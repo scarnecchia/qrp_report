@@ -151,6 +151,10 @@
             drop rc dsid;
         run;
 
+        proc sort data=_temp_baseline_transposed;
+            by groupvar runid cohort metvar _label_;
+        run;
+
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
             data &outdata.;
@@ -158,18 +162,11 @@
             run;
         %end;
         %else %do;
-            proc sql noprint undo_policy = none;
-                create table &outdata. as
-                select x.*, 
-                       y.dp&dpnumber.
-                from &outdata. as x
-                full join _temp_baseline_transposed as y
-                on x.groupvar = y.groupvar and 
-                   x.runid = y.runid and 
-                   x.cohort = y.cohort and
-                   x.metvar = y.metvar and
-                   x._label_= y._label_;
-            quit;
+            data &outdata.;
+                merge &outdata.
+                      _temp_baseline_transposed;
+                by groupvar runid cohort metvar _label_;
+            run;
         %end;
 
     %end; /*level 1 baseline tables*/
