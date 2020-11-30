@@ -36,7 +36,7 @@
     %global output input infolder macros;
 
     /* If reportroot is missing, assign default path */
-    %if %length(&reportroot) = 0 %then %do;
+    %if %symexist(reportroot) = 0 or %length(&reportroot) = 0 %then %do;
     %let rc = %sysfunc(filename(fr,.));
     %let reportroot = %sysfunc(pathname(&fr.));
     /* Find all \ slashes and turn them into / for both Windows/Unix compatibility */
