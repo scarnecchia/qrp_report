@@ -122,12 +122,17 @@ options validvarname = v7;
   libname &ref. %unquote((&libpaths.)) &options.;
 %mend soc_lib;
 
+%macro initialize_paths;
 %let INFOLDER = %soc_clean_paths(&INFOLDER.);
+%if %length(&DATAROOT) > 0 %then %do;
 %let DATAROOT = %soc_clean_paths(&DATAROOT.);      
+%end;
 %let REPORTROOT = %soc_clean_paths(&REPORTROOT.);
+%mend initialize_paths;
+%initialize_paths;
 
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
-%soc_lib(INPUT, &INFOLDER &REPORTROOT.inputfiles/, options=%str(access=readonly));
+%soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -135,15 +140,20 @@ options validvarname = v7;
 /*-----------------------------------------------------------------------------------------------*/
 
 /*driver macros*/
-%include "&reportroot./inputfiles/macros/create_report.sas";
+%include "&reportroot.inputfiles/macros/create_report.sas";
 
 /*utility macros*/
-%include "&reportroot./inputfiles/macros/utility_macros.sas";
+%include "&reportroot.inputfiles/macros/utility_macros.sas";
 
 /*set up*/
-%include "&reportroot./inputfiles/macros/initialize_macro_variables.sas";
-%include "&reportroot./inputfiles/macros/process_inputfiles.sas";
+%include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
+%include "&reportroot.inputfiles/macros/process_inputfiles.sas";
 
 /*baseline macros*/
-%include "&reportroot./inputfiles/macros/baseline_aggregate.sas";
-%include "&reportroot./inputfiles/macros/baseline_expand_parameters.sas";
+%include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
+%include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
+
+/*-----------------------------------------------------------------------------------------------*/
+/* Section 4 - Call create_report.sas 															 */
+/*-----------------------------------------------------------------------------------------------*/
+%create_report();
