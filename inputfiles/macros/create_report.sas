@@ -37,20 +37,6 @@
 
     %put =====> MACRO CALLED: create_report;
 
-    %global output input infolder macros;
-
-    /*Assign libname for output location*/
-    %let output = &reportroot.output/;
-    libname output "&output";
-
-    /*Assign libname for inputfiles location*/
-    %let input = &reportroot.inputfiles/;
-    libname input "&input";
-
-    /*Assign libname for macros location */
-    %let macros = &reportroot.inputfiles/macros/;
-    libname macros "&macros";
-
     /*clear work and output*/
     proc datasets nowarn nolist lib=work kill; quit;
     proc datasets nowarn nolist lib=output kill; quit;
