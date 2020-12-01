@@ -28,17 +28,7 @@
 
     %put =====> MACRO CALLED: initialize_macro_variables ;
 
-    /* Report parameters */
-    %global reporttype small_cellcounts redactevents redactPt stratifybydp seed look_start look_end;
-
-    %let reporttype=;
-    %let small_cellcounts=;
-    %let redactevents=;
-    %let redactPt=;
-    %let stratifybydp =;
-    %let seed=.;
-    %let look_start=.;
-    %let look_end=.;
+    /* Code for initializing global macro variables goes here */
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

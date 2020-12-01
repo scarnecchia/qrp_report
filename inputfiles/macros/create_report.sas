@@ -28,11 +28,11 @@
 %macro create_report();
 
 /*--------------------------------------------------------------------------------------------*/
-/* Assign libnames, initialize global macro variables and read in input files                 */
+/* Initialize global macro variables and read in input files                                  */
 /*--------------------------------------------------------------------------------------------*/
 
     /* Start log */
-    proc printto log="&reportroot./output/qrp_report_output.log" new;
+    proc printto log="&reportroot.output/qrp_report_output.log" new;
     run;
 
     %put =====> MACRO CALLED: create_report;

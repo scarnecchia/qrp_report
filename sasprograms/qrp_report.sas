@@ -125,12 +125,9 @@ options validvarname = v7;
 %let INFOLDER = %soc_clean_paths(&INFOLDER.);
 %let DATAROOT = %soc_clean_paths(&DATAROOT.);      
 %let REPORTROOT = %soc_clean_paths(&REPORTROOT.);
-%let MACROS = &reportroot.inputfiles/macros/;
 
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
-%soc_lib(DATAROOT, &DATAROOT, options=%str(access=readonly));
-%soc_lib(REPORTROOT, &REPORTROOT, options=%str(access=readonly));
-%soc_lib(INPUT, &REPORTROOT.inputfiles/, options=%str(access=readonly));
+%soc_lib(INPUT, &INFOLDER &REPORTROOT.inputfiles/, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 
 /*-----------------------------------------------------------------------------------------------*/
