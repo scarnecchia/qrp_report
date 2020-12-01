@@ -51,7 +51,7 @@
 %let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORT_FILE file*/
-%let CREATEREPORTFILE =;
+%let CREATEREPORT_FILE =;
 
 ****************************************************************************************
 *******                             END OF USER INPUT                             ******
@@ -78,17 +78,28 @@ options fullstimer ;
 options missing = .;
 options validvarname = v7;
 
+/* If reportroot is missing, assign default path */
+%if %symexist(reportroot) = 0 or %length(&reportroot) = 0 %then %do;
+%global reportroot;
+%let rc = %sysfunc(filename(fr,.));
+%let reportroot = %sysfunc(pathname(&fr.));
+/* Find all \ slashes and turn them into / for both Windows/Unix compatibility */
+%let reportroot = %sysfunc(tranwrd(&reportroot,\,/));
+/* Remove inputfiles/macros subdirectory to get root path */
+%let reportroot = %sysfunc(tranwrd(&reportroot,sasprograms,/));
+%let rc= %sysfunc(filename(fr));
+%end;
 
 *-------------------------------------------------------------------------------------------------
 * 1- Include macros
 *-------------------------------------------------------------------------------------------------;
 
 /*driver macros*/
-%include "&packageroot./inputfiles/macros/create_report.sas";
+%include "&reportroot./inputfiles/macros/create_report.sas";
 
 /*utility macros*/
-%include "&packageroot./inputfiles/macros/utility_macros.sas";
+%include "&reportroot./inputfiles/macros/utility_macros.sas";
 
 /*set up*/
-%include "&packageroot./inputfiles/macros/initialize_macros_variables.sas";
-%include "&packageroot./inputfiles/macros/processinputfiles.sas";
+%include "&reportroot./inputfiles/macros/initialize_macro_variables.sas";
+%include "&reportroot./inputfiles/macros/process_inputfiles.sas";
