@@ -123,10 +123,9 @@ options validvarname = v7;
 %mend soc_lib;
 
 %macro initialize_paths;
-%let INFOLDER = %soc_clean_paths(&INFOLDER.);
-%if %length(&DATAROOT) > 0 %then %do;
-%let DATAROOT = %soc_clean_paths(&DATAROOT.);      
-%end;
+/* DATAROOT is optional in header program */
+%if %length(&DATAROOT) > 0 %then %let DATAROOT = %soc_clean_paths(&DATAROOT.);   
+%let INFOLDER = %soc_clean_paths(&INFOLDER.);   
 %let REPORTROOT = %soc_clean_paths(&REPORTROOT.);
 %mend initialize_paths;
 %initialize_paths;
