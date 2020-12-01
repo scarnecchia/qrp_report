@@ -5,21 +5,12 @@
 * PROGRAM: utility_macros.sas  
 *
 * Created (mm/dd/yyyy): 12/20/2015
-* Last modified: 06/30/2019
+* Last modified: 12/1/2020
 * Version: 1.2
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: This program includes two macros:
 *   - %isdata() macro determines whether a dataset is empty or not
-*   - &colmaxmin() macro runs a proc means
-*   - %createcovarlabel() macro takes a covariate input file and creates dataset with COVARNUM and a label
-*   - %recodecovars() macro creates a list of covariates to correctly group in output
-*   - %create_comma_charlist() macro creates a list of variables, each in quotation marks and separated by a comma
-*   - %tableletter() macro dynamically increases table numbering              
-*   - %soc_clean_paths()
-*   - %soc_dirExist()
-*   - %soc_quotepath()
-*   - %soc_lib()
 *
 *  Program inputs:                                                                                   
 *   -
@@ -39,12 +30,6 @@
 *
 *--------------------------------------------------------------------------------------------------
 *  CHANGE LOG: 
-*
-*   Version   Date       Initials      Comment (reference external documentation when available)
-*   -------   --------   --------   ---------------------------------------------------------------
-*   1.1       10/30/17   AP         Made length of covariate labels data-driven
-*
-*   1.2       06/30/19   AP         Add SOC setup macros
 *
 ***************************************************************************************************;
 
