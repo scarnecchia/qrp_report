@@ -1,40 +1,21 @@
-****************************************************************************************************
-*                                      PROGRAM OVERVIEW
-****************************************************************************************************
-*
-* PROGRAM: qrp_report.sas
-* Created (mm/dd/yyyy): 11/30/2020
-* Last modified: 
-* Version: 
-*
-*--------------------------------------------------------------------------------------------------
-* PURPOSE:
-*   Create QRP reports based on analysis types
-*   The following can be requested:
-*		-Type 1 
-*		-Type 2 
-*		  -Multiple Events 
-*		  -Overlap 
-*		  -Concomitant Use
-*		  -PSA
-*		-Type 4
-*		  -PSA
-*		-Type 5
-*		-Type 6
-*
-*--------------------------------------------------------------------------------------------------
 ***************************************************************************************************
 *                                      SENTINEL PROGRAM
 ***************************************************************************************************
-* NAME:
 *
-* PURPOSE:
+* PROGRAM: qrp_report.sas
+* CREATED (mm/dd/yyyy):
+* LAST MODIFIED: 
+* VERSION: 1.0.0
+*
+* PURPOSE: Aggregate QRP outputs from data partners and produce an Excel report
 *
 * MAJOR STEPS:
 *
 * KEY DEPENDENCIES/CONSTRAINTS/CAVEATS:
 *
 * PROGRAMMING NOTES:
+*
+*
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
 *  Sentinel Coordinating Center
@@ -45,9 +26,9 @@
 *
 ***************************************************************************************************;
 
-/*-------------------------------------------------------------------------------------*/
-/* Section 1: User inputs 															   */
-/*-------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+/* Section 1: User inputs 														           	      */
+/*------------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
 %let INFOLDER =;
@@ -61,15 +42,15 @@
 /* Enter the name of the CREATEREPORTFILE file*/
 %let CREATEREPORTFILE =;
 
-****************************************************************************************
-*******                             END OF USER INPUT                             ******
-*******                        DO NOT EDIT BELOW THIS LINE                        ******
-******* (Consult with SOC or Sentinel team leader if you feel edits are required) ******
-****************************************************************************************;
+***************************************************************************************************;
+*******                             END OF USER INPUT                                        ******
+*******                        DO NOT EDIT BELOW THIS LINE                                   ******
+*******     (Consult with SOC or Sentinel team leader if you feel edits are required)        ******
+***************************************************************************************************;
 
-/*---------------------------------------------------------------------*/
-/* NOTE: This is standard SOC environment setup code -- Do Not Edit   */
-/*---------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+/* NOTE: This is standard SOC environment setup code -- Do Not Edit                               */
+/*------------------------------------------------------------------------------------------------*/
 
 /* System options */
 options nosymbolgen nomlogic;
@@ -86,9 +67,9 @@ options fullstimer ;
 options missing = .;
 options validvarname = v7;
 
-/*----------------------------------------------------------------------------------------*/
-/* Section 2 - SOC macros for cleaning paths and libname assignments 					  */
-/*----------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+/* Section 2 - SOC macros for cleaning paths and libname assignments 					          */
+/*------------------------------------------------------------------------------------------------*/
 
 /* If reportroot is missing, assign default path */
 %macro check_reportroot;
@@ -152,20 +133,20 @@ options validvarname = v7;
 %soc_lib(DATAROOT, &DATAROOT, options=%str(access=readonly))
 %soc_lib(REPORTROOT, &REPORTROOT, options=%str(access=readonly))
 
-/*----------------------------------------------------------------------------------------*/
-/* Section 3 - Include macros 															  */
-/*----------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+/* Section 3 - Include macros 															          */
+/*------------------------------------------------------------------------------------------------*/
 
 /*driver macros*/
-%include "&reportroot./inputfiles/macros/create_report.sas";
+%include "&reportroot.inputfiles/macros/create_report.sas";
 
 /*utility macros*/
-%include "&reportroot./inputfiles/macros/utility_macros.sas";
+%include "&reportroot.inputfiles/macros/utility_macros.sas";
 
 /*set up*/
-%include "&reportroot./inputfiles/macros/initialize_macro_variables.sas";
-%include "&reportroot./inputfiles/macros/process_inputfiles.sas";
+%include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
+%include "&reportroot.inputfiles/macros/process_inputfiles.sas";
 
 /*baseline macros*/
-%include "&reportroot./inputfiles/macros/baseline_aggregate.sas";
-%include "&reportroot./inputfiles/macros/baseline_expand_parameters.sas";
+%include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
+%include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
