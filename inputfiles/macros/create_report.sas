@@ -32,7 +32,7 @@
 /*--------------------------------------------------------------------------------------------*/
 
     /* Start log */
-    proc printto log="&reportroot.output/qrp_report_output.log" new;
+    proc printto log="&reportroot.output/qrp_report_log.log" new;
     run;
 
     %put =====> MACRO CALLED: create_report;
