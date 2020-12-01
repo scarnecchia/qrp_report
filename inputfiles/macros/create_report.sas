@@ -27,6 +27,10 @@
 
 %macro create_report();
 
+/*--------------------------------------------------------------------------------------------*/
+/* Assign libnames, initialize global macro variables and read in input files                 */
+/*--------------------------------------------------------------------------------------------*/
+
     /* Start log */
     proc printto log="&reportroot./output/qrp_report_output.log" new;
     run;
@@ -34,8 +38,6 @@
     %put =====> MACRO CALLED: create_report;
 
     %global output input infolder macros;
-
-    %let reportroot = %soc_clean_paths(&reportroot.);
 
     /*Assign libname for output location*/
     %let output = &reportroot.output/;
@@ -49,9 +51,6 @@
     %let macros = &reportroot.inputfiles/macros/;
     libname macros "&macros";
 
-    /*Assign libname for package infolder*/
-    libname infolder "&infolder.";
-
     /*clear work and output*/
     proc datasets nowarn nolist lib=work kill; quit;
     proc datasets nowarn nolist lib=output kill; quit;
@@ -63,7 +62,7 @@
     %process_inputfiles();
 
 /*--------------------------------------------------------------------------------------------*/
-/* Clean Work                                                                              */
+/* Clean Work                                                                                 */
 /*--------------------------------------------------------------------------------------------*/
 
     proc datasets nowarn nolist lib=work kill; quit;

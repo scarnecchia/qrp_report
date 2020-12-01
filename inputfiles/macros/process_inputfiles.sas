@@ -36,10 +36,10 @@
         %abort;
     %end;
 
-    /*Read in CREATEREPORT_FILE and assign macro variables*/
+    /*Read in CREATEREPORTFILE and assign macro variables*/
     data _null_;
         set input.&createreportfile.;
-        call symputx('ReportType', reporttype, 'G');
+        call symputx('ReportType', upcase(reporttype), 'G');
         call symputx('small_cellcounts',upcase(small_cellcounts),'G');
         call symputx('redactevents',redactevents,'G');
         call symputx('redactPT',redactPT,'G');
