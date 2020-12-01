@@ -1,40 +1,21 @@
-****************************************************************************************************
-*                                      PROGRAM OVERVIEW
-****************************************************************************************************
-*
-* PROGRAM: qrp_report.sas
-* Created (mm/dd/yyyy): 11/30/2020
-* Last modified: 
-* Version: 
-*
-*--------------------------------------------------------------------------------------------------
-* PURPOSE:
-*   Create QRP reports based on analysis types
-*   The following can be requested:
-*		-Type 1 
-*		-Type 2 
-*		  -Multiple Events 
-*		  -Overlap 
-*		  -Concomitant Use
-*		  -PSA
-*		-Type 4
-*		  -PSA
-*		-Type 5
-*		-Type 6
-*
-*--------------------------------------------------------------------------------------------------
 ***************************************************************************************************
 *                                      SENTINEL PROGRAM
 ***************************************************************************************************
-* NAME:
 *
-* PURPOSE:
+* PROGRAM: qrp_report.sas
+* CREATED (mm/dd/yyyy):
+* LAST MODIFIED: 
+* VERSION: 1.0.0
+*
+* PURPOSE: Aggregate QRP outputs from data partners and produce an Excel report
 *
 * MAJOR STEPS:
 *
 * KEY DEPENDENCIES/CONSTRAINTS/CAVEATS:
 *
 * PROGRAMMING NOTES:
+*
+*
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
 *  Sentinel Coordinating Center
