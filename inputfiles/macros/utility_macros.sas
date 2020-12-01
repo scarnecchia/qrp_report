@@ -6,10 +6,9 @@
 *
 * Created (mm/dd/yyyy): 12/20/2015
 * Last modified: 12/1/2020
-* Version: 1.2
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This program includes two macros:
+* PURPOSE: This program includes the following macros:
 *   - %isdata() macro determines whether a dataset is empty or not
 *
 *  Program inputs:                                                                                   
@@ -27,9 +26,6 @@
 * CONTACT INFO: 
 *  Sentinel Coordinating Center
 *  info@sentinelsystem.org
-*
-*--------------------------------------------------------------------------------------------------
-*  CHANGE LOG: 
 *
 ***************************************************************************************************;
 
