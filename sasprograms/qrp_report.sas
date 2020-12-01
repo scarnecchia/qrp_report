@@ -51,7 +51,7 @@
 %let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORT_FILE file*/
-%let CREATEREPORT_FILE =;
+%let CREATEREPORTFILE =;
 
 ****************************************************************************************
 *******                             END OF USER INPUT                             ******

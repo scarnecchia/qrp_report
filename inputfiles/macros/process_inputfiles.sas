@@ -29,16 +29,16 @@
 
     %put =====> MACRO CALLED: process_inputfiles ;
 
-    %isdata(dataset=input.&createreport_file.);
+    %isdata(dataset=input.&createreportfile.);
     %if %eval(&nobs<1) %then %do;
-        %put ERROR: (Sentinel) CREATEREPORT_FILE is missing.;
+        %put ERROR: (Sentinel) CREATEREPORTFILE is missing.;
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
         %abort;
     %end;
 
     /*Read in CREATEREPORT_FILE and assign macro variables*/
     data _null_;
-        set input.&createreport_file.;
+        set input.&createreportfile.;
         call symputx('ReportType', reporttype, 'G');
         call symputx('small_cellcounts',upcase(small_cellcounts),'G');
         call symputx('redactevents',redactevents,'G');
