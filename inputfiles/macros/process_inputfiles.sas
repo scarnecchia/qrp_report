@@ -39,12 +39,12 @@
     /*Read in CREATEREPORT_FILE and assign macro variables*/
     data _null_;
         set input.&createreport_file.;
-        call symputx('ReportType', report_type, 'G');
+        call symputx('ReportType', reporttype, 'G');
         call symputx('small_cellcounts',upcase(small_cellcounts),'G');
         call symputx('redactevents',redactevents,'G');
         call symputx('redactPT',redactPT,'G');
         /*DP stratification*/
-        call symputx('stratify_by_DP', upcase(stratify_by_DP), 'G');
+        call symputx('stratifybyDP', upcase(stratifybyDP), 'G');
         call symputx('seed', seed, 'G');
         /* Report input files */
         call symputx('groupsfile', groupsfile, 'G');

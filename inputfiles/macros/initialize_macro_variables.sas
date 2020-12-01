@@ -48,13 +48,13 @@
     %let L2ComparisonsFile=;
 
     /* Report parameters */
-    %global reporttype small_cellcounts redactevents redactPt stratify_by_dp seed look_start look_end;
+    %global reporttype small_cellcounts redactevents redactPt stratifybydp seed look_start look_end;
 
     %let reporttype=;
     %let small_cellcounts=;
     %let redactevents=;
     %let redactPt=;
-    %let stratify_by_dp =;
+    %let stratifybydp =;
     %let seed=.;
     %let look_start=.;
     %let look_end=.;
