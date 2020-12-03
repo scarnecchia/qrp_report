@@ -85,6 +85,7 @@
         data dpinfofile;
             set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
+            dp=lowcase(dp);
         run;
         %if %eval(&num_dp.=0) %then %do;
             %put ERROR: (Sentinel) In DPINFOFILE, INCLUDEDP = N for all rows;

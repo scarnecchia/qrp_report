@@ -27,9 +27,9 @@
 
 %macro create_report();
 
-/*--------------------------------------------------------------------------------------------*/
-/* Initialize global macro variables and read in input files                                  */
-/*--------------------------------------------------------------------------------------------*/
+***************************************************************************************************;
+* Initialize global macro variables and read in input files                                  
+***************************************************************************************************;
 
     /* Start log */
     proc printto log="&reportroot.output/qrp_report_log.log" new;
@@ -46,6 +46,15 @@
 
     /*read in input files and process input file parameters*/
     %process_inputfiles();
+
+***************************************************************************************************;
+* Create concactenated libname for each DP and output DP metadata                                                      
+***************************************************************************************************;
+
+    %createlibref(dplist = &random_dplist.,
+                  dpinfofile = dpinfofile, 
+                  dataroot = &dataroot.,
+                  signaturefile =%scan(&runidlist,1)_signature);
 
 /*--------------------------------------------------------------------------------------------*/
 /* Clean Work                                                                                 */

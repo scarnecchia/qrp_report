@@ -32,6 +32,10 @@
     %global num_dp random_dplist;
     %let num_dp = 0; 
 
+    /*variables related to query*/
+    %global runidlist;
+    %let runidlist = r01; /*temporary - remove when runidlist implemented*/
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
