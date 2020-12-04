@@ -45,11 +45,7 @@
             from input.&createreportfile;
         quit;
 
-        *Reset all parameters and make global;
-        %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile tablefile
-                figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
-                CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
-
+        *Reset all parameters;
         %let ReportType= ;
         %let small_cellcounts = ;
         %let redactevents = ;

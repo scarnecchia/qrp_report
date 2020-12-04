@@ -36,6 +36,11 @@
     %global runidlist;
     %let runidlist = r01; /*temporary - remove when runidlist implemented*/
 
+    /*variables related to createreport input file*/
+    %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile tablefile
+            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
+            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
