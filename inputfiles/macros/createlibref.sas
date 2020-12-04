@@ -181,7 +181,13 @@
 				where lowcase(DP) = "&DPSITEID.";
 			run;
 
-			libname &DPSITEID "&PATH." access=readonly;
+            %if %soc_dirExist(&path.) %then %do;
+			     libname &DPSITEID "&PATH." access=readonly;
+            %end;
+            %else %do;
+                %put ERROR: (Sentinel) Path specified in DPINFOFILE for &DPSITEID. does not exist. Package will abort.;
+                %abort;
+            %end;
 
 			/*Update signature file with VersionID*/
 			%if "&signaturefile" ne "" %then %do;
