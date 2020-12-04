@@ -29,6 +29,10 @@
 
     %put =====> MACRO CALLED: process_inputfiles ;
 
+/***************************************************************************************************
+*   Read in CREATEREPORTFILE and assign each parameter to a macro variable                                                  
+***************************************************************************************************/
+
     %isdata(dataset=input.&createreportfile.);
     %if %eval(&nobs<1) %then %do;
         %put ERROR: (Sentinel) CREATEREPORTFILE is missing.;
@@ -36,17 +40,16 @@
         %abort;
     %end;
 
-/***************************************************************************************************
-*   Read in CREATEREPORTFILE and assign each parameter to a macro variable                                                  
-***************************************************************************************************/
-
-        %global numparms;
         proc sql noprint;
             select count(*) into: numparms
             from input.&createreportfile;
         quit;
 
-        *Reset all parameters;
+        *Reset all parameters and make global;
+        %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile tablefile
+                figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
+                CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
+
         %let ReportType= ;
         %let small_cellcounts = ;
         %let redactevents = ;
@@ -73,6 +76,7 @@
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", parameter);
                     call symputx("value", value);
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
                 end;
             run;
             %let &parameter. = &value.;
