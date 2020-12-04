@@ -41,6 +41,25 @@
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
             CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
 
+    %let ReportType= ;
+    %let small_cellcounts = ;
+    %let redactevents = ;
+    %let redactPT = ;
+    %let stratifybyDP = ;
+    %let seed = ;
+    %let groupsfile = ;
+    %let tablefile = ;
+    %let figurefile = ;
+    %let labelfile = ;
+    %let itsregressionfile = ;
+    %let treeaggfile = ;
+    %let appendixfile = ;
+    %let selectionprobabilities = ;
+    %let CodeDescriptionsFile = ;
+    %let TableColumnsFile = ;
+    %let DPInfoFile = ;
+    %let L2ComparisonsFile = ;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
