@@ -147,6 +147,7 @@ options validvarname = v7;
 /*set up*/
 %include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
 %include "&reportroot.inputfiles/macros/process_inputfiles.sas";
+%include "&reportroot.inputfiles/macros/createlibref.sas";
 
 /*baseline macros*/
 %include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
