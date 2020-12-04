@@ -36,10 +36,6 @@
         %abort;
     %end;
 
-    /*Determine number of runs*/
-    proc contents data=input.&createreportfile noprint out=&createreportfile;
-    run;
-       
         %global numparms;
         proc sql noprint;
             select count(*) into: numparms
