@@ -36,6 +36,10 @@
         %abort;
     %end;
 
+***************************************************************************************************;
+*   Read in CREATEREPORTFILE and assign each parameter to a macro variable                                                  
+***************************************************************************************************;
+
         %global numparms;
         proc sql noprint;
             select count(*) into: numparms
