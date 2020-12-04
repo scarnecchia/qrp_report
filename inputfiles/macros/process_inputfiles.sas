@@ -40,17 +40,11 @@
     proc contents data=input.&createreportfile noprint out=&createreportfile;
     run;
        
-        %global numruns numparms;
+        %global numparms;
         proc sql noprint;
-            select count(*) into: numruns
-            from &createreportfile
-            where substr(upcase(name),1,3) = 'RUN';
-
             select count(*) into: numparms
-            from input.&createreportfile
+            from input.&createreportfile;
         quit;
-
-    %do createreportrun = 1 %to %eval(&numruns.);
 
         *Reset all parameters;
         %let ReportType= ;
@@ -78,7 +72,7 @@
                 set input.&createreportfile;
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", parameter);
-                    call symputx("value", run&createreportrun.);
+                    call symputx("value", value);
                 end;
             run;
             %let &parameter. = &value.;
@@ -92,8 +86,6 @@
             %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
             %abort;
         %end;
-        
-    %end; /* createreportrun loop */ 
 
     %put =====> END MACRO: process_inputfiles;
 
