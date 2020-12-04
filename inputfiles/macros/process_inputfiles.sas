@@ -45,26 +45,6 @@
             from input.&createreportfile;
         quit;
 
-        *Reset all parameters;
-        %let ReportType= ;
-        %let small_cellcounts = ;
-        %let redactevents = ;
-        %let redactPT = ;
-        %let stratifybyDP = ;
-        %let seed = ;
-        %let groupsfile = ;
-        %let tablefile = ;
-        %let figurefile = ;
-        %let labelfile = ;
-        %let itsregressionfile = ;
-        %let treeaggfile = ;
-        %let appendixfile = ;
-        %let selectionprobabilities = ;
-        %let CodeDescriptionsFile = ;
-        %let TableColumnsFile = ;
-        %let DPInfoFile = ;
-        %let L2ComparisonsFile = ;
-
         /*Assign all parameters to macro variables*/
         %do createreportparameter = 1 %to %eval(&numparms.);
             data _null_;
