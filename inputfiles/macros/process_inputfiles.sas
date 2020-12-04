@@ -36,34 +36,53 @@
         %abort;
     %end;
 
-    /*Read in CREATEREPORTFILE and assign macro variables*/
-    data _null_;
-        set input.&createreportfile.;
-        call symputx('ReportType', upcase(reporttype), 'G');
-        call symputx('small_cellcounts',upcase(small_cellcounts),'G');
-        call symputx('redactevents',redactevents,'G');
-        call symputx('redactPT',redactPT,'G');
-        /*DP stratification*/
-        call symputx('stratifybyDP', upcase(stratifybyDP), 'G');
-        call symputx('seed', seed, 'G');
-        /* Report input files */
-        call symputx('groupsfile', groupsfile, 'G');
-        call symputx('baselinefile', baselinefile, 'G');
-        call symputx('tablefile', tablefile, 'G');
-        call symputx('figurefile', figurefile, 'G');
-        call symputx('labelfile', labelfile, 'G');
-        call symputx('itsregressionfile', itsregressionfile, 'G');
-        call symputx('treeaggfile', treeaggfile, 'G');
-        call symputx('appendixfile', appendixfile, 'G');
-        call symputx('selectionprobabilities',selectionprobabilities,'G');
-        call symputx('CodeDescriptionsFile',CodeDescriptionsFile,'G');
-        call symputx('TableColumnsFile',TableColumnsFile,'G');
-        call symputx('DPInfoFile', DPInfoFile, 'G');
-        call symputx('L2ComparisonsFile',L2ComparisonsFile,'G');
-        /*Look periods in report*/
-        call symputx('look_start', look_start, 'G');
-        call symputx('look_end', look_end, 'G');
+    /*Determine number of runs*/
+    proc contents data=input.&createreportfile noprint out=&createreportfile;
     run;
+       
+        %global numruns numparms;
+        proc sql noprint;
+            select count(*) into: numruns
+            from &createreportfile
+            where substr(upcase(name),1,3) = 'RUN';
+
+            select count(*) into: numparms
+            from input.&createreportfile
+        quit;
+
+        %do createreportrun = 1 %to %eval(&numruns.);
+
+        *Reset all parameters;
+        %let ReportType= ;
+        %let small_cellcounts = ;
+        %let redactevents = ;
+        %let redactPT = ;
+        %let stratifybyDP = ;
+        %let seed = ;
+        %let groupsfile = ;
+        %let tablefile = ;
+        %let figurefile = ;
+        %let labelfile = ;
+        %let itsregressionfile = ;
+        %let treeaggfile = ;
+        %let appendixfile = ;
+        %let selectionprobabilities = ;
+        %let CodeDescriptionsFile = ;
+        %let TableColumnsFile = ;
+        %let DPInfoFile = ;
+        %let L2ComparisonsFile = ;
+
+        /*Assign all parameters to macro variables*/
+        %do createreportparameter = 1 %to %eval(&numparms.);
+            data _null_;
+                set input.&createreportfile;
+                if _n_ = &createreportparameter. then do;
+                    call symputx("parameter", parameter);
+                    call symputx("value", run&createreportrun.);
+                end;
+            run;
+            %let &parameter. = &value.;
+        %end;
 
     /*Check if DPINFOFILE exists, abort if it doesn't*/
     %isdata(dataset=input.&DPInfoFile.);
