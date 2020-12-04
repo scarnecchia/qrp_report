@@ -28,7 +28,13 @@
 
     %put =====> MACRO CALLED: initialize_macro_variables ;
 
-    /* Code for initializing global macro variables goes here */
+    /*variables related to DPs*/
+    %global num_dp random_dplist;
+    %let num_dp = 0; 
+
+    /*variables related to query*/
+    %global runidlist;
+    %let runidlist = r01; /*temporary - remove when runidlist implemented*/
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
