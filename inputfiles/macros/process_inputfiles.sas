@@ -29,9 +29,9 @@
 
     %put =====> MACRO CALLED: process_inputfiles ;
 
-***************************************************************************************************;
-*   Read in CREATEREPORTFILE and assign each parameter to a run level macro variable                                                  
-***************************************************************************************************;
+/***************************************************************************************************
+*   Read in CREATEREPORTFILE and assign each parameter to a macro variable                                                  
+***************************************************************************************************/
 
     %isdata(dataset=input.&createreportfile.);
     %if %eval(&nobs<1) %then %do;
@@ -40,34 +40,23 @@
         %abort;
     %end;
 
-    /*Read in CREATEREPORTFILE and assign macro variables*/
-    data _null_;
-        set input.&createreportfile.;
-        call symputx('ReportType', upcase(reporttype), 'G');
-        call symputx('small_cellcounts',upcase(small_cellcounts),'G');
-        call symputx('redactevents',redactevents,'G');
-        call symputx('redactPT',redactPT,'G');
-        /*DP stratification*/
-        call symputx('stratifybyDP', upcase(stratifybyDP), 'G');
-        call symputx('seed', seed, 'G');
-        /* Report input files */
-        call symputx('groupsfile', groupsfile, 'G');
-        call symputx('baselinefile', baselinefile, 'G');
-        call symputx('tablefile', tablefile, 'G');
-        call symputx('figurefile', figurefile, 'G');
-        call symputx('labelfile', labelfile, 'G');
-        call symputx('itsregressionfile', itsregressionfile, 'G');
-        call symputx('treeaggfile', treeaggfile, 'G');
-        call symputx('appendixfile', appendixfile, 'G');
-        call symputx('selectionprobabilities',selectionprobabilities,'G');
-        call symputx('CodeDescriptionsFile',CodeDescriptionsFile,'G');
-        call symputx('TableColumnsFile',TableColumnsFile,'G');
-        call symputx('DPInfoFile', DPInfoFile, 'G');
-        call symputx('L2ComparisonsFile',L2ComparisonsFile,'G');
-        /*Look periods in report*/
-        call symputx('look_start', look_start, 'G');
-        call symputx('look_end', look_end, 'G');
-    run;
+        proc sql noprint;
+            select count(*) into: numparms
+            from input.&createreportfile;
+        quit;
+
+        /*Assign all parameters to macro variables*/
+        %do createreportparameter = 1 %to %eval(&numparms.);
+            data _null_;
+                set input.&createreportfile;
+                if _n_ = &createreportparameter. then do;
+                    call symputx("parameter", parameter);
+                    call symputx("value", value);
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
+                end;
+            run;
+            %let &parameter. = &value.;
+        %end;
 
 /************************************************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
@@ -127,7 +116,6 @@
             from output.dpinfo;
         quit;
     %end;
-
 
     %put =====> END MACRO: process_inputfiles;
 
