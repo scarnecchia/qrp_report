@@ -50,7 +50,7 @@
             from input.&createreportfile
         quit;
 
-        %do createreportrun = 1 %to %eval(&numruns.);
+    %do createreportrun = 1 %to %eval(&numruns.);
 
         *Reset all parameters;
         %let ReportType= ;
@@ -84,13 +84,16 @@
             %let &parameter. = &value.;
         %end;
 
-    /*Check if DPINFOFILE exists, abort if it doesn't*/
-    %isdata(dataset=input.&DPInfoFile.);
-    %if %eval(&nobs.=0) %then %do; 
-        %put ERROR: (Sentinel) DPINFOFILE is missing.;
-        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
-        %abort;
-    %end;
+
+        /*Check if DPINFOFILE exists, abort if it doesn't*/
+        %isdata(dataset=input.&DPInfoFile.);
+        %if %eval(&nobs.=0) %then %do; 
+            %put ERROR: (Sentinel) DPINFOFILE is missing.;
+            %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
+            %abort;
+        %end;
+        
+    %end; /* createreportrun loop */ 
 
     %put =====> END MACRO: process_inputfiles;
 
