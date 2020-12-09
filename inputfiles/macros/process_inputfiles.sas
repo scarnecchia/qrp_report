@@ -116,7 +116,40 @@
             from output.dpinfo;
         quit;
     %end;
+	
+/************************************************************************************************************************************
+*   Read in the qrp parameters file and assign parameter to macro variables                                                 
+************************************************************************************************************************************/
+    /* Transpose qrp_parameters to determine run values associated with desired runids */
+	proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+       var run:;
+    run;
 
+    proc sql noprint;
+        select count(distinct runid) 
+	    into: numrunid
+        from input.&groupsfile.;
+        
+		%let numrunid = &numrunid.;
+
+		select distinct b._name_
+		      ,a.runid
+	    into: run1 -:run&numrunid. 
+		     ,:id1 - :id&numrunid.
+        from input.&groupsfile. as a
+        left join _qrp_parameters_trans as b
+           on a.runid = b.col1;
+     quit;
+
+     /* Identify run specific parameters and values to store as macro variables*/
+	 %do n = 1 %to &numrunid.;
+        data _null_;
+		  set infolder.qrp_parameters (keep = parameter &&run&n.);
+		  new_parameter = catx("_","&&id&n.",parameter);
+		  call symputx(new_parameter,&&run&n.,'G');
+		run;
+     %end;
+	
     %put =====> END MACRO: process_inputfiles;
 
 %mend process_inputfiles;
