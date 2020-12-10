@@ -150,7 +150,7 @@
 		      ,runid
 	    into: numrunid
 		     ,:runidlist separated by ' '
-        from input.&groupsfile.
+        from _inputfiles
         group by runid;
         
 		%let numrunid = &numrunid.;
