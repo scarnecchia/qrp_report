@@ -153,6 +153,10 @@ options validvarname = v7;
 %include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 
+/*report formatting and output macros*/
+%include "&reportroot.inputfiles/macros/output_report_dates.sas";
+
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 4 - Call create_report.sas 															 */
 /*-----------------------------------------------------------------------------------------------*/
