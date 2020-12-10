@@ -127,7 +127,10 @@
 
     /* Combine input files to identify all runids requested */
 	 data _inputfiles;
-	   set input.&groupsfile. (keep = runid)
+	   set 
+	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
+	       input.&groupsfile. (keep = runid)
+		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonsfile.)) %then %do;
 		   input.&l2comparisonsfile. (keep = runid)
 		 %end;
