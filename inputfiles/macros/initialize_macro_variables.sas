@@ -34,7 +34,7 @@
 
     /*variables related to query*/
     %global runidlist;
-    %let runidlist = r01; /*temporary - remove when runidlist implemented*/
+    %let runidlist = ;
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
