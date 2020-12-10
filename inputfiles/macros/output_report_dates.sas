@@ -64,7 +64,7 @@
     /*Assign final formatted dates*/
     data _null_;
         call symputx('startdateformatted', put(&minstartdate.,WORDDATE.));
-        call symputx('enddateformatted', put(max(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.));
+        call symputx('enddateformatted', put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.));
     run;
 
     %put study start date = &startdateformatted.;
