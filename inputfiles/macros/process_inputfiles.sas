@@ -147,13 +147,14 @@
 
      proc sql noprint;
         select count(distinct runid) 
-		      ,runid
 	    into: numrunid
-		     ,:runidlist separated by ' '
-        from _inputfiles
-        group by runid;
+        from _inputfiles;
         
 		%let numrunid = &numrunid.;
+
+		select distinct runid
+	    into: runidlist separated by ' '
+        from _inputfiles;
 
 		select distinct b._name_
 		      ,a.runid
