@@ -34,10 +34,10 @@
 
     /*variables related to query*/
     %global runidlist;
-    %let runidlist = r01; /*temporary - remove when runidlist implemented*/
+    %let runidlist = ;
 
     /*variables related to createreport input file*/
-    %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile tablefile
+    %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
             CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
 
@@ -48,6 +48,7 @@
     %let stratifybyDP = ;
     %let seed = ;
     %let groupsfile = ;
+    %let baselinefile = ;
     %let tablefile = ;
     %let figurefile = ;
     %let labelfile = ;
