@@ -128,17 +128,17 @@
     /* Combine input files to identify all runids requested */
 	 data _inputfiles;
 	   set input.&groupsfile. (keep = runid)
-	     %if %sysfunc(exist(input.&L2COMPARISONSFILE.)) %then %do;
-		   input.&L2COMPARISONSFILE. (keep = runid)
+	     %if %sysfunc(exist(input.&l2comparisonsfile.)) %then %do;
+		   input.&l2comparisonsfile. (keep = runid)
 		 %end;
-		 %if %sysfunc(exist(input.&BASELINEFILE.)) %then %do;
-		   input.&BASELINEFILE. (keep = runid)
+		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
+		   input.&baselinefile. (keep = runid)
 		 %end;
-		 %if %sysfunc(exist(input.&ITSREGRESSIONFILE.)) %then %do;
-		   input.&ITSREGRESSIONFILE. (keep = runid)
+		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
+		   input.&itsregressionfile. (keep = runid)
 		 %end;
-		 %if %sysfunc(exist(input.&TREEAGGFILE.)) %then %do;
-		   input.&TREEAGGFILE. (keep = runid)
+		 %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+		   input.&treeaggfile. (keep = runid)
 		 %end;;
      run;
 
@@ -166,6 +166,36 @@
 		   %put ERROR: (Sentinel) Review input files and confirm valid runids are requested for the QRP run designated at the infolder directory.;
 		   %abort;
 		%end;
+		
+		/* Initialize macro variables */
+	    %global &&id&n.._runid &&id&n.._periodidstart &&id&n.._periodidend &&id&n.._monitoringfile &&id&n.._cohortcodes 
+            &&id&n.._surveillancemode &&id&n.._cohortfile &&id&n.._type1file &&id&n.._covariatecodes &&id&n.._comorbfile 
+            &&id&n.._inclusioncodes &&id&n.._utilfile &&id&n.._drugclassfile &&id&n.._psestimationfile &&id&n.._indlevel 
+            &&id&n.._treefile &&id&n.._treelookup &&id&n.._icd10icd9map &&id&n.._covstratfile &&id&n.._psmatchfile 
+            &&id&n.._stratificationfile &&id&n.._userstrata; 
+			
+        %let &&id&n.._runid              = ;
+        %let &&id&n.._periodidstart      = ;
+        %let &&id&n.._periodidend        = ;
+        %let &&id&n.._monitoringfile     = ;
+        %let &&id&n.._cohortcodes        = ;
+        %let &&id&n.._surveillancemode   = ;
+        %let &&id&n.._cohortfile         = ;
+        %let &&id&n.._type1file          = ;
+        %let &&id&n.._covariatecodes     = ;
+        %let &&id&n.._comorbfile         = ;
+        %let &&id&n.._inclusioncodes     = ;
+        %let &&id&n.._utilfile           = ;
+        %let &&id&n.._drugclassfile      = ;
+        %let &&id&n.._psestimationfile   = ;
+        %let &&id&n.._indlevel           = ;
+        %let &&id&n.._treefile           = ;
+        %let &&id&n.._treelookup         = ;
+        %let &&id&n.._icd10icd9map       = ;
+        %let &&id&n.._covstratfile       = ;
+        %let &&id&n.._psmatchfile        = ;
+        %let &&id&n.._stratificationfile = ;
+        %let &&id&n.._userstrata         = ;
 
         data _null_;
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
