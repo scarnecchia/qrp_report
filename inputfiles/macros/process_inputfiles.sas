@@ -145,7 +145,7 @@
      proc sql noprint;
         select count(distinct runid) 
 	    into: numrunid
-        from input.&groupsfile.;
+        from _inputfiles;
         
 		%let numrunid = &numrunid.;
 
@@ -233,6 +233,10 @@
 		  call symputx(new_parameter,&&run&n.,'G');
 		run;
      %end;
+	 
+	 proc datasets noprint lib = work;
+	  delete _:;
+	 quit;
 	
     %put =====> END MACRO: process_inputfiles;
 
