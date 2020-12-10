@@ -143,6 +143,13 @@
 
      /* Identify run specific parameters and values to store as macro variables*/
 	 %do n = 1 %to &numrunid.;
+	   /* Abort if run value is missing*/
+        %if %str("&&run&n.") = %str("") %then %do;
+           %put ERROR: (Sentinel) runid &&id&n. is not on the infolder.qrp_parameters file.;
+		   %put Please review input files and confirm valid runids are requested for the QRP run designated as the infolder parameter.;
+		   %abort;
+		%end;
+
         data _null_;
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
 		  new_parameter = catx("_","&&id&n.",parameter);
