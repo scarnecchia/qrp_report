@@ -121,11 +121,28 @@
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
 ************************************************************************************************************************************/
     /* Transpose qrp_parameters to determine run values associated with desired runids */
-	proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+	 proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
        var run:;
-    run;
+     run;
 
-    proc sql noprint;
+    /* Combine input files to identify all runids requested */
+	 data _inputfiles;
+	   set input.&groupsfile. (keep = runid)
+	     %if %sysfunc(exist(input.&L2COMPARISONSFILE.)) %then %do;
+		   input.&L2COMPARISONSFILE. (keep = runid)
+		 %end;
+		 %if %sysfunc(exist(input.&BASELINEFILE.)) %then %do;
+		   input.&BASELINEFILE. (keep = runid)
+		 %end;
+		 %if %sysfunc(exist(input.&ITSREGRESSIONFILE.)) %then %do;
+		   input.&ITSREGRESSIONFILE. (keep = runid)
+		 %end;
+		 %if %sysfunc(exist(input.&TREEAGGFILE.)) %then %do;
+		   input.&TREEAGGFILE. (keep = runid)
+		 %end;;
+     run;
+
+     proc sql noprint;
         select count(distinct runid) 
 	    into: numrunid
         from input.&groupsfile.;
@@ -136,7 +153,7 @@
 		      ,a.runid
 	    into: run1 -:run&numrunid. 
 		     ,:id1 - :id&numrunid.
-        from input.&groupsfile. as a
+        from _inputfiles as a
         left join _qrp_parameters_trans as b
            on a.runid = b.col1;
      quit;
@@ -146,7 +163,7 @@
 	   /* Abort if run value is missing*/
         %if %str("&&run&n.") = %str("") %then %do;
            %put ERROR: (Sentinel) runid &&id&n. is not on the infolder.qrp_parameters file.;
-		   %put Please review input files and confirm valid runids are requested for the QRP run designated as the infolder parameter.;
+		   %put ERROR: (Sentinel) Review input files and confirm valid runids are requested for the QRP run designated at the infolder directory.;
 		   %abort;
 		%end;
 
