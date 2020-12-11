@@ -33,13 +33,19 @@
     %let num_dp = 0; 
 
     /*variables related to query*/
-    %global runidlist;
+    %global runidlist numrunid;
     %let runidlist = ;
+    %let numrunid = 0;
+
+    /*variables assigned to the start and end date of the query - used in all titles*/
+    %global startdateformatted studyenddateformatted;
+    %let startdateformatted = ;
+    %let studyenddateformatted = ;
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
-            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile;
+            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile look_start look_end;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -60,6 +66,8 @@
     %let TableColumnsFile = ;
     %let DPInfoFile = ;
     %let L2ComparisonsFile = ;
+    %let look_start = 1;
+    %let look_end = 1;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
