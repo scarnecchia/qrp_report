@@ -152,7 +152,7 @@
         
 		%let numrunid = &numrunid.;
 
-		select distinct runid
+		select distinct lowcase(runid)
 	    into: runidlist separated by ' '
         from _inputfiles;
 
