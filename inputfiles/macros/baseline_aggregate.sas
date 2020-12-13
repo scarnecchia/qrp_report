@@ -105,8 +105,10 @@
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
+                     , y.order
                      , y.cohort
-                     , y.group as groupvar
+                     , y.analysisgrp
+                     , y.group as group1
                 from &infile. as x,
                      _temp_baseline_tablenames&b. as y
                 where x.&mergevar. = y.group;
@@ -120,11 +122,11 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by groupvar runid cohort;
+            by analysisgrp group1 runid order cohort;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by groupvar runid cohort;
+            by analysisgrp group1 runid order cohort;
 		run;
 
         proc datasets library=WORK nowarn nolist;
@@ -152,7 +154,7 @@
         run;
 
         proc sort data=_temp_baseline_transposed;
-            by groupvar runid cohort metvar _label_;
+            by analysisgrp group1 runid order cohort metvar _label_;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -165,7 +167,7 @@
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed;
-                by groupvar runid cohort metvar _label_;
+                by analysisgrp group1 runid order cohort metvar _label_;
             run;
         %end;
 
@@ -202,6 +204,7 @@
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
+                     , y.order
                 from &dpsiteid..&runid._adjusted_baseline_&periodid. as x,
                      &GROUPTABLE.(where=(runid="&runid.")) as y
                 where x.analysisgrp = y.group;
@@ -234,7 +237,7 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid table group1 group2 weight vartype metvar;                 
+            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -247,7 +250,7 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid table group1 group2 weight vartype metvar; 
+                by analysisgrp runid order table group1 group2 weight vartype metvar; 
             run;
         %end;
 			

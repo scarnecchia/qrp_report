@@ -40,8 +40,9 @@
 
         data &outdata.;
             set input.&baselinefile.;
-            format cohort mergevar $15.;
+            format cohort mergevar analysisgrp $15.;
             group=lowcase(group);
+            analysisgrp = group;
             runid=lowcase(runid);
             cohort = "&cohort";
             mergevar = "&mergevar";
@@ -86,11 +87,15 @@
 
         %if &includenonpregnant = Y %then %do;
             data &outdata.;
-                set &outdata.(where=(upcase(includenonpregnant)='N')
-                    &outdata.(where=(upcase(includenonpregnant)='Y')
-                    &outdata.(in=a where=(upcase(includenonpregnant)='Y');
+                set &outdata.(where=(upcase(includenonpregnant)='N'))
+                    &outdata.(in=a where=(upcase(includenonpregnant)='Y'))
+                    &outdata.(in=b where=(upcase(includenonpregnant)='Y'));
                 if a then do;
                     cohort = "nopreg";
+                    analysisgrp = group;
+                end;
+                if b then do;
+                    analysisgrp = group;
                 end;
             run;
         %end;
@@ -99,6 +104,7 @@
             data &outdata.;
                 set &outdata.(in=a)
                     &outdata.(in=b);
+                format analysisgrp $40.;
                 if a then group = cats(group, '_eoi');
                 if b then group = cats(group, '_ref');
             run;
@@ -147,6 +153,12 @@
 /*        %assign_cohort_mergevar(cohort=switchepisodes, mergevar=analysisgrp, outdata=baselinefile);*/
     %end;
 
+    /*Determine number of unique group/analysisgrp baseline tables*/
+    proc sql noprint;
+        select max(order) into: numbaselinetablegrp
+        from baselinefile;
+    quit;
+
     ***********************************************************************************************;
     * Aggregate baseline tables across DPs                               
     ***********************************************************************************************;
@@ -154,6 +166,7 @@
     /*loop through each periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
+        /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
             %baseline_aggregate(dpsiteid = &dpsiteid.,
@@ -169,12 +182,153 @@
                                   periodid = &periodid.);
         %end;
 
-    %end;
+        ***********************************************************************************************;
+        * Reformat L1 tables to mimic L2 format                             
+        ***********************************************************************************************;
+
+        %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
+
+            %macro reformatL1baseline();
+                /*split std metrics out so they can be remerged as separate column*/
+                /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
+
+                /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
+                data _temp_mean_count
+                     _temp_std(keep=metvar analysisgrp group1 runid order dp:);
+                    set alldptable1_&periodid.;
+                    format vartype table weight $30.;
+
+                    /*table = Unadjusted*/
+                    /*weight = 'Unweighted*/
+                    table = 'Unadjusted';
+                    weight = 'Unweighted';
+
+                    if substr(metvar,1,4) = 'STD_' then do;
+                        metvar = substr(metvar, 5);
+                        output _temp_std;
+                        vartype = 'continuous';
+                    end;
+                    else do;
+                        if substr(metvar,1,5)='MEAN_' then do;
+                            metvar = substr(metvar, 6);
+                            vartype ='continuous';
+                        end;
+                        else do;
+                            vartype ='dichotomous';
+                        end;
+                        output _temp_mean_count;
+                    end;
+                run;
+
+                proc datasets nowarn noprint lib =work;
+                    delete alldptable1_&periodid.;
+                quit;
+
+                /*loop through each ORDER value to build new table*/
+                %do b = 1 %to %eval(&numbaselinetablegrp.);
+
+                    /*when cohort = mi or nopreg then this will become a pairwise comparison mirroring group1 & group2*/
+                    /*else, group1 will be populated and group2 metrics will be missing*/
+
+                    data _temp_baseline&b.;
+                        set baselinefile(where=(order=&b.));
+                        if _n_ = 1 then do;
+                        call symputx('includenonpregnant', upcase(includenonpregnant));
+                        call symputx('cohortvalue', cohort);
+                        end;
+                    run;
+
+                    %if %str("&includenonpregnant") = "Y" | %str("&cohortvalue") = %str("mi") %then %do;
+
+
+
+                    %end;
+                    %else %do;
+                        /*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
+                        data _temp_totalcounts&b.;
+                            merge _temp_mean_count(where=(order=&b. and metvar in ('N_EPISODES'))
+                                   /*rename dp to n_episodes*/
+                                   %do d =1 %to %eval(&num_dp.);
+                                   rename=dp&d.=n_episodes&d.
+                                   %end; )
+                                  _temp_mean_count(where=(order=&b. and metvar in ('PATIENT'))
+                                   /*rename dp to n_patients*/
+                                   %do d =1 %to %eval(&num_dp.);
+                                   rename=dp&d.=n_patients&d.
+                                   %end; );  
+                            by runid group1;
+                            keep runid group1 n_:;
+                        run;
+
+                        data _temp_mean_count&b.;
+                            merge _temp_mean_count(where=(order=&b.)
+                                    /*rename dp to exp_mean*/
+                                    %do d =1 %to %eval(&num_dp.);
+                                    rename=dp&d.=exp_mean&d.
+                                    %end; )
+                            _temp_totalcounts&b.;
+                            by runid group1;
+                            format group2 $40.;
+                            call missing(group2);
+
+                            /*assign weights*/
+                            array expvar{&num_dp.} exp_w1_1-exp_w1_&num_dp.;
+                            array nepis{&num_dp.} n_episodes1-n_episodes&num_dp.;
+                            array npat{&num_dp.} n_patients1-n_patients&num_dp.;
+                        
+                            do i = 1 to &num_dp.;
+                                if metvar in ('N_EPISODES', 'PATIENT') then expvar(i) = .;
+                                else if substr(metvar,1,4) = 'SEX_' | substr(metvar,1,5) = 'RACE_' | substr(metvar,1,9) = 'HISPANIC_' 
+                                    then expvar(i) = npat(i);
+                                else expvar(i) = nepis(i);
+                            end;
+
+                            drop i n_episodes: n_patients:;
+                        run;
+
+                        /*merge in std*/
+                        proc sql noprint;
+                            create table _temp_table1_reformat&b. as
+                            select x.*
+                                   %do d = 1 %to %eval(&num_dp.);
+                                   , dp&d. as exp_std&d.
+                                   %end;
+                            from _temp_mean_count&b. as x
+                            left join _temp_std(where=(order=&b.)) as y
+                            on x.metvar = y.metvar;
+                        quit;
+
+                        proc append base=alldptable1_&periodid. data=_temp_table1_reformat&b.; run;
+                    %end;
+
+
+
+
+
+            
+
+            
+                %end;
+
+            %mend reformatL1baseline;
+            %reformatL1baseline();
+
+        %end; /*reformat table*/
+
+
+
+
+
+    %end; /*loop through periodid*/
+
+
+
+
 
     data output.alldp;set alldptable1_1; run;
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_:;
+        delete baselinefile_: _temp_:;
     quit;
 
     %end; /*baselinefile input file exists*/
