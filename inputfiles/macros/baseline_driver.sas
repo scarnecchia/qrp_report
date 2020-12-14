@@ -194,15 +194,10 @@
 
                 /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
                 data _temp_mean_count
-                     _temp_std(keep=metvar analysisgrp group1 runid order dp:);
+                     _temp_std(keep=metvar group1 cohort order dp:);
                     set alldptable1_&periodid.;
-                    format vartype table weight $30.;
-
-                    /*table = Unadjusted*/
-                    /*weight = 'Unweighted*/
-                    table = 'Unadjusted';
-                    weight = 'Unweighted';
-
+                    format vartype $30.;
+             
                     if substr(metvar,1,4) = 'STD_' then do;
                         metvar = substr(metvar, 5);
                         output _temp_std;
@@ -224,108 +219,233 @@
                     delete alldptable1_&periodid.;
                 quit;
 
+                proc sort data=_temp_mean_count;
+                    by order metvar vartype _label_ ;
+                run;
+
                 /*loop through each ORDER value to build new table*/
                 %do b = 1 %to %eval(&numbaselinetablegrp.);
-
-                    /*when cohort = mi or nopreg then this will become a pairwise comparison mirroring group1 & group2*/
-                    /*else, group1 will be populated and group2 metrics will be missing*/
 
                     data _temp_baseline&b.;
                         set baselinefile(where=(order=&b.));
                         if _n_ = 1 then do;
-                        call symputx('includenonpregnant', upcase(includenonpregnant));
-                        call symputx('cohortvalue', cohort);
+                            call symputx('includenonpregnant', upcase(includenonpregnant));
+                            call symputx('cohortvalue', cohort);
+                            call symputx('analysisgrp', analysisgrp);
+                            call symputx('computebalance', upcase(computebalance));
+
+                            /*if includenonpregnant = Y, group1=preg and group2=nonpreg*/
+                            /*when cohort = mi, group1= _eoi and group2=_ref*/
+                            /*otherwise, group2 will not be populated*/
+                            if upcase(includenonpregnant) = 'Y' then do;
+                                call symputx('group1where',"and cohort='preg'");
+                                call symputx('group2where',"and cohort='nopreg'");
+                                call symputx('createcompcolumns', 'Y');
+                            end;
+                            else if cohort = "mi" then do;
+                                call symputx('group1where',"and substr(group1, length(group1)-3, length(group1))='_eoi'");
+                                call symputx('group2where',"and substr(group1, length(group1)-3, length(group1))='_ref'");
+                                call symputx('createcompcolumns', 'Y');
+                            end;
+                            else do;
+                                call symputx('group1where',"");
+                                call symputx('group2where',"");
+                                call symputx('createcompcolumns', 'N');
+                            end;
                         end;
                     run;
 
-                    %if %str("&includenonpregnant") = "Y" | %str("&cohortvalue") = %str("mi") %then %do;
+                    /*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
+                    data _temp_totalcounts&b.;
+                        merge /*EOI*/
+                            _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('N_EPISODES') &group1where.)
+                                /*rename dp to n_episodes_exp*/
+                                %do d =1 %to %eval(&num_dp.);
+                                rename=dp&d.=n_episodes_exp&d.
+                                %end; )
+                            _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('PATIENT') &group1where.)
+                               /*rename dp to n_patients_exp*/
+                               %do d =1 %to %eval(&num_dp.);
+                               rename=dp&d.=n_patients_exp&d.
+                               %end; )
 
+                            %if &createcompcolumns = Y %then %do;
+                               /*REF*/
+                               _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('N_EPISODES') &group2where.)
+                               /*rename dp to n_episodes_comp*/
+                               %do d =1 %to %eval(&num_dp.);
+                               rename=dp&d.=n_episodes_comp&d.
+                               %end; )
+                               _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('PATIENT') &group2where.)
+                               /*rename dp to n_patients_comp*/
+                               %do d =1 %to %eval(&num_dp.);
+                               rename=dp&d.=n_patients_comp&d.
+                               %end; )
+                            %end;
+                                ;
+                        by order;
+                        keep order n_:;
+                    run;
 
+                    /*merge GROUP1 and GROUP2*/
+                    data _temp_mean_count&b.;
+                       merge _temp_mean_count(where=(order=&b. &group1where.)
+                                /*rename dp to exp_mean*/
+                                %do d =1 %to %eval(&num_dp.);
+                                rename=dp&d.=exp_mean&d.
+                                %end; )
+                        %if &createcompcolumns = Y %then %do;
+                            _temp_mean_count(where=(order=&b. &group2where.)
+                                /*rename dp to exp_mean*/
+                                %do d =1 %to %eval(&num_dp.);
+                                rename=dp&d.=comp_mean&d.
+                                %end; )
+                        %end; ;
+                        by order metvar vartype _label_;
+                    run;
+                  
+                    /*merge in std*/
+                    proc sql noprint;
+                        create table _temp_formatted_&b. as
+                        select x.*
+                               %do d = 1 %to %eval(&num_dp.);
+                                   , y.dp&d. as exp_std&d.
+                                   %if &createcompcolumns = Y %then %do;
+                                   , z.dp&d. as comp_std&d.
+                                   %end;
+                               %end;
+                        from _temp_mean_count&b. as x
+                        left join _temp_std(where=(order=&b. &group1where.)) as y
+                        on x.metvar = y.metvar
+                        %if &createcompcolumns = Y %then %do;
+                        left join _temp_std(where=(order=&b. &group2where.)) as z
+                        on x.metvar = z.metvar
+                        %end;
+                        ;
+                    quit;
 
-                    %end;
-                    %else %do;
-                        /*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
-                        data _temp_totalcounts&b.;
-                            merge _temp_mean_count(where=(order=&b. and metvar in ('N_EPISODES'))
-                                   /*rename dp to n_episodes*/
-                                   %do d =1 %to %eval(&num_dp.);
-                                   rename=dp&d.=n_episodes&d.
-                                   %end; )
-                                  _temp_mean_count(where=(order=&b. and metvar in ('PATIENT'))
-                                   /*rename dp to n_patients*/
-                                   %do d =1 %to %eval(&num_dp.);
-                                   rename=dp&d.=n_patients&d.
-                                   %end; );  
-                            by runid group1;
-                            keep runid group1 n_:;
-                        run;
+                    %macro assignexpcompvar(var=);
+                        array &var.var1{&num_dp.} &var._w1_1-&var._w1_&num_dp.;
+                        array &var.var2{&num_dp.} &var._w2_1-&var._w2_&num_dp.;
+                        array nepis_&var.{&num_dp.} n_episodes_&var.1-n_episodes_&var.&num_dp.;
+                        array npat_&var.{&num_dp.} n_patients_&var.1-n_patients_&var.&num_dp.;
+                        array &var.mean{&num_dp.} &var._mean1-&var._mean&num_dp.;
+                        array &var.std{&num_dp.} &var._std1-&var._std&num_dp.;
+                        array &var.s2{&num_dp.} &var._s2_1-&var._s2_&num_dp.;
 
-                        data _temp_mean_count&b.;
-                            merge _temp_mean_count(where=(order=&b.)
-                                    /*rename dp to exp_mean*/
-                                    %do d =1 %to %eval(&num_dp.);
-                                    rename=dp&d.=exp_mean&d.
-                                    %end; )
-                            _temp_totalcounts&b.;
-                            by runid group1;
-                            format group2 $40.;
-                            call missing(group2);
-
-                            /*assign weights*/
-                            array expvar{&num_dp.} exp_w1_1-exp_w1_&num_dp.;
-                            array nepis{&num_dp.} n_episodes1-n_episodes&num_dp.;
-                            array npat{&num_dp.} n_patients1-n_patients&num_dp.;
-                        
-                            do i = 1 to &num_dp.;
-                                if metvar in ('N_EPISODES', 'PATIENT') then expvar(i) = .;
-                                else if substr(metvar,1,4) = 'SEX_' | substr(metvar,1,5) = 'RACE_' | substr(metvar,1,9) = 'HISPANIC_' 
-                                    then expvar(i) = npat(i);
-                                else expvar(i) = nepis(i);
+                        do &var. = 1 to &num_dp.;
+                            /*initalize new vars to missing*/
+                            &var.var1(&var.) = .;
+                            &var.var2(&var.) = .;
+                            &var.s2(&var.) = .;
+                           
+                            /*weights*/
+                            if substr(metvar,1,4) = 'SEX_' | substr(metvar,1,5) = 'RACE_' | substr(metvar,1,9) = 'HISPANIC_' then do;
+                                &var.var1(&var.) = npat_&var.(&var.);
+                                &var.var2(&var.) = npat_&var.(&var.);
+                            end;
+                            else do;
+                                &var.var1(&var.) = nepis_&var.(&var.);
+                                &var.var2(&var.) = nepis_&var.(&var.);
                             end;
 
-                            drop i n_episodes: n_patients:;
+                            /*percent*/
+                            if vartype = 'dichotomous' then do;
+                                if missing(&var.mean(&var.)) then &var.mean(&var.) = 0;
+                                if &var.var1(&var.)>0 then &var.std(&var.) = &var.mean(&var.) / &var.var1(&var.);
+                                else if &var.var1(&var.)=0 then &var.std(&var.) = 0;
+                                if &var.std(&var.)>0 then &var.s2(&var.)=&var.std(&var.)*(1-&var.std(&var.));
+                                else &var.s2(&var.) = 0;
+                            end;
+
+                            /*s2*/
+                            else if vartype = 'continuous' then do;
+                                if &var.std(&var.)>0 then &var.s2(&var.) = &var.std(&var.)*&var.std(&var.);
+                                else &var.s2(&var.) = 0;
+                            end;
+                        end;
+                        drop &var.;
+                    %mend;
+
+                    data _temp_table1_reformat&b.;
+                        merge _temp_formatted_&b.
+                              _temp_totalcounts&b.;
+                        by order;
+                        format group2 $40. table weight $30.;
+
+                        /*table = Unadjusted*/
+                        /*weight = 'Unweighted*/
+                        table = 'Unadjusted';
+                        weight = 'Unweighted';
+
+                        %if &createcompcolumns = Y %then %do;
+                            %if "&includenonpregnant" = "Y" %then %do;
+                                group1 = "preg";
+                                group2 = "nopreg";
+                            %end;
+                            %else %if %str("&cohortvalue") = %str("mi") %then %do;
+                                group1 = cats("&analysisgrp", "_eoi");
+                                group2 = cats("&analysisgrp", "_ref");
+                            %end;
+                        %end;
+                        %else %do;
+                            call missing(group2);
+                        %end;
+
+                        /*assign weights: 
+                          - COMP vars missing when no group2 value and for PATIENT/N_EPISODES rows
+                          - weights - patient count for sex, race, and hispanic because % is patient based
+                          - weights - episode count for all other metrics because metric is episode based */
+
+                        /*compute %, sd2 columns, and AD/SD when computebalance = Y*/
+                        %assignexpcompvar(var=exp);
+                        %if &createcompcolumns = Y %then %do;
+                        %assignexpcompvar(var=comp);
+                        %end;
+
+                        /*AD and SD*/
+                        %if &computebalance = Y & &createcompcolumns = Y %then %do;
+                        array abdiff{&num_dp.} ad1-ad&num_dp.;
+                        array stdiff{&num_dp.} sd1-sd&num_dp.;
+
+                        do i= 1 to &num_dp.;
+                            abdiff(i)=.;
+                            stdiff(i)=.;
+
+                            if vartype = 'dichotomous' then do;
+                                abdiff(i)=expstd(i)-compstd(i);
+                                if sum(exps2(i),comps2(i))>0 then stdiff(i)=(expstd(i)-compstd(i))/sqrt((exps2(i)+comps2(i))/2);
+                            end;
+                            if vartype = 'continuous' then do;
+                                abdiff(i)=expmean(i)-compmean(i);
+                                if sum(expstd(i),compstd(i))>0 then stdiff(i)=(expmean(i)-compmean(i))/sqrt((expstd(i)+compstd(i))/2);
+                            end;
+                        end;
+                        drop i;
+                        %end;
+
+                        drop n_episodes: n_patients:;
+                    run;
+
+                    /*use set to avoid missing var warnings*/
+                    %if %eval(&b.=1) %then %do;
+                        data alldptable1_&periodid.;
+                            set _temp_table1_reformat&b.;
                         run;
-
-                        /*merge in std*/
-                        proc sql noprint;
-                            create table _temp_table1_reformat&b. as
-                            select x.*
-                                   %do d = 1 %to %eval(&num_dp.);
-                                   , dp&d. as exp_std&d.
-                                   %end;
-                            from _temp_mean_count&b. as x
-                            left join _temp_std(where=(order=&b.)) as y
-                            on x.metvar = y.metvar;
-                        quit;
-
-                        proc append base=alldptable1_&periodid. data=_temp_table1_reformat&b.; run;
                     %end;
-
-
-
-
-
-            
-
-            
+                    %else %do;
+                        data alldptable1_&periodid.;
+                            set alldptable1_&periodid.
+                                _temp_table1_reformat&b.;
+                        run;
+                    %end;
                 %end;
 
             %mend reformatL1baseline;
             %reformatL1baseline();
 
         %end; /*reformat table*/
-
-
-
-
-
     %end; /*loop through periodid*/
-
-
-
-
-
-    data output.alldp;set alldptable1_1; run;
 
     proc datasets nowarn noprint lib=work;
         delete baselinefile_: _temp_:;
