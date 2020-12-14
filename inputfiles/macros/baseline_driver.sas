@@ -226,10 +226,15 @@
                 /*loop through each ORDER value to build new table*/
                 %do b = 1 %to %eval(&numbaselinetablegrp.);
 
-                    data _temp_baseline&b.;
+                    data _null_;
                         set baselinefile(where=(order=&b.));
                         if _n_ = 1 then do;
+                            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                             call symputx('includenonpregnant', upcase(includenonpregnant));
+                            %end;
+                            %else %do;
+                            call symputx('includenonpregnant', 'N');
+                            %end;
                             call symputx('cohortvalue', cohort);
                             call symputx('analysisgrp', analysisgrp);
                             call symputx('computebalance', upcase(computebalance));
@@ -445,10 +450,23 @@
             %reformatL1baseline();
 
         %end; /*reformat table*/
+
+        ***********************************************************************************************;
+        * Compute Aggregate metrics and format DP metrics                       
+        ***********************************************************************************************;
+
+        %baseline_compute(reporttype =&reporttype.,
+                          numbaselinetablegrp = &numbaselinetablegrp.,
+                          num_dp = &num_dp.,
+                          stratifybydp = &stratifybydp.,
+                          periodid = &periodid.);
+
+        data output.alldptable1_&periodid.; set alldptable1_&periodid.; run;
+
     %end; /*loop through periodid*/
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_: _temp_:;
+        delete baselinefile_: _temp_: alldptable1_:;
     quit;
 
     %end; /*baselinefile input file exists*/
