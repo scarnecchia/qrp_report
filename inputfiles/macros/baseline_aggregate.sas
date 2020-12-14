@@ -107,7 +107,9 @@
                      , y.runid
                      , y.order
                      , y.cohort
+                     %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
+                     %end;
                      , y.group as group1
                 from &infile. as x,
                      _temp_baseline_tablenames&b. as y
