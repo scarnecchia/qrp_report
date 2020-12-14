@@ -219,6 +219,9 @@
 
             /*defensive: set metvar to uppercase*/
             metvar=upcase(metvar);
+
+            /*replace TOTAL with N_EPISODES to match L1 tables*/
+            if metvar = 'TOTAL' then metvar = 'N_EPISODES';
         run;
 
         /*Add &DPNUMBER suffix to variables*/

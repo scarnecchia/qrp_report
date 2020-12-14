@@ -29,7 +29,8 @@
 *  Program outputs:                                                                                                                                       
 *  	- Dataset with additional aggregated columns
 * 
-*  PARAMETERS:        
+*  PARAMETERS:    
+*   - datain: input dataset 
 *   - reporttype
 *   - numbaselinetablegrp: number of baseline table groups
 *   - num_dp: number of data partners
@@ -47,7 +48,7 @@
 *
 ***************************************************************************************************;
 
-%macro baseline_compute(reporttype=, numbaselinetablegrp=, num_dp=, stratifybydp=, periodid=);
+%macro baseline_compute(datain=, reporttype=, numbaselinetablegrp=, num_dp=, stratifybydp=, periodid=);
 
 	%put =====> MACRO CALLED: baseline_compute;
 
@@ -83,6 +84,15 @@
                 call symputx('exposurechar', upcase(exposurechar));
                 call symputx('includenonpregnant', upcase(includenonpregnant));
                 %end;
+
+                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y then include COMP columns*/
+                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
+                   upcase(includenonpregnant) = 'Y' | cohort = "mi" then do;
+                   call symputx('includecomp', 'Y');
+                end;
+                else do;
+                   call symputx('includecomp', 'N');
+                end;
             end;
         run;
 
@@ -94,6 +104,82 @@
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
             run;
        %end;
+       
+       /*Put total number of patients and episodes in macro variables and compute overall totals*/
+        data _null_; 
+            set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table = 'Unadjusted' and order=&b.));
+        
+            total_exp_episodes = 0;
+            total_exp_patients = 0;
+            array dploopexp(&num_dp.) exp_mean1-exp_mean&num_dp.;
+
+            %if "&includecomp" = "Y" %then %do;
+            total_comp_episodes = 0;
+            total_comp_patients = 0;
+            array dploopcomp(&num_dp.) comp_mean1-comp_mean&num_dp.;
+            %end;
+
+            /*Number of Episodes*/
+            if metvar = 'N_EPISODES' then do;
+                do i = 1 to &num_dp.;
+    	           if ^missing(dploopexp(i)) then total_exp_episodes = total_exp_episodes + dploopexp(i);
+   	            end;
+                call symputx("total_exp_episodes", total_exp_episodes); /*FORMERLY TOTEPIS*/
+
+                %if "&includecomp" = "Y" %then %do;
+                    do i = 1 to &num_dp.;
+        	           if ^missing(dploopcomp(i)) then total_comp_episodes = total_comp_episodes + dploopcomp(i);
+       	            end;
+                    call symputx("total_comp_episodes", total_comp_episodes); 
+                %end;
+
+                %do a = 1 %to &num_dp.;
+                    call symputx("n_episodes_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
+                    %if "&includecomp" = "Y" %then %do;
+                    call symputx("n_episodes_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
+                    %end;
+                %end;
+            end;
+
+            /*Number of Patients*/
+            else if metvar = 'PATIENT' then do;
+                do i = 1 to &num_dp.;
+    	           if ^missing(dploopexp(i)) then total_exp_patients = total_exp_patients + dploopexp(i);
+   	            end;
+                call symputx("total_exp_patients", total_exp_patients); /*FORMERLY TOTPTS*/
+
+                %if "&includecomp" = "Y" %then %do;
+                    do i = 1 to &num_dp.;
+        	           if ^missing(dploopcomp(i)) then total_comp_patients = total_comp_patients + dploopcomp(i);
+       	            end;
+                    call symputx("total_comp_patients", total_comp_patients); /*FORMERLY TOTPTS*/
+                %end;
+
+                %do a = 1 %to &num_dp.;
+                    call symputx("n_patients_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
+                    %if "&includecomp" = "Y" %then %do;
+                    call symputx("n_patients_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
+                    %end;
+                %end;
+            end;
+
+            /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_exp_patients", total_exp_episodes);
+            %if "&includecomp" = "Y" %then %do;
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_comp_patients", total_comp_episodes);
+            %end;
+        run;
+
+        %put total number of group1 episodes for order=&b.:  &total_exp_episodes.;
+        %put total number of group1 patients for order=&b.:  &total_exp_patients.;
+        %if "&includecomp" = "Y" %then %do;
+        %put total number of group2 episodes for order=&b.:  &total_comp_episodes.;
+        %put total number of group2 patients for order=&b.:  &total_comp_patients.;
+        %end;
+
+
+
+
 
 
     %end; /*loop through each baseline group*/

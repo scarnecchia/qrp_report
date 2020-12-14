@@ -455,7 +455,8 @@
         * Compute Aggregate metrics and format DP metrics                       
         ***********************************************************************************************;
 
-        %baseline_compute(reporttype =&reporttype.,
+        %baseline_compute(datain=alldptable1_&periodid.,
+                          reporttype =&reporttype.,
                           numbaselinetablegrp = &numbaselinetablegrp.,
                           num_dp = &num_dp.,
                           stratifybydp = &stratifybydp.,
