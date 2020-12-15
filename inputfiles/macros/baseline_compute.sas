@@ -80,7 +80,6 @@
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
-                call symputx('exposurechar', upcase(exposurechar));
                 call symputx('ouputinfantchar', upcase(ouputinfantchar));
                 call symputx('exposurechar', upcase(exposurechar));
                 call symputx('includenonpregnant', upcase(includenonpregnant));
@@ -341,6 +340,11 @@
 /*                        sd = '-';*/
 /*                    end;*/
 
+                /*reformat DP specific vars*/
+                %if "&stratifybydp" = "Y" %then %do;
+                    format exp_mean: 8.1 exp_std: 8.3 %if "&includecomp" = "Y" %then %do; comp_mean: 8.1 comp_std: 8.3 %end; ;
+                %end;
+
                 keep metvar analysisgrp order vartype weight table eoi_a eoi_b 
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; ref_a ref_b
@@ -360,30 +364,30 @@
         ***********************************************************************************************;
 
         /*All - unweighted*/
-        %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregregatetab1);
+        %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
 
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
         %if &psfile. = psmatchfile %then %do;
             %if "&ratio" = "F" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab2);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2);
             %end;
             %if "&ratio" = "V" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab3);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3);
             %end;
         %end;
 
         /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
         %if &psfile. = stratificationfile %then %do;
             %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do;
-		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab4);
+		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4);
 		    %end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab5);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5);
         %end;
 
         /*IPTW - Adjusted cohort - Unweighted and Weighted */
         %if &psfile. = iptwfile %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab6);
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab7);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7);
         %end;
 
 
@@ -393,18 +397,18 @@
 
         %if %eval(&b.=1) %then %do;
             data &dataout.;
-                set baseline_aggregregatetab:;
+                set baseline_aggregatetab:;
             run;
         %end;
         %else %do;
             data &dataout.;
-                set &dataout. baseline_aggregregatetab:;
+                set &dataout. baseline_aggregatetab:;
             run;
         %end;
 
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
-            delete baseilne_aggregatetab:;
+            delete baseline_aggregatetab:;
         quit;
         
 

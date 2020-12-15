@@ -197,6 +197,9 @@
                      _temp_std(keep=metvar group1 cohort order dp:);
                     set alldptable1_&periodid.;
                     format vartype $30.;
+
+                    /*defensive: set metvar to uppercase*/
+                    metvar=upcase(metvar);
              
                     if substr(metvar,1,4) = 'STD_' then do;
                         metvar = substr(metvar, 5);

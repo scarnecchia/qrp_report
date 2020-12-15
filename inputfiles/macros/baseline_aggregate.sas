@@ -145,17 +145,13 @@
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
             data &outdata.;
                 set _temp_baseline_transposed;
-                /*defensive: set metvar to uppercase*/
-                metvar=upcase(metvar);
             run;
         %end;
         %else %do;
             data &outdata.;
                 merge &outdata.
-                      _temp_baseline_transposed;
+                      _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar;
-                /*defensive: set metvar to uppercase*/
-                metvar=upcase(metvar);
             run;
         %end;
 
