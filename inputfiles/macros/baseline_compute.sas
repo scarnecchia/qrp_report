@@ -98,10 +98,15 @@
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
+        %let psfile = ;
+        %let weightscheme = ;
         %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp."));
+                call symputx('psfile', file);
+
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
+                if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
             run;
        %end;
        
@@ -111,25 +116,18 @@
         
             total_exp_episodes = 0;
             total_exp_patients = 0;
-            array dploopexp(&num_dp.) exp_mean1-exp_mean&num_dp.;
-
             %if "&includecomp" = "Y" %then %do;
             total_comp_episodes = 0;
             total_comp_patients = 0;
-            array dploopcomp(&num_dp.) comp_mean1-comp_mean&num_dp.;
             %end;
 
             /*Number of Episodes*/
             if metvar = 'N_EPISODES' then do;
-                do i = 1 to &num_dp.;
-    	           if ^missing(dploopexp(i)) then total_exp_episodes = total_exp_episodes + dploopexp(i);
-   	            end;
+    	        total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
                 call symputx("total_exp_episodes", total_exp_episodes); /*FORMERLY TOTEPIS*/
 
                 %if "&includecomp" = "Y" %then %do;
-                    do i = 1 to &num_dp.;
-        	           if ^missing(dploopcomp(i)) then total_comp_episodes = total_comp_episodes + dploopcomp(i);
-       	            end;
+        	        total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
                     call symputx("total_comp_episodes", total_comp_episodes); 
                 %end;
 
@@ -143,15 +141,11 @@
 
             /*Number of Patients*/
             else if metvar = 'PATIENT' then do;
-                do i = 1 to &num_dp.;
-    	           if ^missing(dploopexp(i)) then total_exp_patients = total_exp_patients + dploopexp(i);
-   	            end;
+    	        total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
                 call symputx("total_exp_patients", total_exp_patients); /*FORMERLY TOTPTS*/
 
                 %if "&includecomp" = "Y" %then %do;
-                    do i = 1 to &num_dp.;
-        	           if ^missing(dploopcomp(i)) then total_comp_patients = total_comp_patients + dploopcomp(i);
-       	            end;
+        	        total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
                     call symputx("total_comp_patients", total_comp_patients); /*FORMERLY TOTPTS*/
                 %end;
 
@@ -177,11 +171,10 @@
         %put total number of group2 patients for order=&b.:  &total_comp_patients.;
         %end;
 
-
-
-
-
-
+        ***********************************************************************************************;
+        * Macro computes pooled metrics                         
+        ***********************************************************************************************;
+     
     %end; /*loop through each baseline group*/
 
 
