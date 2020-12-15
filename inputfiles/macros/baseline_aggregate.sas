@@ -202,8 +202,11 @@
             /*defensive: set metvar to uppercase*/
             metvar=upcase(metvar);
 
-            /*replace TOTAL with N_EPISODES to match L1 tables*/
-            if metvar = 'TOTAL' then metvar = 'N_EPISODES';
+            /*replace TOTAL with N_EPISODES and assign vartype to match L1 tables*/
+            if metvar = 'TOTAL' then do;
+                metvar = 'N_EPISODES';
+                vartype = 'dichotomous';
+            end;
         run;
 
         /*Add &DPNUMBER suffix to variables*/

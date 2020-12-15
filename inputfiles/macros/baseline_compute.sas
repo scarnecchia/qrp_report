@@ -203,7 +203,7 @@
             %end;
 
             data &dataout.;
-                set &datain.(where=(table="&table" and weight = "&weight" and order=&b. and metvar ne 'MAHALANOBIS'));
+                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
                 format eoi_a 8.1 eoi_b 8.3 %if "&includecomp" = "Y" %then %do; ref_a 8.1 ref_b 8.3 %end; ;
 
@@ -270,10 +270,12 @@
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(num_comp(i)) then ref_a = ref_a + num_comp(i);
                         %end;
+                        if metvar not in ('N_EPISODES', 'PATIENT') then do;
                         %if "&weight" = "Weighted" %then %do;
                             if num_exp(i) > 0 then agg_sw_exp = agg_sw_exp + (exp_s2(i)*vk_exp(i)) ; /*Numerator of Sw2 for SD calculation*/
                             if num_comp(i) > 0 then agg_sw_comp = agg_sw_comp + (comp_s2(i)*vk_comp(i));
                         %end;
+                        end;
                     end;
 
                     /*initialize to 0*/
@@ -285,7 +287,9 @@
                     ** Calculate aggregated percent: 
                        - Denominator for sex, race, and Hispanic is total number of patients
                        - Denominator for other metrics is total number of episodes 
-                       - Total Episodes/Patients: for unadjusted tables - do not fill in %, otherwise compute % out of unadjusted total;
+                       - Total Episodes/Patients: for unadjusted tables:
+                            - L1: do not fill in %, 
+                            - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables;
                     if index(metvar, 'SEX') >0 | index(metvar, 'RACE') >0 | index(metvar, 'HISPANIC') >0 then do;
                         if ^missing(eoi_a) and (total_exp_patients gt 0) then eoi_b = eoi_a/total_exp_patients;
                         %if "&includecomp" = "Y" %then %do;
@@ -293,13 +297,15 @@
                         %end;
                     end;
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
-                        %if "&table" = "Unadjusted" %then %do;
-                            eoi_b = .;
+                        eoi_b = .;
+                        ref_b = .;
+                        %if "&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+                            eoi_b = 1;
                             %if "&includecomp" = "Y" %then %do;
-                            ref_b = .;
+                            ref_b = 1;
                             %end;
                         %end;
-                        %else %do;
+                        %else %do; /*L2 only*/
                             if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
                             %if "&includecomp" = "Y" %then %do;
                             if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&total_unadjusted_comp_episodes.;
@@ -314,22 +320,24 @@
                     end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
-                        ad = compress(put((100*(eoi_a/agg_exp_w)) - (100*(ref_a/agg_comp_w)), 8.3)) ;
+                        if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
+                            ad = compress(put((100*(eoi_a/agg_exp_w)) - (100*(ref_a/agg_comp_w)), 8.3)) ;
 
-                        /*standardized difference*/
-                        a = (eoi_a/agg_exp_w);
-                        b = (ref_a/agg_comp_w);
-                        %if "&weight" = "Weighted" %then %do; /*Weighted Adjusted*/  
-                            stw = agg_sw_exp / agg_v_exp;
-                            scw = agg_sw_comp / agg_v_comp;
-                            c = sqrt( (stw + scw) / 2);
-                        %end;
-                        %else %do; /*Unweighted*/
-                            c = sqrt(((a*(1-a)) + (b*(1-b))) / 2);
-                        %end;
-                        /*SD*/
-                        if (eoi_a > 0) AND (ref_a > 0) AND (c>0) then sd = compress(put(((a-b) / c), 8.3));
-                        else sd = '-';
+                            /*standardized difference*/
+                            a = (eoi_a/agg_exp_w);
+                            b = (ref_a/agg_comp_w);
+                            %if "&weight" = "Weighted" %then %do; /*Weighted Adjusted*/  
+                                stw = agg_sw_exp / agg_v_exp;
+                                scw = agg_sw_comp / agg_v_comp;
+                                c = sqrt( (stw + scw) / 2);
+                            %end;
+                            %else %do; /*Unweighted*/
+                                c = sqrt(((a*(1-a)) + (b*(1-b))) / 2);
+                            %end;
+                            /*SD*/
+                            if (eoi_a > 0) AND (ref_a > 0) AND (c>0) then sd = compress(put(((a-b) / c), 8.3));
+                            else sd = '-';
+                        end;
                     %end;
                 end;
 
@@ -395,7 +403,6 @@
         ***********************************************************************************************;
         * Stack and save final table                   
         ***********************************************************************************************;
-
         %if %eval(&b.=1) %then %do;
             data &dataout.;
                 set baseline_aggregatetab:;
