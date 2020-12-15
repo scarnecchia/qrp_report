@@ -137,39 +137,25 @@
             rename _name_ = metvar;
         quit;
 
-        /*if no covariates need to initialize _label_*/
-        /*defensive: set metvar to uppercase*/
-        data _temp_baseline_transposed; 
-            set _temp_baseline_transposed;
-
-            metvar=upcase(metvar);
-
-            if _n_ = 1 then do;
-                dsid = open("_temp_baseline_transposed");
-                if varnum(dsid,"_label_") = 0 then do;
-                    format _label_ $70.;
-                    _label_ ='';
-                end;
-                rc= close(dsid);
-            end;
-            drop rc dsid;
-        run;
-
         proc sort data=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort metvar _label_;
+            by analysisgrp group1 runid order cohort metvar ;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
             data &outdata.;
                 set _temp_baseline_transposed;
+                /*defensive: set metvar to uppercase*/
+                metvar=upcase(metvar);
             run;
         %end;
         %else %do;
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed;
-                by analysisgrp group1 runid order cohort metvar _label_;
+                by analysisgrp group1 runid order cohort metvar;
+                /*defensive: set metvar to uppercase*/
+                metvar=upcase(metvar);
             run;
         %end;
 

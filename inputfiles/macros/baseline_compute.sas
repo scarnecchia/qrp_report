@@ -30,8 +30,9 @@
 *  	- Dataset with additional aggregated columns
 * 
 *  PARAMETERS:    
-*   - datain: input dataset 
-*   - reporttype
+*   - datain: input dataset name
+*   - dataout: output dataset name
+*   - reporttype: Report type (type + level)
 *   - numbaselinetablegrp: number of baseline table groups
 *   - num_dp: number of data partners
 *   - stratifybydp: Y/N to format DP specific metrics
@@ -48,7 +49,7 @@
 *
 ***************************************************************************************************;
 
-%macro baseline_compute(datain=, reporttype=, numbaselinetablegrp=, num_dp=, stratifybydp=, periodid=);
+%macro baseline_compute(datain=, dataout=, reporttype=, numbaselinetablegrp=, num_dp=, stratifybydp=, periodid=);
 
 	%put =====> MACRO CALLED: baseline_compute;
 
@@ -124,17 +125,17 @@
             /*Number of Episodes*/
             if metvar = 'N_EPISODES' then do;
     	        total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
-                call symputx("total_exp_episodes", total_exp_episodes); /*FORMERLY TOTEPIS*/
+                call symputx("total_unadjusted_exp_episodes", total_exp_episodes); /*FORMERLY TOTEPIS*/
 
                 %if "&includecomp" = "Y" %then %do;
         	        total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
-                    call symputx("total_comp_episodes", total_comp_episodes); 
+                    call symputx("total_unadjusted_comp_episodes", total_comp_episodes); 
                 %end;
 
                 %do a = 1 %to &num_dp.;
-                    call symputx("n_episodes_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
+                    call symputx("n_unadjusted_episodes_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
                     %if "&includecomp" = "Y" %then %do;
-                    call symputx("n_episodes_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
+                    call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
                     %end;
                 %end;
             end;
@@ -142,39 +143,271 @@
             /*Number of Patients*/
             else if metvar = 'PATIENT' then do;
     	        total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
-                call symputx("total_exp_patients", total_exp_patients); /*FORMERLY TOTPTS*/
+                call symputx("total_unadjusted_exp_patients", total_exp_patients); /*FORMERLY TOTPTS*/
 
                 %if "&includecomp" = "Y" %then %do;
         	        total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
-                    call symputx("total_comp_patients", total_comp_patients); /*FORMERLY TOTPTS*/
+                    call symputx("total_unadjusted_comp_patients", total_comp_patients); /*FORMERLY TOTPTS*/
                 %end;
 
                 %do a = 1 %to &num_dp.;
-                    call symputx("n_patients_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
+                    call symputx("n_unadjusted_patients_exp&a", exp_mean&a); /*FORMERLY TOTEXP&a*/ /*EPIS_DP&a.*/
                     %if "&includecomp" = "Y" %then %do;
-                    call symputx("n_patients_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
+                    call symputx("n_unadjusted_patients_comp&a", comp_mean&a); /*FORMERLY TOTCOMP&a*/ 
                     %end;
                 %end;
             end;
 
             /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
-            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_exp_patients", total_exp_episodes);
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
             %if "&includecomp" = "Y" %then %do;
-            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_comp_patients", total_comp_episodes);
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
             %end;
         run;
 
-        %put total number of group1 episodes for order=&b.:  &total_exp_episodes.;
-        %put total number of group1 patients for order=&b.:  &total_exp_patients.;
+        %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
+        %put total number of unadjusted group1 patients for order=&b.:  &total_unadjusted_exp_patients.;
         %if "&includecomp" = "Y" %then %do;
-        %put total number of group2 episodes for order=&b.:  &total_comp_episodes.;
-        %put total number of group2 patients for order=&b.:  &total_comp_patients.;
+        %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
+        %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
         %end;
 
         ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
-     
+        %macro baselinecomputemetrics(table=, weight=, dataout=);
+
+            /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
+            %if "&table." = "Adjusted" %then %do;
+                data _null_; 
+                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." and weight = "&weight" and order=&b.));
+                    %do a = 1 %to &num_dp.;
+                        call symputx("n_adjusted_episodes_exp&a", exp_mean&a); /*FORMERLY PAT_EXP&a*/
+                        call symputx("n_adjusted_patients_exp&a", exp_mean&a); /*Defensive for sex/race/hispanic computation*/
+                        call symputx("n_adjusted_episodes_comp&a", comp_mean&a); /*FORMERLY PAT_COMP&a.*/
+                        call symputx("n_adjusted_patients_compp&a", comp_mean&a); /*Defensive for sex/race/hispanic computation*/
+                    %end;
+
+                    /*recompute total episodes for loop*/
+                    total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
+                    call symputx("total_adjusted_exp_episodes", total_exp_episodes); /*FORMERLY TOTEPIS*/
+                    call symputx("total_adjusted_exp_patients", total_exp_episodes); /*Defensive for sex/race/hispanic computation*/
+                    total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
+                    call symputx("total_adjusted_comp_episodes", total_comp_episodes); /*FORMERLY TOTEPIS*/
+                    call symputx("total_adjusted_comp_patients", total_comp_episodes); /*Defensive for sex/race/hispanic computation*/
+                run;
+
+                %put total number of adjusted group1 episodes for order=&b.:  &total_adjusted_exp_episodes.;
+                %put total number of adjusted group1 patients for order=&b.:  &total_adjusted_exp_patients.;
+                %put total number of adjusted group2 episodes for order=&b.:  &total_adjusted_comp_episodes.;
+                %put total number of adjusted group2 patients for order=&b.:  &total_adjusted_comp_patients.;
+            %end;
+
+            data &dataout.;
+                set &datain.(where=(table="&table" and weight = "&weight" and order=&b. and metvar ne 'MAHALANOBIS'));
+
+                    format eoi_a 8.1 eoi_b 8.3 %if "&includecomp" = "Y" %then %do; ref_a 8.1 ref_b 8.3 %end; ;
+
+                    /*set up total count variables and arrays*/
+                	total_exp_episodes = "&&&total_&table._exp_episodes."; /*Sum of episodes in group1*/ /*FORMERLY AGG_N_EXP*/
+                	total_exp_patients = "&&&total_&table._exp_patients."; /*Sum of patients in group1*/ /*FORMERLY AGG_N_EXP*/
+                    agg_exp_w = 0; /*Sum of weights*/
+                    agg_exp_w2 = 0;
+                    array exp_s2(&num_dp.) exp_s2_1-exp_s2_&num_dp.;
+                    array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
+                    array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
+
+                    %if "&includecomp" = "Y" %then %do;
+                	total_comp_episodes = "&&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ /*FORMERLY AGG_N_COMP*/
+                	total_comp_patients = "&&&total_&table._comp_patients."; /*Sum of patients in group2*/ /*FORMERLY AGG_N_COMP*/
+                    agg_comp_w = 0;
+                    agg_comp_w2 = 0; 
+                    array comp_s2(&num_dp.) comp_s2_1-comp_s2_&num_dp.;
+                    array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
+                    array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
+                    %end;
+
+                    %if "&weight" = "Weighted" %then %do;
+                        agg_v_exp = 0; /*Needed to compute SD for variable adjusted analysis*/
+                        agg_v_comp = 0;
+                        agg_sw_exp = 0; /*Needed to compute SD for variable adjusted analysis*/
+                        agg_sw_comp = 0;
+
+                        array vk_exp(&num_dp.) vk_exp_1-vk_exp_&num_dp.;
+                        array vk_comp(&num_dp.) vk_comp_1-vk_comp_&num_dp.;
+                    %end;
+
+                    /*Loop through each DP to compute aggregate metrics*/
+                    do i = 1 to &num_dp.;
+
+                        /*Aggregate weights*/
+                        if ^missing(exp_w(i)) then agg_exp_w = agg_exp_w + exp_w(i) ; /*Sum of weights - exposed group*/
+                        if ^missing(exp_w2(i)) then agg_exp_w2 = agg_exp_w2 + exp_w2(i) ; /*Sum of squared weights - exposed group*/
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(comp_w(i)) then agg_comp_w = agg_comp_w + comp_w(i) ; /*Sum of weights - comparison group*/
+                        if ^missing(comp_w2(i)) then agg_comp_w2 = agg_comp_w2 + comp_w2(i) ; /*Sum of squared weights - comparison group*/
+                        %end;
+
+                        %if "&weight" = "Weighted" %then %do;
+                            if (exp_w(i)) > 0 then vk_exp(i) =  ( (exp_w(i)**2) - exp_w2(i)) / exp_w(i);
+                            if (comp_w(i)) > 0 then vk_comp(i) =  ( (comp_w(i)**2) - comp_w2(i)) / comp_w(i);
+                            if vk_exp(i)>0 then agg_v_exp  = agg_v_exp +  vk_exp(i); /*denominator of Sw2 for SD calculation*/
+                            if vk_comp(i)>0 then agg_v_comp  = agg_v_comp +  vk_comp(i); /*denominator of Sw2 for SD calculation*/
+                        %end;
+                    end;
+
+                    /*Aggregate dichotomous variables*/
+                    if lowcase(vartype) = 'dichotomous' and upcase(metvar) not in ('N_EPISODES', 'PATIENT') then do;
+
+                        array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
+                        eoi_a = 0; /*Aggregated numerator in the exposed group*/ 
+                        %if "&includecomp" = "Y" %then %do;
+                        array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
+                        ref_a = 0; /*Aggregated numerator in the comparison group*/
+                        %end;
+
+                        do i = 1 to &num_dp.;
+                            if ^missing(num_exp(i)) then eoi_a = eoi_a + num_exp(i);
+                            %if "&includecomp" = "Y" %then %do;
+                            if ^missing(num_comp(i)) then ref_a = ref_a + num_comp(i);
+                            %end;
+                            %if "&weight" = "Weighted" %then %do;
+                                if num_exp(i) > 0 then agg_sw_exp = agg_sw_exp + (exp_s2(i)*vk_exp(i)) ; /*Numerator of Sw2 for SD calculation*/
+                                if num_comp(i) > 0 then agg_sw_comp = agg_sw_comp + (comp_s2(i)*vk_comp(i));
+                            %end;
+                        end;
+
+                        /*initialize to 0*/
+                        eoi_b = 0;
+                        %if "&includecomp" = "Y" %then %do;
+                        ref_b = 0;
+                        %end;
+
+                        ** Calculate aggregated percent: 
+                           - Denominator for sex, race, and Hispanic is total number of patients
+                           - Denominator for other metrics is total number of episodes  ;
+                        if index(metvar, 'SEX') >0 | index(metvar, 'RACE') >0 | index(metvar, 'HISPANIC') >0 then do;
+                            if ^missing(eoi_a) and (total_exp_patients gt 0) then eoi_b = eoi_a/total_exp_patients;
+                            %if "&includecomp" = "Y" %then %do;
+                            if ^missing(ref_a) and (total_comp_patients gt 0) then ref_b = ref_a/total_comp_patients;
+                            %end;
+                        end;
+                        else do;
+                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/total_exp_episodes;
+                            %if "&includecomp" = "Y" %then %do;
+                            if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/total_comp_episodes;
+                            %end;
+                        end;
+
+                        %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
+                            ad = compress(put((100*(eoi_a/agg_exp_w)) - (100*(ref_a/agg_comp_w)), 8.3)) ;
+
+                            /*standardized difference*/
+                            a = (eoi_a/agg_exp_w);
+                            b = (ref_a/agg_comp_w);
+                            %if "&weight" = "Weighted" %then %do; /*Weighted Adjusted*/  
+                                stw = agg_sw_exp / agg_v_exp;
+                                scw = agg_sw_comp / agg_v_comp;
+                                c = sqrt( (stw + scw) / 2);
+                            %end;
+                            %else %do; /*Unweighted*/
+                                c = sqrt(((a*(1-a)) + (b*(1-b))) / 2);
+                            %end;
+                            /*SD*/
+                            if (eoi_a > 0) AND (ref_a > 0) AND (c>0) then sd = compress(put(((a-b) / c), 8.3));
+                            else sd = '-';
+                        %end;
+
+                    end;
+
+/*                    if upcase(metvar) = 'TOTAL' then do;*/
+/*                        if ^missing(agg_n_exp) AND (tot_exposed gt 0) then do;*/
+/*                            eoi_a = strip(put(agg_n_exp, comma12.0));*/
+/*                            eoi_b = strip(put(100*(agg_n_exp/tot_exposed), 8.1))||'%';*/
+/*                        end;*/
+/*                        else do;*/
+/*                            eoi_a = strip(put(0, 8.0));*/
+/*                            eoi_b = strip('0.0%');*/
+/*                        end;*/
+/*                        if ^missing(agg_n_comp) AND (tot_comparison gt 0) then do;*/
+/*                            ref_a = strip(put(agg_n_comp, comma12.0));*/
+/*                            ref_b = strip(put(100*(agg_n_comp/tot_comparison), 8.1))||'%';*/
+/*                        end; */
+/*                        else do;*/
+/*                            ref_a = strip(put(0, 8.0));*/
+/*                            ref_b = strip('0.0%');*/
+/*                        end;*/
+/*                        ad = '-';*/
+/*                        sd = '-';*/
+/*                    end;*/
+
+                keep metvar analysisgrp order vartype weight table eoi_a eoi_b 
+                    %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
+                    %if "&includecomp" = "Y" %then %do; ref_a ref_b
+                      %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
+                        %if "&computebalance." = "Y" %then %do; ad: sd: %end;
+                      %end;   
+                      %else %do;
+                        %if "&computebalance." = "Y" %then %do; ad sd %end;
+                      %end;
+                    %end; 
+                    ;
+            run;
+        %mend baselinecomputemetrics;
+
+        ***********************************************************************************************;
+        * Compute aggregated tables                     
+        ***********************************************************************************************;
+
+        /*All - unweighted*/
+        %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregregatetab1);
+
+        /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
+        %if &psfile. = psmatchfile %then %do;
+            %if "&ratio" = "F" %then %do;
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab2);
+            %end;
+            %if "&ratio" = "V" %then %do;
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab3);
+            %end;
+        %end;
+
+        /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
+        %if &psfile. = stratificationfile %then %do;
+            %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do;
+		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab4);
+		    %end;
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab5);
+        %end;
+
+        /*IPTW - Adjusted cohort - Unweighted and Weighted */
+        %if &psfile. = iptwfile %then %do;
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregregatetab6);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregregatetab7);
+        %end;
+
+
+        ***********************************************************************************************;
+        * Stack and save final table                   
+        ***********************************************************************************************;
+
+        %if %eval(&b.=1) %then %do;
+            data &dataout.;
+                set baseline_aggregregatetab:;
+            run;
+        %end;
+        %else %do;
+            data &dataout.;
+                set &dataout. baseline_aggregregatetab:;
+            run;
+        %end;
+
+        /*Clean up*/
+        proc datasets nowarn noprint lib=work;
+            delete baseilne_aggregatetab:;
+        quit;
+        
+
     %end; /*loop through each baseline group*/
 
 
@@ -183,11 +416,7 @@
 
 
 					
-    /*Clean up*/
-    proc datasets nowarn noprint lib=work;
-        delete :;
-    quit;
-    
+   
 	%put =====> END MACRO: baseline_compute;
 
 %mend baseline_compute;

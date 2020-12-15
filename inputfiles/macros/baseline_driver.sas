@@ -220,7 +220,7 @@
                 quit;
 
                 proc sort data=_temp_mean_count;
-                    by order metvar vartype _label_ ;
+                    by order metvar vartype ;
                 run;
 
                 /*loop through each ORDER value to build new table*/
@@ -306,7 +306,7 @@
                                 rename=dp&d.=comp_mean&d.
                                 %end; )
                         %end; ;
-                        by order metvar vartype _label_;
+                        by order metvar vartype;
                     run;
                   
                     /*merge in std*/
@@ -456,6 +456,7 @@
         ***********************************************************************************************;
 
         %baseline_compute(datain=alldptable1_&periodid.,
+                          dataout=table1_&periodid.,
                           reporttype =&reporttype.,
                           numbaselinetablegrp = &numbaselinetablegrp.,
                           num_dp = &num_dp.,
@@ -463,6 +464,7 @@
                           periodid = &periodid.);
 
         data output.alldptable1_&periodid.; set alldptable1_&periodid.; run;
+        data output.table1; set table1_1; run;
 
     %end; /*loop through periodid*/
 
