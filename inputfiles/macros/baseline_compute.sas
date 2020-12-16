@@ -184,7 +184,7 @@
                         call symputx("n_adjusted_episodes_exp&a", exp_mean&a); 
                         call symputx("n_adjusted_patients_exp&a", exp_mean&a); /*Defensive for sex/race/hispanic computation*/
                         call symputx("n_adjusted_episodes_comp&a", comp_mean&a); 
-                        call symputx("n_adjusted_patients_compp&a", comp_mean&a); /*Defensive for sex/race/hispanic computation*/
+                        call symputx("n_adjusted_patients_comp&a", comp_mean&a); /*Defensive for sex/race/hispanic computation*/
                     %end;
 
                     /*recompute total episodes for loop*/
