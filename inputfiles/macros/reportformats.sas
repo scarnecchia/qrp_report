@@ -30,30 +30,26 @@
 
 *Age Format;
 
- /*Look through each run*/
-%do n = 1 %to &numrunid.;
-
  /*Look through each analytic group*/
- %do grp = 1 %to &&run&n.numgroups.;
+ %do grp = 1 %to &numgroups.;
 
 	%let MISSAGESTRAT=N;
 
 	data _NULL_;
-	set infolder.&&run&n.cohortfile. (keep=agestrat cohortgrp);
+	set master_cohortfile (keep=agestrat cohortgrp);
 	if _n_ = &grp.;
 	if missing(agestrat)=1 then call symputx("MISSAGESTRAT","Y");
 	run;
 	%put &MISSAGESTRAT.;
 
 	%IF %STR("&MISSAGESTRAT.")="Y" %THEN %DO;
-		%LET AGESTRAT="00-01"="0-1 years" "02-04"="2-4 years" "05-09"="5-9 years" "10-14"="10-14 years" "15-18"="15-18 years" 
+		%LET AGESTRAT&grp.="00-01"="0-1 years" "02-04"="2-4 years" "05-09"="5-9 years" "10-14"="10-14 years" "15-18"="15-18 years" 
 		"19-21"="19-21 years" "22-44"="22-44 years" "45-64"="45-64 years" "65-74"="65-74 years" "75+"=">=75 years";
-		%LET NUMAGECAT=10;
 	%END;
 
 	%ELSE %DO;
 		data _agefmt;
-		set infolder.&&run&n.cohortfile. (keep=agestrat cohortgrp);
+		set master_cohortfile (keep=agestrat cohortgrp);
 		if _n_ = &grp.;
 		format start end var $20.;
 		nwords=countw(agestrat, " ");
@@ -68,7 +64,10 @@
 				 start=scan(var, 1, "+");
 				 end="High";
 			end;
-			var2=compress(translate(upcase(var),"",'M',"",'W',"",'Y',"",'Q',"",'D'));
+			var2=strip(compress(translate(upcase(start),"",'M',"",'W',"",'Y',"",'Q',"",'D')))||"-"||strip(end);
+			if end="High" then do;
+			var2=strip(compress(translate(upcase(start),"",'M',"",'W',"",'Y',"",'Q',"",'D')))||"+";
+			end;
 			*remove leading zeros;
 			if start in: ("0") then start=substr(start,2);
 			if end   in: ("0") then end=substr(end,2);
@@ -104,25 +103,28 @@
 		run;
 
 	  proc sql noprint;
-      select distinct label_fmt into: AGESTRAT  separated by ' '    
-      from _agefmt;
-      select count(distinct label_fmt) into: NUMAGECAT
+      select distinct label_fmt into: AGESTRAT&grp.  separated by ' '    
       from _agefmt;
       quit; 
+
 	%END; *non-missing agestrat;
 
-	%put &AGESTRAT. &NUMAGECAT.;
+ %END; *loop grp;
+
+	%let AGESTRAT =;
+ 	%do grp = 1 %to &numgroups.; 
+	%let AGESTRAT = &agestrat. &&AGESTRAT&grp.. ;
+	%end;
+	
+	%put &=AGESTRAT;
 
 	proc format;
-    value $agefmt_&grp._&n._strat
+    value $agefmt
           &AGESTRAT.;
     run;
 
 *End Age format;
 
- %END; *loop grp;
-
-%END; *loop run;
 
 %mend reportformats;
 %reportformats;

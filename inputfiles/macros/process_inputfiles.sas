@@ -245,25 +245,19 @@
 /***************************************************************************************************
 *   Assess nb of cohorts for each run                                                
 ***************************************************************************************************/
-     
-     %do n = 1 %to &numrunid.;
 
-	  %global run&n.numgroups run&n.cohortfile;
-	  %let run&n.numgroups=0;
-	  %let run&n.cohortfile=;
+	 data master_cohortfile;
+	 set %do n = 1 %to &numrunid.;
+	 		%let runid=&&id&n..;
+			infolder.&&&runid._cohortfile
+		%end;
+	 ;
+	 run;
 
-	  data _null_;
-	  set infolder.qrp_parameters (keep = parameter &&run&n.);
-	  where parameter="COHORTFILE";
-	  call symputx("run&n.cohortfile",&&run&n.);
-	  run;
-     
       proc sql noprint;
-      select count(distinct cohortgrp) into: run&n.numgroups
-      from infolder.&&run&n.cohortfile.;
+      select count(distinct cohortgrp) into: numgroups
+      from master_cohortfile;
       quit; 
-   
-     %end;
      
 	 
 /***************************************************************************************************
