@@ -30,8 +30,11 @@
 
 *Age Format;
 
+ /*Look through each run*/
+%do n = 1 %to &numrunid.;
+
  /*Look through each analytic group*/
- %do grp = 1 %to &numgroups.;
+ %do grp = 1 %to &&run&n.numgroups.;
 
 	%let MISSAGESTRAT=N;
 
@@ -111,13 +114,15 @@
 	%put &AGESTRAT. &NUMAGECAT.;
 
 	proc format;
-    value $agefmt
+    value $agefmt_&grp._&n._strat
           &AGESTRAT.;
     run;
 
 *End Age format;
 
  %END; *loop grp;
+
+%END; *loop run;
 
 %mend reportformats;
 %reportformats;

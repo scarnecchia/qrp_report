@@ -246,8 +246,11 @@
 *   Assess nb of cohorts for each run                                                
 ***************************************************************************************************/
      
-     
      %do n = 1 %to &numrunid.;
+
+	  %global run&n.numgroups run&n.cohortfile;
+	  %let run&n.numgroups=0;
+	  %let run&n.cohortfile=;
 
 	  data _null_;
 	  set infolder.qrp_parameters (keep = parameter &&run&n.);
@@ -259,9 +262,8 @@
       select count(distinct cohortgrp) into: run&n.numgroups
       from infolder.&&run&n.cohortfile.;
       quit; 
-
+   
      %end;
-     
      
 	 
 /***************************************************************************************************
