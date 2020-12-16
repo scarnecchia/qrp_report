@@ -36,7 +36,7 @@
 	%let MISSAGESTRAT=N;
 
 	data _NULL_;
-	set &&id&n.._cohortfile (keep=agestrat cohortgrp);
+	set infolder.&&run&n.cohortfile. (keep=agestrat cohortgrp);
 	if _n_ = &grp.;
 	if missing(agestrat)=1 then call symputx("MISSAGESTRAT","Y");
 	run;
@@ -50,7 +50,7 @@
 
 	%ELSE %DO;
 		data _agefmt;
-		set &&id&n.._cohortfile (keep=agestrat cohortgrp);
+		set infolder.&&run&n.cohortfile. (keep=agestrat cohortgrp);
 		if _n_ = &grp.;
 		format start end var $20.;
 		nwords=countw(agestrat, " ");

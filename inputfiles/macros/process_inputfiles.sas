@@ -241,6 +241,28 @@
 		  call symputx(new_parameter,&&run&n.,'G');
 		run;
      %end;
+ 
+/***************************************************************************************************
+*   Assess nb of cohorts for each run                                                
+***************************************************************************************************/
+     
+     
+     %do n = 1 %to &numrunid.;
+
+	  data _null_;
+	  set infolder.qrp_parameters (keep = parameter &&run&n.);
+	  where parameter="COHORTFILE";
+	  call symputx("run&n.cohortfile",&&run&n.);
+	  run;
+     
+      proc sql noprint;
+      select count(distinct cohortgrp) into: run&n.numgroups
+      from infolder.&&run&n.cohortfile.;
+      quit; 
+
+     %end;
+     
+     
 	 
 /***************************************************************************************************
 *   Clean up                                                
