@@ -243,7 +243,7 @@
      %end;
  
 /***************************************************************************************************
-*   Assess nb of cohorts for each run                                                
+*   Create a combined cohortfile for all runs                                                
 ***************************************************************************************************/
 
 	 data master_cohortfile;
@@ -253,12 +253,6 @@
 		%end;
 	 ;
 	 run;
-
-      proc sql noprint;
-      select count(distinct cohortgrp) into: numgroups
-      from master_cohortfile;
-      quit; 
-     
 	 
 /***************************************************************************************************
 *   Clean up                                                

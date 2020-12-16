@@ -32,10 +32,6 @@
     %global num_dp random_dplist;
     %let num_dp = 0;
 
- 	/*variables related to nb cohorts*/
-    %global numgroups;
-    %let numgroups = 0;  
-
     /*variables related to query*/
     %global runidlist numrunid;
     %let runidlist = ;
