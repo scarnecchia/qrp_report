@@ -431,7 +431,7 @@
                         %end;
                     %end;
 
-                    drop exp_mean_num comp_mean_num exp_std_sum comp_std_sum;
+                    drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
                 end;
 
                 /*reformat DP specific vars*/
