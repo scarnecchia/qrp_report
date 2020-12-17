@@ -132,7 +132,7 @@
                 %end;
 
                 %do a = 1 %to &num_dp.;
-                    call symputx("n_unadjusted_episodes_exp&a", exp_mean&a); 
+                    call symputx("n_unadjusted_episodes_exp&a", exp_mean&a);  
                     %if "&includecomp" = "Y" %then %do;
                     call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); 
                     %end;
@@ -213,7 +213,10 @@
                 agg_exp_w = 0; /*Sum of weights*/
                 agg_exp_w2 = 0;
                 array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
+                array std_exp(&num_dp.) exp_std1-exp_std&num_dp.;
                 array exp_s2(&num_dp.) exp_s2_1-exp_s2_&num_dp.;
+                array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
+                array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
 
                 %if "&includecomp" = "Y" %then %do;
                 total_comp_episodes = "&&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ 
@@ -221,7 +224,10 @@
                 agg_comp_w = 0;
                 agg_comp_w2 = 0; 
                 array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
+                array std_comp(&num_dp.) comp_std1-comp_std&num_dp.; 
                 array comp_s2(&num_dp.) comp_s2_1-comp_s2_&num_dp.;
+                array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
+                array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
                 %end;
 
                 %if "&weight" = "Weighted" %then %do;
@@ -245,10 +251,6 @@
 
                 /*Computations for weighted SD*/
                 %if "&weight" = "Weighted" %then %do;
-                   array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
-                   array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
-                   array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
-                   array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
                     do i = 1 to &num_dp.;
                         if (exp_w(i)) > 0 then vk_exp(i) =  ( (exp_w(i)**2) - exp_w2(i)) / exp_w(i);
                         if (comp_w(i)) > 0 then vk_comp(i) =  ( (comp_w(i)**2) - comp_w2(i)) / comp_w(i);
@@ -350,15 +352,92 @@
                 end;
 
                 /*Aggregate continuous variables*/
-                if lowcase(vartype) = 'continuous' then do;
+                if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
+                    /*assign dp specific patient and episode count*/
+                    %do a = 1 %to &num_dp.; 
+                        exp_episodes&a. = "&&&&n_&table._episodes_exp&a."; /*Total number of patients in the exposed*/
+                        %if "&includecomp" = "Y" %then %do;
+                        comp_episodes&a. = "&&&&n_&table._episodes_comp&a."; /*Total number of patients in the reference group*/
+                        %end;
+                    %end;
+                    array exp_episodes(&num_dp.) exp_episodes1-exp_episodes&num_dp.;
+                    %if "&includecomp" = "Y" %then %do;
+                    array comp_episodes(&num_dp.) comp_episodes1-comp_episodes&num_dp.;
+                    %end;
 
+                    count = 0;
+                    exp_mean_num = 0; 
+                    exp_std_sum = 0; /*Weighted sum for std calculation in the exposed group*/
+                    %if "&includecomp" = "Y" %then %do;
+                    comp_mean_num = 0; 
+                    comp_std_sum = 0;/*Weighted sum for std calculation in the comparison group*/
+                    %end;
 
+                    do i = 1 to &num_dp.;
+                        if ^missing(num_exp(i)) and ^missing(exp_w(i)) then exp_mean_num = exp_mean_num + (num_exp(i)*exp_w(i));
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(num_comp(i)) and ^missing(comp_w(i)) then comp_mean_num = comp_mean_num + (num_comp(i)*comp_w(i));
+                        %end;
 
+                        %if "&weight" = "Weighted" %then %do;
+                            if num_exp(i) & exp_s2(i)>= 0 then agg_sw_exp = agg_sw_exp + ( (exp_s2(i))*(vk_exp(i))); /*Numerator of Sw2 for SD calculation*/
+                            if num_comp(i)& comp_s2(i)>= 0 then agg_sw_comp = agg_sw_comp + ( (comp_s2(i))*(vk_comp(i))); 
+                        %end;
+                        %else %do;
+                            ** Get weighted Std Dev for pooled Standard Deviation calculation  ** ;
+                            if ^missing(std_exp(i)) then exp_std_sum = exp_std_sum + (std_exp(i)**2)*(exp_episodes(i) - 1);
+                            ** Count number of data partners with a value - for pooled std dev calculation  ** ;
+                            if ^missing(std_exp(i)) then count = count + 1 ;
+                            %if "&includecomp" = "Y" %then %do;
+                            if ^missing(std_comp(i)) then comp_std_sum = comp_std_sum + (std_comp(i)**2)*(comp_episodes(i) - 1);
+                            %end;
+                        %end;
+                    end;
+                        
+                    if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then eoi_a = exp_mean_num/agg_exp_w ;
+                    %if "&includecomp" = "Y" %then %do;
+                    if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then ref_a = comp_mean_num/agg_comp_w ;
+                    %end;            
+
+                    %if "&weight" = "Weighted" %then %do;
+                        if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then eoi_b = sqrt(agg_sw_exp/agg_v_exp) ;
+                        if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then ref_b = sqrt(agg_sw_comp/agg_v_comp) ;
+                    %end;
+                    %else %do;
+                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then eoi_b = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then ref_b = sqrt(comp_std_sum/(total_comp_episodes - count));
+                        %end;
+                    %end;
+
+                    %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
+                        ad = compress(put(eoi_a - ref_a, 8.3)) ;
+
+                        %if "&weight" = "Weighted" %then %do; /*Weighted SD*/
+                            /*standardized difference*/
+                            a = eoi_a - ref_a;
+                            stw = agg_sw_exp / agg_v_exp;
+                            scw = agg_sw_comp/agg_v_comp;
+                            c = sqrt( (stw + scw) / 2);
+                            if (^missing(a)) AND (c>0) then sd = compress(put(a/c, 8.3));
+                            else sd = '-';
+                        %end;
+                        %else %do; /*unweighted SD*/
+                            if (eoi_b > 0) AND (ref_b > 0) then sd = compress(put((eoi_a - ref_a)/(sqrt((eoi_b*eoi_b + ref_b*ref_b)/2)), 8.3)) ;
+                            else sd = '-';
+                        %end;
+                    %end;
+
+                    drop exp_mean_num comp_mean_num exp_std_sum comp_std_sum;
                 end;
 
-
                 /*reformat DP specific vars*/
-                %if "&stratifybydp" = "Y" %then %do;
+                %if "&stratifybydp" = "Y" & "&computebalance." = "Y" %then %do;
+                    %do i = 1 %to &num_dp.;
+                        ad&i. = compress(put(ad&i., 8.3));
+                        sd&i. = compress(put(sd&i., 8.3));
+                    %end;
+
                     format exp_mean: 8.1 exp_std: 8.3 %if "&includecomp" = "Y" %then %do; comp_mean: 8.1 comp_std: 8.3 %end; ;
                 %end;
 
@@ -374,6 +453,7 @@
                     %end; 
                     ;
             run;
+
         %mend baselinecomputemetrics;
 
         ***********************************************************************************************;

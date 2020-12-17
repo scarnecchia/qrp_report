@@ -413,6 +413,7 @@
 
                         /*AD and SD*/
                         %if &computebalance = Y & &createcompcolumns = Y %then %do;
+
                         array abdiff{&num_dp.} ad1-ad&num_dp.;
                         array stdiff{&num_dp.} sd1-sd&num_dp.;
 
@@ -466,7 +467,6 @@
                           stratifybydp = &stratifybydp.,
                           periodid = &periodid.);
 
-        data output.alldptable1_&periodid.; set alldptable1_&periodid.; run;
         data output.table1; set table1_1; run;
 
     %end; /*loop through periodid*/
