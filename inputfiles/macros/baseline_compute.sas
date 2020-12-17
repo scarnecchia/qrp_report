@@ -182,9 +182,7 @@
                     set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." and weight = "&weight" and order=&b.));
                     %do a = 1 %to &num_dp.;
                         call symputx("n_adjusted_episodes_exp&a", exp_mean&a); 
-                        call symputx("n_adjusted_patients_exp&a", exp_mean&a); /*Defensive for sex/race/hispanic computation*/
                         call symputx("n_adjusted_episodes_comp&a", comp_mean&a); 
-                        call symputx("n_adjusted_patients_comp&a", comp_mean&a); /*Defensive for sex/race/hispanic computation*/
                     %end;
 
                     /*recompute total episodes for loop*/
@@ -354,8 +352,6 @@
                             comp_mean&i. = round(comp_mean&i., 1);
                         %end;
                     %end;
-
-
                 end;
 
                 /*Aggregate continuous variables*/
