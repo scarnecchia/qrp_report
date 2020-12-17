@@ -348,6 +348,13 @@
                     %if "&includecomp" = "Y" %then %do;
                     ref_a = round(ref_a, 1);
                     %end;
+                    %if "&stratifybydp" = "Y" %then %do;
+                        %do i =1 %to &num_dp.;
+                            exp_mean&i. = round(exp_mean&i., 1);
+                            comp_mean&i. = round(comp_mean&i., 1);
+                        %end;
+                    %end;
+
 
                 end;
 
