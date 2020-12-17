@@ -212,18 +212,16 @@
                 total_exp_patients = "&&&total_&table._exp_patients."; /*Sum of patients in group1*/ 
                 agg_exp_w = 0; /*Sum of weights*/
                 agg_exp_w2 = 0;
+                array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
                 array exp_s2(&num_dp.) exp_s2_1-exp_s2_&num_dp.;
-                array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
-                array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
 
                 %if "&includecomp" = "Y" %then %do;
                 total_comp_episodes = "&&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ 
                 total_comp_patients = "&&&total_&table._comp_patients."; /*Sum of patients in group2*/
                 agg_comp_w = 0;
                 agg_comp_w2 = 0; 
+                array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
                 array comp_s2(&num_dp.) comp_s2_1-comp_s2_&num_dp.;
-                array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
-                array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
                 %end;
 
                 %if "&weight" = "Weighted" %then %do;
@@ -236,47 +234,45 @@
                     array vk_comp(&num_dp.) vk_comp_1-vk_comp_&num_dp.;
                 %end;
 
-                /*Loop through each DP to compute aggregate metrics*/
-                do i = 1 to &num_dp.;
+               /*Aggregate weights*/
+                agg_exp_w = sum(of exp_w1_1-exp_w1_&num_dp.); /*Sum of weights - exposed group*/
+                agg_exp_w2 = sum(of exp_w2_1-exp_w2_&num_dp.); /*Sum of squared weights - exposed group*/
 
-                    /*Aggregate weights*/
-                    if ^missing(exp_w(i)) then agg_exp_w = agg_exp_w + exp_w(i) ; /*Sum of weights - exposed group*/
-                    if ^missing(exp_w2(i)) then agg_exp_w2 = agg_exp_w2 + exp_w2(i) ; /*Sum of squared weights - exposed group*/
-                    %if "&includecomp" = "Y" %then %do;
-                    if ^missing(comp_w(i)) then agg_comp_w = agg_comp_w + comp_w(i) ; /*Sum of weights - comparison group*/
-                    if ^missing(comp_w2(i)) then agg_comp_w2 = agg_comp_w2 + comp_w2(i) ; /*Sum of squared weights - comparison group*/
-                    %end;
+                %if "&includecomp" = "Y" %then %do;
+                agg_comp_w = sum(of comp_w1_1-comp_w1_&num_dp.); /*Sum of weights - comparison group*/
+                agg_comp_w2 = sum(of comp_w2_1-comp_w2_&num_dp.); /*Sum of squared weights - comparison group*/
+                %end;
 
-                    %if "&weight" = "Weighted" %then %do;
+                /*Computations for weighted SD*/
+                %if "&weight" = "Weighted" %then %do;
+                    do i = 1 to &num_dp.;
+                        array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
+                        array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
+                        array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
+                        array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
+
                         if (exp_w(i)) > 0 then vk_exp(i) =  ( (exp_w(i)**2) - exp_w2(i)) / exp_w(i);
                         if (comp_w(i)) > 0 then vk_comp(i) =  ( (comp_w(i)**2) - comp_w2(i)) / comp_w(i);
                         if vk_exp(i)>0 then agg_v_exp  = agg_v_exp +  vk_exp(i); /*denominator of Sw2 for SD calculation*/
                         if vk_comp(i)>0 then agg_v_comp  = agg_v_comp +  vk_comp(i); /*denominator of Sw2 for SD calculation*/
-                    %end;
-                end;
+                    end;
+                %end;
 
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-
-                    array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
-                    eoi_a = 0; /*Aggregated numerator in the exposed group*/ 
+                    eoi_a=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
                     %if "&includecomp" = "Y" %then %do;
-                    array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
-                    ref_a = 0; /*Aggregated numerator in the comparison group*/
+                    ref_a=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/
                     %end;
 
+                    %if "&weight" = "Weighted" %then %do;
                     do i = 1 to &num_dp.;
-                        if ^missing(num_exp(i)) then eoi_a = eoi_a + num_exp(i);
-                        %if "&includecomp" = "Y" %then %do;
-                        if ^missing(num_comp(i)) then ref_a = ref_a + num_comp(i);
-                        %end;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do;
-                        %if "&weight" = "Weighted" %then %do;
                             if num_exp(i) > 0 then agg_sw_exp = agg_sw_exp + (exp_s2(i)*vk_exp(i)) ; /*Numerator of Sw2 for SD calculation*/
                             if num_comp(i) > 0 then agg_sw_comp = agg_sw_comp + (comp_s2(i)*vk_comp(i));
-                        %end;
                         end;
                     end;
+                    %end;
 
                     /*initialize to 0*/
                     eoi_b = 0;
@@ -339,6 +335,13 @@
                             else sd = '-';
                         end;
                     %end;
+
+                    /*round eoi_a and eoi_b - will be a decimal for weighted tables*/
+                    eoi_a = round(eoi_a, 1);
+                    %if "&includecomp" = "Y" %then %do;
+                    ref_a = round(ref_a, 1);
+                    %end;
+
                 end;
 
                 /*Aggregate continuous variables*/
