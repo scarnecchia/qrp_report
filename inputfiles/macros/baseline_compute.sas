@@ -208,8 +208,8 @@
                 format eoi_a 8.1 eoi_b 8.3 %if "&includecomp" = "Y" %then %do; ref_a 8.1 ref_b 8.3 %end; ;
 
                 /*set up total count variables and arrays*/
-                total_exp_episodes = "&&&total_&table._exp_episodes."; /*Sum of episodes in group1*/ 
-                total_exp_patients = "&&&total_&table._exp_patients."; /*Sum of patients in group1*/ 
+                total_exp_episodes = "&&total_&table._exp_episodes."; /*Sum of episodes in group1*/ 
+                total_exp_patients = "&&total_&table._exp_patients."; /*Sum of patients in group1*/ 
                 agg_exp_w = 0; /*Sum of weights*/
                 agg_exp_w2 = 0;
                 array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
@@ -219,8 +219,8 @@
                 array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
 
                 %if "&includecomp" = "Y" %then %do;
-                total_comp_episodes = "&&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ 
-                total_comp_patients = "&&&total_&table._comp_patients."; /*Sum of patients in group2*/
+                total_comp_episodes = "&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ 
+                total_comp_patients = "&&total_&table._comp_patients."; /*Sum of patients in group2*/
                 agg_comp_w = 0;
                 agg_comp_w2 = 0; 
                 array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
