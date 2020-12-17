@@ -40,7 +40,7 @@
 
         data &outdata.;
             set input.&baselinefile.;
-            format cohort mergevar analysisgrp $15.;
+            format cohort mergevar $15. analysisgrp $40.;
             group=lowcase(group);
             analysisgrp = group;
             runid=lowcase(runid);
