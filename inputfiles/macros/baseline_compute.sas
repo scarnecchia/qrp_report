@@ -437,18 +437,25 @@
                 /*reformat DP specific vars*/
                 %if "&stratifybydp" = "Y" & "&computebalance." = "Y" %then %do;
                     %do i = 1 %to &num_dp.;
-                        ad&i. = compress(put(ad&i., 8.3));
-                        sd&i. = compress(put(sd&i., 8.3));
+                        adchar&i. = strip(compress(put(ad&i., 8.3)));
+                        sdchar&i. = strip(compress(put(sd&i., 8.3)));
+                
+                        if metvar ne 'MAHALANOBIS' then do;
+                          if adchar&i. = '.' then adchar&i. = '-';
+                          if sdchar&i. = '.' then sdchar&i. = '-';
+                        end;
                     %end;
-
+                %end;
+                %if "&stratifybydp" = "Y" %then %do;
                     format exp_mean: 8.1 exp_std: 8.3 %if "&includecomp" = "Y" %then %do; comp_mean: 8.1 comp_std: 8.3 %end; ;
                 %end;
+
 
                 keep metvar analysisgrp order vartype weight table eoi_a eoi_b 
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; ref_a ref_b
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                        %if "&computebalance." = "Y" %then %do; ad: sd: %end;
+                        %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
                       %end;   
                       %else %do;
                         %if "&computebalance." = "Y" %then %do; ad sd %end;
