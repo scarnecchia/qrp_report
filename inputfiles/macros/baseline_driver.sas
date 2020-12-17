@@ -427,7 +427,7 @@
                             end;
                             if vartype = 'continuous' then do;
                                 abdiff(i)=expmean(i)-compmean(i);
-                                if sum(expstd(i),compstd(i))>0 then stdiff(i)=(expmean(i)-compmean(i))/sqrt((expstd(i)+compstd(i))/2);
+                                if sum(expstd(i),compstd(i))>0 then stdiff(i)=(expmean(i)-compmean(i))/sqrt(((expstd(i)*expstd(i))+(compstd(i)*compstd(i)))/2);
                             end;
                         end;
                         drop i;
