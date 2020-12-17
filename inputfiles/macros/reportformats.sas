@@ -47,7 +47,7 @@
 			end;
 			var2=strip(compress(translate(upcase(start),"",'M',"",'W',"",'Y',"",'Q',"",'D')))||"-"||strip(end);
 			if end="High" then do;
-			var2=strip(compress(translate(upcase(start),"",'M',"",'W',"",'Y',"",'Q',"",'D')))||"+";
+			var2=strip(start)||"+";
 			end;
 			*remove leading zeros;
 			if start in: ("0") then start=substr(start,2);
@@ -62,7 +62,7 @@
 				start=tranwrd(UPCASE(start),'Y',' years');
 				start=tranwrd(UPCASE(start),'Q',' quarters');
 				start=tranwrd(UPCASE(start),'D',' days');	
-			    formatAge=strip(">=")||""||strip(lowcase(start));
+			    formatAge=strip("=")||""||strip(lowcase(start));
 			end;
 			else do;
 			 *if missing period = years;
@@ -96,7 +96,6 @@
     run;
 
 *End Age format;
-
 
 %mend reportformats;
 	
