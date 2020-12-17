@@ -332,6 +332,12 @@
                             /*SD*/
                             if (eoi_a > 0) AND (ref_a > 0) AND (c>0) then sd = compress(put(((a-b) / c), 8.3));
                             else sd = '-';
+
+                            %if "&stratifybydp" = "Y" %then %do;
+                                %do i =1 %to &num_dp.;
+                                if missing(ad&i.)=0 then ad&i. = ad&i.*100;
+                                %end;
+                            %end;
                         end;
                     %end;
 
