@@ -245,12 +245,11 @@
 
                 /*Computations for weighted SD*/
                 %if "&weight" = "Weighted" %then %do;
+                   array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
+                   array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
+                   array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
+                   array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
                     do i = 1 to &num_dp.;
-                        array exp_w(&num_dp.) exp_w1_1-exp_w1_&num_dp.;
-                        array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
-                        array comp_w(&num_dp.) comp_w1_1-comp_w1_&num_dp.;
-                        array comp_w2(&num_dp.) comp_w2_1-comp_w2_&num_dp.;
-
                         if (exp_w(i)) > 0 then vk_exp(i) =  ( (exp_w(i)**2) - exp_w2(i)) / exp_w(i);
                         if (comp_w(i)) > 0 then vk_comp(i) =  ( (comp_w(i)**2) - comp_w2(i)) / comp_w(i);
                         if vk_exp(i)>0 then agg_v_exp  = agg_v_exp +  vk_exp(i); /*denominator of Sw2 for SD calculation*/
