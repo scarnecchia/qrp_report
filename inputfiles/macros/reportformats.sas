@@ -30,7 +30,7 @@
 
 *Age Format;
 		data _agefmt;
-		set master_cohortfile (keep=agestrat cohortgrp);
+		set master_cohortfile (keep=agestrat);
 		if missing(agestrat) then agestrat ="00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+";
 		format start end var $20.;
 		nwords=countw(agestrat, " ");
@@ -62,7 +62,7 @@
 				start=tranwrd(UPCASE(start),'Y',' years');
 				start=tranwrd(UPCASE(start),'Q',' quarters');
 				start=tranwrd(UPCASE(start),'D',' days');	
-			    formatAge=strip("=")||""||strip(lowcase(start));
+				formatAge=strip('^{unicode "2265"x} ')||""||strip(lowcase(start));
 			end;
 			else do;
 			 *if missing period = years;
@@ -94,6 +94,10 @@
     value $agefmt
           &AGESTRAT.;
     run;
+
+    proc datasets nowarn noprint lib=work;
+        delete _agefmt;
+    quit;
 
 *End Age format;
 
