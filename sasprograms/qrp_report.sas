@@ -151,8 +151,10 @@ options validvarname = v7;
 %include "&reportroot.inputfiles/macros/reportformats.sas";
 
 /*baseline macros*/
+%include "&reportroot.inputfiles/macros/baseline_driver.sas";
 %include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
+%include "&reportroot.inputfiles/macros/baseline_compute.sas";
 
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";

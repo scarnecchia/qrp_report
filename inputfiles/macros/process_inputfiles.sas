@@ -153,7 +153,7 @@
         
 		%let numrunid = &numrunid.;
 
-		select distinct runid
+		select distinct lowcase(runid)
 	    into: runidlist separated by ' '
         from _inputfiles;
 
@@ -254,6 +254,66 @@
 	 ;
 	 run;
 	 
+
+/***************************************************************************************************
+*   For L2 reports - create master PS/CS input file dataset                                               
+***************************************************************************************************/
+
+    %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+
+        /*Create shell table*/
+        data pscs_masterinputs;
+            length runid $5 file $32 analysisgrp $40 psestimategrp $40 ratio $1 strataweight $3 ipweight $4
+                   caliper ceiling percentiles 8;
+            call missing(runid, file, analysisgrp, psestimategrp, ceiling, caliper, ratio, strataweight,
+                   ipweight, percentiles);
+            stop;
+        run;
+
+        %do n = 1 %to &numrunid.;
+            %let runid = %scan(&runidlist., &n.);
+            data pscs_masterinputs;
+                set pscs_masterinputs
+                %if %str("&&&runid._psmatchfile") ne %str("") %then %do;
+                    infolder.&&&runid._psmatchfile(in=a)
+                %end;
+                %if %str("&&&runid._stratificationfile") ne %str("") %then %do;
+                    infolder.&&&runid._stratificationfile(in=b)
+                %end;
+                %if %str("&&&runid._covstratfile") ne %str("") %then %do;
+                    infolder.&&&runid._covstratfile(in=c)
+                %end;
+                %if %str("&&&runid._iptwfile") ne %str("") %then %do;
+                    infolder.&&&runid._iptwfile(in=d)
+                %end; ;
+
+                %if %str("&&&runid._psmatchfile") ne %str("") %then %do;
+                if a then file = 'psmatchfile';
+                %end;
+                %if %str("&&&runid._stratificationfile") ne %str("") %then %do;
+                if b then file = 'stratificationfile';
+                %end;
+                %if %str("&&&runid._covstratfile") ne %str("") %then %do;
+                if c then file = 'covstratfile';
+                %end;
+                %if %str("&&&runid._iptwfile") ne %str("") %then %do;
+                if d then file = 'iptwfile';
+                %end;
+
+                runid = "&runid.";
+                analysisgrp = lowcase(analysisgrp);
+                psestimategrp = lowcase(psestimategrp);
+                keep runid file analysisgrp psestimategrp ceiling caliper ratio strataweight
+                     ipweight percentiles;
+            run;
+        %end;
+
+        proc sort data=pscs_masterinputs nodupkey;
+            by analysisgrp;
+        run;
+
+    %end;
+
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/

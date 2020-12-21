@@ -105,8 +105,12 @@
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
+                     , y.order
                      , y.cohort
-                     , y.group as groupvar
+                     %if "&mergevar" ne "analysisgrp" %then %do;
+                     , y.analysisgrp
+                     %end;
+                     , y.group as group1
                 from &infile. as x,
                      _temp_baseline_tablenames&b. as y
                 where x.&mergevar. = y.group;
@@ -120,11 +124,11 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by groupvar runid cohort;
+            by analysisgrp group1 runid order cohort;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by groupvar runid cohort;
+            by analysisgrp group1 runid order cohort;
 		run;
 
         proc datasets library=WORK nowarn nolist;
@@ -133,26 +137,8 @@
             rename _name_ = metvar;
         quit;
 
-        /*if no covariates need to initialize _label_*/
-        /*defensive: set metvar to uppercase*/
-        data _temp_baseline_transposed; 
-            set _temp_baseline_transposed;
-
-            metvar=upcase(metvar);
-
-            if _n_ = 1 then do;
-                dsid = open("_temp_baseline_transposed");
-                if varnum(dsid,"_label_") = 0 then do;
-                    format _label_ $70.;
-                    _label_ ='';
-                end;
-                rc= close(dsid);
-            end;
-            drop rc dsid;
-        run;
-
         proc sort data=_temp_baseline_transposed;
-            by groupvar runid cohort metvar _label_;
+            by analysisgrp group1 runid order cohort metvar ;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -164,8 +150,8 @@
         %else %do;
             data &outdata.;
                 merge &outdata.
-                      _temp_baseline_transposed;
-                by groupvar runid cohort metvar _label_;
+                      _temp_baseline_transposed(in=a);
+                by analysisgrp group1 runid order cohort metvar;
             run;
         %end;
 
@@ -202,6 +188,7 @@
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
+                     , y.order
                 from &dpsiteid..&runid._adjusted_baseline_&periodid. as x,
                      &GROUPTABLE.(where=(runid="&runid.")) as y
                 where x.analysisgrp = y.group;
@@ -214,6 +201,12 @@
 
             /*defensive: set metvar to uppercase*/
             metvar=upcase(metvar);
+
+            /*replace TOTAL with N_EPISODES and assign vartype to match L1 tables*/
+            if metvar = 'TOTAL' then do;
+                metvar = 'N_EPISODES';
+                vartype = 'dichotomous';
+            end;
         run;
 
         /*Add &DPNUMBER suffix to variables*/
@@ -234,7 +227,7 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid table group1 group2 weight vartype metvar;                 
+            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -247,7 +240,7 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid table group1 group2 weight vartype metvar; 
+                by analysisgrp runid order table group1 group2 weight vartype metvar; 
             run;
         %end;
 			
