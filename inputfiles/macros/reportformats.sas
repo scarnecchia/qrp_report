@@ -47,12 +47,9 @@
 				 end="High";
 			end;
 
-			var2=strip(compress(translate((start),"",'M',"",'W',"",'Y',"",'Q',"",'D')))||"-"||strip(end);
 			periodstart=compress(start,'0123456789');
 			periodend=compress(end,'0123456789');
-			if periodstart ne periodend then do;
-				var2=strip(start)||"-"||strip(end);
-			end;
+			var2=strip(start)||"-"||strip(end);
 			if end="High" then do;
 				var2=strip(start)||"+";
 			end;
