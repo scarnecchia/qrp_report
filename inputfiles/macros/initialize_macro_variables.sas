@@ -30,7 +30,7 @@
 
     /*variables related to DPs*/
     %global num_dp random_dplist;
-    %let num_dp = 0; 
+    %let num_dp = 0;
 
     /*variables related to query*/
     %global runidlist numrunid;
