@@ -65,7 +65,6 @@
                 call symputx('analysisgrp', analysisgrp);
                 call symputx('runid', runid);
                 call symputx('covarsort', upcase(covarsort));
-                call symputx('healthchar', upcase(healthchar));
                 /*computebalance defaults to Y for L2 tables*/
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -73,7 +72,8 @@
                 %else %do;
                 call symputx('computebalance', upcase(computebalance));
                 %end;
-                
+
+                call symputx('healthchar', upcase(healthchar));
                 call symputx('medproduse', upcase(medproduse));
                 call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
 
@@ -496,6 +496,29 @@
             %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6);
             %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7);
         %end;
+
+        ***********************************************************************************************;
+        * Execute %baseline_expand_parameters()              
+        ***********************************************************************************************;
+        %baseline_expand_parameters(var =medproduse);
+        %baseline_expand_parameters(var =healthchar);
+        %baseline_expand_parameters(var =UtilizationIntensity);
+        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+        %baseline_expand_parameters(var =pregnancychar);
+        %baseline_expand_parameters(var =exposurechar);
+        %end;
+
+        ***********************************************************************************************;
+        * Apply user defined inclusion parameters and assign 1) row labels and 2) row headers          
+        ***********************************************************************************************;
+
+
+
+
+    
+
+
+
 
 
         ***********************************************************************************************;
