@@ -46,6 +46,9 @@
 
     /*read in input files and process input file parameters*/
     %process_inputfiles();
+    
+    /*Create report formats*/
+    %reportformats();
 
 ***************************************************************************************************;
 * Create concactenated libname for each DP and output DP metadata                                                      
