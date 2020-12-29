@@ -73,9 +73,13 @@
                 call symputx('computebalance', upcase(computebalance));
                 %end;
 
-                call symputx('healthchar', upcase(healthchar));
-                call symputx('medproduse', upcase(medproduse));
-                call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                /*inialize to dummy value if missing*/
+                if missing(healthchar) then call symputx('healthchar', 'missing');
+                else call symputx('healthchar', upcase(healthchar));
+                if missing(medproduse) then call symputx('medproduse', 'missing');
+                else call symputx('medproduse', upcase(medproduse));
+                if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -472,7 +476,7 @@
                 %if &psfile. = iptwfile | "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do; 
                     if metvar = 'N_EPISODES' then delete;
                 %end;
-                /*Removing FOLLOWUPTIME/EVENT rows  */
+                /*Removing FOLLOWUPTIME/EVENT rows*/
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
@@ -542,9 +546,20 @@
 
             %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
 
+            /*if covarsort = A, then alphabetize by covarlabel*/
+            %if %str("&covarsort") = %str("A") %then %do;
+            proc sort data=&&runid._covarname sortseq=linguistic (numeric_collation=on);
+                by studyname;
+            run;
+            %end;
+
             data covarname_baseline; 
                 length MetVar $30 covarlabel $&baselinelabellength.;
                 set &&runid._covarname; 
+                %if %str("&covarsort") = %str("A") %then %do;
+                by studyname;
+                alphabeticalorder = _n_;
+                %end;
                 MetVar = cats("COVAR", covarnum);
                 covarlabel = studyname;
                 drop covarnum studyname;
@@ -557,15 +572,22 @@
             proc sort data=baseline_aggregate_prelabel;
                 by metvar;
             run;
-
         %end;
 
         ***********************************************************************************************;
         * Apply user defined inclusion parameters and assign 1) row labels and 2) row headers          
         ***********************************************************************************************;
 
+        /*utility macro to assign label, grouper, sortorder, sortorder2*/
+        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=);
+            %if %length(&label)>0 %then %do; label= &label; %end;
+            %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
+            %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
+            %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
+        %mend;
+
         data baseline_aggregatefinal;
-            length _label_ $&baselinelabellength grouper $60;
+            length label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;
@@ -582,19 +604,13 @@
             /* Patient Characteristics */
             /***************************/
             if MetVar = 'PATIENT' then do;
-                _label_ = 'Number of unique patients';
-                grouper = 'Patient Characteristics';
-                sortorder =1.1;
+            %assignbaselinevars(label="Number of unique patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             if MetVar = 'N_EPISODES' then do;
-                _label_ = 'Number of unique episodes';
-                grouper = 'Patient Characteristics';
-                sortorder =1.2;
+            %assignbaselinevars(label="Number of unique episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
-                _label_ = 'Number of weighted patients';
-                grouper = 'Patient Characteristics';
-                sortorder =1.3;
+            %assignbaselinevars(label="Number of weighted patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=3);
 /*                eoi_b = .;*/
 /*                ref_b = .;*/
 /*                ad = '-';*/
@@ -604,137 +620,214 @@
             /*infant characteristics*/
             %if "&ouputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
-                    _label_ = 'Mean enrollment time after birth';
-                    grouper = 'Patient Characteristics';
-                    sortorder =1.4;
+                %assignbaselinevars(label="Mean enrollment time after birth", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=4);
                 end;
                 else if MetVar = 'ENROLL_DIFF' then do;
-                    _label_ = 'Mean difference between date of birth and date of enrollment';
-                    grouper = 'Patient Characteristics';
-                    sortorder =1.5;
+                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=5);
                 end;
             %end;
 
             /*******************************/
             /* Demographic Characteristics */
             /*******************************/
-
                 /*age*/
                 else if index(upcase(MetVar),'AGE') > 0 then do;
-                    if upcase(MetVar) = 'AGE' then do;
-                        _label_ = 'Mean age (years)'; 
-                        sortorder = 2;
-                     end;
-                     else do; 
-                        sortorder =3; 
+                    if MetVar = 'AGE' then do;
+                    %assignbaselinevars(label="Mean age (years)", grouper="Demographic Characteristics", sortorder1 = 2, sortorder2=1);
+                    end;
+                    else do; 
+                        /*Sortorder2 assigned after merging in agegroupnum values below*/
                         /*Convert AGEXX_XX to agestrat format*/
                         if countc(MetVar, '_') = 0 then agegroup = compress(substr(MetVar, 4)) ||'+'; 
                         else agegroup =compress(translate(substr(MetVar, 4),'-','_')); 
-                        agefmt = put(agegroup, $agefmt.);
-                        _label_ = agefmt;
+                        %assignbaselinevars(label=put(agegroup, $agefmt.), grouper="Demographic Characteristics", sortorder1 = 3, sortorder2=1);
                     end;
-                    grouper = 'Demographic Characteristics';  
                 end;
 
                 /*sex*/
                 else if MetVar in ('FEMALE', 'SEX_F') then do;
-                    _label_ = 'Female'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder = 4.1;
+                %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('F', sexsort.));
                 end;
                 else if MetVar in ('MALE', 'SEX_M') then do; 
-                    _label_ = 'Male'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =4.2;
+                %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('M', sexsort.));
                 end;
                 else if MetVar in ('SEX_OTHER', 'SEX_O') then do;
-                    _label_ = 'Other'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =4.3;
+                %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('O', sexsort.));
                 end;
 
                 /*race*/
                 else if MetVar in ('AMERICANINDIAN', 'RACE_1') then do; 
-                    _label_ = 'American Indian or Alaska Native'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.1; 
+                %assignbaselinevars(label=put('1', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('1', racesort.));
                 end;
                 else if MetVar in ('ASIAN', 'RACE_2') then do; 
-                    _label_ = 'Asian'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.2; 
+                %assignbaselinevars(label=put('2', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('2', racesort.));
                 end;
                 else if MetVar in ('BLACK', 'RACE_3') then do; 
-                    _label_ = 'Black or African American'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.3; 
+                %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('3', racesort.));
                 end;
                 else if MetVar in ('PACIFICISLANDER', 'RACE_4') then do; 
-                    _label_ = 'Native Hawaiian or Other Pacific Islander'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.4; 
+                %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('4', racesort.));
                 end;
                 else if MetVar in ('RACE_UNKNOWN', 'RACE_0') then do; 
-                    _label_ = 'Unknown'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.5; 
+                %assignbaselinevars(label=put('0', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('0', racesort.));
                 end;
                 else if MetVar in ('WHITE', 'RACE_5') then do; 
-                    _label_ = 'White'; 
-                    grouper = 'Demographic Characteristics'; 
-                    sortorder =5.6; 
+                %assignbaselinevars(label=put('5', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('5', racesort.));
                 end;
 
                 /*hispanic*/
-
+                else if substr(MetVar, 1,10) = 'HISPANIC_Y' then do; 
+                %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('Y', hispanicsort.));
+                end;
+                else if substr(MetVar, 1,10) = 'HISPANIC_N' then do; 
+                %assignbaselinevars(label=put('N', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('N', hispanicsort.));
+                end;
+                else if substr(MetVar, 1,10) = 'HISPANIC_Y' then do; 
+                %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('Y', hispanicsort.));
+                end;
 
                 /*year*/
+                else if index((MetVar),'YEAR') > 0 then do;
+                %assignbaselinevars(label=compress(substr(MetVar,6)), grouper="Demographic Characteristics", sortorder1 = 8, sortorder2=compress(substr(MetVar,6)));
+                end;
 
-/*                    else if upcase(MetVar) = 'HISPANIC_YES' then do; _label_ = 'Hispanic Origin'; grouper = 'Patient Characteristics'; sortorder =7; &check_missing.; end;*/
-/*                    else if upcase(MetVar) in ('HISPANIC_NO', 'HISPANIC_UNKNOWN') then delete;*/
-/**/
-/*                    else if index((upcase(MetVar)),'YEAR') > 0 then do;*/
-/*                        grouper = 'Patient Characteristics';  */
-/*                        sortorder =8; */
-/*                        _label_ = 'Year ('||compress(substr(MetVar,6))||')';*/
-/*                    end;*/
-/**/
-/*                %if %length(&RecordedHistory.) = 0 and %length(&HistoryofUse.) = 0 and %length(&UtilizationIntensity.) = 0 %then %do;*/
-/*                    else if index(upcase(MetVar), 'COVAR') > 0 then do;*/
-/*                        grouper = 'Recorded History of:'; */
-/*                        _label_ = covarlabel; */
-/*                        sortorder =10;*/
-/*                    end;*/
-/*                %end;*/
-/*                %else %do;*/
-/*                    else if index(upcase(MetVar), 'COMORBIDSCORE') > 0 then do;*/
-/*                        if 'COMORBIDSCORE' in (&FinalRecordedHistory.) then do;*/
-/*                        grouper = 'Recorded History of:'; */
-/*                        _label_ = 'Charlson/Elixhauser Combined Comorbidity Score'; sortorder =9;*/
-/*                        call symputx('printcomorbscore', 'Y');*/
-/*                        end;*/
-/*                    end;*/
-/*                    else if upcase(MetVar) in (&FinalRecordedHistory.) then do; grouper = 'Recorded History of:'; sortorder =10; _label_ = covarlabel; end;*/
-/*                    else if upcase(MetVar) in (&FinalHistoryofUse.) then do; grouper = 'History of Use:'; sortorder =11;_label_ = covarlabel; end;*/
-/*                    else if upcase(MetVar) in (&FinalUtilization.) then do; */
-/*                        grouper = 'Health Service Utilization Intensity:'; */
-/*                        if upcase(MetVar) = "NUMCLASS" then do; _label_ = "Mean number of unique drug classes"; sortorder =13; end;*/
-/*                        if upcase(MetVar) = "NUMGENERIC" then do; _label_ = "Mean number of generics"; sortorder =13; end;*/
-/*                        if upcase(MetVar) = "NUMRX" then do;_label_ = "Mean number of filled prescriptions"; sortorder =13; end;*/
-/*                        if upcase(MetVar) = "NUMAV" then do;_label_ = "Mean number of ambulatory encounters"; sortorder =12; end;*/
-/*                        if upcase(MetVar) = "NUMED" then do;_label_ = "Mean number of emergency room encounters";sortorder =12; end;*/
-/*                        if upcase(MetVar) = "NUMIP" then do;_label_ = "Mean number of inpatient hospital encounters";sortorder =12; end;*/
-/*                        if upcase(MetVar) = "NUMIS" then do;_label_ = "Mean number of non-acute institutional encounters";sortorder =12; end;*/
-/*                        if upcase(MetVar) = "NUMOA" then do;_label_ = "Mean number of other ambulatory encounters";sortorder =12; end;*/
-/*                    end;*/
-/*                %end;*/
-/*                else delete;*/
+            /*******************************************************************/
+            /* Type 4 - Pregnancy Characteristics and Exposure Characteristics */
+            /*******************************************************************/
+            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+            %if %length(&pregnancychar.) >0 %then %do;
+                else if metvar in (&pregnancychar.) then do;      
+                    if MetVar= 'PREPOSTIND_PRE' then do;
+                    %assignbaselinevars(label="Preterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
+                    end;
+                    if MetVar= 'PREPOSTIND_TERM' then do;
+                    %assignbaselinevars(label="Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
+                    end;
+                    if MetVar= 'PREPOSTIND_POST' then do;
+                    %assignbaselinevars(label="Postterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
+                    end;
+                    if MetVar= 'PREPOSTIND_NONE' then do;
+                    %assignbaselinevars(label="Unknown term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
+                    end;
+                    if MetVar= 'GA_BIRTH' then do;
+                    %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
+                    end;
+                end; 
+            %end;
+            %if %length(&exposurechar.) >0 %then %do;
+                else if metvar in (&exposurechar.) then do;      
+                    if MetVar= 'GA_FIRST' then do;
+                    %assignbaselinevars(label="Mean gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=1);
+                    end;
+                    if MetVar= 'ADJUSTEDDISP_PRE' then do;
+                    %assignbaselinevars(label="Mean number of dispensings in pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=2);
+                    end;
+                    if MetVar= 'ADJUSTEDDISP_T1' then do;
+                    %assignbaselinevars(label="Mean number of dispensings in first trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=3);
+                    end;
+                    if MetVar= 'ADJUSTEDDISP_T2' then do;
+                    %assignbaselinevars(label="Mean number of dispensings in second trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=4);
+                    end;
+                    if MetVar= 'ADJUSTEDDISP_T3' then do;
+                    %assignbaselinevars(label="Mean number of dispensings in third trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=5);
+                    end;
+                    if MetVar= 'EXP_T1' then do;
+                    %assignbaselinevars(label="Exposed during first trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=6);
+                    end;
+                    if MetVar= 'EXP_T2' then do;
+                    %assignbaselinevars(label="Exposed during second trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=7);
+                    end;
+                    if MetVar= 'EXP_T3' then do;
+                    %assignbaselinevars(label="Exposed during third trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=8);
+                    end;
+                    if MetVar= 'EXP_PRE' then do;
+                    %assignbaselinevars(label="Exposed during user-defined pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=9);
+                    end;
+                end;
+            %end;
+            %end;
+
+            /*********************************************************************************************/
+            /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
+            /*********************************************************************************************/
+            else if metvar in (&healthchar.,&medproduse.,&UtilizationIntensity.) then do;   
+                /*Assign grouper and sortorder1*/
+                if metvar in (&healthchar.) then do;
+                %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 11, sortorder2=);
+                end;
+                if metvar in (&medproduse.) then do;
+                %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 12, sortorder2=);
+                end;
+                if metvar in (&UtilizationIntensity.) then do;
+                %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 13, sortorder2=);
+                end;
+
+                /*Assign labels and sortorder2*/
+                if metvar = 'COMORBIDSCORE' then do;
+                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
+                end;
+                if metvar = 'NUMAV' then do;
+                %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
+                end;
+                if metvar = 'NUMED' then do;
+                %assignbaselinevars(label="Mean number of emergency room encounters", grouper=, sortorder1 =, sortorder2=2001);
+                end;
+                if metvar = 'NUMIP' then do;
+                %assignbaselinevars(label="Mean number of inpatient hospital encounters", grouper=, sortorder1 =, sortorder2=2002);
+                end;
+                if metvar = 'NUMIS' then do;
+                %assignbaselinevars(label="Mean number of non-acute institutional encounters", grouper=, sortorder1 =, sortorder2=2003);
+                end;
+                if metvar = 'NUMOA' then do;
+                %assignbaselinevars(label="Mean number of other ambulatory encounters", grouper=, sortorder1 =, sortorder2=2004);
+                end;
+                if metvar = 'NUMRX' then do;
+                %assignbaselinevars(label="Mean number of filled prescriptions", grouper=, sortorder1 =, sortorder2=2005);
+                end;
+                if metvar = 'NUMGENERIC' then do;
+                %assignbaselinevars(label="Mean number of generics dispensed", grouper=, sortorder1 =, sortorder2=2006);
+                end;
+                if metvar = 'NUMCLASS' then do;
+                %assignbaselinevars(label="Mean number of unique drug classes dispensed", grouper=, sortorder1 =, sortorder2=2007);
+                end;
+                if substr(metvar,1,5)='COVAR' then do;
+                    *Assign sort order using covarsort parameter;
+                    %if %str("&covarsort") = %str("A") %then %do;
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=alphabeticalorder);
+                    %end;
+                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=substr(metvar,6));
+                    %end;
+                    %else %if %str("&covarsort") = %str("O") %then %do;
+                    covarorderlist = compress(tranwrd(resolve('&healthchar.,&medproduse.,&UtilizationIntensity'), '"', ""));                     
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(metvar), ',','e'));
+                    %end;
+                end;
+            end;
+            else delete;
+
+                /*Remove rows not requested in COHORTFILE - Sex, Hispanic, Race*/
+
+                /*Remove sex = M/O from type 4 tables*/
+
+                /*Remove N_PATIENTS if cohortdef = 01*/
+
+                keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper eoi_a eoi_b
+                    %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
+                    %if "&includecomp" = "Y" %then %do; ref_a ref_b
+                      %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
+                        %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
+                      %end;   
+                      %else %do;
+                        %if "&computebalance." = "Y" %then %do; ad sd %end;
+                      %end;
+                    %end; 
+                    ;
             run;
 
 
-
     
-
+        /*Merge in agefmtsort to correctly update sortorder*/
 
 
 

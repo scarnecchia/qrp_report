@@ -29,10 +29,13 @@
     %put =====> MACRO CALLED: report_formats_labels ;
 
 /***************************************************************************************************
-*  Age Format;                                            
+*  Create demographic variable formats                                            
 ***************************************************************************************************/
-    data _agefmt;
-		set master_cohortfile (keep=agestrat);
+
+    /* Age Format*/
+    data _agefmt(keep=label_fmt)
+         agefmtsort(keep=var count cohortgrp rename=var=agegroup rename=count=agegroupnum);
+		set master_cohortfile (keep=agestrat cohortgrp);
 		if missing(agestrat) then agestrat ="00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+";
 		agestrat=upcase(agestrat);
 		format start end var $20.;
@@ -101,6 +104,7 @@
 			end;
 			label_fmt="'"||strip(var2)||"'='"||strip(formatAge)||"'";
 			output _agefmt;
+            output agefmtsort; 
 		end;
 		drop nwordsvar nwords;
     run;
@@ -112,16 +116,59 @@
 
 	%put &=AGESTRAT;
 
-	proc format;
-    value $agefmt
-          &AGESTRAT.;
-    run;
-
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
     quit;
 
-    *End Age format;
+    /***************************/
+    /* MASTER FORMAT STATEMENT */
+    /***************************/
+    proc format;  
+
+        /*Age Format*/
+        value $agefmt
+        &AGESTRAT.;
+
+        /*Sex Format*/
+        value $sexfmt
+        "F"   = "Female"
+        "M"   = "Male"
+        "O"   = "Other";
+
+        value $sexsort
+        "F"   = 1
+        "M"   = 2
+        "O"   = 3;
+
+        /*Race Format*/
+        value $racefmt
+        "0"   = "Unknown"
+        "1"   = "American Indian or Alaska Native"
+        "2"   = "Asian"
+        "3"   = "Black or African American"
+        "4"   = "Native Hawaiian or Other Pacific Islander"
+        "5"   = "White";
+
+        value $racesort     
+        "1"   = 1
+        "2"   = 2
+        "3"   = 3
+        "4"   = 4
+        "0"   = 5
+        "5"   = 6;
+
+        /*Hispanic Format*/
+        value $hispanicfmt
+        "Y"   = "Yes"
+        "N"   = "No"
+        "U"   = "Unknown";
+
+        value $hispanicsort
+        "Y"   = 1
+        "N"   = 2
+        "U"   = 3;
+    run;
+
 
 /***************************************************************************************************
 *  Create datasets containing run specific covariate labels                                              
