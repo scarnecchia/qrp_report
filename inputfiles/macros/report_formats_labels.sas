@@ -10,7 +10,18 @@
 *                                        
 *  Program inputs:                                                                                   
 * 
-*  Program outputs:                                                                                                                                       
+*  Program outputs:       
+*   datasets:
+*   -agefmtsort: one row per cohortgrp, agegroup, agegroupnum
+*
+*   formats;
+*   -agefmt
+*   -sexfmt
+*   -sexsort
+*   -racefmt
+*   -racesort
+*   -hispanicfmt
+*   -hispanicsort
 *
 *  PARAMETERS:                                                                       
 *            
