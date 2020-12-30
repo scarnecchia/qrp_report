@@ -32,7 +32,7 @@
 
     data lookup_t2multevent;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $20. levelid1 levelid2 $50.;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 $55.;
 
         includeinreport = 'N';
 
@@ -216,7 +216,7 @@
 
 	    data lookup_&name.;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 includeinreport;
-        format table $5. dataset $15. tablesubstrat $20. tablesub $40. levelid1 levelid2 $50.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 $55.;
 
 	        includeinreport = 'N';
 
@@ -267,7 +267,7 @@
 
     data lookup_t1t2_censor;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $20. levelid1 levelid2 $50.;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 $55.;
 
         includeinreport = 'N';
 		%macro censortables3(dsn,num);
@@ -324,7 +324,7 @@
 
     data lookup_t2overlap;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $20. levelid1 $34. levelid2 $50.;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 $34. levelid2 $55.;
 
         includeinreport = 'N';
 
@@ -406,6 +406,135 @@
 		lookup_t2overlap(in=b);
     if b then table = 'T2';
 	run;
+
+	/***************************************************************************************************************************
+	  T5episdur, T5disp, T5gaps, T5first, T5censor
+	 ***************************************************************************************************************************/
+	%let stratLevel = overall|sex|agegroup|race|hispanic|sex agegroup|sex race|sex hispanic|agegroup race|agegroup hispanic;
+	%let stratfirst = overall|sex|agegroup|race|hispanic;
+    
+    %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
+    %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
+
+	    data lookup_t5_all;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 includeinreport;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 $55.;
+
+	        includeinreport = 'N';
+
+	        dataset = "t5episdur";
+			  %do t = 2 %to 3;
+                 %do s = 1 %to &stratlevels.;
+                    table = "T&t.";
+				    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    tablesubstrat= "cumepisodelength";
+				    levelnum =1;
+				    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+				      levelid1 = "";
+				      levelid2 = "cumepisodelength";
+				    %end;
+				    %else %do;
+	                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				      levelid2 = "cumepisodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    %end;
+	                output;
+			     %end;
+			  %end;
+			  %do t = 4 %to 9;
+                 %do s = 1 %to &stratlevels.;
+                    table = "T&t.";
+				    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    tablesubstrat= "episodenum episodelength";
+				    levelnum =1;
+				    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+				      levelid1 = "episodenum";
+				      levelid2 = "episodenum episodelength";
+				    %end;
+				    %else %do;
+	                  levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				      levelid2 = "episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    %end;
+	                output;
+			     %end;
+			  %end;
+
+			  dataset = "t5disp";
+			  %do t = 10 %to 11;
+                 %do s = 1 %to &stratlevels.;
+                    table = "T&t.";
+				    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    tablesubstrat= "daysupp";
+				    levelnum =1;
+				    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+				      levelid1 = "";
+				      levelid2 = "daysupp";
+				    %end;
+				    %else %do;
+	                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				      levelid2 = "daysupp %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    %end;
+	                output;
+			     %end;
+			  %end;
+
+			  dataset = "t5gaps";
+			  %do t = 12 %to 14;
+                 %do s = 1 %to &stratlevels.;
+                    table = "T&t.";
+				    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				    tablesubstrat= "gaplength gapnum";
+				    levelnum =1;
+				    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+				      levelid1 = "gaplength gapnum";
+				      levelid2 = "";
+				    %end;
+				    %else %do;
+	                  levelid1 = "gaplength gapnum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+				      levelid2 = "";
+				    %end;
+	                output;
+			     %end;
+			  %end;
+
+			  dataset = "t5censor";
+			  table = "T15";
+			  tablesub= "overall";
+			  tablesubstrat= "episodenum";
+			  levelnum =1;
+			  levelid1 = "episodenum";
+			  levelid2 = "";
+	          output;
+
+			  dataset = "t5first";
+			  %do f = 1 %to 3;
+                 %do s = 1 %to &stratflevels.;
+                    table = "F&f.";
+				    tablesub= "%sysfunc(left(%scan(%str(&stratfirst.), &s, '|')))";
+				    tablesubstrat= "mntsfromstart";
+				    levelnum =1;
+				    %if %sysfunc(left(%scan(%str(&stratfirst.), &s, '|'))) = overall %then %do;
+				      levelid1 = "mntsfromstart";
+				      levelid2 = "";
+				    %end;
+				    %else %do;
+	                  levelid1 = "mntsfromstart %sysfunc(left(%scan(%str(&stratfirst.), &s, '|')))";
+				      levelid2 = "";
+				    %end;
+	                output;
+			     %end;
+			  %end;
+
+			  dataset = "t5censor";
+			  %do f = 4 %to 5;
+                table = "F&f.";
+			    tablesub= "overall";
+			    tablesubstrat= "episodenum episodelength";
+			    levelnum =1;
+			    levelid1 = "episodenum episodelength";
+			    levelid2 = "";
+				output;
+			  %end;
+		    run;
 	
 	/* Combine all lookup tables into one */
 	data levellookup;
