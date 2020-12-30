@@ -59,6 +59,27 @@
         %end;
 
 /***************************************************************************************************
+*   Check that REPORTTYPE is valid                                              
+***************************************************************************************************/
+
+    /*Valid values:
+        - T1: Type 1 report
+        - T2L1: Level 1, type 2 report
+        - T2L2: Level 2, type 2 report 
+        - ITS: ITS report
+        - T4L1: Level 1, type 4 report 
+        - T4L2: Level 2, type 4 report 
+        - T5: Type 5 report
+        - T6: Type 6 report
+        - TREE2: tree aggregation for Type 2
+        - TREE3: tree aggregration for Type 3
+        - TREE4: tree aggregation for Type 4 */
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
+        %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
+        %abort;
+    %end;
+
+/***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
 ***************************************************************************************************/
 
@@ -249,9 +270,13 @@
 	 data master_cohortfile;
 	 set %do n = 1 %to &numrunid.;
 	 		%let runid=&&id&n..;
-			infolder.&&&runid._cohortfile
+			infolder.&&&runid._cohortfile(in=n&n.)
 		%end;
 	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+	 		runid = "&&id&n.";
+        %end;
 	 run;
 	 
 

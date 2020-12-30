@@ -56,7 +56,6 @@
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
-
     %do b = 1 %to %eval(&numbaselinetablegrp.);
 
         data _null_;
@@ -65,6 +64,7 @@
                 call symputx('analysisgrp', analysisgrp);
                 call symputx('runid', runid);
                 call symputx('covarsort', upcase(covarsort));
+                call symputx('cohort', cohort);
                 /*computebalance defaults to Y for L2 tables*/
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -84,12 +84,12 @@
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
-                call symputx('ouputinfantchar', strip(upcase(ouputinfantchar)));
+                call symputx('outputinfantchar', strip(upcase(outputinfantchar)));
                 call symputx('exposurechar', upcase(exposurechar));
                 call symputx('includenonpregnant', strip(upcase(includenonpregnant)));
                 %end;
                 %else %do;
-                call symputx('ouputinfantchar', 'N');
+                call symputx('outputinfantchar', 'N');
                 call symputx('includenonpregnant', 'N');
                 %end;
 
@@ -103,6 +103,7 @@
                 end;
             end;
         run;
+        %put creating baseline table for &analysisgrp;
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
@@ -111,14 +112,138 @@
         %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp."));
-                call symputx('psfile', file);
+                call symputx('psfile', strip(file));
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
             run;
-       %end;
-       
-       /*Put total number of patients and episodes in macro variables and compute overall totals*/
+        %end;
+
+        *************************************************************
+        * Processing - need to:
+            - determine cohortgrp associated with EOI cohort
+            - extract cohort specific demographic values
+            - extract cohortdef
+        ************************************************************;
+
+        %let cohortgrp = ;
+        /*L1*/
+        %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
+            %let cohortgrp = &analysisgrp.;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
+            %if %str("&cohort") = %str("") %then %do;
+                %let cohortgrp = &analysisgrp;
+            %end;
+            %if %str("&cohort") = %str("multevent") %then %do;
+                data _null_;
+                    set infolder.&&&runid._multeventfile(where=(analysisgrp="&analysisgrp"));
+                    call symputx('cohortgrp', strip(primary));
+                run;
+            %end;
+            %if %str("&cohort") = %str("overlap") %then %do;
+                data _null_;
+                    set infolder.&&&runid._overlapfile(where=(analysisgrp="&analysisgrp"));
+                    call symputx('cohortgrp', strip(primary));
+                run;
+            %end;
+            %if %str("&cohort") = %str("concomitance") %then %do;
+                data _null_;
+                    set infolder.&&&runid._concfile(where=(analysisgrp="&analysisgrp"));
+                    call symputx('cohortgrp', strip(primary));
+                run;
+            %end;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
+            %if %str("&cohort") = %str("preg") | %str("&cohort") = %str("nopreg") %then %do;
+                %let cohortgrp = &analysisgrp;
+            %end;
+            %if %str("&cohort") = %str("mi") %then %do;
+                data _null_;
+                    set infolder.&&&runid._micohortfile(where=(milgrp="&analysisgrp"));
+                    call symputx('cohortgrp', strip(groupname));
+                run;            
+            %end;
+        %end;
+
+        /*L2*/
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            /*if file = psmatchfile, stratificationfile, iptwfile - then link to psestimationfile*/
+            /*if file = covstratfile, pull directly*/
+            %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+                data _null_;
+                    set infolder.&&&runid._&psfile.(where=(analysisgrp="&analysisgrp."));
+                    call symputx('psestimategrp', psestimategrp);
+                run;
+                data _null_;
+                    set infolder.&&&runid._psestimationfile(where=(psestimategrp="&psestimategrp."));
+                    call symputx('eoi', strip(eoi));
+                run;
+            %end;
+            %else %if &psfile. = covstratfile %then %do;
+                data _null_;
+                    set infolder.&&&runid._covstratfile(where=(analysisgrp="&analysisgrp."));
+                    call symputx('eoi', strip(eoi));
+                run;
+            %end;
+
+            *T2: EOI group = cohortgrp;
+            %if %str("&reporttype") = %str("T2L2") %then %do;
+                %let cohortgrp = &eoi;
+            %end;
+            *T4: After extracting EOI group - need to link to MICOHORTFILE to grab cohortgrp;
+            %if %str("&reporttype") = %str("T4L2") %then %do;
+                data _null_;
+                    set infolder.&&&runid._micohortfile(where=(milgrp=substr("&eoi",1,length("&eoi")-4)));
+                    call symputx('cohortgrp', strip(groupname));
+                run;
+            %end;
+        %end;
+
+        /*Extract agegroup, sex, race, and hispanic requirements*/
+        data _tempcohort;
+            set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
+            if missing(agestrat) then call symputx("agestrat", "00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+");
+            else call symputx("agestrat", upcase(agestrat));
+            if missing(sex) then call symputx("sex", "'F', 'M', 'O'");
+            else call symputx("sex", upcase(sex));
+            if missing(race) then call symputx("race", "'0', '1', '2', '3', '4', '5'");
+            else call symputx("race", upcase(race));
+            if missing(hispanic) then call symputx("hispanic", "'Y', 'N', 'U'");
+            else call symputx("hispanic", upcase(hispanic));
+        run;
+        %create_comma_charlist(inlist=&agestrat, outlist=agestrat1);
+
+        /*Extract cohortdef - for L2 queries always 01, for T5 always 04*/
+        %if %str("&reporttype") = %str("T1") %then %do;
+            data _null_;
+                set infolder.&&&runid._type1file(where=(group="&cohortgrp."));
+                call symputx("cohortdef", strip(t1cohortdef));
+            run;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
+            data _null_;
+                set infolder.&&&runid._type2file(where=(group="&cohortgrp."));
+                call symputx("cohortdef", strip(t2cohortdef));
+            run;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
+            data _null_;
+                set infolder.&&&runid._type4file(where=(group="&cohortgrp."));
+                call symputx("cohortdef", strip(t4cohortdef));
+            run;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %let cohortdef = 01;
+        %end;
+        %else %if %str("&reporttype") = %str("T5") %then %do;
+            %let cohortdef = 04;
+        %end;
+
+
+        ***********************************************************************************************
+        * Put total number of patients and episodes in macro variables and compute overall totals
+        **********************************************************************************************;
         data _null_; 
             set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table = 'Unadjusted' and order=&b.));
         
@@ -475,6 +600,12 @@
                 /*Removing unweighted total row for IPTW and PS stratum weighted table 1. Will use TOTAL_WEIGHTED row*/
                 %if &psfile. = iptwfile | "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do; 
                     if metvar = 'N_EPISODES' then delete;
+                    if MetVar = 'TOTAL_WEIGHTED' then do;
+                        eoi_b = .;
+                        ref_b = .;
+                        ad = '-';
+                        sd = '-';
+                    end;
                 %end;
                 /*Removing FOLLOWUPTIME/EVENT rows*/
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
@@ -586,7 +717,7 @@
             %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
         %mend;
 
-        data baseline_aggregatefinal;
+        data baseline_aggregatelabels;
             length label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
 
             %if "&includecovars" = "Y" %then %do;
@@ -606,19 +737,15 @@
             if MetVar = 'PATIENT' then do;
             %assignbaselinevars(label="Number of unique patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=1);
             end;
-            if MetVar = 'N_EPISODES' then do;
+            else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
             %assignbaselinevars(label="Number of unique episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
             %assignbaselinevars(label="Number of weighted patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=3);
-/*                eoi_b = .;*/
-/*                ref_b = .;*/
-/*                ad = '-';*/
-/*                sd = '-';*/
             end;
 
             /*infant characteristics*/
-            %if "&ouputinfantchar" = "Y" %then %do;
+            %if "&outputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
                 %assignbaselinevars(label="Mean enrollment time after birth", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=4);
                 end;
@@ -638,52 +765,60 @@
                     else do; 
                         /*Sortorder2 assigned after merging in agegroupnum values below*/
                         /*Convert AGEXX_XX to agestrat format*/
+                        /*remove agegroups not requested in cohortfile*/
                         if countc(MetVar, '_') = 0 then agegroup = compress(substr(MetVar, 4)) ||'+'; 
                         else agegroup =compress(translate(substr(MetVar, 4),'-','_')); 
+                        if upcase(agegroup) in (&agestrat1.) then do;
                         %assignbaselinevars(label=put(agegroup, $agefmt.), grouper="Demographic Characteristics", sortorder1 = 3, sortorder2=1);
+                        end;
+                        else delete;
                     end;
                 end;
 
-                /*sex*/
-                else if MetVar in ('FEMALE', 'SEX_F') then do;
+                /*sex - only keep F if type 4 and remove rows not requested in cohortfile*/
+                else if MetVar in ('FEMALE', 'SEX_F') and 'F' in (&sex.) then do;
                 %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('F', sexsort.));
                 end;
-                else if MetVar in ('MALE', 'SEX_M') then do; 
-                %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('M', sexsort.));
+                else if MetVar in ('MALE', 'SEX_M') and 'M' in (&sex.) then do; 
+                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
+                        %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('M', sexsort.));
+                    %end;
                 end;
-                else if MetVar in ('SEX_OTHER', 'SEX_O') then do;
-                %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('O', sexsort.));
+                else if MetVar in ('SEX_OTHER', 'SEX_O') and 'O' in (&sex.) then do;
+                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
+                    %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('O', sexsort.));
+                    %end;
                 end;
 
-                /*race*/
-                else if MetVar in ('AMERICANINDIAN', 'RACE_1') then do; 
+                /*race - remove rows not requested in cohortfile*/
+                else if MetVar in ('AMERICANINDIAN', 'RACE_1') and '1' in (&race.) then do; 
                 %assignbaselinevars(label=put('1', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('1', racesort.));
                 end;
-                else if MetVar in ('ASIAN', 'RACE_2') then do; 
+                else if MetVar in ('ASIAN', 'RACE_2') and '2' in (&race.) then do; 
                 %assignbaselinevars(label=put('2', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('2', racesort.));
                 end;
-                else if MetVar in ('BLACK', 'RACE_3') then do; 
+                else if MetVar in ('BLACK', 'RACE_3') and '3' in (&race.) then do; 
                 %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('3', racesort.));
                 end;
-                else if MetVar in ('PACIFICISLANDER', 'RACE_4') then do; 
+                else if MetVar in ('PACIFICISLANDER', 'RACE_4') and '4' in (&race.) then do; 
                 %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('4', racesort.));
                 end;
-                else if MetVar in ('RACE_UNKNOWN', 'RACE_0') then do; 
+                else if MetVar in ('RACE_UNKNOWN', 'RACE_0') and '0' in (&race.) then do; 
                 %assignbaselinevars(label=put('0', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('0', racesort.));
                 end;
-                else if MetVar in ('WHITE', 'RACE_5') then do; 
+                else if MetVar in ('WHITE', 'RACE_5') and '5' in (&race.) then do; 
                 %assignbaselinevars(label=put('5', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('5', racesort.));
                 end;
 
-                /*hispanic*/
-                else if substr(MetVar, 1,10) = 'HISPANIC_Y' then do; 
+                /*hispanic - remove rows not requested in cohortfile*/
+                else if substr(MetVar, 1,10) = 'HISPANIC_Y' and 'Y' in (&hispanic.) then do; 
                 %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('Y', hispanicsort.));
                 end;
-                else if substr(MetVar, 1,10) = 'HISPANIC_N' then do; 
+                else if substr(MetVar, 1,10) = 'HISPANIC_N' and 'N' in (&hispanic.) then do; 
                 %assignbaselinevars(label=put('N', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('N', hispanicsort.));
                 end;
-                else if substr(MetVar, 1,10) = 'HISPANIC_Y' then do; 
-                %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('Y', hispanicsort.));
+                else if substr(MetVar, 1,10) = 'HISPANIC_U' and 'U' in (&hispanic.) then do; 
+                %assignbaselinevars(label=put('U', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('U', hispanicsort.));
                 end;
 
                 /*year*/
@@ -804,33 +939,43 @@
                     %end;
                 end;
             end;
-            else delete;
+            
+            if missing(label) then delete;
 
-                /*Remove rows not requested in COHORTFILE - Sex, Hispanic, Race*/
+            keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper eoi_a eoi_b
+                %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
+                %if "&includecomp" = "Y" %then %do; ref_a ref_b
+                  %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
+                    %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
+                  %end;   
+                  %else %do;
+                    %if "&computebalance." = "Y" %then %do; ad sd %end;
+                  %end;
+                %end; 
+                ;
+        run;
 
-                /*Remove sex = M/O from type 4 tables*/
-
-                /*Remove N_PATIENTS if cohortdef = 01*/
-
-                keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper eoi_a eoi_b
-                    %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
-                    %if "&includecomp" = "Y" %then %do; ref_a ref_b
-                      %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                        %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
-                      %end;   
-                      %else %do;
-                        %if "&computebalance." = "Y" %then %do; ad sd %end;
-                      %end;
-                    %end; 
-                    ;
-            run;
-
-
-    
         /*Merge in agefmtsort to correctly update sortorder*/
+        proc sql noprint;
+            create table baseline_aggregatefinal as
+            select x.*, y.agegroupnum
+            from baseline_aggregatelabels as x
+            left join agefmtsort(where=(cohortgrp="&cohortgrp")) as y
+            on x.agegroup=y.agegroup;
+        quit;
 
+        data baseline_aggregatefinal;
+            set baseline_aggregatefinal;
+                if sortorder1 =3 then do;
+                    sortorder2 = agegroupnum;
+                end;
+            drop agegroup agegroupnum;
+        run;
 
-
+        /*Final sort*/;
+        proc sort data=baseline_aggregatefinal;
+            by table weight sortorder1 sortorder2;
+        run;
 
         ***********************************************************************************************;
         * Stack and save final table                   
@@ -848,8 +993,10 @@
 
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
-            delete baseline_aggregatetab: baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline;
+            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline _tempcohort;
         quit;
+
+        %symdel agestrat1;
 
     %end; /*loop through each baseline group*/
    

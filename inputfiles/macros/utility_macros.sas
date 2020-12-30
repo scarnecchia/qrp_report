@@ -48,9 +48,9 @@
 %macro create_comma_charlist(inlist=, outlist=);
   %global &outlist.;
 
-  %let countvars = %sysfunc(Countw(%quote(&inlist.)));
+  %let countvars = %sysfunc(Countw(%quote(&inlist.), ' '));
     %do c = 1 %to &countvars.;
-      %let word = %scan(%quote(&inlist),&c.);
+      %let word = %scan(%quote(&inlist),&c., ' ');
         %if &c. = 1 %then %do;
           %let &outlist. = "&word.";
         %end;
