@@ -960,7 +960,7 @@
             create table baseline_aggregatefinal as
             select x.*, y.agegroupnum
             from baseline_aggregatelabels as x
-            left join agefmtsort(where=(cohortgrp="&cohortgrp")) as y
+            left join agefmtsort(where=(cohortgrp="&cohortgrp" and runid="&runid.")) as y
             on x.agegroup=y.agegroup;
         quit;
 

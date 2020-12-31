@@ -45,8 +45,8 @@
 
     /* Age Format*/
     data _agefmt(keep=label_fmt)
-         agefmtsort(keep=var count cohortgrp rename=var=agegroup rename=count=agegroupnum);
-		set master_cohortfile (keep=agestrat cohortgrp);
+         agefmtsort(keep=var count cohortgrp runid rename=var=agegroup rename=count=agegroupnum);
+		set master_cohortfile (keep=agestrat cohortgrp runid);
 		if missing(agestrat) then agestrat ="00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+";
 		agestrat=upcase(agestrat);
 		format start end var $20.;
