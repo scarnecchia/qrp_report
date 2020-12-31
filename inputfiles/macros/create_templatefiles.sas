@@ -28,7 +28,7 @@
 ***************************************************************************************************;
 
 /*Define libname for location of templatefiles folder*/
-libname tempfl "";
+libname tempfl "U:\git\qrp_report\templatefiles";
 
 %macro create_templatefiles();
 
@@ -477,14 +477,14 @@ libname tempfl "";
 
         includeinreport = 'N';
         call missing(levelid3);
+        call missing(tablesubstrat);
 
         dataset = "t5episdur";
 		%do t = 2 %to 3;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    tablesubstrat= "cumepisodelength";
-			    levelnum =1;
+			    levelnum =2;
 			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 			      levelid1 = "";
 			      levelid2 = "cumepisodelength";
@@ -500,8 +500,7 @@ libname tempfl "";
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    tablesubstrat= "episodenum episodelength";
-			    levelnum =1;
+			    levelnum =2;
 			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 			      levelid1 = "episodenum";
 			      levelid2 = "episodenum episodelength";
@@ -519,8 +518,7 @@ libname tempfl "";
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    tablesubstrat= "daysupp";
-			    levelnum =1;
+			    levelnum =2;
 			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 			      levelid1 = "";
 			      levelid2 = "daysupp";
@@ -538,7 +536,6 @@ libname tempfl "";
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    tablesubstrat= "gaplength gapnum";
 			    levelnum =1;
 			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 			      levelid1 = "gaplength gapnum";
@@ -555,10 +552,9 @@ libname tempfl "";
 		dataset = "t5censor";
 		table = "T15";
 		tablesub= "overall";
-		tablesubstrat= "episodenum";
-		levelnum =1;
-		levelid1 = "episodenum";
-		levelid2 = "";
+		levelnum =2;
+		levelid1 = "";
+		levelid2 = "episodenum";
         output;
 
 		dataset = "t5first";
@@ -566,7 +562,6 @@ libname tempfl "";
              %do s = 1 %to &stratflevels.;
                 table = "F&f.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratfirst.), &s, '|')))";
-			    tablesubstrat= "mntsfromstart";
 			    levelnum =1;
 			    %if %sysfunc(left(%scan(%str(&stratfirst.), &s, '|'))) = overall %then %do;
 			      levelid1 = "mntsfromstart";
@@ -584,7 +579,6 @@ libname tempfl "";
 		%do f = 4 %to 5;
            table = "F&f.";
 		    tablesub= "overall";
-		    tablesubstrat= "episodenum episodelength";
 		    levelnum =1;
 		    levelid1 = "episodenum episodelength";
 		    levelid2 = "";
