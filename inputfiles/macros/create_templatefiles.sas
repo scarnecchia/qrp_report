@@ -113,7 +113,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 	/*t1censor & t2censor Tables*/
     %let stratacensor = agegroup| year| sex;
     %macro templatecensortablefigures(type,dsn,num);
-        data lookup_&type._censortablesfigures;
+        data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
             format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
 
@@ -165,7 +165,8 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         run;
     %mend templatecensortablefigures;
 	%templatecensortablefigures(1,t1censor,2);
-	%templatecensortablefigures(2,t2censor,3);
+	%templatecensortablefigures(2,t2followuptime,3);
+	%templatecensortablefigures(2,t2censor,2);
 
     /*Multiple Events Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
@@ -417,17 +418,18 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         /*t1tablefile*/
         data tempfl.t1tablefile;
             set lookup_t1cida
-                lookup_1_censortablesfigures(where=(substr(table,1,1)='T'));
+                lookup_t1censor(where=(substr(table,1,1)='T'));
         run;
         /*t1figurefile*/
         data tempfl.t1figurefile;
-            set lookup_1_censortablesfigures(drop=tablesubstrat where=(substr(table,1,1)='F'));
+            set lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
         run;
 
         /*t2l1tablefile*/
         data tempfl.t2l1tablefile;
             set lookup_t2cida
-                lookup_2_censortablesfigures(where=(substr(table,1,1)='T'))
+                lookup_t2followuptime(where=(substr(table,1,1)='T'))
+                lookup_t2censor(where=(substr(table,1,1)='T'))
                 lookup_t2conc
                 lookup_t2multevent
                 lookup_t2overlap;
@@ -435,7 +437,8 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 
         /*t2l1figurefile*/
         data tempfl.t2l1figurefile;
-            set lookup_2_censortablesfigures(drop=tablesubstrat where=(substr(table,1,1)='F'));
+            set lookup_t2followuptime(where=(substr(table,1,1)='F'))
+            lookup_t2censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
         run;
 
     *************************************
