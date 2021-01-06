@@ -893,6 +893,77 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         - ITSTableFile
         - ITSFigureFile
     *************************************;
+    %let stratLevel = overall|sex|agegroup|race|hispanic;
+    %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
+    %let intervallist = year|year month|quarter;
+
+	data lookup_its_tablefilefile;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+
+        includeinreport = 'N';
+        call missing(tablesubstrat);
+
+        dataset = "t2its";
+		%do t = 1 %to 3;
+            %do int = 1 %to 3;
+            %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =1;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "%sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
+			      levelid2 = "";
+                  levelid3 = "";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) %sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
+			      levelid2 = "";
+			      levelid3 = "";
+			    %end;
+                output;
+		     %end;
+             %end;
+		%end;
+
+        dataset = "t2itsprev";
+		%do t = 1 %to 3;
+            %do int = 1 %to 3;
+            %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =1;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "%sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
+			      levelid2 = "";
+                  levelid3 = "";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) %sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
+			      levelid2 = "";
+			      levelid3 = "";
+			    %end;
+                output;
+		     %end;
+             %end;
+		%end;
+
+        if table = 'T3' then table = 'F1';
+    run;
+	
+    /*Output ITS files*/
+        /*ITStablefile*/
+        data tempfl.ITStablefile;
+            set lookup_its_tablefilefile(where=(substr(table,1,1)='T'));
+        run;
+        /*ITSfigurefile*/
+        data tempfl.ITSfigurefile;
+            set lookup_its_tablefilefile(where=(substr(table,1,1)='F'));
+            drop tablesubstrat;
+            rename tablesub=figuresub;
+            rename table=figure;
+        run;
+
 
     /*Clean up*/
     proc datasets nowarn noprint;
