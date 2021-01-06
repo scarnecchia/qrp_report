@@ -605,6 +605,234 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         - T6TableFile
         - T6FigureFile
     *************************************;
+    %let stratLevel = overall|sex|agegroup|race|hispanic|sex agegroup|sex race|sex hispanic|agegroup race|agegroup hispanic;
+	%let stratfirst = overall|sex|agegroup|race|hispanic;
+    
+    %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
+    %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
+
+	data lookup_t6tablefigurefile;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+
+        includeinreport = 'N';
+        call missing(tablesubstrat);
+
+        dataset = "t6counts";
+		%do t = 1 %to 2;
+            %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =3;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "";
+			      levelid2 = "year";
+                  levelid3 = "month year";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) year";
+			      levelid3 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) month year";
+			    %end;
+                output;
+		     %end;
+		%end;
+
+        dataset = "t6trend";
+        table = "T3";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "year";
+		      levelid2 = "month year";
+              levelid3 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) year";
+		      levelid2 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) month year";
+		      levelid3 = "";
+		    %end;
+            output;
+	     %end;
+
+        dataset = "t6counts";
+        table = "T4";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =3;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "";
+		      levelid2 = "year";
+              levelid3 = "month year";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) year";
+		      levelid3 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) month year";
+		    %end;
+            output;
+	     %end;
+
+        dataset = "t6disp";
+        table = "T5";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "daysupp";
+		      levelid2 = "";
+              levelid3 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) daysupp";
+		      levelid2 = "";
+		      levelid3 = "";
+		    %end;
+            output;
+	     %end;
+
+        dataset = "t6episdur";
+        table = "T6";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "cumepisodelength";
+		      levelid2 = "";
+              levelid3 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) cumepisodelength";
+		      levelid2 = "";
+		      levelid3 = "";
+		    %end;
+            output;
+	     %end;
+
+        dataset = "t6uptake";
+        table = "T7";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "uptakedays";
+		      levelid2 = "";
+              levelid3 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) uptakedays";
+		      levelid2 = "";
+		      levelid3 = "";
+		    %end;
+            output;
+        %end;
+
+		dataset = "t6censor";
+		table = "T8";
+		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "episodelength";
+		levelid2 = "";
+        output;
+
+		dataset = "t6plota";
+		table = "T9";
+		tablesub= "overall";
+		levelnum =2;
+		levelid1 = "";
+		levelid2 = "ttswitch";
+        output;
+		dataset = "t6plotb";
+		table = "T10";
+		tablesub= "overall";
+		levelnum =2;
+		levelid1 = "";
+		levelid2 = "ttswitch";
+        output;
+
+        dataset = "T6switchepisdur";
+        table = "T11";
+        %do s = 1 %to &stratlevels.;
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "episodelength";
+		      levelid2 = "";
+              levelid3 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) episodelength";
+		      levelid2 = "";
+		      levelid3 = "";
+		    %end;
+            output;
+        %end;
+
+		%do t = 12 %to 15;
+            %if %eval(&t.=12) | %eval(&t.=14) %then %do; dataset = "t6plota"; %end;
+            %if %eval(&t.=13) | %eval(&t.=15) %then %do; dataset = "t6plotb"; %end;
+            %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "";
+			      levelid2 = "ttswitch";
+                  levelid3 = "";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) ttswitch";
+			      levelid3 = "";
+			    %end;
+                output;
+		     %end;
+		%end;
+
+        dataset = "t6counts";
+		%do f = 1 %to 3;
+            %do s = 1 %to &stratlevels.;
+                table = "F&f.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =3;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "";
+			      levelid2 = "year";
+                  levelid3 = "month year";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) year";
+			      levelid3 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) month year";
+			    %end;
+                output;
+		     %end;
+		%end;
+    
+        %do f = 4 %to 7;
+            %if %eval(&f.=4) | %eval(&f.=6) %then %do; dataset = "t6plota"; %end;
+            %if %eval(&f.=5) | %eval(&f.=7) %then %do; dataset = "t6plotb"; %end;
+            table = "F&f.";
+		    tablesub= "overall";
+		    levelnum =2;
+		    levelid1 = "";
+		    levelid2 = "ttswitch";
+            levelid3 = "";
+			output;
+		%end;
+
+    run;
+	
+    /*Output T6 files*/
+        /*t6tablefile*/
+        data tempfl.t6tablefile;
+            set lookup_t6tablefigurefile(where=(substr(table,1,1)='T'));
+        run;
+        /*t6figurefile*/
+        data tempfl.t6figurefile;
+            set lookup_t6tablefigurefile(where=(substr(table,1,1)='F'));
+        run;
    
     *************************************
      REPORTTYPE = ITS files:
