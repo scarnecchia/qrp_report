@@ -483,7 +483,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         call missing(tablesubstrat);
 
         dataset = "t5episdur";
-		%do t = 2 %to 3;
+		%do t = 1 %to 2;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -499,7 +499,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
                 output;
 		     %end;
 		%end;
-		%do t = 4 %to 9;
+		%do t = 3 %to 8;
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -517,7 +517,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 		  %end;
 
 		dataset = "t5disp";
-		%do t = 10 %to 11;
+		%do t = 9 %to 10;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -535,7 +535,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 		%end;
 
 		dataset = "t5gaps";
-		%do t = 12 %to 14;
+		%do t = 11 %to 13;
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -553,7 +553,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 		%end;
 
 		dataset = "t5censor";
-		table = "T15";
+		table = "T14";
 		tablesub= "overall";
 		levelnum =2;
 		levelid1 = "";
@@ -605,8 +605,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         - T6TableFile
         - T6FigureFile
     *************************************;
-
-
+   
     *************************************
      REPORTTYPE = ITS files:
         - ITSTableFile
