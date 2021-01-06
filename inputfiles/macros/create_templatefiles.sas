@@ -418,11 +418,13 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         /*t1tablefile*/
         data tempfl.t1tablefile;
             set lookup_t1cida
-                lookup_t1censor(where=(substr(table,1,1)='T'));
+                lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='T'));
         run;
         /*t1figurefile*/
         data tempfl.t1figurefile;
             set lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
+            rename tablesub=figuresub;
+            rename table=figure;
         run;
 
         /*t2l1tablefile*/
@@ -437,20 +439,70 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 
         /*t2l1figurefile*/
         data tempfl.t2l1figurefile;
-            set lookup_t2followuptime(where=(substr(table,1,1)='F'))
+            set lookup_t2followuptime(drop=tablesubstrat where=(substr(table,1,1)='F'))
             lookup_t2censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
+            rename tablesub=figuresub;
+            rename table=figure;
         run;
 
     *************************************
      REPORTTYPE = T2L2 file:
         - T2L2FigureFile
     *************************************;
+    data tempfl.t2l2figurefile;
+        retain figure dataset figuresub levelnum levelid1 levelid2 levelid3 includeinreport;
+        format figure $5. dataset $15. figuresub $25. levelid1 levelid2 levelid3 $55.;
+        call missing(dataset, levelid1, levelid2, levelid3);
+        levelnum = 0;
+        includeinreport = 'N';
 
+        /*PS Histograms*/
+        figure = 'F1';
+        figuresub = 'overall';
+        output;
+
+        /*Forest Plots*/
+        figure = 'F2';
+        figuresub = 'overall';
+        output;
+
+        /*Unadjusted KM Curve*/
+        figure = 'F3';
+        figuresub = 'overall';
+        output;
+
+        /*Conditional KM Curve*/
+        figure = 'F4';
+        figuresub = 'overall';
+        output;
+
+        /*Unconditional KM Curve*/
+        figure = 'F5';
+        figuresub = 'overall';
+        output;
+    run;
 
     *************************************
      REPORTTYPE = T4L2 file:
         - T4L2FigureFile
     *************************************;
+    data tempfl.t4l2figurefile;
+        retain figure dataset figuresub levelnum levelid1 levelid2 levelid3 includeinreport;
+        format figure $5. dataset $15. figuresub $25. levelid1 levelid2 levelid3 $55.;
+        call missing(dataset, levelid1, levelid2, levelid3);
+        levelnum = 0;
+        includeinreport = 'N';
+
+        /*PS Histograms*/
+        figure = 'F1';
+        figuresub = 'overall';
+        output;
+
+        /*Forest Plots*/
+        figure = 'F2';
+        figuresub = 'overall';
+        output;
+    run;
 
     *************************************
      REPORTTYPE = T4L1 file:
@@ -464,10 +516,6 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         - T5TableFile
         - T5FigureFile
     *************************************;
-
-	/***************************************************************************************************************************
-	  T5episdur, T5disp, T5gaps, T5first, T5censor
-	 ***************************************************************************************************************************/
 	%let stratLevel = overall|sex|agegroup|race|hispanic|sex agegroup|sex race|sex hispanic|agegroup race|agegroup hispanic;
 	%let stratfirst = overall|sex|agegroup|race|hispanic;
     
@@ -597,6 +645,9 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         /*t5figurefile*/
         data tempfl.t5figurefile;
             set lookup_t5tablefigurefile(where=(substr(table,1,1)='F'));
+            drop tablesubstrat;
+            rename tablesub=figuresub;
+            rename table=figure;
         run;
 
    
@@ -832,6 +883,9 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         /*t6figurefile*/
         data tempfl.t6figurefile;
             set lookup_t6tablefigurefile(where=(substr(table,1,1)='F'));
+            drop tablesubstrat;
+            rename tablesub=figuresub;
+            rename table=figure;
         run;
    
     *************************************
