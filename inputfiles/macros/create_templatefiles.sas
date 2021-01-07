@@ -508,8 +508,57 @@ libname tempfl "U:\git\qrp_report\templatefiles";
      REPORTTYPE = T4L1 file:
         - T4L1TableFile
     *************************************;
+    %let stratLevel = overall;
+    %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
 
+    data tempfl.t4l1tablefile;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
 
+        includeinreport = 'N';
+        call missing(levelid2);
+        call missing(levelid3);
+
+        dataset = "t4preg";
+        %do p = 1 %to 2;
+        %if %eval(&p.=1) %then %do; tablesubstrat = 't4preg'; %end;
+        %if %eval(&p.=2) %then %do; tablesubstrat = 't4nopreg'; %end;
+        %do s = 1 %to &stratlevels.;
+            table = "T1";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "moiname";
+		      levelid2 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "moiname %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    %end;
+            output;
+	     %end;
+         %end;
+          
+        dataset = "t4preggestwk";
+        %do p = 1 %to 2;
+        %if %eval(&p.=1) %then %do; tablesubstrat = 't4preg'; %end;
+        %if %eval(&p.=2) %then %do; tablesubstrat = 't4nopreg'; %end;
+        %do s = 1 %to &stratlevels.;
+            table = "T2";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =1;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "gestwk";
+		      levelid2 = "";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "gestwk %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    %end;
+            output;
+	     %end;
+         %end;
+    run;
 
     *************************************
      REPORTTYPE = T5 files:
@@ -947,8 +996,6 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 		     %end;
              %end;
 		%end;
-
-        if table = 'T3' then table = 'F1';
     run;
 	
     /*Output ITS files*/
@@ -958,7 +1005,8 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         run;
         /*ITSfigurefile*/
         data tempfl.ITSfigurefile;
-            set lookup_its_tablefilefile(where=(substr(table,1,1)='F'));
+            set lookup_its_tablefilefile(where=(table='T1'));
+            table = 'F1';
             drop tablesubstrat;
             rename tablesub=figuresub;
             rename table=figure;
