@@ -946,7 +946,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
     %let intervallist = year|year month|quarter;
 
-	data lookup_its_tablefilefile;
+	data lookup_its_tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
 
@@ -1001,11 +1001,11 @@ libname tempfl "U:\git\qrp_report\templatefiles";
     /*Output ITS files*/
         /*ITStablefile*/
         data tempfl.ITStablefile;
-            set lookup_its_tablefilefile(where=(substr(table,1,1)='T'));
+            set lookup_its_tablefigurefile(where=(substr(table,1,1)='T'));
         run;
         /*ITSfigurefile*/
         data tempfl.ITSfigurefile;
-            set lookup_its_tablefilefile(where=(table='T1'));
+            set lookup_its_tablefigurefile(where=(table='T1'));
             table = 'F1';
             drop tablesubstrat;
             rename tablesub=figuresub;
