@@ -275,7 +275,9 @@
 	 ;
      format runid $6.;
         %do n = 1 %to &numrunid.;
+            if n&n. then do;
 	 		runid = "&&id&n.";
+            end;
         %end;
 	 run;
 	 
