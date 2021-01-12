@@ -726,7 +726,7 @@
                 if a;
             %end;
             %else %do;
-                set baseline_aggregatefinal;
+                set baseline_aggregate_prelabel;
                 length covarlabel $&baselinelabellength;
                 call missing(covarlabel);
             %end;
