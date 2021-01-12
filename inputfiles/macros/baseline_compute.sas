@@ -738,7 +738,7 @@
             %assignbaselinevars(label="Number of unique patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
-            %assignbaselinevars(label="Number of unique episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
+            %assignbaselinevars(label="Number of episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
             %assignbaselinevars(label="Number of weighted patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=3);
