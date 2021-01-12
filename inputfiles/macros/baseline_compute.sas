@@ -830,7 +830,6 @@
             /* Type 4 - Pregnancy Characteristics and Exposure Characteristics */
             /*******************************************************************/
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
-            %if %length(&pregnancychar.) >0 %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
                     %assignbaselinevars(label="Preterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
@@ -848,8 +847,6 @@
                     %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
                     end;
                 end; 
-            %end;
-            %if %length(&exposurechar.) >0 %then %do;
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
                     %assignbaselinevars(label="Mean gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=1);
@@ -879,7 +876,6 @@
                     %assignbaselinevars(label="Exposed during user-defined pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=9);
                     end;
                 end;
-            %end;
             %end;
 
             /*********************************************************************************************/
