@@ -148,9 +148,9 @@
         run;
     %end;
 
-    /*T6: cohort is 'switchepisodes' and mergevar = 'analysisgrp'*/
+    /*T6: cohort is 'switch' and mergevar = 'analysisgrp'*/
     %else %if %str("&reporttype") = %str("T6") %then %do;
-/*        %assign_cohort_mergevar(cohort=switchepisodes, mergevar=analysisgrp, outdata=baselinefile);*/
+        %assign_cohort_mergevar(cohort=switch, mergevar=analysisgrp, outdata=baselinefile);
     %end;
 
     /*Determine number of unique group/analysisgrp baseline tables*/
