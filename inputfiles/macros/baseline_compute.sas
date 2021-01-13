@@ -63,7 +63,7 @@
             if _n_ = 1 then do;
                 call symputx('analysisgrp', analysisgrp);
                 call symputx('runid', runid);
-                if upcase(covarsort) not in ('A','O','C') then covarsort = 'A'; /*set A as default*/
+                if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
                 call symputx('cohort', cohort);
                 /*computebalance defaults to Y for L2 tables*/
