@@ -63,6 +63,7 @@
             if _n_ = 1 then do;
                 call symputx('analysisgrp', analysisgrp);
                 call symputx('runid', runid);
+                if upcase(covarsort) not in ('A','O','C') then covarsort = 'A'; /*set A as default*/
                 call symputx('covarsort', upcase(covarsort));
                 call symputx('cohort', cohort);
                 /*computebalance defaults to Y for L2 tables*/
@@ -661,6 +662,8 @@
         %baseline_expand_parameters(var =exposurechar);
         %end;
 
+        %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
+
         ***********************************************************************************************;
         * Derive labels for covariates              
         ***********************************************************************************************;
@@ -930,8 +933,9 @@
                     %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=substr(metvar,6));
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
+                    length covarorderlist $&covarlistlength.;
                     covarorderlist = compress(tranwrd(resolve('&healthchar.,&medproduse.,&UtilizationIntensity'), '"', ""));                     
-                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(metvar), ',','e'));
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(metvar), ',','e'));
                     %end;
                 end;
             end;
