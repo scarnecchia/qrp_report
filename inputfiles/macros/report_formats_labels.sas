@@ -74,8 +74,8 @@
 				same=1;
 			end;
 			*remove leading zeros;
-			if start in: ("0") then start=substr(start,2);
-			if end   in: ("0") then end=substr(end,2);
+			if start in: ("0") and start ne 0 then start=substr(start,2);
+			if end   in: ("0") and end ne 0 then end=substr(end,2);
 			if end="High" then do;
 			 *if missing period = years;
 				if index(start,"M")=0 AND index(start,"W")=0 AND index(start,"Y")=0 AND index(start,"Q")=0
