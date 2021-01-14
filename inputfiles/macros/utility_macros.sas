@@ -10,6 +10,7 @@
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: This program includes the following macros:
 *   - %isdata() macro determines whether a dataset is empty or not
+*   - %create_comma_charlist() macro converst space delimited list to comma delimited list with quotes
 *
 *  Program inputs:                                                                                   
 *   -
@@ -41,3 +42,21 @@
     %end;   
 %PUT &NOBS.;
 %MEND ISDATA;
+
+
+*Macro for converting macro variable with space deliminated list to comma deliminated list with quotation around each word;
+%macro create_comma_charlist(inlist=, outlist=);
+  %global &outlist.;
+
+  %let countvars = %sysfunc(Countw(%quote(&inlist.), ' '));
+    %do c = 1 %to &countvars.;
+      %let word = %scan(%quote(&inlist),&c., ' ');
+        %if &c. = 1 %then %do;
+          %let &outlist. = "&word.";
+        %end;
+        %else %do;
+          %let &outlist. = &&&outlist. , "&word.";
+        %end;
+    %end;
+  %let &outlist = %upcase(&&&outlist);
+%mend create_comma_charlist;
