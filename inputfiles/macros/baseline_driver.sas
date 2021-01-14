@@ -186,7 +186,7 @@
         * Reformat L1 tables to mimic L2 format                             
         ***********************************************************************************************;
 
-        %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1|T6/i,&reporttype.)) > 0 %then %do;
 
             %macro reformatL1baseline();
                 /*split std metrics out so they can be remerged as separate column*/

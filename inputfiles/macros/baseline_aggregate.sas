@@ -124,11 +124,11 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by analysisgrp group1 runid order cohort;
+            by analysisgrp group1 runid order cohort switchstep;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort;
+            by analysisgrp group1 runid order cohort switchstep;
 		run;
 
         proc datasets library=WORK nowarn nolist;

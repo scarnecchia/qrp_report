@@ -240,6 +240,9 @@
         %else %if %str("&reporttype") = %str("T5") %then %do;
             %let cohortdef = 04;
         %end;
+		%else %if %str("&reporttype") = %str("T6") %then %do;
+            %let cohortdef = 02;
+        %end;
 
 
         ***********************************************************************************************
@@ -650,6 +653,7 @@
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
         run;
+		
 
         ***********************************************************************************************;
         * Execute %baseline_expand_parameters()              
