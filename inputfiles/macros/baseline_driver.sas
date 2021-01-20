@@ -228,7 +228,6 @@
 
                 /*loop through each ORDER value to build new table*/
                 %do b = 1 %to %eval(&numbaselinetablegrp.);
-
                     data _null_;
                         set baselinefile(where=(order=&b.));
                         if _n_ = 1 then do;
@@ -263,7 +262,7 @@
                         end;
                     run;
 
-                    /*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
+					/*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
                     data _temp_totalcounts&b.;
                         merge /*EOI*/
                             _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('N_EPISODES') &group1where.)
@@ -458,7 +457,9 @@
         ***********************************************************************************************;
         * Compute Aggregate metrics and format DP metrics                       
         ***********************************************************************************************;
-
+data output.alldptable1_&periodid.;
+ set alldptable1_&periodid.;
+ run;
         %baseline_compute(datain=alldptable1_&periodid.,
                           dataout=table1_&periodid.,
                           reporttype =&reporttype.,
@@ -466,8 +467,10 @@
                           num_dp = &num_dp.,
                           stratifybydp = &stratifybydp.,
                           periodid = &periodid.);
-
-        data output.table1; set table1_1; run;
+data output.table1_&periodid.;
+ set table1_&periodid.;
+ run;
+        
 
     %end; /*loop through periodid*/
 

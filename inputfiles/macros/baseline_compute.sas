@@ -129,7 +129,7 @@
 
         %let cohortgrp = ;
         /*L1*/
-        %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T5|T6/i,&reporttype.)) > 0 %then %do;
             %let cohortgrp = &analysisgrp.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
@@ -202,7 +202,8 @@
         %end;
 
         /*Extract agegroup, sex, race, and hispanic requirements*/
-        data _tempcohort;
+
+       data _tempcohort;
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
             if missing(agestrat) then call symputx("agestrat", "00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+");
             else call symputx("agestrat", upcase(agestrat));
@@ -312,7 +313,9 @@
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
         %macro baselinecomputemetrics(table=, weight=, dataout=);
-
+data output.&datain._&table.;
+set &datain.;
+run;
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
                 data _null_; 
@@ -337,7 +340,7 @@
                 %put total number of adjusted group2 patients for order=&b.:  &total_adjusted_comp_patients.;
             %end;
 
-            data &dataout.;
+            data &dataout.; /*jolene may have to transpose this dataset before or after */ 
                 length metvar $30;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 

@@ -124,12 +124,27 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by analysisgrp group1 runid order cohort switchstep;
+            by analysisgrp group1 runid order cohort 
+			   %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+               %end;;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort switchstep;
+            by analysisgrp group1 runid order cohort  ; 
 		run;
+
+		%if %str("&reporttype") = %str("T6") %then %do;
+         data _temp_baseline_transposed (drop = col2 col3);
+           set _temp_baseline_transposed;
+		   switchstep_0 = col1;
+           switchstep_1 = col2;
+           switchstep_2 = col3;
+           step0 = col1;
+		   step1 = ((col2 - col1)/(col1))*100;
+		   step2 = ((col3 - col2)/(col2))*100;
+		 run;
+        %end;
 
         proc datasets library=WORK nowarn nolist;
             modify _temp_baseline_transposed;  
