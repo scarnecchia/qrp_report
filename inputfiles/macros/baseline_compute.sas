@@ -338,7 +338,7 @@
                 %put total number of adjusted group2 patients for order=&b.:  &total_adjusted_comp_patients.;
             %end;
 
-            data &dataout.; /*jolene may have to transpose this dataset before or after */ 
+            data &dataout.; 
                 length metvar $30;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
