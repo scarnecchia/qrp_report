@@ -70,7 +70,7 @@
           &array.[i] = substrn(&in.,p,l);
     end;
     call sortc(of &array.[*]);
-    length &out. $50;
+    length &out. $100;
     &out. = catx(' ',of &array.[*]);
     drop i p l &in.;
 %mend;

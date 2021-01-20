@@ -69,6 +69,10 @@
     %let look_start = 1;
     %let look_end = 1;
 
+    /*tablefile and figurefile variables*/
+    %global datasetlist;
+    %let datasetlist = ;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
