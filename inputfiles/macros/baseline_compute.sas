@@ -313,9 +313,7 @@
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
         %macro baselinecomputemetrics(table=, weight=, dataout=);
-data output.&datain._&table.;
-set &datain.;
-run;
+
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
                 data _null_; 
