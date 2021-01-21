@@ -135,7 +135,9 @@
         proc sql noprint;
             select dp into: random_dplist separated by ' '
             from output.dpinfo;
-        quit;
+			select maskedID into: masked_dpid_list separated by ' '
+            from output.dpinfo;
+		quit;
     %end;
 	
 /***************************************************************************************************
@@ -186,6 +188,34 @@
         left join _qrp_parameters_trans as b
            on a.runid = b.col1;
      quit;
+
+	/*Identify groups for each runID*/
+	%if %sysfunc(exist(input.&groupsfile. )) = 0 %then %do;
+		%put WARNING: GroupsFile does not exist. Confirm file and path are specified correctly;
+		%abort;
+	%end;
+
+	data &groupsfile.;
+		set input.&groupsfile.;
+		runid = lowcase(runid);
+		group = lowcase(group);
+	run;
+
+	 %do n = 1 %to &numrunid.;
+		%global numgroups_&n. grouplist_&n.;
+         %let runid = %scan(&runidlist., &n.);
+     		proc sql noprint;
+            /*RUNID specific list of groups*/
+            select group into: grouplist_&n. separated by ' ' 
+            from &groupsfile.
+            where runid = "&runid.";
+            /*RUNID specific number of groups*/
+            select count(*) into: numgroups_&n.
+            from &groupsfile.
+            where runid = "&runid.";
+			quit;
+			%put &&numgroups_&n..;
+     %end;
 
      /* Identify run specific parameters and values to store as macro variables*/
 	 %do n = 1 %to &numrunid.;
