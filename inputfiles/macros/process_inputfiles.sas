@@ -494,7 +494,7 @@
                 %else %do;
                     /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
                     proc sql noprint;
-                        select distinct strip(dataset) into: tdatasetlist separated by ' '
+                        select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
                         from tablefile(where=(missing(dataset)=0))
                     quit;
                     %let datasetlist = &tdatasetlist.;
@@ -614,7 +614,7 @@
                 %else %do;
                     /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
                     proc sql noprint;
-                        select distinct strip(dataset) into: fdatasetlist separated by ' '
+                        select distinct strip(lowcase(dataset)) into: fdatasetlist separated by ' '
                         from figurefile(where=(missing(dataset)=0))
                     quit;
                     %let datasetlist = &datasetlist. &fdatasetlist.;
