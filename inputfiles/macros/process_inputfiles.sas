@@ -287,6 +287,7 @@
 
      /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
      %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
             data _tempuserstrata(rename=levelvars_out=levelvars);
