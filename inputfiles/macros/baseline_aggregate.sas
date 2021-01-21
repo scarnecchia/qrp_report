@@ -135,15 +135,21 @@
 		run;
 
 		%if %str("&reporttype") = %str("T6") %then %do;
-         data _temp_baseline_transposed (drop = col2 col3);
+		
+		 proc contents data = _temp_baseline_transposed out = name noprint;
+		 quit;
+		 proc sql noprint;
+		  select distinct name into: col_list separated by " " from name
+          where name like "COL%";
+		 quit;
+
+         data _temp_baseline_transposed;
            set _temp_baseline_transposed;
-		   switchstep_0 = col1;
-           switchstep_1 = col2;
-           switchstep_2 = col3;
-           step0 = col1;
-		   step1 = ((col2 - col1)/(col1))*100;
-		   step2 = ((col3 - col2)/(col2))*100;
+		   %do col_l = 1 %to %sysfunc(countw(&col_list));
+		     switchstep_%eval(&col_l -1) = col&col_l;
+		   %end;
 		 run;
+
         %end;
 
         proc datasets library=WORK nowarn nolist;

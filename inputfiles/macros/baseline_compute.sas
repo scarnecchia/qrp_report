@@ -129,7 +129,7 @@
 
         %let cohortgrp = ;
         /*L1*/
-        %if %sysfunc(prxmatch(m/T1|T5|T6/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
             %let cohortgrp = &analysisgrp.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
@@ -200,6 +200,15 @@
                 run;
             %end;
         %end;
+		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+            data _null_;
+			
+			  set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
+                call symputx('cohortgrp', strip(group))
+		    ;
+            
+            run;
+        %end;
 
         /*Extract agegroup, sex, race, and hispanic requirements*/
 
@@ -242,7 +251,10 @@
             %let cohortdef = 04;
         %end;
 		%else %if %str("&reporttype") = %str("T6") %then %do;
-            %let cohortdef = 02;
+            data _null_;
+              set infolder.&&&runid._treatmentpathways (where=(analysisgrp="&analysisgrp."));
+              call symputx('cohortdef', strip(switchcohortdef));
+            run;
         %end;
 
 
