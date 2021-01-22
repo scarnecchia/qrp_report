@@ -76,8 +76,7 @@
 		    %let runid = %scan(&runidlist, &n); 
 
 				   %if %sysfunc(exist(&DPID..&&runid._&infile))=0 %then %do;
-					   %put WARNING: &&runid._&infile does not exist for &DPID.. Please confirm correct DPID and path location specified. Program will abort;
-					   %abort; 
+					   %put NOTE: &&runid._&infile does not exist for &DPID..;
 				   %end;
 				   %else %do;
 					   data temp_&dps.; 
