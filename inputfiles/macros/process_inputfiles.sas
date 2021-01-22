@@ -652,7 +652,7 @@
         %do n = 1 %to &numrunid.;
             %let runid = %scan(&runidlist., &n.);
             data pscs_masterinputs;
-                set pscs_masterinputs
+                set pscs_masterinputs(in=x)
                 %if %str("&&&runid._psmatchfile") ne %str("") %then %do;
                     infolder.&&&runid._psmatchfile(in=a)
                 %end;
@@ -679,7 +679,9 @@
                 if d then file = 'iptwfile';
                 %end;
 
+                if not x then do;
                 runid = "&runid.";
+                end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp ceiling caliper ratio strataweight
