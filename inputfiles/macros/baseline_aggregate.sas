@@ -131,26 +131,12 @@
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort  ; 
+            by analysisgrp group1 runid order cohort 
+            %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+            %end;; 
 		run;
 
-		%if %str("&reporttype") = %str("T6") %then %do;
-		
-		 proc contents data = _temp_baseline_transposed out = name noprint;
-		 quit;
-		 proc sql noprint;
-		  select distinct name into: col_list separated by " " from name
-          where name like "COL%";
-		 quit;
-
-         data _temp_baseline_transposed;
-           set _temp_baseline_transposed;
-		   %do col_l = 1 %to %sysfunc(countw(&col_list));
-		     switchstep_%eval(&col_l -1) = col&col_l;
-		   %end;
-		 run;
-
-        %end;
 
         proc datasets library=WORK nowarn nolist;
             modify _temp_baseline_transposed;  
