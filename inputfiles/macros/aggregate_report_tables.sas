@@ -5,7 +5,6 @@
 * PROGRAM: aggregate_report_tables.sas  
 *
 * Created (mm/dd/yyyy): 01/20/2021
-* Version: 1.1
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: The macro imports and aggregates the following tables relevant to report:
@@ -80,6 +79,7 @@
 				   %end;
 				   %else %do;
 					   data temp_&dps.; 
+					      length runid $5.;
 						  set &DPID..&&runid._&infile; 
 						  where lowcase(&name.) in (&&grouplist_&n..); 
 						  &name.=lowcase(&name.);
