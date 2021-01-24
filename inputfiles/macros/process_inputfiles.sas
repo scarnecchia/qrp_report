@@ -354,14 +354,22 @@
             by _all_;
         run;
 
-        *Abort if there are duplicate tableid/levelid values;
+        *Abort if there are duplicate tableid/levelid values and tableid/levelvars values;
         proc sort data=userstrata nodupkey dupout=_userstratadups;
             by tableid levelid;
         run;
-
         %isdata(dataset=_userstratadups);
         %if %eval(&nobs.>0) %then %do;
             %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelid combinations.;
+            %put The reporting code will abort;
+            %abort;
+        %end;
+        proc sort data=userstrata nodupkey dupout=_userstratadups;
+            by tableid levelvars;
+        run;
+        %isdata(dataset=_userstratadups);
+        %if %eval(&nobs.>0) %then %do;
+            %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelvars combinations.;
             %put The reporting code will abort;
             %abort;
         %end;
