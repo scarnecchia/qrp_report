@@ -240,10 +240,7 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid order table group1 group2 weight vartype metvar 
-              %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-              %end;;                 
+            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
