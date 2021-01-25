@@ -354,10 +354,10 @@
                                %end;
                         from _temp_mean_count&b. as x
                         left join _temp_std(where=(order=&b. &group1where.)) as y
-                        on x.metvar = y.metvar
+                        on x.metvar = y.metvar and x.switchstep = y.switchstep
                         %if &createcompcolumns = Y %then %do;
                         left join _temp_std(where=(order=&b. &group2where.)) as z
-                        on x.metvar = z.metvar
+                        on x.metvar = z.metvar and x.switchstep = z.switchstep
                         %end;
                         ;
                     quit;
