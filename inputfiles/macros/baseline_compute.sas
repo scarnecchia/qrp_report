@@ -478,10 +478,19 @@
                             %end;
                         %end;
                         %else %do; /*L2 only*/
+						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do; /*jolene*/
+						    %let switch_b = %eval(&switch_count.-1);
+                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_&switch_b._exp_episodes.;
+                            %if "&includecomp" = "Y" %then %do;
+                            if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&&&total_&switch_b._comp_episodes.;
+							%end;
+						  %end;
+						  %else %do;
                             if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
                             %if "&includecomp" = "Y" %then %do;
                             if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&total_unadjusted_comp_episodes.;
                             %end;
+						  %end;
                         %end;
                     end;
                     else do;
@@ -665,7 +674,18 @@
         %if %str("&reporttype") = %str("T6") %then %do;
            %let switch_count = 0;
 		%end;
-		%baseline_create;
+		%let total_unadjusted_exp_episodes = 0;
+        %let total_unadjusted_exp_patients = 0;
+        %let total_unadjusted_comp_episodes = 0;
+        %let total_unadjusted_comp_patients = 0;
+		%do num_d = 1 %to &num_dp;
+		  %let n_adjusted_episodes_exp&num_d. = 0; 
+		  %let n_adjusted_episodes_comp&num_d. = 0;
+		  %let n_unadjusted_episodes_exp&num_d. = 0; 
+		  %let n_unadjusted_episodes_comp&num_d. = 0;
+        %end;
+
+        %baseline_create;
         /*All - unweighted*/
         %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
 
@@ -701,6 +721,13 @@
 
           %do switch_count = 1 %to &switch_counter;
 		    %baseline_create;
+			%let total_&switch_count._exp_episodes = 0;
+            %let total_&switch_count._exp_patients = 0;
+			%do num_d = 1 %to &num_dp;
+		      %let n_&switch_count._episodes_exp&num_d. = 0; 
+		      %let n_&switch_count._episodes_comp&num_d. = 0;
+            %end;
+
 		    %baselinecomputemetrics(table=&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
           %end;
         %end;
