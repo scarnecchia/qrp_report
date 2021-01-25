@@ -10,7 +10,8 @@
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: This program includes the following macros:
 *   - %isdata() macro determines whether a dataset is empty or not
-*   - %create_comma_charlist() macro converst space delimited list to comma delimited list with quotes
+*   - %create_comma_charlist() macro converts space delimited list to comma delimited list with quotes
+*   - %alphabetizevarutil() macro alphabetizes variables in a data step
 *
 *  Program inputs:                                                                                   
 *   -
@@ -43,7 +44,6 @@
 %PUT &NOBS.;
 %MEND ISDATA;
 
-
 *Macro for converting macro variable with space deliminated list to comma deliminated list with quotation around each word;
 %macro create_comma_charlist(inlist=, outlist=);
   %global &outlist.;
@@ -60,3 +60,17 @@
     %end;
   %let &outlist = %upcase(&&&outlist);
 %mend create_comma_charlist;
+
+*Macro to alphabetize variables in a data step;
+%macro alphabetizevarutil(array=, in=, out=);
+    array &array.[10] $50 _temporary_;
+      call missing(of &array.[*]);
+       do i = 1 to dim(&array.) until(p eq 0);
+        call scan(&in.,i,p,l);
+          &array.[i] = substrn(&in.,p,l);
+    end;
+    call sortc(of &array.[*]);
+    length &out. $100;
+    &out. = catx(' ',of &array.[*]);
+    drop i p l &in.;
+%mend;
