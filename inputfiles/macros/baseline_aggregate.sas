@@ -145,7 +145,10 @@
         quit;
 
         proc sort data=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort metvar ;
+            by analysisgrp group1 runid order cohort metvar 
+              %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+            %end;;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -158,7 +161,10 @@
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
-                by analysisgrp group1 runid order cohort metvar;
+                by analysisgrp group1 runid order cohort metvar
+                   %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+            %end;;
             run;
         %end;
 
@@ -234,7 +240,10 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
+            by analysisgrp runid order table group1 group2 weight vartype metvar 
+              %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+              %end;;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -247,7 +256,10 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid order table group1 group2 weight vartype metvar; 
+                by analysisgrp runid order table group1 group2 weight vartype metvar 
+                %if %str("&reporttype") = %str("T6") %then %do;
+                 switchstep
+                %end;; 
             run;
         %end;
 			
