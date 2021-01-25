@@ -397,7 +397,10 @@
 
             /*if reporttype = T4L1, replace dataset if tablesubstrat = t4nopreg*/
             %if %str("&reporttype") = %str("T4L1") %then %do;
-                if tablesubstrat = 't4nopreg' then dataset = 't4nopreg';
+                if tablesubstrat = 't4nopreg' then do;
+                    if dataset = 't4preg' then dataset = 't4nopreg';
+                    if dataset = 't4preggestwk' then dataset = 't4nopreggestwk';
+                end;
             %end;
 
         	/*Add column to hold table title stratification value - prior to reorder of variables*/
