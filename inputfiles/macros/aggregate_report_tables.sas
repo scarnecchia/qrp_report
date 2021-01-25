@@ -3,7 +3,6 @@
 ****************************************************************************************************
 *
 * PROGRAM: aggregate_report_tables.sas  
-*
 * Created (mm/dd/yyyy): 01/20/2021
 *
 *--------------------------------------------------------------------------------------------------
@@ -59,56 +58,54 @@
 *
 ***************************************************************************************************;
 
-
 %macro aggregate_report_tables();
-
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-		%macro agg_report(infile=, outfile=, name=);
-		
-		proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
+        %macro agg_report(infile=, outfile=, name=);
+
+            proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
-		*loop through DPs;
-	      %do dps = 1 %to %eval(&num_dp.); 
-			%let DPID = %scan(&random_dplist,&dps); 
-			%let maskedID = %scan(&masked_dplist,&dps); 
+    		*loop through DPs;
+    	    %do dps = 1 %to %eval(&num_dp.); 
+    			%let DPID = %scan(&random_dplist,&dps); 
+    			%let maskedID = %scan(&masked_dplist,&dps); 
 
-	 		%do n = 1 %to &numrunid.;
-		    %let runid = %scan(&runidlist, &n); 
+    	 		%do n = 1 %to &numrunid.;
+    		    %let runid = %scan(&runidlist, &n); 
 
-				   %if %sysfunc(exist(&DPID..&&runid._&infile))=0 %then %do;
-					   %put NOTE: (Sentinel) &&runid._&infile does not exist for &DPID..;
-				   %end;
-				   %else %do;
-					   data temp_&dps.; 
-					      length runid $5.;
-						  set &DPID..&&runid._&infile; 
-						  where lowcase(&name.) in (&&grouplist_&n..); 
-						  &name.=lowcase(&name.);
-						  dpidsiteid = "&maskedID";
-						  runid= "&runid.";
-						    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
-						      if gapnum = 999 then delete;
-						    %end;				   
-						  run;
+    			   %if %sysfunc(exist(&DPID..&&runid._&infile))=0 %then %do;
+    				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &DPID..;
+    			   %end;
+    			   %else %do;
+    				   data temp_&dps.; 
+    				      length runid $5.;
+    					  set &DPID..&&runid._&infile; 
+    					  where lowcase(&name.) in (&&grouplist_&n..); 
+    					  &name.=lowcase(&name.);
+    					  dpidsiteid = "&maskedID";
+    					  runid= "&runid.";
+    					    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
+    					      if gapnum = 999 then delete;
+    					    %end;				   
+    					run;
 
-					   *warning if no rows selected after applying the where clause;
-					    %isdata(dataset=temp_&dps.);
-					    %if %eval(&nobs.=0) %then %do;
-						   %put WARNING: (Sentinel) No rows in dataset &DPID..&&runid._&infile where &name.="&&grouplist_&n..";
-					    %end;
+    				   *warning if no rows selected after applying the where clause;
+    				    %isdata(dataset=temp_&dps.);
+    				    %if %eval(&nobs.=0) %then %do;
+    					   %put WARNING: (Sentinel) No rows in dataset &DPID..&&runid._&infile where &name.="&&grouplist_&n..";
+    				    %end;
+    								
+    				   /* Aggregate Data */
+    				   proc append data=temp_&dps. base=&outfile. force; run;
 
-									
-					   /* Aggregate Data */
-					   proc append data=temp_&dps. base=&outfile. force; run;
+    				   proc datasets nowarn noprint nolist lib=work; delete temp_&dps.; quit;	
+    			   %end;	
 
-					   proc datasets nowarn noprint nolist lib=work; delete temp_&dps.; quit;	
-				   %end;	
+    			%end; *runID;
+    		  %end;*loop through DPs;
 
-			%end; *runID;
-		  %end;*loop through DPs;
-		%mend agg_report;
+        %mend agg_report;
 
 	    %if %str("&reporttype") = %str("T1") %then %do;
 			%if %index(&datasetlist.,t1cida) > 0 %then %do;
@@ -127,7 +124,7 @@
 			  %agg_report(infile=censor_cida, outfile=agg_t2censor, name=group); 
 			%end;
 			%if %index(&datasetlist.,t2followuptime) > 0 %then %do;
-			  %agg_report(infile=t2_followuptime_cida, outfile=agg_t2followuptime, name=group); 
+			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
 			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp); 
@@ -209,5 +206,3 @@
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;
-
-
