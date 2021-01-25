@@ -194,7 +194,10 @@
 
                 /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
                 data _temp_mean_count
-                     _temp_std(keep=metvar group1 cohort order dp:);
+                     _temp_std(keep=metvar group1 cohort order dp:
+                       %if %str("&reporttype") = %str("T6") %then %do;
+			            Switchstep
+			           %end;);
                     set alldptable1_&periodid.;
                     format vartype $30.;
 
@@ -223,7 +226,10 @@
                 quit;
 
                 proc sort data=_temp_mean_count;
-                    by order metvar vartype ;
+                    by order metvar vartype 
+                    %if %str("&reporttype") = %str("T6") %then %do;
+			          Switchstep
+			        %end;;
                 run;
 
                 /*loop through each ORDER value to build new table*/
@@ -265,12 +271,20 @@
 					/*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
                     data _temp_totalcounts&b.;
                         merge /*EOI*/
-                            _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('N_EPISODES') &group1where.)
+                            _temp_mean_count(keep=order group1 cohort metvar dp: 
+							    %if %str("&reporttype") = %str("T6") %then %do;
+			                      Switchstep
+			                    %end;
+                                where=(order=&b. and metvar in ('N_EPISODES') &group1where.)
                                 /*rename dp to n_episodes_exp*/
                                 %do d =1 %to %eval(&num_dp.);
                                 rename=dp&d.=n_episodes_exp&d.
                                 %end; )
-                            _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('PATIENT') &group1where.)
+                            _temp_mean_count(keep=order group1 cohort metvar dp: 
+							  %if %str("&reporttype") = %str("T6") %then %do;
+			                    Switchstep
+			                  %end;
+                              where=(order=&b. and metvar in ('PATIENT') &group1where.)
                                /*rename dp to n_patients_exp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_patients_exp&d.
@@ -278,23 +292,37 @@
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                               _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('N_EPISODES') &group2where.)
+                               _temp_mean_count(keep=order group1 cohort metvar dp: 
+							     %if %str("&reporttype") = %str("T6") %then %do;
+			                      Switchstep
+			                    %end;
+                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where.)
                                /*rename dp to n_episodes_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_episodes_comp&d.
                                %end; )
-                               _temp_mean_count(keep=order group1 cohort metvar dp: where=(order=&b. and metvar in ('PATIENT') &group2where.)
+                               _temp_mean_count(keep=order group1 cohort metvar dp:
+							    %if %str("&reporttype") = %str("T6") %then %do;
+			                     Switchstep
+			                    %end;
+                                where=(order=&b. and metvar in ('PATIENT') &group2where.)
                                /*rename dp to n_patients_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_patients_comp&d.
                                %end; )
                             %end;
                                 ;
-                        by order;
-                        keep order n_:;
+                        by order 
+                          %if %str("&reporttype") = %str("T6") %then %do;
+			                Switchstep
+			              %end;;
+                        keep order n_: 
+                             %if %str("&reporttype") = %str("T6") %then %do;
+			                   Switchstep
+			                 %end;;
                     run;
 
-                    /*merge GROUP1 and GROUP2*/
+					/*merge GROUP1 and GROUP2*/
                     data _temp_mean_count&b.;
                        merge _temp_mean_count(where=(order=&b. &group1where.)
                                 /*rename dp to exp_mean*/
@@ -308,9 +336,12 @@
                                 rename=dp&d.=comp_mean&d.
                                 %end; )
                         %end; ;
-                        by order metvar vartype;
+                        by order metvar vartype  
+                           %if %str("&reporttype") = %str("T6") %then %do;
+			                 Switchstep
+			               %end;;
                     run;
-                  
+          
                     /*merge in std*/
                     proc sql noprint;
                         create table _temp_formatted_&b. as

@@ -261,7 +261,7 @@
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
         **********************************************************************************************;
-        %macro baselinecomputemetrics(table=, weight=, dataout=);
+        %macro baseline_create;
            data _null_; 
               set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table = 'Unadjusted' and order=&b.
                            %if %str("&reporttype") = %str("T6") %then %do;
@@ -322,6 +322,13 @@
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
               %end;
 
+			  /* For Type 6 switching, tables renamed to switch step*/
+			  
+			  %if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
+			    call symputx("total_&switch_count._exp_episodes", total_exp_episodes);
+				call symputx("total_&switch_count._exp_patients", total_exp_patients);
+              %end;
+
 			  
           run;
 
@@ -331,11 +338,11 @@
             %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
             %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
           %end;
-	
+	%mend baseline_create;
         ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
-        
+      %macro baselinecomputemetrics(table=, weight=, dataout=);  
           
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
@@ -643,6 +650,9 @@
                         sd = '-';
                     end;
                 %end;
+				%if %str("&reporttype") = %str("T6") %then %do;
+			      table = "Switchstep_&switch_count.";
+			    %end;
                 /*Removing FOLLOWUPTIME/EVENT rows*/
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
@@ -655,6 +665,7 @@
         %if %str("&reporttype") = %str("T6") %then %do;
            %let switch_count = 0;
 		%end;
+		%baseline_create;
         /*All - unweighted*/
         %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
 
@@ -689,6 +700,7 @@
 		  quit;
 
           %do switch_count = 1 %to &switch_counter;
+		    %baseline_create;
 		    %baselinecomputemetrics(table=&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
           %end;
         %end;
@@ -699,7 +711,6 @@
             set baseline_aggregatetab:;
         run;
 		
-
         ***********************************************************************************************;
         * Execute %baseline_expand_parameters()              
         ***********************************************************************************************;
