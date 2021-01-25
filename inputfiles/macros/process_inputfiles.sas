@@ -283,7 +283,7 @@
 	         %let runid = %scan(&runidlist., &n.);
 	     		proc sql noprint;
 	            /*RUNID specific list of groups*/
-	            select strip(quote(group, "'")) into :grouplist_&n separated by "," 
+	            select quote(strip(group), "'") into :grouplist_&n separated by ","
 	            from groupsfile
 	            where runid = "&runid.";
 				quit;
