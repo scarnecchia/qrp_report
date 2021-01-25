@@ -66,6 +66,9 @@
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
 		%macro agg_report(infile=, outfile=, name=);
+		
+		proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
+				
 		*loop through DPs;
 	      %do dps = 1 %to %eval(&num_dp.); 
 			%let DPID = %scan(&random_dplist,&dps); 
@@ -75,7 +78,7 @@
 		    %let runid = %scan(&runidlist, &n); 
 
 				   %if %sysfunc(exist(&DPID..&&runid._&infile))=0 %then %do;
-					   %put NOTE: &&runid._&infile does not exist for &DPID..;
+					   %put NOTE: (Sentinel) &&runid._&infile does not exist for &DPID..;
 				   %end;
 				   %else %do;
 					   data temp_&dps.; 
@@ -98,12 +101,8 @@
 
 									
 					   /* Aggregate Data */
-					   %if ("&dps." eq "1") and &n.=1 %then %do;
-						  data &outfile.; set temp_&dps.; run;
-					   %end;
-					   %else %do;
-						  proc append data=temp_&dps. base=&outfile. force; run;
-					   %end;
+					   proc append data=temp_&dps. base=&outfile. force; run;
+
 					   proc datasets nowarn noprint nolist lib=work; delete temp_&dps.; quit;	
 				   %end;	
 
