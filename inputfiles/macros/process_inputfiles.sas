@@ -187,6 +187,63 @@
            on a.runid = b.col1;
      quit;
 
+     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
+        %let chk_baselinegrpnum = ;
+
+        /* Check whether order values are the same across different run IDs */
+        proc sql noprint;
+            select count(distinct order)
+            into :numorder 
+            from input.&baselinefile;
+        quit;
+
+        %do m = 1 %to &numorder;
+        data _check_repeat_order;
+           set input.&baselinefile.(where=(order=&m));
+           lag_runid = lag(runid);
+           if _n_ > 1 then do;
+            if lowcase(runid) ^= lowcase(lag_runid) then do;
+                put 'ERROR: (Sentinel) ORDER values cannot be repeated across different RUNID values';
+                abort;
+            end;
+            if missing(baselinegroupnum) then do;
+                put 'ERROR: (Sentinel) ORDER values can only be repeated when using the BASELINEGROUPNUM parameter';
+                abort;
+            end;
+           end;
+           if not missing(baselinegroupnum) then call symputx('chk_baselinegrpnum', strip(baselinegroupnum));
+        run;
+
+        /* Check for populated baselinegroupnum parameter within specific analysis types */
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegrpnum) > 0 %then %do;
+         %put ERROR: (Sentinel) BASELINEGROUPNUM must be missing for %upcase(&reporttype.) analyses.;
+         %abort;
+        %end;
+
+        %end; /* m */
+
+        /* Check each runid for a maximum of 2 order values */
+        %do n = 1 %to &numrunid;
+            %let rid = %scan(&runidlist, &n);
+
+        proc sql noprint;
+            select count(baselinegroupnum)
+            into :two_max_groups
+            from input.&baselinefile
+            where lower(runid) = "&rid"
+            group by order;
+        quit;
+
+        %if &two_max_groups > 2 %then %do;
+          %put ERROR: (Sentinel) Only a maximum of 2 rows per ORDER value can be specified for the BASELINEGROUPNUM parameter;
+          %put ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values.;
+         %abort;
+        %end;
+
+        %end; /* n */
+
+     %end; /* baselinefile */
+
      /* Identify run specific parameters and values to store as macro variables*/
 	 %do n = 1 %to &numrunid.;
 	   /* Abort if run value is missing*/

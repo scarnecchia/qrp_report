@@ -97,6 +97,10 @@
                 if b then do;
                     analysisgrp = group;
                 end;
+                if not missing(baselinegroupnum) then do;
+                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT';
+                    abort;
+                end;
             run;
         %end;
 
@@ -107,6 +111,10 @@
                 format analysisgrp $40.;
                 if a then group = cats(group, '_eoi');
                 if b then group = cats(group, '_ref');
+                if not missing(baselinegroupnum) then do;
+                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with MILGRP values';
+                    abort;
+                end;
             run;
         %end;
     %mend;
