@@ -28,11 +28,12 @@
 %macro baseline_driver();
 
     %put =====> MACRO CALLED: baseline_driver;
+	/* Type 6 baseline tables contain 1 row per switch and these switches need to be included in the by processing*/
     %if %str("&reporttype") = %str("T6") %then %do;
       %let Switch_s = switchstep;
     %end;
 	%else %do;
-	  %let Swtich_s = ' ';
+	  %let Swtich_s = ;
 	%end;
     %isdata(dataset=input.&baselinefile.);
     %if %eval(&nobs.>0) %then %do;
