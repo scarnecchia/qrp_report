@@ -78,6 +78,7 @@
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &DPID..;
     			   %end;
     			   %else %do;
+				   	%if %length(&&grouplist_&n..) > 0 %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5.;
     					  set &DPID..&&runid._&infile; 
@@ -100,6 +101,8 @@
     				   proc append data=temp_&dps. base=&outfile. force; run;
 
     				   proc datasets nowarn noprint nolist lib=work; delete temp_&dps.; quit;	
+    				%end; *&&grouplist_&n..;
+    				   
     			   %end;	
 
     			%end; *runID;
