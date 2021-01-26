@@ -28,7 +28,12 @@
 %macro baseline_driver();
 
     %put =====> MACRO CALLED: baseline_driver;
-
+    %if %str("&reporttype") = %str("T6") %then %do;
+      %let Switch_s = switchstep;
+    %end;
+	%else %do;
+	  %let Swtich_s = ' ';
+	%end;
     %isdata(dataset=input.&baselinefile.);
     %if %eval(&nobs.>0) %then %do;
 
@@ -187,17 +192,13 @@
         ***********************************************************************************************;
 
         %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1|T6/i,&reporttype.)) > 0 %then %do;
-
-            %macro reformatL1baseline();
-                /*split std metrics out so they can be remerged as separate column*/
-                /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
-
-                /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
-                data _temp_mean_count
-                     _temp_std(keep=metvar group1 cohort order dp:
-                       %if %str("&reporttype") = %str("T6") %then %do;
-			            Switchstep
-			           %end;);
+		  /*split std metrics out so they can be remerged as separate column*/
+          /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
+              
+          /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
+                  
+          data _temp_mean_count
+                     _temp_std(keep=metvar group1 cohort order dp: &Switch_s);
                     set alldptable1_&periodid.;
                     format vartype $30.;
 
@@ -226,12 +227,14 @@
                 quit;
 
                 proc sort data=_temp_mean_count;
-                    by order metvar vartype 
-                    %if %str("&reporttype") = %str("T6") %then %do;
-			          Switchstep
-			        %end;;
+                    by order metvar vartype &Switch_s;
                 run;
 
+            %macro reformatL1baseline(switch = );
+			      %let switch_where = ;
+                  %if %str("&reporttype") = %str("T6") and (&switch = 1 or &switch = 2) %then %do;
+                    %let switch_where = and switchstep = &switch;
+                  %end;
                 /*loop through each ORDER value to build new table*/
                 %do b = 1 %to %eval(&numbaselinetablegrp.);
                     data _null_;
@@ -269,22 +272,16 @@
                     run;
 
 					/*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
-                    data _temp_totalcounts&b.;
+                    data _temp_totalcounts&b.&switch.; 
                         merge /*EOI*/
-                            _temp_mean_count(keep=order group1 cohort metvar dp: 
-							    %if %str("&reporttype") = %str("T6") %then %do;
-			                      Switchstep
-			                    %end;
-                                where=(order=&b. and metvar in ('N_EPISODES') &group1where.)
+                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                                where=(order=&b. and metvar in ('N_EPISODES') &group1where. &switch_where )
                                 /*rename dp to n_episodes_exp*/
                                 %do d =1 %to %eval(&num_dp.);
                                 rename=dp&d.=n_episodes_exp&d.
                                 %end; )
-                            _temp_mean_count(keep=order group1 cohort metvar dp: 
-							  %if %str("&reporttype") = %str("T6") %then %do;
-			                    Switchstep
-			                  %end;
-                              where=(order=&b. and metvar in ('PATIENT') &group1where.)
+                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                              where=(order=&b. and metvar in ('PATIENT') &group1where. &switch_where)
                                /*rename dp to n_patients_exp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_patients_exp&d.
@@ -292,59 +289,44 @@
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                               _temp_mean_count(keep=order group1 cohort metvar dp: 
-							     %if %str("&reporttype") = %str("T6") %then %do;
-			                      Switchstep
-			                    %end;
-                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where.)
+                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where. &switch_where) 
                                /*rename dp to n_episodes_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_episodes_comp&d.
                                %end; )
-                               _temp_mean_count(keep=order group1 cohort metvar dp:
-							    %if %str("&reporttype") = %str("T6") %then %do;
-			                     Switchstep
-			                    %end;
-                                where=(order=&b. and metvar in ('PATIENT') &group2where.)
+                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                                where=(order=&b. and metvar in ('PATIENT') &group2where. &switch_where)
                                /*rename dp to n_patients_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_patients_comp&d.
                                %end; )
                             %end;
                                 ;
-                        by order 
-                          %if %str("&reporttype") = %str("T6") %then %do;
-			                Switchstep
-			              %end;;
-                        keep order n_: 
-                             %if %str("&reporttype") = %str("T6") %then %do;
-			                   Switchstep
-			                 %end;;
+                       by order &Switch_s;
+                        keep order n_: &Switch_s;
                     run;
 
 					/*merge GROUP1 and GROUP2*/
-                    data _temp_mean_count&b.;
-                       merge _temp_mean_count(where=(order=&b. &group1where.)
+                    data _temp_mean_count&b.&switch.;
+                       merge _temp_mean_count(where=(order=&b. &group1where. &switch_where)
                                 /*rename dp to exp_mean*/
                                 %do d =1 %to %eval(&num_dp.);
                                 rename=dp&d.=exp_mean&d.
                                 %end; )
                         %if &createcompcolumns = Y %then %do;
-                            _temp_mean_count(where=(order=&b. &group2where.)
+                            _temp_mean_count(where=(order=&b. &group2where. &switch_where)
                                 /*rename dp to exp_mean*/
                                 %do d =1 %to %eval(&num_dp.);
                                 rename=dp&d.=comp_mean&d.
                                 %end; )
                         %end; ;
-                        by order metvar vartype  
-                           %if %str("&reporttype") = %str("T6") %then %do;
-			                 Switchstep
-			               %end;;
+                        by order metvar vartype &Switch_s;
                     run;
           
                     /*merge in std*/
                     proc sql noprint;
-                        create table _temp_formatted_&b. as
+                        create table _temp_formatted_&b.&switch. as
                         select x.*
                                %do d = 1 %to %eval(&num_dp.);
                                    , y.dp&d. as exp_std&d.
@@ -353,13 +335,13 @@
                                    %end;
                                %end;
                         from _temp_mean_count&b. as x
-                        left join _temp_std(where=(order=&b. &group1where.)) as y
+                        left join _temp_std(where=(order=&b. &group1where. &switch_where.)) as y
                         on x.metvar = y.metvar
 						%if %str("&reporttype") = %str("T6") %then %do;
                           and x.switchstep = y.switchstep
 						%end;
                         %if &createcompcolumns = Y %then %do;
-                        left join _temp_std(where=(order=&b. &group2where.)) as z
+                        left join _temp_std(where=(order=&b. &group2where. &switch_where)) as z
                         on x.metvar = z.metvar 
 						%if %str("&reporttype") = %str("T6") %then %do;
                           and x.switchstep = z.switchstep
@@ -411,15 +393,21 @@
                         drop &var.;
                     %mend;
 
-                    data _temp_table1_reformat&b.;
-                        merge _temp_formatted_&b.
-                              _temp_totalcounts&b.;
+                    data _temp_table1_reformat&b.&switch.;
+                        merge _temp_formatted_&b.&switch.
+                              _temp_totalcounts&b.&switch.;
                         by order;
                         format group2 $40. table weight $30.;
 
                         /*table = Unadjusted*/
                         /*weight = 'Unweighted*/
-                        table = 'Unadjusted';
+						
+						%if %str("&reporttype") = %str("T6") %then %do; 
+                          table = 'Switchstep_&switch.';
+						%end;
+						%else %do;
+                          table = 'Unadjusted';
+                        %end;
                         weight = 'Unweighted';
 
                         %if &createcompcolumns = Y %then %do;
@@ -474,14 +462,14 @@
 
                     /*use set to avoid missing var warnings*/
                     %if %eval(&b.=1) %then %do;
-                        data alldptable1_&periodid.;
-                            set _temp_table1_reformat&b.;
+                        data alldptable1_&periodid.&switch.;
+                            set _temp_table1_reformat&b.&switch.;
                         run;
                     %end;
                     %else %do;
-                        data alldptable1_&periodid.;
-                            set alldptable1_&periodid.
-                                _temp_table1_reformat&b.;
+                        data alldptable1_&periodid.&switch.;
+                            set alldptable1_&periodid.&switch.
+                                _temp_table1_reformat&b.&switch.;
                         run;
                     %end;
                 %end;
@@ -489,6 +477,22 @@
             %mend reformatL1baseline;
             %reformatL1baseline();
 
+		    /* Call computations for T6 switching */
+            %if %str("&reporttype") = %str("T6") %then %do; 
+
+              proc sql noprint;
+		        select max(switchstep) into: switch_counter from alldptable1_&periodid. where metvar = 'N_EPISODES' ;
+		      quit;
+
+              %do switch_count = 1 %to &switch_counter;
+		        %reformatL1baseline(switch = &switch_count);
+		      %end;
+          %end; 
+          
+		   data alldptable1_&periodid.;
+		    set alldptable1_&periodid.:;
+		   run;
+		   
         %end; /*reformat table*/
 
         ***********************************************************************************************;
@@ -502,7 +506,6 @@
                           num_dp = &num_dp.,
                           stratifybydp = &stratifybydp.,
                           periodid = &periodid.);
-        
 
     %end; /*loop through periodid*/
 

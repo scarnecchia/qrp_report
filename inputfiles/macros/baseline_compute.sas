@@ -478,7 +478,7 @@
                             %end;
                         %end;
                         %else %do; /*L2 only*/
-						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do; /*jolene*/
+						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do;
 						    %let switch_b = %eval(&switch_count.-1);
                             if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_&switch_b._exp_episodes.;
                             %if "&includecomp" = "Y" %then %do;
@@ -716,7 +716,7 @@
 		%if %str("&reporttype") = %str("T6") %then %do; 
 
           proc sql noprint;
-		    select max(switchstep) into: switch_counter from &datain.;
+		    select max(switchstep) into: switch_counter from &datain. where metvar = 'N_EPISODES' ;
 		  quit;
 
           %do switch_count = 1 %to &switch_counter;
