@@ -33,7 +33,7 @@
       %let Switch_s = switchstep;
     %end;
 	%else %do;
-	  %let Swtich_s = ;
+	  %let Switch_s = ;
 	%end;
     %isdata(dataset=input.&baselinefile.);
     %if %eval(&nobs.>0) %then %do;
