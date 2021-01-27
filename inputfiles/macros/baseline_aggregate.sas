@@ -124,17 +124,11 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by analysisgrp group1 runid order cohort 
-			   %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-               %end;;
+            by analysisgrp group1 runid order cohort &switch_s;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort 
-            %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-            %end;; 
+            by analysisgrp group1 runid order cohort &switch_s; 
 		run;
 
 
@@ -145,10 +139,7 @@
         quit;
 
         proc sort data=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort metvar 
-              %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-            %end;;
+            by analysisgrp group1 runid order cohort metvar &switch_s;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -161,10 +152,7 @@
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
-                by analysisgrp group1 runid order cohort metvar
-                   %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-            %end;;
+                by analysisgrp group1 runid order cohort metvar &switch_s;
             run;
         %end;
 
@@ -253,10 +241,7 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid order table group1 group2 weight vartype metvar 
-                %if %str("&reporttype") = %str("T6") %then %do;
-                 switchstep
-                %end;; 
+                by analysisgrp runid order table group1 group2 weight vartype metvar; 
             run;
         %end;
 			

@@ -14,6 +14,7 @@
 *       - order
 *       - metvar
 *       - vartype
+*       - switchstep
 *       - exp_mean1-exp_mean&num_dp
 *       - exp_std1-exp_std&num_dp
 *       - exp_s2_1-exp_s2_&num_dp
@@ -261,9 +262,9 @@
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
         **********************************************************************************************;
-        %macro baseline_create;
+        
            data _null_; 
-              set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table = 'Unadjusted' and order=&b.
+              set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table ne 'Adjusted' and order=&b.
                            %if %str("&reporttype") = %str("T6") %then %do;
 						     %if &switch_count = 0 %then %do;
                                and switchstep = &switch_count
@@ -338,8 +339,7 @@
             %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
             %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
           %end;
-	%mend baseline_create;
-        ***********************************************************************************************;
+	    ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
       %macro baselinecomputemetrics(table=, weight=, dataout=);  
@@ -371,14 +371,7 @@
 
             data &dataout.; 
                 length metvar $30;
-                set &datain.(where=(
-				                  %if %str("&reporttype") = %str("T6") %then %do;
-					                switchstep =&switch_count.
-					              %end;
-								  %else %do;
-                                    table="&table"
-                                  %end;
-                                  and weight = "&weight" and order=&b.));
+                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
                 format eoi_a 8.1 eoi_b 8.3 %if "&includecomp" = "Y" %then %do; ref_a 8.1 ref_b 8.3 %end; ;
 
@@ -481,9 +474,6 @@
 						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do;
 						    %let switch_b = %eval(&switch_count.-1);
                             if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_&switch_b._exp_episodes.;
-                            %if "&includecomp" = "Y" %then %do;
-                            if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&&&total_&switch_b._comp_episodes.;
-							%end;
 						  %end;
 						  %else %do;
                             if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
@@ -636,7 +626,6 @@
                     format exp_mean: 8.1 exp_std: 8.3 %if "&includecomp" = "Y" %then %do; comp_mean: 8.1 comp_std: 8.3 %end; ;
                 %end;
 
-
                 keep metvar analysisgrp order vartype weight table eoi_a eoi_b 
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; ref_a ref_b
@@ -659,10 +648,7 @@
                         sd = '-';
                     end;
                 %end;
-				%if %str("&reporttype") = %str("T6") %then %do;
-			      table = "Switchstep_&switch_count.";
-			    %end;
-                /*Removing FOLLOWUPTIME/EVENT rows*/
+				/*Removing FOLLOWUPTIME/EVENT rows*/
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
@@ -685,7 +671,6 @@
 		  %let n_unadjusted_episodes_comp&num_d. = 0;
         %end;
 
-        %baseline_create;
         /*All - unweighted*/
         %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
 
@@ -720,7 +705,6 @@
 		  quit;
 
           %do switch_count = 1 %to &switch_counter;
-		    %baseline_create;
 			%let total_&switch_count._exp_episodes = 0;
             %let total_&switch_count._exp_patients = 0;
 			%do num_d = 1 %to &num_dp;
@@ -728,7 +712,7 @@
 		      %let n_&switch_count._episodes_comp&num_d. = 0;
             %end;
 
-		    %baselinecomputemetrics(table=&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
+		    %baselinecomputemetrics(table=/*Switchstep_*/&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
           %end;
         %end;
 		

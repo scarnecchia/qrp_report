@@ -223,17 +223,13 @@
                     end;
                 run;
 
-                proc datasets nowarn noprint lib =work;
-                    delete alldptable1_&periodid.;
-                quit;
-
                 proc sort data=_temp_mean_count;
                     by order metvar vartype &Switch_s;
                 run;
 
             %macro reformatL1baseline(switch = );
 			      %let switch_where = ;
-                  %if %str("&reporttype") = %str("T6") and (&switch = 1 or &switch = 2) %then %do;
+                  %if %str("&reporttype") = %str("T6")  %then %do;
                     %let switch_where = and switchstep = &switch;
                   %end;
                 /*loop through each ORDER value to build new table*/
@@ -335,7 +331,7 @@
                                    , z.dp&d. as comp_std&d.
                                    %end;
                                %end;
-                        from _temp_mean_count&b. as x
+                        from _temp_mean_count&b.&switch. as x
                         left join _temp_std(where=(order=&b. &group1where. &switch_where.)) as y
                         on x.metvar = y.metvar
 						%if %str("&reporttype") = %str("T6") %then %do;
@@ -400,11 +396,12 @@
                         by order;
                         format group2 $40. table weight $30.;
 
-                        /*table = Unadjusted*/
+                        /*table = Unadjusted for T6 table = Switchstep_0, Switchstep_1 or Switchstep_2*/
                         /*weight = 'Unweighted*/
+					
 						
 						%if %str("&reporttype") = %str("T6") %then %do; 
-                          table = 'Switchstep_&switch.';
+                          table = "Switchstep_&switch.";
 						%end;
 						%else %do;
                           table = 'Unadjusted';
@@ -476,19 +473,22 @@
                 %end;
 
             %mend reformatL1baseline;
-            %reformatL1baseline();
+            
 
 		    /* Call computations for T6 switching */
             %if %str("&reporttype") = %str("T6") %then %do; 
 
               proc sql noprint;
-		        select max(switchstep) into: switch_counter from alldptable1_&periodid. where metvar = 'N_EPISODES' ;
+		        select max(switchstep) into: switch_counter from alldptable1_&periodid. where upcase(metvar) = 'N_EPISODES' ;
 		      quit;
 
-              %do switch_count = 1 %to &switch_counter;
+              %do switch_count = 0 %to &switch_counter;
 		        %reformatL1baseline(switch = &switch_count);
 		      %end;
           %end; 
+		  %else %do;
+		    %reformatL1baseline();
+		  %end;
           
 		   data alldptable1_&periodid.;
 		    set alldptable1_&periodid.:;
@@ -511,7 +511,7 @@
     %end; /*loop through periodid*/
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_: _temp_: alldptable1_:;
+        delete baselinefile_: _temp_: ;
     quit;
 
     %end; /*baselinefile input file exists*/
