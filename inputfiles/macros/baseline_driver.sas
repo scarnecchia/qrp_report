@@ -223,6 +223,16 @@
                     end;
                 run;
 
+                %if %str("&reporttype") = %str("T6") %then %do; 
+				  proc sql noprint;
+		            select max(switchstep) into: switch_counter from alldptable1_&periodid. where upcase(metvar) = 'N_EPISODES' ;
+		          quit;
+				%end;
+
+				proc datasets nowarn noprint lib= work;
+				  delete alldptable1_&periodid.;
+				quit;
+
                 proc sort data=_temp_mean_count;
                     by order metvar vartype &Switch_s;
                 run;
@@ -287,13 +297,13 @@
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
                                _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where. &switch_where) 
+                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where. ) 
                                /*rename dp to n_episodes_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_episodes_comp&d.
                                %end; )
                                _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                where=(order=&b. and metvar in ('PATIENT') &group2where. &switch_where)
+                                where=(order=&b. and metvar in ('PATIENT') &group2where. )
                                /*rename dp to n_patients_comp*/
                                %do d =1 %to %eval(&num_dp.);
                                rename=dp&d.=n_patients_comp&d.
@@ -477,10 +487,6 @@
 
 		    /* Call computations for T6 switching */
             %if %str("&reporttype") = %str("T6") %then %do; 
-
-              proc sql noprint;
-		        select max(switchstep) into: switch_counter from alldptable1_&periodid. where upcase(metvar) = 'N_EPISODES' ;
-		      quit;
 
               %do switch_count = 0 %to &switch_counter;
 		        %reformatL1baseline(switch = &switch_count);
