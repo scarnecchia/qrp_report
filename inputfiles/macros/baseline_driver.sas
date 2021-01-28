@@ -28,15 +28,17 @@
 %macro baseline_driver();
 
     %put =====> MACRO CALLED: baseline_driver;
-	/* Type 6 baseline tables contain 1 row per switch and these switches need to be included in the by processing*/
+
+    %isdata(dataset=input.&baselinefile.);
+    %if %eval(&nobs.>0) %then %do;
+
+    /* Type 6 baseline tables contain 1 row per switch and these switches need to be included in all 'by' processing*/
     %if %str("&reporttype") = %str("T6") %then %do;
       %let Switch_s = switchstep;
     %end;
 	%else %do;
 	  %let Switch_s = ;
 	%end;
-    %isdata(dataset=input.&baselinefile.);
-    %if %eval(&nobs.>0) %then %do;
 
     ***********************************************************************************************;
     * Create modified baseline dataset with COHORT and MERGEVAR vars to feed into %baseline_aggregate                                
@@ -193,55 +195,58 @@
         ***********************************************************************************************;
 
         %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1|T6/i,&reporttype.)) > 0 %then %do;
-		  /*split std metrics out so they can be remerged as separate column*/
-          /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
-              
-          /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
-                  
-          data _temp_mean_count
-                     _temp_std(keep=metvar group1 cohort order dp: &Switch_s);
-                    set alldptable1_&periodid.;
-                    format vartype $30.;
 
-                    /*defensive: set metvar to uppercase*/
-                    metvar=upcase(metvar);
-             
-                    if substr(metvar,1,4) = 'STD_' then do;
-                        metvar = substr(metvar, 5);
-                        output _temp_std;
-                        vartype = 'continuous';
+            /*split std metrics out so they can be remerged as separate column*/
+            /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
+            /*NOTE: additional metrics (AD, SD, %) computed in %baseline_compute()*/
+            data _temp_mean_count
+                 _temp_std(keep=metvar group1 cohort order dp: &Switch_s);
+                set alldptable1_&periodid.;
+                format vartype $30.;
+
+                /*defensive: set metvar to uppercase*/
+                metvar=upcase(metvar);
+         
+                if substr(metvar,1,4) = 'STD_' then do;
+                    metvar = substr(metvar, 5);
+                    output _temp_std;
+                    vartype = 'continuous';
+                end;
+                else do;
+                    if substr(metvar,1,5)='MEAN_' then do;
+                        metvar = substr(metvar, 6);
+                        vartype ='continuous';
                     end;
                     else do;
-                        if substr(metvar,1,5)='MEAN_' then do;
-                            metvar = substr(metvar, 6);
-                            vartype ='continuous';
-                        end;
-                        else do;
-                            vartype ='dichotomous';
-                        end;
-                        output _temp_mean_count;
+                        vartype ='dichotomous';
                     end;
-                run;
+                    output _temp_mean_count;
+                end;
+            run;
 
-                %if %str("&reporttype") = %str("T6") %then %do; 
-				  proc sql noprint;
-		            select max(switchstep) into: switch_counter from alldptable1_&periodid. where upcase(metvar) = 'N_EPISODES' ;
-		          quit;
-				%end;
+            /*put maximum number of switches into macro variable switch_counter*/
+            %if %str("&reporttype") = %str("T6") %then %do; 
+			  proc sql noprint;
+	            select max(switchstep) into: switch_counter from alldptable1_&periodid. where upcase(metvar) = 'N_EPISODES' ;
+	          quit;
+			%end;
 
-				proc datasets nowarn noprint lib= work;
-				  delete alldptable1_&periodid.;
-				quit;
+			proc datasets nowarn noprint lib= work;
+			  delete alldptable1_&periodid.;
+			quit;
 
-                proc sort data=_temp_mean_count;
-                    by order metvar vartype &Switch_s;
-                run;
+            proc sort data=_temp_mean_count;
+                by order metvar vartype &Switch_s;
+            run;
 
             %macro reformatL1baseline(switch = );
-			      %let switch_where = ;
-                  %if %str("&reporttype") = %str("T6")  %then %do;
+
+                /*to restrict type 6 switching tables*/
+                %let switch_where = ;
+                %if %str("&reporttype") = %str("T6")  %then %do;
                     %let switch_where = and switchstep = &switch;
-                  %end;
+                %end;
+
                 /*loop through each ORDER value to build new table*/
                 %do b = 1 %to %eval(&numbaselinetablegrp.);
                     data _null_;
@@ -311,7 +316,7 @@
                             %end;
                                 ;
                        by order &Switch_s;
-                        keep order n_: &Switch_s;
+                       keep order n_: &Switch_s;
                     run;
 
 					/*merge GROUP1 and GROUP2*/
@@ -322,7 +327,7 @@
                                 rename=dp&d.=exp_mean&d.
                                 %end; )
                         %if &createcompcolumns = Y %then %do;
-                            _temp_mean_count(where=(order=&b. &group2where. &switch_where)
+                            _temp_mean_count(where=(order=&b. &group2where.)
                                 /*rename dp to exp_mean*/
                                 %do d =1 %to %eval(&num_dp.);
                                 rename=dp&d.=comp_mean&d.
@@ -348,11 +353,8 @@
                           and x.switchstep = y.switchstep
 						%end;
                         %if &createcompcolumns = Y %then %do;
-                        left join _temp_std(where=(order=&b. &group2where. &switch_where)) as z
+                        left join _temp_std(where=(order=&b. &group2where.)) as z
                         on x.metvar = z.metvar 
-						%if %str("&reporttype") = %str("T6") %then %do;
-                          and x.switchstep = z.switchstep
-						%end;
                         %end;
                         ;
                     quit;
@@ -406,17 +408,16 @@
                         by order;
                         format group2 $40. table weight $30.;
 
-                        /*table = Unadjusted for T6 table = Switchstep_0, Switchstep_1 or Switchstep_2*/
-                        /*weight = 'Unweighted*/
-					
-						
+                        /*For ReportType = T1, T2L1, T4L1, T5, set table = Unadjusted*/
+                        /*For ReportType = T6 set table = Switchstep_0, Switchstep_1 or Switchstep_2*/
+                        /*weight = 'Unweighted for all ReportType*/
+                        weight = 'Unweighted';
 						%if %str("&reporttype") = %str("T6") %then %do; 
                           table = "Switchstep_&switch.";
 						%end;
 						%else %do;
                           table = 'Unadjusted';
                         %end;
-                        weight = 'Unweighted';
 
                         %if &createcompcolumns = Y %then %do;
                             %if "&includenonpregnant" = "Y" %then %do;
@@ -483,23 +484,23 @@
                 %end;
 
             %mend reformatL1baseline;
-            
 
-		    /* Call computations for T6 switching */
+            /*For ReportType = T1, T2L1, T4L1, and T5, call %reformatL1baseline one time*/
+            /*For ReportType = T6, call %reformatL1baseline once for each switch and stack datasets*/
             %if %str("&reporttype") = %str("T6") %then %do; 
+                %do switch_count = 0 %to &switch_counter;
+		          %reformatL1baseline(switch = &switch_count);
+		        %end;
 
-              %do switch_count = 0 %to &switch_counter;
-		        %reformatL1baseline(switch = &switch_count);
-		      %end;
-          %end; 
-		  %else %do;
-		    %reformatL1baseline();
-		  %end;
-          
-		   data alldptable1_&periodid.;
-		    set alldptable1_&periodid.:;
-		   run;
-		   
+                /*Stack all tables together*/
+                data alldptable1_&periodid.;
+		          set alldptable1_&periodid.:;
+                run;
+            %end; 
+		    %else %do;
+		      %reformatL1baseline();
+            %end;
+
         %end; /*reformat table*/
 
         ***********************************************************************************************;
@@ -517,7 +518,7 @@
     %end; /*loop through periodid*/
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_: _temp_: ;
+        delete baselinefile_: _temp_: alldptable1_:;
     quit;
 
     %end; /*baselinefile input file exists*/
