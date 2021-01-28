@@ -370,7 +370,7 @@
 
 			%if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
                 data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." 
+                    set &datain.(where=(upcase(metvar)='N_EPISODES'  
                       and weight = "&weight" and order=&b. and switchstep = &switch_count));
                     %do a = 1 %to &num_dp.;
                         call symputx("n_&table._episodes_exp&a", exp_mean&a); 
@@ -385,15 +385,9 @@
                     call symputx("total_&table._comp_episodes", total_comp_episodes); 
                     call symputx("total_&table._comp_patients", total_comp_episodes); /*Defensive for sex/race/hispanic computation*/
                 run;
-
-                %put total number of &table. group1 episodes for order=&b.:  &total_&table._exp_episodes.;
-                %put total number of &table. group1 patients for order=&b.:  &total_&table._exp_patients.;
-                %put total number of &table. group2 episodes for order=&b.:  &total_&table._comp_episodes.;
-                %put total number of &table. group2 patients for order=&b.:  &total_&table._comp_patients.;
-				
 				
 				data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." 
+                    set &datain.(where=(upcase(metvar)='N_EPISODES' 
                       and weight = "&weight" and order=&b. and switchstep = %eval(&switch_count-1)));
                     %do a = 1 %to &num_dp.;
 					    %let s_b = %eval(&switch_count-1);
@@ -710,7 +704,7 @@
 
         %if %str("&reporttype") = %str("T6") %then %do;
            %let switch_count = 0;
-		   %baselinecomputemetrics(table=switch_0, weight=Unweighted, dataout=baseline_aggregatetab1);
+		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
 		%end;
         /*All - unweighted*/
 		%if %str("&reporttype") ne %str("T6") %then %do;
@@ -747,7 +741,7 @@
 		  quit;
 
           %do switch_count = 1 %to &switch_counter;
-		    %baselinecomputemetrics(table=Switch_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
+		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
           %end;
         %end;
 		
