@@ -296,7 +296,7 @@
                     call symputx("n_unadjusted_episodes_exp&a", exp_mean&a); 
                     %if %str("&reporttype") = %str("T6") %then %do;
 					  %let s_now = %eval(&switch_count -1);
-                      call symputx("n_&s_now._episodes_exp&a", exp_mean&a);
+                      call symputx("n_switchstep_&s_now._episodes_exp&a", exp_mean&a);
                     %end; 
                     %if "&includecomp" = "Y" %then %do;
                       call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); 
@@ -331,8 +331,8 @@
 			  /* For Type 6 switching, tables renamed to switch step*/
 			  
 			  %if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
-			    call symputx("total_&switch_count._exp_episodes", total_exp_episodes);
-				call symputx("total_&switch_count._exp_patients", total_exp_patients);
+			    call symputx("total_Switchstep_&switch_count._exp_episodes", total_exp_episodes);
+				call symputx("total_Switchstep_&switch_count._exp_patients", total_exp_patients);
               %end;
 
 			  
@@ -478,7 +478,7 @@
                         %else %do; /*L2 only*/
 						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do;
 						    %let switch_b = %eval(&switch_count.-1);
-                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_&switch_b._exp_episodes.;
+                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_SWITCHSTEP_&switch_b._exp_episodes.;
 							 %if "&stratifybydp" = "Y" %then %do;
 							   %do nu_d = 1 %to &num_dp.;
 							     exp_std&nu_d. = exp_mean&i/&&&n_Switchstep_&switch_count._episodes_exp&nu_d.;
