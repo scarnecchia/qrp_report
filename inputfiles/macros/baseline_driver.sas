@@ -98,7 +98,7 @@
                     analysisgrp = group;
                 end;
                 if not missing(baselinegroupnum) then do;
-                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT';
+                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT=Y';
                     abort;
                 end;
             run;

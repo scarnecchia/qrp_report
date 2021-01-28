@@ -702,6 +702,11 @@
                 abort;
             end;
            end;
+           if _n_ > 2 then do;
+             put 'ERROR: (Sentinel) Only a maximum of 2 rows per ORDER value can be specified for the BASELINEGROUPNUM parameter';
+             put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
+             abort;
+           end;
            if not missing(baselinegroupnum) then call symputx('chk_baselinegrpnum', strip(baselinegroupnum));
         run;
 
@@ -712,26 +717,6 @@
         %end;
 
         %end; /* m */
-
-        /* Check each runid for a maximum of 2 order values */
-        %do n = 1 %to &numrunid;
-            %let rid = %scan(&runidlist, &n);
-
-        proc sql noprint;
-            select count(baselinegroupnum)
-            into :two_max_groups
-            from input.&baselinefile
-            where lower(runid) = "&rid"
-            group by order;
-        quit;
-
-        %if &two_max_groups > 2 %then %do;
-          %put ERROR: (Sentinel) Only a maximum of 2 rows per ORDER value can be specified for the BASELINEGROUPNUM parameter;
-          %put ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values.;
-         %abort;
-        %end;
-
-        %end; /* n */
 
      %end; /* baselinefile */
 
