@@ -689,7 +689,7 @@
         quit;
 
         %do m = 1 %to &numorder;
-        data _check_repeat_order;
+        data _null_;
            set input.&baselinefile.(where=(order=&m));
            lag_runid = lag(runid);
            if _n_ > 1 then do;
