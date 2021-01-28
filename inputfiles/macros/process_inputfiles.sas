@@ -707,7 +707,7 @@
              put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
              abort;
            end;
-           if not missing(baselinegroupnum) then call symputx('chk_baselinegrpnum', strip(baselinegroupnum));
+           if not missing(baselinegroupnum) then call symputx('chk_baselinegrpnum', baselinegroupnum);
         run;
 
         /* Check for populated baselinegroupnum parameter within specific analysis types */
