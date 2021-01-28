@@ -712,7 +712,7 @@
 
         /* Check for populated baselinegroupnum parameter within specific analysis types */
         %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegrpnum) > 0 %then %do;
-         %put ERROR: (Sentinel) BASELINEGROUPNUM must be missing for %upcase(&reporttype.) analyses.;
+         %put ERROR: (Sentinel) BASELINEGRPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
          %abort;
         %end;
 
