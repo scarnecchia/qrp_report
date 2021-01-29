@@ -371,18 +371,33 @@
                 data _null_; 
                     set &datain.(where=(upcase(metvar) in ('PATIENT', 'N_EPISODES')  
                       and weight = "&weight" and order=&b. and switchstep = &switch_count));
-                    %do a = 1 %to &num_dp.;
+                    
+					/*Number of Episodes*/
+                    if metvar = 'N_EPISODES' then do;
+                      %do a = 1 %to &num_dp.;
                         call symputx("n_&table._episodes_exp&a", exp_mean&a); 
-                    %end;
+                      %end;
+					  /*recompute total episodes for loop*/
+                      total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
+                      call symputx("total_&table._exp_episodes", total_exp_episodes); 
+                    end;
 
-                    /*recompute total episodes for loop*/
-                    total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
-                    call symputx("total_&table._exp_episodes", total_exp_episodes); 
-                    call symputx("total_&table._exp_patients", total_exp_episodes); /*Defensive for sex/race/hispanic computation*/
+					/*Number of Patients*/
+                    else if metvar = 'PATIENT' then do;
+					  %do a = 1 %to &num_dp.;
+                        call symputx("n_&table._patients_exp&a", exp_mean&a); 
+                      %end;
+					  /*recompute total episodes for loop*/
+                      total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
+                      call symputx("total_&table._exp_patients", total_exp_patients); 
+                    end;
+                    
+/*                    call symputx("total_&table._exp_patients", total_exp_episodes); */
+					/*Defensive for sex/race/hispanic computation*/
                 run;
 				
 				data _null_; 
-                    set &datain.(where=(upcase(metvar) in ('PATIENT', 'N_EPISODES') 
+                    set &datain.(where=(upcase(metvar) ='N_EPISODES'
                       and weight = "&weight" and order=&b. and switchstep = %eval(&switch_count-1)));
                     %do a = 1 %to &num_dp.;
 					    %let s_b = %eval(&switch_count-1);
@@ -393,6 +408,7 @@
                     call symputx("total_Switchstep_&s_b._exp_episodes", total_exp_episodes); 
                     call symputx("total_Switchstep_&s_b._exp_patients", total_exp_episodes); /*Defensive for sex/race/hispanic computation*/
                 run;
+
             %end;
 
             data &dataout.; 
@@ -481,8 +497,7 @@
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
-					        - Switching: Switching allows for baseline to be a portion of the full baseline. 
-					          Each of these new baselines need calculated for use in the demoniators.;
+					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
                     if index(metvar, 'SEX') >0 | index(metvar, 'RACE') >0 | index(metvar, 'HISPANIC') >0 then do;
                         if ^missing(eoi_a) and (total_exp_patients gt 0) then eoi_b = eoi_a/total_exp_patients;
                         %if "&includecomp" = "Y" %then %do;
