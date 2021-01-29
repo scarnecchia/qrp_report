@@ -496,30 +496,30 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         eoi_b = .;
                         ref_b = .;
-                        %if "&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
+                            ("&table" ="switchstep_0") %then %do;
                             eoi_b = 1;
                             %if "&includecomp" = "Y" %then %do;
                             ref_b = 1;
                             %end;
                         %end;
-                        %else %do; /*L2 only*/
-						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do;
-						    %let switch_b = %eval(&switch_count.-1);
-                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
-							 %if "&stratifybydp" = "Y" %then %do;
-							   %do nu_d = 1 %to &num_dp.;
-							     exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
-							   %end;
-                             %end;
-						  %end;
-						  %else %do;
-                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
-                            %if "&includecomp" = "Y" %then %do;
+						%else %if %str("&reporttype") = %str("T6")  and &switch_count > 0 %then %do;
+						  %let switch_b = %eval(&switch_count.-1);
+                          if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
+						  %if "&stratifybydp" = "Y" %then %do;
+						    %do nu_d = 1 %to &num_dp.;
+							  exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+							%end;
+                          %end;
+						%end;
+						  
+						%else %do;
+                          if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
+                          %if "&includecomp" = "Y" %then %do;
                             if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&total_unadjusted_comp_episodes.;
-                            %end;
-						  %end;
-                        %end;
-                    end;
+                          %end;
+						%end;
+                      end;
                     else do;
                         if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/total_exp_episodes;
                         %if "&includecomp" = "Y" %then %do;
@@ -694,17 +694,6 @@
         ***********************************************************************************************;
         * Compute aggregated tables                     
         ***********************************************************************************************;
-        
-		%let total_unadjusted_exp_episodes = 0;
-        %let total_unadjusted_exp_patients = 0;
-        %let total_unadjusted_comp_episodes = 0;
-        %let total_unadjusted_comp_patients = 0;
-		%do num_d = 1 %to &num_dp;
-		  %let n_adjusted_episodes_exp&num_d. = 0; 
-		  %let n_adjusted_episodes_comp&num_d. = 0;
-		  %let n_unadjusted_episodes_exp&num_d. = 0; 
-		  %let n_unadjusted_episodes_comp&num_d. = 0;
-        %end;
 
         %if %str("&reporttype") = %str("T6") %then %do;
            %let switch_count = 0;
