@@ -124,12 +124,13 @@
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
-            by analysisgrp group1 runid order cohort;
+            by analysisgrp group1 runid order cohort &switch_s;
         run;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort;
+            by analysisgrp group1 runid order cohort &switch_s; 
 		run;
+
 
         proc datasets library=WORK nowarn nolist;
             modify _temp_baseline_transposed;  
@@ -138,7 +139,7 @@
         quit;
 
         proc sort data=_temp_baseline_transposed;
-            by analysisgrp group1 runid order cohort metvar ;
+            by analysisgrp group1 runid order cohort metvar &switch_s;
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -151,7 +152,7 @@
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
-                by analysisgrp group1 runid order cohort metvar;
+                by analysisgrp group1 runid order cohort metvar &switch_s;
             run;
         %end;
 
