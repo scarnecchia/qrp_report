@@ -387,7 +387,7 @@
 					  %do a = 1 %to &num_dp.;
                         call symputx("n_&table._patients_exp&a", exp_mean&a); 
                       %end;
-					  /*recompute total episodes for */
+					  /*recompute total patients for */
                       total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
                       call symputx("total_&table._exp_patients", total_exp_patients); 
                     end;
@@ -516,15 +516,16 @@
                             ref_b = 1;
                             %end;
                         %end;
-						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0 and metvar = 'N_EPISODES' %then %do;
+						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0  %then %do;
 						  %let switch_b = %eval(&switch_count.-1);
-                          if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
-						  %if "&stratifybydp" = "Y" %then %do;
-						    %do nu_d = 1 %to &num_dp.;
-							  exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
-							%end;
-                          %end;
-						  call symputx("total_&table._exp_patients", total_exp_episodes); 
+						  if metvar = 'N_EPISODES' then do;
+                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
+						    %if "&stratifybydp" = "Y" %then %do;
+						      %do nu_d = 1 %to &num_dp.;
+							    exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+							  %end;
+                            %end;
+						  end;
 						%end;
 						  
 						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
