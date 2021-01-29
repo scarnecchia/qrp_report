@@ -508,7 +508,7 @@
                         eoi_b = .;
                         ref_b = .;
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
-                            ("&table" ="Switchstep_0" or "&table" ="Switchstep_1") %then %do;
+                            ("&table" ="Switchstep_0") %then %do;
                             eoi_b = 1;
                             %if "&includecomp" = "Y" %then %do;
                             ref_b = 1;
