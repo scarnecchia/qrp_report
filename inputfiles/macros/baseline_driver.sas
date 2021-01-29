@@ -247,6 +247,10 @@
                 by order metvar vartype &Switch_s;
             run;
 
+            proc sort data=baselinefile;
+                by order baselinegroupnum;
+            run;
+
             %macro reformatL1baseline(switch = );
 
                 /*to restrict type 6 switching tables*/
@@ -527,9 +531,6 @@
             %end;
 
         %end; /*reformat table*/
-
-        data output.alldptable1_&periodid.;
-            set alldptable1_&periodid.; run;
 
         ***********************************************************************************************;
         * Compute Aggregate metrics and format DP metrics                       
