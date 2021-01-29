@@ -391,9 +391,13 @@
                       and weight = "&weight" and order=&b. and switchstep = %eval(&switch_count-1)));
                     %do a = 1 %to &num_dp.;
 					    %let s_b = %eval(&switch_count-1);
-                        call symputx("n_Switch_&s_b._episodes_exp&a", exp_mean&a); 
-                        call symputx("n_Switch_&s_b._episodes_comp&a", comp_mean&a); 
+                        call symputx("n_Switchstep_&s_b._episodes_exp&a", exp_mean&a); 
+                        call symputx("n_Switchstep_&s_b._episodes_comp&a", comp_mean&a); 
                     %end;
+					/*recompute total episodes for loop*/
+                    total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
+                    call symputx("total_Switchstep_&s_b._exp_episodes", total_exp_episodes); 
+                    call symputx("total_Switchstep_&s_b._exp_patients", total_exp_episodes); /*Defensive for sex/race/hispanic computation*/
                 run;
             %end;
 
@@ -501,10 +505,10 @@
                         %else %do; /*L2 only*/
 						  %if %str("&reporttype") = %str("T6")  and &switch_count > 1 %then %do;
 						    %let switch_b = %eval(&switch_count.-1);
-                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&&total_SWITCH_&switch_b._exp_episodes.;
+                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
 							 %if "&stratifybydp" = "Y" %then %do;
 							   %do nu_d = 1 %to &num_dp.;
-							     exp_std&nu_d. = exp_mean&i/&&&n_Switch_&switch_b._episodes_exp&nu_d.;
+							     exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
 							   %end;
                              %end;
 						  %end;
