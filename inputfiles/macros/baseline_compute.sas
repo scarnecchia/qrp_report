@@ -280,7 +280,9 @@
               if metvar = 'N_EPISODES' then do;
     	          total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
                   call symputx("total_unadjusted_exp_episodes", total_exp_episodes);
-
+				  %if %str("&reporttype") = %str("T6") %then %do;
+			        call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
+                  %end;
 
                   %if "&includecomp" = "Y" %then %do;
         	        total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
@@ -304,6 +306,9 @@
               else if metvar = 'PATIENT' then do;
     	          total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
                   call symputx("total_unadjusted_exp_patients", total_exp_patients); 
+				  %if %str("&reporttype") = %str("T6") %then %do;
+				    call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
+                  %end;
 
                   %if "&includecomp" = "Y" %then %do;
         	          total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
@@ -323,13 +328,7 @@
               %if "&includecomp" = "Y" %then %do;
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
               %end;
-
-			  /* For Type 6 switching, tables renamed to switch step*/
-			  
-			  %if %str("&reporttype") = %str("T6") %then %do;
-			    call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
-				call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
-              %end;	  
+	  
           run;
 
           %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
@@ -370,29 +369,24 @@
 
 			%if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
                 data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES'  
+                    set &datain.(where=(upcase(metvar) in ('PATIENT', 'N_EPISODES')  
                       and weight = "&weight" and order=&b. and switchstep = &switch_count));
                     %do a = 1 %to &num_dp.;
                         call symputx("n_&table._episodes_exp&a", exp_mean&a); 
-                        call symputx("n_&table._episodes_comp&a", comp_mean&a); 
                     %end;
 
                     /*recompute total episodes for loop*/
                     total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
                     call symputx("total_&table._exp_episodes", total_exp_episodes); 
                     call symputx("total_&table._exp_patients", total_exp_episodes); /*Defensive for sex/race/hispanic computation*/
-                    total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
-                    call symputx("total_&table._comp_episodes", total_comp_episodes); 
-                    call symputx("total_&table._comp_patients", total_comp_episodes); /*Defensive for sex/race/hispanic computation*/
                 run;
 				
 				data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES' 
+                    set &datain.(where=(upcase(metvar) in ('PATIENT', 'N_EPISODES') 
                       and weight = "&weight" and order=&b. and switchstep = %eval(&switch_count-1)));
                     %do a = 1 %to &num_dp.;
 					    %let s_b = %eval(&switch_count-1);
                         call symputx("n_Switchstep_&s_b._episodes_exp&a", exp_mean&a); 
-                        call symputx("n_Switchstep_&s_b._episodes_comp&a", comp_mean&a); 
                     %end;
 					/*recompute total episodes for loop*/
                     total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
@@ -486,7 +480,9 @@
                        - Denominator for other metrics is total number of episodes 
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
-                            - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables;
+                            - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
+					        - Switching: Switching allows for baseline to be a portion of the full baseline. 
+					          Each of these new baselines need calculated for use in the demoniators.;
                     if index(metvar, 'SEX') >0 | index(metvar, 'RACE') >0 | index(metvar, 'HISPANIC') >0 then do;
                         if ^missing(eoi_a) and (total_exp_patients gt 0) then eoi_b = eoi_a/total_exp_patients;
                         %if "&includecomp" = "Y" %then %do;
@@ -497,7 +493,7 @@
                         eoi_b = .;
                         ref_b = .;
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
-                            ("&table" ="switchstep_0") %then %do;
+                            ("&table" ="Switchstep_0" or "&table" ="Switchstep_1") %then %do;
                             eoi_b = 1;
                             %if "&includecomp" = "Y" %then %do;
                             ref_b = 1;
@@ -513,7 +509,7 @@
                           %end;
 						%end;
 						  
-						%else %do;
+						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                           if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
                           %if "&includecomp" = "Y" %then %do;
                             if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&total_unadjusted_comp_episodes.;
@@ -694,9 +690,8 @@
         ***********************************************************************************************;
         * Compute aggregated tables                     
         ***********************************************************************************************;
-
+        %let switch_count = 0;
         %if %str("&reporttype") = %str("T6") %then %do;
-           %let switch_count = 0;
 		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
 		%end;
         /*All - unweighted*/
@@ -730,7 +725,7 @@
 		%if %str("&reporttype") = %str("T6") %then %do; 
 
           proc sql noprint;
-		    select max(switchstep) into: switch_counter from &datain. where metvar = 'N_EPISODES' ;
+		    select max(switchstep) into: switch_counter from &datain. where metvar = 'N_EPISODES' and order =&b. ;
 		  quit;
 
           %do switch_count = 1 %to &switch_counter;
