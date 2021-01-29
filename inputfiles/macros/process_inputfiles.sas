@@ -679,7 +679,7 @@
 ***************************************************************************************************/
 
   %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-        %let chk_baselinegrpnum = ;
+        %let chk_baselinegroupnum = ;
 
         /* Check whether order values are the same across different run IDs */
         proc sql noprint;
@@ -707,12 +707,12 @@
              put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
              abort;
            end;
-           if not missing(baselinegroupnum) then call symputx('chk_baselinegrpnum', baselinegroupnum);
+           if not missing(baselinegroupnum) then call symputx('chk_baselinegrouppnum', baselinegroupnum);
         run;
 
         /* Check for populated baselinegroupnum parameter within specific analysis types */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegrpnum) > 0 %then %do;
-         %put ERROR: (Sentinel) BASELINEGRPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
+         %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
          %abort;
         %end;
 

@@ -249,9 +249,11 @@
                             call symputx('cohortvalue', cohort);
                             call symputx('analysisgrp', analysisgrp);
                             call symputx('computebalance', upcase(computebalance));
+                            call symputx('baselinegroupnum', baselinegroupnum);
 
                             /*if includenonpregnant = Y, group1=preg and group2=nonpreg*/
                             /*when cohort = mi, group1= _eoi and group2=_ref*/
+                            *if baselinegroupnum is specified, group1 = baselinegroupnum = 1 and group2 = baselinegroupnum = 2;
                             /*otherwise, group2 will not be populated*/
                             if upcase(includenonpregnant) = 'Y' then do;
                                 call symputx('group1where',"and cohort='preg'");
@@ -263,11 +265,22 @@
                                 call symputx('group2where',"and substr(group1, length(group1)-3, length(group1))='_ref'");
                                 call symputx('createcompcolumns', 'Y');
                             end;
+                            else if missing(baselinegroupnum)=0 then do;
+                                call symputx('group1where','and group1="&analysisgrp"');
+                                call symputx('createcompcolumns', 'Y');
+                            end;
                             else do;
                                 call symputx('group1where',"");
                                 call symputx('group2where',"");
                                 call symputx('createcompcolumns', 'N');
                             end;
+                        end;
+                        /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
+                        if _n_ = 2 then do;
+                        if missing(baselinegroupnum)=0 then do;
+                            call symputx('group2where','and group1="&analysisgrp2"');
+                            call symputx('analysisgrp2',analysisgrp);
+                        end;
                         end;
                     run;
 
@@ -403,6 +416,10 @@
                                 group1 = cats("&analysisgrp", "_eoi");
                                 group2 = cats("&analysisgrp", "_ref");
                             %end;
+                            %else %if %length(&baselinegroupnum.) >0 %then %do;
+                                group1 = "&analysisgrp";
+                                group2 = "&analysisgrp2";
+                            %end;
                         %end;
                         %else %do;
                             call missing(group2);
@@ -462,6 +479,9 @@
             %reformatL1baseline();
 
         %end; /*reformat table*/
+
+        data output.alldptable1_&periodid.;
+            set alldptable1_&periodid.; run;
 
         ***********************************************************************************************;
         * Compute Aggregate metrics and format DP metrics                       
