@@ -365,7 +365,7 @@
                 %put total number of adjusted group2 patients for order=&b.:  &total_adjusted_comp_patients.;
             %end;
 
-            /*For T6 tables, put total number of episodes and patients in macro vairable for current switch step
+            /*For T6 tables, put total number of episodes and patients in macro variable for current switch step
               and total number of episodes for prior switch*/
 			%if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
                 data _null_; 
