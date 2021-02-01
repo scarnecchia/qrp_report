@@ -1,3 +1,35 @@
+****************************************************************************************************
+*                                           PROGRAM OVERVIEW
+****************************************************************************************************
+*
+* PROGRAM: utility_macros.sas  
+*
+* Created (mm/dd/yyyy): 12/20/2015
+* Last modified: 12/1/2020
+*
+*--------------------------------------------------------------------------------------------------
+* PURPOSE: This program includes the following macros:
+*   - %isdata() macro determines whether a dataset is empty or not
+*   - %create_comma_charlist() macro converts space delimited list to comma delimited list with quotes
+*   - %alphabetizevarutil() macro alphabetizes variables in a data step
+*
+*  Program inputs:                                                                                   
+*   -
+* 
+*  Program outputs:                                                                                                                                       
+*   -
+* 
+*  PARAMETERS:                                                                       
+*            
+*  Programming Notes:                                                                                
+*                                                                           
+*
+*--------------------------------------------------------------------------------------------------
+* CONTACT INFO: 
+*  Sentinel Coordinating Center
+*  info@sentinelsystem.org
+*
+***************************************************************************************************;
 
 *Macro to determine whether a dataset is empty or not;
 %MACRO ISDATA(dataset=);

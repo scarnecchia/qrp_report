@@ -29,8 +29,9 @@
     %put =====> MACRO CALLED: initialize_macro_variables ;
 
     /*variables related to DPs*/
-    %global num_dp random_dplist;
+    %global num_dp random_dplist masked_dplist;
     %let num_dp = 0;
+	%let masked_dplist =;
 
     /*variables related to query*/
     %global runidlist numrunid;
@@ -68,6 +69,10 @@
     %let L2ComparisonsFile = ;
     %let look_start = 1;
     %let look_end = 1;
+
+    /*tablefile and figurefile variables*/
+    %global datasetlist;
+    %let datasetlist = ;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

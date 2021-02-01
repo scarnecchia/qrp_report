@@ -59,6 +59,27 @@
         %end;
 
 /***************************************************************************************************
+*   Check that REPORTTYPE is valid                                              
+***************************************************************************************************/
+
+    /*Valid values:
+        - T1: Type 1 report
+        - T2L1: Level 1, type 2 report
+        - T2L2: Level 2, type 2 report 
+        - ITS: ITS report
+        - T4L1: Level 1, type 4 report 
+        - T4L2: Level 2, type 4 report 
+        - T5: Type 5 report
+        - T6: Type 6 report
+        - TREE2: tree aggregation for Type 2
+        - TREE3: tree aggregration for Type 3
+        - TREE4: tree aggregation for Type 4 */
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
+        %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
+        %abort;
+    %end;
+
+/***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
 ***************************************************************************************************/
 
@@ -114,7 +135,9 @@
         proc sql noprint;
             select dp into: random_dplist separated by ' '
             from output.dpinfo;
-        quit;
+			select maskedID into: masked_dplist separated by ' '
+            from output.dpinfo;
+		quit;
     %end;
 	
 /***************************************************************************************************
@@ -165,6 +188,7 @@
         left join _qrp_parameters_trans as b
            on a.runid = b.col1;
      quit;
+
 
      /* Identify run specific parameters and values to store as macro variables*/
 	 %do n = 1 %to &numrunid.;
@@ -241,6 +265,33 @@
 		  call symputx(new_parameter,&&run&n.,'G');
 		run;
      %end;
+
+/***************************************************************************************************
+*   Identify groups for each runID                                               
+***************************************************************************************************/
+
+	%if %sysfunc(exist(input.&groupsfile. )) ne 0 %then %do;
+
+		data groupsfile;
+			set input.&groupsfile.;
+			runid = lowcase(runid);
+			group = lowcase(group);
+		run;
+
+		 %do n = 1 %to &numrunid.;
+			%global grouplist_&n.;
+	         %let runid = %scan(&runidlist., &n.);
+	     		proc sql noprint;
+	            /*RUNID specific list of groups*/
+	            select quote(strip(group), "'") into :grouplist_&n separated by ","
+	            from groupsfile
+	            where runid = "&runid.";
+				quit;
+				%put &&grouplist_&n..;
+	     %end;
+
+	 %end;
+
  
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
@@ -249,11 +300,380 @@
 	 data master_cohortfile;
 	 set %do n = 1 %to &numrunid.;
 	 		%let runid=&&id&n..;
-			infolder.&&&runid._cohortfile
+			infolder.&&&runid._cohortfile(in=n&n.)
 		%end;
 	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+	 		runid = "&&id&n.";
+            end;
+        %end;
 	 run;
-	 
+
+/***************************************************************************************************
+*   Userstrata, TableFile and FigureFile Processing                                         
+***************************************************************************************************/
+
+     /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
+     %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        /*confirm userstrata file exists*/
+        %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
+            data _tempuserstrata(rename=levelvars_out=levelvars);
+                format levelvars $100.;
+                set infolder.&&&runid._userstrata;
+                levelvars = lowcase(levelvars);
+                tableid = lowcase(tableID);
+                levelvars = tranwrd(levelvars, "*", " ");
+
+                /*****************************************/
+                /* Defensive coding for automatic strata */
+                /*****************************************/
+                /*All report types*/
+                if index(levelvars, 'month') > 0 & index(levelvars, 'year') = 0 then do;
+                    levelvars = tranwrd(levelvars, "month", "year month");
+                end;
+                if index(levelvars, 'quarter') > 0 & index(levelvars, 'year') = 0 then do;
+                   levelvars = tranwrd(levelvars, "quarter", "year quarter");
+                end;
+
+                /*ReportType = T2L1*/
+                %if %str("&reporttype") = %str("T2L1") %then %do;
+                if tableID in ('t2epigap', 't2epigapprev') and index(levelvars, 'epi_gap') = 0 then do;
+				    levelvars = catx(' ',levelvars, "epi_gap");
+                end;
+                %end;
+
+                /*ReportType = T6*/
+                %if %str("&reporttype") = %str("T6") %then %do;
+                if tableID= "t6disp" and index(levelvars, 'daysupp') = 0 then do;
+                    levelvars = catx(' ',levelvars, "daysupp");
+                end;
+                if tableID = "t6episdur" and index(levelvars, 'cumepisodelength') = 0 then do;
+                    levelvars = catx(' ',levelvars, "cumepisodelength");
+                end;
+                if tableID = "t6censor" and index(levelvars, 'episodelength') = 0 then do;
+                    levelvars = catx(' ',levelvars, "episodelength");
+                end;
+                if tableID = "t6uptake" and index(levelvars, 'uptakedays') = 0 then do;
+                    levelvars = catx(' ',levelvars, "uptakedays");
+                end;
+                if tableID = "t6trend" and index(levelvars, 'year') = 0 then do;
+                    levelvars = catx(' ',levelvars, "year");
+                end;
+                if tableID = "t6switchepisdur" and index(levelvars, 'episodelength') = 0 then do;
+                    levelvars = catx(' ',levelvars, "episodelength");
+                end;
+                %end;
+
+        		*alphabetize levelid vars;
+                %alphabetizevarutil(array=d, in=levelvars, out=levelvars_out);
+            run;
+
+            proc append base=userstrata data=_tempuserstrata force; run;
+        %end;
+    %end;
+
+    /*userstrata is optional if no rows in tablefile and figurefile are specified with DATASET populated*/
+    %let userstrataspecified = N;
+    %isdata(dataset=userstrata);
+    %if %eval(&nobs.>0) %then %do;
+        %let userstrataspecified = Y;
+        proc sort data=userstrata nodupkey;
+            by _all_;
+        run;
+
+        *Abort if there are duplicate tableid/levelid values and tableid/levelvars values;
+        proc sort data=userstrata nodupkey dupout=_userstratadups;
+            by tableid levelid;
+        run;
+        %isdata(dataset=_userstratadups);
+        %if %eval(&nobs.>0) %then %do;
+            %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelid combinations.;
+            %put The reporting code will abort;
+            %abort;
+        %end;
+        proc sort data=userstrata nodupkey dupout=_userstratadups;
+            by tableid levelvars;
+        run;
+        %isdata(dataset=_userstratadups);
+        %if %eval(&nobs.>0) %then %do;
+            %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelvars combinations.;
+            %put The reporting code will abort;
+            %abort;
+        %end;
+    %end;
+
+    /*Read in TableFile, alphabetize variables, and assign title*/
+    %isdata(dataset=input.&tablefile.);
+    %if %eval(&nobs.>0) %then %do;
+        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
+                       rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
+            set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+
+        	table=upcase(table);
+        	tablesub=lowcase(tablesub);
+            tablesubstrat=lowcase(tablesubstrat);
+        	levelid1 = lowcase(levelid1);
+        	levelid2 = lowcase(levelid2);
+        	levelid3 = lowcase(levelid3);
+        	dataset = lowcase(dataset);
+
+        	*defensive: replace overall with missing;
+        	if levelid1 = 'overall' then levelid1 = '';
+        	if levelid2 = 'overall' then levelid2 = '';
+        	if levelid3 = 'overall' then levelid3 = '';
+
+            /*if reporttype = T4L1, replace dataset if tablesubstrat = t4nopreg*/
+            %if %str("&reporttype") = %str("T4L1") %then %do;
+                if tablesubstrat = 't4nopreg' then do;
+                    if dataset = 't4preg' then dataset = 't4nopreg';
+                    if dataset = 't4preggestwk' then dataset = 't4nopreggestwk';
+                end;
+            %end;
+
+        	/*Add column to hold table title stratification value - prior to reorder of variables*/
+            format tabletitle $100.;
+            if tablesub='overall' then do;
+                tabletitle = '';
+            end;
+            else do;
+                numw = countw(tablesub);
+                do i = 1 to numw;
+                    if i = 1 then do;
+                        tabletitle = ', by '||strip(propcase(scan(tablesub, i)));
+                    end;
+                    else if i = 2 and numw = 2 then do;
+                        tabletitle = cat(strip(tabletitle), ' and ',strip(propcase(scan(tablesub, i))));
+                    end;
+                    else if i = numw and numw >2 then do;
+                        tabletitle = cat(strip(tabletitle), ', and ',strip(propcase(scan(tablesub, i))));
+                    end;
+                    else do;
+                        tabletitle = cat(strip(tabletitle), ', ',strip(propcase(scan(tablesub, i))));
+                    end;
+                end;
+                drop i numw;
+
+                /*change the following tablesub values:
+                 - Agegroup => Age Group
+                 - Hispanic => Hispanic Origin
+                 - Zip3 => 3-Digit Zip/State
+                 - Zip_uncertain => Zip Uncertain
+                 - Hhs_reg => Health and Human Services (HHS) Region
+                 - Cb_reg => Census Bureau Region
+                 - Adherence => Overall Adherence Criteria
+                */
+                if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
+                if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
+                if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
+                if index(tabletitle, 'Zip_uncertain')>0 then tabletitle =tranwrd(tabletitle, 'Zip_uncertain', 'Zip Uncertain');
+                if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
+                if index(tabletitle, 'Cb_reg')>0 then tabletitle =tranwrd(tabletitle, 'Cb_reg', 'Census Bureau Region');
+                if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
+
+                /*Add ampersand to covariate. Will be resovled when title prints*/
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&covar');
+            end;
+
+        	*alphabetize levelid, tablesub and tablesubstrat vars;
+            %alphabetizevarutil(array=a, in=levelid1, out=levelid1_out);
+            %alphabetizevarutil(array=b, in=levelid2, out=levelid2_out);
+            %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
+            %alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
+            %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
+        run;
+
+        %isdata(dataset=tablefile);
+        %if %eval(&nobs.>0) %then %do;
+            /*TableFile requires USERSTRATA specified*/
+            %if &userstrataspecified. = N %then %do;
+                %put ERROR: (Sentinel) TableFile specified however no USERSTRATA file is specified in QRP.;
+                %abort;
+            %end;
+            %else %do;
+                *Merge in levelids - need to do three times, 1 for each levelid;
+                proc sql noprint undo_policy=none;
+                	create table tablefile as
+                	select distinct table.table
+                		 , table.tablesub
+                         , table.tablesubstrat
+                		 , table.dataset
+                		 , table.levelid1 as strat1
+                		 , table.levelid2 as strat2
+                         , table.levelid3 as strat3
+                         , table.levelnum
+                         , table.tabletitle
+                		 , strata.levelid as levelid1
+                         , strata1.levelid as levelid2
+                         , strata2.levelid as levelid3
+                	from tablefile as table
+                	left join userstrata as strata
+                	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
+                    left join userstrata as strata1
+                	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
+                    left join userstrata as strata2
+                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
+                quit;
+        		
+                *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
+                data levelid_check;
+                	set tablefile;
+                    where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
+                run;
+
+                %isdata(dataset=levelid_check);
+                %if %eval(&nobs.>0) %then %do;
+                    data output.levelid_check;
+                        set levelid_check;
+                    run;
+                   %put ERROR: (Sentinel) Unable to generate all requested report tables and stratifications.;
+                   %put ERROR: (Sentinel) Check output data LEVELID_CHECK for more information.;
+                   %abort;
+                %end;
+                %else %do;
+                    /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
+                    proc sql noprint;
+                        select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
+                        from tablefile(where=(missing(dataset)=0))
+                    quit;
+                    %let datasetlist = &tdatasetlist.;
+                %end;
+            %end;
+        %end; /*TableFile has rows with IncludeinReport=Y*/
+        %else %do;
+            %put WARNING: (Sentinel) TableFile specified, but all rows have INCLUDEINREPORT set to N.;
+        %end;
+    %end; /*TableFile specified*/
+
+    /*Read in FigureFile, alphabetize variables, and assign title*/
+    %isdata(dataset=input.&figurefile.);
+    %if %eval(&nobs.>0) %then %do;
+        data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
+                        rename=figuresub_out=figuresub);
+            set input.&figurefile.(where=(upcase(includeinreport)='Y'));
+
+        	figure=upcase(figure);
+        	figuresub=lowcase(figuresub);
+        	levelid1 = lowcase(levelid1);
+        	levelid2 = lowcase(levelid2);
+        	levelid3 = lowcase(levelid3);
+        	dataset = lowcase(dataset);
+
+        	*defensive: replace overall with missing;
+        	if levelid1 = 'overall' then levelid1 = '';
+        	if levelid2 = 'overall' then levelid2 = '';
+        	if levelid3 = 'overall' then levelid3 = '';
+
+        	/*Add column to hold figure title stratification value - prior to reorder of variables*/
+            format figuretitle $100.;
+            if figuresub='overall' then do;
+                figuretitle = '';
+            end;
+            else do;
+                numw = countw(figuresub);
+                do i = 1 to numw;
+                    if i = 1 then do;
+                        figuretitle = ', by '||strip(propcase(scan(figuresub, i)));
+                    end;
+                    else if i = 2 and numw = 2 then do;
+                        figuretitle = cat(strip(figuretitle), ' and ',strip(propcase(scan(figuresub, i))));
+                    end;
+                    else if i = numw and numw >2 then do;
+                        figuretitle = cat(strip(figuretitle), ', and ',strip(propcase(scan(figuresub, i))));
+                    end;
+                    else do;
+                        figuretitle = cat(strip(figuretitle), ', ',strip(propcase(scan(figuresub, i))));
+                    end;
+                end;
+                drop i numw;
+
+                /*change the following tablesub values:
+                 - Agegroup => Age Group
+                 - Hispanic => Hispanic Origin
+                */
+                if index(figuretitle, 'Agegroup')>0 then figuretitle =tranwrd(figuretitle, 'Agegroup', 'Age Group');
+                if index(figuretitle, 'Hispanic')>0 then figuretitle =tranwrd(figuretitle, 'Hispanic', 'Hispanic Origin');
+            end;
+
+        	*alphabetize levelid and figuresub vars;
+            %alphabetizevarutil(array=a, in=levelid1, out=levelid1_out);
+            %alphabetizevarutil(array=b, in=levelid2, out=levelid2_out);
+            %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
+            %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
+        run;
+
+        %isdata(dataset=figurefile);
+        %if %eval(&nobs.>0) & %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
+            /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
+            /*USERSTRATA is optional for reporttype = T2L2, T4L2*/
+            %if &userstrataspecified. = N %then %do;
+                %put ERROR: (Sentinel) FigureFile specified however no USERSTRATA file is specified in QRP.;
+                %abort;
+            %end;
+            %else %do;
+                /*Check USERSTRATA file against FigureFile to ensure correct levelIDs specified*/
+                *Merge in levelids - need to do three times, 1 for each levelid;
+                proc sql noprint undo_policy=none;
+                    create table figurefile as
+                    select distinct figure.figure
+                    	 , figure.figuresub
+                    	 , figure.dataset
+                    	 , figure.levelid1 as strat1
+                    	 , figure.levelid2 as strat2
+                         , figure.levelid3 as strat3
+                         , figure.levelnum
+                         , figure.figuretitle
+                    	 , strata.levelid as levelid1
+                         , strata1.levelid as levelid2
+                         , strata2.levelid as levelid3
+                    from figurefile as figure
+                    left join userstrata as strata
+                    on strata.tableid = figurefile.dataset and strata.levelvars = figurefile.levelid1
+                    left join userstrata as strata1
+                    on strata1.tableid = figurefile.dataset and strata1.levelvars = figurefile.levelid2
+                    left join userstrata as strata2
+                    on strata2.tableid = figurefile.dataset and strata2.levelvars = figurefile.levelid3;
+                quit;
+            	
+                *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
+                data levelid_check;
+                    set figurefile;
+                    where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
+                run;
+
+                %isdata(dataset=levelid_check);
+                %if %eval(&nobs.>0) %then %do;
+                    data output.levelid_check;
+                        set levelid_check;
+                    run;
+                   %put ERROR: (Sentinel) Unable to generate all requested report figures and stratifications.;
+                   %put ERROR: (Sentinel) Check output data LEVELID_CHECK for more information.;
+                   %abort;
+                %end;
+                %else %do;
+                    /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
+                    proc sql noprint;
+                        select distinct strip(lowcase(dataset)) into: fdatasetlist separated by ' '
+                        from figurefile(where=(missing(dataset)=0))
+                    quit;
+                    %let datasetlist = &datasetlist. &fdatasetlist.;
+                %end;
+            %end;
+        %end; /*FigureFile has rows with IncludeinReport=Y and should be mapped to USERSTRATA file*/
+        %else %if %eval(&nobs.<1) %then %do;
+            %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
+        %end;
+    %end; /*FigureFile specified*/
+
+    /*TableFile and FigureFile are optional, but if neither are specified for the following report types then write warning to the log:
+       T1, T2L1, T4L1, T5, T6, ITS*/
+    %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T4L1|T5|T6/i,&reporttype.)) & %sysfunc(exist(tablefile))<1 & %sysfunc(exist(figurefile))<1 %then %do;
+        %put WARNING: (Sentinel) TableFile and FigureFile are not specified. No additional tables or figures will be produced.;
+    %end;
+
+    %put datasetlist = &datasetlist;
 
 /***************************************************************************************************
 *   For L2 reports - create master PS/CS input file dataset                                               
@@ -273,7 +693,7 @@
         %do n = 1 %to &numrunid.;
             %let runid = %scan(&runidlist., &n.);
             data pscs_masterinputs;
-                set pscs_masterinputs
+                set pscs_masterinputs(in=x)
                 %if %str("&&&runid._psmatchfile") ne %str("") %then %do;
                     infolder.&&&runid._psmatchfile(in=a)
                 %end;
@@ -300,7 +720,9 @@
                 if d then file = 'iptwfile';
                 %end;
 
+                if not x then do;
                 runid = "&runid.";
+                end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp ceiling caliper ratio strataweight

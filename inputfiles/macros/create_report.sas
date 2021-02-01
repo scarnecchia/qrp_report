@@ -47,8 +47,8 @@
     /*read in input files and process input file parameters*/
     %process_inputfiles();
     
-    /*Create report formats*/
-    %reportformats();
+    /*Create report formats and labels*/
+    %report_formats_labels();
 
 ***************************************************************************************************;
 * Create concactenated libname for each DP and output DP metadata                                                      
@@ -65,7 +65,11 @@
 
     %baseline_driver();
 
+***************************************************************************************************;
+* Aggregate MSOC output tables from each DP                                                      
+***************************************************************************************************;
 
+	%aggregate_report_tables;
 
 ***************************************************************************************************;
 *   Assign study start and end dates                                               
