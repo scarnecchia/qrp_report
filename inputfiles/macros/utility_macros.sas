@@ -28,8 +28,9 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
-
-*Macro to determine whether a dataset is empty or not;
+/*-----------------------------------------------------------------------------------------------------------
+   Macro to determine whether a dataset is empty or not
+  -----------------------------------------------------------------------------------------------------------*/
 %MACRO ISDATA(dataset=);
     %GLOBAL NOBS;
     %let NOBS=0;
@@ -41,3 +42,75 @@
     %end;   
 %PUT &NOBS.;
 %MEND ISDATA;
+
+/*-----------------------------------------------------------------------------------------------------------
+   Macro to create template to use in reports
+  -----------------------------------------------------------------------------------------------------------*/
+%macro template;
+   proc template;
+   define style qrp_report;
+   notes "QRP Report Style";
+      style data/
+      backgroundcolor = white
+   	  color = black
+   	  fontfamily = "Arial"
+   	  fontsize = 9pt
+   	  bordercolor = ligr
+   	  borderstyle = solid
+   	  borderwidth = 1pt
+   	  cellpadding =1.75pt
+   	  frame = box
+   	  ;
+      style body/
+      backgroundcolor = white
+   	  frame = void
+   	  topmargin = 1.0in
+   	  leftmargin = .5in
+   	  rightmargin = .5in
+   	  bottommargin = .75in
+   	  ;
+      style header /
+      color = black
+   	  foreground=black
+   	  just=L 
+      bordertopcolor=black 
+      borderbottomcolor=black
+   	  bordercolor = ligr
+   	  borderstyle = solid
+   	  borderwidth = 1pt
+   	  fontfamily = "Arial"
+   	  fontweight = bold
+   	  fontsize = 9pt
+   	  cellpadding =1.75pt
+      backgroundcolor = white
+   	  frame = box
+   	  ;
+   	style footer /
+      color = black
+   	  fontfamily = "Arial"
+   	  fontweight = bold
+   	  fontsize = 9pt
+   	  cellpadding =1.75pt
+      backgroundcolor = white
+   	  frame = void
+   	  ;
+      style subheader /
+      color = black
+   	  fontfamily = "Arial"
+   	  fontweight = bold
+   	  fontsize = 9pt
+   	  cellpadding =1.75pt
+      backgroundcolor = ligr
+   	  frame = void
+   	  just = L
+   	  bordertopcolor=black 
+      borderbottomcolor=black
+   	  bordercolor = ligr
+   	  borderstyle = solid
+   	  borderwidth = 1pt
+   	  frame = box;
+   	  ;
+      end;
+   run;
+	 
+%mend template;
