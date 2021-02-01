@@ -74,7 +74,6 @@
     &out. = catx(' ',of &array.[*]);
     drop i p l &in.;
 %mend;
-
 /*-----------------------------------------------------------------------------------------------------------
    Macro to create template to use in reports
   -----------------------------------------------------------------------------------------------------------*/
@@ -82,7 +81,7 @@
    proc template;
    define style qrp_report;
    notes "QRP Report Style";
-      style data/
+    style data/
       backgroundcolor = white
    	  color = black
    	  fontfamily = "Arial"
@@ -92,8 +91,9 @@
    	  borderwidth = 1pt
    	  cellpadding =1.75pt
    	  frame = box
+	  just = C
    	  ;
-      style body/
+    style body/
       backgroundcolor = white
    	  frame = void
    	  topmargin = 1.0in
@@ -101,10 +101,26 @@
    	  rightmargin = .5in
    	  bottommargin = .75in
    	  ;
-      style header /
+	style title /
       color = black
    	  foreground=black
-   	  just=L 
+   	  just = L 
+      bordertopcolor=black 
+      borderbottomcolor=black
+   	  bordercolor = ligr
+   	  borderstyle = solid
+   	  borderwidth = 1pt
+   	  fontfamily = "Arial"
+   	  fontweight = bold
+   	  fontsize = 9pt
+   	  cellpadding =1.75pt
+      backgroundcolor = white
+   	  frame = box
+   	  ;
+    style header /
+      color = black
+   	  foreground=black
+   	  just = C 
       bordertopcolor=black 
       borderbottomcolor=black
    	  bordercolor = ligr
@@ -126,7 +142,7 @@
       backgroundcolor = white
    	  frame = void
    	  ;
-      style subheader /
+    style subheader/
       color = black
    	  fontfamily = "Arial"
    	  fontweight = bold
