@@ -189,7 +189,6 @@
            on a.runid = b.col1;
      quit;
 
-
      /* Identify run specific parameters and values to store as macro variables*/
 	 %do n = 1 %to &numrunid.;
 	   /* Abort if run value is missing*/
@@ -674,6 +673,52 @@
     %end;
 
     %put datasetlist = &datasetlist;
+
+/***************************************************************************************************
+*   BASELINEGROUPNUM parameter check - ensure valid parameter combinations are used                                           
+***************************************************************************************************/
+
+  %if %sysfunc(exist(input.&baselinefile.)) %then %do;
+        %let chk_baselinegroupnum = ;
+
+        /* Check whether order values are the same across different run IDs */
+        proc sql noprint;
+            select count(distinct order)
+            into :numorder 
+            from input.&baselinefile;
+        quit;
+
+        %do m = 1 %to &numorder;
+        data _null_;
+           set input.&baselinefile.(where=(order=&m));
+           lag_runid = lag(runid);
+           if _n_ > 1 then do;
+            if lowcase(runid) ^= lowcase(lag_runid) then do;
+                put 'ERROR: (Sentinel) ORDER values cannot be repeated across different RUNID values';
+                abort;
+            end;
+            if missing(baselinegroupnum) then do;
+                put 'ERROR: (Sentinel) ORDER values can only be repeated when using the BASELINEGROUPNUM parameter';
+                abort;
+            end;
+           end;
+           if _n_ > 2 then do;
+             put 'ERROR: (Sentinel) Only a maximum of 2 rows per ORDER value can be specified for the BASELINEGROUPNUM parameter';
+             put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
+             abort;
+           end;
+           if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
+        run;
+
+        /* Check for populated baselinegroupnum parameter within specific analysis types */
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
+         %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
+         %abort;
+        %end;
+
+        %end; /* m */
+
+     %end; /* baselinefile */
 
 /***************************************************************************************************
 *   For L2 reports - create master PS/CS input file dataset                                               

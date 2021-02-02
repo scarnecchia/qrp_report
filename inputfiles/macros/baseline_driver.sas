@@ -105,6 +105,10 @@
                 if b then do;
                     analysisgrp = group;
                 end;
+                if not missing(baselinegroupnum) then do;
+                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT=Y';
+                    abort;
+                end;
             run;
         %end;
 
@@ -115,6 +119,10 @@
                 format analysisgrp $40.;
                 if a then group = cats(group, '_eoi');
                 if b then group = cats(group, '_ref');
+                if not missing(baselinegroupnum) then do;
+                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with MILGRP values';
+                    abort;
+                end;
             run;
         %end;
     %mend;
@@ -239,6 +247,10 @@
                 by order metvar vartype &Switch_s;
             run;
 
+            proc sort data=baselinefile;
+                by order baselinegroupnum;
+            run;
+
             %macro reformatL1baseline(switch = );
 
                 /*to restrict type 6 switching tables*/
@@ -261,9 +273,11 @@
                             call symputx('cohortvalue', cohort);
                             call symputx('analysisgrp', analysisgrp);
                             call symputx('computebalance', upcase(computebalance));
+                            call symputx('baselinegroupnum', baselinegroupnum);
 
                             /*if includenonpregnant = Y, group1=preg and group2=nonpreg*/
                             /*when cohort = mi, group1= _eoi and group2=_ref*/
+                            *if baselinegroupnum is specified, group1 = baselinegroupnum = 1 and group2 = baselinegroupnum = 2;
                             /*otherwise, group2 will not be populated*/
                             if upcase(includenonpregnant) = 'Y' then do;
                                 call symputx('group1where',"and cohort='preg'");
@@ -275,11 +289,22 @@
                                 call symputx('group2where',"and substr(group1, length(group1)-3, length(group1))='_ref'");
                                 call symputx('createcompcolumns', 'Y');
                             end;
+                            else if missing(baselinegroupnum)=0 then do;
+                                call symputx('group1where','and group1="&analysisgrp"');
+                                call symputx('createcompcolumns', 'Y');
+                            end;
                             else do;
                                 call symputx('group1where',"");
                                 call symputx('group2where',"");
                                 call symputx('createcompcolumns', 'N');
                             end;
+                        end;
+                        /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
+                        if _n_ = 2 then do;
+                        if missing(baselinegroupnum)=0 then do;
+                            call symputx('group2where','and group1="&analysisgrp2"');
+                            call symputx('analysisgrp2',analysisgrp);
+                        end;
                         end;
                     run;
 
@@ -427,6 +452,10 @@
                             %else %if %str("&cohortvalue") = %str("mi") %then %do;
                                 group1 = cats("&analysisgrp", "_eoi");
                                 group2 = cats("&analysisgrp", "_ref");
+                            %end;
+                            %else %if %length(&baselinegroupnum.) >0 %then %do;
+                                group1 = "&analysisgrp";
+                                group2 = "&analysisgrp2";
                             %end;
                         %end;
                         %else %do;
