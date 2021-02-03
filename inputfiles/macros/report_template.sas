@@ -1,0 +1,122 @@
+****************************************************************************************************
+*                                           PROGRAM OVERVIEW
+****************************************************************************************************
+*
+* PROGRAM: report_template.sas  
+*
+* Created (mm/dd/yyyy): 02/01/2021
+* Last modified: 02/01/2021
+*
+*--------------------------------------------------------------------------------------------------
+* PURPOSE: This program is used to create a template for qrp reports using proc template
+*  
+*  Program inputs:                                                                                   
+* 
+*  Program outputs:    
+*   -template named qrp_report_&outputtype.
+* 
+*  PARAMETERS:
+*   - outputtype: The file type the template will be used for (ex: Excel)
+*   - fontsize: The size of the font
+*   - font: The font family                                                                    
+*            
+*  Programming Notes:    
+*
+*--------------------------------------------------------------------------------------------------
+* CONTACT INFO: 
+*  Sentinel Coordinating Center
+*  info@sentinelsystem.org
+*
+***************************************************************************************************;
+
+/*-------------------------------------------------------------------------------------------------
+   Macro to create template to use in reports
+--------------------------------------------------------------------------------------------------*/
+
+ %macro report_template(outputtype = ,fontsize = , font =);
+
+    proc template;
+        define style qrp_report_&outputtype.;
+        notes "QRP Report Style";
+        style data/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+     	  bordercolor = ligr
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  cellpadding =1.75pt
+     	  frame = box
+  	      just = C
+     	  ;
+        style body/
+          backgroundcolor = white
+     	  frame = void
+     	  topmargin = 1.0in
+     	  leftmargin = .5in
+     	  rightmargin = .5in
+     	  bottommargin = .75in
+     	  ;
+  	     style title /
+          color = black
+     	  foreground=black
+          bordertopcolor=black 
+          borderbottomcolor=black
+     	  bordercolor = ligr
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = white
+     	  frame = box
+     	  just = L 
+     	  ;
+        style header /
+          color = black
+     	  foreground=black
+          bordertopcolor=black 
+          borderbottomcolor=black
+     	  bordercolor = ligr
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = white
+     	  frame = box
+     	  just = C 
+     	  ;
+     	style footer /
+          color = black
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = white
+     	  frame = void
+     	  just = L 
+     	  ;
+        style subheader/
+          color = black
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = ligr
+     	  frame = void
+     	  bordertopcolor=black 
+          borderbottomcolor=black
+     	  bordercolor = ligr
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  frame = box
+     	  just = L
+     	  ;
+        end;
+    run;
+
+%mend report_template;
