@@ -60,6 +60,18 @@
                   signaturefile =%scan(&runidlist,1)_signature);
 
 ***************************************************************************************************;
+* Create PDF and Excel templates                                                    
+***************************************************************************************************;
+
+	%if %str("&sysscp.") = %str("WIN") %then %do;
+	  %template(outputtype = excel, fontsize = 10pt, font = Calibri); 
+	%end;
+	%else %do;
+	  %template(outputtype = excel, fontsize = 9pt, font = Arial); 
+	%end;
+	%template(outputtype = pdf, fontsize = 8pt, font= Arial); 
+	
+***************************************************************************************************;
 * Baseline tables                                                      
 ***************************************************************************************************;
 
