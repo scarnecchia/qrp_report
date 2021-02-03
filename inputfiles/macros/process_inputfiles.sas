@@ -155,8 +155,8 @@
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
 	       input.&groupsfile. (keep = runid)
 		 %end;
-	     %if %sysfunc(exist(input.&l2comparisonsfile.)) %then %do;
-		   input.&l2comparisonsfile. (keep = runid)
+	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
+		   input.&l2comparisonfile. (keep = runid)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
 		   input.&baselinefile. (keep = runid)
@@ -266,11 +266,10 @@
      %end;
 
 /***************************************************************************************************
-*   Identify groups for each runID                                               
+*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6                                             
 ***************************************************************************************************/
 
 	%if %sysfunc(exist(input.&groupsfile. )) ne 0 %then %do;
-
 		data groupsfile;
 			set input.&groupsfile.;
 			runid = lowcase(runid);
@@ -288,10 +287,8 @@
 				quit;
 				%put &&grouplist_&n..;
 	     %end;
-
 	 %end;
 
- 
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
 ***************************************************************************************************/
@@ -721,10 +718,60 @@
      %end; /* baselinefile */
 
 /***************************************************************************************************
-*   For L2 reports - create master PS/CS input file dataset                                               
+*   For L2 reports:
+     1: Read in L2ComparisonFile
+     2: For T4 reports: read in optional SelectionProbabilitiesFile
+     3: create master PS/CS input file dataset                                               
 ***************************************************************************************************/
 
     %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+
+        /******************/
+        /*L2ComparisonFile*/
+        /******************/
+        %isdata(dataset=input.&l2comparisonfile.);
+        %if %eval(&nobs.>0) %then %do;
+            data l2comparisonfile;
+                set input.&l2comparisonfile.;
+                /*defensive*/
+                analysisgrp=strip(lowcase(analysisgrp));
+                runid=strip(lowcase(runid));
+
+                %if %str("&reporttype") = %str("T2L2") %then %do;
+                outputconditional=strip(upcase(outputconditional));
+                outputunconditional=strip(upcase(outputunconditional));
+                %end;
+                %else %if %str("&reporttype") = %str("T4L2") %then %do;
+                outputunconditional=strip(upcase(outputunconditional));
+                if outputunconditional ne 'Y' then do;
+                    put 'WARNING: (Sentinel) Parameter OutputUnconditional is not set to Y so only unadjusted results will be included in report';
+                end;
+                outputconditional='N';
+                %end;
+            run;
+        %end;
+        %else %do;
+            %put Warning: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2. Effect estimates will not be computed;
+        %end;
+
+        /****************************/
+        /*SelectionProbabilitiesFile*/
+        /****************************/
+        %if %str("&reporttype") = %str("T4L2") %then %do;
+        %isdata(dataset=input.&SelectionProbabilitiesFile.);
+        %if %eval(&nobs.>0) %then %do;
+            data SelectionProbabilitiesFile;
+                set input.&SelectionProbabilitiesFile.;
+                /*defensive*/
+                analysisgrp=strip(lowcase(analysisgrp));
+                runid=strip(lowcase(runid));
+            run;
+        %end;
+        %end;
+        
+        /**********************************/
+        /*Master PS/CS input file datasets*/
+        /**********************************/
 
         /*Create shell table*/
         data pscs_masterinputs;
@@ -735,6 +782,7 @@
             stop;
         run;
 
+        /*Set each table by looping through runIDs*/
         %do n = 1 %to &numrunid.;
             %let runid = %scan(&runidlist., &n.);
             data pscs_masterinputs;
@@ -776,7 +824,7 @@
         %end;
 
         proc sort data=pscs_masterinputs nodupkey;
-            by analysisgrp;
+            by runid analysisgrp;
         run;
 
     %end;
