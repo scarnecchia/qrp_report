@@ -145,7 +145,7 @@ options validvarname = v7;
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
 
 /*report template*/
-%include "&reportroot.inputfiles/macros/template.sas";
+%include "&reportroot.inputfiles/macros/report_template.sas";
 
 /*set up*/
 %include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
