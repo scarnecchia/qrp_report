@@ -74,6 +74,10 @@
     %global datasetlist;
     %let datasetlist = ;
 
+    /*L2 report variables*/
+    %global numl2comparisons;
+    %let numl2comparisons = 0;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

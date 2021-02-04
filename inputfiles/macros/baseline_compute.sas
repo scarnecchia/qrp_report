@@ -113,7 +113,7 @@
         %let weightscheme = ;
         %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp."));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));

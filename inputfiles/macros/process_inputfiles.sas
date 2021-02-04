@@ -749,6 +749,8 @@
                 outputconditional='N';
                 %end;
             run;
+
+            %let numl2comparisons = &nobs.;
         %end;
         %else %do;
             %put Warning: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2. Effect estimates will not be computed;
@@ -775,9 +777,9 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file $32 analysisgrp $40 psestimategrp $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles 8;
-            call missing(runid, file, analysisgrp, psestimategrp, ceiling, caliper, ratio, strataweight,
+            length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+                   caliper ceiling percentiles covarnum 8;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles);
             stop;
         run;
@@ -818,14 +820,17 @@
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
-                keep runid file analysisgrp psestimategrp ceiling caliper ratio strataweight
-                     ipweight percentiles;
+                if missing(covarnum) then covarnum = 0;
+                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight
+                     ipweight percentiles eoi ref;
             run;
         %end;
 
         proc sort data=pscs_masterinputs nodupkey;
             by runid analysisgrp;
         run;
+
+        data output.pscs_masterinputs; set pscs_masterinputs; run;
 
     %end;
 
