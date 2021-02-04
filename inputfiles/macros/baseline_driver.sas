@@ -45,7 +45,7 @@
     ***********************************************************************************************;
 
     %macro assign_cohort_mergevar(cohort=, mergevar=, outdata=, crosscheckfile = , crosscheckvar = ,includenonpregnant=N);
-
+	
         data &outdata.;
             set input.&baselinefile.;
             format cohort mergevar $15. analysisgrp $40.;
@@ -55,6 +55,28 @@
             cohort = "&cohort";
             mergevar = "&mergevar";
         run;
+		
+		proc sql noprint;
+		  create table &outdata._ps as
+		    select base.*
+			      ,pscs.psestimategrp
+		    from &outdata. as base
+			left join pscs_masterinputs as pscs
+			  on base.analysisgrp = pscs.analysisgrp
+			left join pscs_masterinputs (where = (not missing(ipweight))) as ip
+			  on base.analysisgrp = ip.analysisgrp
+		    order by psestimategrp
+			        ,order;
+		quit;
+		
+		data &outdata.;
+		  set &outdata._ps;
+		  length unique_psestimate 5;
+		  retain unique_psestimate;
+		  by psestimategrp order;
+		  unique_psestimate +1;
+          if first.psestimategrp then unique_psestimate = 1;
+		run;
 
         /*Only keep rows where group found in selected input file*/
         %if %str("&crosscheckfile") ne %str("") %then %do;
