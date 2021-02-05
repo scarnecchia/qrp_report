@@ -767,6 +767,7 @@
                 /*defensive*/
                 analysisgrp=strip(lowcase(analysisgrp));
                 runid=strip(lowcase(runid));
+                value = upcase(value);
             run;
         %end;
         %end;
@@ -829,8 +830,6 @@
         proc sort data=pscs_masterinputs nodupkey;
             by runid analysisgrp;
         run;
-
-        data output.pscs_masterinputs; set pscs_masterinputs; run;
 
     %end;
 

@@ -13,12 +13,13 @@
 *  - infile        = the name of the file to aggregate across DPs
 *  - outfile       = the name of the final file
 *  - pscsfile      = QRP input file that defines analysis
+*  - whereclause   = condition to restrict infile
 *  - convrule      = comma delimited list of indicator numbers to consider model having converged
 *  - convdata      = dataset that contains convergence status (QRP [runid]_estimates_[periodid])
 *  - settomissvars = comma delimited variables to set to missing if model does not converge
 * 
 *  Program outputs:                                                                                                                                       
-*	- a dataset &&dataout. containing DP data with DP indentification variable
+*	- a dataset &outfile. containing DP data with DP indentification variable
 * 
 *  Programming Notes:                                                                                
 *                             
@@ -33,6 +34,7 @@
 %macro aggregate_l2_datasets(infile=,
                              outfile=,
                              pscsfile=,
+                             whereclause=,
                              convrule=,
                              convdata=,
                              settomissvars=);
@@ -40,16 +42,17 @@
     %put =====> MACRO CALLED: aggregate_l2_datasets;
 
   	proc datasets library = work nolist nowarn; 
-        delete &dataout.; 
+        delete &outfile.; 
     quit;
 
     %do dps = 1 %to %eval(&num_dp.); 
-        %let dpsiteid = %scan(&random_dplist,&dps); 
+        %let dpidsiteid = %scan(&random_dplist,&dps); 
     	%let maskedID = %scan(&masked_dplist,&dps); 
 
         *Manage convergence status - if model did not meet convergence status, then set variables list in 
          SETTOMISSVARS to missing;
         %let converge = 1;
+        %if %length(&convrule.)>0 %then %do;
         %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
             %if %sysfunc(exist(&dpidsiteid..&convdata))=1 %then %do;
                 data _null_;
@@ -59,12 +62,13 @@
                 run;
             %end;
         %end;
+        %end;
 
         %if %sysfunc(exist(&dpidsiteid..&infile))=1 %then %do;
 			data _temp_&dps.; 
-				set &dpsiteid..&datain.(where=(lowcase(analysisgrp)="&analysisgrp"));
-				length dpidsiteid $6.;
-				dpidsiteid = "&dpsiteid.";
+				set &dpidsiteid..&infile.(where=(&whereclause.));
+				length dpidsiteid $4.;
+				dpidsiteid = "&maskedID.";
         	  	dum0=1;
           		dp=input("&dps.",best.);
 
@@ -74,11 +78,11 @@
                 %end;
             run; 
 
-            /*Append to &dataout*/
-            proc append data=_temp_&dps. base=&dataout. force; run;
+            /*Append to &outfile*/
+            proc append data=_temp_&dps. base=&outfile. force; run;
         %end;
         %else %do;
-    	   %put WARNING: (Sentinel) &infile does not exist for &dpsiteid..;
+    	   %put WARNING: (Sentinel) &infile does not exist for &dpidsiteid..;
         %end;
 
         /*Write warning to log if data exist by analysisgrp is missing from file*/
@@ -86,7 +90,6 @@
 		%if %eval(&nobs.=0) %then %do;
             %put WARNING: (Sentinel File &infile exists for DP &DPIDSITEID., but analysisgrp &analysisgrp. is missing;  
         %end;  
-
 
         /*Delete temporary dataset*/
         proc datasets nowarn noprint nolist lib=work; 

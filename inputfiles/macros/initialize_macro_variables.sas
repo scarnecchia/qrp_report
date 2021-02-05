@@ -39,9 +39,11 @@
     %let numrunid = 0;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
-    %global startdateformatted studyenddateformatted;
+    %global startdateformatted studyenddateformatted minqueryyear maxqueryyear;
     %let startdateformatted = ;
     %let studyenddateformatted = ;
+    %let minqueryyear = 2000;
+    %let maxqueryyear = %sysfunc(year("&sysdate."d));
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
@@ -50,8 +52,8 @@
 
     %let ReportType= ;
     %let small_cellcounts = ;
-    %let redactevents = ;
-    %let redactPT = ;
+    %let redactevents =0;
+    %let redactPT =0;
     %let stratifybyDP = ;
     %let seed = ;
     %let groupsfile = ;

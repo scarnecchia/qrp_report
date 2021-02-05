@@ -65,7 +65,12 @@
     data _null_;
         call symputx('startdateformatted', put(&minstartdate.,WORDDATE.));
         call symputx('enddateformatted', put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.));
+        call symputx('enddate', min(&maxfupenddate.,&maxdpenddate.));
     run;
+
+    /*Assign min and max years*/
+    %let minqueryyear = %sysfunc(year(&minstartdate.));
+    %let maxqueryyear = %sysfunc(year(&enddate.));
 
     %put study start date = &startdateformatted.;
     %put study end date = &enddateformatted.;
