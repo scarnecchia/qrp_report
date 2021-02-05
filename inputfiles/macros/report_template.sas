@@ -38,6 +38,12 @@
     proc template;
         define style qrp_report_&outputtype.;
         notes "QRP Report Style";
+		%if %str("&outputtype.") = %str("excel") %then %do;
+		  parent = styles.Excel;
+		%end;
+		%else %do;
+		  parent = styles.Pearl;
+		%end;
         style data/
           backgroundcolor = white
      	  color = black
@@ -115,6 +121,48 @@
      	  borderwidth = 1pt
      	  frame = box
      	  just = L
+     	  ;
+		style systemtitle/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+		  fontweight = bold
+     	  cellpadding =1.75pt
+     	  frame = void
+  	      just = L
+     	  ;
+		style linecontent/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+     	  bordercolor = ligr
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  cellpadding =1.75pt
+     	  frame = box
+  	      just = L
+     	  ;
+		style paragraph/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+		  fontweight = bold
+     	  cellpadding =1.75pt
+     	  frame = void
+  	      just = L
+     	  ;
+		style note/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+		  fontweight = bold
+     	  cellpadding =1.75pt
+     	  frame = void
+  	      just = L
      	  ;
         end;
     run;
