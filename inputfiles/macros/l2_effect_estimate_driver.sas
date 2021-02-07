@@ -346,19 +346,16 @@
 
                 /* Type 4 tables
                     %l2_effect_estimate_runlogitor = OR Logit model or CMH (risk set and patient level)
+                    %l2_effect_estimate_runrd_rs = risk ratio, risk differences (risk set)
 
-
-
+                /* Macro calls for risk metrics are the same for ReportType = T2L2 and T4L2 for risk set
+                   data. ReportType = T2L2 can also compute risk metrics using individual level data
                 /**************************************************************************************/
 
-/*			    %if "&datalevel" = "rs" %then %do;*/
-/*                 %lt4_r1_efest_computerisk(where=%str(analysis="Unadjusted" and subgroupcat=''), Analysis= "Unadjusted", subgroupcat = "");*/
-/*             %if "&datalevel" = "pl" %then %do;*/
-/*                 %lt4_r1_efest_computerisk(where=%str(subgroupcat=''), Analysis= "Unadjusted", subgroupcat = "");*/
-
-
-
                 /*Unadjusted*/
+                %if &individualreturn. = N | %str("&reporttype.") = %str("T4L2") %then %do;
+                    %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = "", donotreport=N);
+                %end;
                 %if %str("&reporttype.") = %str("T2L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runcox(where=missing(subgroupcat), strata=dpidsiteid, analysis= "Unadjusted", subgroupcat = "");
@@ -366,45 +363,60 @@
                     %end;
                     %if &individualreturn. = N %then %do;
                     %l2_effect_estimate_runlogithr(where=analysis="Unadjusted", analysis= "Unadjusted", subgroupcat = "");
-                    %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = "", donotreport=N);
                     %end;
                 %end;
                 %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat), analysis="Unadjusted",
                                                    subgroupcat="", ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
+
                     %end;
                     %if &individualreturn. = N %then %do;
                     %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=analysis="Unadjusted", analysis="Unadjusted",
                                                    subgroupcat="", ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
                     %end;
                 %end;
-                %if %str("&reporttype.") = %str("T2L2") %then %do;
+
                 /*Conditional - 
                     *analysis conditioned on matchid (PS maching)
                     *analysis conditioned on percentile (PS stratification)
                     *analysis conditioned on covariate (Covariate stratification)*/
                 %if &outputconditional. = Y & &marginalweights. = N %then %do; 
-                    %if &individualreturn. = Y %then %do;
-                    %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
-                                               strata=%quote(dpidsiteid &stratavar.),
-                                               analysis= "Conditional", 
-                                               subgroupcat = "");
-                    %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0, 
-                                                 strata=%quote(dpidsiteid, &stratavar.), 
-                                                 analysis= "Conditional",
-                                                 subgroupcat = "",
-                                                 donotreport=&suppresscolumns.);
-                    %end;
-                    %if &individualreturn. = N %then %do;
-                    %l2_effect_estimate_runlogithr(where=analysis="Conditional",
-                                                 analysis= "Conditional", 
-                                                 subgroupcat = "");
+                    %if &individualreturn. = N | %str("&reporttype.") = %str("T4L2") %then %do;
                     %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="", 
                                                  analysis= "Conditional", 
                                                  subgroupcat = "", 
                                                  donotreport=&suppresscolumns.);
                     %end;
+                    %if %str("&reporttype.") = %str("T2L2") %then %do;
+                        %if &individualreturn. = Y %then %do;
+                        %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
+                                                   strata=%quote(dpidsiteid &stratavar.),
+                                                   analysis= "Conditional", 
+                                                   subgroupcat = "");
+                        %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0, 
+                                                     strata=%quote(dpidsiteid, &stratavar.), 
+                                                     analysis= "Conditional",
+                                                     subgroupcat = "",
+                                                     donotreport=&suppresscolumns.);
+                        %end;
+                        %if &individualreturn. = N %then %do;
+                        %l2_effect_estimate_runlogithr(where=analysis="Conditional",
+                                                     analysis= "Conditional", 
+                                                     subgroupcat = "");
+                        %end;
+                    %end;
+                    %else %if %str("&reporttype.") = %str("T4L2") %then %do;
+                    %if &individualreturn. = Y %then %do;
+                    %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and missing(&stratavar.)=0, analysis="Conditional",
+                                                   subgroupcat="", ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
+
+                    %end;
+                    %if &individualreturn. = N %then %do;
+                    %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=analysis="Conditional", analysis="Conditional",
+                                                   subgroupcat="", ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
+                    %end;
+                %end;
                 %end;
            
                 /*Unconditional - only for FRM PS match analysis*/
@@ -425,7 +437,6 @@
                     %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="", analysis= "Unconditional", subgroupcat = "", donotreport=N);
                     %end;
                 %end;
-                %end;
                 
                 /*PS IPTW/Weighted Stratification analysis:
                     - Unweighted (risk metrics)
@@ -436,108 +447,109 @@
                 %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="", analysis= "Weighted", subgroupcat = "", donotreport=N);
                 %end;
 
+                /**********************************************************************************/
+                /* Stratify overall tables by DP                                                  */
+                /**********************************************************************************/
+                %if "&stratifybyDP" = "Y" %then %do;
+                    %let covarnum = 9000; /*set to 9000 for DP stratification*/
+
+                    %do dps = 1 %to &num_dp;
+                        %let dpname =%scan(&masked_dplist.,&dps.); 
+                        %put &dpname.; 
+
+                        /*Unadjusted*/
+                        %if &individualreturn. = Y %then %do;
+                        %l2_effect_estimate_runcox(where=missing(subgroupcat) and dpidsiteid="&dpname.", 
+                                                   strata=dpidsiteid, 
+                                                   analysis= "Unadjusted", 
+                                                   subgroupcat = "&dpname.");
+                        %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and dpidsiteid="&dpname.",
+                                                     strata=dpidsiteid, 
+                                                     analysis= "Unadjusted", 
+                                                     subgroupcat = "&dpname.",
+                                                     donotreport=N);
+                        %end;
+                        %if &individualreturn. = N %then %do;
+                        %l2_effect_estimate_runlogithr(where=analysis="Unadjusted" and dpidsiteid="&dpname.",         
+                                                     analysis= "Unadjusted",
+                                                     subgroupcat = "&dpname.");
+                        %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="" and dpidsiteid="&dpname.",
+                                                     analysis= "Unadjusted", 
+                                                     subgroupcat = "&dpname.", 
+                                                     donotreport=N);
+                        %end;
+
+                        /*Conditional*/ 
+                        %if &outputconditional. = Y & &marginalweights. = N %then %do; 
+                            %if &individualreturn. = Y %then %do;
+                            %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
+                                                       strata=%quote(dpidsiteid &stratavar.), 
+                                                       analysis= "Conditional", 
+                                                       subgroupcat = "&dpname.");
+                            %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
+                                                         strata=%quote(dpidsiteid, &stratavar.), 
+                                                         analysis= "Conditional", 
+                                                         subgroupcat = "&dpname.", 
+                                                         donotreport=&suppresscolumns.);
+                            %end;
+                            %if &individualreturn. = N %then %do;
+                            %l2_effect_estimate_runlogithr(where=analysis="Conditional" and dpidsiteid="&dpname.", 
+                                                         analysis= "Conditional", 
+                                                         subgroupcat = "&dpname.");
+                            %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname.", 
+                                                         analysis= "Conditional", 
+                                                         subgroupcat = "&dpname.", 
+                                                         donotreport=&suppresscolumns.);
+                            %end;
+                        %end;
+                   
+                        /*Unconditional - only for FRM PS match analysis*/
+                        %if &pscsfile. = psmatchfile & "&outputunconditional"="Y" and "&unconditional_distributed" = "Y" and &ratio.= F %then %do;
+                            %if &individualreturn. = Y %then %do;
+                            %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
+                                                       strata=%quote(dpidsiteid), 
+                                                       analysis= "Unconditional", 
+                                                       subgroupcat = "&dpname.");
+                            %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
+                                                         strata=%quote(dpidsiteid), 
+                                                         analysis= "Unconditional",
+                                                         subgroupcat = "&dpname.", 
+                                                         donotreport=N);
+                            %end;
+                            %if &individualreturn. = N %then %do;
+                            %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", 
+                                                         analysis= "Unconditional", 
+                                                         subgroupcat = "&dpname.");
+                            %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="" and dpidsiteid="&dpname.", 
+                                                         analysis= "Unconditional", 
+                                                         subgroupcat = "&dpname.", 
+                                                         donotreport=N);
+                            %end;
+                        %end;
+                        
+                        /*PS IPTW/Weighted Stratification analysis:
+                            - Unweighted (risk metrics)
+                            - Weighted (Risk metrics and effect estimate)*/
+                        %if &marginalweights. = Y %then %do;
+                        %l2_effect_estimate_runrobusthr(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat="&dpname.");
+                        %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
+                                                     analysis= "Unweighted", 
+                                                     subgroupcat = "&dpname.", 
+                                                     donotreport=N);
+                        %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
+                                                     analysis= "Weighted", 
+                                                     subgroupcat = "&dpname.",
+                                                     donotreport=N);
+                        %end;
+                    %end; *dp;  
+                %end; /*stratifybyDP = Y*/
+
+                proc datasets library=work nowarn nolist;
+                    delete cat_dp:;
+                quit;
+
             %end; /*end overall metric computations*/
 
-            /**********************************************************************************/
-            /* Stratify overall tables by DP                                                  */
-            /**********************************************************************************/
-            %if "&stratifybyDP" = "Y" & %eval(&covarnum.=0) %then %do;
-                %let covarnum = 9000; /*set to 9000 for DP stratification*/
-
-                %do dps = 1 %to &num_dp;
-                    %let dpname =%scan(&masked_dplist.,&dps.); 
-                    %put &dpname.; 
-
-                    /*Unadjusted*/
-                    %if &individualreturn. = Y %then %do;
-                    %l2_effect_estimate_runcox(where=missing(subgroupcat) and dpidsiteid="&dpname.", 
-                                               strata=dpidsiteid, 
-                                               analysis= "Unadjusted", 
-                                               subgroupcat = "&dpname.");
-                    %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and dpidsiteid="&dpname.",
-                                                 strata=dpidsiteid, 
-                                                 analysis= "Unadjusted", 
-                                                 subgroupcat = "&dpname.",
-                                                 donotreport=N);
-                    %end;
-                    %if &individualreturn. = N %then %do;
-                    %l2_effect_estimate_runlogithr(where=analysis="Unadjusted" and dpidsiteid="&dpname.",         
-                                                 analysis= "Unadjusted",
-                                                 subgroupcat = "&dpname.");
-                    %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="" and dpidsiteid="&dpname.",
-                                                 analysis= "Unadjusted", 
-                                                 subgroupcat = "&dpname.", 
-                                                 donotreport=N);
-                    %end;
-
-                    /*Conditional*/ 
-                    %if &outputconditional. = Y & &marginalweights. = N %then %do; 
-                        %if &individualreturn. = Y %then %do;
-                        %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
-                                                   strata=%quote(dpidsiteid &stratavar.), 
-                                                   analysis= "Conditional", 
-                                                   subgroupcat = "&dpname.");
-                        %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
-                                                     strata=%quote(dpidsiteid, &stratavar.), 
-                                                     analysis= "Conditional", 
-                                                     subgroupcat = "&dpname.", 
-                                                     donotreport=&suppresscolumns.);
-                        %end;
-                        %if &individualreturn. = N %then %do;
-                        %l2_effect_estimate_runlogithr(where=analysis="Conditional" and dpidsiteid="&dpname.", 
-                                                     analysis= "Conditional", 
-                                                     subgroupcat = "&dpname.");
-                        %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                     analysis= "Conditional", 
-                                                     subgroupcat = "&dpname.", 
-                                                     donotreport=&suppresscolumns.);
-                        %end;
-                    %end;
-               
-                    /*Unconditional - only for FRM PS match analysis*/
-                    %if &pscsfile. = psmatchfile & "&outputunconditional"="Y" and "&unconditional_distributed" = "Y" and &ratio.= F %then %do;
-                        %if &individualreturn. = Y %then %do;
-                        %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
-                                                   strata=%quote(dpidsiteid), 
-                                                   analysis= "Unconditional", 
-                                                   subgroupcat = "&dpname.");
-                        %l2_effect_estimate_runrd_pl(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
-                                                     strata=%quote(dpidsiteid), 
-                                                     analysis= "Unconditional",
-                                                     subgroupcat = "&dpname.", 
-                                                     donotreport=N);
-                        %end;
-                        %if &individualreturn. = N %then %do;
-                        %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", 
-                                                     analysis= "Unconditional", 
-                                                     subgroupcat = "&dpname.");
-                        %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                     analysis= "Unconditional", 
-                                                     subgroupcat = "&dpname.", 
-                                                     donotreport=N);
-                        %end;
-                    %end;
-                    
-                    /*PS IPTW/Weighted Stratification analysis:
-                        - Unweighted (risk metrics)
-                        - Weighted (Risk metrics and effect estimate)*/
-                    %if &marginalweights. = Y %then %do;
-                    %l2_effect_estimate_runrobusthr(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat="&dpname.");
-                    %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
-                                                 analysis= "Unweighted", 
-                                                 subgroupcat = "&dpname.", 
-                                                 donotreport=N);
-                    %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                 analysis= "Weighted", 
-                                                 subgroupcat = "&dpname.",
-                                                 donotreport=N);
-                    %end;
-                %end; *dp;  
-            %end; /*stratifybyDP = Y*/
-
-            proc datasets library=work nowarn nolist;
-                delete cat_dp:;
-            quit;
 
             /**********************************************************************************/
             /* For subgroup analyses - determine subgroup categories and number of categories */
@@ -659,14 +671,19 @@
     %nextloop:
 
     %end; /*loop through each analysisgrp*/
-    data output.logitest; set logitest; run;
-%abort;
+
     /*Merge together risk metrics and effect estimates*/
     data output.rdest; set rdest; run;
     data output.logitest; set logitest; run;
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
+        select r.*, 
+            %if "&reporttype." = "T2L2" %then %do;
+            HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
+            %end;
+            %else %if "&reporttype." = "T4L2" %then %do;
+            or_95ci, or, LCL, UCL, or_se, adjor_95ci, adjor, adjor_LCL, adjor_UCL
+            %end;
         from rdest as r
         /* left join b/c IPTW contains rows that do not have a computed HR*/
         left join logitest as c

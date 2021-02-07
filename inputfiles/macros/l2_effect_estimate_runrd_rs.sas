@@ -81,9 +81,8 @@
             %let stratifiedratediff =.;
             %let lower =.;
             %let upper =.;
-            %end;
-            %else %do;
-
+       %end;
+       %else %do;
             *weigthed RD calculations;
             %let stratifiedratediff = %SYSEVALF(&num./&denom.);
             %put &stratifiedratediff;
@@ -119,45 +118,62 @@
                 /***Columns included in report***/
                 
                 /*Number of New Users - n0/n1*/
+                /*Number of Events - ev0/ev1*/
+                /*Risk per 1000 New Users - risk_1000NU0/risk_1000NU1*/
+                /*Risk difference per 1000 New Users*/
+
                 /*Person Years at Risk - FUTime_Y0/FUTime_Y1 */
                 /*Average Person Days at Risk - AvgFUTime_D0/AvgFUTime_D1 */
                 /*Average Person Years at Risk - AvgFUTime_Y0/AvgFUTime_Y1 */
-                /*Number of Events - ev0/ev1*/
                 /*Incidence Rate per 1000 Person Years - IR_1000PY0/IR_1000PY1*/
-                /*Risk per 1000 New Users - risk_1000NU0/risk_1000NU1*/
+
+                /*Risk ratio:(ev1/n1) / (ev0/n0) */
 
                 MedicalProduct&exp. = "&&grp&exp.";
-                FUTime_Y&exp. = round(FUTime&exp./365.25,0.01);
-        
-                if n&exp. > 0 then do;
-                    AvgFUTime_D&exp.=round(FUTime&exp./n&exp.,0.01);
-                    AvgFUTime_Y&exp.=round((FUTime&exp./365.25) / n&exp.,0.01);
-                    risk_1000NU&exp. = 1000*(EV&exp. / n&exp.);
 
+                /*Risk computation for risk difference and risk ratio*/
+                if n&exp. > 0 then do;
+                    risk_1000NU&exp. = 1000*(EV&exp. / n&exp.);
                     /***Intermediate columns for NNT AR PAR***/
                     risk_1NU&exp. = EV&exp./n&exp.;
                 end;
                 else do;
-                    AvgFUTime_D&exp. = 0;
-                    AvgFUTime_Y&exp.= 0;
                     risk_1000NU&exp. = 0;
                     risk_1NU&exp. = 0;
                 end;
-                if FUTime_Y&exp. > = 0 then do;
+
+                FUTime_Y&exp. = round(FUTime&exp./365.25,0.01);
+                if n&exp. > 0 then do;
+                    AvgFUTime_D&exp.=round(FUTime&exp./n&exp.,0.01);
+                    AvgFUTime_Y&exp.=round((FUTime&exp./365.25) / n&exp.,0.01);
+                end;
+                else do;
+                    AvgFUTime_D&exp. = 0;
+                    AvgFUTime_Y&exp.= 0;
+                end;
+                if FUTime_Y&exp. > 0 then do;
                     IR_1000PY&exp. = 1000*(EV&exp. / FUTime_Y&exp.);
                 end;
                 else do;
                     IR_1000PY&exp. = 0;
                 end;
-
             %end;
 
             /*Incidence Rate Difference per 1000 Person Years*/
+            %if %str("&reporttype.") = %str("T2L2") %then %do;
             IRDiff_1000PY =  IR_1000PY1  - IR_1000PY0;
+            %end;
+            %else %do;
+            IRDiff_1000PY = .;
+            %end;
 
             /*Difference in Risk per 1000 New Users*/
             RD_1000NU =  risk_1000NU1 -  risk_1000NU0;
 
+            /*Risk ratio*/
+            if risk_1NU0 > 0 then RR = risk_1NU1 / risk_1NU0;
+            else rr = .;
+            
             /***Columns not included in report***/
             if (risk_1NU1 - risk_1NU0) > 0 then NNT = 1/(risk_1NU1 - risk_1NU0);
                 else NNT = .;
@@ -179,7 +195,7 @@
             *total number of events;
             totalevents = sum(ev0, ev1);
 
-            /*Stratified incident rate diff*/
+            /*Stratified incident rate diff - currently  not kept on dataset*/
             length RD_95CI $50.;
             stratifiedrd = put(&stratifiedratediff., 8.5); 
             lower = put(&Lower, 8.5);
@@ -187,11 +203,11 @@
             RD_95CI = (stratifiedrd||" ("||lower||", "||upper||")");
             label rd_95CI = "Incidence Rate Difference per (Nominal 95% Confidence Interval)";
 
-            format n0 n1 ev0 ev1 comma10. FUTime_Y: AvgFUTime_D: AvgFUTime_Y: comma12.2 IR_1000PY: risk_1000NU: IRDiff_1000PY: RD_1000NU: nnt  comma8.2
+            format n0 n1 ev0 ev1 comma10. FUTime_Y: AvgFUTime_D: AvgFUTime_Y: comma12.2 IR_1000PY: risk_1000NU: IRDiff_1000PY: RD_1000NU: nnt rr comma8.2
             ar par percentn12.2 poprisk best8.4;
 
             keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct:
-                n0 n1 FUTime_Y: AvgFUTime_D: AvgFUTime_Y: EV0 EV1 IR_1000PY: risk_1000NU: IRDiff_1000PY RD_1000NU poprisk nnt ar par RD_95CI totalevents;
+                n0 n1 FUTime_Y: AvgFUTime_D: AvgFUTime_Y: EV0 EV1 IR_1000PY: risk_1000NU: IRDiff_1000PY RD_1000NU poprisk rr nnt ar par RD_95CI totalevents;
         run;
 
         /*transform dataset to 1 line per exposure*/
@@ -200,7 +216,7 @@
             %do exp = 1 %to 0 %by -1;
             est_wide(keep= analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat totalevents
                     n&exp medicalproduct&exp FUTime_Y&exp AvgFUTime_D&exp AvgFUTime_Y&exp EV&exp IR_1000PY&exp risk_1000NU&exp 
-                    IRDiff_1000PY RD_1000NU poprisk nnt ar par
+                    IRDiff_1000PY RD_1000NU poprisk nnt ar par rr
                 rename=(n&exp = n)
                 rename=(medicalproduct&exp = medicalproduct)
                 rename=(FUTime_Y&exp = FUTime_Y)
@@ -218,6 +234,7 @@
             IRDiff_1000PYchar = strip(put(IRDiff_1000PY, comma8.2));
             RD_1000NUchar = strip(put(RD_1000NU, comma8.2));
             risk_1000NUchar = strip(put(risk_1000NU, comma8.2));
+            rrchar = strip(put(rr, comma8.2));
 
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
@@ -225,12 +242,13 @@
 
             %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
                 EVchar = '';
+                rrchar = '';
                 IR_1000PYchar = '';
                 IRDiff_1000PYchar = '';
                 RD_1000NUchar = '';
                 risk_1000NUchar = '';
             %end;
-            %if %eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y") %then %do;
+            %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
                 FUTime_Ychar = '';
                 AvgFUTime_Dchar = '';
                 AvgFUTime_Ychar = '';
@@ -249,6 +267,14 @@
 
             /*by analysisgrp*/
             analysisgrpsort = &loopcount.;
+
+            keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
+                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar 
+                 /*only include followup time variables for ReportType = T2L2*/
+                 %if %str("&reporttype.") = %str("T2L2") %then %do;
+                 FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
+                 %end;
+                 ;
         run;
     %end;
     %else %do;  *create empty dataset;
@@ -278,6 +304,7 @@
                 nnt = .;
                 ar = .;
                 par =.;
+                rr = .;
 
                 RD_95CI = "";
 
@@ -292,6 +319,7 @@
 
                 *Convert to character variables and redact (will keep unredacted as numeric locally);
                 EVchar = put(EV, comma10.);
+                rrchar = put(rr, comma8.2);
                 IR_1000PYchar = put(IR_1000PY, comma8.2);
                 IRDiff_1000PYchar = put(IRDiff_1000PY, comma8.2);
                 RD_1000NUchar = put(RD_1000NU, comma8.2);
@@ -301,12 +329,13 @@
                 AvgFUTime_Ychar = put(AvgFUTime_Y, comma12.2);
                 %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
                     EVchar = '';
+                    rrchar = '';
                     IR_1000PYchar = '';
                     IRDiff_1000PYchar = '';
                     RD_1000NUchar = '';
                     risk_1000NUchar = '';
                 %end;
-                    %if %eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y") %then %do;
+                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
                     FUTime_Ychar = '';
                     AvgFUTime_Dchar = '';
                     AvgFUTime_Ychar = '';
@@ -327,9 +356,12 @@
                 analysisgrpsort = &loopcount.;
 
                 keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
-                n FUTime_Y AvgFUTime_D AvgFUTime_Y EV IR_1000PY risk_1000NU IRDiff_1000PY RD_1000NU poprisk nnt ar par RD_95CI 
-                EVchar IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar;
-
+                n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar 
+                /*only include followup time variables for ReportType = T2L2*/
+                %if %str("&reporttype.") = %str("T2L2") %then %do;
+                 FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
+                %end;
+                ;
             output;
             %end;
         run;

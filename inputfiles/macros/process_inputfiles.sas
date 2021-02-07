@@ -50,8 +50,8 @@
             data _null_;
                 set input.&createreportfile;
                 if _n_ = &createreportparameter. then do;
-                    call symputx("parameter", parameter);
-                    call symputx("value", value);
+                    call symputx("parameter", strip(parameter));
+                    call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('redactevents', 'redactPT') and missing(value) then call symputx("value",0);
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
@@ -739,16 +739,20 @@
                 analysisgrp=strip(lowcase(analysisgrp));
                 runid=strip(lowcase(runid));
 
+
+                outputconditional=strip(upcase(outputconditional));
+                outputunconditional=strip(upcase(outputunconditional));
+
                 %if %str("&reporttype") = %str("T2L2") %then %do;
                 outputconditional=strip(upcase(outputconditional));
                 outputunconditional=strip(upcase(outputunconditional));
                 %end;
                 %else %if %str("&reporttype") = %str("T4L2") %then %do;
-                outputunconditional=strip(upcase(outputunconditional));
-                if outputunconditional ne 'Y' then do;
-                    put 'WARNING: (Sentinel) Parameter OutputUnconditional is not set to Y so only unadjusted results will be included in report';
-                end;
-                outputconditional='N';
+/*                outputunconditional=strip(upcase(outputunconditional));*/
+/*                if outputunconditional ne 'Y' then do;*/
+/*                    put 'WARNING: (Sentinel) Parameter OutputUnconditional is not set to Y so only unadjusted results will be included in report';*/
+/*                end;*/
+/*                outputconditional='N';*/
                 %end;
             run;
 

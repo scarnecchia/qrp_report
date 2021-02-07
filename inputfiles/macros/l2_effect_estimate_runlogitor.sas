@@ -120,7 +120,6 @@
     %if %eval(&Unexpevlvl.+&Expevlvl.)>=4 %then %do; 
 
         %if "&ormethod" = "logit" %then %do;
-        data output._forest; set _forest; run;
             ods output ParameterEstimates=_oddsratio;
             proc genmod data=_forest descending; 
                 class exposure(ref='0') &classvars. dp;
@@ -133,7 +132,6 @@
                 table dp*&percentile.*exposure*event / cmh;
             run;
         %end;
-
 
 		/***********************/
 		/* compute odds ratios */
@@ -187,9 +185,12 @@
                     adjor_ucl = adjor+1.96*or_se;
                     adjor_95CI = strip(put(adjor, 5.2))|| " ("||strip(put(adjor_lcl, 5.2))||", "|| strip(put(adjor_ucl, 5.2))||")";
                 end;
+                else do;
+                adjor_95ci = 'NaN';
+                end;
             %end;
             %else %do;
-                adjor_95ci = 'NaN';
+                adjor_95ci = 'N/A';
             %end;
 
   			label MonitoringPeriod = "Monitoring Period";
