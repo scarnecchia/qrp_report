@@ -52,6 +52,8 @@
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", parameter);
                     call symputx("value", value);
+                    /*defensive*/
+                    if lowcase(parameter) in ('redactevents', 'redactPT') and missing(value) then call symputx("value",0);
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
                 end;
             run;
@@ -779,9 +781,9 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles covarnum 8;
+                   caliper ceiling percentiles covarnum 8 unconditional $1.;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, ceiling, caliper, ratio, strataweight,
-                   ipweight, percentiles);
+                   ipweight, percentiles, unconditional);
             stop;
         run;
 
@@ -823,12 +825,12 @@
                 psestimategrp = lowcase(psestimategrp);
                 if missing(covarnum) then covarnum = 0;
                 keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight
-                     ipweight percentiles eoi ref;
+                     ipweight percentiles eoi ref unconditional;
             run;
         %end;
 
         proc sort data=pscs_masterinputs nodupkey;
-            by runid analysisgrp;
+            by runid covarnum analysisgrp;
         run;
 
     %end;

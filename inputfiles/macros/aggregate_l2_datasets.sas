@@ -17,7 +17,8 @@
 *  - convrule      = comma delimited list of indicator numbers to consider model having converged
 *  - convdata      = dataset that contains convergence status (QRP [runid]_estimates_[periodid])
 *  - settomissvars = comma delimited variables to set to missing if model does not converge
-* 
+*  - renameclause  = optional rename statement when reading in dataset 
+*
 *  Program outputs:                                                                                                                                       
 *	- a dataset &outfile. containing DP data with DP indentification variable
 * 
@@ -37,7 +38,8 @@
                              whereclause=,
                              convrule=,
                              convdata=,
-                             settomissvars=);
+                             settomissvars=,
+                             renameclause=);
 
     %put =====> MACRO CALLED: aggregate_l2_datasets;
 
@@ -66,7 +68,7 @@
 
         %if %sysfunc(exist(&dpidsiteid..&infile))=1 %then %do;
 			data _temp_&dps.; 
-				set &dpidsiteid..&infile.(where=(&whereclause.));
+				set &dpidsiteid..&infile.(where=(&whereclause.)&renameclause.);
 				length dpidsiteid $4.;
 				dpidsiteid = "&maskedID.";
         	  	dum0=1;

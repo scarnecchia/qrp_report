@@ -248,13 +248,13 @@
             else sort2 = 2;
 
             /*by analysisgrp*/
-            analysisgrpsort = &loopcont.;
+            analysisgrpsort = &loopcount.;
         run;
     %end;
     %else %do;  *create empty dataset;
         data est;
-                length medicalproduct $40 subgroupcat $10. analysisgrp $40. analysis $13.;
-                format MonitoringPeriod 2. analysisgrp $40.;
+            length medicalproduct $40 subgroupcat $10. analysisgrp $40. analysis $13.;
+            format MonitoringPeriod 2. analysisgrp $40.;
             %do exp = 1 %to 0 %by -1;
 
                 analysisgrp = "&analysisgrp.";
@@ -263,7 +263,7 @@
                 MonitoringPeriod = put(&periodid., 2.);
                 Analysis= &Analysis.;
                 subgroupcat = &subgroupcat.;
-                MedicalProduct = "&&group&exp.";
+                MedicalProduct = "&&grp&exp.";
 
                 n = .;
                 FUTime_Y = .;
@@ -324,7 +324,7 @@
                 else sort2 = 2;
 
                 /*by analysisgrp*/
-                analysisgrpsort = &loopcont.;
+                analysisgrpsort = &loopcount.;
 
                 keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n FUTime_Y AvgFUTime_D AvgFUTime_Y EV IR_1000PY risk_1000NU IRDiff_1000PY RD_1000NU poprisk nnt ar par RD_95CI 

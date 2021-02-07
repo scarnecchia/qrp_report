@@ -2,7 +2,7 @@
 *                                           PROGRAM OVERVIEW
 ****************************************************************************************************
 *
-* PROGRAM: l2_effect_estimate_runlogit.sas  
+* PROGRAM: l2_effect_estimate_runlogithr.sas  
 * Created (mm/dd/yyyy): 07/01/2015
 *
 *--------------------------------------------------------------------------------------------------
@@ -25,9 +25,9 @@
 *
 ***************************************************************************************************;
 
-%macro l2_effect_estimate_runlogit(where=, analysis=, subgroupcat=);
+%macro l2_effect_estimate_runlogithr(where=, analysis=, subgroupcat=);
 
-    %put =====> MACRO CALLED: l2_effect_estimate_runlogit ;
+    %put =====> MACRO CALLED: l2_effect_estimate_runlogithr ;
 
     data forest;
     set cat_dp_rs;
@@ -123,6 +123,6 @@
 	    delete est pest forest forest_exp;
 	quit;
 
-    %put NOTE: ******** END OF MACRO: l2_effect_estimate_runlogit ********;
+    %put NOTE: ******** END OF MACRO: l2_effect_estimate_runlogithr ********;
 
-%mend l2_effect_estimate_runlogit;
+%mend l2_effect_estimate_runlogithr;

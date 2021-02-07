@@ -52,7 +52,7 @@
     %let numsubcat = ;
     %let subcategorization = ;
 
-    %if %eval(0 < &covarnum. <1000) %then %do;
+    %if %eval(&covarnum. <1000) %then %do;
         %let subgroupvar = covar&covarnum.;
         %let numsubcat = 2;
 	    %let sublabel = %cmpres(Covar&covarnum.);
@@ -75,13 +75,13 @@
 
         %if &computecategories. = Y %then %do;
             /*if reporttype = T4L2, extract original cohorgrp*/
-            %if %str("reporttype.") = ("T4L2") %then %do;
+            %if %str("&reporttype.") = ("T4L2") %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&grp1.",1,length("&grp1")-4)));
                     call symputx('cohortgrp', strip(groupname));
                 run;
             %end;
-            %else %if %str("reporttype.") = ("T2L2") %then %do;
+            %else %if %str("&reporttype.") = ("T2L2") %then %do;
                 %let cohortgrp = &grp1.;
             %end;
 
@@ -130,25 +130,25 @@
     %end;
     %else %if &covarnum. = 1013 %then %do;
         %let subgroupvar = Hispanic;
-        %let sublabel = Hispanic origin;
+        %let sublabel = Hispanic Origin;
         %let numsubcat = 3;
         %let subcategorization = Y N U;
     %end;
     %else %if &covarnum. = 1014 %then %do;
         %let subgroupvar = prepostind;
-        %let sublabel = Pre-Post indicator;
+        %let sublabel = Pre-Post Indicator;
         %let numsubcat = 4;
         %let subcategorization = NONE PRE POST TERM;
     %end;
     %else %if &covarnum. = 2000 %then %do;
         %let subgroupvar = MatchMethod;
-        %let sublabel = Match method;
+        %let sublabel = Match Method;
         %let numsubcat = 9;
         %let subcategorization = BC RE SI LA OT N1 N2 N3 NA;
     %end;
     %else %if &covarnum. = 2001 %then %do;
         %let subgroupvar = birth_type;
-        %let sublabel = Birth type;
+        %let sublabel = Birth Type;
         %let numsubcat = 8;
         %let subcategorization = 0 1 2 3 4 5 8 9;
     %end;

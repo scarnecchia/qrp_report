@@ -315,7 +315,7 @@
                 else sort2 = 2;
 
                 /*by analysisgrp*/
-                analysisgrpsort = &loopcont.;
+                analysisgrpsort = &loopcount.;
 		run;
 	%end;
 	%else %do; /*create empty dataset*/
@@ -395,7 +395,7 @@
                 else sort2 = 2;
 
                 /*by analysisgrp*/
-                analysisgrpsort = &loopcont.;
+                analysisgrpsort = &loopcount.;
 
     			keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct sort1 sort2 analysisgrpsort
     			n FUTime_Y AvgFUTime_D AvgFUTime_Y EV IR_1000PY risk_1000NU IRDiff_1000PY RD_1000NU poprisk nnt ar par RD_95CI totalevents
