@@ -65,8 +65,8 @@
 			  on base.analysisgrp = pscs.analysisgrp
 			left join pscs_masterinputs (where = (not missing(ipweight))) as ip
 			  on base.analysisgrp = ip.analysisgrp
-		    order by psestimategrp
-			        ,order;
+		    order by order
+			        ,psestimategrp;
 		quit;
 		
 		data &outdata.;
@@ -76,6 +76,10 @@
 		  by psestimategrp order;
 		  unique_psestimate +1;
           if first.psestimategrp then unique_psestimate = 1;
+		run;
+		
+		proc sort data = &outdata.;
+		  by order;
 		run;
 
         /*Only keep rows where group found in selected input file*/

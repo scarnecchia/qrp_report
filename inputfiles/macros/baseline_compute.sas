@@ -714,7 +714,7 @@
         %end;
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
         %if &psfile. = psmatchfile %then %do;
-            %if "&ratio" = "F" and %eval(&unique_psestimate.) = 1 %then %do;
+            %if "&ratio" = "F" %then %do;
             %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2);
             %end;
             %if "&ratio" = "V" %then %do;
