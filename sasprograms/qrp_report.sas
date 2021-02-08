@@ -134,6 +134,9 @@ options validvarname = v7;
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 
+/* Assign ods template path */
+ods path(prepend) work.templat(update);
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
@@ -143,6 +146,9 @@ options validvarname = v7;
 
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
+
+/*report template*/
+%include "&reportroot.inputfiles/macros/report_template.sas";
 
 /*set up*/
 %include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
