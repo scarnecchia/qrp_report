@@ -156,7 +156,7 @@
                 catnum = &cat.;
                 MonitoringPeriod = put(&periodid., 2.);
                 Analysis= &analysis.;
-                subgroupcat = &subgroupcat.;
+                subgroupcat = "&subgroupcat.";
                 HR_pvalue = '-'; /*no p value*/
 
                 HR_95CI = strip(put(HR, 5.2))|| " ("||strip(put(LCL, 5.2))||", "|| strip(put(UCL, 5.2))||")";
@@ -188,7 +188,7 @@
 		    covarnum  = &covarnum.;
 		    catnum = &cat.;
 			Analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
 	  		format MonitoringPeriod 2.;
 	  		length HR_95CI $30. HR_pvalue $6.;

@@ -65,9 +65,8 @@
         /* confirm analytic dataset has observations */
         %isdata(dataset=_sub1);
         %if %eval(&NOBS.>=1) %then %do;
-       
             data _forest(drop=cntexp cntunexp);
-                set _sub1(keep=exp unexp evexp evunexp dp %if &pscsfile.=stratificationfile %then %do; percentilevalue %end;);
+                set _sub1(keep=exp unexp evexp evunexp dp &classvars. &noclassvars.  %if &pscsfile.=stratificationfile %then %do; percentile %end;);
 
                 /* eoi group */
                 do cntexp=1 to exp;
@@ -86,34 +85,29 @@
                 end;
             run;
         
-            proc sql noprint;
-                select count(distinct event) into: Unexpevlvl
-                from _forest
-                where exposure=0;
-
-                select count(distinct event) into: Expevlvl
-                from _forest
-                where exposure=1;
-            quit;
+           
         %end; /* end do statement for creating person-level dataset */
     %end; /* risk-level data */
 
     %if "&individualreturn" = "Y" & %eval(&redactevents.=0) %then %do;
         data _forest;
-            set cat_dp_pl(keep=event exposure covarnum analysisgrp &subgroupcat. &classvars. &noclassvars. where=(&where.));
+            set cat_dp_pl(keep=event dp dpidsiteid exposure covarnum analysisgrp subgroupcat &stratavar. &classvars. &noclassvars. where=(&where.));
         run;
-
-        proc sql noprint;
-            select count(distinct event) into: Unexpevlvl
-            from _forest
-            where exposure=0;
-
-            select count(distinct event) into: Expevlvl
-            from _forest
-            where exposure=1;
-        quit;
     %end;
   
+    %isdata(datset=_forest);
+    %if %eval(&nobs.>=1) %then %do;
+     proc sql noprint;
+        select count(distinct event) into: Unexpevlvl
+        from _forest
+        where exposure=0;
+
+        select count(distinct event) into: Expevlvl
+        from _forest
+        where exposure=1;
+    quit;
+    %end;
+
 	/***************************************************/
     /* fit the model for generating odds ratio and CIs */
 	/***************************************************/
@@ -128,8 +122,8 @@
         %end;
         %else %if "&ormethod" = "cmh" %then %do;
             ods output commonRelRisks=_oddsratio;
-            proc freq data=_forest noprint;
-                table dp*&percentile.*exposure*event / cmh;
+            proc freq data=_forest ;
+                table dp*percentile*exposure*event / cmh;
             run;
         %end;
 
@@ -141,7 +135,7 @@
   	           set _oddsratio (where=(parameter='exposure' and level1='1') rename = (estimate = or_coef stderr = or_se));
             %end;
             %else %if "&ormethod" = "cmh" %then %do;
-              set _oddsratio (where=(index(Statistic, "Odds")>0) rename=(value=or lowercl = orlcl uppercl=orucl);
+              set _oddsratio (where=(index(Statistic, "Odds")>0) rename=(value=or lowercl = lcl uppercl=ucl));
             %end;
 
             /*for both ORs - a character variable is computed in the form XX.XX (XX.XX-XX.XX) and 3 numeric variables are 
@@ -154,7 +148,7 @@
 	        catnum = &cat.;
 	  		MonitoringPeriod = put(&periodid., 2.);
 			Analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
             %if "&ormethod" = "logit" %then %do;
     		    or =exp(or_coef);
@@ -163,8 +157,8 @@
                 or_95CI = strip(put(exp(or_coef), 5.2))|| " ("||strip(put(exp(LowerWaldCL), 5.2))||", "|| strip(put(exp(UpperWaldCL), 5.2))||")";
             %end;
             %else %if "&ormethod" = "cmh" %then %do;
-                or_95CI = strip(put(or, 5.2))|| " ("||strip(put(orlcl, 5.2))||", "|| strip(put(orucl, 5.2))||")";
-                or_se=(or-orlcl)/1.96;
+                or_95CI = strip(put(or, 5.2))|| " ("||strip(put(lcl, 5.2))||", "|| strip(put(ucl, 5.2))||")";
+                or_se=(or-lcl)/1.96;
             %end;
 
             /* set or_95ci to NaN if not computed */
@@ -221,7 +215,7 @@
 	        catnum = &cat.;
 	  		MonitoringPeriod = put(&periodid., 2.);
 			Analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
             *odds ratio;
 		    or = .;

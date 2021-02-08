@@ -180,7 +180,7 @@
 	        catnum = &cat.;
 	  		MonitoringPeriod = put(&periodid., 2.);
 			analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
 			%do exp=1 %to 0 %by -1;
 
@@ -331,7 +331,7 @@
     		    catnum = &cat.;
     		  	MonitoringPeriod = put(&periodid., 2.);
     			analysis= &analysis.;
-    			subgroupcat = &subgroupcat.;
+    			subgroupcat = "&subgroupcat.";
 
     			MedicalProduct = "&&grp&exp.";
 

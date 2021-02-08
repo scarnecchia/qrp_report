@@ -61,7 +61,7 @@
 	        catnum = &cat.;
 	  		MonitoringPeriod = put(&periodid., 2.);
 			Analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
 			if probchisq < 0.001 then do;
 				HR_pvalue = '<0.001';
@@ -96,7 +96,7 @@
 		    COVARNUM  = &covarnum.;
 		    catnum = &cat.;
 			Analysis= &analysis.;
-			subgroupcat = &subgroupcat.;
+			subgroupcat = "&subgroupcat.";
 
 	  		format MonitoringPeriod 2.;
 	  		length HR_95CI $30. HR_pvalue $6.;

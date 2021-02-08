@@ -738,22 +738,10 @@
                 /*defensive*/
                 analysisgrp=strip(lowcase(analysisgrp));
                 runid=strip(lowcase(runid));
-
-
+                if missing(outputconditional) then outputconditional = 'Y';
+                if missing(outputunconditional) then outputunconditional = 'Y';
                 outputconditional=strip(upcase(outputconditional));
                 outputunconditional=strip(upcase(outputunconditional));
-
-                %if %str("&reporttype") = %str("T2L2") %then %do;
-                outputconditional=strip(upcase(outputconditional));
-                outputunconditional=strip(upcase(outputunconditional));
-                %end;
-                %else %if %str("&reporttype") = %str("T4L2") %then %do;
-/*                outputunconditional=strip(upcase(outputunconditional));*/
-/*                if outputunconditional ne 'Y' then do;*/
-/*                    put 'WARNING: (Sentinel) Parameter OutputUnconditional is not set to Y so only unadjusted results will be included in report';*/
-/*                end;*/
-/*                outputconditional='N';*/
-                %end;
             run;
 
             %let numl2comparisons = &nobs.;
