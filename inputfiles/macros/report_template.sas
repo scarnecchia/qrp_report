@@ -59,10 +59,6 @@
         style body/
           backgroundcolor = white
      	  frame = void
-     	  topmargin = 1.0in
-     	  leftmargin = .5in
-     	  rightmargin = .5in
-     	  bottommargin = .75in
      	  ;
   	     style title /
           color = black
