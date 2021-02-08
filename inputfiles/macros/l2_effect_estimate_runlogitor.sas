@@ -132,10 +132,10 @@
 		/***********************/
   	    data oddsratio; 
             %if "&ormethod" = "logit" %then %do;
-  	           set _oddsratio (where=(parameter='exposure' and level1='1') rename = (estimate = or_coef stderr = or_se));
+  	           set _oddsratio (where=(lowcase(parameter)='exposure' and level1='1') rename = (estimate = or_coef stderr = or_se));
             %end;
             %else %if "&ormethod" = "cmh" %then %do;
-              set _oddsratio (where=(index(Statistic, "Odds")>0) rename=(value=or lowercl = lcl uppercl=ucl));
+              set _oddsratio (where=(index(lowcase(statistic), "odds")>0) rename=(value=or lowercl = lcl uppercl=ucl));
             %end;
 
             /*for both ORs - a character variable is computed in the form XX.XX (XX.XX-XX.XX) and 3 numeric variables are 
