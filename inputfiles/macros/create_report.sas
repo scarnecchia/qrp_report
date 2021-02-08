@@ -58,7 +58,7 @@
                   dpinfofile = dpinfofile, 
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
-
+	
 ***************************************************************************************************;
 * Baseline tables                                                      
 ***************************************************************************************************;
@@ -76,6 +76,20 @@
 ***************************************************************************************************;
 
     %output_report_dates();
+
+
+***************************************************************************************************;
+*   Output report                                                
+***************************************************************************************************;
+
+    /*Create PDF and Excel templates*/
+    %if %str("&sysscp.") = %str("WIN") %then %do;
+	   %report_template(outputtype = excel, fontsize = 10pt, font = Calibri); 
+	%end;
+	%else %do;
+	   %report_template(outputtype = excel, fontsize = 9pt, font = Arial); 
+	%end;
+	%report_template(outputtype = pdf, fontsize = 8pt, font= Arial); 
 
 /*--------------------------------------------------------------------------------------------*/
 /* Clean Work                                                                                 */
