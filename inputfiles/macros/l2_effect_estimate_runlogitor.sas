@@ -66,8 +66,9 @@
         %isdata(dataset=_sub1);
         %if %eval(&NOBS.>=1) %then %do;
             data _forest(drop=cntexp cntunexp);
-                set _sub1(keep=exp unexp evexp evunexp dp &classvars. &noclassvars.  %if &pscsfile.=stratificationfile %then %do; percentile %end;);
+                set _sub1(keep=exp unexp evexp evunexp dp &classvars. &noclassvars. %if &pscsfile.=stratificationfile %then %do; percentile %end;);
 
+                length exposure event 3;
                 /* eoi group */
                 do cntexp=1 to exp;
                     exposure=1;
@@ -84,7 +85,6 @@
                     output;
                 end;
             run;
-        
            
         %end; /* end do statement for creating person-level dataset */
     %end; /* risk-level data */
