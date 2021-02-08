@@ -56,32 +56,35 @@
             mergevar = "&mergevar";
         run;
 		
-		proc sql noprint;
-		  create table &outdata._ps as
-		    select base.*
-			      ,pscs.psestimategrp
-		    from &outdata. as base
-			left join pscs_masterinputs as pscs
-			  on base.analysisgrp = pscs.analysisgrp
-			left join pscs_masterinputs (where = (not missing(ipweight))) as ip
-			  on base.analysisgrp = ip.analysisgrp
-		    order by order
-			        ,psestimategrp;
-		quit;
+		/* Identify unique psestimategrp for L2 reports */
+		%if %sysfunc(index(&reporttype.,L2)) > 0 %then %do;
+		   proc sql noprint;
+		     create table &outdata._ps as
+		       select base.*
+		   	      ,pscs.psestimategrp
+		       from &outdata. as base
+		   	left join pscs_masterinputs as pscs
+		   	  on base.analysisgrp = pscs.analysisgrp
+		   	left join pscs_masterinputs (where = (not missing(ipweight))) as ip
+		   	  on base.analysisgrp = ip.analysisgrp
+		       order by order
+		   	        ,psestimategrp;
+		   quit;
+		   
+		   data &outdata.;
+		     set &outdata._ps;
+		     length unique_psestimate 5;
+		     retain unique_psestimate;
+		     by psestimategrp order;
+		     unique_psestimate +1;
+             if first.psestimategrp then unique_psestimate = 1;
+		   run;
+		   
+		   proc sort data = &outdata.;
+		     by order;
+		   run;
+        %end;
 		
-		data &outdata.;
-		  set &outdata._ps;
-		  length unique_psestimate 5;
-		  retain unique_psestimate;
-		  by psestimategrp order;
-		  unique_psestimate +1;
-          if first.psestimategrp then unique_psestimate = 1;
-		run;
-		
-		proc sort data = &outdata.;
-		  by order;
-		run;
-
         /*Only keep rows where group found in selected input file*/
         %if %str("&crosscheckfile") ne %str("") %then %do;
 
