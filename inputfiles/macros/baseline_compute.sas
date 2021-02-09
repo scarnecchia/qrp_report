@@ -709,7 +709,7 @@
 		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
 		%end;
         /*All - unweighted*/
-		%if %str("&reporttype") ne %str("T6") %then %do;
+		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
           %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
         %end;
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
@@ -724,7 +724,7 @@
 
         /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
         %if &psfile. = stratificationfile %then %do;
-            %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") and %eval(&unique_psestimate.) = 1 %then %do;
+            %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
 		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4);
 		    %end;
             %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5);

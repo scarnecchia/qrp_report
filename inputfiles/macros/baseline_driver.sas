@@ -67,8 +67,8 @@
 		   	  on base.analysisgrp = pscs.analysisgrp
 		   	left join pscs_masterinputs (where = (not missing(ipweight))) as ip
 		   	  on base.analysisgrp = ip.analysisgrp
-		       order by order
-		   	        ,psestimategrp;
+		       order by psestimategrp
+			           ,order;
 		   quit;
 		   
 		   data &outdata.;
