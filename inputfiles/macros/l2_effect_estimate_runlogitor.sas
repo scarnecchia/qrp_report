@@ -95,7 +95,7 @@
         run;
     %end;
   
-    %isdata(datset=_forest);
+    %isdata(dataset=_forest);
     %if %eval(&nobs.>=1) %then %do;
      proc sql noprint;
         select count(distinct event) into: Unexpevlvl
