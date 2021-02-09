@@ -373,10 +373,6 @@
                    data. ReportType = T2L2 can also compute risk metrics using individual level data
                 /**************************************************************************************/
 
-
-/*                %macro t2_compute_effect_estimates(conditional = , unconditional =, marginalweights = , individualreturn = , analysis=, subgroupcat = , */
-
-
                 /*Unadjusted*/
                 %if &individualreturn. = N | %str("&reporttype.") = %str("T4L2") %then %do;
                     %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = , donotreport=N);
@@ -465,7 +461,6 @@
                         %end;
                         %if &individualreturn. = N %then %do;
                         %l2_effect_estimate_runlogithr(where=analysis="Unconditional", analysis= "Unconditional", subgroupcat = );
-                        %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="", analysis= "Unconditional", subgroupcat = , donotreport=N);
                         %end;
                     %end;
                     %else %if %str("&reporttype.") = %str("T4L2") %then %do;
@@ -552,9 +547,7 @@
                                                              donotreport=&suppresscolumns.);
                                 %end;
                                 %if &individualreturn. = N %then %do;
-                                %l2_effect_estimate_runlogithr(where=analysis="Conditional" and dpidsiteid="&dpname.", 
-                                                             analysis= "Conditional", 
-                                                             subgroupcat = &dpname.);
+                                %l2_effect_estimate_runlogithr(where=analysis="Conditional" and dpidsiteid="&dpname.", analysis= "Conditional", subgroupcat = &dpname.);
                                 %end;
                             %end;
                             %else %if %str("&reporttype.") = %str("T4L2") %then %do;
@@ -590,9 +583,7 @@
                                                              donotreport=N);
                                 %end;
                                 %if &individualreturn. = N %then %do;
-                                %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", 
-                                                             analysis= "Unconditional", 
-                                                             subgroupcat = &dpname.);
+                                %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", analysis= "Unconditional", subgroupcat = &dpname.);
                                 %end;
                             %end;
                             %else %if %str("&reporttype.") = %str("T4L2") %then %do;
@@ -614,13 +605,9 @@
                         %if &marginalweights. = Y %then %do;
                         %l2_effect_estimate_runrobusthr(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
-                                                     analysis= "Unweighted", 
-                                                     subgroupcat = &dpname., 
-                                                     donotreport=N);
+                                                     analysis= "Unweighted", subgroupcat = &dpname., donotreport=N);
                         %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                     analysis= "Weighted", 
-                                                     subgroupcat = &dpname.,
-                                                     donotreport=N);
+                                                     analysis= "Weighted", subgroupcat = &dpname., donotreport=N);
                         %end;
                     %end; *dp;  
                 %end; /*stratifybyDP = Y*/
@@ -749,14 +736,12 @@
                             %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=N);
                         %end;
                         %if %str("&reporttype.") = %str("T2L2") %then %do;
-
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat.);
                         %l2_effect_estimate_runrd_pl(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid, &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=&suppresscolumns.);
                         %end;
                         %if &individualreturn. = N %then %do;
                         %l2_effect_estimate_runlogithr(where=analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat.);
-                        %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=N);
                         %end;
                         %end;
                         %else %if %str("&reporttype.") = %str("T4L2") %then %do;
@@ -813,6 +798,8 @@
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
         by analysisgrpsort covarnum catnum subgroupcat sort1 sort2;
     run;
+
+    data output.l2_effectestimates_&periodid.; set l2_effectestimates_&periodid.; run;
 
     proc datasets lib=work nolist nowarn; 
         delete rdest logitest; 
