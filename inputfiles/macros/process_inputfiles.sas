@@ -269,8 +269,7 @@
 *   Identify groups for each runID                                               
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile. )) ne 0 %then %do;
-
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
 		data groupsfile;
 			set input.&groupsfile.;
 			runid = lowcase(runid);
@@ -288,9 +287,7 @@
 				quit;
 				%put &&grouplist_&n..;
 	     %end;
-
 	 %end;
-
  
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
@@ -309,6 +306,19 @@
             end;
         %end;
 	 run;
+
+/***************************************************************************************************
+*   Read in LABELFILE if specified                                               
+***************************************************************************************************/
+	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
+        data labelfile;
+            set input.&labelfile.;
+            /*defensive*/
+    		runid = lowcase(runid);
+    		group = lowcase(group);
+            labeltype = lowcase(labeltype);
+        run;
+    %end;
 
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
