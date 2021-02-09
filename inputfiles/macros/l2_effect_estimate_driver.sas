@@ -154,7 +154,6 @@
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
                 %let individualreturn = Y;
             %end;
-                %let individualreturn = N;
 
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
             %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and covarnum = &covarnum.;
