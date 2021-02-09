@@ -42,8 +42,8 @@
     %global startdateformatted studyenddateformatted minqueryyear maxqueryyear;
     %let startdateformatted = ;
     %let studyenddateformatted = ;
-    %let minqueryyear = 2000;
-    %let maxqueryyear = %sysfunc(year("&sysdate."d));
+    %let minqueryyear = ;
+    %let maxqueryyear = ;
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
