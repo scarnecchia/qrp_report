@@ -80,10 +80,6 @@
              if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
 		   run;
 		   
-		   data output.test;
-		   set &outdata.;
-		   run;
-		   
 		   proc sort data = &outdata.;
 		     by order;
 		   run;
