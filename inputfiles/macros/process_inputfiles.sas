@@ -53,7 +53,7 @@
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('redactevents', 'redactPT') and missing(value) then call symputx("value",0);
+                    if lowcase(parameter) in ('redactevents', 'redactpt') and missing(value) then call symputx("value",0);
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
                 end;
             run;
