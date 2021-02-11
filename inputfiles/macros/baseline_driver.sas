@@ -45,17 +45,46 @@
     ***********************************************************************************************;
 
     %macro assign_cohort_mergevar(cohort=, mergevar=, outdata=, crosscheckfile = , crosscheckvar = ,includenonpregnant=N);
-
+	
         data &outdata.;
             set input.&baselinefile.;
-            format cohort mergevar $15. analysisgrp $40.;
+            format cohort mergevar $15. analysisgrp $40. unique_psestimate 3.;
             group=lowcase(group);
             analysisgrp = group;
             runid=lowcase(runid);
             cohort = "&cohort";
             mergevar = "&mergevar";
+			unique_psestimate = 1;
         run;
-
+		
+		/* Identify unique psestimategrp for L2 reports */
+		%if %sysfunc(index(&reporttype.,L2)) > 0 %then %do;
+		   proc sql noprint;
+		     create table &outdata._ps as
+		       select base.*
+		   	      ,pscs.psestimategrp
+		       from &outdata. as base
+		   	left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+		   	  on base.runid = pscs.runid
+			  and base.analysisgrp = pscs.analysisgrp
+		      order by psestimategrp
+			          ,order;
+		   quit;
+		   
+		   data &outdata.;
+		     set &outdata._ps (drop = unique_psestimate); /* Remove default value */
+		     length unique_psestimate 3;
+		     retain unique_psestimate;
+		     by psestimategrp order;
+		     unique_psestimate +1;
+             if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
+		   run;
+		   
+		   proc sort data = &outdata.;
+		     by order;
+		   run;
+        %end;
+		
         /*Only keep rows where group found in selected input file*/
         %if %str("&crosscheckfile") ne %str("") %then %do;
 

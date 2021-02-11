@@ -728,10 +728,10 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file $32 analysisgrp $40 psestimategrp $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles 8;
-            call missing(runid, file, analysisgrp, psestimategrp, ceiling, caliper, ratio, strataweight,
-                   ipweight, percentiles);
+            length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+                   caliper ceiling percentiles covarnum 8 unconditional $1.;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, ceiling, caliper, ratio, strataweight,
+                   ipweight, percentiles, unconditional);
             stop;
         run;
 
@@ -770,8 +770,9 @@
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
-                keep runid file analysisgrp psestimategrp ceiling caliper ratio strataweight
-                     ipweight percentiles;
+                if missing(covarnum) then covarnum = 0;
+                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight
+                     ipweight percentiles eoi ref unconditional;
             run;
         %end;
 
