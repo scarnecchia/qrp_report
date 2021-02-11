@@ -747,7 +747,7 @@
             %let numl2comparisons = &nobs.;
         %end;
         %else %do;
-            %put Warning: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2. Effect estimates will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2. Effect estimates will not be computed;
         %end;
 
         /****************************/
