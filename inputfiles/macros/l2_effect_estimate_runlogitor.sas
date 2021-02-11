@@ -222,6 +222,7 @@
             lcl = .;
             ucl = .;
             or_95ci="N/A";
+            or_se = .;
 
             *adjusted odds ratio;
             adjor = .;
