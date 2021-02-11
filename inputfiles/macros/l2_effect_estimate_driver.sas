@@ -239,7 +239,7 @@
                                        outfile=aggpl,
                                        pscsfile=&pscsfile.,
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%str(&convrule.),
+                                       convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(matchID,pscore,percentile));
 
@@ -260,7 +260,7 @@
                                        %else %do;
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
                                        %end;
-                                       convrule=%str(&convrule.),
+                                       convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
                                        %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
@@ -279,7 +279,7 @@
                                        %else %do;
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
                                        %end;
-                                       convrule=%str(&convrule.),
+                                       convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
                                        %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
@@ -291,7 +291,7 @@
                                        outfile=aggrs,
                                        pscsfile=&pscsfile.,
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%str(&convrule.),
+                                       convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(risksetpop,Followuptime,RiskSetID,ExposureProbability));
                 /*compute log odds on aggrs dataset*/
@@ -309,7 +309,7 @@
                                        outfile=aggmw,
                                        pscsfile=&pscsfile.,
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%str(&convrule.),
+                                       convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
                 %end;

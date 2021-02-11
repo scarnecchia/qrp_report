@@ -14,7 +14,7 @@
 *  - outfile       = the name of the final file
 *  - pscsfile      = QRP input file that defines analysis
 *  - whereclause   = condition to restrict infile
-*  - convrule      = comma delimited list of indicator numbers to consider model having converged
+*  - convrule      = comma or space delimited list of indicator numbers to consider model having converged
 *  - convdata      = dataset that contains convergence status (QRP [runid]_estimates_[periodid])
 *  - settomissvars = comma delimited variables to set to missing if model does not converge
 *  - renameclause  = optional rename statement when reading in dataset 

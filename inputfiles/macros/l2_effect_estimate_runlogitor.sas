@@ -190,7 +190,7 @@
   			label MonitoringPeriod = "Monitoring Period";
   			label or_95ci = "Odds Ratio (95% CI)";
   			label adjor_95ci = "Adjusted Odds Ratio (95% CI)";
-		    or_se = "StdErr of Coefficient";
+		    label or_se = "StdErr of Coefficient";
             label or = "Odds Ratio";
             label LCL = "95% LCL";
             label UCL = "95% UCL";
