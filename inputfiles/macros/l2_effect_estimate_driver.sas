@@ -134,7 +134,7 @@
             %let analysisgrpweight = ;
             %let suppresscolumns = N;
             %let psestimategrp = ;
-            %let stratavar = ;;
+            %let stratavar = ;
             %let analysisgrpweight = ;
             %let individualreturn = N;
             %let marginalweights = N;
@@ -342,7 +342,7 @@
                     %isdata(dataset=SelectionProbabilitiesFile);
                     %if %eval(&nobs.>0) %then %do;
                     data _null_;
-                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and covarnum = &covarnum.));
+                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum.));
                         call symputx('s11', s11);
                         call symputx('s01', s01);
                         call symputx('s10', s10);
@@ -667,7 +667,7 @@
                         %isdata(dataset=SelectionProbabilitiesFile);
                         %if %eval(&nobs.>0) %then %do;
                         data _null_;
-                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and covarnum = &covarnum. and value = "&subgroupcat"));
+                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum. and value = "&subgroupcat"));
                             call symputx('s11', s11);
                             call symputx('s01', s01);
                             call symputx('s10', s10);
