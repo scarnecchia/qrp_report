@@ -74,6 +74,10 @@
     %global datasetlist;
     %let datasetlist = ;
 
+    /*baseline table variables*/
+    %global numbaselinetablegrp;
+    %let numbaselinetablegrp =0;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
