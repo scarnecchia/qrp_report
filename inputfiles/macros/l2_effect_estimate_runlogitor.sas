@@ -146,7 +146,7 @@
             analysisgrp = "&analysisgrp.";
 	        COVARNUM  = &covarnum.;
 	        catnum = &cat.;
-	  		MonitoringPeriod = put(&periodid., 2.);
+	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
 
@@ -213,7 +213,7 @@
             analysisgrp = "&analysisgrp.";
 	        COVARNUM  = &covarnum.;
 	        catnum = &cat.;
-	  		MonitoringPeriod = put(&periodid., 2.);
+	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
 

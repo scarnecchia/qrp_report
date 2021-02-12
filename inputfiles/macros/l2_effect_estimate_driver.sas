@@ -799,8 +799,6 @@
         by analysisgrpsort covarnum catnum subgroupcat sort1 sort2;
     run;
 
-    data output.l2_effectestimates_&periodid.; set l2_effectestimates_&periodid.; run;
-
     proc datasets lib=work nolist nowarn; 
         delete rdest logitest; 
     quit;
