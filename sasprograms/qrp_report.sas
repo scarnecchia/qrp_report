@@ -162,8 +162,23 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
 
-/*Aggregate macro*/
+/*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
+%include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
+
+/*L2 report macros*/
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_pl.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
+
+
+
+
 
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
