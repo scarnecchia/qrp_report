@@ -58,16 +58,14 @@
 
     /* Check if more than one run (monitoring file) specified */
     %if &numrunid > 1 and (&look_start > 1 or &look_end > 1) %then %do;
-    proc sql noprint;
-        select count(distinct startdate), 
-               count(distinct fupenddate)
-               into :CHK_SAME_START,
-                    :CHK_SAME_END
-        from _monitoring;
-    quit;
 
+    /* Check if dates are unique across monitoring file. */
+    proc sort data = _monitoring out=_monitoring_dups uniqueout=_monitoring_unique nouniquekey;
+        by startdate fupenddate;
+    run;
 
-    %if &CHK_SAME_START > 1 or &CHK_SAME_END > 1 %then %do;
+    %isdata(dataset=_monitoring_unique);
+    %if %eval(&nobs) > 0 %then %do;
     %put ERROR: (Sentinel) You cannot use different monitoring files with more than one period;
     %abort;
     %end;
@@ -98,7 +96,7 @@
     %end;
 
     proc datasets nowarn noprint lib=work;
-        delete _monitoring;
+        delete _monitoring:;
     quit;
 
     %put =====> MACRO ENDED: output_report_dates ;
