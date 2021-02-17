@@ -39,9 +39,9 @@
     %let numrunid = 0;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
-    %global startdateformatted studyenddateformatted minqueryyear maxqueryyear;
+    %global startdateformatted enddateformatted minqueryyear maxqueryyear;
     %let startdateformatted = ;
-    %let studyenddateformatted = ;
+    %let enddateformatted = ;
     %let minqueryyear = ;
     %let maxqueryyear = ;
 
@@ -83,6 +83,9 @@
     /*L2 report variables*/
     %global numl2comparisons;
     %let numl2comparisons = 0;
+
+    /*Output counter variables*/
+    %global tableletter tablecount;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
