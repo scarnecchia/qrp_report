@@ -39,19 +39,21 @@
     %let numrunid = 0;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
-    %global startdateformatted studyenddateformatted;
+    %global startdateformatted studyenddateformatted minqueryyear maxqueryyear;
     %let startdateformatted = ;
     %let studyenddateformatted = ;
+    %let minqueryyear = ;
+    %let maxqueryyear = ;
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
-            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilities
-            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonsFile look_start look_end;
+            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile
+            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end;
 
     %let ReportType= ;
     %let small_cellcounts = ;
-    %let redactevents = ;
-    %let redactPT = ;
+    %let redactevents =0;
+    %let redactPT =0;
     %let stratifybyDP = ;
     %let seed = ;
     %let groupsfile = ;
@@ -62,11 +64,11 @@
     %let itsregressionfile = ;
     %let treeaggfile = ;
     %let appendixfile = ;
-    %let selectionprobabilities = ;
+    %let selectionprobabilitiesfile = ;
     %let CodeDescriptionsFile = ;
     %let TableColumnsFile = ;
     %let DPInfoFile = ;
-    %let L2ComparisonsFile = ;
+    %let L2ComparisonFile = ;
     %let look_start = 1;
     %let look_end = 1;
 
@@ -77,6 +79,10 @@
     /*baseline table variables*/
     %global numbaselinetablegrp;
     %let numbaselinetablegrp =0;
+
+    /*L2 report variables*/
+    %global numl2comparisons;
+    %let numl2comparisons = 0;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

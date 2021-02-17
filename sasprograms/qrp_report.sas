@@ -134,6 +134,9 @@ options validvarname = v7;
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 
+/* Assign ods template path */
+ods path(prepend) work.templat(update);
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
@@ -143,6 +146,9 @@ options validvarname = v7;
 
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
+
+/*report template*/
+%include "&reportroot.inputfiles/macros/report_template.sas";
 
 /*set up*/
 %include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
@@ -156,8 +162,23 @@ options validvarname = v7;
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
 
-/*Aggregate macro*/
+/*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
+%include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
+
+/*L2 report macros*/
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_pl.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
+
+
+
+
 
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";

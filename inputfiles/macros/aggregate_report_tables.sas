@@ -68,20 +68,20 @@
 				
     		*loop through DPs;
     	    %do dps = 1 %to %eval(&num_dp.); 
-    			%let DPID = %scan(&random_dplist,&dps); 
+    			%let dpidsiteid = %scan(&random_dplist,&dps); 
     			%let maskedID = %scan(&masked_dplist,&dps); 
 
     	 		%do n = 1 %to &numrunid.;
     		    %let runid = %scan(&runidlist, &n); 
 
-    			   %if %sysfunc(exist(&DPID..&&runid._&infile))=0 %then %do;
-    				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &DPID..;
+    			   %if %sysfunc(exist(&dpidsiteid..&&runid._&infile))=0 %then %do;
+    				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
 				   	%if %length(&&grouplist_&n..) > 0 %then %do;    			   
     				   data temp_&dps.; 
-    				      length runid $5.;
-    					  set &DPID..&&runid._&infile; 
+    				      length runid $5. dpidsiteid $6.;
+    					  set &dpidsiteid..&&runid._&infile; 
     					  where lowcase(&name.) in (&&grouplist_&n..); 
     					  &name.=lowcase(&name.);
     					  dpidsiteid = "&maskedID";
@@ -94,7 +94,7 @@
     				   *warning if no rows selected after applying the where clause;
     				    %isdata(dataset=temp_&dps.);
     				    %if %eval(&nobs.=0) %then %do;
-    					   %put WARNING: (Sentinel) No rows in dataset &DPID..&&runid._&infile where &name.="&&grouplist_&n..";
+    					   %put WARNING: (Sentinel) No rows in dataset &dpidsiteid..&&runid._&infile where &name.="&&grouplist_&n..";
     				    %end;
     								
     				   /* Aggregate Data */

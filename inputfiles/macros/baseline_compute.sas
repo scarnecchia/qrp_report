@@ -66,6 +66,7 @@
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
                 call symputx('cohort', cohort);
+				call symputx('unique_psestimate',unique_psestimate);
                 /*computebalance defaults to Y for L2 tables*/
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -113,7 +114,7 @@
         %let weightscheme = ;
         %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp."));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
@@ -708,7 +709,7 @@
 		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
 		%end;
         /*All - unweighted*/
-		%if %str("&reporttype") ne %str("T6") %then %do;
+		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
           %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
         %end;
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
@@ -723,7 +724,7 @@
 
         /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
         %if &psfile. = stratificationfile %then %do;
-            %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do;
+            %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
 		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4);
 		    %end;
             %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5);
@@ -731,7 +732,9 @@
 
         /*IPTW - Adjusted cohort - Unweighted and Weighted */
         %if &psfile. = iptwfile %then %do;
+		    %if %eval(&unique_psestimate.) = 1 %then %do;
             %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6);
+			%end;
             %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7);
         %end;
 
@@ -1090,7 +1093,7 @@
                 set &dataout. baseline_aggregatefinal;
             run;
         %end;
-
+		
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
             delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline _tempcohort;

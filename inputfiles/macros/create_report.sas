@@ -58,6 +58,12 @@
                   dpinfofile = dpinfofile, 
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
+	
+***************************************************************************************************;
+*   Assign study start and end dates                                               
+***************************************************************************************************;
+
+    %output_report_dates();
 
 ***************************************************************************************************;
 * Baseline tables                                                      
@@ -72,14 +78,30 @@
 	%aggregate_report_tables;
 
 ***************************************************************************************************;
-*   Assign study start and end dates                                               
+*   Compute effect estimates for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
 
-    %output_report_dates();
+    /*loop l2 processing by periodid*/
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+        %l2_effect_estimate_driver();
+    %end;
 
-/*--------------------------------------------------------------------------------------------*/
-/* Clean Work                                                                                 */
-/*--------------------------------------------------------------------------------------------*/
+***************************************************************************************************;
+*   Output report                                                
+***************************************************************************************************;
+
+    /*Create PDF and Excel templates*/
+    %if %str("&sysscp.") = %str("WIN") %then %do;
+	   %report_template(outputtype = excel, fontsize = 10pt, font = Calibri); 
+	%end;
+	%else %do;
+	   %report_template(outputtype = excel, fontsize = 9pt, font = Arial); 
+	%end;
+	%report_template(outputtype = pdf, fontsize = 8pt, font= Arial); 
+
+***************************************************************************************************;
+*   Clean Work                                                                                 
+***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
 
