@@ -39,9 +39,8 @@
     %let numrunid = 0;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
-    %global startdateformatted studyenddateformatted;
+    %global startdateformatted;
     %let startdateformatted = ;
-    %let studyenddateformatted = ;
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile

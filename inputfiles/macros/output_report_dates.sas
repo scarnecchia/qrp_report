@@ -23,6 +23,9 @@
 *     - The query period end date is the max of all DP end dates. Except when FUPENDDATE is populated
 *       and FUPENDDATE is earlier than the max of the DP end dates
 *
+*   The query period end date is calculated and assigned for each period id, rather than across the 
+*   first starting date of the first period and the last end date of the last period. 
+*
 *   Both dates are formatted to "Month Day, Year" - January 1, 2010
 *
 *--------------------------------------------------------------------------------------------------
@@ -53,22 +56,46 @@
         ;
     run;
 
+    /* Check if more than one run (monitoring file) specified */
+    %if &numrunid > 1 and (&look_start > 1 or &look_end > 1) %then %do;
+    proc sql noprint;
+        select count(distinct startdate), 
+               count(distinct fupenddate)
+               into :CHK_SAME_START,
+                    :CHK_SAME_END
+        from _monitoring;
+    quit;
+
+
+    %if &CHK_SAME_START > 1 or &CHK_SAME_END > 1 %then %do;
+    %put ERROR: (Sentinel) You cannot use different monitoring files with more than one period;
+    %abort;
+    %end;
+
+    %end;
+
+    /* loop through looks */
+    %do n = &look_start %to &look_end;
+    %global enddate&n.formatted;
+
     proc sql noprint;
         select min(startdate) into: minstartdate
         from _monitoring;
         select max(fupenddate) into: maxfupenddate
         from _monitoring
-        where missing(fupenddate)=0;
+        where missing(fupenddate)=0 and periodid=&n;
     quit;
 
     /*Assign final formatted dates*/
     data _null_;
         call symputx('startdateformatted', put(&minstartdate.,WORDDATE.));
-        call symputx('enddateformatted', put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.));
+        call symputx("enddate&n.formatted", put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.), 'G');
     run;
 
-    %put study start date = &startdateformatted.;
-    %put study end date = &enddateformatted.;
+    %put study start date for period &n = &startdateformatted.;
+    %put study end date for period &n = &&enddate&n.formatted.;
+
+    %end;
 
     proc datasets nowarn noprint lib=work;
         delete _monitoring;
