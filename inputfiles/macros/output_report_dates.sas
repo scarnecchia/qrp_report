@@ -59,7 +59,7 @@
     /* Check if more than one run (monitoring file) specified */
     %if &numrunid > 1 and (&look_start > 1 or &look_end > 1) %then %do;
 
-    /* Check if dates are unique across monitoring file. */
+    /* Check if dates are unique across monitoring files */
     proc sort data = _monitoring out=_monitoring_dups uniqueout=_monitoring_unique nouniquekey;
         by startdate fupenddate;
     run;
