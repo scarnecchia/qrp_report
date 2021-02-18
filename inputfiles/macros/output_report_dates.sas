@@ -11,9 +11,11 @@
 *  Program inputs:                                                                                   
 * 
 *  Program outputs:                                                                                                                                       
-*    Two macro variables:
+*    Three or more macro variables:
 *     - startdateformatted
 *     - enddateformatted 
+*     - enddate1formatted - enddate&nformatted
+*
 *
 *  PARAMETERS:                                                                       
 *            
@@ -22,6 +24,9 @@
 *     - The query period start date is equal to the startdate parameter from the monitoring file
 *     - The query period end date is the max of all DP end dates. Except when FUPENDDATE is populated
 *       and FUPENDDATE is earlier than the max of the DP end dates
+*     - The query period end date is also calculated for each monitoring period, which can either be
+*       the FUPENDDATE of that period when populated, or the max of all DP end dates.
+*. 
 *
 *   Both dates are formatted to "Month Day, Year" - January 1, 2010
 *
@@ -53,18 +58,39 @@
         ;
     run;
 
+    /* Check if more than one run (monitoring file) specified */
+    %if &numrunid > 1 and %eval(&look_end-&look_start) > 0 %then %do;
+
+    /* Check if dates are unique across monitoring files */
+    proc sort data = _monitoring out=_monitoring_dups uniqueout=_monitoring_unique nouniquekey;
+        by startdate fupenddate;
+    run;
+
+    %isdata(dataset=_monitoring_unique);
+    %if %eval(&nobs) > 0 %then %do;
+    %put ERROR: (Sentinel) You cannot use different monitoring files with more than one period;
+    %abort;
+    %end;
+
+    %end;
+
+    /* loop through looks */
+    %do n = &look_start %to &look_end;
+    %global enddate&n.formatted;
+
     proc sql noprint;
         select min(startdate) into: minstartdate
         from _monitoring;
         select max(fupenddate) into: maxfupenddate
         from _monitoring
-        where missing(fupenddate)=0;
+        where missing(fupenddate)=0 and periodid=&n;
     quit;
 
     /*Assign final formatted dates*/
     data _null_;
         call symputx('startdateformatted', put(&minstartdate.,WORDDATE.));
         call symputx('enddateformatted', put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.));
+        call symputx("enddate&n.formatted", put(min(&maxfupenddate.,&maxdpenddate.) ,WORDDATE.), 'G');
         call symputx('enddate', min(&maxfupenddate.,&maxdpenddate.));
     run;
 
@@ -73,10 +99,12 @@
     %let maxqueryyear = %sysfunc(year(&enddate.));
 
     %put study start date = &startdateformatted.;
-    %put study end date = &enddateformatted.;
+    %put study end date for period &n = &&enddate&n.formatted.;
+
+    %end;
 
     proc datasets nowarn noprint lib=work;
-        delete _monitoring;
+        delete _monitoring:;
     quit;
 
     %put =====> MACRO ENDED: output_report_dates ;
