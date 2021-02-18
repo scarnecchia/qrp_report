@@ -143,7 +143,7 @@
 
                 %tableletter();                             
                 %addtotoc(tabnum="Table 1&tableletter.", 
-                 caption="Baseline Characteristics of &captionlabel. (Aggregated) in the Sentinel Distributed Database from &startdateformatted. to &enddateformatted.");
+                 caption="Baseline Characteristics of &captionlabel. (Aggregated) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
 
                 /*Output seperate table for each Data Partner - loop through each DP*/
                 %if &stratifybydp. = Y %then %do;    
@@ -151,7 +151,7 @@
     		         %let maskedID = %scan(&masked_dplist,&dps); 
                      %tableletter();                             
                      %addtotoc(tabnum="Table 1&tableletter.", 
-                      caption="Baseline Characteristics of &captionlabel. (&maskedid.) in the Sentinel Distributed Database from &startdateformatted. to &enddateformatted.");
+                      caption="Baseline Characteristics of &captionlabel. (&maskedid.) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
                     %end;
                 %end; /*DP stratification*/
             %end; /*loop through each periodid*/
