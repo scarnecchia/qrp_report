@@ -24,10 +24,9 @@
 *     - The query period start date is equal to the startdate parameter from the monitoring file
 *     - The query period end date is the max of all DP end dates. Except when FUPENDDATE is populated
 *       and FUPENDDATE is earlier than the max of the DP end dates
-*     - 
-*
-*   The query period end date is calculated and assigned for each period id, rather than across the 
-*   first starting date of the first period and the last end date of the last period. 
+*     - The query period end date is also calculated for each monitoring period, which can either be
+*       the FUPENDDATE of that period when populated, or the max of all DP end dates.
+*. 
 *
 *   Both dates are formatted to "Month Day, Year" - January 1, 2010
 *
