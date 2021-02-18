@@ -39,8 +39,9 @@
     %let numrunid = 0;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
-    %global startdateformatted minqueryyear maxqueryyear;
+    %global startdateformatted enddateformatted minqueryyear maxqueryyear;
     %let startdateformatted = ;
+    %let enddateformatted = ;
     %let minqueryyear = ;
     %let maxqueryyear = ;
 
