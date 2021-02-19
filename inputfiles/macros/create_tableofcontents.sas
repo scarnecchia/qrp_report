@@ -161,7 +161,6 @@
                     %if &psfile. = covstratfile %then %let tablecount = 0;
                 %end;
             %end;
-            %put tablecount = &tablecount;
 
             /*Assign labels*/
             %let baselinelabel = ;
@@ -190,7 +189,7 @@
                         if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
                     end;
                     %end;
-                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
                     if c then do;
                         if labeltype = 'grouplabel' then call symputx('psestimatelabel',label);
                     end;
@@ -202,7 +201,7 @@
             %if %length(&baselinegroupnum.)>0 %then %do;
             %let captionlabel = &grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.;
             %end;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
             %let captionlabel = &psestimatelabel.;
             %end;         
 
