@@ -91,12 +91,22 @@
             %let analysisgrp = ;
             %let analysisgrp2 = ;
             %let baselinegroupnum = ;
+            %let pregnancylabel = ;
+            %let includenonpregnant = N;
 
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
                     call symputx('analysisgrp', analysisgrp);
                     call symputx('runid', runid);
+                    call symputx('cohort', cohort);
+                    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+                    if cohort in ('preg', 'nopreg') then do;
+                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
+                        else call symput('pregnancylabel', ' Pregnancy Cohort');
+                    end;
+                    call symputx('includenonpregnant', upcase(includenonpregnant));
+                    %end;
                     if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 end;
                 /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
@@ -133,9 +143,9 @@
                 run;
             %end;
 
-            %let captionlabel = &grouplabel.&baselinelabel.;
+            %let captionlabel = &grouplabel.&pregnancylabel&baselinelabel.;
             %if %length(&baselinegroupnum.)>0 %then %do;
-            %let captionlabel = &grouplabel. and &grouplabel2.&baselinelabel.;
+            %let captionlabel = &grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.;
             %end;
 
             /*loop through each periodid*/
@@ -167,7 +177,7 @@
     /*********************/
     /* Remove empty rows */
     /*********************/
-    data tableofcontents;
+    data output.tableofcontents;
        set tableofcontents;
        if missing(tabnum)=0;
     run;
