@@ -248,7 +248,7 @@
        
                 /*Output seperate table for each Data Partner - loop through each DP*/
                 %if &stratifybydp. = Y %then %do;    
-                    %do dps = 1 %to &numrunid.;
+                    %do dps = 1 %to %eval(&num_dp.);
         		        %let maskedID = %scan(&masked_dplist,&dps); 
                         %if %eval(&unique_psestimate.) = 1 %then %do;
                             %baselinetoc(&maskedid.);
