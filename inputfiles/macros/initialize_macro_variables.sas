@@ -73,8 +73,9 @@
     %let look_end = 1;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist;
+    %global datasetlist figurelist;
     %let datasetlist = ;
+    %let figurelist = ;
 
     /*L2 report variables*/
     %global numl2comparisons;
