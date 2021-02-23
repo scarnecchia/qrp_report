@@ -232,7 +232,7 @@
                     /*Weighted - IPTW, PS Stratum, PS Stratification*/
                     %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
                         %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Weight: &weightlabel.;
+                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
                         %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                         %tableletter(); 
                         %addtotoc(tabnum=Table 1&tableletter., 
