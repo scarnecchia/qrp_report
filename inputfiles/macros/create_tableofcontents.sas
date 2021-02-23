@@ -38,15 +38,15 @@
         set tableofcontents end=eof;
         output;
         if eof then do;
-            tabnum = &tabnum.;
-            caption = &caption.;
+            tabnum = "&tabnum.";
+            caption = "&caption.";
             output;
         end;
     run;
     %mend;
 
     /*********************************************************************************************/
-    /* Initialize empty table and table number                                                   */
+    /* Initialize "empty table and table number                                                   */
     /*********************************************************************************************/
     data tableofcontents;
         length tabnum $25 caption $500;
@@ -143,7 +143,7 @@
                     if upcase(ipweight)= 'ATE' then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
-                    call symputx('truncationlabel',truncweight||'%');
+                    call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
                 end;
             run;
             %end;
@@ -197,20 +197,20 @@
                 run;
             %end;
 
-            %let captionlabel = &grouplabel.&pregnancylabel&baselinelabel.;
+            %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
             %if %length(&baselinegroupnum.)>0 %then %do;
-            %let captionlabel = &grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.;
+            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
             %end;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-            %let captionlabel = &psestimatelabel.;
+            %let captionlabel = %bquote(&psestimatelabel.);
             %end;         
 
             /*1 block of code for both aggregate and DP tables*/
             %macro baselinetoc(table);
                 %if %eval(&unique_psestimate.) = 1 %then %do;
                  %tableletter(); 
-                 %addtotoc(tabnum="Table 1&tableletter.", 
-                 caption="&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
+                 %addtotoc(tabnum=Table 1&tableletter., 
+                 caption=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.));
                 %end;
 
                 /*For L2 tables - up to 2 additional adjusted tables*/
@@ -218,15 +218,15 @@
                     /*PS Match Adjusted*/
                     %if &psfile. = psmatchfile %then %do;
                     %tableletter(); 
-                    %addtotoc(tabnum="Table 1&tableletter.", 
-                    caption="Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
+                    %addtotoc(tabnum=Table 1&tableletter., 
+                    caption=%quote(Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Unweighted - IPTW and PS Stratum*/
                     %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                     %tableletter(); 
-                    %addtotoc(tabnum="Table 1&tableletter.", 
-                     caption="Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
+                    %addtotoc(tabnum=Table 1&tableletter., 
+                     caption=%quote(Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Weighted - IPTW, PS Stratum, PS Stratification*/
@@ -235,8 +235,8 @@
                         %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Weight: &weightlabel.;
                         %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                         %tableletter(); 
-                        %addtotoc(tabnum="Table 1&tableletter.", 
-                        caption="Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.");
+                        %addtotoc(tabnum=Table 1&tableletter., 
+                        caption=%quote(Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the Sentinel Distributed Database from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
                 %end; /*Additional L2 tables*/
             %mend;
@@ -258,7 +258,6 @@
             %end; /*loop through each periodid*/
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
-
 
     /*********************/
     /* Remove empty rows */
