@@ -46,7 +46,7 @@
     %mend;
 
     /*********************************************************************************************/
-    /* Initialize "empty table and table number                                                   */
+    /* Initialize empty table and table number                                                   */
     /*********************************************************************************************/
     data tableofcontents;
         length tabnum $25 caption $500;
