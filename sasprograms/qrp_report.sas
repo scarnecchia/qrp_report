@@ -55,7 +55,7 @@ options ls=100 nocenter ;
 options obs=MAX ;
 options msglevel=i ;
 options mprint mprintnest ;
-options errorcheck=strict errors=0 ;
+options errorcheck=strict errors=0;
 options merror serror ;
 options dkricond=error dkrocond=error mergenoby=warn;
 options dsoptions=nonote2err noquotelenmax ;
@@ -177,6 +177,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
 
 /*report formatting and output macros*/
+%include "&reportroot.inputfiles/macros/output_report.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
