@@ -90,6 +90,9 @@
 *   Output report                                                
 ***************************************************************************************************;
 
+    /*Compile table of contents*/
+    %create_tableofcontents();
+
     /*Create PDF and Excel templates*/
     %if %str("&sysscp.") = %str("WIN") %then %do;
 	   %report_template(outputtype = excel, fontsize = 10pt, font = Calibri); 

@@ -12,6 +12,7 @@
 *   - %isdata() macro determines whether a dataset is empty or not
 *   - %create_comma_charlist() macro converts space delimited list to comma delimited list with quotes
 *   - %alphabetizevarutil() macro alphabetizes variables in a data step
+*   - %tableletter() macro increments a letter suffix
 *
 *  Program inputs:                                                                                   
 *   -
@@ -73,4 +74,31 @@
     length &out. $100;
     &out. = catx(' ',of &array.[*]);
     drop i p l &in.;
+%mend;
+
+*Macro for incrementing table/figure letter suffix;
+%macro tableletter();
+  %if %eval(&tablecount = 0) %then %do;
+    %let tableletter = ;
+  %end;
+  %else %do;
+      %if %eval(%sysfunc(mod(&tablecount.,26))=0) %then %do;
+        %let div = %eval((&tablecount. / 26)-1); %put &div.;
+        %let secondplace = %eval(&tablecount - (26*&div));%put &secondplace.;
+      %end; 
+      %else %do;
+        %let div = %sysfunc(int(&tablecount. / 26)); %put &div.;
+        %let secondplace = %eval(&tablecount - (26*&div));%put &secondplace.;
+      %end;
+
+      %if %eval(&div = 0) %then %do;
+        %let tableletter = %scan(a b c d e f g h i j k l m n o p q r s t u v w x y z, &tablecount.);
+      %end;
+      %else %do;
+        %let tableletter = %scan(a b c d e f g h i j k l m n o p q r s t u v w x y z, &div.)%scan(a b c d e f g h i j k l m n o p q r s t u v w x y z, &secondplace);
+      %end;
+  %end;
+
+  %put tableletter = &tableletter.;
+  %let tablecount = %eval(&tablecount + 1); /*+1 to counter*/
 %mend;

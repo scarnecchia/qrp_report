@@ -76,9 +76,16 @@
     %global datasetlist;
     %let datasetlist = ;
 
+    /*baseline table variables*/
+    %global numbaselinetablegrp;
+    %let numbaselinetablegrp =0;
+
     /*L2 report variables*/
     %global numl2comparisons;
     %let numl2comparisons = 0;
+
+    /*Output counter variables*/
+    %global tableletter tablecount;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
