@@ -752,6 +752,7 @@
         /******************/
         %isdata(dataset=input.&l2comparisonfile.);
         %if %eval(&nobs.>0) %then %do; 
+            %global outputforestplot;
             %let outputforestplot = N;
             data l2comparisonfile;
                 set input.&l2comparisonfile.;
@@ -772,7 +773,7 @@
 
             /*Defensive check - if any comparisons request forest plot, then F2 in FIGUREFILE must be requested*/
             %if %index(&figurelist.,F2)=0 & &outputforestplot=Y %then %do;
-                %put WARNING: (Sentinel) Forest Plots not request in FIGUREFILE, however OUTPUTFORESTPLOT set to Y in L2COMPARISONFILE.;
+                %put WARNING: (Sentinel) Forest Plots not requested in FIGUREFILE, however OUTPUTFORESTPLOT set to Y in L2COMPARISONFILE.;
                 %put WARNING: (Sentinel) Forest Plots will not be produced;
                 data l2comparisonfile;
                     set l2comparisonfile;
