@@ -103,6 +103,16 @@
 
     %end;
 
+    /*Add DPENDDATE to output.dpinfo as the earliest of: DPMAXDATE and Query End Date*/
+    data output.dpinfo(rename=dpmindate1=dpmindate);
+        set output.dpinfo;
+        format dpenddate dpmindate1 $10.;
+        dpenddate = put(min(&maxfupenddate., input(dpmaxdate,date9.)), mmddyy10.);
+        /*format dpmindate*/
+        dpmindate1 = put(input(dpmindate,date9.), mmddyy10.);
+        drop dpmindate;
+    run;
+
     proc datasets nowarn noprint lib=work;
         delete _monitoring:;
     quit;
