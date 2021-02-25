@@ -323,6 +323,19 @@
     %end;
 
 /***************************************************************************************************
+*   Read in APPENDIXFILE if specified                                               
+***************************************************************************************************/
+	%if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
+        data appendixfile;
+            set input.&appendixfile.;
+            /*defensive*/
+    		appendixtype = lowcase(appendixtype);
+    		codestab = lowcase(codestab);
+            header = lowcase(header);
+        run;
+    %end;
+	
+/***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
 
