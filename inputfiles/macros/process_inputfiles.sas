@@ -271,7 +271,7 @@
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6                                             
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile. )) ne 0 %then %do;
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
 		data groupsfile;
 			set input.&groupsfile.;
 			runid = lowcase(runid);
@@ -290,7 +290,7 @@
 				%put &&grouplist_&n..;
 	     %end;
 	 %end;
-
+ 
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
 ***************************************************************************************************/
@@ -308,6 +308,19 @@
             end;
         %end;
 	 run;
+
+/***************************************************************************************************
+*   Read in LABELFILE if specified                                               
+***************************************************************************************************/
+	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
+        data labelfile;
+            set input.&labelfile.;
+            /*defensive*/
+    		runid = lowcase(runid);
+    		group = lowcase(group);
+            labeltype = lowcase(labeltype);
+        run;
+    %end;
 
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
@@ -802,8 +815,8 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles covarnum 8 unconditional $1.;
-            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, ceiling, caliper, ratio, strataweight,
+                   caliper ceiling percentiles covarnum truncweight 8 unconditional $1.;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional);
             stop;
         run;
@@ -845,7 +858,7 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 if missing(covarnum) then covarnum = 0;
-                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight
+                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional;
             run;
         %end;

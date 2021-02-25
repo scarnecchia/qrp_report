@@ -28,7 +28,7 @@
 ***************************************************************************************************;
 
 /*Define libname for location of templatefiles folder*/
-libname tempfl "U:\git\qrp_report\templatefiles";
+libname tempfl "";
 
 %macro create_templatefiles();
 
@@ -944,7 +944,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
     *************************************;
     %let stratLevel = overall|sex|agegroup|race|hispanic;
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
-    %let intervallist = year|year month|quarter;
+    %let intervallist = year|month year|quarter year;
 
 	data lookup_its_tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
@@ -954,7 +954,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
         call missing(tablesubstrat);
 
         dataset = "t2its";
-		%do t = 1 %to 3;
+		%do t = 1 %to 2;
             %do int = 1 %to 3;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
@@ -976,7 +976,7 @@ libname tempfl "U:\git\qrp_report\templatefiles";
 		%end;
 
         dataset = "t2itsprev";
-		%do t = 1 %to 3;
+		%do t = 1 %to 2;
             %do int = 1 %to 3;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
@@ -1011,7 +1011,6 @@ libname tempfl "U:\git\qrp_report\templatefiles";
             rename tablesub=figuresub;
             rename table=figure;
         run;
-
 
     /*Clean up*/
     proc datasets nowarn noprint;
