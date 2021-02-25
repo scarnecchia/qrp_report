@@ -179,6 +179,7 @@ ods path(prepend) work.templat(update);
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
+%include "&reportroot.inputfiles/macros/output_appendices.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
 /*-----------------------------------------------------------------------------------------------*/
