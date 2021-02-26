@@ -71,8 +71,7 @@
                   on est.covarnum = cov.covarnum 
               %end;
               where sort2 = 1 and 
-                    analysis ne "Unweighted" /* and 
-                   (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum = 0)) */
+                    analysis ne "Unweighted" 
                    order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
 
               create table id_2 as 
@@ -110,8 +109,7 @@
                   on est.covarnum = cov.covarnum 
                %end;
                where sort2 = 1 and 
-                     analysis ne "Unweighted" /* and 
-                     (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum ne 0)) */
+                     analysis ne "Unweighted" 
                order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
           quit;
 
