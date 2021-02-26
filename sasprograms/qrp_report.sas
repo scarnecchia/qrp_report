@@ -28,16 +28,16 @@
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
-%let INFOLDER =U:\dev\test\qrp_dev_8895_nsdp_v01\inputfiles;
+%let INFOLDER =;
 
 /* Location of data folder */
-%let DATAROOT =U:\dev\test\qrp_dev_8895_nsdp_v01\data;
+%let DATAROOT =;
 
 /* Location of QRP report package */
-%let REPORTROOT =U:\dev\test\qrp_report;
+%let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =createreport_file;
+%let CREATEREPORTFILE =;
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
@@ -177,12 +177,12 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
 
 /*Figure macros */
-%include "&reportroot.inputfiles/macros/create_forest.sas"
+%include "&reportroot.inputfiles/macros/create_forest.sas";
 
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report.sas";
-%include "&reportroot.inputfiles/macros/forestplot_template.sas"
-%include "&reportroot.inputfiles/macros/forestplot_driver.sas"
+%include "&reportroot.inputfiles/macros/forestplot_template.sas";
+%include "&reportroot.inputfiles/macros/forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 

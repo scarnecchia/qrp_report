@@ -196,7 +196,7 @@
                 put _all_;
                 run;
                 ods select all;
-                ods startpage=no;
+                ods startpage=no; /* Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures */
 
                 %tableletter();
                 ods excel options(sheet_interval="none" sheet_name = "Figure &forestfig.&TABLELETTER" tab_color="yellow");
