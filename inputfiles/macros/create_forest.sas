@@ -142,6 +142,9 @@
               set id_1(in=id1)
                   id_2(in=id2);
               length title $200 label $250;
+              %if %eval(&nobs) = 0 %then %do;
+              call missing(label);
+              %end;
               /*Assign labels*/
               if id1 then do;
                   id = 2;
