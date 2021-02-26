@@ -250,14 +250,14 @@
                   end;
                   /*covarnum 2001 = Birth Type */
                   else if covarnum = 2001 then do;
-                    if subgroupcat = '0' then title = '0';
-                    if subgroupcat = '1' then title = '1';
-                    if subgroupcat = '2' then title = '2';
-                    if subgroupcat = '3' then title = '3';
-                    if subgroupcat = '4' then title = '4';
-                    if subgroupcat = '5' then title = '5';
-                    if subgroupcat = '8' then title = '8';
-                    if subgroupcat = '9' then title = '9';
+                    if subgroupcat = '0' then title = 'Unspecified # of live births';
+                    if subgroupcat = '1' then title = '1 live birth';
+                    if subgroupcat = '2' then title = '2 live births';
+                    if subgroupcat = '3' then title = '3 live births';
+                    if subgroupcat = '4' then title = '4 live births';
+                    if subgroupcat = '5' then title = '5 live births';
+                    if subgroupcat = '8' then title = 'Multiple live births, unspecified number';
+                    if subgroupcat = '9' then title = 'Conflicting code(s) for number of live births';
                   end;
                   /*covarnum 1001 = Age Groups*/
                   /*covarnum 1002 = Year*/
