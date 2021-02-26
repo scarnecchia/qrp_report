@@ -9,10 +9,9 @@
 * PURPOSE: Creates and outputs forest plots for level 2 analyses
 *                                       
 *  Program inputs:                                                                                   
-*   - l2_effectestimates_&periodid.sas7bdat
+*   - [runid]_forest_[periodid].sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - [runid]_forest_[periodid].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -56,7 +55,7 @@
         %let ForestPointEst = OR;
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
-        %isdata(dataset=selectionprobabilities);
+        %isdata(dataset=SelectionProbabilitiesFile);
         %if %eval(&nobs) > 0 %then %do;
         %let ForestRatioTitle = Adjusted Odds Ratios (OR);
         %let ForestRatioFoot = Adjusted odds ratio;
