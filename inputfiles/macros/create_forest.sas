@@ -28,8 +28,6 @@
 
 %macro create_forest;
 
-  options mprint mlogic symbolgen source2;
-
     /* loop through each runid */
     %do n = 1 %to &numrunid;
       %let runid = %scan(&runidlist,&n);
@@ -132,12 +130,8 @@
               from pscs_masterinputs a 
               inner join l2comparisonfile b
               on a.analysisgrp = b.analysisgrp 
-              where upper(b.outputforestplot) = 'Y' and a.runid="&runid";
-
-              select count(*) into: NumForestGroups
-              from forestgroupsonly;
-              select strip(lowcase(analysisgrp)) into: ForestGroupList separated by ' '
-              from forestgroupsonly;
+              where upper(b.outputforestplot) = 'Y' and a.runid="&runid"
+              order by a.analysisgrp;
             quit;
 
           /*Variable ID used for indentation:
@@ -242,14 +236,16 @@
               end;
           run;
 
-          proc sql noprint undo_policy=none;
-            create table &runid._forest_&fpi. as
-            select a.*, b.file, b.ipweight, b.strataweight, b.percentiles, b.ratio, b.ceiling, b.caliper
-            from &runid._forest_&fpi. a right join forestgroupsonly b 
-            on a.analysisgrp = b.analysisgrp
-            order by a.analysisgrp, a.analysis, a.analysisgrpsort, a.covarnum, a.catnum, a.subgroupcat, a.sort1, a.sort2;
-          quit;
+          proc sort data = &runid._forest_&fpi.;
+            by analysisgrp;
+          run;
 
+          data &runid._forest_&fpi;
+            merge &runid._forest_&fpi(in=a)
+                   forestgroupsonly(in=b);
+            by analysisgrp;
+            if b;
+          run;
 
           /* Merge in all analysis type input files and create footnotes, labels and sheet names */
           data &runid._forest_&fpi;

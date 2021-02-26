@@ -29,7 +29,7 @@
 *--------------------------------------------------------------------------------------------------
 ***************************************************************************************************;
 
-%macro forestplot_template(plotheight=);
+%macro forestplot_template(plotheight=, pointest=, lowerci=, upperci=, ci95=, cilabel=);
 
 ods path(prepend) work.templat(update);
 
@@ -58,16 +58,17 @@ proc template;
     endsidebar;
 
     /* Single cell with inner margins for left and right tables */
-    layout overlay / xAxisOpts=(label="HR (95% CI)" type=log display=(line ticks tickvalues label)
+    layout overlay / xAxisOpts=(label="&cilabel" type=log display=(line ticks tickvalues label)
     tickValueAttrs=(size=8 weight=bold)
     labelAttrs=(size=8 weight=bold)
-    offsetMin=0.1)
+    offsetMin=0.1
+    lineextent=data)
     yAxisOpts=(reverse=true display=none) wallDisplay=none;
 
     /* Odds Ratio plot */
     /*    referenceLine y=ref / lineAttrs=(thickness=15 color=_bandColor);*/
-    scatterPlot y=obsId x=HR / markerAttrs=(symbol=squareFilled color=black)
-    xErrorLower=LCL xErrorUpper=UCL errorBarCapShape=none errorbarattrs=(color=black);
+    scatterPlot y=obsId x=&pointest / markerAttrs=(symbol=squareFilled color=black)
+    xErrorLower=&lowerci xErrorUpper=&upperci errorBarCapShape=none errorbarattrs=(color=black);
     referenceLine x=1;
 
     /* Right-side table */
@@ -76,7 +77,7 @@ proc template;
     indentWeight=indentwt display=(values);
     endInnerMargin;
     innerMargin / align=right gutter=0.1in;
-    axisTable y=obsId value=HR_95CI / display=(values);
+    axisTable y=obsId value=&ci95 / display=(values);
     endInnerMargin;
 
     endLayout; /* overlay */
