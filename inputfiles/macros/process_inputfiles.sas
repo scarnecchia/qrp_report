@@ -331,7 +331,6 @@
             /*defensive*/
     		appendixtype = lowcase(appendixtype);
     		codestab = lowcase(codestab);
-            header = lowcase(header);
         run;
     %end;
 	
