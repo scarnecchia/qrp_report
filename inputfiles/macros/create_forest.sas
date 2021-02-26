@@ -71,8 +71,9 @@
                   on est.covarnum = cov.covarnum 
               %end;
               where sort2 = 1 and 
-                    analysis ne "Unweighted" and 
-                   (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum = 0));
+                    analysis ne "Unweighted" /* and 
+                   (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum = 0)) */
+                   order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
 
               create table id_2 as 
               select est.analysisgrp, 
@@ -109,8 +110,8 @@
                   on est.covarnum = cov.covarnum 
                %end;
                where sort2 = 1 and 
-                     analysis ne "Unweighted" and 
-                     (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum ne 0))
+                     analysis ne "Unweighted" /* and 
+                     (est.covarnum in (0,9000) | (est.covarnum not in (0,9000) and catnum ne 0)) */
                order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
           quit;
 
@@ -182,7 +183,7 @@
                   end;
                   /*covarnum 1014 = Pre-Post indicator*/
                   else if covarnum = 1014 then do;
-                      title = 'Pre-Post Indicator';
+                      title = 'Delivery status';
                   end;
                   /*covarnum 2000 = Match Method*/
                   else if covarnum = 2000 then do;
@@ -231,7 +232,7 @@
                   end;
                   /*covarnum 1014 = Pre-Post Indicator*/
                   else if covarnum = 1014 then do;
-                    if subgroupcat = 'NONE' then title = 'None';
+                    if subgroupcat = 'NONE' then title = 'Unknown Term';
                     if subgroupcat = 'PRE' then title = 'Pre-Term';
                     if subgroupcat = 'POST' then title = 'Post-Term';
                     if subgroupcat = 'TERM' then title = 'Term';
@@ -348,7 +349,7 @@
                                                                                      %end;
                                                                                      LCL UCL id file
                                                                                      );
-          by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2;
+          by analysisgrpsort analysis id COVARNUM catnum subgroupcat sort1 sort2;
           run;
 
           proc datasets nowarn noprint lib=work;
