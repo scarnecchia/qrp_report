@@ -180,12 +180,15 @@
                   else if covarnum = 1013 then do;
                       title = 'Hispanic Origin';
                   end;
+                  /*covarnum 1014 = Pre-Post indicator*/
                   else if covarnum = 1014 then do;
                       title = 'Pre-Post Indicator';
                   end;
+                  /*covarnum 2000 = Match Method*/
                   else if covarnum = 2000 then do;
                       title = 'Match Method';
                   end;
+                  /*covarnum 2001 = Birth Type*/
                   else if covarnum = 2001 then do;
                       title = 'Birth Type';
                   end;
@@ -225,6 +228,36 @@
                       if subgroupcat = 'U' then title = 'Unknown';
                       if subgroupcat = 'Y' then title = 'Yes';
                       if subgroupcat = 'N' then title = 'No';
+                  end;
+                  /*covarnum 1014 = Pre-Post Indicator*/
+                  else if covarnum = 1014 then do;
+                    if subgroupcat = 'NONE' then title = 'None';
+                    if subgroupcat = 'PRE' then title = 'Pre-Term';
+                    if subgroupcat = 'POST' then title = 'Post-Term';
+                    if subgroupcat = 'TERM' then title = 'Term';
+                  end;
+                  /*covarnum 2000 = Match Method*/
+                  else if covarnum = 2000 then do;
+                    if subgroupcat = 'BC' then title = 'Birth Certificate';
+                    if subgroupcat = 'RE' then title = 'Birth Registry';
+                    if subgroupcat = 'SI' then title = 'Health plan subscriber or family number';
+                    if subgroupcat = 'LA' then title = 'Exact or probabilistic last name and address match based upon health plan administrative data';
+                    if subgroupcat = 'OT' then title = 'Other';
+                    if subgroupcat = 'N1' then title = 'No subscriber/family IDs available for linkage';
+                    if subgroupcat = 'N2' then title = 'No name/address available for linkage';
+                    if subgroupcat = 'N3' then title = 'Neither subscriber/family IDs nor name/address available for linkage';
+                    if subgroupcat = 'NA' then title = 'No linkage made; any other reasons';
+                  end;
+                  /*covarnum 2001 = Birth Type */
+                  else if covarnum = 2001 then do;
+                    if subgroupcat = '0' then title = '0';
+                    if subgroupcat = '1' then title = '1';
+                    if subgroupcat = '2' then title = '2';
+                    if subgroupcat = '3' then title = '3';
+                    if subgroupcat = '4' then title = '4';
+                    if subgroupcat = '5' then title = '5';
+                    if subgroupcat = '8' then title = '8';
+                    if subgroupcat = '9' then title = '9';
                   end;
                   /*covarnum 1001 = Age Groups*/
                   /*covarnum 1002 = Year*/
