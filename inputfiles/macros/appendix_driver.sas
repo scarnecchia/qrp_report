@@ -40,12 +40,12 @@
 			report = %upcase(&_report.);	
 			type = %upcase(&_rpttyp.);
 			ord = "&_ord";
-			tag ="createTypeReportNDC_GenBr"; 
+			tag ="appendixNDC_GenBr"; 
 			appendix = "Appendix %upcase(&_ord.)";
 			titletype = "&_titletype.";
 			title = "Generic and Brand Names of Medical Products Used to Define &_titletype. in this Request";
             output;
-			tag ="createTypeReportNDC";
+			tag ="appendixNDC";
 			appendix = "Appendix %upcase(&_ord.).1";
 			title = "National Drug Codes (NDCs) for Medical Products Used to Define &_titletype. in this Request";
             output;
@@ -61,7 +61,7 @@
 			report = %upcase(&_report.);	
 			type = %upcase(&_rpttyp.);
 			ord = "&_ord";
-			tag ="createTypeReportDXPX";
+			tag ="appendixDXPX";
 			appendix = "Appendix %upcase(&_ord.)";
 			titletype = "&_titletype.";
 			title = "&_label1. Codes Used to Define &_titletype. in this Request";
@@ -154,16 +154,9 @@
         length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
         call missing(report, type, ord, tag, appendix, titletype, title);
     run;
-    %let tablecount = 1;
+    %let tablecount = 2;
 	
 	libname codes XLSX "&INFOLDER.codes.xlsx";	
-
-	proc sql ; 
-		create table xlsx_sheets as
-		select *
-		from dictionary.tables
-		where libname='CODES';
-	quit;
 	
 	proc sort data = appendixfile;
 	by order headerorder;
@@ -247,14 +240,14 @@
 				%end;
 			%end; /*eachCodelist k-loop*/
 		%end; /*headerorder j-loop*/
-		%if %upcase(&_type.) = INDEX %then %do; %let apptitle = %bquote(Exposures); %end;
-		%else %if %upcase(&_type.) = EXPINC %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
-		%else %if %upcase(&_type.) = COVARIATE %then %do; %let apptitle = %bquote(Covariates); %end;
-		%else %if %upcase(&_type.) = CENSOR %then %do; %let apptitle = %bquote(Exposure Censoring Criteria); %end;
-		%else %if %upcase(&_type.) = OUTCOME %then %do; %let apptitle = %bquote(Outcomes); %end;
-		%else %if %upcase(&_type.) = OUTCOMEINC %then %do; %let apptitle = %bquote(Outcome Incidence Criteria); %end;
-		%else %if %upcase(&_type.) = INCLUSION %then %do; %let apptitle = %bquote(Inclusion Criteria); %end;
-		%else %if %upcase(&_type.) = EXCLUSION %then %do; %let apptitle = %bquote(Exclusion Criteria); %end;
+		%if &_type. = index %then %do; %let apptitle = %bquote(Exposures); %end;
+		%else %if &_type. = expinc %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
+		%else %if &_type. = covariate %then %do; %let apptitle = %bquote(Covariates); %end;
+		%else %if &_type. = censor %then %do; %let apptitle = %bquote(Exposure Censoring Criteria); %end;
+		%else %if &_type. = outcome %then %do; %let apptitle = %bquote(Outcomes); %end;
+		%else %if &_type. = outcomeinc %then %do; %let apptitle = %bquote(Outcome Incidence Criteria); %end;
+		%else %if &_type. = inclusion %then %do; %let apptitle = %bquote(Inclusion Criteria); %end;
+		%else %if &_type. = exclusion %then %do; %let apptitle = %bquote(Exclusion Criteria); %end;
 		
 		%if %varexist(&_type._&i.,ndc)>0 %then %do;
 			%tableletter(); 
@@ -277,7 +270,7 @@
     /* delete xls_sheets file and temp datasets */
     /********************************************/
 	proc datasets lib=work nolist;
-		delete xlsx_sheets _:;
+		delete _:;
 	quit;
 
     %end; /*appendixfile input file exists*/

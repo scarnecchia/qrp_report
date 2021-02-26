@@ -13,6 +13,7 @@
 *   - %create_comma_charlist() macro converts space delimited list to comma delimited list with quotes
 *   - %alphabetizevarutil() macro alphabetizes variables in a data step
 *   - %tableletter() macro increments a letter suffix
+*   - %varexist() macro checks for the existence of a variable
 *
 *  Program inputs:                                                                                   
 *   -
