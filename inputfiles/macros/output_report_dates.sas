@@ -113,6 +113,10 @@
         drop dpmindate;
     run;
 
+    proc sort data=output.dpinfo sortseq=linguistic(numeric_collation=on);
+        by maskedid;
+    run;
+
     proc datasets nowarn noprint lib=work;
         delete _monitoring:;
     quit;
