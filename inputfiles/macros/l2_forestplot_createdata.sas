@@ -141,10 +141,9 @@
       %if %eval(&nobs>0) %then %do;
         proc sql noprint undo_policy=none;
           create table id_1 as
-          select a.*, b.label
+          select a.*, b.label, b.labeltype
           from id_1 a left join labelfile b
-          on a.analysisgrp = b.group
-          where lower(b.labeltype)='grouplabel';
+          on a.analysisgrp = b.group;
         quit;
       %end;
 
@@ -158,15 +157,17 @@
               id_2(in=id2);
           length title $200 label $250;
           %if %eval(&nobs) = 0 %then %do;
-          call missing(label);
+          label='';
+          labeltype='';
           %end;
+          if missing(labeltype) then labeltype='grouplabel';
           /*Assign labels*/
           if id1 then do;
               id = 2;
               /*covarnum 0 = Overall - apply analysisgrp label*/
               if covarnum = 0 then do;
                   id = 1;
-                  if missing(label) then title=analysisgrp;
+                  if missing(label) and labeltype='grouplabel' then title=analysisgrp;
                   else title=label;
               end;
               /*covarnum 1000 = Sex*/
