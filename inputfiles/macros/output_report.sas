@@ -65,10 +65,10 @@
 * Forest Plots                                                    
 ***************************************************************************************************;
    
-    %if &outputforestplot = Y %then %do;
+    %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
   /* Place holder code for figure number, this is subject to be moved and/or changed */
         %let forestfig=1;
-        %forestplot_driver;
+        %l2_forestplot_driver;
     %end; 
 
 ***************************************************************************************************;

@@ -84,15 +84,13 @@
     /*loop l2 processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %l2_effect_estimate_driver();
+
+    %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+        %l2_forestplot_createdata;
     %end;
 
-***************************************************************************************************;
-*   Create forest plot dataset                                            
-***************************************************************************************************;
-
-    %if &outputforestplot = Y %then %do;
-        %create_forest;
     %end;
+
 
 ***************************************************************************************************;
 *   Output report                                                

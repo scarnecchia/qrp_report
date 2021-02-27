@@ -191,7 +191,7 @@
         %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
             proc sql;    
                 create table &runid._covarname as 
-                select distinct covarnum, studyname 
+                select distinct covarnum, studyname, "&runid" as runid length=4
                 from infolder.&&&runid._covariatecodes.;
             quit;
         %end;

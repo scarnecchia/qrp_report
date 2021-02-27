@@ -752,7 +752,6 @@
         /******************/
         %isdata(dataset=input.&l2comparisonfile.);
         %if %eval(&nobs.>0) %then %do; 
-            %global outputforestplot;
             %let outputforestplot = N;
             data l2comparisonfile;
                 set input.&l2comparisonfile.;
