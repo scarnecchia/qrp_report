@@ -291,6 +291,13 @@
         by analysisgrpsort analysis id covarnum catnum subgroupcat sort1 sort2 runid;
       run;
 
+      /* Need to delete extra rows for labels when multiple subgroups are created */
+      data forest_&periodid.;
+        set forest_&periodid;
+        lag_title = lag(title);
+        if lag_title = title then delete;
+      run;
+
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
       data forest_&periodid;
         length forest_title $100 footnote $200;
@@ -359,7 +366,11 @@
                                                                                  %end;
                                                                                  LCL UCL id file
                                                                                  );
-      by analysisgrpsort analysis id COVARNUM catnum subgroupcat sort1 sort2;
+      by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2;
+      run;
+
+      data output.test;
+        set forest_&periodid.;
       run;
 
       proc datasets nowarn noprint lib=work;
