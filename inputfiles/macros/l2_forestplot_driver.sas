@@ -52,13 +52,6 @@
         %let ForestPointEst = OR;
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
-        %isdata(dataset=SelectionProbabilitiesFile);
-        %if %eval(&nobs) > 0 %then %do;
-        %let ForestCI95 = ADJOR_95CI;
-        %let ForestPointEst = ADJOR;
-        %let ForestLowerCI = Adj_LCL;
-        %let ForestUpperCI = Adj_UCL;
-        %end;
         %end; 
 
         /* Determine font for forest plot */

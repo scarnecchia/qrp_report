@@ -44,10 +44,6 @@
         where b.outputforestplot = 'Y';
       quit;
 
-      data output.forest_l2_effectestimates_&periodid.;
-        set forest_l2_effectestimates_&periodid.;
-      run;
-
       /* Check to see if covariates file exists */
       %isdata(dataset=covarname);
 
