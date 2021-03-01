@@ -52,6 +52,9 @@
     ods escapechar="^";
     title;
 
+/* Place holder code for figure number, this is subject to be moved and/or changed */
+    %let figurenum=1;
+
 ***************************************************************************************************;
 * Table of Contents                                            
 ***************************************************************************************************;
@@ -66,8 +69,6 @@
 ***************************************************************************************************;
    
     %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
-  /* Place holder code for figure number, this is subject to be moved and/or changed */
-        %let forestfig=1;
         %l2_forestplot_driver;
     %end; 
 

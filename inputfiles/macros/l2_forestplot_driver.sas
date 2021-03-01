@@ -159,7 +159,7 @@
                             data _null_;
                                 set foot&countgrp.;
                                 if _n_ = &f. then do;
-                                    if not missing(title) then call symputx('analysistitle', title);
+                                 call symputx('analysistitle', title);
                                 end;
                             run;
 
@@ -186,10 +186,10 @@
                 ods startpage=no; /* Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures */
 
                 %tableletter();
-                ods excel options(sheet_interval="none" sheet_name = "Figure &forestfig.&TABLELETTER" tab_color="blue");
+                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue");
                 proc odstext pagebreak=yes;
-                p "Figure &forestfig.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title" /
-                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted." /
+                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='wrap:no'];
                 p " ";
                 run;
 

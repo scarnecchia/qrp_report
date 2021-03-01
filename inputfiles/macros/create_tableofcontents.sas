@@ -286,7 +286,7 @@
             %if %length(&forest_title) > 0 %then %do;
             %tableletter();
             %addtotoc(tabnum=Figure &figurenum.&tableletter.,
-            caption=%quote(Figure &figurenum.&tableletter.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title))
+            caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted.))
             %end; /* Forest title exists */
             %end; /* loop plots */
         %end; /* loop periods */

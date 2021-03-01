@@ -146,11 +146,8 @@
       data forest_&periodid.;
           set id_1(in=id1)
               id_2(in=id2);
-          length title $200;
-          %if %eval(&nobs > 0) %then %do;
-           length label $&label_length;
-          %end;
-          %else %do;
+          length title $200 label $&label_length;
+          %if %eval(&nobs = 0) %then %do;
           label='';
           labeltype='grouplabel';
           %end;

@@ -313,7 +313,6 @@
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
 	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
-        %global label_length;
         data labelfile;
             set input.&labelfile.;
             /*defensive*/
