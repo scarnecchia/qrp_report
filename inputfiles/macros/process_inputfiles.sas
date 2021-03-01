@@ -323,11 +323,11 @@
         run;
 
         /* Determine length of label based off input file */
-        proc contents data = labelfile out=label_length(keep=name length);
+        proc contents data = labelfile out=_label_length(keep=name length);
         run;
 
         data _null_;
-            set label_length(where=(lowcase(name)= 'label'));
+            set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
         run;
     %end;
