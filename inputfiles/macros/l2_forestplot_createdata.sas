@@ -39,9 +39,9 @@
           inner join 
           l2comparisonfile d
           on c.analysisgrp = d.analysisgrp
-          where upper(d.outputforestplot) = 'Y') as b
+          where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
-        where upper(b.outputforestplot) = 'Y';
+        where b.outputforestplot = 'Y';
       quit;
 
       /*dataset id_1 will be used to apply a label */
