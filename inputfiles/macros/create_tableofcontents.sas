@@ -266,7 +266,7 @@
     %isdata(dataset=figurefile);
     %if %eval(&nobs.>0) %then %do;
 
-        %let figurenum = 1; /* Will need to change based on what figures are being output */
+        %let figurenum = 1; /* Add +1 for additional figure types that are requested */
         %let tablecount = 1;
 
         /*F2: Forest Plots*/
