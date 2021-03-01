@@ -186,10 +186,10 @@
                 ods startpage=no; /* Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures */
 
                 %tableletter();
-                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue");
+                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue" flow='none');
                 proc odstext pagebreak=yes;
-                p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted." /
-                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black width=1000%];
+                p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title ^{newline}in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted." /
+                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
                 p " ";
                 run;
 
