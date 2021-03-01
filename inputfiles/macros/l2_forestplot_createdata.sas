@@ -44,9 +44,13 @@
         where b.outputforestplot = 'Y';
       quit;
 
+      data output.forest_l2_effectestimates_&periodid.;
+        set forest_l2_effectestimates_&periodid.;
+      run;
+
       /* Check to see if covariates file exists */
       %isdata(dataset=covarname);
-      
+
       /*dataset id_1 will be used to apply a label */
       /*dataset id_2 contains effect estimates*/
       /*both are restricted to sort2 =1, in order to deduplicate the file*/
@@ -350,6 +354,15 @@
             end;
 
             end;
+          /* Set adjusted ORs if they have been requested */
+          %if "&reporttype." = "T4L2" %then %do;
+          if not missing(adjor) then do;
+          or_95ci=adjor_95ci;
+          or=adjor;
+          lcl=adjor_LCL;
+          ucl=adjor_UCL;
+          end;
+          %end;
       run;
 
       proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis footnote forest_title plotorder
@@ -357,7 +370,7 @@
                                                                                  HR_95ci HR  
                                                                                  %end;
                                                                                  %else %if "&reporttype." = "T4L2" %then %do;
-                                                                                 or_95ci or adjor_95ci adjor adjor_LCL adjor_UCL
+                                                                                 or_95ci or
                                                                                  %end;
                                                                                  LCL UCL id file
                                                                                  );
