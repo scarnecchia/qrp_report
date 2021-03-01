@@ -156,8 +156,6 @@
     run;
     %let tablecount = 2;
 	
-	libname codes XLSX "&INFOLDER.codes.xlsx";	
-	
 	proc sort data = appendixfile;
 	by order headerorder;
 	run;
@@ -167,22 +165,22 @@
 		into :maxapporder, :codestabcnt
 		from appendixfile;
 	%let codestabcnt=&codestabcnt.; 
-		select codestab
-		into :codestab1-:codestab&codestabcnt.
+		select codestab, codesfile
+		into :codestab1-:codestab&codestabcnt.,
+		     :codesfile1-:codesfile&codestabcnt.
 		from appendixfile;
 	quit; 
-	
-	%let var_lis = BrandName Form Route Strength Unit; /*variable list for NDC*/
-	
+		
 	/* Create codelist appendices */
 	%do i = 1 %to &maxapporder.;
 	 
 		proc sql noprint;
 			select codestab, count(distinct headerorder), 
-			case when (header is missing) then '@' else header end as header, appendixtype
+			case when (header is missing) then '@' else header end as header, codesfile, appendixtype
 			into :codetabs separated by "*", 
 				 :headerorder, 
 				 :header separated by "*",
+				 :codesfile separated by "*",
 				 :_type trimmed
 			from appendixfile
 			where order=&i;	
@@ -190,13 +188,33 @@
 
 		%do j = 1 %to &headerorder;
 	   		%let eachCodeList = %scan(&codetabs, &j, %str(*));
+	   		%let eachCodeFile = %scan(&codesfile, &j, %str(*));
 	   		%let currHeader = %qscan(%bquote(&header.), &j, %str(*));
 	   		%if &currHeader = %str(@) %then %let currHeader = ;
 			
+			libname codes XLSX "&INFOLDER.&eachCodeFile";	
+			
 			%do k = 1 %to %sysfunc(countw(&eachCodelist));
+			
+			%let optionalvars = ;
+			proc sql noprint;
+				select name
+				into : optionalvars separated by ' '
+				from dictionary.columns
+				where libname='CODES' and memname=upcase("%scan(&eachCodelist,&k)")
+			    %if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
+				  and lowcase(name) not in ('ndc','genericname');
+				%end;
+				%else %do;
+				  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform');
+				%end;
+			quit;			
+			%put optionalvars = &optionalvars.;
+			
 			data _%scan(&eachCodelist,&k);
 			%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-			 length brandname $1000 unit strength $50 route form $200 genericname $250 ndc $11;
+			 *length brandname $1000 unit strength $50 route form $200 genericname $250 ndc $11;
+			 length genericname $250 ndc $11;
 			%end;
 			%else %do;
 			 length code1 $20 descrip $600 codetype1 $3 codecat1 $2 codeform $5;
@@ -214,16 +232,16 @@
 			    %if %varexist(codes.%scan(&eachCodelist,&k),ndc)=0 %then %do;
 					code1=cats(compress(code1,' '));
 					codeform = compress(strip(codecat1)||strip(codetype1), );
-					keep header code1 descrip codetype1 codecat1 codeform appendix_sort header_sort;
+					keep header code1 descrip codetype1 codecat1 codeform &optionalvars. appendix_sort header_sort;
 			    %end;
 			    %else %do;
-					%do lds = 1 %to %sysfunc(countw(&var_lis));
-					  %scan(&var_lis, &lds) = %scan(&var_lis, &lds);
-					%end;
 					codecat1='RX';
 					ndc = cats(compress(ndc,' '));
 					Strength = strip(Strength);
-					keep header ndc genericname BrandName Form Route Strength Unit appendix_sort header_sort;
+					keep header ndc genericname &optionalvars. appendix_sort header_sort;
+					%if %index(%lowcase(&optionalvars),brand_name)>0 %then %do; 
+						rename brand_name = brandname;
+					%end;
 				%end;
 			run; 
 			
@@ -239,8 +257,11 @@
 					run;
 				%end;
 				%else %do;
-					data &_type._&i.;
-					 set &_type._&i. _%scan(&eachCodelist,&k);
+					proc sql noprint;
+					create table &_type._&i. as
+					select * from &_type._&i.
+					outer union corr
+					select * from _%scan(&eachCodelist,&k);
 					run;
 				%end;
 			%end; /*eachCodelist k-loop*/

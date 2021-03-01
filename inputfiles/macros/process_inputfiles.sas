@@ -333,6 +333,8 @@
             /*defensive*/
     		appendixtype = lowcase(appendixtype);
     		codestab = lowcase(codestab);
+			/*if extension is not specified, will default to .xlsx*/
+			if scan(codesfile,2,'.')='' then codesfile=cats(scan(codesfile,1,'.'),'.xlsx');
         run;
     %end;
 	

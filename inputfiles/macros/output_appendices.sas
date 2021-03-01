@@ -109,6 +109,16 @@
 		proc sort data=&type nodup;
 			by appendix_sort header_sort ndc;
 		run;
+		
+		%let optionalvars = ;
+		proc sql noprint;
+			select lowcase(name)
+			into : optionalvars separated by ' '
+			from dictionary.columns
+			where libname='WORK' and memname=upcase("&type")
+			  and lowcase(name) not in ('header','appendix_sort','header_sort','ndc','genericname');
+		quit;			
+		%put optionalvars = &optionalvars.;
 
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
 		ods proclabel = "&_appendix.";
@@ -117,15 +127,20 @@
 		proc report data =  &type nofs nowd spanrows missing headskip split="*"
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			columns ("&apptitle." header ndc genericname brandname form route strength unit);
+			columns ("&apptitle." header ndc genericname &optionalvars.);
 			define header /order noprint order=data ' ';
 			define ndc / display "NDC" style(column)=[tagattr='type:text' width=.75in just=L] style(header)=[background = lightgrey]; 
-			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey]; 
-			define BrandName/ display "Brand Name" style(column)=[just=L] style(header)=[background = lightgrey]; 
-			define Form/ display "Form" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey]; 
-			define Route/ display "Route" style(column)=[width=.75in just=L] style(header)=[background = lightgrey]; 
-			define Strength/ display "Strength" style(column)=[width=.75in just=L] style(header)=[background = lightgrey]; 
-			define Unit/ display "Unit" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey]; 
+			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey];
+			%if %str("&optionalvars") ne %str("") %then %do;
+				%do x = 1 %to %sysfunc(countw(&optionalvars));
+					define %scan(&optionalvars, &x)/ %if "%scan(&optionalvars, &x)" = "brandname" %then %do;
+													  display "Brand Name" style(column)=[just=L] style(header)=[background = lightgrey];
+					                                 %end;
+													 %else %do;
+													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
+													 %end; 
+				%end;
+			%end;
 				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
 				length text $100;
 					text = header;
@@ -144,17 +159,21 @@
 		ods proclabel = "&_appendix.";
 		%let apptitle  =  %bquote(&_appendix.. &reporttype_label.);
 
-		proc sort data=&type nodupkey out=&type._NDC_GenBr(keep=appendix_sort header_sort header genericname brandname);
-		by appendix_sort header_sort genericname BrandName;
+		proc sort data=&type nodupkey out=&type._NDC_GenBr(keep=appendix_sort header_sort header genericname 
+																%if %varexist(&type,brandname) = 1 %then %do; brandname %end; 
+														   );
+		by appendix_sort header_sort genericname %if %varexist(&type,brandname) = 1 %then %do; brandname %end; ;
 		run;
 		
 		proc report data =  &type._NDC_GenBr nofs nowd spanrows missing headskip split="*"
 		style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 		style(report)=[rules=none frame=box cellpadding =1.75pt];
-			column ("&apptitle." header genericname brandname);
+			column ("&apptitle." header genericname %if %varexist(&type,brandname) = 1 %then %do; brandname %end;);
 			define header /order noprint order=data ' ';
 			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = lightgrey];
-			define BrandName/ display "Brand Name" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
+			%if %varexist(&type,brandname) = 1 %then %do;
+			 define BrandName/ display "Brand Name" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
+			%end;
 				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
 				length text $100;
 					text = header;
@@ -198,6 +217,16 @@
 		proc sort data=&type nodup;
 			by appendix_sort header_sort code1;
 		run;
+		
+		%let optionalvars = ;
+		proc sql noprint;
+			select name
+			into : optionalvars separated by ' '
+			from dictionary.columns
+			where libname='WORK' and memname=upcase("&type")
+			  and lowcase(name) not in ('header','appendix_sort','header_sort','code1','descrip','codetype1','codecat1','codeform');
+		quit;			
+		%put optionalvars = &optionalvars.;
 
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
 		ods proclabel = "&_appendix.";
@@ -206,12 +235,17 @@
 		proc report data =  &type nofs nowd spanrows missing headskip split="*"
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			column ("&apptitle." codeform header code1 descrip  codecat1 codetype1);
+			column ("&apptitle." codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
 			define code1 / display "Code" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
 			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = lightgrey];
 			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
-			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
+			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];			
+			%if %str("&optionalvars") ne %str("") %then %do;
+				%do x = 1 %to %sysfunc(countw(&optionalvars));
+					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
+				%end;
+			%end;
 			define codeform/noprint;
 				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
 				length text $100;
