@@ -17,8 +17,9 @@
 * 
 *  PARAMETERS:
 *   - outputtype: The file type the template will be used for (ex: Excel)
-*   - fontsize: The size of the font
-*   - font: The font family                                                                    
+*   - tablefontsize: The size of the font for tables
+*   - font: The font family    
+*   - footfontsize: The size of the font for footnotes                                                                
 *            
 *  Programming Notes:    
 *
