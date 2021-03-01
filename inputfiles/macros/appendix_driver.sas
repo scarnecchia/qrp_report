@@ -262,7 +262,7 @@
 					select * from &_type._&i.
 					outer union corr
 					select * from _%scan(&eachCodelist,&k);
-					run;
+					quit;
 				%end;
 			%end; /*eachCodelist k-loop*/
 		%end; /*headerorder j-loop*/
