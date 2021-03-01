@@ -189,7 +189,7 @@
                 ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue");
                 proc odstext pagebreak=yes;
                 p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted." /
-                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='wrap:no'];
+                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black width=1000%];
                 p " ";
                 run;
 
