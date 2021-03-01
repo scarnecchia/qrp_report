@@ -30,17 +30,18 @@
 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
-        create table l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio
+        create table forest_l2_effectestimates_&periodid. as
+        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
         left join
-        (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid
+        (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
           from pscs_masterinputs c
           inner join 
           l2comparisonfile d
           on c.analysisgrp = d.analysisgrp
           where upper(d.outputforestplot) = 'Y') as b
-        on a.analysisgrp = b.analysisgrp;
+        on a.analysisgrp = b.analysisgrp
+        where upper(b.outputforestplot) = 'Y';
       quit;
 
       /*dataset id_1 will be used to apply a label */
@@ -70,7 +71,7 @@
                  %else %do;
                  '' as covarlabel
                  %end;
-          from l2_effectestimates_&periodid. as est
+          from forest_l2_effectestimates_&periodid. as est
           %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
               on est.covarnum = cov.covarnum  and est.runid = cov.runid
@@ -116,7 +117,7 @@
                  %else %do;
                  '' as covarlabel
                  %end;
-           from l2_effectestimates_&periodid. as est
+           from forest_l2_effectestimates_&periodid. as est
            %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
               on est.covarnum = cov.covarnum and est.runid = cov.runid
@@ -132,7 +133,7 @@
         proc sql noprint undo_policy=none;
           create table id_1 as
           select a.*, b.label, b.labeltype
-          from id_1 a left join labelfile b
+          from id_1 a left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
           on a.analysisgrp = b.group;
         quit;
       %end;
@@ -145,10 +146,10 @@
       data forest_&periodid.;
           set id_1(in=id1)
               id_2(in=id2);
-          length title $200 label $250;
+          length title $200 label $&label_length;
           %if %eval(&nobs) = 0 %then %do;
           label='';
-          labeltype='';
+          labeltype='grouplabel';
           %end;
           if missing(labeltype) then labeltype='grouplabel';
           /*Assign labels*/
@@ -360,7 +361,7 @@
       run;
 
       proc datasets nowarn noprint lib=work;
-        delete id_: covarname;
+        delete id_:;
       quit;
 
 %mend l2_forestplot_createdata;

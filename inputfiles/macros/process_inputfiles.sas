@@ -313,12 +313,22 @@
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
 	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
+        %global label_length;
         data labelfile;
             set input.&labelfile.;
             /*defensive*/
     		runid = lowcase(runid);
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
+        run;
+
+        /* Determine length of label based off input file */
+        proc contents data = labelfile out=label_length(keep=name length);
+        run;
+
+        data _null_;
+            set label_length(where=(lowcase(name)= 'label'));
+            call symputx('label_length',length);
         run;
     %end;
 
