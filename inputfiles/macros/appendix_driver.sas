@@ -172,6 +172,8 @@
 		from appendixfile;
 	quit; 
 	
+	%let var_lis = BrandName Form Route Strength Unit; /*variable list for NDC*/
+	
 	/* Create codelist appendices */
 	%do i = 1 %to &maxapporder.;
 	 
@@ -215,6 +217,9 @@
 					keep header code1 descrip codetype1 codecat1 codeform appendix_sort header_sort;
 			    %end;
 			    %else %do;
+					%do lds = 1 %to %sysfunc(countw(&var_lis));
+					  %scan(&var_lis, &lds) = %scan(&var_lis, &lds);
+					%end;
 					codecat1='RX';
 					ndc = cats(compress(ndc,' '));
 					Strength = strip(Strength);
