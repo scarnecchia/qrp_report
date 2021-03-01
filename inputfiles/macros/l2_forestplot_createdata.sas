@@ -12,7 +12,7 @@
 *   - l2_effectestimates_&periodid.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - [runid]_forest_[periodid].sas7bdat
+*   - forest_[periodid].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -27,16 +27,6 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-
-      /* Stack all potential covarname datasets from multiple runs */
-      data covarname;
-        set 
-        %do n = 1 %to &numrunid;
-          %let runid = %scan(&runidlist,&n);
-          &runid._covarname
-        %end;
-        ;
-      run;
 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;

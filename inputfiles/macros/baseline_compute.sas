@@ -773,26 +773,28 @@
         %let includecovars = N;
         %let baselinelabellength = 70;
 
-        %isdata(dataset=&&runid._covarname);
+        %isdata(dataset=infolder.&&&runid._covariatecodes.);
         %if %eval(&nobs.>0) %then %do;
             %let includecovars = Y;
+
             proc sql noprint;
                 select max(length(studyname)) into :baselinelabellength
-                from &&runid._covarname;
+                from covarname
+                where runid="&runid.";
             quit;
 
             %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
 
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;
-            proc sort data=&&runid._covarname sortseq=linguistic (numeric_collation=on);
+            proc sort data=covarname(where=(runid="&runid.")) sortseq=linguistic (numeric_collation=on);
                 by studyname;
             run;
             %end;
 
             data covarname_baseline; 
                 length MetVar $30 covarlabel $&baselinelabellength.;
-                set &&runid._covarname; 
+                set covarname(where=(runid="&runid.")); 
                 %if %str("&covarsort") = %str("A") %then %do;
                 by studyname;
                 alphabeticalorder = _n_;

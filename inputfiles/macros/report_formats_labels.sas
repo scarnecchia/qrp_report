@@ -196,6 +196,16 @@
             quit;
         %end;
     %end;
-    
+
+	/* Stack all potential covarname datasets from multiple runs */
+    data covarname;
+    	set 
+    %do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        &runid._covarname
+    %end;
+    ;
+	run;
+   
 %mend report_formats_labels;
 	
