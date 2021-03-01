@@ -369,10 +369,6 @@
       by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2;
       run;
 
-      data output.test;
-        set forest_&periodid.;
-      run;
-
       proc datasets nowarn noprint lib=work;
         delete id_: covarname;
       quit;
