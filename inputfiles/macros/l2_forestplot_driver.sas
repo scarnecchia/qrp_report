@@ -52,6 +52,13 @@
         %let ForestPointEst = OR;
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
+        %isdata(dataset=SelectionProbabilitiesFile);
+        %if %eval(&nobs) > 0 %then %do;
+        %let ForestCI95 = ADJOR_95CI;
+        %let ForestPointEst = ADJOR;
+        %let ForestLowerCI = Adj_LCL;
+        %let ForestUpperCI = Adj_UCL;
+        %end;
         %end; 
 
         /* Determine font for forest plot */
@@ -206,7 +213,7 @@
 
                 %if "&forestnohrfootnote" = "Y" %then %do;
                     proc odstext pagebreak=yes;
-                    p "^{super 1}&ForestRatioFoot could not be calculated for all analyses" / style=[just=L];
+                    p "^{super 1}&ForestRatioFoot could not be calculated for all analyses" / style=[just=L fontsize=7pt];
                     run;
                 %end;
 
@@ -216,7 +223,7 @@
                         %if "&forestnohrfootnote" = "Y" %then %let fncount1= %eval(&fncount.+1);
                         %else %let fncount1= &fncount;
                     proc odstext pagebreak=yes;
-                    p "^{super &fncount1}&fn" / style=[just=L];
+                    p "^{super &fncount1}&fn" / style=[just=L fontsize=7pt];
                     run;
                 %end;
                 %end;

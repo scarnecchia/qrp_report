@@ -44,6 +44,9 @@
         where b.outputforestplot = 'Y';
       quit;
 
+      /* Check to see if covariates file exists */
+      %isdata(dataset=covarname);
+      
       /*dataset id_1 will be used to apply a label */
       /*dataset id_2 contains effect estimates*/
       /*both are restricted to sort2 =1, in order to deduplicate the file*/

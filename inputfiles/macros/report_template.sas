@@ -17,9 +17,8 @@
 * 
 *  PARAMETERS:
 *   - outputtype: The file type the template will be used for (ex: Excel)
-*   - tablefontsize: The size of the font for tables
-*   - font: The font family    
-*   - footfontsize: The size of the font for footnotes                                                                
+*   - fontsize: The size of the font
+*   - font: The font family                                                                    
 *            
 *  Programming Notes:    
 *
@@ -34,7 +33,7 @@
    Macro to create template to use in reports
 --------------------------------------------------------------------------------------------------*/
 
- %macro report_template(outputtype = ,tablefontsize = , footfontsize=, font =);
+ %macro report_template(outputtype = ,fontsize = , font =);
 
     proc template;
         define style qrp_report_&outputtype.;
@@ -49,7 +48,7 @@
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
      	  bordercolor = ligr
      	  borderstyle = solid
      	  borderwidth = 1pt
@@ -71,7 +70,7 @@
      	  borderwidth = 1pt
      	  fontfamily = "&font."
      	  fontweight = bold
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
      	  frame = box
@@ -87,7 +86,7 @@
      	  borderwidth = 1pt
      	  fontfamily = "&font."
      	  fontweight = bold
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
      	  frame = box
@@ -97,7 +96,7 @@
           color = black
      	  fontfamily = "&font."
      	  fontweight = bold
-     	  fontsize = &footfontsize.
+     	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
      	  frame = void
@@ -107,7 +106,7 @@
           color = black
      	  fontfamily = "&font."
      	  fontweight = bold
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = ligr
      	  frame = void
@@ -123,7 +122,7 @@
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
      	  frame = void
@@ -133,7 +132,7 @@
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
-     	  fontsize = &tablefontsize.
+     	  fontsize = &fontsize.
      	  bordercolor = ligr
      	  borderstyle = solid
      	  borderwidth = 1pt
@@ -145,7 +144,7 @@
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
-     	  fontsize = &footfontsize.
+     	  fontsize = &fontsize.
      	  cellpadding =1.75pt
      	  frame = void
   	      just = L
@@ -154,7 +153,7 @@
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
-     	  fontsize = &footfontsize.
+     	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
      	  frame = void
