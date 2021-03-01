@@ -101,12 +101,12 @@
 
     /*Create PDF and Excel templates*/
     %if %str("&sysscp.") = %str("WIN") %then %do;
-	   %report_template(outputtype = excel, fontsize = 10pt, font = Calibri); 
+	   %report_template(outputtype = excel, tablefontsize = 10pt, footfontsize=9pt, font = Calibri); 
 	%end;
 	%else %do;
-	   %report_template(outputtype = excel, fontsize = 9pt, font = Arial); 
+	   %report_template(outputtype = excel, tablefontsize = 9pt, footfontsize=8pt, font = Arial); 
 	%end;
-	%report_template(outputtype = pdf, fontsize = 8pt, font= Arial); 
+	%report_template(outputtype = pdf, tablefontsize = 8pt, footfontsize=7pt, font= Arial); 
 
     /*driver macro*/
     %output_report();
