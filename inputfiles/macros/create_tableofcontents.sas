@@ -259,6 +259,42 @@
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
 
+  /*********************************************************************************************/
+  /*   Figures                                                                                 */
+  /*********************************************************************************************/  
+
+    %isdata(dataset=figurefile);
+    %if %eval(&nobs.>0) %then %do;
+
+        %let figurenum = 1; /* Will need to change based on what figures are being output */
+        %let tablecount = 1;
+
+        /*F2: Forest Plots*/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 and %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+
+        %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
+        %else %let ForestRatioTitle = Odds Ratios (OR);
+
+        %do j = %eval(&look_start) %to %eval(&look_end);
+            %do plot = 1 %to 7;
+            %let forest_title = ;
+            data _null_;
+            set forest_&j(where=(plotorder=&plot));
+              call symputx("forest_title",forest_title);
+            run;
+
+            %if %length(&forest_title) > 0 %then %do;
+            %tableletter();
+            %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+            caption=%quote(Figure &figurenum.&tableletter.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title))
+            %end; /* Forest title exists */
+            %end; /* loop plots */
+        %end; /* loop periods */
+
+        %end; /*Forest plots */
+
+    %end; /* Figure file */
+
     /*********************/
     /* Remove empty rows */
     /*********************/
