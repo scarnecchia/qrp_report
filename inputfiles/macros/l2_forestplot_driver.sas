@@ -9,7 +9,7 @@
 * PURPOSE: Creates and outputs forest plots for level 2 analyses
 *                                       
 *  Program inputs:                                                                                   
-*   - [runid]_forest_[periodid].sas7bdat
+*   - forest_[periodid].sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 * 
