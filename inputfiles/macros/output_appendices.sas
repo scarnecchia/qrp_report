@@ -60,13 +60,16 @@
 		ods proclabel = "&sheetname.";
 		%let apptitle  =  %bquote(&sheetname.. List of States and Territories Included in Each Census Bureau Region);
 
-			proc report data =  cb nofs nowd spanrows missing headskip split="*"
-				style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-				style(report)=[rules=none frame=box cellpadding =1.75pt];
-				columns ("&apptitle." cbreg staterri);
-				define cbreg / display "Census Bureau Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
-				define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-				run;
+		proc report data =  cb nofs nowd spanrows missing headskip
+			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+			style(report)=[rules=none frame=box cellpadding =1.75pt];
+			columns (cbreg staterri);
+			define cbreg / display "Census Bureau Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
+			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
+			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+				line "&apptitle.";
+			endcomp;
+		run;
 	%mend geog_cb;
 
 	%macro geog_hhs(tab);
@@ -92,13 +95,16 @@
 		ods proclabel = "&sheetname.";
 		%let apptitle  =  %bquote(&sheetname.. List of States and Territories Included in Each Health and Human Services (HHS) Region);
 
-			proc report data =  hhs nofs nowd spanrows missing headskip split="*"
-				style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-				style(report)=[rules=none frame=box cellpadding =1.75pt];
-				column ("&apptitle." hhsreg staterri);
-				define hhsreg / display "HHS Region" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
-				define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-				run;
+		proc report data =  hhs nofs nowd spanrows missing headskip
+			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+			style(report)=[rules=none frame=box cellpadding =1.75pt];
+			column (hhsreg staterri);
+			define hhsreg / display "HHS Region" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
+			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
+			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+				line "&apptitle.";
+			endcomp;
+		run;
 	%mend geog_hhs;
 
 	/************************/
@@ -123,11 +129,12 @@
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
 		ods proclabel = "&_appendix.";
 		%let apptitle  =  %bquote(&_appendix.. &reporttype_label.);
-		
-		proc report data =  &type nofs nowd spanrows missing headskip split="*"
+	
+		proc report data =  &type nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			columns ("&apptitle." header ndc genericname &optionalvars.);
+			
+			columns (header ndc genericname &optionalvars.);
 			define header /order noprint order=data ' ';
 			define ndc / display "NDC" style(column)=[tagattr='type:text' width=.75in just=L] style(header)=[background = lightgrey]; 
 			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey];
@@ -135,19 +142,23 @@
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
 					define %scan(&optionalvars, &x)/ %if %lowcase("%scan(&optionalvars, &x)") = "brandname" %then %do;
 													  display "Brand Name" style(column)=[just=L] style(header)=[background = lightgrey];
-					                                 %end;
+													 %end;
 													 %else %do;
 													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
 													 %end; 
 				%end;
 			%end;
-				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
-				length text $100;
-					text = header;
-					num = 100;
-					line text $varying. num;
-				endcomp;
-			run;
+			
+			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			length text $100;
+				text = header;
+				num = 100;
+				line text $varying. num;
+			endcomp;
+			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			line "&apptitle.";
+			endcomp;
+		run;
 	%mend appendixNDC;
 
 	/**************************************************/
@@ -164,23 +175,28 @@
 														   );
 		by appendix_sort header_sort genericname %if %varexist(&type,brandname) = 1 %then %do; brandname %end; ;
 		run;
-		
-		proc report data =  &type._NDC_GenBr nofs nowd spanrows missing headskip split="*"
-		style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-		style(report)=[rules=none frame=box cellpadding =1.75pt];
-			column ("&apptitle." header genericname %if %varexist(&type,brandname) = 1 %then %do; brandname %end;);
+	
+		proc report data =  &type._NDC_GenBr nofs nowd spanrows missing headskip
+			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+			style(report)=[rules=none frame=box cellpadding =1.75pt];
+			
+			columns (header genericname %if %varexist(&type,brandname) = 1 %then %do; brandname %end;);
 			define header /order noprint order=data ' ';
 			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = lightgrey];
 			%if %varexist(&type,brandname) = 1 %then %do;
 			 define BrandName/ display "Brand Name" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
 			%end;
-				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
-				length text $100;
-					text = header;
-					num = 100;
-					line text $varying. num;
-				endcomp;
-			run;
+			
+			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			length text $100;
+				text = header;
+				num = 100;
+				line text $varying. num;
+			endcomp;
+			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			line "&apptitle.";
+			endcomp;
+		run;
 	%mend appendixNDC_GenBr;
 
 	/********************************************/
@@ -189,8 +205,8 @@
 
 	proc format;
 		value $codecat1f
-			  "DX" = "Diagnosis"
-			  "PX" = "Procedure";
+			"DX" = "Diagnosis"
+			"PX" = "Procedure";
 		value $DXPX09f
 			"09" = "ICD-9-CM";
 		value $DX10f
@@ -227,71 +243,76 @@
 			  and lowcase(name) not in ('header','appendix_sort','header_sort','code1','descrip','codetype1','codecat1','codeform');
 		quit;			
 		%put optionalvars = &optionalvars.;
-
+		
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
 		ods proclabel = "&_appendix.";
 		%let apptitle  =  %bquote(&_appendix.. &reporttype_label.);
 
-		proc report data =  &type nofs nowd spanrows missing headskip split="*"
+		proc report data =  &type nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			column ("&apptitle." codeform header code1 descrip codecat1 codetype1 &optionalvars.);
+			
+			columns (codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
 			define code1 / display "Code" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
 			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = lightgrey];
-			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
-			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];			
+			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];	
+			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];		
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
 					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
 				%end;
 			%end;
 			define codeform/noprint;
-				compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
-				length text $100;
-					text = header;
-					num = 100;
-					line text $varying. num;
-				endcomp;
-				compute codetype1;
-						if codeform = "DX10" then  do;
-							call define(_col_, "format", "$DX10f.");
-						end;
-						else if codeform = "DX09" then  do;
-							call define(_col_, "format", "$DXPX09f.");
-						end;
-						else if codeform = "PX09" then  do;
-							call define(_col_, "format", "$DXPX09f.");
-						end;
-						else if codeform = "PX10" then  do;
-							call define(_col_, "format", "$PX10f.");
-						end;					
-						else if codeform = "PXC4" then  do;
-							call define(_col_, "format", "$PXC4f.");
-						end;					
-						else if codeform = "PXHC" then  do;
-							call define(_col_, "format", "$PXHCH3f.");
-						end;					
-						else if codeform = "PXH3" then  do;
-							call define(_col_, "format", "$PXHCH3f.");
-						end;					
-						else if codeform = "PXC2" then  do;
-							call define(_col_, "format", "$PXC2f.");
-						end;					
-						else if codeform = "PXC3" then  do;
-							call define(_col_, "format", "$PXC3f.");
-						end;					
-						else if codeform = "PXND" then  do;
-							call define(_col_, "format", "$PXNDf.");
-						end;					
-						else if codeform = "PXRE" then  do;
-							call define(_col_, "format", "$PXREf.");
-						end;										
-				endcomp;
-				compute codecat1;
-					call define(_col_, "format", "$codecat1f.");
-				endcomp;
-			run;
+			
+			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			length text $100;
+				text = header;
+				num = 100;
+				line text $varying. num;
+			endcomp;
+			compute codetype1;
+					if codeform = "DX10" then  do;
+						call define(_col_, "format", "$DX10f.");
+					end;
+					else if codeform = "DX09" then  do;
+						call define(_col_, "format", "$DXPX09f.");
+					end;
+					else if codeform = "PX09" then  do;
+						call define(_col_, "format", "$DXPX09f.");
+					end;
+					else if codeform = "PX10" then  do;
+						call define(_col_, "format", "$PX10f.");
+					end;					
+					else if codeform = "PXC4" then  do;
+						call define(_col_, "format", "$PXC4f.");
+					end;					
+					else if codeform = "PXHC" then  do;
+						call define(_col_, "format", "$PXHCH3f.");
+					end;					
+					else if codeform = "PXH3" then  do;
+						call define(_col_, "format", "$PXHCH3f.");
+					end;					
+					else if codeform = "PXC2" then  do;
+						call define(_col_, "format", "$PXC2f.");
+					end;					
+					else if codeform = "PXC3" then  do;
+						call define(_col_, "format", "$PXC3f.");
+					end;					
+					else if codeform = "PXND" then  do;
+						call define(_col_, "format", "$PXNDf.");
+					end;					
+					else if codeform = "PXRE" then  do;
+						call define(_col_, "format", "$PXREf.");
+					end;										
+			endcomp;
+			compute codecat1;
+				call define(_col_, "format", "$codecat1f.");
+			endcomp;
+			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+				line "&apptitle.";
+			endcomp;
+		run;
 	%mend appendixDXPX;
 
 ***************************************************************************************************;
