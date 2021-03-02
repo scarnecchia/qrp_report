@@ -245,9 +245,9 @@
               /*covarnum 1014 = Pre-Post Indicator*/
               else if covarnum = 1014 then do;
                 if subgroupcat = 'NONE' then title = 'Unknown Term';
-                if subgroupcat = 'PRE' then title = 'Pre-Term';
-                if subgroupcat = 'POST' then title = 'Post-Term';
-                if subgroupcat = 'TERM' then title = 'Term';
+                if subgroupcat = 'PRE' then title = 'Pre-Term (0-258 days)';
+                if subgroupcat = 'POST' then title = 'Post-Term (281-301 days)';
+                if subgroupcat = 'TERM' then title = 'Term (259-280 days)';
               end;
               /*covarnum 2000 = Match Method*/
               else if covarnum = 2000 then do;
