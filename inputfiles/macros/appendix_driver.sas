@@ -203,23 +203,22 @@
 				from dictionary.columns
 				where libname='CODES' and memname=upcase("%scan(&eachCodelist,&k)")
 			    %if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-				  and lowcase(name) not in ('ndc','genericname');
+				  and lowcase(name) not in ('ndc','genericname','generic_name','studyname');
 				%end;
 				%else %do;
-				  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform');
+				  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform','studyname');
 				%end;
 			quit;			
 			%put optionalvars = &optionalvars.;
 			
 			data _%scan(&eachCodelist,&k);
 			%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-			 *length brandname $1000 unit strength $50 route form $200 genericname $250 ndc $11;
 			 length genericname $250 ndc $11;
 			%end;
 			%else %do;
 			 length code1 $20 descrip $600 codetype1 $3 codecat1 $2 codeform $5;
 			%end;
-			 set codes.%scan(&eachCodelist,&k);
+			 set codes.%scan(&eachCodelist,&k) %if %varexist(codes.%scan(&eachCodelist,&k),generic_name) = 1 %then %do; (rename=(generic_name=genericname)) %end;;
 				length header $300.;
 				%if %length(&currHeader) > 0 %then %do;
 					header = "&currHeader.";
@@ -257,7 +256,7 @@
 					run;
 				%end;
 				%else %do;
-					proc sql noprint;
+					proc sql noprint undo_policy=none;
 					create table &_type._&i. as
 					select * from &_type._&i.
 					outer union corr
@@ -266,6 +265,13 @@
 				%end;
 			%end; /*eachCodelist k-loop*/
 		%end; /*headerorder j-loop*/
+
+		proc datasets lib=work nolist;
+			modify &_type._&i;
+				format _character_;
+			run;
+		quit;
+	
 		%if &_type. = index %then %do; %let apptitle = %bquote(Exposures); %end;
 		%else %if &_type. = expinc %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
 		%else %if &_type. = covariate %then %do; %let apptitle = %bquote(Covariates); %end;

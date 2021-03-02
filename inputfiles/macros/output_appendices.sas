@@ -112,7 +112,7 @@
 		
 		%let optionalvars = ;
 		proc sql noprint;
-			select lowcase(name)
+			select propcase(name)
 			into : optionalvars separated by ' '
 			from dictionary.columns
 			where libname='WORK' and memname=upcase("&type")
@@ -133,7 +133,7 @@
 			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
-					define %scan(&optionalvars, &x)/ %if "%scan(&optionalvars, &x)" = "brandname" %then %do;
+					define %scan(&optionalvars, &x)/ %if %lowcase("%scan(&optionalvars, &x)") = "brandname" %then %do;
 													  display "Brand Name" style(column)=[just=L] style(header)=[background = lightgrey];
 					                                 %end;
 													 %else %do;
@@ -220,7 +220,7 @@
 		
 		%let optionalvars = ;
 		proc sql noprint;
-			select name
+			select propcase(name)
 			into : optionalvars separated by ' '
 			from dictionary.columns
 			where libname='WORK' and memname=upcase("&type")
