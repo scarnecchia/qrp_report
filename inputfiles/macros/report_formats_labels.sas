@@ -233,7 +233,7 @@
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen; 
+        delete studylen covnames; 
    quit;    
    
 %mend report_formats_labels;
