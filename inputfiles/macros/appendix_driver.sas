@@ -166,13 +166,60 @@
     /*********************************************************************************************/
     /* Initialize empty appendixreport table                                                     */
     /*********************************************************************************************/
-
     data appendixreport;
         length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
         call missing(report, type, ord, tag, appendix, titletype, title);
     run;
     %let tablecount = 2;
+
+    /*********************************************************************************************/
+    /* Create geographic location appendices if requested                                        */
+    /*********************************************************************************************/		
+    %isdata(dataset=tablefile);
+    %if %eval(&nobs.>0) %then %do;
+		%if %index(tablesub,'cb_reg')>0 %then %do;
+			%tableletter(); 	
+			data appendixreport;
+				set appendixreport end=eof;
+				if report ne '' then output;
+				if eof then do;
+					report = "GEOG_CB";	
+					type = "GEOG";
+					ord = "&tabletter.";
+					tag ="geog_cb";
+					appendix = "Appendix %upcase(&tabletter.)";
+					titletype = "Geographic Location";
+					title = "List of States and Territories Included in Each Census Bureau Region";
+					output;
+				end;
+			run;
+			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+					  caption = %bquote(List of States and Territories Included in Each Census Bureau Region));
+		%end;	
+		%else %if %index(tablesub,'hhs_reg')>0 %then %do;
+			%tableletter(); 		
+			data appendixreport;
+				set appendixreport end=eof;
+				if report ne '' then output;
+				if eof then do;
+					report = "GEOG_HHS";	
+					type = "GEOG";
+					ord = "&tabletter.";
+					tag ="geog_hhs";
+					appendix = "Appendix %upcase(&tabletter.)";
+					titletype = "Geographic Location";
+					title = "List of States and Territories Included in Each Health and Human Services (HHS) Region";
+					output;
+				end;
+			run;
+			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+					  caption = %bquote(List of States and Territories Included in Each Health and Human Services (HHS) Region));
+		%end;
+	%end;
 	
+    /*********************************************************************************************/
+    /* Create appendices based on the data in the AppendixFile                                   */
+    /*********************************************************************************************/	
 	proc sort data = appendixfile;
 	by order headerorder;
 	run;
@@ -288,11 +335,6 @@
 								select * from _%scan(&eachCodelist,&k);
 								quit;
 							%end;
-***** dowe *****;
-data output.w_&i._&j._&k._%scan(&eachCodelist,&k);
- set _%scan(&eachCodelist,&k);
-run;	
-***** dowe *****; 
 					%end; /*exist codestab check*/
 					%else %do;
 						%put WARNING: (Sentinel) %scan(&eachCodelist,&k) CodesTab does not exist.;
@@ -307,21 +349,11 @@ run;
 			%end;	
 		%end; /*headerorder j-loop*/
 		%if %sysfunc(exist(&_type._&i)) %then %do;
-***** dowe *****;
-data output.x_&_type._&i;
- set &_type._&i;
-run;	
-***** dowe *****; 
 			proc datasets lib=work nolist;
 				modify &_type._&i;
 					format _character_;
 				run;
 			quit;
-***** dowe *****;
-data output.y_&_type._&i;
- set &_type._&i;
-run;	
-***** dowe *****; 
 		
 			%if &_type. = index %then %do; %let apptitle = %bquote(Exposures); %end;
 			%else %if &_type. = expinc %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
@@ -349,14 +381,6 @@ run;
 			%end;
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
-***** dowe *****;
-data output.z_appendixreport;
- set appendixreport;
-run;	
-data output.z_tableofcontents;
- set tableofcontents;
-run;	
-***** dowe *****; 
 
     /********************************************/
     /* delete xls_sheets file and temp datasets */
