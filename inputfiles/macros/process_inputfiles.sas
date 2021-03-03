@@ -322,7 +322,7 @@
         run;
 
         /* Determine length of label based off input file */
-        proc contents data = labelfile out=_label_length(keep=name length);
+        proc contents data = labelfile out=_label_length(keep=name length) noprint;
         run;
 
         data _null_;

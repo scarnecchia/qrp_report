@@ -152,7 +152,6 @@
           length title $200 label $&label_length;
           %if %eval(&nobs = 0) %then %do;
           label='';
-          labeltype='';
           %end;
           /*Assign labels*/
           if id1 then do;
