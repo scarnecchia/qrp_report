@@ -211,20 +211,7 @@
         %end;
     %end;
 
-    /* Stack all potential covarname datasets from multiple runs */
-    %let COVARNAME_DSETS = ;
-    proc contents data=work._ALL_ nods;
-    ods output members=covnames(where=(find(name,'covarname','i')) keep=name);
-    run;
-
-    proc sql noprint;
-        select name 
-        into :COVARNAME_DSETS 
-        separated by ' '
-        from covnames;
-    quit;
-
-    %if %length(&COVARNAME_DSETS) > 0 %then %do;
+    %if %eval(&MAXLEN_STUDYNAME) > 0 %then %do;
      data covarname;
      	length studyname $&MAXLEN_STUDYNAME;
         set covarname:;
@@ -233,7 +220,7 @@
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covnames; 
+        delete studylen; 
    quit;    
    
 %mend report_formats_labels;
