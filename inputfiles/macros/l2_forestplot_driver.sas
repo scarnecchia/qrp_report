@@ -56,7 +56,7 @@
 
         /* Determine font for forest plot */
         %if &sysscp = WIN %then %let fontfamily=Calibri;
-        %else %let fontfamily=Arial;
+        %else %let fontfamily=Albany AMT;
 
         /*7 potential plots:
             1. Site-adjusted
@@ -73,6 +73,7 @@
             %let forestfootnote = Y;
             %let forestnohrfootnote = N;
             %let nummaxforestfootnote = 9;
+            %let forestnohrsuper = ;
             %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079;
 
             data forest;
@@ -94,6 +95,7 @@
                 call symputx('forestnohrfootnote', 'Y');
                 call symputx('nummaxforestfootnote', 8);
                 call symputx('unicode_list', '00b2 00b3 2074 2075 2076 2077 2078 2079');
+                call symputx('forestnohrsuper', "^{super 1}");
               end;
             run;
 
@@ -188,7 +190,7 @@
                 %tableletter();
                 ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue" flow='none');
                 proc odstext pagebreak=yes;
-                p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title ^{newline}in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted." /
+                p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title ^{newline}in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted.&forestnohrsuper." /
                 style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
                 p " ";
                 run;

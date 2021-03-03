@@ -60,7 +60,7 @@ proc template;
     /* Single cell with inner margins for left and right tables */
     layout overlay / xAxisOpts=(label="&cilabel" type=log display=(line ticks tickvalues label)
     tickValueAttrs=(size=8 weight=bold)
-    labelAttrs=(size=8 weight=bold family="&font")
+    labelAttrs=(size=9 weight=bold family="&font")
     offsetMin=0.1
     lineextent=data)
     yAxisOpts=(reverse=true display=none) wallDisplay=none;
@@ -77,7 +77,7 @@ proc template;
     indentWeight=indentwt display=(values);
     endInnerMargin;
     innerMargin / align=right gutter=0.1in;
-    axisTable y=obsId value=&ci95 / display=(values) valueAttrs=(size=8 family="&font");
+    axisTable y=obsId value=&ci95 / display=(values) valueAttrs=(size=9 family="&font");
     endInnerMargin;
 
     endLayout; /* overlay */
