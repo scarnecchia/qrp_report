@@ -69,7 +69,10 @@
         end;
     run;
 	%mend agg_apprptdxpx;
-	
+
+    /*********************************************************************************************/
+    /* Utility macro to get appropriate PX DX label for appendix file                            */
+    /*********************************************************************************************/	
 	%macro getLabels(_indata=);
 	/* Create labels for all codecat-codetype combinations */
 	%global _label1;
@@ -142,6 +145,20 @@
 	%put &_label1;
 	%mend getLabels;
 
+    /*********************************************************************************************/
+    /* Utility macro to get check if a tab exists on an excel codelist file                      */
+    /*********************************************************************************************/		
+	%macro xlsx_exist(libname,memname);
+		%local ret dsid;
+		%let ret=-1;
+		%let dsid = %sysfunc(open(sashelp.vmember(where=(libname=%upcase("&libname") and memname=%upcase("&memname")))));
+		%if &dsid %then %do;
+		  %let ret=%eval(0=%sysfunc(fetch(&dsid)));
+		  %let dsid=%sysfunc(close(&dsid));
+		%end;
+		&ret.
+	%mend xlsx_exist;
+
 
     %isdata(dataset=appendixfile);
     %if %eval(&nobs.>0) %then %do;
@@ -192,111 +209,154 @@
 	   		%let currHeader = %qscan(%bquote(&header.), &j, %str(*));
 	   		%if &currHeader = %str(@) %then %let currHeader = ;
 			
-			libname codes XLSX "&INFOLDER.&eachCodeFile";	
+			/* Prevent library path from being written to log */
+			proc printto log=log;
+			run;
+			%if %sysfunc(fileexist(&INFOLDER.&eachCodeFile)) %then %do;
+				libname codes XLSX "&INFOLDER.&eachCodeFile";	
+				/* Resume writing to log */
+				proc printto log="&reportroot.output/qrp_report_log.log";
+				run;
+				
+				%do k = 1 %to %sysfunc(countw(&eachCodelist));
+				
+					%if %xlsx_exist(codes,%scan(&eachCodelist,&k)) %then %do;
+						%let optionalvars = ;
+						proc sql noprint;
+							select name
+							into : optionalvars separated by ' '
+							from dictionary.columns
+							where libname='CODES' and memname=upcase("%scan(&eachCodelist,&k)")
+							%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
+							  and lowcase(name) not in ('ndc','genericname','generic_name','studyname');
+							%end;
+							%else %do;
+							  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform','studyname');
+							%end;
+						quit;			
+						%put optionalvars = &optionalvars.;
+						
+						data _%scan(&eachCodelist,&k);
+						%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
+						 length genericname $250 ndc $11;
+						%end;
+						%else %do;
+						 length code1 $20 descrip $600 codetype1 $3 codecat1 $2 codeform $5;
+						%end;
+						 set codes.%scan(&eachCodelist,&k) %if %varexist(codes.%scan(&eachCodelist,&k),generic_name) = 1 %then %do; (rename=(generic_name=genericname)) %end;;
+							length header $300.;
+							%if %length(&currHeader) > 0 %then %do;
+								header = "&currHeader.";
+							%end;
+							%else %if %varexist(codes.%scan(&eachCodelist,&k),studyname)>0 %then %do;
+								header = studyname;
+							%end;
+							appendix_sort = &i;
+							header_sort = &j;
+							%if %varexist(codes.%scan(&eachCodelist,&k),ndc)=0 %then %do;
+								code1=cats(compress(code1,' '));
+								codeform = compress(strip(codecat1)||strip(codetype1), );
+								keep header code1 descrip codetype1 codecat1 codeform &optionalvars. appendix_sort header_sort;
+							%end;
+							%else %do;
+								codecat1='RX';
+								ndc = cats(compress(ndc,' '));
+								Strength = strip(Strength);
+								keep header ndc genericname &optionalvars. appendix_sort header_sort;
+								%if %index(%lowcase(&optionalvars),brand_name)>0 %then %do; 
+									rename brand_name = brandname;
+								%end;
+							%end;
+						run; 
+						
+						%if %varexist(_%scan(&eachCodelist,&k),ndc) = 1 %then %do;
+							proc sort data=_%scan(&eachCodelist,&k) nodupkey;
+								by header ndc;          
+							run;
+						%end;
+							/* Create one dataset for each AppendixOrder */
+							%if %sysfunc(exist(&_type._&i))=0 %then %do;
+								data &_type._&i.;
+								 set _%scan(&eachCodelist,&k);
+								run;
+							%end;
+							%else %do;
+								proc sql noprint undo_policy=none;
+								create table &_type._&i. as
+								select * from &_type._&i.
+								outer union corr
+								select * from _%scan(&eachCodelist,&k);
+								quit;
+							%end;
+***** dowe *****;
+data output.w_&i._&j._&k._%scan(&eachCodelist,&k);
+ set _%scan(&eachCodelist,&k);
+run;	
+***** dowe *****; 
+					%end; /*exist codestab check*/
+					%else %do;
+						%put WARNING: (Sentinel) %scan(&eachCodelist,&k) CodesTab does not exist.;
+					%end;	
+				%end; /*eachCodelist k-loop*/
+			%end; /*fileexist codesfile check*/
+			%else %do;				
+				/* Resume writing to log */
+				proc printto log="&reportroot.output/qrp_report_log.log";
+				run;
+				%put WARNING: (Sentinel) &eachCodeFile. CodesFile does not exist.;
+			%end;	
+		%end; /*headerorder j-loop*/
+		%if %sysfunc(exist(&_type._&i)) %then %do;
+***** dowe *****;
+data output.x_&_type._&i;
+ set &_type._&i;
+run;	
+***** dowe *****; 
+			proc datasets lib=work nolist;
+				modify &_type._&i;
+					format _character_;
+				run;
+			quit;
+***** dowe *****;
+data output.y_&_type._&i;
+ set &_type._&i;
+run;	
+***** dowe *****; 
+		
+			%if &_type. = index %then %do; %let apptitle = %bquote(Exposures); %end;
+			%else %if &_type. = expinc %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
+			%else %if &_type. = covariate %then %do; %let apptitle = %bquote(Covariates); %end;
+			%else %if &_type. = censor %then %do; %let apptitle = %bquote(Exposure Censoring Criteria); %end;
+			%else %if &_type. = outcome %then %do; %let apptitle = %bquote(Outcomes); %end;
+			%else %if &_type. = outcomeinc %then %do; %let apptitle = %bquote(Outcome Incidence Criteria); %end;
+			%else %if &_type. = inclusion %then %do; %let apptitle = %bquote(Inclusion Criteria); %end;
+			%else %if &_type. = exclusion %then %do; %let apptitle = %bquote(Exclusion Criteria); %end;
 			
-			%do k = 1 %to %sysfunc(countw(&eachCodelist));
-			
-			%let optionalvars = ;
-			proc sql noprint;
-				select name
-				into : optionalvars separated by ' '
-				from dictionary.columns
-				where libname='CODES' and memname=upcase("%scan(&eachCodelist,&k)")
-			    %if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-				  and lowcase(name) not in ('ndc','genericname','generic_name','studyname');
-				%end;
-				%else %do;
-				  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform','studyname');
-				%end;
-			quit;			
-			%put optionalvars = &optionalvars.;
-			
-			data _%scan(&eachCodelist,&k);
-			%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-			 length genericname $250 ndc $11;
+			%if %varexist(&_type._&i.,ndc)>0 %then %do;
+				%tableletter(); 
+				%agg_apprptndc(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
+				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request));
+				%addtotoc(tabnum= Appendix %upcase(&tableletter.).1, 
+						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request));
 			%end;
 			%else %do;
-			 length code1 $20 descrip $600 codetype1 $3 codecat1 $2 codeform $5;
+				%tableletter(); 	
+				%getLabels(_indata = &_type._&i.);
+				%agg_apprptdxpx(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
+				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+						  caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request));
 			%end;
-			 set codes.%scan(&eachCodelist,&k) %if %varexist(codes.%scan(&eachCodelist,&k),generic_name) = 1 %then %do; (rename=(generic_name=genericname)) %end;;
-				length header $300.;
-				%if %length(&currHeader) > 0 %then %do;
-					header = "&currHeader.";
-				%end;
-				%else %if %varexist(codes.%scan(&eachCodelist,&k),studyname)>0 %then %do;
-					header = studyname;
-				%end;
-				appendix_sort = &i;
-				header_sort = &j;
-			    %if %varexist(codes.%scan(&eachCodelist,&k),ndc)=0 %then %do;
-					code1=cats(compress(code1,' '));
-					codeform = compress(strip(codecat1)||strip(codetype1), );
-					keep header code1 descrip codetype1 codecat1 codeform &optionalvars. appendix_sort header_sort;
-			    %end;
-			    %else %do;
-					codecat1='RX';
-					ndc = cats(compress(ndc,' '));
-					Strength = strip(Strength);
-					keep header ndc genericname &optionalvars. appendix_sort header_sort;
-					%if %index(%lowcase(&optionalvars),brand_name)>0 %then %do; 
-						rename brand_name = brandname;
-					%end;
-				%end;
-			run; 
-			
-			%if %varexist(_%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-				proc sort data=_%scan(&eachCodelist,&k) nodupkey;
-					by header ndc;          
-				run;
-			%end;
-				/* Create one dataset for each AppendixOrder */
-				%if &k=1 and &j=1 %then %do;
-					data &_type._&i.;
-					 set _%scan(&eachCodelist,&k);
-					run;
-				%end;
-				%else %do;
-					proc sql noprint undo_policy=none;
-					create table &_type._&i. as
-					select * from &_type._&i.
-					outer union corr
-					select * from _%scan(&eachCodelist,&k);
-					quit;
-				%end;
-			%end; /*eachCodelist k-loop*/
-		%end; /*headerorder j-loop*/
-
-		proc datasets lib=work nolist;
-			modify &_type._&i;
-				format _character_;
-			run;
-		quit;
-	
-		%if &_type. = index %then %do; %let apptitle = %bquote(Exposures); %end;
-		%else %if &_type. = expinc %then %do; %let apptitle = %bquote(Exposure Incidence Criteria); %end;
-		%else %if &_type. = covariate %then %do; %let apptitle = %bquote(Covariates); %end;
-		%else %if &_type. = censor %then %do; %let apptitle = %bquote(Exposure Censoring Criteria); %end;
-		%else %if &_type. = outcome %then %do; %let apptitle = %bquote(Outcomes); %end;
-		%else %if &_type. = outcomeinc %then %do; %let apptitle = %bquote(Outcome Incidence Criteria); %end;
-		%else %if &_type. = inclusion %then %do; %let apptitle = %bquote(Inclusion Criteria); %end;
-		%else %if &_type. = exclusion %then %do; %let apptitle = %bquote(Exclusion Criteria); %end;
-		
-		%if %varexist(&_type._&i.,ndc)>0 %then %do;
-			%tableletter(); 
-			%agg_apprptndc(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
-			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-			          caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request));
-			%addtotoc(tabnum= Appendix %upcase(&tableletter.).1, 
-			          caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request));
-		%end;
-		%else %do;
-			%tableletter(); 	
-			%getLabels(_indata = &_type._&i.);
-			%agg_apprptdxpx(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
-			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-			          caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request));
-		%end;		
+		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
+***** dowe *****;
+data output.z_appendixreport;
+ set appendixreport;
+run;	
+data output.z_tableofcontents;
+ set tableofcontents;
+run;	
+***** dowe *****; 
 
     /********************************************/
     /* delete xls_sheets file and temp datasets */
