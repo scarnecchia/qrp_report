@@ -358,7 +358,7 @@
 
         compute after / style=[just=c background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off];
         line "^{super 1}Participating Data Partners include &dpnamelist.";
-        line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner’s data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
+        line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
     run;
 	
