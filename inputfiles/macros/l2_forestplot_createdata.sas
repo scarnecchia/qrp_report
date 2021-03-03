@@ -152,17 +152,15 @@
           length title $200 label $&label_length;
           %if %eval(&nobs = 0) %then %do;
           label='';
-          labeltype='grouplabel';
+          labeltype='';
           %end;
-
-          if missing(labeltype) then labeltype='grouplabel';
           /*Assign labels*/
           if id1 then do;
               id = 2;
               /*covarnum 0 = Overall - apply analysisgrp label*/
               if covarnum = 0 then do;
                   id = 1;
-                  if missing(label) and labeltype='grouplabel' then title=analysisgrp;
+                  if missing(label) then title=analysisgrp;
                   else title=label;
               end;
               /*covarnum 1000 = Sex*/
@@ -286,17 +284,11 @@
         by analysisgrpsort analysis id covarnum catnum subgroupcat sort1 sort2 runid;
       run;
 
-      /* Need to delete extra rows for labels when multiple subgroups are created */
-      data forest_&periodid.;
-        set forest_&periodid;
-        lag_title = lag(title);
-        if lag_title = title then delete;
-      run;
-
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
       data forest_&periodid;
         length forest_title $100 footnote $200;
           set forest_&periodid;
+            lag_title = lag(title);
             if analysis = "Unadjusted" then do;
             plotorder=1;
             forest_title="Site-Adjusted Analyses";
@@ -359,6 +351,7 @@
           ucl=adjor_UCL;
           end;
           %end;
+          if lag_title = title then delete;
       run;
 
       proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis footnote forest_title plotorder
@@ -374,7 +367,7 @@
       run;
 
       proc datasets nowarn noprint lib=work;
-        delete id_:;
+        delete id_: forest_l2_effectestimates_&periodid.;
       quit;
 
 %mend l2_forestplot_createdata;

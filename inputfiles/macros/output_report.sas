@@ -52,7 +52,7 @@
     ods escapechar="^";
     title;
 
-/* Place holder code for figure number, this is subject to be moved and/or changed */
+/* Counter for figure number */
     %let figurenum=1;
 
 ***************************************************************************************************;

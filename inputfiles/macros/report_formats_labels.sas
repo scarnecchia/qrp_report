@@ -196,7 +196,7 @@
         	run;
 
             proc sql;    
-                create table &runid._covarname as 
+                create table covarname_&runid. as 
                 select distinct covarnum, studyname, "&runid" as runid length=5
                 from infolder.&&&runid._covariatecodes.;
 
@@ -212,15 +212,12 @@
     %end;
 
     /* Stack all potential covarname datasets from multiple runs */
+    %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
      data covarname;
      	length studyname $&MAXLEN_STUDYNAME;
-        set 
-        %do r = 1 %to &numrunid;
-          %let runid = %scan(&runidlist,&r);
-          &runid._covarname
-        %end;
-        ;
-    run;
+        set covarname:;
+     run;
+    %end;
    
 %mend report_formats_labels;
 	
