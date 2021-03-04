@@ -196,6 +196,36 @@
             quit;
         %end;
     %end;
+	
+
+
+/***************************************************************************************************
+*  Create the formats for use with the Diagnosis and Procedure appendices output                                                         
+***************************************************************************************************/
+	proc format;
+		value $codecat1f
+			"DX" = "Diagnosis"
+			"PX" = "Procedure";
+		value $DXPX09f
+			"09" = "ICD-9-CM";
+		value $DX10f
+			"10" = "ICD-10-CM"; 			 		  
+		value $PX10f
+			"10" =  "ICD-10-PCS";
+		value $PXC4f
+			"C4" = "CPT-4"; 			 
+		value $PXHCH3f
+			"HC" = "HCPCS"
+			"H3" = "HCPCS"; 			  			 
+		value $PXC2f
+			"C2" = "CPT-2"; 			 
+		value $PXC3f
+			"C3" = "CPT-3"; 			 
+		value $PXNDf
+			"ND" = "NDC"; 			 
+		value $PXREf
+			"RE" = "RE";
+	run;
     
 %mend report_formats_labels;
 	

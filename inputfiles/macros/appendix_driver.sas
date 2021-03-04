@@ -6,12 +6,17 @@
 * Created (mm/dd/yyyy): 02/25/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro drives the drives the creation of the report appendices
+* PURPOSE: This macro drives the creation of the report appendices
 *                                        
-*  Program inputs:                                                                                   
-*
+*  Program inputs:   
+*   - TABLEFILE     
+*   - APPENDIXFILE                                                                           
+*		-Excel file(s) containing code lists
 * 
-*  Program outputs:                                                                                                                                       
+*  Program outputs:   
+*   -tableofcontents: dataset containing table of contents  
+*   -appendixreport: dataset containing appendix information for output_appendices.sas
+*   -datasets containing data to be output in output_appendices.sas
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -70,79 +75,92 @@
     run;
 	%mend agg_apprptdxpx;
 
+	%macro agg_apprptgeog(_report =, _title =);
+    data appendixreport;
+        set appendixreport end=eof;
+        if report ne '' then output;
+        if eof then do;
+			report = %upcase(&_report.);	
+			type = "GEOG";
+			ord = "&tableletter.";
+			tag ="appendixGEOG";
+			appendix = "Appendix %upcase(&tableletter.)";
+			title = "List of States and Territories Included in Each &_title. Region";
+            output;
+        end;
+    run;
+	%mend agg_apprptgeog;
+	
     /*********************************************************************************************/
     /* Utility macro to get appropriate PX DX label for appendix file                            */
     /*********************************************************************************************/	
 	%macro getLabels(_indata=);
-	/* Create labels for all codecat-codetype combinations */
-	%global _label1;
-	
-	proc sql noprint;
-				create table _labels as
-					select  codeform, 
-					(CASE (codeform)
-					when ("DX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
-					when ("DX10") then   "International Classification of Diseases, Tenth Revision, Clinical Modification (ICD-10-CM)"
-					when ("PX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
-					when ("PX10") then   "International Classification of Diseases, Tenth Revision, Procedural Coding System (ICD-10-PCS)"
-					when ("PXC4") then   "Current Procedural Terminology, Fourth Edition (CPT-4)"
-					when ("PXHC") then   "Healthcare Common Procedure Coding System, Level II (HCPCS)"
-					when ("PXH3") then   "Healthcare Common Procedure Coding System, Level III (HCPCS)"
-					when ("PXC2") then   "Current Procedural Terminology, Second Edition (CPT-2)"
-					when ("PXC3") then   "Current Procedural Terminology, Third Edition (CPT-3)"
-					when ("PXND") then   "National Drug Code (NDC)"
-					when ("PXRE") then   "Revenue (RE)"
-					else ""
-					END) as codelabel 
-					from &_indata.;  
-	quit;				
+		/* Create labels for all codecat-codetype combinations */
+		%global _label1;
+		
+		proc sql noprint;
+					create table _labels as
+						select  codeform, 
+						(CASE (codeform)
+						when ("DX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
+						when ("DX10") then   "International Classification of Diseases, Tenth Revision, Clinical Modification (ICD-10-CM)"
+						when ("PX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
+						when ("PX10") then   "International Classification of Diseases, Tenth Revision, Procedural Coding System (ICD-10-PCS)"
+						when ("PXC4") then   "Current Procedural Terminology, Fourth Edition (CPT-4)"
+						when ("PXHC") then   "Healthcare Common Procedure Coding System, Level II (HCPCS)"
+						when ("PXH3") then   "Healthcare Common Procedure Coding System, Level III (HCPCS)"
+						when ("PXC2") then   "Current Procedural Terminology, Second Edition (CPT-2)"
+						when ("PXC3") then   "Current Procedural Terminology, Third Edition (CPT-3)"
+						when ("PXND") then   "National Drug Code (NDC)"
+						when ("PXRE") then   "Revenue (RE)"
+						else ""
+						END) as codelabel 
+						from &_indata.;  
+		quit;				
 
-	/*Remove duplicates to narrow down to the only labels present,
-		to be used in the report title*/
-	proc sort nodupkey data=_labels;
-		by codelabel;
-	run;				
+		/*Remove duplicates to narrow down to the only labels present,
+			to be used in the report title*/
+		proc sort nodupkey data=_labels;
+			by codelabel;
+		run;				
 
-	/* Get count of unique labels present */
-	proc sql noprint; select count(codeform) into :codecount from _labels; quit;
+		/* Get count of unique labels present */
+		proc sql noprint;
+			select count(codeform), codelabel
+			into :codecount,
+				 :uniquecodelabel separated by "*"
+			from _labels;
+		quit;
 
-	proc sql noprint;
-		select codeform, codelabel
-		into :uniquecodeform separated by " ",
-			 :uniquecodelabel separated by "*"
-		from _labels;
-	quit;
+		%put &codecount.; 
+		%put &uniquecodelabel.;
 
-	%put &uniquecodeform.; 
-	%put &uniquecodelabel.;
+		/* Dynamic Assignment of labels to macrovariable for Diagnosis/Procedure Appendices */
+		%let _label = ;
+		%let l=0;
 
-	/* Dynamic Assignment of labels to macrovariable for Diagnosis/Procedure Appendices */
-	%let _label = ;
-	%let l=0;
-
-	data _null_;
-			%if %eval(&codecount) = 1 %then %do;
-			/*get only label*/
-				%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*));		
+		%if %eval(&codecount) = 1 %then %do;
+		/*get only label*/
+			%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*));		
+		%end;
+		%else %if %eval(&codecount) = 2 %then %do;
+		/*get both labels*/
+			%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*)) and %qscan(%bquote(&uniquecodelabel.), 2, %str(*)) ;		
+		%end;
+		/* if more than 2 labels present*/
+		%else %if %eval(&codecount) ge 3  %then %do;
+		/*get first label*/
+			%let _label1 = %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));		
+			/* then get all other labels*/
+			%do %while (&l+1 lt &codecount - 1);
+				%let l = %eval(&l + 1);
+				%let _label1 = &_label1, %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));
+					
 			%end;
-			%else %if %eval(&codecount) = 2 %then %do;
-			/*get both labels*/
-				%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*)) and %qscan(%bquote(&uniquecodelabel.), 2, %str(*)) ;		
-			%end;
-			/* if more than 2 labels present*/
-			%else %if %eval(&codecount) ge 3  %then %do;
-			/*get first label*/
-				%let _label1 = %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));		
-				/* then get all other labels*/
-				%do %while (&l+1 lt &codecount - 1);
-					%let l = %eval(&l + 1);
-					%let _label1 = &_label1, %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));
-						
-				%end;
-				%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
-			%end;	
-	run;
-	%put &_label1;
+			%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
+		%end;	
+
+		%put &_label1;
 	%mend getLabels;
 
     /*********************************************************************************************/
@@ -159,67 +177,51 @@
 		&ret.
 	%mend xlsx_exist;
 
+    %let tablecount = 2; /* Appendix A is tablecount 1 */
 
-    %isdata(dataset=appendixfile);
-    %if %eval(&nobs.>0) %then %do;
-
-    /*********************************************************************************************/
-    /* Initialize empty appendixreport table                                                     */
-    /*********************************************************************************************/
+    /* Initialize empty appendixreport table */
     data appendixreport;
         length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
         call missing(report, type, ord, tag, appendix, titletype, title);
     run;
-    %let tablecount = 2;
-
+	
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
     /*********************************************************************************************/		
     %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
-		%if %index(tablesub,'cb_reg')>0 %then %do;
+	
+		%let geog_cb=0;
+		%let geog_hhs=0;
+		data _null_;
+			set tablefile;
+			if indexw(tablesub,'cb_reg') then call symputx("geog_cb",1);
+			if indexw(tablesub,'hhs_reg') then call symputx("geog_hhs",1);
+		run;
+		%put geog_cb=&geog_cb.;
+		%put geog_hhs=&geog_hhs.;
+		
+		%if %eval(&geog_cb.>0)%then %do;
 			%tableletter(); 	
-			data appendixreport;
-				set appendixreport end=eof;
-				if report ne '' then output;
-				if eof then do;
-					report = "GEOG_CB";	
-					type = "GEOG";
-					ord = "&tabletter.";
-					tag ="geog_cb";
-					appendix = "Appendix %upcase(&tabletter.)";
-					titletype = "Geographic Location";
-					title = "List of States and Territories Included in Each Census Bureau Region";
-					output;
-				end;
-			run;
+			%agg_apprptgeog(_report ="GEOG_CB", _title =Census Bureau);
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 					  caption = %bquote(List of States and Territories Included in Each Census Bureau Region));
-		%end;	
-		%else %if %index(tablesub,'hhs_reg')>0 %then %do;
-			%tableletter(); 		
-			data appendixreport;
-				set appendixreport end=eof;
-				if report ne '' then output;
-				if eof then do;
-					report = "GEOG_HHS";	
-					type = "GEOG";
-					ord = "&tabletter.";
-					tag ="geog_hhs";
-					appendix = "Appendix %upcase(&tabletter.)";
-					titletype = "Geographic Location";
-					title = "List of States and Territories Included in Each Health and Human Services (HHS) Region";
-					output;
-				end;
-			run;
+		%end;
+	
+		%if %eval(&geog_hhs.>0)%then %do;
+			%tableletter(); 	
+			%agg_apprptgeog(_report ="GEOG_HHS", _title =%str(Health and Human Services (HHS)));
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 					  caption = %bquote(List of States and Territories Included in Each Health and Human Services (HHS) Region));
 		%end;
 	%end;
-	
+
     /*********************************************************************************************/
     /* Create appendices based on the data in the AppendixFile                                   */
     /*********************************************************************************************/	
+    %isdata(dataset=appendixfile);
+    %if %eval(&nobs.>0) %then %do;
+	
 	proc sort data = appendixfile;
 	by order headerorder;
 	run;
@@ -301,13 +303,13 @@
 							appendix_sort = &i;
 							header_sort = &j;
 							%if %varexist(codes.%scan(&eachCodelist,&k),ndc)=0 %then %do;
-								code1=cats(compress(code1,' '));
+								code1=cats(compress(code1,' '));
 								codeform = compress(strip(codecat1)||strip(codetype1), );
 								keep header code1 descrip codetype1 codecat1 codeform &optionalvars. appendix_sort header_sort;
 							%end;
 							%else %do;
 								codecat1='RX';
-								ndc = cats(compress(ndc,' '));
+								ndc = cats(compress(ndc,' '));
 								Strength = strip(Strength);
 								keep header ndc genericname &optionalvars. appendix_sort header_sort;
 								%if %index(%lowcase(&optionalvars),brand_name)>0 %then %do; 
@@ -317,7 +319,7 @@
 						run; 
 						
 						%if %varexist(_%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-							proc sort data=_%scan(&eachCodelist,&k) nodupkey;
+							proc sort data=_%scan(&eachCodelist,&k) (where=(ndc ne '')) nodupkey ;
 								by header ndc;          
 							run;
 						%end;

@@ -41,72 +41,57 @@
 	
 
 	/**********************************/
-	/* Geographic Location Appendix   */
-	/**********************************/
-	%macro geog_cb(tab);
-		proc sql noprint;
-			create table cb 
-			(cbreg char(10), staterri char(250));
-			insert into cb
-				values("Northeast", "Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont, New Jersey, New York, Pennsylvania")
-				values("Midwest",	"Illinois, Indiana, Michigan, Ohio, Wisconsin, Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, South Dakota")
-				values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama,Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
-				values("West",	"Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington")
-				values("Other",	"Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau");
-		quit;
+	/* Geographic Location Appendices */
+	/**********************************/	
+	%macro appendixGEOG(type, reporttype_label, _appendix);	
+		%if %upcase(&type.)=GEOG_CB %then %do;
+			proc sql noprint;
+				create table geogreg 
+				(region char(10), staterri char(250));
+				insert into geogreg
+					values("Northeast","Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont, New Jersey, New York, Pennsylvania")
+					values("Midwest","Illinois, Indiana, Michigan, Ohio, Wisconsin, Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, South Dakota")
+					values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama,Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
+					values("West","Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington")
+					values("Other","Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau");
+			quit;
+			%let geog = Census Bureau;
+		%end;
+		%else %do;
+			proc sql noprint;
+				create table geogreg 
+					(region char(10), staterri char(200));
+				insert into geogreg
+					values("Region 01",	"Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont")
+					values("Region 02",	"New Jersey, New York, Puerto Rico, Virgin Islands")
+					values("Region 03",	"Delaware, Maryland, Pennsylvania, Virginia, West Virginia, District of Columbia")
+					values("Region 04",	"Alabama, Florida, Georgia, Kentucky, Mississippi, North Carolina, South Carolina, Tennessee")
+					values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin")
+					values("Region 06",	"Arkansas, Louisiana, New Mexico, Oklahoma, Texas")
+					values("Region 07",	"Iowa, Kansas, Missouri, Nebraska")
+					values("Region 08",	"Colorado, Montana, North Dakota, South Dakota, Utah, Wyoming")
+					values("Region 09",	"Arizona, California, Hawaii, Nevada, American Samoa, Federated States of Micronesia, Guam, Palau")
+					values("Region 10",	"Alaska, Idaho, Oregon, Washington")
+					values("Region 99",	"Missing");
+			quit;
+			%let geog = HHS;
+		%end;
+		ods excel options(sheet_name= "&_appendix." tab_color='purple');
+		ods proclabel = "&_appendix.";
+		%let apptitle  =  %bquote(&_appendix.. &reporttype_label.);
 
-		%let sheetname = &tab;
-		ods excel options(sheet_name="&sheetname." tab_color='purple');
-		ods proclabel = "&sheetname.";
-		%let apptitle  =  %bquote(&sheetname.. List of States and Territories Included in Each Census Bureau Region);
-
-		proc report data =  cb nofs nowd spanrows missing headskip
+		proc report data =  geogreg nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			columns (cbreg staterri);
-			define cbreg / display "Census Bureau Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
+			columns (region staterri);
+			define region / display "&geog. Region" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
 			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
 			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
 				line "&apptitle.";
 			endcomp;
 		run;
-	%mend geog_cb;
-
-	%macro geog_hhs(tab);
-		proc sql noprint;
-			create table hhs 
-				(hhsreg char(10), staterri char(200));
-			insert into hhs
-				values("Region 01",	"Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont")
-				values("Region 02",	"New Jersey, New York, Puerto Rico, Virgin Islands")
-				values("Region 03",	"Delaware, Maryland, Pennsylvania, Virginia, West Virginia, District of Columbia")
-				values("Region 04",	"Alabama, Florida, Georgia, Kentucky, Mississippi, North Carolina, South Carolina, Tennessee")
-				values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin")
-				values("Region 06",	"Arkansas, Louisiana, New Mexico, Oklahoma, Texas")
-				values("Region 07",	"Iowa, Kansas, Missouri, Nebraska")
-				values("Region 08",	"Colorado, Montana, North Dakota, South Dakota, Utah, Wyoming")
-				values("Region 09",	"Arizona, California, Hawaii, Nevada, American Samoa, Federated States of Micronesia, Guam, Palau")
-				values("Region 10",	"Alaska, Idaho, Oregon, Washington")
-				values("Region 99",	"Missing");
-		quit ;
-
-		%let sheetname = &tab;
-		ods excel options(sheet_name="&sheetname." tab_color='purple');
-		ods proclabel = "&sheetname.";
-		%let apptitle  =  %bquote(&sheetname.. List of States and Territories Included in Each Health and Human Services (HHS) Region);
-
-		proc report data =  hhs nofs nowd spanrows missing headskip
-			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			column (hhsreg staterri);
-			define hhsreg / display "HHS Region" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
-			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
-				line "&apptitle.";
-			endcomp;
-		run;
-	%mend geog_hhs;
-
+	%mend appendixGEOG;	
+	
 	/************************/
 	/* Create NDC Reports   */
 	/************************/
@@ -201,33 +186,7 @@
 
 	/********************************************/
 	/* Create Diagnosis and Procedure Reports   */
-	/********************************************/
-
-	proc format;
-		value $codecat1f
-			"DX" = "Diagnosis"
-			"PX" = "Procedure";
-		value $DXPX09f
-			"09" = "ICD-9-CM";
-		value $DX10f
-			"10" = "ICD-10-CM"; 			 		  
-		value $PX10f
-			"10" =  "ICD-10-PCS";
-		value $PXC4f
-			"C4" = "CPT-4"; 			 
-		value $PXHCH3f
-			"HC" = "HCPCS"
-			"H3" = "HCPCS"; 			  			 
-		value $PXC2f
-			"C2" = "CPT-2"; 			 
-		value $PXC3f
-			"C3" = "CPT-3"; 			 
-		value $PXNDf
-			"ND" = "NDC"; 			 
-		value $PXREf
-			"RE" = "RE";
-	run;
-	
+	/********************************************/	
 	%macro appendixDXPX(type, reporttype_label, _appendix);
 
 		proc sort data=&type nodup;
@@ -363,14 +322,17 @@
     run;
 	
 
+***************************************************************************************************;
+* Geographic and Other Appendices                                         
+***************************************************************************************************;
+
 	proc sql noprint;
-	select report, type, ord, tag, appendix, titletype, title
+	select report, type, ord, tag, appendix, title
 	into  :reports separated by "*", 
 		  :report_types separated by "*", 
 		  :lettercounts separated by "*", 
 		  :report_tags separated by "*", 
 		  :appendices separated by "*", 
-		  :titletypes separated by "*",
 		  :labels separated by "*"
 	from appendixreport;
 	quit;
@@ -383,17 +345,11 @@
 			%let data = %scan(&report_types., &p.);
 			%let tab = 	%scan(&appendices., &p., %str(*));
 			%let _report = %scan(&reports., &p., %str(*));
-			%let _titletype = %scan(&titletypes., &p., %str(*));
 			%let appendix = %scan(&appendices., &p., %str(*));
 			%let label =  %scan(%bquote(&labels.), &p.,%str(*));
 			%put &data.;
-			%if "%upcase(&data.)" = "GEOG" %then %do;
-				 %if "%upcase(&_report.)" = "GEOG_CB" %then %do;
-					  %geog_cb(&tab);
-				 %end;
-				 %else %if "%upcase(&_report.)" = "GEOG_HHS" %then %do;
-					  %geog_hhs(&tab);
-				 %end;
+			%if "%upcase(&_tags.)" = "APPENDIXGEOG"  %then %do;
+				%appendixGEOG(&_report., %bquote(&label.), &appendix.);
 			%end;
 			%else %if "%upcase(&_tags.)" = "APPENDIXDXPX"  %then %do;
 				%appendixDXPX(&_report., %bquote(&label.), &appendix.);
@@ -405,14 +361,6 @@
 				%appendixNDC(&_report., %bquote(&label.), &appendix.);
 			%end;
 		%end;
-
-
-   
-***************************************************************************************************;
-*                                          
-***************************************************************************************************;
-
-
 
 
     %put =====> END MACRO: output_appendices ;
