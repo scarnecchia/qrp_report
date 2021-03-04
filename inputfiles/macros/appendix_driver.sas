@@ -177,7 +177,12 @@
 		&ret.
 	%mend xlsx_exist;
 
-    %let tablecount = 2; /* Appendix A is tablecount 1 */
+    %let tablecount = 2; /* Appendix A is tablecount 1 */    /* Initialize empty appendixreport table */
+	
+    data appendixreport;
+        length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
+        call missing(report, type, ord, tag, appendix, titletype, title);
+    run;
 	
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
@@ -197,13 +202,6 @@
 		%put geog_hhs=&geog_hhs.;
 		
 		%if %eval(&geog_cb.>0)%then %do;
-		/* Initialize empty appendixreport table (if it does not exist) */
-		%if %sysfunc(exist(appendixreport))=0 %then %do;
-			data appendixreport;
-				length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-				call missing(report, type, ord, tag, appendix, titletype, title);
-			run;
-		%end;
 			%tableletter(); 	
 			%agg_apprptgeog(_report ="GEOG_CB", _title =Census Bureau);
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
@@ -211,13 +209,6 @@
 		%end;
 	
 		%if %eval(&geog_hhs.>0)%then %do;
-			/* Initialize empty appendixreport table (if it does not exist) */
-			%if %sysfunc(exist(appendixreport))=0 %then %do;
-				data appendixreport;
-					length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-					call missing(report, type, ord, tag, appendix, titletype, title);
-				run;
-			%end;
 			%tableletter(); 	
 			%agg_apprptgeog(_report ="GEOG_HHS", _title =%str(Health and Human Services (HHS)));
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
@@ -230,14 +221,6 @@
     /*********************************************************************************************/	
     %isdata(dataset=appendixfile);
     %if %eval(&nobs.>0) %then %do;
-
-    /* Initialize empty appendixreport table (if it does not exist) */
-	%if %sysfunc(exist(appendixreport))=0 %then %do;
-		data appendixreport;
-			length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-			call missing(report, type, ord, tag, appendix, titletype, title);
-		run;
-	%end;
 	
 	proc sort data = appendixfile;
 	by order headerorder;
@@ -380,13 +363,6 @@
 			
 			%if %varexist(&_type._&i.,ndc)>0 %then %do;
 				%tableletter(); 
-				/* Initialize empty appendixreport table (if it does not exist) */
-				%if %sysfunc(exist(appendixreport))=0 %then %do;
-					data appendixreport;
-						length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-						call missing(report, type, ord, tag, appendix, titletype, title);
-					run;
-				%end;
 				%agg_apprptndc(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request));
@@ -394,14 +370,7 @@
 						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request));
 			%end;
 			%else %do;
-				%tableletter();
-				/* Initialize empty appendixreport table (if it does not exist) */
-				%if %sysfunc(exist(appendixreport))=0 %then %do;
-					data appendixreport;
-						length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-						call missing(report, type, ord, tag, appendix, titletype, title);
-					run;
-				%end; 			
+				%tableletter();		
 				proc sql noprint;
 							create table _labels as
 								select  codeform, 
@@ -471,6 +440,22 @@
 			%end;
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
+	
+	/*Delete appendixreport if no additional appendices have been requested*/		
+	proc sql noprint;
+	select count(*)
+	into  :appendixcount
+	from appendixreport
+	where report is not missing;
+	quit;
+	
+	%put appendixcount = &appendixcount.;
+	
+    %if %eval(&appendixcount.=0) %then %do;
+		proc datasets lib=work nolist;
+			delete appendixreport;
+		quit;
+	%end;
 
     /********************************************/
     /* delete xls_sheets file and temp datasets */
