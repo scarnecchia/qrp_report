@@ -39,9 +39,9 @@ proc template;
     begingraph / designheight=&plotheight designwidth=7in;
 
     discreteattrmap name='text' / trimleading=true;
-    value '1' / textAttrs=(size=7 weight=bold family="&font");
-    value '2' / textAttrs=(size=7 weight=normal family="&font");
-    value '3' / textAttrs=(size=7 weight=normal family="&font");
+    value '1' / textAttrs=(weight=bold family="&font");
+    value '2' / textAttrs=(weight=normal family="&font");
+    value '3' / textAttrs=(weight=normal family="&font");
     enddiscreteattrmap;
 
     discreteattrvar attrvar=txtDAV var=id attrmap='text';
@@ -53,7 +53,7 @@ proc template;
     sidebar / align=top;
     layout lattice / columns=2 rowweights=uniform columnweights=(0.6 .4)
     backgroundcolor=_headerColor opaque=true;
-    entry textAttrs=(size=7 weight=bold family="&font") hAlign=left "Analysis";
+    entry textAttrs=(size=9 weight=bold family="&font") hAlign=left "Analysis";
     endLayout;
     endsidebar;
 
@@ -73,7 +73,7 @@ proc template;
 
     /* Right-side table */
     innerMargin / align=left gutter=0.1in;
-    axisTable y=obsId value=title / textGroup=txtDAV
+    axisTable y=obsId value=title / display=(values) valueattrs=(size=9 family="&font") textGroup=txtDAV
     indentWeight=indentwt display=(values);
     endInnerMargin;
     innerMargin / align=right gutter=0.1in;
