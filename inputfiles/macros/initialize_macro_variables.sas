@@ -74,8 +74,9 @@
     %let datedistributed = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist;
+    %global datasetlist figurelist;
     %let datasetlist = ;
+    %let figurelist = ;
 
     /*baseline table variables*/
     %global numbaselinetablegrp;
@@ -84,6 +85,10 @@
     /*L2 report variables*/
     %global numl2comparisons;
     %let numl2comparisons = 0;
+
+    /*label file variables */
+    %global label_length;
+    %let label_length = 250;
 
     /*Output counter variables*/
     %global tableletter tablecount;

@@ -136,7 +136,7 @@
     %end;
     %else %if &covarnum. = 1014 %then %do;
         %let subgroupvar = prepostind;
-        %let sublabel = Pre-Post Indicator;
+        %let sublabel = Delivery Status;
         %let numsubcat = 4;
         %let subcategorization = NONE PRE POST TERM;
     %end;

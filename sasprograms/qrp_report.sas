@@ -149,6 +149,7 @@ ods path(prepend) work.templat(update);
 
 /*report template*/
 %include "&reportroot.inputfiles/macros/report_template.sas";
+%include "&reportroot.inputfiles/macros/l2_forestplot_template.sas";
 
 /*set up*/
 %include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
@@ -176,8 +177,12 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
 
+/*Figure macros */
+%include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
+
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report.sas";
+%include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
 %include "&reportroot.inputfiles/macros/output_appendices.sas";

@@ -145,7 +145,6 @@
      	  color = black
      	  fontfamily = "&font."
      	  fontsize = &fontsize.
-		  fontweight = bold
      	  cellpadding =1.75pt
      	  frame = void
   	      just = L

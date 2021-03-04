@@ -274,7 +274,42 @@
     %addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
 	
 	/* The remaining appendices are created in appendix_driver.sas */
-	
+
+  /*********************************************************************************************/
+  /*   Figures                                                                                 */
+  /*********************************************************************************************/  
+
+    %isdata(dataset=figurefile);
+    %if %eval(&nobs.>0) %then %do;
+
+        %let figurenum = 1; /* Add +1 for additional figure types that are requested */
+        %let tablecount = 1;
+
+        /*F2: Forest Plots*/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 and %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+
+        %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
+        %else %let ForestRatioTitle = Odds Ratios (OR);
+
+        %do j = %eval(&look_start) %to %eval(&look_end);
+            %do plot = 1 %to 7;
+            %let forest_title = ;
+            data _null_;
+            set forest_&j(where=(plotorder=&plot));
+              call symputx("forest_title",forest_title);
+            run;
+
+            %if %length(&forest_title) > 0 %then %do;
+            %tableletter();
+            %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+            caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the Sentinel Distributed Database from &startdateformatted. to &&enddate&j.formatted.))
+            %end; /* Forest title exists */
+            %end; /* loop plots */
+        %end; /* loop periods */
+
+        %end; /*Forest plots */
+
+    %end; /* Figure file */
 
     /*********************/
     /* Remove empty rows */
