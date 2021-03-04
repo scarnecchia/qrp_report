@@ -182,20 +182,46 @@
 
 
 /***************************************************************************************************
-*  Create datasets containing run specific covariate labels                                              
+*  Create stacked dataset containing covariate labels for all runs                                              
 ***************************************************************************************************/
 
+    %let MAXLEN_STUDYNAME = 0;
     /*loop through each runID, create datasets &runid._covarname*/
     %do r = 1 %to %eval(&numrunid.);
         %let runid = %scan(&runidlist., &r.);
         %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
-            proc sql;    
-                create table &runid._covarname as 
-                select distinct covarnum, studyname 
+
+        	/* Get studyname length per runid */
+        	proc contents data = infolder.&&&runid._covariatecodes. out=studylen(keep=name length) noprint;
+        	run;
+
+            proc sql noprint;    
+                create table covarname_&runid. as 
+                select distinct covarnum, studyname, "&runid" as runid length=5
                 from infolder.&&&runid._covariatecodes.;
+
+               	select length
+               	into: MAXLEN_STUDYNAME_&r
+               	from studylen
+               	where lower(name)='studyname';
             quit;
+
+            /* Need to set maximum studyname length across all runs */
+            %if &MAXLEN_STUDYNAME < &&MAXLEN_STUDYNAME_&r %then %let MAXLEN_STUDYNAME = &&MAXLEN_STUDYNAME_&r;
         %end;
     %end;
-    
+
+    %if %eval(&MAXLEN_STUDYNAME) > 0 %then %do;
+     data covarname;
+     	length studyname $&MAXLEN_STUDYNAME;
+        set covarname:;
+     run;
+    %end;
+
+    /*Delete temporary dataset*/
+   proc datasets nowarn noprint nolist lib=work; 
+        delete studylen covarname_:; 
+   quit;    
+   
 %mend report_formats_labels;
 	

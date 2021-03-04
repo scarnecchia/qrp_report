@@ -320,6 +320,15 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
         run;
+
+        /* Determine length of label based off input file */
+        proc contents data = labelfile out=_label_length(keep=name length) noprint;
+        run;
+
+        data _null_;
+            set _label_length(where=(lowcase(name)= 'label'));
+            call symputx('label_length',length);
+        run;
     %end;
 
 /***************************************************************************************************
@@ -615,6 +624,12 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
+      /*Put list of requested figures into macro variabl FIGURELIST*/
+        proc sql noprint;
+            select distinct figure into: figurelist separated by ' '
+            from figurefile;
+        quit;
+
         %isdata(dataset=figurefile);
         %if %eval(&nobs.>0) & %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
@@ -745,7 +760,8 @@
         /*L2ComparisonFile*/
         /******************/
         %isdata(dataset=input.&l2comparisonfile.);
-        %if %eval(&nobs.>0) %then %do;
+        %if %eval(&nobs.>0) %then %do; 
+            %let outputforestplot = N;
             data l2comparisonfile;
                 set input.&l2comparisonfile.;
                 /*defensive*/
@@ -755,9 +771,31 @@
                 if missing(outputunconditional) then outputunconditional = 'Y';
                 outputconditional=strip(upcase(outputconditional));
                 outputunconditional=strip(upcase(outputunconditional));
+
+                if missing(outputforestplot) then outputforestplot = 'N';
+                else outputforestplot=strip(upcase(outputforestplot));
+                if outputforestplot = 'Y' then call symputx('outputforestplot', 'Y');
             run;
 
             %let numl2comparisons = &nobs.;
+
+            /*Defensive check - if any comparisons request forest plot, then F2 in FIGUREFILE must be requested*/
+            %if %index(&figurelist.,F2)=0 & &outputforestplot=Y %then %do;
+                %put WARNING: (Sentinel) Forest Plots not requested in FIGUREFILE, however OUTPUTFORESTPLOT set to Y in L2COMPARISONFILE.;
+                %put WARNING: (Sentinel) Forest Plots will not be produced;
+                data l2comparisonfile;
+                    set l2comparisonfile;
+                    outputforestplot = 'N'; 
+                run;
+            %end;
+            %if %index(&figurelist.,F2)>0 & &outputforestplot=N %then %do;
+                %put WARNING: (Sentinel) Forest Plots requested in FIGUREFILE, however OUTPUTFORESTPLOT set to N for all rows in L2COMPARISONFILE;
+                proc sql noprint;
+                    select distinct figure into: figurelist separated by ' '
+                    from figurefile
+                    where figure ne 'F2';
+                quit;
+            %end;
         %end;
         %else %do;
             %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates. Effect estimates will not be computed;
