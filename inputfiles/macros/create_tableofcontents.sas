@@ -260,21 +260,6 @@
     %end; /*include baseline tables in toc*/
 
 
-
-
-
-
-
-
-    /*****************/
-    /* Appendices    */
-    /*****************/
-
-    /*Appendix A*/
-    %addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
-	
-	/* The remaining appendices are created in appendix_driver.sas */
-
   /*********************************************************************************************/
   /*   Figures                                                                                 */
   /*********************************************************************************************/  
@@ -310,7 +295,17 @@
         %end; /*Forest plots */
 
     %end; /* Figure file */
+	
 
+    /*****************/
+    /* Appendices    */
+    /*****************/
+
+    /*Appendix A*/
+    %addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
+	
+	/* The remaining appendices are created in appendix_driver.sas */
+	
     /*********************/
     /* Remove empty rows */
     /*********************/

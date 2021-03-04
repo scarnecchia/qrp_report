@@ -86,7 +86,7 @@
 			columns (region staterri);
 			define region / display "&geog. Region" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
 			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
 				line "&apptitle.";
 			endcomp;
 		run;
@@ -100,15 +100,18 @@
 		proc sort data=&type nodup;
 			by appendix_sort header_sort ndc;
 		run;
-		
+
+		proc contents data = &type noprint
+		               out = _varnames (keep=name);
+	    run;
+
 		%let optionalvars = ;
 		proc sql noprint;
 			select propcase(name)
 			into : optionalvars separated by ' '
-			from dictionary.columns
-			where libname='WORK' and memname=upcase("&type")
-			  and lowcase(name) not in ('header','appendix_sort','header_sort','ndc','genericname');
-		quit;			
+			from _varnames
+			where lowcase(name) not in ('header','appendix_sort','header_sort','ndc','genericname');
+		quit;
 		%put optionalvars = &optionalvars.;
 
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
@@ -121,7 +124,7 @@
 			
 			columns (header ndc genericname &optionalvars.);
 			define header /order noprint order=data ' ';
-			define ndc / display "NDC" style(column)=[tagattr='type:text' width=.75in just=L] style(header)=[background = lightgrey]; 
+			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = lightgrey]; 
 			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
@@ -140,7 +143,7 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
 			line "&apptitle.";
 			endcomp;
 		run;
@@ -178,7 +181,7 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
 			line "&apptitle.";
 			endcomp;
 		run;
@@ -192,15 +195,20 @@
 		proc sort data=&type nodup;
 			by appendix_sort header_sort code1;
 		run;
-		
+
+		proc contents data = &type noprint
+		               out = _varnames (keep=name);
+	    run;
+
 		%let optionalvars = ;
+
 		proc sql noprint;
 			select propcase(name)
 			into : optionalvars separated by ' '
-			from dictionary.columns
-			where libname='WORK' and memname=upcase("&type")
-			  and lowcase(name) not in ('header','appendix_sort','header_sort','code1','descrip','codetype1','codecat1','codeform');
-		quit;			
+			from _varnames
+			where lowcase(name) not in ('header','appendix_sort','header_sort','code1','descrip','codetype1','codecat1','codeform');
+		quit;
+
 		%put optionalvars = &optionalvars.;
 		
 		ods excel options(sheet_name= "&_appendix." tab_color='purple');
@@ -213,7 +221,7 @@
 			
 			columns (codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
-			define code1 / display "Code" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];
+			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = lightgrey];
 			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = lightgrey];
 			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];	
 			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];		
@@ -268,7 +276,7 @@
 			compute codecat1;
 				call define(_col_, "format", "$codecat1f.");
 			endcomp;
-			compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
 				line "&apptitle.";
 			endcomp;
 		run;
@@ -298,6 +306,18 @@
             %end;
         %end;
     %end;
+	
+	/*Trick excel to create new sheet*/
+	ods startpage=now;
+	ods excel options(sheet_interval="table");
+	ods exclude _all_;
+	data _null_;
+	file print;
+	put _all_;
+	run;
+	ods select all;
+	ods startpage=no;
+	/*Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures*/
 
     ods excel options(sheet_name="Appendix A" tab_color='purple');
 	ods proclabel = "Appendix A";
@@ -311,11 +331,11 @@
 		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = lightgrey];
 		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = lightgrey];
 
-        compute before _page_ / style=[just=c background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+        compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";
         endcomp;
 
-        compute after / style=[just=c background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off];
+        compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off];
         line "^{super 1}Participating Data Partners include &dpnamelist.";
         line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
@@ -325,42 +345,44 @@
 ***************************************************************************************************;
 * Geographic and Other Appendices                                         
 ***************************************************************************************************;
+    %isdata(dataset=appendixreport);
+    %if %eval(&nobs.>0) %then %do;
+		proc sql noprint;
+		select report, type, ord, tag, appendix, title, count(*)
+		into  :reports separated by "*", 
+			  :report_types separated by "*", 
+			  :lettercounts separated by "*", 
+			  :report_tags separated by "*", 
+			  :appendices separated by "*", 
+			  :labels separated by "*",
+			  :appendixcount
+		from appendixreport;
+		quit;
 
-	proc sql noprint;
-	select report, type, ord, tag, appendix, title
-	into  :reports separated by "*", 
-		  :report_types separated by "*", 
-		  :lettercounts separated by "*", 
-		  :report_tags separated by "*", 
-		  :appendices separated by "*", 
-		  :labels separated by "*"
-	from appendixreport;
-	quit;
+		%put &appendixcount.;
 
-	%let appendixcount = %sysfunc(countw(&lettercounts.)); 
-	%put &appendixcount.;
-
-		%do p=1 %to %eval(&appendixcount.);
-			%let _tags = %scan(&report_tags., &p, %str(*));
-			%let data = %scan(&report_types., &p.);
-			%let tab = 	%scan(&appendices., &p., %str(*));
-			%let _report = %scan(&reports., &p., %str(*));
-			%let appendix = %scan(&appendices., &p., %str(*));
-			%let label =  %scan(%bquote(&labels.), &p.,%str(*));
-			%put &data.;
-			%if "%upcase(&_tags.)" = "APPENDIXGEOG"  %then %do;
-				%appendixGEOG(&_report., %bquote(&label.), &appendix.);
+			%do p=1 %to %eval(&appendixcount.);
+				%let _tags = %scan(&report_tags., &p, %str(*));
+				%let data = %scan(&report_types., &p.);
+				%let tab = 	%scan(&appendices., &p., %str(*));
+				%let _report = %scan(&reports., &p., %str(*));
+				%let appendix = %scan(&appendices., &p., %str(*));
+				%let label =  %scan(%bquote(&labels.), &p.,%str(*));
+				%put &data.;
+				%if "%upcase(&_tags.)" = "APPENDIXGEOG"  %then %do;
+					%appendixGEOG(&_report., %bquote(&label.), &appendix.);
+				%end;
+				%else %if "%upcase(&_tags.)" = "APPENDIXDXPX"  %then %do;
+					%appendixDXPX(&_report., %bquote(&label.), &appendix.);
+				%end;
+				%else %if "%upcase(&_tags.)" = "APPENDIXNDC_GENBR"  %then %do;
+					%appendixNDC_GenBr(&_report., %bquote(&label.), &appendix.);
+				%end;
+				%else %if "%upcase(&_tags.)" = "APPENDIXNDC"  %then %do;
+					%appendixNDC(&_report., %bquote(&label.), &appendix.);
+				%end;
 			%end;
-			%else %if "%upcase(&_tags.)" = "APPENDIXDXPX"  %then %do;
-				%appendixDXPX(&_report., %bquote(&label.), &appendix.);
-			%end;
-			%else %if "%upcase(&_tags.)" = "APPENDIXNDC_GENBR"  %then %do;
-				%appendixNDC_GenBr(&_report., %bquote(&label.), &appendix.);
-			%end;
-			%else %if "%upcase(&_tags.)" = "APPENDIXNDC"  %then %do;
-				%appendixNDC(&_report., %bquote(&label.), &appendix.);
-			%end;
-		%end;
+	%end;
 
 
     %put =====> END MACRO: output_appendices ;
