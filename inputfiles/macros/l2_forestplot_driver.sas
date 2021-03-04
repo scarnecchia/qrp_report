@@ -76,6 +76,15 @@
             %let forestnohrsuper = ;
             %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079;
 
+            /* Adjust plot height for groups of 1 */
+            %let plot_n = ;
+            proc sql noprint;
+                select count(*)
+                into: plot_n
+                from forest_&j
+                where plotorder=&plot;
+            quit;
+
             data forest;
             set forest_&j(where=(plotorder=&plot));
               obsid=_n_;
@@ -84,7 +93,12 @@
               if id=1 then indentWt=0;
               if id=2 then indentWt=.5;
               if id=3 then indentWt=1;
+              %if &plot_n ^= 2 %then %do;
               call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
+              %end;
+              %else %do;
+              call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
+              %end;
               call symputx("forest_title",forest_title);
 
               /*if HR cannot be computed for any row in plot, then:
