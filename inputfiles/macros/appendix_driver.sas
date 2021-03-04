@@ -441,15 +441,14 @@
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
 	
-	/*Delete appendixreport if no additional appendices have been requested*/		
+	/*Delete appendixreport if no additional appendices have been requested*/	
+	%global appendixcount;
 	proc sql noprint;
 	select count(*)
 	into  :appendixcount
 	from appendixreport
 	where report is not missing;
 	quit;
-	
-	%put appendixcount = &appendixcount.;
 	
     %if %eval(&appendixcount.=0) %then %do;
 		proc datasets lib=work nolist;

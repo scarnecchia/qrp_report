@@ -348,18 +348,15 @@
     %isdata(dataset=appendixreport);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
-		select report, type, ord, tag, appendix, title, count(*)
+		select report, type, ord, tag, appendix, title
 		into  :reports separated by "*", 
 			  :report_types separated by "*", 
 			  :lettercounts separated by "*", 
 			  :report_tags separated by "*", 
 			  :appendices separated by "*", 
-			  :labels separated by "*",
-			  :appendixcount
+			  :labels separated by "*"
 		from appendixreport;
 		quit;
-
-		%put &appendixcount.;
 
 			%do p=1 %to %eval(&appendixcount.);
 				%let _tags = %scan(&report_tags., &p, %str(*));
