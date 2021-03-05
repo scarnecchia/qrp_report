@@ -342,8 +342,14 @@
             /*defensive*/
     		appendixtype = lowcase(appendixtype);
     		codestab = lowcase(codestab);
+			/*valid maximum length of an excel file name is 31*/
+			if length(scan(codesfile,1,'.'))>31 then codesfile='';
 			/*if extension is not specified, will default to .xlsx*/
-			if scan(codesfile,2,'.')='' then codesfile=cats(scan(codesfile,1,'.'),'.xlsx');
+			if codesfile ne '' and scan(codesfile,2,'.')='' then do;
+				codesfile=cats(scan(codesfile,1,'.'),'.xlsx');
+				%put WARNING: (Sentinel) The APPENDIXFILE contains an invalid CodesFile name.;
+				%put The maximun length of an Excel file name is 31 characters.;
+			end;
         run;
     %end;
 	

@@ -33,13 +33,14 @@
     /*********************************************************************************************/
     /* Utility macro to add row to tableofcontents file                                          */
     /*********************************************************************************************/
-    %macro addtotoc(tabnum=, caption=);
+    %macro addtotoc(tabnum=, caption=, appendixtype=);
     data tableofcontents;
         set tableofcontents end=eof;
         output;
         if eof then do;
             tabnum = "&tabnum.";
             caption = "&caption.";
+			appendixtype = "&appendixtype.";
             output;
         end;
     run;
@@ -49,8 +50,8 @@
     /* Initialize empty table and table number                                                   */
     /*********************************************************************************************/
     data tableofcontents;
-        length tabnum $25 caption $500;
-        call missing(tabnum, caption);
+        length tabnum $25 caption $500 appendixtype $30;
+        call missing(tabnum, caption, appendixtype);
     run;
 
     %let number = 1;

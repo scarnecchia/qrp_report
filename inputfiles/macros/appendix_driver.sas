@@ -205,14 +205,16 @@
 			%tableletter(); 	
 			%agg_apprptgeog(_report ="GEOG_CB", _title =Census Bureau);
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-					  caption = %bquote(List of States and Territories Included in Each Census Bureau Region));
+					  caption = %bquote(List of States and Territories Included in Each Census Bureau Region),
+					  appendixtype = GEOG_CB);
 		%end;
 	
 		%if %eval(&geog_hhs.>0)%then %do;
 			%tableletter(); 	
 			%agg_apprptgeog(_report ="GEOG_HHS", _title =%str(Health and Human Services (HHS)));
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-					  caption = %bquote(List of States and Territories Included in Each Health and Human Services (HHS) Region));
+					  caption = %bquote(List of States and Territories Included in Each Health and Human Services (HHS) Region),
+					  appendixtype = GEOG_HHS);
 		%end;
 	%end;
 
@@ -252,12 +254,12 @@
 	   		%let eachCodeFile = %scan(&codesfile, &j, %str(*));
 	   		%let currHeader = %qscan(%bquote(&header.), &j, %str(*));
 	   		%if &currHeader = %str(@) %then %let currHeader = ;
-			
+						
 			/* Prevent library path from being written to log */
 			proc printto log=log;
 			run;
-			%if %sysfunc(fileexist(&INFOLDER.&eachCodeFile)) %then %do;
-				libname codes XLSX "&INFOLDER.&eachCodeFile";	
+			%if %sysfunc(fileexist(&INPUT.&eachCodeFile)) & %str("&eachCodeFile") ne %str("") %then %do;
+				libname codes XLSX "&INPUT.&eachCodeFile";	
 				/* Resume writing to log */
 				proc printto log="&reportroot.output/qrp_report_log.log";
 				run;
@@ -365,9 +367,14 @@
 				%tableletter(); 
 				%agg_apprptndc(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request));
+						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request),
+						  appendixtype = appendixNDC_GenBr);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.).1, 
-						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request));
+						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request),
+						  appendixtype = appendixNDC);
+			    data Appendix&tableletter.;
+				 set &_type._&i.;
+				run; 
 			%end;
 			%else %do;
 				%tableletter();		
@@ -436,13 +443,16 @@
 				*getLabels(_indata = &_type._&i.);
 				%agg_apprptdxpx(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-						  caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request));
+						  caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request),
+						  appendixtype = appendixDXPX);
+			    data Appendix&tableletter.;
+				 set &_type._&i.;
+				run; 
 			%end;
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
 	
 	/*Delete appendixreport if no additional appendices have been requested*/	
-	%global appendixcount;
 	proc sql noprint;
 	select count(*)
 	into  :appendixcount

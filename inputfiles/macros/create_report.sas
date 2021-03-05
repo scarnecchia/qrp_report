@@ -97,7 +97,7 @@
     /*Compile table of contents*/
     %create_tableofcontents();
 
-    /*create appenices*/
+    /*create appendices*/
     %appendix_driver();
 
     /*Create PDF and Excel templates*/
