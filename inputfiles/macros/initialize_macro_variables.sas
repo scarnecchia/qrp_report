@@ -91,7 +91,7 @@
     %let label_length = 250;
 
     /*Output counter variables*/
-    %global tableletter tablecount appendixcount;
+    %global tableletter tablecount;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

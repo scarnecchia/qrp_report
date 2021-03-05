@@ -44,43 +44,14 @@
 	/* Geographic Location Appendices */
 	/**********************************/	
 	%macro appendixGEOG(_data=, _rptlabel=, _tab=);
-		%if %upcase(&_data.)=GEOG_CB %then %do;
-			proc sql noprint;
-				create table geogreg 
-				(region char(10), staterri char(250));
-				insert into geogreg
-					values("Northeast","Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont, New Jersey, New York, Pennsylvania")
-					values("Midwest","Illinois, Indiana, Michigan, Ohio, Wisconsin, Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, South Dakota")
-					values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama,Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
-					values("West","Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington")
-					values("Other","Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau");
-			quit;
-			%let geog = Census Bureau;
-		%end;
-		%else %do;
-			proc sql noprint;
-				create table geogreg 
-					(region char(10), staterri char(200));
-				insert into geogreg
-					values("Region 01",	"Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont")
-					values("Region 02",	"New Jersey, New York, Puerto Rico, Virgin Islands")
-					values("Region 03",	"Delaware, Maryland, Pennsylvania, Virginia, West Virginia, District of Columbia")
-					values("Region 04",	"Alabama, Florida, Georgia, Kentucky, Mississippi, North Carolina, South Carolina, Tennessee")
-					values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin")
-					values("Region 06",	"Arkansas, Louisiana, New Mexico, Oklahoma, Texas")
-					values("Region 07",	"Iowa, Kansas, Missouri, Nebraska")
-					values("Region 08",	"Colorado, Montana, North Dakota, South Dakota, Utah, Wyoming")
-					values("Region 09",	"Arizona, California, Hawaii, Nevada, American Samoa, Federated States of Micronesia, Guam, Palau")
-					values("Region 10",	"Alaska, Idaho, Oregon, Washington")
-					values("Region 99",	"Missing");
-			quit;
-			%let geog = HHS;
-		%end;
+		%if %index(&_rptlabel.,HHS) %then %do; %let geog = HHS; %end;
+		%else %do; %let geog = Census Bureau; %end;
+
 		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
-		proc report data =  geogreg nofs nowd spanrows missing headskip
+		proc report data =  &_data nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
 			columns (region staterri);
@@ -344,19 +315,8 @@
 ***************************************************************************************************;
 * Geographic and Other Appendices                                         
 ***************************************************************************************************;
-    %isdata(dataset=appendixreport);
+    %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
-		proc sql noprint;
-		select report, type, ord, tag, appendix, title
-		into  :reports separated by "*", 
-			  :report_types separated by "*", 
-			  :lettercounts separated by "*", 
-			  :report_tags separated by "*", 
-			  :appendices separated by "*", 
-			  :labels separated by "*"
-		from appendixreport;
-		quit;
-		
 		proc sql noprint;
 		select compress(tabnum,,'ka'), tabnum, appendixtype, caption, count(*)
 		into  :indata separated by "*", 
@@ -368,25 +328,27 @@
 		where appendixtype is not missing;
 		run;
 
+		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
 				%let _indata = %scan(&indata., &p, %str(*));				
 				%let _type = 	%scan(&type., &p., %str(*));				
 				%let _appendix = 	%scan(&appendix., &p., %str(*));			
-				%let _title =  %scan(%bquote(&title.), &p.,%str(*));					
-				%if %index(%upcase(&_type.),GEOG) %then %do;
-					%appendixGEOG(_data=&_type., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
+				%let _title =  %scan(%bquote(&title.), &p.,%str(*));	
+				%if "%upcase(&_type.)" = "APPENDIXGEOG" %then %do;	
+					%appendixGEOG(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXDXPX"  %then %do;
+				%else %if "%upcase(&_type.)" = "APPENDIXDXPX" %then %do;
 					%appendixDXPX(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXNDC_GENBR"  %then %do;
+				%else %if "%upcase(&_type.)" = "APPENDIXNDC_GENBR" %then %do;
 					%appendixNDC_GenBr(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXNDC"  %then %do;
+				%else %if "%upcase(&_type.)" = "APPENDIXNDC" %then %do;
 					%appendixNDC(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
 				%end;
 			%end;
+		%end;
 	%end;
 
 

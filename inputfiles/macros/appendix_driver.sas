@@ -35,135 +35,6 @@
     %put =====> MACRO CALLED: appendix_driver;
 
     /*********************************************************************************************/
-    /* Utility macros to add row to appendixreport file                                          */
-    /*********************************************************************************************/
-	%macro agg_apprptndc(_report =, _rpttyp = , _ord= , _titletype =);
-    data appendixreport;
-        set appendixreport end=eof;
-        output;
-        if eof then do;
-			report = %upcase(&_report.);	
-			type = %upcase(&_rpttyp.);
-			ord = "&_ord";
-			tag ="appendixNDC_GenBr"; 
-			appendix = "Appendix %upcase(&_ord.)";
-			titletype = "&_titletype.";
-			title = "Generic and Brand Names of Medical Products Used to Define &_titletype. in this Request";
-            output;
-			tag ="appendixNDC";
-			appendix = "Appendix %upcase(&_ord.).1";
-			title = "National Drug Codes (NDCs) for Medical Products Used to Define &_titletype. in this Request";
-            output;
-        end;
-    run;
-	%mend agg_apprptndc;
-	
-	%macro agg_apprptdxpx(_report =, _rpttyp = , _ord= , _titletype =);
-    data appendixreport;
-        set appendixreport end=eof;
-        if report ne '' then output;
-        if eof then do;
-			report = %upcase(&_report.);	
-			type = %upcase(&_rpttyp.);
-			ord = "&_ord";
-			tag ="appendixDXPX";
-			appendix = "Appendix %upcase(&_ord.)";
-			titletype = "&_titletype.";
-			title = "&_label1. Codes Used to Define &_titletype. in this Request";
-            output;
-        end;
-    run;
-	%mend agg_apprptdxpx;
-
-	%macro agg_apprptgeog(_report =, _title =);
-    data appendixreport;
-        set appendixreport end=eof;
-        if report ne '' then output;
-        if eof then do;
-			report = %upcase(&_report.);	
-			type = "GEOG";
-			ord = "&tableletter.";
-			tag ="appendixGEOG";
-			appendix = "Appendix %upcase(&tableletter.)";
-			title = "List of States and Territories Included in Each &_title. Region";
-            output;
-        end;
-    run;
-	%mend agg_apprptgeog;
-	
-    /*********************************************************************************************/
-    /* Utility macro to get appropriate PX DX label for appendix file                            */
-    /*********************************************************************************************/	
-	%macro getLabels(_indata=);
-		/* Create labels for all codecat-codetype combinations */
-		%global _label1;
-		
-		proc sql noprint;
-					create table _labels as
-						select  codeform, 
-						(CASE (codeform)
-						when ("DX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
-						when ("DX10") then   "International Classification of Diseases, Tenth Revision, Clinical Modification (ICD-10-CM)"
-						when ("PX09") then   "International Classification of Diseases, Ninth Revision, Clinical Modification (ICD-9-CM)"
-						when ("PX10") then   "International Classification of Diseases, Tenth Revision, Procedural Coding System (ICD-10-PCS)"
-						when ("PXC4") then   "Current Procedural Terminology, Fourth Edition (CPT-4)"
-						when ("PXHC") then   "Healthcare Common Procedure Coding System, Level II (HCPCS)"
-						when ("PXH3") then   "Healthcare Common Procedure Coding System, Level III (HCPCS)"
-						when ("PXC2") then   "Current Procedural Terminology, Second Edition (CPT-2)"
-						when ("PXC3") then   "Current Procedural Terminology, Third Edition (CPT-3)"
-						when ("PXND") then   "National Drug Code (NDC)"
-						when ("PXRE") then   "Revenue (RE)"
-						else ""
-						END) as codelabel 
-						from &_indata.;  
-		quit;				
-
-		/*Remove duplicates to narrow down to the only labels present,
-			to be used in the report title*/
-		proc sort nodupkey data=_labels;
-			by codelabel;
-		run;				
-
-		/* Get count of unique labels present */
-		proc sql noprint;
-			select count(codeform), codelabel
-			into :codecount,
-				 :uniquecodelabel separated by "*"
-			from _labels;
-		quit;
-
-		%put &codecount.; 
-		%put &uniquecodelabel.;
-
-		/* Dynamic Assignment of labels to macrovariable for Diagnosis/Procedure Appendices */
-		%let _label = ;
-		%let l=0;
-
-		%if %eval(&codecount) = 1 %then %do;
-		/*get only label*/
-			%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*));		
-		%end;
-		%else %if %eval(&codecount) = 2 %then %do;
-		/*get both labels*/
-			%let _label1 = %qscan(%bquote(&uniquecodelabel.), 1, %str(*)) and %qscan(%bquote(&uniquecodelabel.), 2, %str(*)) ;		
-		%end;
-		/* if more than 2 labels present*/
-		%else %if %eval(&codecount) ge 3  %then %do;
-		/*get first label*/
-			%let _label1 = %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));		
-			/* then get all other labels*/
-			%do %while (&l+1 lt &codecount - 1);
-				%let l = %eval(&l + 1);
-				%let _label1 = &_label1, %qscan(%bquote(&uniquecodelabel.), &l+1, %str(*));
-					
-			%end;
-			%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
-		%end;	
-
-		%put &_label1;
-	%mend getLabels;
-
-    /*********************************************************************************************/
     /* Utility macro to get check if a tab exists on an excel codelist file                      */
     /*********************************************************************************************/		
 	%macro xlsx_exist(libname,memname);
@@ -177,44 +48,61 @@
 		&ret.
 	%mend xlsx_exist;
 
-    %let tablecount = 2; /* Appendix A is tablecount 1 */    /* Initialize empty appendixreport table */
-	
-    data appendixreport;
-        length report $20 type $12 ord $3 tag $70 appendix $15 titletype $70 title $1000;
-        call missing(report, type, ord, tag, appendix, titletype, title);
-    run;
+    %let tablecount = 2; /* Appendix A is tablecount 1 */ 
 	
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
     /*********************************************************************************************/		
     %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
-	
+
 		%let geog_cb=0;
 		%let geog_hhs=0;
-		
+
 		data _null_;
 			set tablefile;
 			if indexw(tablesub,'cb_reg') then call symputx("geog_cb",1);
 			if indexw(tablesub,'hhs_reg') then call symputx("geog_hhs",1);
 		run;
-		%put geog_cb=&geog_cb.;
-		%put geog_hhs=&geog_hhs.;
 		
 		%if %eval(&geog_cb.>0)%then %do;
 			%tableletter(); 	
-			%agg_apprptgeog(_report ="GEOG_CB", _title =Census Bureau);
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 					  caption = %bquote(List of States and Territories Included in Each Census Bureau Region),
-					  appendixtype = GEOG_CB);
+					  appendixtype = appendixGEOG);
+			proc sql noprint;
+				create table Appendix&tableletter. 
+				(region char(10), staterri char(250));
+				insert into Appendix&tableletter.
+					values("Northeast","Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont, New Jersey, New York, Pennsylvania")
+					values("Midwest","Illinois, Indiana, Michigan, Ohio, Wisconsin, Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, South Dakota")
+					values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama,Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
+					values("West","Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington")
+					values("Other","Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau");
+			quit;
 		%end;
 	
 		%if %eval(&geog_hhs.>0)%then %do;
 			%tableletter(); 	
-			%agg_apprptgeog(_report ="GEOG_HHS", _title =%str(Health and Human Services (HHS)));
 			%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 					  caption = %bquote(List of States and Territories Included in Each Health and Human Services (HHS) Region),
-					  appendixtype = GEOG_HHS);
+					  appendixtype = appendixGEOG);
+			proc sql noprint;
+				create table Appendix&tableletter. 
+					(region char(10), staterri char(200));
+				insert into Appendix&tableletter.
+					values("Region 01",	"Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont")
+					values("Region 02",	"New Jersey, New York, Puerto Rico, Virgin Islands")
+					values("Region 03",	"Delaware, Maryland, Pennsylvania, Virginia, West Virginia, District of Columbia")
+					values("Region 04",	"Alabama, Florida, Georgia, Kentucky, Mississippi, North Carolina, South Carolina, Tennessee")
+					values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin")
+					values("Region 06",	"Arkansas, Louisiana, New Mexico, Oklahoma, Texas")
+					values("Region 07",	"Iowa, Kansas, Missouri, Nebraska")
+					values("Region 08",	"Colorado, Montana, North Dakota, South Dakota, Utah, Wyoming")
+					values("Region 09",	"Arizona, California, Hawaii, Nevada, American Samoa, Federated States of Micronesia, Guam, Palau")
+					values("Region 10",	"Alaska, Idaho, Oregon, Washington")
+					values("Region 99",	"Missing");
+			quit;
 		%end;
 	%end;
 
@@ -261,7 +149,7 @@
 			%if %sysfunc(fileexist(&INPUT.&eachCodeFile)) & %str("&eachCodeFile") ne %str("") %then %do;
 				libname codes XLSX "&INPUT.&eachCodeFile";	
 				/* Resume writing to log */
-				proc printto log="&reportroot.output/qrp_report_log.log";
+				proc printto log="&OUTPUT.qrp_report_log.log";
 				run;
 				
 				%do k = 1 %to %sysfunc(countw(&eachCodelist));
@@ -321,15 +209,15 @@
 							run;
 						%end;
 							/* Create one dataset for each AppendixOrder */
-							%if %sysfunc(exist(&_type._&i))=0 %then %do;
-								data &_type._&i.;
+							%if %sysfunc(exist(_&_type._&i))=0 %then %do;
+								data _&_type._&i.;
 								 set _%scan(&eachCodelist,&k);
 								run;
 							%end;
 							%else %do;
 								proc sql noprint undo_policy=none;
-								create table &_type._&i. as
-								select * from &_type._&i.
+								create table _&_type._&i. as
+								select * from _&_type._&i.
 								outer union corr
 								select * from _%scan(&eachCodelist,&k);
 								quit;
@@ -347,9 +235,9 @@
 				%put WARNING: (Sentinel) &eachCodeFile. CodesFile does not exist.;
 			%end;	
 		%end; /*headerorder j-loop*/
-		%if %sysfunc(exist(&_type._&i)) %then %do;
+		%if %sysfunc(exist(_&_type._&i)) %then %do;
 			proc datasets lib=work nolist;
-				modify &_type._&i;
+				modify _&_type._&i;
 					format _character_;
 				run;
 			quit;
@@ -363,9 +251,8 @@
 			%else %if &_type. = inclusion %then %do; %let apptitle = %bquote(Inclusion Criteria); %end;
 			%else %if &_type. = exclusion %then %do; %let apptitle = %bquote(Exclusion Criteria); %end;
 			
-			%if %varexist(&_type._&i.,ndc)>0 %then %do;
+			%if %varexist(_&_type._&i.,ndc)>0 %then %do;
 				%tableletter(); 
-				%agg_apprptndc(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request),
 						  appendixtype = appendixNDC_GenBr);
@@ -373,7 +260,7 @@
 						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request),
 						  appendixtype = appendixNDC);
 			    data Appendix&tableletter.;
-				 set &_type._&i.;
+				 set _&_type._&i.;
 				run; 
 			%end;
 			%else %do;
@@ -395,7 +282,7 @@
 								when ("PXRE") then   "Revenue (RE)"
 								else ""
 								END) as codelabel 
-								from &_type._&i.;  
+								from _&_type._&i.;  
 				quit;				
 
 				/*Remove duplicates to narrow down to the only labels present,
@@ -440,31 +327,16 @@
 					%end;
 					%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
 				%end;					
-				*getLabels(_indata = &_type._&i.);
-				%agg_apprptdxpx(_report = "&_type._&i.", _rpttyp = "&_type.", _ord = &tableletter, _titletype = &apptitle.);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 						  caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request),
 						  appendixtype = appendixDXPX);
 			    data Appendix&tableletter.;
-				 set &_type._&i.;
+				 set _&_type._&i.;
 				run; 
 			%end;
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
-	
-	/*Delete appendixreport if no additional appendices have been requested*/	
-	proc sql noprint;
-	select count(*)
-	into  :appendixcount
-	from appendixreport
-	where report is not missing;
-	quit;
-	
-    %if %eval(&appendixcount.=0) %then %do;
-		proc datasets lib=work nolist;
-			delete appendixreport;
-		quit;
-	%end;
+
 
     /********************************************/
     /* delete xls_sheets file and temp datasets */
