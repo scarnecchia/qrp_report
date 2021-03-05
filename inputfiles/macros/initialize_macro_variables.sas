@@ -29,9 +29,10 @@
     %put =====> MACRO CALLED: initialize_macro_variables ;
 
     /*variables related to DPs*/
-    %global num_dp random_dplist masked_dplist;
+    %global num_dp random_dplist masked_dplist database;
     %let num_dp = 0;
 	%let masked_dplist =;
+    %let database = ;
 
     /*variables related to query*/
     %global runidlist numrunid;

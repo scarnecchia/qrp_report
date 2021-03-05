@@ -97,9 +97,11 @@
     %else %do;
         /*Number of DPs to include in report and list of DPs*/
         data dpinfofile;
+            length database $250;
             set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
             dp=lowcase(dp);
+            if missing(database) then database = 'Sentinel Distributed Database';
         run;
         %if %eval(&num_dp.=0) %then %do;
             %put ERROR: (Sentinel) In DPINFOFILE, INCLUDEDP = N for all rows;
@@ -113,6 +115,25 @@
         quit;
         %put Number of DPs included in report: &num_dp.;
         %put List of DPs included in report: &dplist.;
+
+        /*Create database macro variable to use in titles*/
+        proc sql noprint;
+            select count(distinct database)
+            into: databasecount
+            from dpinfofile;
+            %let databasecount = &databasecount.;
+            
+            select distinct strip(database) into :database1 - :database&databasecount.
+            from dpinfofile;
+        quit;
+        %if %eval(&databasecount.=1) %then %do; %let database = &database1.; %end;
+        %else %if %eval(&databasecount.=2) %then %do; %let database = &database1. and &database2.; %end;
+        %else %do;
+            %do db = 1 %to %eval(&databasecount.);
+                %if %eval(&db. ne &databasecount.) %then %let database = &database. &&database&db.,;
+                %else %let database = &database. and &&database&db.;
+            %end;
+        %end;
 
         /*Randomize and mask DPs*/
         data maskedDPIDkey;
