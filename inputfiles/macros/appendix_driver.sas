@@ -15,8 +15,8 @@
 * 
 *  Program outputs:   
 *   -tableofcontents: dataset containing table of contents  
-*   -appendixreport: dataset containing appendix information for output_appendices.sas
-*   -datasets containing data to be output in output_appendices.sas
+*   -appendixreport: dataset containing appendix information for appendix_output.sas
+*   -datasets containing data to be output in appendix_output.sas
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -146,8 +146,8 @@
 			/* Prevent library path from being written to log */
 			proc printto log=log;
 			run;
-			%if %sysfunc(fileexist(&INPUT.&eachCodeFile)) & %str("&eachCodeFile") ne %str("") %then %do;
-				libname codes XLSX "&INPUT.&eachCodeFile";	
+			%if %sysfunc(fileexist(&INPUT.&eachCodeFile..xlsx)) & %str("&eachCodeFile") ne %str("") %then %do;
+				libname codes XLSX "&INPUT.&eachCodeFile..xlsx";	
 				/* Resume writing to log */
 				proc printto log="&OUTPUT.qrp_report_log.log";
 				run;

@@ -188,7 +188,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
-%include "&reportroot.inputfiles/macros/output_appendices.sas";
+%include "&reportroot.inputfiles/macros/appendix_output.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
 /*-----------------------------------------------------------------------------------------------*/
