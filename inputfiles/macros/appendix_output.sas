@@ -57,7 +57,7 @@
 			columns (region staterri);
 			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
 			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
 				line "&apptitle.";
 			endcomp;
 		run;
@@ -84,7 +84,7 @@
 		quit;
 		%put optionalvars = &optionalvars.;
 
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table"  flow="tables" row_heights='50');
+		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 	
@@ -94,15 +94,15 @@
 			
 			columns (header ndc genericname &optionalvars.);
 			define header /order noprint order=data ' ';
-			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = lightgrey]; 
-			define genericname/ display "Generic Name" style(column)=[just=L] style(header)=[background = lightgrey];
+			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = white]; 
+			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
 					define %scan(&optionalvars, &x)/ %if %lowcase("%scan(&optionalvars, &x)") = "brandname" %then %do;
-													  display "Brand Name" style(column)=[just=L] style(header)=[background = lightgrey];
+													  display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
 													 %end;
 													 %else %do;
-													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
+													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = white];
 													 %end; 
 				%end;
 			%end;
@@ -113,7 +113,7 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes"];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
 			line "&apptitle.";
 			endcomp;
 		run;
@@ -124,7 +124,7 @@
 	/**************************************************/
 	%macro appendixNDC_GenBr(_data=, _rptlabel=, _tab=);
 
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table"  flow="tables" row_heights='50');
+		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
@@ -140,9 +140,9 @@
 			
 			columns (header genericname %if %varexist(&_data,brandname) = 1 %then %do; brandname %end;);
 			define header /order noprint order=data ' ';
-			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = lightgrey];
+			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
 			%if %varexist(&_data,brandname) = 1 %then %do;
-			 define BrandName/ display "Brand Name" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
+			 define BrandName/ display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
 			%end;
 			
 			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
@@ -151,7 +151,7 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes"];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
 			line "&apptitle.";
 			endcomp;
 		run;
@@ -181,7 +181,7 @@
 
 		%put optionalvars = &optionalvars.;
 		
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table"  flow="tables" row_heights='50');
+		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
@@ -191,13 +191,13 @@
 			
 			columns (codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
-			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = lightgrey];
-			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = lightgrey];
-			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];	
-			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = lightgrey];		
+			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = white];
+			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = white];
+			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = white];	
+			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = white];		
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
-					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = lightgrey];
+					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = white];
 				%end;
 			%end;
 			define codeform/noprint;
@@ -246,7 +246,7 @@
 			compute codecat1;
 				call define(_col_, "format", "$codecat1f.");
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes"];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
 				line "&apptitle.";
 			endcomp;
 		run;
@@ -277,19 +277,7 @@
         %end;
     %end;
 	
-	/*Trick excel to create new sheet*/
-	ods startpage=now;
-	ods excel options(sheet_interval="table");
-	ods exclude _all_;
-	data _null_;
-	file print;
-	put _all_;
-	run;
-	ods select all;
-	ods startpage=no;
-	/*Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures*/
-
-    ods excel options(sheet_name="Appendix A" tab_color='purple');
+    ods excel options(sheet_name="Appendix A" tab_color='purple' sheet_interval="table");
 	ods proclabel = "Appendix A";
 
     proc report data = output.dpinfo nofs nowd

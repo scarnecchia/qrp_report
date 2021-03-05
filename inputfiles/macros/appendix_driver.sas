@@ -56,8 +56,8 @@
     %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
 
-		%let geog_cb=0;
-		%let geog_hhs=0;
+		%let geog_cb=1;
+		%let geog_hhs=1;
 
 		data _null_;
 			set tablefile;
@@ -160,7 +160,7 @@
 							select name
 							into : optionalvars separated by ' '
 							from dictionary.columns
-							where libname='CODES' and memname=upcase("%scan(&eachCodelist,&k)")
+							where libname='CODES' and memname=%upcase("%scan(&eachCodelist,&k)")
 							%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
 							  and lowcase(name) not in ('ndc','genericname','generic_name','studyname');
 							%end;
@@ -302,8 +302,7 @@
 				%put &codecount.; 
 				%put &uniquecodelabel.;
 
-				/* Dynamic Assignment of labels to macrovariable for Diagnosis/Procedure Appendices */
-				%global _label1;	
+				/* Dynamic Assignment of labels to macro variable for Diagnosis/Procedure Appendices */
 				%let _label = ;
 				%let l=0;
 
