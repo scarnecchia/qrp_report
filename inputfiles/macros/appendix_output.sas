@@ -57,21 +57,38 @@
 			columns (region staterri);
 			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
 			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
+			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
 				line "&apptitle.";
 			endcomp;
 		run;
 	%mend appendixGEOG;	
 	
-	/************************/
-	/* Create NDC Reports   */
-	/************************/
+	/**************************************************/
+	/* Create NDC Reports - Generic and Brand Names   */
+	/**************************************************/
+		
 	%macro appendixNDC(_data=, _rptlabel=, _tab=);
-		proc sort data=&_data nodup;
-			by appendix_sort header_sort ndc;
-		run;
+	
+		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
+		ods proclabel = "&_tab.";
+		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
+	
+		%if %index(&_tab,.) %then %do;
+			proc sort data=&_data. nodup
+					   out=_data_ndc; 
+				by appendix_sort header_sort ndc;
+			run;		
+		%end;
+		%else %do; 
+			proc sort data=&_data. nodupkey 
+					   out=_data_ndc (keep=appendix_sort header_sort header genericname 
+												  %if %varexist(&_data,brandname) = 1 %then %do; brandname %end;);
+				by appendix_sort header_sort genericname %if %varexist(&_data,brandname) = 1 %then %do; brandname %end; ;
+			run;
+		%end;
 
-		proc contents data = &_data noprint
+		proc contents data = _data_ndc noprint
 		               out = _varnames (keep=name);
 	    run;
 
@@ -80,21 +97,19 @@
 			select propcase(name)
 			into : optionalvars separated by ' '
 			from _varnames
-			where lowcase(name) not in ('header','appendix_sort','header_sort','ndc','genericname');
+			where lowcase(name) not in ('header','ndc','appendix_sort','header_sort','genericname');
 		quit;
 		%put optionalvars = &optionalvars.;
-
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
-		ods proclabel = "&_tab.";
-		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 	
-		proc report data =  &_data nofs nowd spanrows missing headskip
+		proc report data =  _data_ndc nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			
-			columns (header ndc genericname &optionalvars.);
+
+			columns (header %if %varexist(_data_ndc,ndc) = 1 %then %do; ndc %end; genericname &optionalvars.);
 			define header /order noprint order=data ' ';
+			%if %varexist(_data_ndc,ndc) = 1 %then %do;
 			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = white]; 
+			%end;
 			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
@@ -113,60 +128,24 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
+			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
 			line "&apptitle.";
 			endcomp;
 		run;
 	%mend appendixNDC;
-
-	/**************************************************/
-	/* Create NDC Reports - Generic and Brand Names   */
-	/**************************************************/
-	%macro appendixNDC_GenBr(_data=, _rptlabel=, _tab=);
-
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
-		ods proclabel = "&_tab.";
-		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
-
-		proc sort data=&_data nodupkey out=&_data._NDC_GenBr(keep=appendix_sort header_sort header genericname 
-																%if %varexist(&_data,brandname) = 1 %then %do; brandname %end; 
-														   );
-		by appendix_sort header_sort genericname %if %varexist(&_data,brandname) = 1 %then %do; brandname %end; ;
-		run;
-	
-		proc report data =  &_data._NDC_GenBr nofs nowd spanrows missing headskip
-			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			
-			columns (header genericname %if %varexist(&_data,brandname) = 1 %then %do; brandname %end;);
-			define header /order noprint order=data ' ';
-			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
-			%if %varexist(&_data,brandname) = 1 %then %do;
-			 define BrandName/ display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
-			%end;
-			
-			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
-			length text $100;
-				text = header;
-				num = 100;
-				line text $varying. num;
-			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
-			line "&apptitle.";
-			endcomp;
-		run;
-	%mend appendixNDC_GenBr;
 
 	/********************************************/
 	/* Create Diagnosis and Procedure Reports   */
 	/********************************************/	
 	%macro appendixDXPX(_data=, _rptlabel=, _tab=);
 
-		proc sort data=&_data nodup;
+		proc sort data=&_data nodup
+		           out=_data_pxdx;
 			by appendix_sort header_sort code1;
 		run;
 
-		proc contents data = &_data noprint
+		proc contents data = _data_pxdx noprint
 		               out = _varnames (keep=name);
 	    run;
 
@@ -181,11 +160,17 @@
 
 		%put optionalvars = &optionalvars.;
 		
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables" row_heights='50');
+		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
+		
+***** dowe *****;	
+data output.z_&_data.;
+ set &_data;
+run; 
+***** dowe *****;
 
-		proc report data =  &_data nofs nowd spanrows missing headskip
+		proc report data =  _data_pxdx nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
 			
@@ -208,6 +193,7 @@
 				num = 100;
 				line text $varying. num;
 			endcomp;
+/*
 			compute codetype1;
 					if codeform = "DX10" then  do;
 						call define(_col_, "format", "$DX10f.");
@@ -243,10 +229,20 @@
 						call define(_col_, "format", "$PXREf.");
 					end;										
 			endcomp;
-			compute codecat1;
-				call define(_col_, "format", "$codecat1f.");
+*/
+			compute codetype1;
+					if codecat1 = "DX" then  do;
+						call define(_col_, "format", "$dxfmt.");
+					end;		
+					else if codecat1 = "PX" then  do;
+						call define(_col_, "format", "$pxfmt.");
+					end;									
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
+			compute codecat1;
+				call define(_col_, "format", "$dxfmt.");
+			endcomp;
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
+			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
 				line "&apptitle.";
 			endcomp;
 		run;
@@ -305,12 +301,17 @@
 ***************************************************************************************************;
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
+***** dowe *****;	
+data output.z_tableofcontents;
+ set tableofcontents;
+run; 
+***** dowe *****;	
 		proc sql noprint;
 		select compress(tabnum,,'ka'), tabnum, appendixtype, caption, count(*)
-		into  :indata separated by "*", 
-			  :appendix separated by "*",
-			  :type separated by "*", 
-			  :title separated by "*",
+		into  :apxdata separated by "*", 
+			  :apxname separated by "*",
+			  :apxtype separated by "*", 
+			  :apxtitle separated by "*",
 			  :appendixcnt
 		from tableofcontents
 		where appendixtype is not missing;
@@ -319,21 +320,21 @@
 		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
-				%let _indata = %scan(&indata., &p, %str(*));				
-				%let _type = 	%scan(&type., &p., %str(*));				
-				%let _appendix = 	%scan(&appendix., &p., %str(*));			
-				%let _title =  %scan(%bquote(&title.), &p.,%str(*));	
-				%if "%upcase(&_type.)" = "APPENDIXGEOG" %then %do;	
-					%appendixGEOG(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
+				%let _apxdata = %scan(&apxdata., &p, %str(*));				
+				%let _apxtype = %scan(&apxtype., &p., %str(*));				
+				%let _apxname = %scan(&apxname., &p., %str(*));			
+				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
+				%if "%upcase(&_apxtype.)" = "APPENDIXGEOG" %then %do;	
+					%appendixGEOG(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXDXPX" %then %do;
-					%appendixDXPX(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
+				%else %if "%upcase(&_apxtype.)" = "APPENDIXDXPX" %then %do;
+					%appendixDXPX(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXNDC_GENBR" %then %do;
-					%appendixNDC_GenBr(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
+				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC_GENBR" %then %do;
+					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
-				%else %if "%upcase(&_type.)" = "APPENDIXNDC" %then %do;
-					%appendixNDC(_data=&_indata., _rptlabel=%bquote(&_title.), _tab=&_appendix.);
+				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC" %then %do;
+					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
 			%end;
 		%end;

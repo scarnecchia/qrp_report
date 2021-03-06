@@ -252,5 +252,24 @@
 			"RE" = "RE";
 	run;
 	
+	proc format;
+		value $pxfmt	
+			"10" = "ICD-10-PCS"
+			"C4" = "CPT-4"
+			"HC" = "HCPCS"
+			"H3" = "HCPCS"
+			"C2" = "CPT-2"	
+			"C3" = "CPT-3"	
+			"ND" = "NDC"		
+			"RE" = "RE";
+	run;
+	proc format;
+		value $dxfmt
+			"DX" = "Diagnosis"
+			"PX" = "Procedure"
+			"09" = "ICD-9-CM"
+			"10" = "ICD-10-CM"; 
+	run;
+	
 %mend report_formats_labels;
 	
