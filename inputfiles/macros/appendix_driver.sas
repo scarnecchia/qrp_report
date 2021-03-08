@@ -331,7 +331,7 @@
 					%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
 				%end;					
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-						  caption = %bquote(&_label1. List of Codes Used to Define &apptitle. in this Request),
+						  caption = %bquote(List of &_label1. Codes Used to Define &apptitle. in this Request),
 						  appendixtype = appendixDXPX);
 			    data Appendix&tableletter.;
 				 set _&_type._&i.;
