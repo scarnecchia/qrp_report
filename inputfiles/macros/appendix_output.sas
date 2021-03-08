@@ -232,6 +232,7 @@
         %end;
     %end;
 	
+	ods pdf startpage=now;
     ods excel options(sheet_name="Appendix A" tab_color='purple' sheet_interval="table");
 	ods proclabel = "Appendix A";
 

@@ -237,8 +237,6 @@
 			"C3" = "CPT-3"	
 			"ND" = "NDC"		
 			"RE" = "RE";
-	run;
-	proc format;
 		value $dxfmt
 			"DX" = "Diagnosis"
 			"PX" = "Procedure"
