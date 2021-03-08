@@ -298,6 +298,12 @@
 		%end;
 	%end;
 
+    /********************************************/
+    /* delete temp datasets                     */
+    /********************************************/
+	proc datasets lib=work nolist;
+		delete _:;
+	quit;
 
     %put =====> END MACRO: appendix_output ;
 
