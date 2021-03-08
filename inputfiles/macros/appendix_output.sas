@@ -198,7 +198,7 @@
 					end;									
 			endcomp;
 			compute codecat1;
-				call define(_col_, "format", "$dxfmt.");
+				call define(_col_, "format", "$cc1fmt.");
 			endcomp;
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
 			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
@@ -281,6 +281,7 @@
 				%let _apxtype = %scan(&apxtype., &p., %str(*));				
 				%let _apxname = %scan(&apxname., &p., %str(*));			
 				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
+				ods pdf startpage=now;
 				%if "%upcase(&_apxtype.)" = "APPENDIXGEOG" %then %do;	
 					%appendixGEOG(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;

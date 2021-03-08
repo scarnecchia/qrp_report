@@ -229,6 +229,7 @@
 ***************************************************************************************************/
 	proc format;
 		value $pxfmt	
+			"09" = "ICD-9-CM"
 			"10" = "ICD-10-PCS"
 			"C4" = "CPT-4"
 			"HC" = "HCPCS"
@@ -242,6 +243,9 @@
 			"PX" = "Procedure"
 			"09" = "ICD-9-CM"
 			"10" = "ICD-10-CM"; 
+		value $cc1fmt
+			"DX" = "Diagnosis"
+			"PX" = "Procedure";
 	run;
 	
 %mend report_formats_labels;
