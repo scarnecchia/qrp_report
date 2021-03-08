@@ -239,8 +239,6 @@
 			"ND" = "NDC"		
 			"RE" = "RE";
 		value $dxfmt
-			"DX" = "Diagnosis"
-			"PX" = "Procedure"
 			"09" = "ICD-9-CM"
 			"10" = "ICD-10-CM"; 
 		value $cc1fmt
