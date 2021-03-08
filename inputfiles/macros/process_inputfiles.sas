@@ -55,6 +55,8 @@
                     /*defensive*/
                     if lowcase(parameter) in ('redactevents', 'redactpt') and missing(value) then call symputx("value",0);
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts') then call symputx("value",upcase(value));
+                    /*add parenthesis for datedistributed*/
+                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
                 end;
             run;
             %let &parameter. = &value.;
@@ -352,6 +354,20 @@
         run;
     %end;
 
+/***************************************************************************************************
+*   Read in APPENDIXFILE if specified                                               
+***************************************************************************************************/
+	%if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
+        data appendixfile;
+            set input.&appendixfile.;
+            /*defensive*/
+    		appendixtype = lowcase(appendixtype);
+    		codestab = lowcase(codestab);
+			/*all files will default to .xlsx*/
+			if index(codesfile,'.') then codesfile=scan(codesfile,1,'.');
+        run;
+    %end;
+	
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/

@@ -223,5 +223,28 @@
         delete studylen covarname_:; 
    quit;    
    
+
+/***************************************************************************************************
+*  Create the formats for use with the Diagnosis and Procedure appendices output                                                         
+***************************************************************************************************/
+	proc format;
+		value $pxfmt	
+			"09" = "ICD-9-CM"
+			"10" = "ICD-10-PCS"
+			"C4" = "CPT-4"
+			"HC" = "HCPCS"
+			"H3" = "HCPCS"
+			"C2" = "CPT-2"	
+			"C3" = "CPT-3"	
+			"ND" = "NDC"		
+			"RE" = "RE";
+		value $dxfmt
+			"09" = "ICD-9-CM"
+			"10" = "ICD-10-CM"; 
+		value $cc1fmt
+			"DX" = "Diagnosis"
+			"PX" = "Procedure";
+	run;
+	
 %mend report_formats_labels;
 	

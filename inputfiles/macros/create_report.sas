@@ -97,6 +97,9 @@
     /*Compile table of contents*/
     %create_tableofcontents();
 
+    /*create appendices*/
+    %appendix_driver();
+
     /*Create PDF and Excel templates*/
     %if %str("&sysscp.") = %str("WIN") %then %do;
 	   %report_template(outputtype = excel, fontsize = 10pt, font = Calibri); 

@@ -134,6 +134,9 @@ options validvarname = v7;
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 
+%let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
+%let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
@@ -184,6 +187,8 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/output_report.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
+%include "&reportroot.inputfiles/macros/appendix_driver.sas";
+%include "&reportroot.inputfiles/macros/appendix_output.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
 /*-----------------------------------------------------------------------------------------------*/
