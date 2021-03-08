@@ -56,8 +56,8 @@
     %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
 
-		%let geog_cb=1;
-		%let geog_hhs=1;
+		%let geog_cb=0;
+		%let geog_hhs=0;
 
 		data _null_;
 			set tablefile;
@@ -76,9 +76,11 @@
 				insert into Appendix&tableletter.
 					values("Northeast","Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont, New Jersey, New York, Pennsylvania")
 					values("Midwest","Illinois, Indiana, Michigan, Ohio, Wisconsin, Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, South Dakota")
-					values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama,Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
-					values("West","Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington")
-					values("Other","Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau");
+					values("South",	"Delaware, District of Columbia, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, West Virginia, Alabama, Kentucky, Mississippi, Tennessee, Arkansas, Louisiana, Oklahoma, Texas")
+					values("West","Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, Wyoming, Alaska, California, Hawaii, Washington, Oregon")
+					values("Other","Northern Mariana Islands, Marshall Islands, Puerto Rico, US Virgin Islands, American Samoa, Micronesia, Guam, Palau")
+					values("Missing","Missing")
+					values("Invalid","Recorded geographic location does not match any identifiers per the Sentinel Common Data Model definition");
 			quit;
 		%end;
 	
@@ -95,13 +97,15 @@
 					values("Region 02",	"New Jersey, New York, Puerto Rico, Virgin Islands")
 					values("Region 03",	"Delaware, Maryland, Pennsylvania, Virginia, West Virginia, District of Columbia")
 					values("Region 04",	"Alabama, Florida, Georgia, Kentucky, Mississippi, North Carolina, South Carolina, Tennessee")
-					values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin")
+					values("Region 05",	"Illinois, Indiana, Michigan, Minnesota, Ohio, Wisconsin.")
 					values("Region 06",	"Arkansas, Louisiana, New Mexico, Oklahoma, Texas")
 					values("Region 07",	"Iowa, Kansas, Missouri, Nebraska")
 					values("Region 08",	"Colorado, Montana, North Dakota, South Dakota, Utah, Wyoming")
 					values("Region 09",	"Arizona, California, Hawaii, Nevada, American Samoa, Federated States of Micronesia, Guam, Palau")
 					values("Region 10",	"Alaska, Idaho, Oregon, Washington")
-					values("Region 99",	"Missing");
+					values("Region 11",	"Northern Mariana Islands, Marshall Islands")
+					values("Missing", "Missing")
+					values("Invalid", "Recorded geographic location does not match any identifiers per the Sentinel Common Data Model definition");
 			quit;
 		%end;
 	%end;
