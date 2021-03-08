@@ -164,11 +164,6 @@
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
-***** dowe *****;	
-data output.z_&_data.;
- set &_data;
-run; 
-***** dowe *****;
 
 		proc report data =  _data_pxdx nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
@@ -193,43 +188,7 @@ run;
 				num = 100;
 				line text $varying. num;
 			endcomp;
-/*
-			compute codetype1;
-					if codeform = "DX10" then  do;
-						call define(_col_, "format", "$DX10f.");
-					end;
-					else if codeform = "DX09" then  do;
-						call define(_col_, "format", "$DXPX09f.");
-					end;
-					else if codeform = "PX09" then  do;
-						call define(_col_, "format", "$DXPX09f.");
-					end;
-					else if codeform = "PX10" then  do;
-						call define(_col_, "format", "$PX10f.");
-					end;					
-					else if codeform = "PXC4" then  do;
-						call define(_col_, "format", "$PXC4f.");
-					end;					
-					else if codeform = "PXHC" then  do;
-						call define(_col_, "format", "$PXHCH3f.");
-					end;					
-					else if codeform = "PXH3" then  do;
-						call define(_col_, "format", "$PXHCH3f.");
-					end;					
-					else if codeform = "PXC2" then  do;
-						call define(_col_, "format", "$PXC2f.");
-					end;					
-					else if codeform = "PXC3" then  do;
-						call define(_col_, "format", "$PXC3f.");
-					end;					
-					else if codeform = "PXND" then  do;
-						call define(_col_, "format", "$PXNDf.");
-					end;					
-					else if codeform = "PXRE" then  do;
-						call define(_col_, "format", "$PXREf.");
-					end;										
-			endcomp;
-*/
+
 			compute codetype1;
 					if codecat1 = "DX" then  do;
 						call define(_col_, "format", "$dxfmt.");
@@ -297,15 +256,12 @@ run;
 	
 
 ***************************************************************************************************;
-* Geographic and Other Appendices                                         
+* Geographic Appendices and Code List Appendices (Index defining codes, Exposure incidence defining 
+* codes, Censor defining codes, Outcome defining codes, Outcome incidence defining codes, Inclusion  
+* defining codes and Covariate defining codes)                                      
 ***************************************************************************************************;
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
-***** dowe *****;	
-data output.z_tableofcontents;
- set tableofcontents;
-run; 
-***** dowe *****;	
 		proc sql noprint;
 		select compress(tabnum,,'ka'), tabnum, appendixtype, caption, count(*)
 		into  :apxdata separated by "*", 

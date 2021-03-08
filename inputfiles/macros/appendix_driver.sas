@@ -254,10 +254,10 @@
 			%if %varexist(_&_type._&i.,ndc)>0 %then %do;
 				%tableletter(); 
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-						  caption = %bquote(Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request),
+						  caption = %bquote(List of Generic and Brand Names of Medical Products Used to Define &apptitle. in this Request),
 						  appendixtype = appendixNDC_GenBr);
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.).1, 
-						  caption = %bquote(National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request),
+						  caption = %bquote(List of National Drug Codes (NDCs) for Medical Products Used to Define &apptitle. in this Request),
 						  appendixtype = appendixNDC);
 			    data Appendix&tableletter.;
 				 set _&_type._&i.;
@@ -327,7 +327,7 @@
 					%let _label1 = &_label1, and %qscan(%bquote(&uniquecodelabel.), &codecount., %str(*));
 				%end;					
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-						  caption = %bquote(&_label1. Codes Used to Define &apptitle. in this Request),
+						  caption = %bquote(&_label1. List of Codes Used to Define &apptitle. in this Request),
 						  appendixtype = appendixDXPX);
 			    data Appendix&tableletter.;
 				 set _&_type._&i.;
