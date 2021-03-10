@@ -133,9 +133,14 @@ options validvarname = v7;
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
-
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+
+/* Create reportdata folder */
+%let repdata = &output.reportdata.;
+options DLCREATEDIR ;
+libname repdata "&repdata" ;
+options NODLCREATEDIR;
 
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
