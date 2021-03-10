@@ -893,23 +893,27 @@
             /***************************/
             /* Patient Characteristics */
             /***************************/
+
+            %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
+            %else %let grouperlabel = Patient;
+
             if MetVar = 'PATIENT' then do;
-            %assignbaselinevars(label="Number of unique patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=1);
+            %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
-            %assignbaselinevars(label="Number of episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
+            %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
-            %assignbaselinevars(label="Number of weighted patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=3);
+            %assignbaselinevars(label="Number of weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
             end;
 
             /*infant characteristics*/
             %if "&outputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
-                %assignbaselinevars(label="Mean enrollment time after birth", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=4);
+                %assignbaselinevars(label="Mean enrollment time after birth (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=4);
                 end;
                 else if MetVar = 'ENROLL_DIFF' then do;
-                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=5);
+                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=5);
                 end;
             %end;
 
@@ -991,16 +995,16 @@
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
-                    %assignbaselinevars(label="Preterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
+                    %assignbaselinevars(label="Pre-Term (0-258 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
                     end;
                     if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label="Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
+                    %assignbaselinevars(label="Term (259-280 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
-                    %assignbaselinevars(label="Postterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
+                    %assignbaselinevars(label="Post-Term (281-301 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
                     end;
                     if MetVar= 'PREPOSTIND_NONE' then do;
-                    %assignbaselinevars(label="Unknown term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
+                    %assignbaselinevars(label="Unknown Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
                     end;
                     if MetVar= 'GA_BIRTH' then do;
                     %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
