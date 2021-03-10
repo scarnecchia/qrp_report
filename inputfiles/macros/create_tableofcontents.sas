@@ -33,13 +33,14 @@
     /*********************************************************************************************/
     /* Utility macro to add row to tableofcontents file                                          */
     /*********************************************************************************************/
-    %macro addtotoc(tabnum=, caption=);
+    %macro addtotoc(tabnum=, caption=, appendixtype=);
     data tableofcontents;
         set tableofcontents end=eof;
         output;
         if eof then do;
             tabnum = "&tabnum.";
             caption = "&caption.";
+			appendixtype = "&appendixtype.";
             output;
         end;
     run;
@@ -49,8 +50,8 @@
     /* Initialize empty table and table number                                                   */
     /*********************************************************************************************/
     data tableofcontents;
-        length tabnum $25 caption $500;
-        call missing(tabnum, caption);
+        length tabnum $25 caption $500 appendixtype $30;
+        call missing(tabnum, caption, appendixtype);
     run;
 
     %let number = 1;
@@ -259,6 +260,7 @@
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
 
+
   /*********************************************************************************************/
   /*   Figures                                                                                 */
   /*********************************************************************************************/  
@@ -294,7 +296,17 @@
         %end; /*Forest plots */
 
     %end; /* Figure file */
+	
 
+    /*****************/
+    /* Appendices    */
+    /*****************/
+
+    /*Appendix A*/
+    %addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
+	
+	/* The remaining appendices are created in appendix_driver.sas */
+	
     /*********************/
     /* Remove empty rows */
     /*********************/

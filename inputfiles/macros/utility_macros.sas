@@ -13,6 +13,7 @@
 *   - %create_comma_charlist() macro converts space delimited list to comma delimited list with quotes
 *   - %alphabetizevarutil() macro alphabetizes variables in a data step
 *   - %tableletter() macro increments a letter suffix
+*   - %varexist() macro checks for the existence of a variable
 *
 *  Program inputs:                                                                                   
 *   -
@@ -102,3 +103,15 @@
   %put tableletter = &tableletter.;
   %let tablecount = %eval(&tablecount + 1); /*+1 to counter*/
 %mend;
+
+*Macro to check the existence of a variable;
+%macro varexist (ds,var);
+%local dsid rc ;
+%let dsid = %sysfunc(open(&ds));
+%if (&dsid) %then %do;
+  %if %sysfunc(varnum(&dsid,&var)) %then 1;
+  %else 0 ;
+  %let rc = %sysfunc(close(&dsid));
+%end;
+%else 0;
+%mend varexist;

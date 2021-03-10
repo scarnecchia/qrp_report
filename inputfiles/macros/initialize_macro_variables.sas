@@ -48,8 +48,8 @@
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
-            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile
-            CodeDescriptionsFile TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end report_destination;
+            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -72,6 +72,7 @@
     %let L2ComparisonFile = ;
     %let look_start = 1;
     %let look_end = 1;
+    %let datedistributed = 
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/
