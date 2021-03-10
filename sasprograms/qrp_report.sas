@@ -170,6 +170,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
+%include "&reportroot.inputfiles/macros/baseline_output.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
@@ -187,13 +188,15 @@ ods path(prepend) work.templat(update);
 
 /*Figure macros */
 %include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
+%include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
+
+/*Appendices macros*/
+%include "&reportroot.inputfiles/macros/appendix_driver.sas";
+%include "&reportroot.inputfiles/macros/appendix_output.sas";
 
 /*report formatting and output macros*/
 %include "&reportroot.inputfiles/macros/output_report.sas";
-%include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/output_report_dates.sas";
-%include "&reportroot.inputfiles/macros/appendix_driver.sas";
-%include "&reportroot.inputfiles/macros/appendix_output.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
 /*-----------------------------------------------------------------------------------------------*/
