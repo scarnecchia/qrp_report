@@ -72,7 +72,7 @@
     %let L2ComparisonFile = ;
     %let look_start = 1;
     %let look_end = 1;
-    %let datedistributed = 
+    %let datedistributed = ;
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/

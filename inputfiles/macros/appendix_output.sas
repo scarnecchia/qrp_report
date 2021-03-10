@@ -39,7 +39,6 @@
 
     %put =====> MACRO CALLED: appendix_output;
 	
-
 	/**********************************/
 	/* Geographic Location Appendices */
 	/**********************************/	
@@ -47,10 +46,8 @@
 		%if %index(&_rptlabel.,HHS) %then %do; %let geog = HHS; %end;
 		%else %do; %let geog = Census Bureau; %end;
 
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
-
 		proc report data =  &_data nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
@@ -59,7 +56,7 @@
 			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
 			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
-				line "&apptitle.";
+	        line "&apptitle.";
 			endcomp;
 		run;
 	%mend appendixGEOG;	
@@ -67,10 +64,7 @@
 	/**************************************************/
 	/* Create NDC Reports - Generic and Brand Names   */
 	/**************************************************/
-		
 	%macro appendixNDC(_data=, _rptlabel=, _tab=);
-	
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 	
@@ -150,20 +144,16 @@
 	    run;
 
 		%let optionalvars = ;
-
 		proc sql noprint;
 			select propcase(name)
 			into : optionalvars separated by ' '
 			from _varnames
 			where lowcase(name) not in ('header','appendix_sort','header_sort','code1','descrip','codetype1','codecat1','codeform');
 		quit;
-
 		%put optionalvars = &optionalvars.;
-		
-		ods excel options(sheet_name= "&_tab." tab_color='purple' sheet_interval="table" flow="tables");
+
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
-		
 
 		proc report data =  _data_pxdx nofs nowd spanrows missing headskip
 			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
@@ -232,8 +222,10 @@
         %end;
     %end;
 	
-	ods pdf startpage=now;
+	ods startpage=now;
+    %if &destination. = excel %then %do;
     ods excel options(sheet_name="Appendix A" tab_color='purple' sheet_interval="table");
+    %end;
 	ods proclabel = "Appendix A";
 
     proc report data = output.dpinfo nofs nowd
@@ -249,7 +241,7 @@
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";
         endcomp;
 
-        compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off];
+        compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off font_size=&footfontsize.];
         line "^{super 1}Participating Data Partners include &dpnamelist.";
         line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
@@ -281,7 +273,10 @@
 				%let _apxtype = %scan(&apxtype., &p., %str(*));				
 				%let _apxname = %scan(&apxname., &p., %str(*));			
 				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
-				ods pdf startpage=now;
+				ods startpage=now;
+                %if &destination. = excel %then %do;
+		        ods excel options(sheet_name= "&_apxname." tab_color='purple' sheet_interval="table" flow="tables");
+                %end;
 				%if "%upcase(&_apxtype.)" = "APPENDIXGEOG" %then %do;	
 					%appendixGEOG(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
