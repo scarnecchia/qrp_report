@@ -516,7 +516,7 @@
                     /*initialize to 0*/
                     exp_std0 = 0; 
                     %if "&includecomp" = "Y" %then %do;
-                    comp_std0 = 0; /* comp_std0 */
+                    comp_std0 = 0;
                     %end;
 
                     ** Calculate aggregated percent: 
@@ -1190,10 +1190,6 @@
             run;
         %end;
 		
-        data output.&dataout;
-            set &dataout;
-        run;
-
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
             delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline _tempcohort;
