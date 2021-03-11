@@ -37,73 +37,185 @@
     /*   proc report                                                                             */
     /*********************************************************************************************/  
 
-    %macro baseline_procreport(characteristiclabel =,
-                               grp1_label=, grp1_var1=, grp1_var2=, 
-                               grp2_label=, grp2_var1=, grp2_var2=, 
-                               grp3_label=, grp3_var1=, grp3_var2=,
+    %macro baseline_procreport(order = ,
+                               table = ,
+                               weight = ,
+                               title= ,
+                               characteristiclabel =, 
+                               grp1_label=,
+                               grp1_var1=,
+                               grp1_var2=, 
+                               grp2_label=,
+                               grp2_var1=, 
+                               grp2_var2=, 
+                               grp3_label=, 
+                               grp3_var1=, 
+                               grp3_var2=,
                                computebalance = );
 
-/*        %if &destination. = excel %then %do;*/
+        /*save data to reportdata folder*/
+        %isdata(dataset=repdata.table1&tableletter.);
+        %if %eval(&nobs.<1) %then %do;
+            data repdata.table1&tableletter.;
+                set table1_&periodid.(where=(order = &order. and table = &table. and weight = &weight.));
+/*                keep label metvar analysisgrp */
+/*                %if &table.=Aggregated %then %do; &grp1_var1. &grp1_var2. */
+            run;
+        %end;
+
+        %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
-/*        %end;*/
+        %end;
         ods proclabel = "Table 1&tableletter.";
-/*        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'*/
-/*            style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'*/
-/*		    style(report)=[rules=none frame=box cellpadding =1.75pt];*/
+        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
+            style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+		    style(report)=[rules=none frame=box cellpadding =1.75pt];
+
+            column (metvar grouper label
+                   ("^S={background=ligr borderleftcolor=white}&grp1_label." &grp1_var1. &grp1_var2.));
+
+            define metvar /  noprint;
+            define grouper / order noprint order=data '';
+            define label / display "&characteristiclabel. Characteristics" style(column)=[width=3in just=L] 
+                           style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
+
+            define &grp1_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] 
+                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
+            define &grp1_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] 
+                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
+          
+            %if &includecomp. = Y %then %do;
+            define &grp2_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
+            define &grp2_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            %end;
+            %if &reporttype. = T6 %then %do;
+            define &grp3_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
+            define &grp3_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            %end;
+
+            /*Add Characteristic header lines*/
+            compute before grouper / style=[background=ligr color=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+              length text $100;
+              if grouper ne "&characteristiclabel. Characteristics" then do;
+                text=grouper;
+                num=100;
+              end;
+              else do; 
+                text = "";
+                num=0;
+              end;
+              line text $Varying. num; 
+            endcomp;
+
+            /*Add Demographic header lines*/
+/*            compute before metvar / style=[background=white color=black just=L];*/
+/*              length text $100;*/
+/*              if index(metvar,'RACE')>0 then do;*/
+/*                text="Race categories";*/
+/*                num=100;*/
+/*              end;*/
+/*              else do; */
+/*                text = "";*/
+/*                num=0;*/
+/*              end;*/
+/*              line text $Varying. num; */
+/*            endcomp;*/
 /**/
-/*        run;*/
+/*               compute label;*/
+/*      if upcase(mervar) in (AGE) then do;*/
+/*        call define(_row_,'style','style={fontstyle=italic}');*/
+/*      end;*/
+/*      endcomp;*/
+
+            /*Add title*/
+            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
+                                           tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+            line "&title.";
+            endcomp;
+        run;   
     %mend;
 
 
-        /*counter for determining table letter*/
-        %let tablecount = 1;
+    /*counter for determining table letter*/
+    %let tablecount = 1;
 
-        /*loop through each baseline table*/
-        %do b = 1 %to &numbaselinetablegrp.;
-            %let analysisgrp = ;
-            %let analysisgrp2 = ;
-            %let baselinegroupnum = ;
-            %let pregnancylabel = ;
-            %let includenonpregnant = N;
+    /*loop through each baseline table*/
+    %do b = 1 %to &numbaselinetablegrp.;
+        %let analysisgrp = ;
+        %let analysisgrp2 = ;
+        %let baselinegroupnum = ;
+        %let pregnancylabel = ;
+        %let includenonpregnant = N;
+        %let includecomp = N;
+        %let computebalance =N;
+        %let maxswitch = 0;
 
-            /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
-            %let ratio = F;
-            %let psfile = ;
-            %let weightlabel = ;
-            %let weightscheme = ;
-            %let pstrim = ;
-            %let percentiles=;
-            %let ratiolabel = ;
-            %let caliperlabel = ;
-            %let truncationlabel = ;
-            %let psestimategrp = ;
-            %let unadjusted = ;
+        /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
+        %let ratio = F;
+        %let psfile = ;
+        %let weightlabel = ;
+        %let weightscheme = ;
+        %let pstrim = ;
+        %let percentiles=;
+        %let ratiolabel = ;
+        %let caliperlabel = ;
+        %let truncationlabel = ;
+        %let psestimategrp = ;
+        %let unadjusted = ;
+        %let eoi = ;
+        %let ref = ;
+        %let switch0group = ;
+        %let switch1group = ;
+        %let switch2group = ;
 
-            data _null_;
-                set baselinefile(where=(order=&b.));
-                if _n_ = 1 then do;
-                    call symputx('analysisgrp', analysisgrp);
-                    call symputx('runid', runid);
-                    call symputx('cohort', cohort);
-                    call symputx('unique_psestimate',unique_psestimate);
-                    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-                    if cohort in ('preg', 'nopreg') then do;
-                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                        else call symput('pregnancylabel', ' Pregnancy Cohort');
-                    end;
-                    call symputx('includenonpregnant', upcase(includenonpregnant));
-                    %end;
-                    if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
+        /*parameters for %baseline_procreport*/
+        %let characteristiclabel = Patient;
+        %let grp1_label=;
+        %let grp1_var1=;
+        %let grp1_var2=;
+        %let grp2_label=;
+        %let grp2_var1=;
+        %let grp2_var2=;
+        %let grp3_label=;
+        %let grp3_var1=;
+        %let grp3_var2=;
+
+        data _null_;
+            set baselinefile(where=(order=&b.));
+            if _n_ = 1 then do;
+                call symputx('analysisgrp', analysisgrp);
+                call symputx('runid', runid);
+                call symputx('cohort', cohort);
+                call symputx('unique_psestimate',unique_psestimate);
+                if computebalance = 'Y' then call symputx('computebalance', 'Y');
+                %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+                if cohort in ('preg', 'nopreg') then do;
+                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
+                    else call symput('pregnancylabel', ' Pregnancy Cohort');
                 end;
-                /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
-                if _n_ = 2 then do;
-                    if missing(baselinegroupnum)=0 then do;
-                        call symputx('analysisgrp2',analysisgrp);
-                    end;
+                call symputx('includenonpregnant', upcase(includenonpregnant));
+                %end;
+                if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
+                
+                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
+                  or BASELINEGROUPNUM is specified then include COMP columns*/
+                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
+                   upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
+                   call symputx('includecomp', 'Y');
                 end;
-            run;
-         
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                else do;
+                   call symputx('includecomp', 'N');
+                end;
+            end;
+            /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
+            if _n_ = 2 then do;
+                if missing(baselinegroupnum)=0 then do;
+                    call symputx('analysisgrp2',analysisgrp);
+                end;
+            end;
+        run;
+     
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
@@ -120,7 +232,7 @@
                     call symputx('pstrim', pstrim);
                     call symputx('percentiles', percentiles);
                     if missing(strataweight) =0 then call symputx('weightscheme', strataweight);
-        	        if upcase(strataweight)= 'ATE' or missing(strataweight) then call symputx("weightlabel","Average Treatment Effect (ATE)");
+                    if upcase(strataweight)= 'ATE' or missing(strataweight) then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(strataweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
                 end;
                 if file = 'iptwfile' then do;
@@ -130,120 +242,205 @@
                     call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
                 end;
             run;
+
+            /*pull EOI and REF group names*/
+            %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+            data _null_;
+                set infolder.&&&runid._&psfile.(where=(analysisgrp="&analysisgrp."));
+                call symputx('psestimategrp', psestimategrp);
+            run;
+            data _null_;
+                set infolder.&&&runid._psestimationfile(where=(psestimategrp="&psestimategrp."));
+                call symputx('eoi', strip(eoi));
+                call symputx('ref', strip(ref));
+            run;
             %end;
-
-            /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
-            - 1 monitoring period
-            - DP stratification = N
-            - max(order) in baselinefile = 1
-            - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
-            %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
-                    %let tablecount = 0;
-                %end;
-                %else %do;
-                    %if &psfile. = covstratfile %then %let tablecount = 0;
-                %end;
+            %else %if &psfile. = covstratfile %then %do;
+            data _null_;
+                set infolder.&&&runid._covstratfile(where=(analysisgrp="&analysisgrp."));
+                call symputx('eoi', strip(eoi));
+                call symputx('ref', strip(ref));
+            run;
             %end;
+        %end;
 
-            /*Assign labels*/
-            %let baselinelabel = ;
-            %let grouplabel = &analysisgrp.;
-            %let psestimatelabel = &psestimategrp.;
-            %if %length(&baselinegroupnum.)>0 %then %do;
-            %let grouplabel2 = &analysisgrp2.;
+        %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+            /*determine maximum switch*/
+            proc sql noprint;
+                select max(switchevalstep) into: maxswitch trimmed
+                from infolder.&&&runid._treatmentpathways(where=((analysisgrp="&analysisgrp.")));
+            quit;
+
+            data _null_;
+                set infolder.&&&runid._treatmentpathways(where=((analysisgrp="&analysisgrp.")));
+                if switchevalstep = 0 then call symputx('switch0group', strip(group));
+                if switchevalstep = 1 then call symputx('switch1group', strip(group));
+                %if %eval(&maxswitch=2) %then %do;
+                if switchevalstep = 2 then call symputx('switch2group', strip(group));   ]
+                %end; 
+            run;
+        %end;
+
+        /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
+        - 1 monitoring period
+        - DP stratification = N
+        - max(order) in baselinefile = 1
+        - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
+        %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
+                %let tablecount = 0;
             %end;
+            %else %do;
+                %if &psfile. = covstratfile %then %let tablecount = 0;
+            %end;
+        %end;
 
-            %isdata(dataset=labelfile);
-            %if %eval(&nobs.>0) %then %do;
-                data _null_;
-                    set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
-                        %if %length(&baselinegroupnum.)>0 %then %do;
-                        labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
-                        %end; 
-                        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-                        labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
-                        %end; 
-                        %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
-                        labelfile(in=d where=(group="&" and runid = "&runid"))
-                        labelfile(in=e where=(group="&" and runid = "&runid"))
-                        labelfile(in=f where=(group="&" and runid = "&runid"))
-                        %end; ;
+        /*Assign labels*/
+        %let baselinelabel = ;
+        %let grouplabel = &analysisgrp.;
+        %let psestimatelabel = &psestimategrp.;
+        %if %length(&baselinegroupnum.)>0 %then %do;
+        %let grouplabel2 = &analysisgrp2.;
+        %end;
 
-
-                    if a then do;
-                        if labeltype = 'grouplabel' then call symputx('grouplabel',label);
-                        if labeltype = 'baselinelabel' then call symputx('baselinelabel',cat(', ',strip(label), ','));
-                    end;
+        %isdata(dataset=labelfile);
+        %if %eval(&nobs.>0) %then %do;
+            data _null_;
+                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
                     %if %length(&baselinegroupnum.)>0 %then %do;
-                    if b then do;
-                        if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
-                    end;
-                    %end;
-                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
-                    if c then do;
-                        if labeltype = 'grouplabel' then call symputx('psestimatelabel',label);
-                    end;
-                    %end;
-                run;
+                        labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
+                    %end; 
+                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                        labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
+                    %end; 
+                    %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+                        labelfile(in=d where=(group="&switch0group." and runid = "&runid"))
+                        labelfile(in=e where=(group="&switch1group." and runid = "&runid"))
+                        %if %eval(&maxswitch=2) %then %do;
+                        labelfile(in=f where=(group="&switch2group." and runid = "&runid"))
+                        %end;
+                    %end; ;
+                if a then do;
+                    if labeltype = 'grouplabel' then call symputx('grouplabel',label);
+                    if labeltype = 'baselinelabel' then call symputx('baselinelabel',cat(', ',strip(label), ','));
+                end;
+                %if %length(&baselinegroupnum.)>0 %then %do;
+                if b then do;
+                    if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
+                end;
+                %end;
+                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
+                if c then do;
+                    if labeltype = 'grouplabel' then call symputx('psestimatelabel',label);
+                end;
+                %end;
+                %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+                if d then do;
+                    if labeltype = 'grouplabel' then call symputx('switch0grplabel',label);
+                end;
+                if e then do;
+                    if labeltype = 'grouplabel' then call symputx('switch1grplabel',label);
+                end;
+                %if %eval(&maxswitch=2) %then %do;
+                if f then do;
+                    if labeltype = 'grouplabel' then call symputx('switch2grplabel',label);
+                end;
+                %end;
+                %end; ;
+            run;
+        %end;
+
+        %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+        %if %length(&baselinegroupnum.)>0 %then %do;
+        %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+        %end;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+        %let captionlabel = %bquote(&psestimatelabel.);
+        %end;         
+
+        /*Set parameters for %baseline_procreport*/
+            /*Label for Characteristics header*/
+            %if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) >0 %then %do;
+                %let characteristiclabel = Mother;
             %end;
 
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+            /*- All tables have grp1
+              - if L2 report or baselinegroupnum is specified, then grp2 is defined
+              - if T6 report, grp2 is defined and grp3 (2nd switch) is optional */
+            %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
+                %let grp1_label = &grouplabel.;
+            %end;
+            %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                %let grp1_label = ;
+
+            %end;
+            %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+
+            %end;
+            
             %if %length(&baselinegroupnum.)>0 %then %do;
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+                %let grp2_label = &grouplabel2.;
             %end;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-            %let captionlabel = %bquote(&psestimatelabel.);
-            %end;         
 
-            /*1 block of code for both aggregate and DP tables*/
-            %macro baselinereport(table);
-                %if %eval(&unique_psestimate.) = 1 %then %do;
-                 %tableletter(); 
-                 %baseline_procreport()
+
+
+
+
+
+        /*1 block of code for both aggregate and DP tables*/
+        %macro baselinereport(table);
+            %if %eval(&unique_psestimate.) = 1 %then %do;
+             %tableletter(); 
+             %baseline_procreport(order = &b., table = 'Unadjusted', weight = 'Unweighted',
+              title=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+              characteristiclabel =&characteristiclabel.,
+              grp1_label=&grp1_label., grp1_var1=eoi_a_char, grp1_var2=eoi_b_char, 
+              grp2_label=, grp2_var1=, grp2_var2=, 
+              grp3_label=, grp3_var1=, grp3_var2=,
+              computebalance = &computebalance.)
+            %end;
+
+            /*For L2 tables - up to 2 additional adjusted tables*/
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                /*PS Match Adjusted*/
+                %if &psfile. = psmatchfile %then %do;
+                %tableletter(); 
+                %baseline_procreport()
                 %end;
 
-                /*For L2 tables - up to 2 additional adjusted tables*/
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-                    /*PS Match Adjusted*/
-                    %if &psfile. = psmatchfile %then %do;
+                /*Unweighted - IPTW and PS Stratum*/
+                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+                %tableletter(); 
+                %baseline_procreport()
+                %end;
+
+                /*Weighted - IPTW, PS Stratum, PS Stratification*/
+                %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
+                    %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
+                    %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
+                    %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport()
-                    %end;
+                %end;
+            %end; /*Additional L2 tables*/
+        %mend;
 
-                    /*Unweighted - IPTW and PS Stratum*/
-                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
-                    %tableletter(); 
-                    %baseline_procreport()
+        /*loop through each periodid*/
+        %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+            /*Aggregated*/
+            %baselinereport(Aggregated);
+   
+            /*Output seperate table for each Data Partner - loop through each DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+        	        %let maskedID = %scan(&masked_dplist,&dps); 
+                    %if %eval(&unique_psestimate.) = 1 %then %do;
+                        %baselinereport(&maskedid.);
                     %end;
-
-                    /*Weighted - IPTW, PS Stratum, PS Stratification*/
-                    %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                        %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
-                        %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
-                        %tableletter(); 
-                        %baseline_procreport()
-                    %end;
-                %end; /*Additional L2 tables*/
-            %mend;
-
-            /*loop through each periodid*/
-            %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-                /*Aggregated*/
-                %baselinereport(Aggregated);
-       
-                /*Output seperate table for each Data Partner - loop through each DP*/
-                %if &stratifybydp. = Y %then %do;    
-                    %do dps = 1 %to %eval(&num_dp.);
-        		        %let maskedID = %scan(&masked_dplist,&dps); 
-                        %if %eval(&unique_psestimate.) = 1 %then %do;
-                            %baselinereport(&maskedid.);
-                        %end;
-                    %end;
-                %end; /*DP stratification*/
-            %end; /*loop through each periodid*/
-        %end; /*loop through each row in baselinefile*/
+                %end;
+            %end; /*DP stratification*/
+        %end; /*loop through each periodid*/
+    %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables */
 
     %put =====> END MACRO: baseline_output ;
