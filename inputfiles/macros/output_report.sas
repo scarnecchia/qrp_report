@@ -16,6 +16,10 @@
 *   - qrp_report.xlsx
 *
 *  PARAMETERS:                                                                       
+*   - destination: ODS destination. Valid values: excel or pdf
+*   - font: font
+*   - fontsize = font size
+*   - footfontsize  = font size for footnotes, typically set as 1 pt smaller than fontsize
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -27,18 +31,22 @@
 *
 ***************************************************************************************************;
 
-%macro output_report();
+%macro output_report(destination = , font=, fontsize=, footfontsize=);
 
     %put =====> MACRO CALLED: output_report;
 
 ***************************************************************************************************;
-* Set up                                            
+* Set up and initialize report template                                            
 ***************************************************************************************************;
+
+    /*report template*/
+    %report_template(outputtype = &destination., fontsize = &fontsize., font = &font.); 
 
     ods listing close;
     ods select all;
     ods noresults;
     options nodate nonumber orientation = landscape;
+    %if &destination. = excel %then %do;
     ods excel file="&REPORTROOT.output/qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
@@ -46,13 +54,17 @@
             frozen_headers = "yes"
             embedded_footnotes= "yes" 
             flow="tables");
+    %end;
+    %if &destination. = pdf %then %do;
     ods pdf file="&REPORTROOT.output/qrp_report.pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
+    %end;
+
     ods noproctitle;
     options nodate nonumber orientation=portrait;
     ods escapechar="^";
     title;
 
-/* Counter for figure number */
+    /* Counter for figure number */
     %let figurenum=1;
 
 ***************************************************************************************************;
