@@ -498,10 +498,10 @@
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
                     eoi_a=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
-                    eoi_a_char=compress(put(eoi_a,comma10.)); /* Character copy of exposed group */
+                    eoi_a_char=compress(put(eoi_a,comma12.)); /* Character copy of exposed group */
                     %if "&includecomp" = "Y" %then %do;
                     ref_a=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/
-                    ref_a_char=compress(put(eoi_a,comma10.)); /* Character copy of reference group */
+                    ref_a_char=compress(put(eoi_a,comma12.)); /* Character copy of reference group */
                     %end;
 
                     %if "&weight" = "Weighted" %then %do;
@@ -1179,10 +1179,6 @@
                 set &dataout. baseline_aggregatefinal;
             run;
         %end;
-
-        data output.&dataout;
-            set &dataout;
-        run;
 		
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
