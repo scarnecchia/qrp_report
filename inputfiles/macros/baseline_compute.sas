@@ -763,7 +763,7 @@
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                        %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
+                        %if "&computebalance." = "Y" %then %do; ad: sd: %end;
                       %end;   
                       %else %do;
                         %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
@@ -1145,7 +1145,7 @@
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                    %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
+                    %if "&computebalance." = "Y" %then %do; ad: sd: %end;
                   %end;   
                   %else %do;
                     %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
