@@ -516,7 +516,7 @@
                     /*initialize to 0*/
                     exp_std0 = 0; 
                     %if "&includecomp" = "Y" %then %do;
-                    comp_std0 = 0; /* comp_std0 */
+                    comp_std0 = 0;
                     %end;
 
                     ** Calculate aggregated percent: 
