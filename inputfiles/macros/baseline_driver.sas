@@ -134,10 +134,11 @@
                 if b then do;
                     analysisgrp = group;
                 end;
-                if not missing(baselinegroupnum) then do;
-                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT=Y';
-                    abort;
-                end;
+                if (a or b) and not missing(baselinegroupnum) then do;
+				    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with INCLUDENONPREGNANT=Y'; 
+					stop; 
+					%abort;
+				end;
             run;
         %end;
 
