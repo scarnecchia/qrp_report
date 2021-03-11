@@ -190,8 +190,10 @@
                     run;
                 %end; /*Create footnote format*/
 
-                /*Trick excel to create new sheet*/
                 ods startpage=now;
+
+                /*Trick excel to create new sheet*/
+                %if &destination. = excel %then %do;
                 ods excel options(sheet_interval="table");
                 ods exclude all;
                 data _null_;
@@ -199,10 +201,14 @@
                 put _all_;
                 run;
                 ods select all;
-                ods startpage=no; /* Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures */
+                %end;
 
+                ods startpage=no; /* Added to prevent PDF pagebreak, may need to be removed when adding more tables/figures */
+            
                 %tableletter();
+                %if &destination. = excel %then %do;
                 ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue" flow='none');
+                %end;
                 proc odstext pagebreak=yes;
                 p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title ^{newline}in the &database. from &startdateformatted. to &&enddate&j.formatted.&forestnohrsuper." /
                 style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
@@ -222,7 +228,7 @@
 
                 %if "&forestnohrfootnote" = "Y" %then %do;
                     proc odstext pagebreak=yes;
-                    p "^{super 1}&ForestRatioFoot could not be calculated for all analyses" / style=[just=L fontsize=7pt];
+                    p "^{super 1}&ForestRatioFoot could not be calculated for all analyses" / style=[just=L fontsize=&footfontsize.];
                     run;
                 %end;
 
@@ -232,7 +238,7 @@
                         %if "&forestnohrfootnote" = "Y" %then %let fncount1= %eval(&fncount.+1);
                         %else %let fncount1= &fncount;
                     proc odstext pagebreak=yes;
-                    p "^{super &fncount1}&fn" / style=[just=L fontsize=7pt];
+                    p "^{super &fncount1}&fn" / style=[just=L fontsize=&footfontsize.];
                     run;
                 %end;
                 %end;
