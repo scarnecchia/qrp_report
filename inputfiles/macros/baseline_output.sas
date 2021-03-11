@@ -42,26 +42,21 @@
                                weight = ,
                                title= ,
                                characteristiclabel =, 
+                               dpnum = ,
                                grp1_label=,
-                               grp1_var1=,
-                               grp1_var2=, 
                                grp2_label=,
-                               grp2_var1=, 
-                               grp2_var2=, 
                                grp3_label=, 
-                               grp3_var1=, 
-                               grp3_var2=,
                                computebalance = );
 
         /*save data to reportdata folder*/
         %isdata(dataset=repdata.table1&tableletter.);
-        %if %eval(&nobs.<1) %then %do;
+/*        %if %eval(&nobs.<1) %then %do;*/
             data repdata.table1&tableletter.;
                 set table1_&periodid.(where=(order = &order. and table = &table. and weight = &weight.));
 /*                keep label metvar analysisgrp */
 /*                %if &table.=Aggregated %then %do; &grp1_var1. &grp1_var2. */
             run;
-        %end;
+/*        %end;*/
 
         %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
@@ -72,25 +67,40 @@
 		    style(report)=[rules=none frame=box cellpadding =1.75pt];
 
             column (metvar grouper label
-                   ("^S={background=ligr borderleftcolor=white}&grp1_label." &grp1_var1. &grp1_var2.));
+                    %if &computebalance. = Y %then %do; ('^S={background=white} Medical Product' %end;
+                   ("^S={background=ligr borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    %if &includecomp. = Y %then %do;
+                   ("^S={background=ligr borderleftcolor=white}&grp2_label." comp_mean&dpnum._char comp_std&dpnum._char)
+                    %end;
+                    %if &reporttype. = T6 %then %do;
+                   ("^S={background=ligr borderleftcolor=white}&grp3_label." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    %end;
+                    %if &computebalance. = Y %then %do; 
+                    ("^S={background=white}Covariate Balance" ad&dpnum._char sd&dpnum._char))
+                    %end; );
 
             define metvar /  noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics" style(column)=[width=3in just=L] 
                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
 
-            define &grp1_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] 
+            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] 
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
-            define &grp1_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] 
+            define exp_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] 
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
           
             %if &includecomp. = Y %then %do;
-            define &grp2_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
-            define &grp2_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
+            define comp_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
             %end;
             %if &reporttype. = T6 %then %do;
-            define &grp3_var1 / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
-            define &grp3_var2 / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
+            define switch2_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            %end;
+
+            %if &computebalance. = Y %then %do;
+            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
+            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
             %end;
 
             /*Add Characteristic header lines*/
@@ -388,15 +398,16 @@
 
 
         /*1 block of code for both aggregate and DP tables*/
-        %macro baselinereport(table);
+        %macro baselinereport(table, dpnum);
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight = 'Unweighted',
               title=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
-              grp1_label=&grp1_label., grp1_var1=eoi_a_char, grp1_var2=eoi_b_char, 
-              grp2_label=, grp2_var1=, grp2_var2=, 
-              grp3_label=, grp3_var1=, grp3_var2=,
+              dpnum = &dpnum.,
+              grp1_label=&grp1_label.,
+              grp2_label=&grp2_label., 
+              grp3_label=,
               computebalance = &computebalance.)
             %end;
 
@@ -428,14 +439,14 @@
         /*loop through each periodid*/
         %do periodid = %eval(&look_start.) %to %eval(&look_end.);
             /*Aggregated*/
-            %baselinereport(Aggregated);
+            %baselinereport(Aggregated, 0);
    
             /*Output seperate table for each Data Partner - loop through each DP*/
             %if &stratifybydp. = Y %then %do;    
                 %do dps = 1 %to %eval(&num_dp.);
         	        %let maskedID = %scan(&masked_dplist,&dps); 
                     %if %eval(&unique_psestimate.) = 1 %then %do;
-                        %baselinereport(&maskedid.);
+                        %baselinereport(&maskedid., &dps.);
                     %end;
                 %end;
             %end; /*DP stratification*/
