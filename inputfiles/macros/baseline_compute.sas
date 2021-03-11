@@ -470,14 +470,16 @@
                 /* Character variables - export exposed and comparison groups when DPs are requested */
                 %if "&stratifybydp" = "Y" %then %do;
                 %do i = 1 %to &num_dp;
-                char_exp_mean&i. = compress(put(exp_mean&i,8.1));
-                char_exp_std&i. = compress(put(exp_std&i,8.1));
-                char_comp_mean&i. = compress(put(comp_mean&i,8.1));
-                char_comp_std&i. = compress(put(comp_std&i,8.1));
-                if missing(exp_mean&i) then char_exp_mean&i = '.';
-                if missing(exp_std&i) then char_exp_std&i = '.';
-                if missing(comp_mean&i) then char_comp_mean&i = '.';
-                if missing(comp_std&i) then char_comp_std&i = '.';
+                    char_exp_mean&i. = compress(put(exp_mean&i,8.1));
+                    char_exp_std&i. = compress(put(exp_std&i,8.1));
+                    if missing(exp_mean&i) then char_exp_mean&i = '.';
+                    if missing(exp_std&i) then char_exp_std&i = '.';
+                    %if "&includecomp" = "Y" %then %do;
+                    char_comp_mean&i. = compress(put(comp_mean&i,8.1));
+                    char_comp_std&i. = compress(put(comp_std&i,8.1));
+                    if missing(comp_mean&i) then char_comp_mean&i = '.';
+                    if missing(comp_std&i) then char_comp_std&i = '.';
+                    %end;
                 %end;
                 %end;
 
@@ -718,8 +720,8 @@
                             sdchar=sd;
                             if sdchar = '.' or sdchar='-' then sdchar = 'N/A';
                         %end;
+                        format ad 8.3;
                     %end;
-                    format ad 8.3;
                     drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
                 end;
 
