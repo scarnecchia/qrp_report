@@ -516,7 +516,7 @@
                     /*initialize to 0*/
                     exp_std0 = 0; 
                     %if "&includecomp" = "Y" %then %do;
-                    comp_std0 = 0;
+                    comp_std0 = 0; /* comp_std0 */
                     %end;
 
                     ** Calculate aggregated percent: 
@@ -541,11 +541,15 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
+                        exp_std0_char = '.';
+                        comp_std0_char = '.';
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
                             ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
+                            exp_std0_char = 'N/A';
                             %if "&includecomp" = "Y" %then %do;
                             comp_std0 = 1;
+                            comp_std0_char = 'N/A';
                             %end;
                         %end;
 						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0  %then %do;
@@ -618,6 +622,12 @@
                                 if missing(ad&i.)=0 then ad&i. = ad&i.*100;
                                 %end;
                             %end;
+                        end;
+                        else do;
+                        ad0=.;
+                        sd0=.;
+                        ad0_char='N/A';
+                        sd0_char='N/A';
                         end;
                     %end;
 
@@ -1179,6 +1189,10 @@
                 set &dataout. baseline_aggregatefinal;
             run;
         %end;
+		
+        data output.&dataout;
+            set &dataout;
+        run;
 
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
