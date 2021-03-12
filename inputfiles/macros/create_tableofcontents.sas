@@ -63,8 +63,8 @@
     /*****************/
     /* Glossary rows */
     /*****************/
-    
-        *tbd;
+    %addtotoc(tabnum=Glossary (CIDA), caption=List of Terms to Define Cohort Identification and Descriptive Analysis (CIDA) Found in this Report);
+	%addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define Propensity Score Analysis (PSA) Found in this Report);				 
 
     /******************/
     /* Baseline Table */
