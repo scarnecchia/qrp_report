@@ -75,7 +75,7 @@
 
     proc report data = tableofcontents nofs nowd headline headskip split="*";           
         columns ( "Table of Contents" tabnum caption);            
-        define tabnum / order=data ' ' style(column)=[just=R width=.7in];
+        define tabnum / order=data ' ' style(column)=[just=R width=.7in fontweight=bold textdecoration=underline];
         define caption / order=data  ' ' style(column)=[just=L];
     run;
 
