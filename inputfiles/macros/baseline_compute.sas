@@ -470,25 +470,49 @@
                 %do i = 1 %to &num_dp;
                 if lowcase(vartype) = 'dichotomous' then do;
                     exp_mean&i._char = compress(put(exp_mean&i,comma12.));
-                    exp_std&i._char = compress(put(exp_std&i,8.1));
-                    if missing(exp_mean&i) then exp_mean&i._char = '.';
+                    exp_std&i._char = compress(put(exp_std&i,percent10.1));
+                    if missing(exp_mean&i) or exp_mean&i = 0  then do;
+                        if metvar in ('N_EPISODES' 'PATIENT') then do;
+                            exp_mean&i._char = '0';
+                            exp_std&i._char = ' ';
+                        end;
+                        else do;
+                            exp_mean&i._char = '.';
+                            exp_std&i._char = '.';
+                        end;
+                    end;
                     if missing(exp_std&i) then exp_std&i._char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
-                    comp_std&i._char = compress(put(comp_std&i,8.1));
-                    if missing(comp_mean&i) then comp_mean&i._char = '.';
+                    comp_std&i._char = compress(put(comp_std&i,percent10.1));
+                    if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        if metvar in ('N_EPISODES' 'PATIENT') then do;
+                            comp_mean&i._char = '0';
+                            comp_std&i._char = ' ';
+                        end;
+                        else do;
+                            comp_mean&i._char = '.';
+                            comp_std&i._char = ' ';
+                        end;
+                    end;
                     if missing(comp_std&i) then comp_std&i._char = '.';
                     %end;
                 end;
                 else do;
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
-                    if missing(exp_mean&i) then exp_mean&i._char = '.';
+                    if missing(exp_mean&i) or exp_mean&i = 0  then do;
+                            exp_mean&i._char = '.';
+                            exp_std&i._char = '.';
+                    end;
                     if missing(exp_std&i) then exp_std&i._char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean&i._char = compress(put(comp_mean&i,8.1));
                     comp_std&i._char = compress(put(comp_std&i,8.1));
-                    if missing(comp_mean&i) then comp_mean&i._char = '.';
+                    if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                            comp_mean&i._char = '.';
+                            comp_std&i._char = '.';
+                    end;
                     if missing(comp_std&i) then comp_std&i._char = '.';
                     %end;
                 end;
@@ -499,9 +523,17 @@
                 if lowcase(vartype) = 'dichotomous' then do;
                     exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
                     exp_mean0_char=compress(put(exp_mean0,comma12.)); /* Character copy of exposed group */
+                    if exp_mean0 = 0 then do;
+                        if metvar in ('N_EPISODES' 'PATIENT') then exp_mean0_char = '0';
+                        else exp_mean0_char = '.';
+                    end;
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
                     comp_mean0_char=compress(put(comp_mean0,comma12.)); /* Character copy of reference group */
+                    if comp_mean0 = 0 then do;
+                        if metvar in ('N_EPISODES' 'PATIENT') then comp_mean0_char = '0';
+                        else comp_mean0_char = '.';
+                    end;
                     %end;
 
                     %if "&weight" = "Weighted" %then %do;
@@ -514,9 +546,11 @@
                     %end;
 
                     /*initialize to 0*/
-                    exp_std0 = 0; 
+                    if exp_mean0 = 0 then exp_std0 = .;
+                    else exp_std0 = 0;
                     %if "&includecomp" = "Y" %then %do;
-                    comp_std0 = 0;
+                    if comp_mean0 = 0 then comp_std0 = .;
+                    else comp_std0 = 0;
                     %end;
 
                     ** Calculate aggregated percent: 
@@ -541,8 +575,8 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        exp_std0_char = '.';
-                        comp_std0_char = '.';
+                        exp_std0_char = ' ';
+                        comp_std0_char = ' ';
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
                             ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
@@ -563,8 +597,8 @@
 						      %do nu_d = 1 %to &num_dp.;
 							    exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
                                 exp_std&nu_d._char = compress(put(exp_std&nu_d.,percent10.1));
-                                if exp_mean&num_d. > 0 and &&&n_Switchstep_&switch_b._episodes_exp&nu_d. = 0 then exp_std&nu_d._char = 'NaN';
-                                if exp_mean&num_d. = 0 then exp_std&nu_d._char = '.';
+                                if exp_mean&nu_d. > 0 and &&&n_Switchstep_&switch_b._episodes_exp&nu_d. = 0 then exp_std&nu_d._char = 'NaN';
+                                if exp_mean&nu_d. = 0 then exp_std&nu_d._char = '.';
 							  %end;
                             %end;
 						  end;
