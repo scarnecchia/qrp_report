@@ -43,6 +43,7 @@
                                title= ,
                                characteristiclabel =, 
                                dpnum = ,
+                               numcolumns = ,
                                grp1_label=,
                                grp2_label=,
                                grp3_label=, 
@@ -58,49 +59,73 @@
             run;
 /*        %end;*/
 
+        /*determine optimal report formatting*/
+        %if %eval(&numcolumns.=2) %then %do;
+            %let labelwidth = 3.5;
+            %let width = 1.15;
+            %let linebreak = ;
+            %let headerheight = .3;
+        %end;
+        %else %if %eval(&numcolumns.=4) %then %do;
+            %let labelwidth = 3;
+            %let width = 1.15;
+            %let linebreak = ;
+            %let headerheight = .3;
+        %end;
+        %else %if %eval(&numcolumns.=6) %then %do;
+            %let labelwidth = 3;
+            %let width = .85;
+            %let linebreak = ^n;
+            %let headerheight = .45;
+        %end;
+
+
         %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
+        %let linebreak = ; /*reset line break and headerheight*/
+        %let headerheight = .3;
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
             style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-		    style(report)=[rules=none frame=box cellpadding =1.75pt];
+		    style(report)=[rules=none frame=box cellpadding =1.5pt];
 
             column (metvar grouper label
                     %if &computebalance. = Y %then %do; ('^S={background=white} Medical Product' %end;
-                   ("^S={background=ligr borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                   ("^S={background=ligr borderleftcolor=white}&grp2_label." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp2_label." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
-                    %if &reporttype. = T6 %then %do;
-                   ("^S={background=ligr borderleftcolor=white}&grp3_label." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    %if &computebalance. = Y %then %do; ) %end;
+                    %if %eval(&maxswitch.=2) %then %do;
+                    ("^S={background=white borderleftcolor=white}&grp3_label." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 
-                    ("^S={background=white}Covariate Balance" ad&dpnum._char sd&dpnum._char))
+                    ('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
                     %end; );
 
-            define metvar /  noprint;
+            define metvar / noprint;
             define grouper / order noprint order=data '';
-            define label / display "&characteristiclabel. Characteristics" style(column)=[width=3in just=L] 
-                           style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
+            define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
+                           style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
 
-            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] 
-                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
-            define exp_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] 
-                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=.3in]; 
+            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] 
+                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
+            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in] 
+                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
           
             %if &includecomp. = Y %then %do;
-            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
-            define comp_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define comp_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
-            %if &reporttype. = T6 %then %do;
-            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
-            define switch2_std&dpnum._char / display 'Percent/^n Standard Deviation' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            %if %eval(&maxswitch.=2) %then %do;
+            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define switch2_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
-            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=.85in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=.3in];
-            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=.85in] style(header)=[background=lightgrey cellheight=.3in];
+            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines*/
@@ -130,12 +155,7 @@
 /*              end;*/
 /*              line text $Varying. num; */
 /*            endcomp;*/
-/**/
-/*               compute label;*/
-/*      if upcase(mervar) in (AGE) then do;*/
-/*        call define(_row_,'style','style={fontstyle=italic}');*/
-/*      end;*/
-/*      endcomp;*/
+
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -179,7 +199,8 @@
         %let switch2group = ;
 
         /*parameters for %baseline_procreport*/
-        %let characteristiclabel = Patient;
+        %if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
+        %else %let characteristiclabel = Patient;
         %let grp1_label=;
         %let grp1_var1=;
         %let grp1_var2=;
@@ -193,7 +214,7 @@
         data _null_;
             set baselinefile(where=(order=&b.));
             if _n_ = 1 then do;
-                call symputx('analysisgrp', analysisgrp);
+                call symputx('analysisgrp', strip(analysisgrp));
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
                 call symputx('unique_psestimate',unique_psestimate);
@@ -286,7 +307,7 @@
                 if switchevalstep = 0 then call symputx('switch0group', strip(group));
                 if switchevalstep = 1 then call symputx('switch1group', strip(group));
                 %if %eval(&maxswitch=2) %then %do;
-                if switchevalstep = 2 then call symputx('switch2group', strip(group));   ]
+                if switchevalstep = 2 then call symputx('switch2group', strip(group));   
                 %end; 
             run;
         %end;
@@ -313,6 +334,14 @@
         %let grouplabel2 = &analysisgrp2.;
         %end;
 
+        %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+            %let grp1_label = &switch0group.;
+            %let grp2_label = &switch0group. to &switch1group.;
+            %if %eval(&maxswitch=2) %then %do;
+            %let grp3_label = &switch1group. to &switch2group.;
+            %end;
+        %end;
+
         %isdata(dataset=labelfile);
         %if %eval(&nobs.>0) %then %do;
             data _null_;
@@ -322,39 +351,33 @@
                     %end; 
                     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
                         labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
+                        labelfile(in=d where=(group="&psestimategrp" and runid = "&runid"))
+                        labelfile(in=e where=(group="&psestimategrp" and runid = "&runid"))
                     %end; 
                     %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
-                        labelfile(in=d where=(group="&switch0group." and runid = "&runid"))
-                        labelfile(in=e where=(group="&switch1group." and runid = "&runid"))
+                        labelfile(in=f where=(group="&switch0group." and runid = "&runid"))
+                        labelfile(in=g where=(group="&switch1group." and runid = "&runid"))
                         %if %eval(&maxswitch=2) %then %do;
-                        labelfile(in=f where=(group="&switch2group." and runid = "&runid"))
+                        labelfile(in=fh where=(group="&switch2group." and runid = "&runid"))
                         %end;
                     %end; ;
                 if a then do;
-                    if labeltype = 'grouplabel' then call symputx('grouplabel',label);
+                    if labeltype = 'grouplabel' then call symputx('grouplabel',strip(label));
                     if labeltype = 'baselinelabel' then call symputx('baselinelabel',cat(', ',strip(label), ','));
                 end;
                 %if %length(&baselinegroupnum.)>0 %then %do;
-                if b then do;
-                    if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
-                end;
+                if b then do; if labeltype = 'grouplabel' then call symputx('grouplabel2',strip(label)); end;
                 %end;
                 %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
-                if c then do;
-                    if labeltype = 'grouplabel' then call symputx('psestimatelabel',label);
-                end;
+                if c then do; if labeltype = 'grouplabel' then call symputx('psestimatelabel',strip(label)); end;
+                if d then do; if labeltype = 'grouplabel' then call symputx('eoilabel',strip(label)); end;
+                if e then do; if labeltype = 'grouplabel' then call symputx('reflabel',strip(label)); end;
                 %end;
                 %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
-                if d then do;
-                    if labeltype = 'grouplabel' then call symputx('switch0grplabel',label);
-                end;
-                if e then do;
-                    if labeltype = 'grouplabel' then call symputx('switch1grplabel',label);
-                end;
+                if f then do; if labeltype = 'grouplabel' then call symputx('switch0grplabel',strip(label)); end;
+                if g then do; if labeltype = 'grouplabel' then call symputx('switch1grplabel',strip(label)); end;
                 %if %eval(&maxswitch=2) %then %do;
-                if f then do;
-                    if labeltype = 'grouplabel' then call symputx('switch2grplabel',label);
-                end;
+                if h then do; if labeltype = 'grouplabel' then call symputx('switch2grplabel',strip(label)); end;
                 %end;
                 %end; ;
             run;
@@ -368,30 +391,43 @@
         %let captionlabel = %bquote(&psestimatelabel.);
         %end;         
 
-        /*Set parameters for %baseline_procreport*/
-            /*Label for Characteristics header*/
-            %if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) >0 %then %do;
-                %let characteristiclabel = Mother;
-            %end;
+        /*Set group labels*/
+           
+        %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
+            %let grp1_label = &grouplabel.;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %let grp1_label = ;
 
-            /*- All tables have grp1
-              - if L2 report or baselinegroupnum is specified, then grp2 is defined
-              - if T6 report, grp2 is defined and grp3 (2nd switch) is optional */
-            %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
-                %let grp1_label = &grouplabel.;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+            %let grp1_label = &switch0grplabel.;
+            %let grp2_label = &switch0grplabel. to &switch1grplabel.;
+            %if %eval(&maxswitch=2) %then %do;
+            %let grp3_label = &switch1grplabel. to &switch2grplabel.;
             %end;
-            %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-                %let grp1_label = ;
+        %end;
+        %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
 
-            %end;
-            %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+        %end;
+        
+        %if %length(&baselinegroupnum.)>0 %then %do;
+            %let grp2_label = &grouplabel2.;
+        %end;
 
-            %end;
-            
-            %if %length(&baselinegroupnum.)>0 %then %do;
-                %let grp2_label = &grouplabel2.;
-            %end;
 
+
+        /*Determine number of columns to optimize formatting*/
+        %let numcolumns = 2;
+        %if &includecomp. = Y %then %do;
+            %let numcolumns = %eval(&numcolumns.+2);
+        %end;
+        %if &computebalance. = Y %then %do;
+            %let numcolumns = %eval(&numcolumns.+2);
+        %end;
+        %if %eval(&maxswitch=2) %then %do;
+            %let numcolumns = %eval(&numcolumns.+2);
+        %end;
 
 
 
@@ -402,12 +438,13 @@
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight = 'Unweighted',
-              title=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+              title=%quote(Table 1&tableletter.. &unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
               dpnum = &dpnum.,
+              numcolumns =&numcolumns.,
               grp1_label=&grp1_label.,
               grp2_label=&grp2_label., 
-              grp3_label=,
+              grp3_label=&grp3_label.,
               computebalance = &computebalance.)
             %end;
 
