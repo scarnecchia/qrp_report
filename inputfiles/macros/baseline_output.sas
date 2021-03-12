@@ -52,8 +52,50 @@
         /*save data to reportdata folder*/
         %isdata(dataset=repdata.table1&tableletter.);
 /*        %if %eval(&nobs.<1) %then %do;*/
+            %let dataset = table1_&periodid.;
+
+            /*if T6 - merge all switchsteps and create new columns*/
+            %if &reporttype. = T6 %then %do;
+                proc sql noprint;
+                    create table table1&tableletter. as
+                    select x.label,
+                           x.grouper,
+                           x.sortorder1, 
+                           x.sortorder2,
+                           x.metvar,
+                           x.analysisgrp,
+                           'Unadjusted' as table,
+                           'Unweighted' as weight,
+                           x.exp_mean&dpnum.,
+                           x.exp_mean&dpnum._char,
+                           x.exp_std&dpnum.,
+                           x.exp_std&dpnum._char,
+                           y.exp_mean&dpnum. as comp_mean&dpnum.,
+                           y.exp_mean&dpnum._char as comp_mean&dpnum._char,
+                           y.exp_std&dpnum. as comp_std&dpnum.,
+                           y.exp_std&dpnum._char as comp_std&dpnum._char,
+                           %if %eval(&maxswitch.=2) %then %do;
+                           z.exp_mean&dpnum. as switch2_mean&dpnum.,
+                           z.exp_mean&dpnum._char as switch2_std&dpnum._char,
+                           z.exp_std&dpnum. as switch2_std&dpnum.,
+                           z.exp_std&dpnum._char as switch2_std&dpnum._char,
+                           %end;
+                           x.order
+                    from table1_&periodid.(where=(order = &order. and table = 'Switchstep_0')) as x
+                    left join table1_&periodid.(where=(order = &order. and table = 'Switchstep_1')) as y
+                    on x.metvar = y.metvar
+                   %if %eval(&maxswitch.=2) %then %do;
+                    left join table1_&periodid.(where=(order = &order. and table = 'Switchstep_2')) as z
+                    on x.metvar = z.metvar
+                   %end;
+                   order by x.sortorder1, x.sortorder2;
+                quit;
+            
+                %let dataset = table1&tableletter.;
+            %end;
+
             data repdata.table1&tableletter.;
-                set table1_&periodid.(where=(order = &order. and table = &table. and weight = &weight.));
+                set &dataset.(where=(order = &order. and table = &table. and weight = &weight.));
 /*                keep label metvar analysisgrp */
 /*                %if &table.=Aggregated %then %do; &grp1_var1. &grp1_var2. */
             run;
@@ -107,7 +149,7 @@
             define metvar / noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
-                           style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
+                           style(header)=[background = lightgrey just=L borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] 
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
@@ -202,14 +244,8 @@
         %if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
         %else %let characteristiclabel = Patient;
         %let grp1_label=;
-        %let grp1_var1=;
-        %let grp1_var2=;
         %let grp2_label=;
-        %let grp2_var1=;
-        %let grp2_var2=;
         %let grp3_label=;
-        %let grp3_var1=;
-        %let grp3_var2=;
 
         data _null_;
             set baselinefile(where=(order=&b.));
@@ -228,9 +264,9 @@
                 %end;
                 if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 
-                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2 or T4L2 or T6 or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
-                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
+                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="T6" | upcase(computebalance)= 'Y' |
                    upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
                    call symputx('includecomp', 'Y');
                 end;
@@ -335,10 +371,10 @@
         %end;
 
         %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
-            %let grp1_label = &switch0group.;
-            %let grp2_label = &switch0group. to &switch1group.;
+            %let switch0grplabel = &switch0group.;
+            %let switch1grplabel = &switch1group.;
             %if %eval(&maxswitch=2) %then %do;
-            %let grp3_label = &switch1group. to &switch2group.;
+            %let switch2grplabel = &switch2group.;
             %end;
         %end;
 
