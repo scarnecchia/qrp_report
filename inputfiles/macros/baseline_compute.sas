@@ -54,8 +54,6 @@
 
 	%put =====> MACRO CALLED: baseline_compute;
 
-    options mprint mlogic symbolgen source2;
-
     /* Create a labels dataset for subgroup header creation */
     data init_labels;
         length label $70 sortorder1 sortorder2 3;
