@@ -186,7 +186,7 @@
 
             /*Indent demographic header lines*/
             compute label;
-              if index(metvar,'_') or prxmatch('/AGE\d/',metvar) > 0 then do;
+              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
             endcomp;
