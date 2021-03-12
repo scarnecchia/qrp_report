@@ -362,7 +362,7 @@
 	    ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
-        %macro baselinecomputemetrics(table=, weight=, dataout=);  
+        %macro baselinecomputemetrics(table=, weight=, dataout=, labelout=);  
          
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
@@ -850,8 +850,10 @@
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
+
             /* Assign necessary variables for labeling */
-            data demo_labels&table.;
+
+            data &labelout;
                 set init_labels;
                 length analysisgrp $40 table weight $30;
                 order=&b;
@@ -867,36 +869,36 @@
         ***********************************************************************************************;
         %let switch_count = 0;
         %if %str("&reporttype") = %str("T6") %then %do;
-		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
+		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
 		%end;
         /*All - unweighted*/
 		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
-          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
+          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels2);
         %end;
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
         %if &psfile. = psmatchfile %then %do;
             %if "&ratio" = "F" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2);
             %end;
             %if "&ratio" = "V" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3);
             %end;
         %end;
 
         /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
         %if &psfile. = stratificationfile %then %do;
             %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
-		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4);
+		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4);
 		    %end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5);
         %end;
 
         /*IPTW - Adjusted cohort - Unweighted and Weighted */
         %if &psfile. = iptwfile %then %do;
 		    %if %eval(&unique_psestimate.) = 1 %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6);
 			%end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7);
         %end;
 
         /*Type 6 switching tables - Switch 1 and Switch 2*/
@@ -906,7 +908,7 @@
             quit;
 
             %do switch_count = 1 %to &switch_counter;
-		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
+		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.), labelout=baseline_labels%eval(7+&switch_count));
             %end;
         %end;
 		
@@ -1243,7 +1245,7 @@
         run;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal demo_labels:;
+            set baseline_aggregatefinal baseline_labels:;
         run;
 
         /*Final sort*/;
