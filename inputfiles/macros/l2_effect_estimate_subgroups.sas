@@ -102,9 +102,9 @@
         %let subgroupvar = Year;
         %let sublabel = Year;
         %if &computecategories. = Y %then %do;
-            %let numsubcat = %eval(&maxqueryyear - &minqueryyear + 1);
+            %let numsubcat = %eval(&&maxyear&periodid. - &minqueryyear + 1);
             %let subcategorization=;
-            %do year = &minqueryyear. %to &maxqueryyear.;
+            %do year = &minqueryyear. %to &&maxyear&periodid.;
                 %let subcategorization = &subcategorization. &year.;
             %end;
             ;
