@@ -55,7 +55,7 @@
 	%put =====> MACRO CALLED: baseline_compute;
 
     /* Create a labels dataset for subgroup header creation */
-    data demo_labels;
+    data init_labels;
         length label $70 sortorder1 sortorder2 3;
         grouper='Demographic Characteristics';
         sortorder2=0;
@@ -612,14 +612,18 @@
 						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0  %then %do;
 						  %let switch_b = %eval(&switch_count.-1);
 						  if metvar = 'N_EPISODES' then do;
-                            if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/&&total_Switchstep_&switch_b._exp_episodes;
+                            if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do;
+                            exp_std0 = exp_mean0/&&total_Switchstep_&switch_b._exp_episodes;
                             exp_std0_char = compress(put(exp_std0,percent10.1));
+                            end;
                             if exp_mean0 > 0 and &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
                             if missing(exp_mean0) then exp_std0_char = '.';
 						    %if "&stratifybydp" = "Y" %then %do;
 						      %do nu_d = 1 %to &num_dp.;
-							    exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+							    if ^missing(exp_mean&nu_d.) and (total_exp_episodes gt 0) then do;
+                                exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
                                 exp_std&nu_d._char = compress(put(exp_std&nu_d.,percent10.1));
+                                end;
                                 if exp_mean&nu_d. > 0 and &&&n_Switchstep_&switch_b._episodes_exp&nu_d. = 0 then exp_std&nu_d._char = 'NaN';
                                 if exp_mean&nu_d. = 0 then exp_std&nu_d._char = '.';
 							  %end;
@@ -847,8 +851,8 @@
             run;
 
             /* Assign necessary variables for labeling */
-            data demo_labels;
-                set demo_labels;
+            data demo_labels&table.;
+                set init_labels;
                 length analysisgrp $40 table weight $30;
                 order=&b;
                 analysisgrp="&analysisgrp.";
@@ -1239,7 +1243,7 @@
         run;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal demo_labels;
+            set baseline_aggregatefinal demo_labels:;
         run;
 
         /*Final sort*/;
