@@ -76,7 +76,7 @@
 
     /* loop through looks */
     %do n = &look_start %to &look_end;
-    %global enddate&n.formatted;
+    %global enddate&n.formatted maxyear&n.;
 
     proc sql noprint;
         select min(startdate) into: minstartdate
@@ -97,6 +97,7 @@
     /*Assign min and max years*/
     %let minqueryyear = %sysfunc(year(&minstartdate.));
     %let maxqueryyear = %sysfunc(year(&enddate.));
+	%let maxyear&n. = %sysfunc(year(&enddate.));
 
     %put study start date = &startdateformatted.;
     %put study end date for period &n = &&enddate&n.formatted.;
