@@ -30,7 +30,7 @@
 %macro baseline_output();
 
     %put =====> MACRO CALLED: baseline_output;
-
+data output.table1_1; set table1_1; run;
     %if %eval(&numbaselinetablegrp.>0) %then %do;
 
     /*********************************************************************************************/
@@ -76,7 +76,7 @@
                            y.exp_std&dpnum._char as comp_std&dpnum._char,
                            %if %eval(&maxswitch.=2) %then %do;
                            z.exp_mean&dpnum. as switch2_mean&dpnum.,
-                           z.exp_mean&dpnum._char as switch2_std&dpnum._char,
+                           z.exp_mean&dpnum._char as switch2_mean&dpnum._char,
                            z.exp_std&dpnum. as switch2_std&dpnum.,
                            z.exp_std&dpnum._char as switch2_std&dpnum._char,
                            %end;
@@ -190,7 +190,6 @@
                 call define(_col_,'style','style={indent=25}');
               end;
             endcomp;
-
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -387,7 +386,7 @@
                         labelfile(in=f where=(group="&switch0group." and runid = "&runid"))
                         labelfile(in=g where=(group="&switch1group." and runid = "&runid"))
                         %if %eval(&maxswitch=2) %then %do;
-                        labelfile(in=fh where=(group="&switch2group." and runid = "&runid"))
+                        labelfile(in=h where=(group="&switch2group." and runid = "&runid"))
                         %end;
                     %end; ;
                 if a then do;
@@ -421,7 +420,6 @@
         %end;         
 
         /*Set group labels*/
-           
         %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = &grouplabel.;
         %end;
@@ -439,12 +437,10 @@
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
 
         %end;
-        
+       
         %if %length(&baselinegroupnum.)>0 %then %do;
             %let grp2_label = &grouplabel2.;
         %end;
-
-
 
         /*Determine number of columns to optimize formatting*/
         %let numcolumns = 2;
@@ -457,8 +453,6 @@
         %if %eval(&maxswitch=2) %then %do;
             %let numcolumns = %eval(&numcolumns.+2);
         %end;
-
-
 
 
 
