@@ -846,7 +846,7 @@
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessart variables for labeling */
+            /* Assign necessary variables for labeling */
             data demo_labels;
                 set demo_labels;
                 length analysisgrp $40 table weight $30;
