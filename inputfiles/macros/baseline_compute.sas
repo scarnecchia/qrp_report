@@ -54,6 +54,29 @@
 
 	%put =====> MACRO CALLED: baseline_compute;
 
+    /* Create a labels dataset for subgroup header creation */
+    data demo_labels;
+        length label $70 sortorder1 sortorder2 3;
+        grouper='Demographic Characteristics';
+        sortorder2=0;
+        sortorder1=3;
+        label='Age categories';
+        output;
+        sortorder1=4;
+        label='Sex';
+        output;
+        sortorder1=5;
+        label='Race categories';
+        output;
+        sortorder1=6;
+        label='Hispanic origin';
+        output;
+        sortorder1=8;
+        label='Year';
+        output;
+    run;
+
+
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
@@ -823,6 +846,16 @@
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
+            /* Assign necessart variables for labeling */
+            data demo_labels;
+                set demo_labels;
+                length analysisgrp $40 table weight $30;
+                order=&b;
+                analysisgrp="&analysisgrp.";
+                table="&table";
+                weight="&weight";
+            run;
+
         %mend baselinecomputemetrics;
 
         ***********************************************************************************************;
@@ -1205,6 +1238,10 @@
             drop agegroup agegroupnum;
         run;
 
+        data baseline_aggregatefinal;
+            set baseline_aggregatefinal demo_labels;
+        run;
+
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
             by table weight sortorder1 sortorder2;
@@ -1223,7 +1260,7 @@
                 set &dataout. baseline_aggregatefinal;
             run;
         %end;
-		
+
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
             delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline _tempcohort;

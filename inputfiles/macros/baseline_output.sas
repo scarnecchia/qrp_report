@@ -184,19 +184,12 @@
               line text $Varying. num; 
             endcomp;
 
-            /*Add Demographic header lines*/
-/*            compute before metvar / style=[background=white color=black just=L];*/
-/*              length text $100;*/
-/*              if index(metvar,'RACE')>0 then do;*/
-/*                text="Race categories";*/
-/*                num=100;*/
-/*              end;*/
-/*              else do; */
-/*                text = "";*/
-/*                num=0;*/
-/*              end;*/
-/*              line text $Varying. num; */
-/*            endcomp;*/
+            /*Indent demographic header lines*/
+            compute label;
+              if index(metvar,'_') or prxmatch('/AGE\d/',metvar) > 0 then do;
+                call define(_col_,'style','style={indent=25}');
+              end;
+            endcomp;
 
 
             /*Add title*/
