@@ -36,7 +36,6 @@ data output.table1_1; set table1_1; run;
     /*********************************************************************************************/
     /*   proc report                                                                             */
     /*********************************************************************************************/  
-
     %macro baseline_procreport(order = ,
                                table = ,
                                weight = ,
@@ -95,20 +94,18 @@ data output.table1_1; set table1_1; run;
             %end;
 
             data repdata.table1&tableletter.;
-                set &dataset.(where=(order = &order. and table = &table. and weight = &weight.));
+                set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
 /*                keep label metvar analysisgrp */
 /*                %if &table.=Aggregated %then %do; &grp1_var1. &grp1_var2. */
             run;
 /*        %end;*/
 
         /*determine optimal report formatting*/
-        %if %eval(&numcolumns.=2) %then %do;
-            %let labelwidth = 3.5;
-            %let width = 1.15;
-            %let linebreak = ;
-            %let headerheight = .3;
-        %end;
-        %else %if %eval(&numcolumns.=4) %then %do;
+        %let labelwidth = 3.5;
+        %let width = 1.15;
+        %let linebreak = ;
+        %let headerheight = .3;
+        %if %eval(&numcolumns.=4) %then %do;
             %let labelwidth = 3;
             %let width = 1.15;
             %let linebreak = ;
@@ -121,6 +118,8 @@ data output.table1_1; set table1_1; run;
             %let headerheight = .45;
         %end;
 
+        %if %length(&pregnancylabel.)>0 %then %let cohortheaderlabel = Cohort;
+        %else %let cohortheaderlabel = Medical Product;
 
         %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
@@ -133,7 +132,7 @@ data output.table1_1; set table1_1; run;
 		    style(report)=[rules=none frame=box cellpadding =1.5pt];
 
             column (metvar grouper label
-                    %if &computebalance. = Y %then %do; ('^S={background=white} Medical Product' %end;
+                    %if &computebalance. = Y %then %do; ("^S={background=white}&cohortheaderlabel." %end;
                     ("^S={background=white borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
                     ("^S={background=white borderleftcolor=white}&grp2_label." comp_mean&dpnum._char comp_std&dpnum._char)
@@ -199,7 +198,6 @@ data output.table1_1; set table1_1; run;
         run;   
     %mend;
 
-
     /*counter for determining table letter*/
     %let tablecount = 1;
 
@@ -246,7 +244,14 @@ data output.table1_1; set table1_1; run;
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
                 call symputx('unique_psestimate',unique_psestimate);
+
+                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+                call symputx('computebalance', 'Y');
+                %end;
+                %else %do;
                 if computebalance = 'Y' then call symputx('computebalance', 'Y');
+                %end;
+
                 %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                 if cohort in ('preg', 'nopreg') then do;
                     if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
@@ -370,6 +375,11 @@ data output.table1_1; set table1_1; run;
             %end;
         %end;
 
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %let eoilabel = &eoi.;
+            %let reflabel = &ref.;
+        %end;
+
         %isdata(dataset=labelfile);
         %if %eval(&nobs.>0) %then %do;
             data _null_;
@@ -379,8 +389,8 @@ data output.table1_1; set table1_1; run;
                     %end; 
                     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
                         labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
-                        labelfile(in=d where=(group="&psestimategrp" and runid = "&runid"))
-                        labelfile(in=e where=(group="&psestimategrp" and runid = "&runid"))
+                        labelfile(in=d where=(group="&eoi" and runid = "&runid"))
+                        labelfile(in=e where=(group="&ref" and runid = "&runid"))
                     %end; 
                     %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
                         labelfile(in=f where=(group="&switch0group." and runid = "&runid"))
@@ -424,8 +434,8 @@ data output.table1_1; set table1_1; run;
             %let grp1_label = &grouplabel.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            %let grp1_label = ;
-
+            %let grp1_label = &eoilabel. ;
+            %let grp2_label = &reflabel. ;
         %end;
         %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = &switch0grplabel.;
@@ -454,21 +464,19 @@ data output.table1_1; set table1_1; run;
             %let numcolumns = %eval(&numcolumns.+2);
         %end;
 
-
-
         /*1 block of code for both aggregate and DP tables*/
         %macro baselinereport(table, dpnum);
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
-             %baseline_procreport(order = &b., table = 'Unadjusted', weight = 'Unweighted',
-              title=%quote(Table 1&tableletter.. &unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
+              title =%quote(Table 1&tableletter.. &unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
               dpnum = &dpnum.,
               numcolumns =&numcolumns.,
               grp1_label=&grp1_label.,
               grp2_label=&grp2_label., 
               grp3_label=&grp3_label.,
-              computebalance = &computebalance.)
+              computebalance = &computebalance.);
             %end;
 
             /*For L2 tables - up to 2 additional adjusted tables*/
@@ -476,13 +484,29 @@ data output.table1_1; set table1_1; run;
                 /*PS Match Adjusted*/
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
-                %baseline_procreport()
+                %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
+                  title =%quote(Table 1&tableletter.. Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  characteristiclabel =&characteristiclabel.,
+                  dpnum = &dpnum.,
+                  numcolumns =&numcolumns.,
+                  grp1_label=&grp1_label.,
+                  grp2_label=&grp2_label., 
+                  grp3_label=&grp3_label.,
+                  computebalance = &computebalance.);
                 %end;
 
                 /*Unweighted - IPTW and PS Stratum*/
                 %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                 %tableletter(); 
-                %baseline_procreport()
+                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
+                  title=%quote(Table 1&tableletter.. Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  characteristiclabel =&characteristiclabel.,
+                  dpnum = &dpnum.,
+                  numcolumns =&numcolumns.,
+                  grp1_label=&grp1_label.,
+                  grp2_label=&grp2_label., 
+                  grp3_label=&grp3_label.,
+                  computebalance = &computebalance.);
                 %end;
 
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
@@ -491,7 +515,15 @@ data output.table1_1; set table1_1; run;
                     %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
                     %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                     %tableletter(); 
-                    %baseline_procreport()
+                    %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
+                      title=%quote(Table 1&tableletter.. Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      characteristiclabel =&characteristiclabel.,
+                      dpnum = &dpnum.,
+                      numcolumns =&numcolumns.,
+                      grp1_label=&grp1_label.,
+                      grp2_label=&grp2_label., 
+                      grp3_label=&grp3_label.,
+                      computebalance = &computebalance.);
                 %end;
             %end; /*Additional L2 tables*/
         %mend;
