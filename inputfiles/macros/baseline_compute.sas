@@ -506,7 +506,6 @@
                         end;
                         if missing(exp_std&i) then exp_std&i._char = '.';
                     end;
-                    if missing(exp_std&i) then exp_std&i._char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
                     comp_std&i._char = compress(put(comp_std&i,percent10.1));
