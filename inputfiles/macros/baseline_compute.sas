@@ -500,9 +500,11 @@
                             exp_std&i._char = ' ';
                         end;
                         else do;
-                            exp_mean&i._char = '.';
-                            exp_std&i._char = '.';
+                            if total_exp_patients gt 0 or total_exp_episodes gt 0 then exp_mean&i._char = '0';
+                            else exp_mean&i._char = '.';
+                            if total_exp_patients = 0 or total_exp_episodes = 0 then exp_std&i._char = '.';
                         end;
+                        if missing(exp_std&i) then exp_std&i._char = '.';
                     end;
                     if missing(exp_std&i) then exp_std&i._char = '.';
                     %if "&includecomp" = "Y" %then %do;
@@ -514,11 +516,12 @@
                             comp_std&i._char = ' ';
                         end;
                         else do;
-                            comp_mean&i._char = '.';
-                            comp_std&i._char = ' ';
+                           if total_comp_patients gt 0 or total_comp_episodes gt 0 then comp_mean&i._char = '0';
+                           else comp_mean&i._char = '.';
+                           if total_comp_patients = 0 or total_comp_episodes = 0 then comp_std&i._char = '.';
                         end;
+                        if missing(comp_std&i) then comp_std&i._char = '.';
                     end;
-                    if missing(comp_std&i) then comp_std&i._char = '.';
                     %end;
                 end;
                 else do;
@@ -549,6 +552,7 @@
                     if exp_mean0 = 0 then do;
                         if metvar in ('N_EPISODES' 'PATIENT') then exp_mean0_char = '0';
                         else exp_mean0_char = '.';
+                        if total_exp_patients gt 0 or total_exp_episodes gt 0 then exp_mean0_char = '0';
                     end;
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
@@ -556,6 +560,7 @@
                     if comp_mean0 = 0 then do;
                         if metvar in ('N_EPISODES' 'PATIENT') then comp_mean0_char = '0';
                         else comp_mean0_char = '.';
+                        if total_comp_patients gt 0 or total_comp_episodes gt 0 then comp_mean0_char = '0';
                     end;
                     %end;
 
@@ -603,7 +608,8 @@
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
                             ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
-                            exp_std0_char = 'N/A';
+                            if metvar = 'PATIENT' then exp_std0_char = 'N/A';
+                            else if metvar = 'N_EPISODES' then exp_std0_char=compress(put(exp_std0,percent10.1));
                             %if "&includecomp" = "Y" %then %do;
                             comp_std0 = 1;
                             comp_std0_char = 'N/A';
@@ -611,6 +617,7 @@
                         %end;
 						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0  %then %do;
 						  %let switch_b = %eval(&switch_count.-1);
+                          if metvar = 'PATIENT' and total_exp_episodes gt 0 then exp_std0_char = 'N/A';
 						  if metvar = 'N_EPISODES' then do;
                             if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do;
                             exp_std0 = exp_mean0/&&total_Switchstep_&switch_b._exp_episodes;
