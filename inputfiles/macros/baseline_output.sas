@@ -286,7 +286,8 @@
                 end;
             end;
         run;
-     
+
+        /*Additional meta-data and group-specific names for each reporttype*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
@@ -335,8 +336,7 @@
             run;
             %end;
         %end;
-
-        %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
+        %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             /*determine maximum switch*/
             proc sql noprint;
                 select max(switchevalstep) into: maxswitch trimmed
@@ -387,6 +387,10 @@
             %let eoilabel = &eoi.;
             %let reflabel = &ref.;
         %end;
+        %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 & &cohort. = mi %then %do;
+            %let eoilabel = &analysisgrp._eoi;
+            %let reflabel = &analysisgrp._ref;
+        %end;
 
         %isdata(dataset=labelfile);
         %if %eval(&nobs.>0) %then %do;
@@ -406,6 +410,10 @@
                         %if %eval(&maxswitch=2) %then %do;
                         labelfile(in=h where=(group="&switch2group." and runid = "&runid"))
                         %end;
+                    %end; 
+                    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 & &cohort. = mi %then %do;
+                        labelfile(in=i where=(group="&analysisgrp._eoi" and runid = "&runid"))
+                        labelfile(in=j where=(group="&analysisgrp._ref" and runid = "&runid"))
                     %end; ;
                 if a then do;
                     if labeltype = 'grouplabel' then call symputx('grouplabel',strip(label));
@@ -414,7 +422,7 @@
                 %if %length(&baselinegroupnum.)>0 %then %do;
                 if b then do; if labeltype = 'grouplabel' then call symputx('grouplabel2',strip(label)); end;
                 %end;
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
+                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
                 if c then do; if labeltype = 'grouplabel' then call symputx('psestimatelabel',strip(label)); end;
                 if d then do; if labeltype = 'grouplabel' then call symputx('eoilabel',strip(label)); end;
                 if e then do; if labeltype = 'grouplabel' then call symputx('reflabel',strip(label)); end;
@@ -425,6 +433,10 @@
                 %if %eval(&maxswitch=2) %then %do;
                 if h then do; if labeltype = 'grouplabel' then call symputx('switch2grplabel',strip(label)); end;
                 %end;
+                %end; 
+                %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 & &cohort. = mi %then %do;
+                if i then do; if labeltype = 'grouplabel' then call symputx('eoilabel',strip(label)); end;
+                if j then do; if labeltype = 'grouplabel' then call symputx('reflabel',strip(label)); end;
                 %end; ;
             run;
         %end;
@@ -439,25 +451,39 @@
 
         /*Set group labels*/
         %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
-            %let grp1_label = &grouplabel.;
+            %let grp1_label = %bquote(&grouplabel.);
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            %let grp1_label = &eoilabel. ;
-            %let grp2_label = &reflabel. ;
+            %let grp1_label = %bquote(&eoilabel.);
+            %let grp2_label = %bquote(&reflabel.);
         %end;
         %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
-            %let grp1_label = &switch0grplabel.;
-            %let grp2_label = &switch0grplabel. to &switch1grplabel.;
+            %let grp1_label = %bquote(&switch0grplabel.);
+            %let grp2_label = %bquote(&switch0grplabel. to &switch1grplabel.);
             %if %eval(&maxswitch=2) %then %do;
-            %let grp3_label = &switch1grplabel. to &switch2grplabel.;
+            %let grp3_label = %bquote(&switch1grplabel. to &switch2grplabel.);
             %end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-
+            %if &cohort = mi %then %do;
+                /*MI exposure and reference cohorts*/
+                %let grp1_label = %bquote(&eoilabel.);
+                %let grp2_label = %bquote(&reflabel.);
+            %end;
+            %else %do;
+                /*Pregnant and non-pregnant cohorts*/
+                %let grp1_label = %bquote(&grouplabel. Pregnancy Cohort);
+                %if &includenonpregnant. = Y %then %do;
+                %let grp2_label = %bquote(&grouplabel. Non-Pregnancy Cohort);
+                %end;
+            %end;
         %end;
        
         %if %length(&baselinegroupnum.)>0 %then %do;
-            %let grp2_label = &grouplabel2.;
+            %let grp2_label = %bquote(&grouplabel2.);
+            %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+            %let grp2_label = %bquote(&grouplabel2. Pregnancy Cohort);
+            %end;
         %end;
 
         /*Determine number of columns to optimize formatting*/
