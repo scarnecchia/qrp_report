@@ -30,7 +30,7 @@
 %macro baseline_output();
 
     %put =====> MACRO CALLED: baseline_output;
-data output.table1_1; set table1_1; run;
+
     %if %eval(&numbaselinetablegrp.>0) %then %do;
 
     /*********************************************************************************************/
@@ -150,23 +150,28 @@ data output.table1_1; set table1_1; run;
             define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = lightgrey just=L borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
 
-            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] 
+            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
-            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in] 
+            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
-          
             %if &includecomp. = Y %then %do;
-            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define comp_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define comp_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
-            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define switch2_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define switch2_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
-            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt.] style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in] style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string"]
+                            style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines*/
