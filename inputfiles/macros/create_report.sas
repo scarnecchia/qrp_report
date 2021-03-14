@@ -123,11 +123,6 @@
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt);
     %end;
 
-
-    /*Create PDF and Excel templates*/
-
-    /*driver macro*/
-
 ***************************************************************************************************;
 *   Clean Work                                                                                 
 ***************************************************************************************************;
