@@ -197,7 +197,7 @@
 
             proc sql noprint;    
                 create table covarname_&runid. as 
-                select distinct covarnum, studyname, "&runid" as runid length=5
+                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
                 from infolder.&&&runid._covariatecodes.;
 
                	select length
