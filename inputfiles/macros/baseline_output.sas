@@ -50,7 +50,7 @@
 
         /*save data to reportdata folder*/
         %isdata(dataset=repdata.table1&tableletter.);
-/*        %if %eval(&nobs.<1) %then %do;*/
+        %if %eval(&nobs.<1) %then %do;
             %let dataset = table1_&periodid.;
 
             /*if T6 - merge all switchsteps and create new columns*/
@@ -95,10 +95,13 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
-/*                keep label metvar analysisgrp */
-/*                %if &table.=Aggregated %then %do; &grp1_var1. &grp1_var2. */
+                keep label grouper metvar analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
+                %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
+                %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
+                %if &computebalance. = Y %then %do; ad&dpnum.: sd&dpnum.: %end;
+                ;
             run;
-/*        %end;*/
+        %end;
 
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
