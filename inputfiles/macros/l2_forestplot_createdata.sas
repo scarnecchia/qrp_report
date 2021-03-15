@@ -380,6 +380,7 @@
                 %do agefmtcount = 1 %to %sysfunc(countw(&AGESTRAT,=));
                   %let agelabel = %scan(&AGESTRAT,&agefmtcount,=);
                 if subgroupcat = "&agelabel" then title = put("&agelabel",$agefmt.);
+                sort3 = &agefmtcount;
                 %end;
               end;
               else if covarnum = 1003 then do;
