@@ -77,7 +77,7 @@
     ods proclabel = "Table of Contents";
 
     proc report data = tableofcontents nofs nowd headline headskip split="*" 
-	    style(report) = {rules = none frame = box borderwidth =1pt bordercolor = black};           
+	    style(report) = {rules = none frame = box borderwidth =1pt bordercolor = black cellpadding=1.75pt};           
         columns ( "Table of Contents" tabnum caption);            
         define tabnum / order=data ' ' style(column)=[just=R width=1.1in fontweight=bold textdecoration=underline];
         define caption / order=data  ' ' style(column)=[just=L];
