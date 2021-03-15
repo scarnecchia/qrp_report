@@ -70,7 +70,8 @@
 ***************************************************************************************************;
 * Table of Contents                                            
 ***************************************************************************************************;  
-    ods excel options(sheet_name="Table of Contents");
+    ods excel options(sheet_name="Table of Contents"
+	                  tab_color = "orange");
     ods proclabel = "Table of Contents";
 
     proc report data = tableofcontents nofs nowd headline headskip split="*";           
