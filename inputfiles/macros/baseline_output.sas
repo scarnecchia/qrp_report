@@ -499,7 +499,7 @@
         %end;
 
         /*1 block of code for both aggregate and DP tables*/
-        %macro baselinereport(table, dpnum);
+        %macro baselinereport(table=, dpnum=);
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
@@ -565,14 +565,14 @@
         /*loop through each periodid*/
         %do periodid = %eval(&look_start.) %to %eval(&look_end.);
             /*Aggregated*/
-            %baselinereport(Aggregated, 0);
+            %baselinereport(table=Aggregated,dpnum=0);
    
             /*Output seperate table for each Data Partner - loop through each DP*/
             %if &stratifybydp. = Y %then %do;    
                 %do dps = 1 %to %eval(&num_dp.);
         	        %let maskedID = %scan(&masked_dplist,&dps); 
                     %if %eval(&unique_psestimate.) = 1 %then %do;
-                        %baselinereport(&maskedid., &dps.);
+                        %baselinereport(table=&maskedid.,dpnum=&dps.);
                     %end;
                 %end;
             %end; /*DP stratification*/
