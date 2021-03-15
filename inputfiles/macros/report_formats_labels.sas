@@ -120,6 +120,7 @@
 		drop nwordsvar nwords;
     run;
 
+    %global AGESTRAT;
 	proc sql noprint;
       select distinct label_fmt into: AGESTRAT  separated by ' '    
       from _agefmt;
@@ -178,6 +179,76 @@
         "Y"   = 1
         "N"   = 2
         "U"   = 3;
+
+        /* Delivery Status format */
+        value $deliveryfmt
+        "PRE" = "Pre-Term (0-258 days)"
+        "TERM" = "Term (259-280 days)"
+        "POST" = "Post-Term (281-301 days)"
+        "NONE" = "Unknown Term";
+
+        value $deliverysort
+        "PRE" = 1
+        "TERM" = 2
+        "POST" = 3
+        "NONE" = 4;
+
+        /* Birth Type format */
+        value $birthtypefmt
+        "0" = "Unspecified # of live births"
+        "1" = "1 live birth"
+        "2" = "2 live births"
+        "3" = "3 live births"
+        "4" = "4 live births"
+        "5" = "5 live births"
+        "8" = "Multiple live births, unspecified number"
+        "9" = "Conflicting code(s) for number of live births";
+
+        value $birthtypesort
+        "0" = 1
+        "1" = 2
+        "2" = 3
+        "3" = 4
+        "4" = 5
+        "5" = 6
+        "8" = 7
+        "9" = 8;
+
+        /* Match method format */
+        value $matchfmt
+        "BC" = "Birth Certificate"
+        "RE" = "Birth Registry"
+        "SI" = "Health plan subscriber or family number"
+        "LA" = "Exact or probabilistic last name and address match based upon health plan administrative data"
+        "OT" = "Other"
+        "N1" = "No subscriber/family IDs available for linkage"
+        "N2" = "No name/address available for linkage"
+        "N3" = "Neither subscriber/family IDs nor name/address available for linkage"
+        "NA" = "No linkage made; any other reasons";
+
+        value $matchsort
+        "BC" = 1
+        "RE" = 2
+        "LA" = 3
+        "SI" = 4
+        "N3" = 5
+        "NA" = 6
+        "N2" = 7
+        "N1" = 8
+        "OT" = 9;
+
+        /* Time format */
+        value $timefmt
+        %do n = &look_start %to &look_end;
+        "&n" = "&startdateformatted to &&enddate&n.formatted"
+        %end;
+        ;
+
+        value $timesort
+        %do n = &look_start %to &look_end;
+        "&n" = &n
+        %end;
+        ;
     run;
 
 
