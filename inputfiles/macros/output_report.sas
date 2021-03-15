@@ -70,13 +70,16 @@
 ***************************************************************************************************;
 * Table of Contents                                            
 ***************************************************************************************************;  
+    %if &destination. = excel %then %do;
     ods excel options(sheet_name="Table of Contents"
 	                  tab_color = "orange");
+	%end;
     ods proclabel = "Table of Contents";
 
-    proc report data = tableofcontents nofs nowd headline headskip split="*";           
+    proc report data = tableofcontents nofs nowd headline headskip split="*" 
+	    style(report) = {rules = none frame = box borderwidth =1pt bordercolor = black};           
         columns ( "Table of Contents" tabnum caption);            
-        define tabnum / order=data ' ' style(column)=[just=R width=.7in fontweight=bold textdecoration=underline];
+        define tabnum / order=data ' ' style(column)=[just=R width=1.1in fontweight=bold textdecoration=underline];
         define caption / order=data  ' ' style(column)=[just=L];
     run;
 
