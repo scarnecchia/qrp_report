@@ -120,7 +120,6 @@
 		drop nwordsvar nwords;
     run;
 
-    %global AGESTRAT;
 	proc sql noprint;
       select distinct label_fmt into: AGESTRAT  separated by ' '    
       from _agefmt;
