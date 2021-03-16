@@ -160,13 +160,13 @@
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define comp_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define switch2_std&dpnum._char / display "Percent/^n Standard Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
