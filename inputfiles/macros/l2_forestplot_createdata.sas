@@ -42,7 +42,7 @@
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
         left join agefmtsort e
-        on a.medicalproduct = e.cohortgrp
+        on a.medicalproduct = e.cohortgrp and b.runid = e.runid
         where b.outputforestplot = 'Y';
       quit;
 
