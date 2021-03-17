@@ -93,7 +93,7 @@
     %let label_length = 250;
 
     /*Age stratification format */
-    %global agestrat;
+    %global agefmt;
 
     /*Output counter variables*/
     %global tableletter tablecount;

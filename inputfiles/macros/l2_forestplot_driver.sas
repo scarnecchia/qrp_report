@@ -186,7 +186,8 @@
 
                     proc format;
                         value $ grpuni
-                        &footnoteformat.;
+                        &footnoteformat.
+                        &agefmt.;
                     run;
                 %end; /*Create footnote format*/
 

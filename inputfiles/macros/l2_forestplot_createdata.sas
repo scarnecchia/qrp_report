@@ -227,8 +227,14 @@
               end;
               /*covarnum 1-999 = covariates*/
               else if covarnum >=1 and covarnum <=999 then do;
-                  if subgroupcat = '0' then title = catx(' ','No', covarlabel);
-                  if subgroupcat = '1' then title = covarlabel;
+                  if subgroupcat = '0' then do;
+                  title = catx(' ','No', covarlabel);
+                  sort3=0;
+                  end;
+                  if subgroupcat = '1' then do;
+                  title = covarlabel;
+                  sort3=1;
+                  end;
               end;
               /*covarnum 1000 = Sex*/
               else if covarnum = 1000 then do;
@@ -260,20 +266,17 @@
                   title = put(subgroupcat,$birthtypefmt.);
                   sort3 = put(subgroupcat,$birthtypesort.);
               end;
+              /*covarnum 1001 = Age Groups*/
               else if covarnum = 1001 then do;
-                %do agefmtcount = 1 %to %sysfunc(countw(&AGESTRAT,=));
-                  %let agelabel = %scan(&AGESTRAT,&agefmtcount,=);
-                if subgroupcat = "&agelabel" then title = put("&agelabel",$agefmt.);
-                sort3 = &agefmtcount;
-                %end;
+                  title = subgroupcat;
+                  sort3 = put(subgroupcat,$agesort.);
               end;
+              /*covarnum 1003 = Time*/
               else if covarnum = 1003 then do;
                   title = put(subgroupcat,$timefmt.);
                   sort3 = put(subgroupcat,$timesort.);
               end;
-              /*covarnum 1001 = Age Groups*/
               /*covarnum 1002 = Year*/
-              /*covarnum 1003 = Time*/
               /*covarnum 9000 = By Data Partner*/
               else if covarnum in (1002, 9000) then do; 
                 title = subgroupcat; 
@@ -366,6 +369,10 @@
                                                                                  LCL UCL id file
                                                                                  );
       by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2 sort3;
+      run;
+
+      data output.forest_&periodid;
+        set forest_&periodid.;
       run;
       
       proc datasets nowarn noprint lib=work;

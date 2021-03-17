@@ -22,6 +22,16 @@
 *   -racesort
 *   -hispanicfmt
 *   -hispanicsort
+*   -deliveryfmt
+*   -deliverysort
+*   -birthtypefmt
+*   -birthtypesort
+*   -matchfmt
+*   -matchsort
+*   -timefmt
+*   -timesort
+*
+*
 *
 *  PARAMETERS:                                                                       
 *            
@@ -44,7 +54,7 @@
 ***************************************************************************************************/
 
     /* Age Format*/
-    data _agefmt(keep=label_fmt)
+    data _agefmt(keep=label_fmt sort_fmt)
          agefmtsort(keep=var count cohortgrp runid rename=var=agegroup rename=count=agegroupnum);
 		set master_cohortfile (keep=agestrat cohortgrp runid);
 		if missing(agestrat) then agestrat ="00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+";
@@ -86,7 +96,7 @@
 				start=tranwrd(start,'Y',' years');
 				start=tranwrd(start,'Q',' quarters');
 				start=tranwrd(start,'D',' days');	
-				formatAge=strip('^{unicode "2265"x} ')||""||strip(start);
+				formatAge=strip("(*ESC*){unicode '2265'x} ")||""||strip(start);
 			end;
 			else do;
 			 *if missing period = years;
@@ -113,7 +123,8 @@
 					formatAge=strip(end);	
 				end;
 			end;
-			label_fmt="'"||strip(var2)||"'='"||strip(formatAge)||"'";
+			label_fmt='"'||strip(var2)||'"="'||strip(formatAge)||'"';
+            sort_fmt="'"||strip(var2)||"'="||strip(count);
 			output _agefmt;
             output agefmtsort; 
 		end;
@@ -121,11 +132,15 @@
     run;
 
 	proc sql noprint;
-      select distinct label_fmt into: AGESTRAT  separated by ' '    
+      select distinct label_fmt into: AGEFMT  separated by ' '    
+      from _agefmt;
+      select distinct sort_fmt into: AGEORDER separated by ' '
       from _agefmt;
     quit; 
 
-	%put &=AGESTRAT;
+	%put &=AGEFMT;
+
+    %put &=AGEORDER;
 
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
@@ -138,7 +153,10 @@
 
         /*Age Format*/
         value $agefmt
-        &AGESTRAT.;
+        &AGEFMT.;
+
+        value $agesort
+        &AGEORDER.;
 
         /*Sex Format*/
         value $sexfmt
