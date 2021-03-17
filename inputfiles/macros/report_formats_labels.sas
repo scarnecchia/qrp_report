@@ -54,7 +54,7 @@
 ***************************************************************************************************/
 
     /* Age Format*/
-    data _agefmt(keep=label_fmt sort_fmt)
+    data _agefmt(keep=label_fmt)
          agefmtsort(keep=var count cohortgrp runid rename=var=agegroup rename=count=agegroupnum);
 		set master_cohortfile (keep=agestrat cohortgrp runid);
 		if missing(agestrat) then agestrat ="00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+";
@@ -124,7 +124,6 @@
 				end;
 			end;
 			label_fmt='"'||strip(var2)||'"="'||strip(formatAge)||'"';
-            sort_fmt="'"||strip(var2)||"'="||strip(count);
 			output _agefmt;
             output agefmtsort; 
 		end;
@@ -134,13 +133,9 @@
 	proc sql noprint;
       select distinct label_fmt into: AGEFMT  separated by ' '    
       from _agefmt;
-      select distinct sort_fmt into: AGEORDER separated by ' '
-      from _agefmt;
     quit; 
 
 	%put &=AGEFMT;
-
-    %put &=AGEORDER;
 
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
@@ -154,9 +149,6 @@
         /*Age Format*/
         value $agefmt
         &AGEFMT.;
-
-        value $agesort
-        &AGEORDER.;
 
         /*Sex Format*/
         value $sexfmt

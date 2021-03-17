@@ -31,7 +31,7 @@
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
+        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
@@ -41,6 +41,8 @@
           on c.analysisgrp = d.analysisgrp
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
+        left join agefmtsort e
+        on a.medicalproduct = e.cohortgrp
         where b.outputforestplot = 'Y';
       quit;
 
@@ -68,6 +70,7 @@
                  est.ceiling,
                  est.caliper,
                  est.ratio,
+                 est.agegroupnum,
                  %if %eval(&nobs.>0) %then %do;
                  cov.studyname as covarlabel
                  %end;
@@ -114,6 +117,7 @@
                  est.ceiling,
                  est.caliper,
                  est.ratio,
+                 est.agegroupnum,
                  %if %eval(&nobs.>0) %then %do;
                  cov.studyname as covarlabel
                  %end;
@@ -261,7 +265,7 @@
               /*covarnum 1001 = Age Groups*/
               else if covarnum = 1001 then do;
                   title = subgroupcat;
-                  sort3 = put(subgroupcat,$agesort.);
+                  sort3 = agegroupnum;
               end;
               /*covarnum 1003 = Time*/
               else if covarnum = 1003 then do;
