@@ -154,6 +154,7 @@
           label='';
           %end;
           /*Assign labels*/
+          sort3 = 0;
           if id1 then do;
               id = 2;
               /*covarnum 0 = Overall - apply analysisgrp label*/
@@ -161,61 +162,51 @@
                   id = 1;
                   if missing(label) then title=analysisgrp;
                   else title=label;
+                  sort3 = -2;
               end;
               /*covarnum 1000 = Sex*/
               else if covarnum = 1000 then do;
                   title = 'Sex';
-                  sort3 = 0;
               end;
               /*covarnum 1-999 = covariates*/
               else if covarnum >=1 and covarnum <=999 then do;
                   title = covarlabel;
-                  sort3 = 0;
               end;
               /*covarnum 1001 = Age Group*/
               else if covarnum = 1001 then do;
                   title = 'Age Group';
-                  sort3 = 0;
               end;
               /*covarnum 1002 = Year*/
               else if covarnum = 1002 then do;
                   title = 'Year';
-                  sort3 = 0;
               end;
               /*covarnum 1003 = Time*/
               else if covarnum = 1003 then do;
                   title = 'Monitoring Period';
-                  sort3 = 0;
               end;
               /*covarnum 1012 = Race*/
               else if covarnum = 1012 then do;
                   title = 'Race';
-                  sort3 = 0;
               end;
               /*covarnum 1013 = Hispanic*/
               else if covarnum = 1013 then do;
                   title = 'Hispanic Origin';
-                  sort3 = 0;
               end;
               /*covarnum 1014 = Pre-Post indicator*/
               else if covarnum = 1014 then do;
                   title = 'Delivery Status';
-                  sort3 = 0;
               end;
               /*covarnum 2000 = Match Method*/
               else if covarnum = 2000 then do;
                   title = 'Match Method';
-                  sort3 = 0;
               end;
               /*covarnum 2001 = Birth Type*/
               else if covarnum = 2001 then do;
                   title = 'Birth Type';
-                  sort3 = 0;
               end;
               /*covarnum 9000 = By Data Parnter*/
               else if covarnum = 9000 then do;
                   title = 'Data Partner';
-                  sort3 = 0;
               end;
           end;
           if id2 then do;
@@ -224,6 +215,7 @@
               if covarnum = 0 then do;
                   id = 2;
                   title = "Overall";
+                  sort3= -1;
               end;
               /*covarnum 1-999 = covariates*/
               else if covarnum >=1 and covarnum <=999 then do;
