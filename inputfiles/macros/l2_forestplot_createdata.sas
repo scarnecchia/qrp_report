@@ -370,10 +370,6 @@
                                                                                  );
       by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2 sort3;
       run;
-
-      data output.forest_&periodid;
-        set forest_&periodid.;
-      run;
       
       proc datasets nowarn noprint lib=work;
         delete id_: forest_l2_effectestimates_&periodid.;

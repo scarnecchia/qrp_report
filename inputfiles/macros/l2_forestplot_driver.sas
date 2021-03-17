@@ -191,6 +191,13 @@
                     run;
                 %end; /*Create footnote format*/
 
+                %if &forestfootnote = N %then %do;
+                proc format;
+                    value $ grpuni
+                    &agefmt.;
+                run;
+                %end;
+
                 ods startpage=now;
 
                 /*Trick excel to create new sheet*/
@@ -222,9 +229,7 @@
 
                 proc sgrender data=forest template=forestAxisTable;
                 dynamic _headerColor='cxd0d0d0';
-                %if &forestfootnote = Y %then %do;
                 format title $grpuni.;
-                %end;
                 run;
 
                 %if "&forestnohrfootnote" = "Y" %then %do;
