@@ -577,9 +577,9 @@
                     %end;
 
                     /*initialize to 0*/
-                    exp_std0 = 1;
+                    exp_std0 = 0;
                     %if "&includecomp" = "Y" %then %do;
-                    comp_std0 = 1;
+                    comp_std0 = 0;
                     %end;
 
                     ** Calculate aggregated percent: 
@@ -604,7 +604,7 @@
                         comp_std0_char=compress(put(comp_std0,percent10.1)); 
                         if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0 = 0 then do;
-                            if total_comp_patients = 0 or total_comp_episodes = 0;
+                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
                             comp_mean0_char = '.';
                             comp_std0_char = '.';
                             end;
@@ -612,8 +612,8 @@
                         %end;
                     end;
                     if metvar in ('N_EPISODES', 'PATIENT') then do;
-                        exp_std0 = 0;
-                        comp_std0 = 0;
+                        exp_std0 = .;
+                        comp_std0 = .;
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
                             ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
@@ -686,7 +686,7 @@
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_exp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
-                            if total_exp_patients or total_comp_episodes = 0 then do;
+                            if total_exp_patients = 0 or total_comp_episodes = 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
                             end;
@@ -696,7 +696,7 @@
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
-                            ad0 = (100*(exp_mean0/agg_exp_w)) - (100*(comp_mean0/agg_comp_w)) ;
+                            ad0 = exp_mean0/agg_exp_w - comp_mean0/agg_comp_w;
                             ad0_char=compress(put(ad0,8.3));
 
                             /*standardized difference*/
@@ -735,6 +735,7 @@
                             comp_mean&i. = round(comp_mean&i., 1);
                         %end;
                     %end;
+                end;
 
                 /*Aggregate continuous variables*/
                 if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
