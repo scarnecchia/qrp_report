@@ -31,7 +31,7 @@
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum
+        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum, f.groupname
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
@@ -41,9 +41,17 @@
           on c.analysisgrp = d.analysisgrp
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
+        %if &reporttype = T2L2 %then %do;
         left join agefmtsort e
         on a.medicalproduct = e.cohortgrp and b.runid = e.runid
         where b.outputforestplot = 'Y';
+        %end;
+        %else %do;
+        left join micohortfile f
+        on scan(a.medicalproduct,1,'_') = f.milgrp
+        left join agefmtsort e 
+        on e.cohortgrp = f.groupname;
+        %end;
       quit;
 
       /* Check to see if covariates file exists */
