@@ -128,6 +128,7 @@
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
         %let linebreak = ; /*reset line break and headerheight*/
         %let headerheight = .3;
+        %if %eval(&numcolumns.=6) %then %let width = .9;
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
