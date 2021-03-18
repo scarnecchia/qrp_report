@@ -543,9 +543,9 @@
                     %end;
                 end;
                 else do;
-                    if exp_mean&i = 0 then exp_std&i = 'NaN';
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
+                    if exp_mean&i = 0 and exp_std&i = 0 then exp_mean&i._char = '.';
                     if missing(exp_std&i) or exp_std&i = 0 then exp_std&i._char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if missing(comp_mean&i) then comp_mean&i = 0;
@@ -665,7 +665,10 @@
                         %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
                         if metvar = 'PATIENT' then exp_std0_char = 'N/A';
-                        if metvar = 'N_EPISODES' then exp_std0_char = compress(put(exp_std0,percent10.1));
+                        if metvar = 'N_EPISODES' then do;
+                            exp_std0_char = compress(put(exp_std0,percent10.1));
+                            if missing(exp_std0) then exp_std0_char = 'NaN';
+                        end;
                         %end;
                     end;
                     else do;
