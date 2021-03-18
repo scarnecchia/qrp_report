@@ -589,7 +589,7 @@
                             - L1: do not fill in %, 
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
-                    if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
+                    if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                         if ^missing(exp_mean0)  and (total_exp_patients gt 0) then exp_std0 = exp_mean0/total_exp_patients;
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
                         if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
@@ -611,7 +611,7 @@
                         end;
                         %end;
                     end;
-                    if metvar in ('N_EPISODES', 'PATIENT') then do;
+                    else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
