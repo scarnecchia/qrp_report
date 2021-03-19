@@ -39,7 +39,7 @@
 
     /*clear work and output*/
     proc datasets nowarn nolist lib=work kill; quit;
-    proc datasets nowarn nolist lib=output kill; quit;
+    proc datasets nowarn nolist lib=repdata kill; quit;
 
     /*Initialize global macro variables*/
     %initialize_macro_variables();
@@ -90,6 +90,20 @@
     %end;
 
 ***************************************************************************************************;
+*   PS Histograms for Reporttype = T2L2 and T4L2                                              
+***************************************************************************************************;
+
+    %if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
+		%do periodid = %eval(&look_start.) %to %eval(&look_end.);
+			%l2_psdistribution_createdata;
+
+			proc datasets nowarn noprint lib=work;
+			delete hist: bins;
+			quit;
+		%end;
+	%end;
+
+***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
 
@@ -123,16 +137,11 @@
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt);
     %end;
 
-
-    /*Create PDF and Excel templates*/
-
-    /*driver macro*/
-
 ***************************************************************************************************;
 *   Clean Work                                                                                 
 ***************************************************************************************************;
 
-    proc datasets nowarn nolist lib=work kill; quit;
+   /* proc datasets nowarn nolist lib=work kill; quit;*/
 
     /* End log */
     proc printto;
