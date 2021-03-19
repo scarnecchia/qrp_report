@@ -708,6 +708,7 @@
                             if missing(exp_std0) then exp_std0_char = 'NaN';
                         end;
                         end;
+                        %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then do;
                         comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;   
                         if metvar = 'PATIENT' then comp_std0_char = 'N/A';
@@ -716,6 +717,7 @@
                             if missing(comp_std0) then comp_std0_char = 'NaN';
                         end;
                         end;
+                        %end;
                         %end;
                     end;
                     else do;
