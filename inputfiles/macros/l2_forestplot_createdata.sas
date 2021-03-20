@@ -28,10 +28,15 @@
 
 %macro l2_forestplot_createdata;
 
+      data _null_;
+        set l2comparisonfile;
+        call symputx('runid', runid);
+      run;
+
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum, f.groupname
+        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum 
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
@@ -44,14 +49,14 @@
         %if &reporttype = T2L2 %then %do;
         left join agefmtsort e
         on a.medicalproduct = e.cohortgrp and b.runid = e.runid
-        where b.outputforestplot = 'Y';
         %end;
         %else %do;
-        left join micohortfile f
+        left join infolder.&&&runid._micohortfile f
         on scan(a.medicalproduct,1,'_') = f.milgrp
         left join agefmtsort e 
-        on e.cohortgrp = f.groupname;
+        on e.cohortgrp = f.groupname and b.runid = e.runid
         %end;
+        where b.outputforestplot = 'Y';
       quit;
 
       /* Check to see if covariates file exists */
@@ -259,6 +264,7 @@
               else if covarnum = 1014 then do;
                   title = put(subgroupcat,$deliveryfmt.);
                   sort3 = put(subgroupcat,$deliverysort.);
+                  sort3=catnum;
               end;
               /*covarnum 2000 = Match Method*/
               else if covarnum = 2000 then do;
