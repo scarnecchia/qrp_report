@@ -28,15 +28,10 @@
 
 %macro l2_forestplot_createdata;
 
-      data _null_;
-        set l2comparisonfile;
-        call symputx('runid', runid);
-      run;
-
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot, e.agegroupnum 
+        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
@@ -46,17 +41,26 @@
           on c.analysisgrp = d.analysisgrp
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
+        where b.outputforestplot = 'Y';
+
+        select runid into :runid trimmed
+        from forest_l2_effectestimates_&periodid.;
+
+        /* Link agegroupnum for T2/T4 */
+        create table forest_l2_effectestimates_&periodid. as
+        select a.*, b.agegroupnum
+        from forest_l2_effectestimates_&periodid. a
         %if &reporttype = T2L2 %then %do;
-        left join agefmtsort e
-        on a.medicalproduct = e.cohortgrp and b.runid = e.runid
+        left join agefmtsort b
+        on a.medicalproduct = b.cohortgrp and a.runid = b.runid
         %end;
         %else %do;
-        left join infolder.&&&runid._micohortfile f
-        on scan(a.medicalproduct,1,'_') = f.milgrp
-        left join agefmtsort e 
-        on e.cohortgrp = f.groupname and b.runid = e.runid
+        left join infolder.&&&runid._micohortfile c
+        on scan(a.medicalproduct,1,'_') = c.milgrp
+        left join agefmtsort b 
+        on b.cohortgrp = c.groupname and a.runid = b.runid
         %end;
-        where b.outputforestplot = 'Y';
+        ;
       quit;
 
       /* Check to see if covariates file exists */
