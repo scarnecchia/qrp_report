@@ -564,7 +564,8 @@
                     if missing(comp_mean&i) then comp_mean&i = 0;
                     comp_mean&i._char = compress(put(comp_mean&i,8.1));
                     comp_std&i._char = compress(put(comp_std&i,8.1));
-                    if missing(comp_std&i) then comp_std&i._char = 'NaN';
+                    if comp_mean&i = 0 and comp_std&i = 0 then comp_mean&i._char = '.';
+                    if missing(comp_std&i) or comp_std&i = 0 then comp_std&i._char = '.';
                     %end;
                 end;
                 %end;
@@ -690,13 +691,14 @@
                           exp_std0_char = compress(put(exp_std0,percent10.1));
                           end;
                           if exp_mean0 > 0 and &total_unadjusted_exp_episodes. = 0 then exp_std0_char = 'NaN';
-                          if missing(exp_mean0) then exp_std0_char = 'NaN';
-                          if missing(exp_std0) then exp_std0_char = 'NaN';
+                          if missing(exp_mean0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
+                          if missing(exp_std0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
                           %if "&includecomp" = "Y" %then %do;
                             if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;
                             comp_std0_char = compress(put(comp_std0,percent10.1));
                             if comp_mean0 > 0 and &total_unadjusted_comp_episodes. = 0 then comp_std0_char = 'NaN';
-                            if missing(comp_mean0) then comp_std0_char = 'NaN';
+                            if missing(comp_mean0) or comp_mean0 = 0 then comp_std0_char = 'NaN';
+                            if missing(comp_std0) or comp_std0 = 0 then comp_std0_char = 'NaN';
                           %end;
 						%end;
                         %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
@@ -765,7 +767,11 @@
                             if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = ((a-b) / c);
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
-                            if sd0_char = '.' then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0  then sd0_char = 'NaN';
                         end;
                         else do;
                         ad0=.;
@@ -879,13 +885,21 @@
                             if (^missing(a)) AND (c>0) then sd0 = a/c;
                             else sd0 = .;
                             sd0_char = compress(put(sd0,8.3));
-                            if sd0_char = '.' then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
                         %end;
                         %else %do; /*unweighted SD*/
                             if (exp_std0 > 0) AND (comp_std0 > 0) then sd0 = (exp_mean0 - comp_mean0)/(sqrt((exp_std0*exp_std0 + comp_std0*comp_std0)/2));
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
-                            if sd0_char = '.' then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
                         %end;
                     %end;
                     drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
@@ -898,8 +912,17 @@
                         sd&i._char = strip(compress(put(sd&i., 8.3)));
                 
                         if metvar ne 'MAHALANOBIS' then do;
-                          if ad&i._char = '.' then ad&i._char = 'NaN';
-                          if sd&i._char = '.' then sd&i._char = 'NaN';
+                          if exp_mean&i >= 0 and ad&i. = 0 then sd&i._char = 'NaN';
+                          if metvar = 'N_EPISODES' then do;
+                                ad&i._char = 'NaN';
+                                sd&i._char = 'NaN';
+                          end;
+                          else do;
+                          if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
+                                ad&i._char = '.';
+                                sd&i._char = '.';
+                          end;
+                          end;
                         end;
                     %end;
                 %end;
@@ -926,8 +949,8 @@
                         comp_std0_char = '.';
                         ad0 = .;
                         sd0 = .;
-                        ad0_char = 'NaN';
-                        sd0_char = 'NaN';
+                        ad0_char = '.';
+                        sd0_char = '.';
                     end;
                 %end;
 				/*Removing FOLLOWUPTIME/EVENT rows*/
