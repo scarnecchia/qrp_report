@@ -546,7 +546,7 @@
                         end;
                     end;
                     else do;
-                        if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        if missing(comp_mean&i) or comp_mean&i = 0 then do;						
                             if total_comp_patients = 0 then do; 
                             comp_mean&i._char = '.';
                             comp_std&i._char = '.';
@@ -559,13 +559,13 @@
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
                     if exp_mean&i = 0 and exp_std&i = 0 then exp_mean&i._char = '.';
-                    if missing(exp_std&i) or exp_std&i = 0 then exp_std&i._char = '.';
+                    if missing(exp_std&i) or exp_std&i = 0 then exp_std&i._char = 'NaN';
                     %if "&includecomp" = "Y" %then %do;
                     if missing(comp_mean&i) then comp_mean&i = 0;
                     comp_mean&i._char = compress(put(comp_mean&i,8.1));
                     comp_std&i._char = compress(put(comp_std&i,8.1));
                     if comp_mean&i = 0 and comp_std&i = 0 then comp_mean&i._char = '.';
-                    if missing(comp_std&i) or comp_std&i = 0 then comp_std&i._char = '.';
+                    if missing(comp_std&i) or comp_std&i = 0 then comp_std&i._char = 'NaN';
                     %end;
                 end;
                 %end;
@@ -737,9 +737,9 @@
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/agg_comp_w;
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
-                        if comp_mean0 > 0 and total_exp_episodes = 0 then comp_std0_char = 'NaN';
+                        if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
-                            if total_exp_patients = 0 or total_comp_episodes = 0 then do;
+                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
                             end;
@@ -767,6 +767,7 @@
                             if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = ((a-b) / c);
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
+							if missing(sd0) then sd0_char = 'NaN';
                             if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
                                 sd0_char = '.';
                                 ad0_char = '.';
@@ -873,7 +874,7 @@
                         if missing(comp_std0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
-                        if missing(comp_std_sum) or comp_std_sum = 0 then comp_std0_char = '.';
+                        if missing(comp_std_sum) or comp_std_sum = 0 then comp_std0_char = 'NaN';
                         %end;
                     %end;
 
@@ -890,6 +891,7 @@
                             if (^missing(a)) AND (c>0) then sd0 = a/c;
                             else sd0 = .;
                             sd0_char = compress(put(sd0,8.3));
+							if missing(sd0) then sd0_char = 'NaN';
                             if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
                                 sd0_char = '.';
                                 ad0_char = '.';
@@ -900,6 +902,7 @@
                             if (exp_std0 > 0) AND (comp_std0 > 0) then sd0 = (exp_mean0 - comp_mean0)/(sqrt((exp_std0*exp_std0 + comp_std0*comp_std0)/2));
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
+							if missing(sd0) then sd0_char = 'NaN';
                             if total_exp_episodes = 0 and total_comp_episodes = 0 and ad0 = 0 then do;
                                 sd0_char = '.';
                                 ad0_char = '.';
@@ -923,6 +926,7 @@
                                 sd&i._char = 'N/A';
                           end;
                           else do;
+						  if missing(sd&i.) then sd&i._char = 'NaN';
                           if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
                                 ad&i._char = '.';
                                 sd&i._char = '.';
