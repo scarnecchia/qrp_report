@@ -749,7 +749,7 @@
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
-                            ad0 = exp_mean0/agg_exp_w - comp_mean0/agg_comp_w;
+                            ad0 = 100*(exp_mean0/agg_exp_w) - 100*(comp_mean0/agg_comp_w);
                             ad0_char=compress(put(ad0,8.3));
 
                             /*standardized difference*/
@@ -779,6 +779,11 @@
                         ad0_char='NaN';
                         sd0_char='NaN';
                         end;
+                        %if "&stratifybydp" = "Y" %then %do;
+                                %do i =1 %to &num_dp.;
+                                if missing(ad&i.)=0 then ad&i. = ad&i.*100;
+                                %end;
+                        %end;
                     %end;
 
                     /*round exp_mean0 and exp_std0 - will be a decimal for weighted tables*/
