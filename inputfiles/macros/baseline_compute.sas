@@ -559,7 +559,7 @@
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
                     if exp_mean&i = 0 and exp_std&i = 0 then exp_mean&i._char = '.';
-                    %if ^%index(&reporttype.,T6) %then %do;
+                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
                     if missing(exp_std&i) or exp_std&i = 0 then exp_std&i._char = 'NaN';
                     %end;
                     %else %do;
@@ -570,7 +570,7 @@
                     comp_mean&i._char = compress(put(comp_mean&i,8.1));
                     comp_std&i._char = compress(put(comp_std&i,8.1));
                     if comp_mean&i = 0 and comp_std&i = 0 then comp_mean&i._char = '.';
-                    %if ^%index(&reporttype.,T6) %then %do;
+                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                     if missing(comp_std&i) or comp_std&i = 0 then comp_std&i._char = 'NaN';
                     %end;
                     %else %do;
@@ -712,18 +712,18 @@
                           %end;
 						%end;
                         %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
-                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do;
+                        if ^missing(exp_mean0) and (total_exp_episodes >= 0) then do;
                         exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
-                        if metvar = 'PATIENT' then exp_std0_char = 'N/A';
+                        if metvar = 'PATIENT' and total_exp_episodes = 0 then exp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
                             exp_std0_char = compress(put(exp_std0,percent10.1));
                             if missing(exp_std0) then exp_std0_char = 'NaN';
                         end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then do;
+                        if ^missing(comp_mean0) and (total_comp_episodes >= 0) then do;
                         comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;   
-                        if metvar = 'PATIENT' then comp_std0_char = 'N/A';
+                        if metvar = 'PATIENT'  and total_comp_episodes = 0 then comp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
                             comp_std0_char = compress(put(comp_std0,percent10.1));
                             if missing(comp_std0) then comp_std0_char = 'NaN';
@@ -931,7 +931,7 @@
                 
                         if metvar ne 'MAHALANOBIS' then do;
                           if exp_mean&i >= 0 and ad&i. = 0 then sd&i._char = 'NaN';
-                          if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED') then do;
+                          if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
                                 ad&i._char = 'N/A';
                                 sd&i._char = 'N/A';
                           end;
