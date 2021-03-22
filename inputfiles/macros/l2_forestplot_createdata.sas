@@ -299,7 +299,7 @@
       run;
 
       proc sort data = forest_&periodid. nodupkey;
-        by analysisgrpsort analysis id covarnum sort3 catnum subgroupcat sort1 sort2 runid;
+        by analysisgrpsort analysis id covarnum sort3 subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
@@ -381,7 +381,7 @@
                                                                                  %end;
                                                                                  LCL UCL id file
                                                                                  );
-      by analysisgrpsort analysis COVARNUM sort3 catnum subgroupcat sort1 sort2;
+      by analysisgrpsort analysis COVARNUM sort3 subgroupcat sort1 sort2;
       run;
       
       proc datasets nowarn noprint lib=work;
