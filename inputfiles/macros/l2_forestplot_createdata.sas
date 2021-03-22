@@ -28,6 +28,22 @@
 
 %macro l2_forestplot_createdata;
 
+      /* Stack all potential micohort files to join onto effect estimates table */
+      %if &reporttype = T4L2 %then %do;
+          data stack_micohort;
+            set 
+            %do n = 1 %to &numrunid;
+              %let runid = %scan(&runidlist.,&n);
+              infolder.&&&runid._micohortfile(in=&runid)
+            %end;
+            ;
+            %do n = 1 %to &numrunid;
+              %let runid = %scan(&runidlist.,&n);
+              if &runid then runid = "&runid";
+            %end;
+          run;
+      %end;
+     
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
@@ -43,9 +59,6 @@
         on a.analysisgrp = b.analysisgrp
         where b.outputforestplot = 'Y';
 
-        select runid into :runid trimmed
-        from forest_l2_effectestimates_&periodid.;
-
         /* Link agegroupnum for T2/T4 */
         create table forest_l2_effectestimates_&periodid. as
         select a.*, b.agegroupnum
@@ -55,7 +68,7 @@
         on a.medicalproduct = b.cohortgrp and a.runid = b.runid
         %end;
         %else %do;
-        left join infolder.&&&runid._micohortfile c
+        left join stack_micohort c
         on scan(a.medicalproduct,1,'_') = c.milgrp
         left join agefmtsort b 
         on b.cohortgrp = c.groupname and a.runid = b.runid
@@ -385,7 +398,7 @@
       run;
       
       proc datasets nowarn noprint lib=work;
-        delete id_: forest_l2_effectestimates_&periodid.;
+        delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
 
 %mend l2_forestplot_createdata;
