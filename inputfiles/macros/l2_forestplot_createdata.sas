@@ -34,7 +34,9 @@
             set 
             %do n = 1 %to &numrunid;
               %let runid = %scan(&runidlist.,&n);
+              %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
               infolder.&&&runid._micohortfile(in=&runid)
+              %end;
             %end;
             ;
             %do n = 1 %to &numrunid;
