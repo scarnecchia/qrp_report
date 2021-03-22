@@ -918,9 +918,9 @@
                 
                         if metvar ne 'MAHALANOBIS' then do;
                           if exp_mean&i >= 0 and ad&i. = 0 then sd&i._char = 'NaN';
-                          if metvar = 'N_EPISODES' then do;
-                                ad&i._char = 'NaN';
-                                sd&i._char = 'NaN';
+                          if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED') then do;
+                                ad&i._char = 'N/A';
+                                sd&i._char = 'N/A';
                           end;
                           else do;
                           if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
@@ -950,12 +950,16 @@
                     if MetVar = 'TOTAL_WEIGHTED' then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        exp_std0_char = '.';
-                        comp_std0_char = '.';
                         ad0 = .;
                         sd0 = .;
+                        if exp_mean0 > 0 or comp_mean0 > 0 then do;
                         ad0_char = 'N/A';
                         sd0_char = 'N/A';
+                        end;
+                        else do;
+                        ad0_char = '.';
+                        sd0_char = '.';
+                        end;
                     end;
                 %end;
 				/*Removing FOLLOWUPTIME/EVENT rows*/
