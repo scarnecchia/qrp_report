@@ -719,7 +719,7 @@
                         %end;
                     end;
                     else do;
-                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/total_exp_episodes;
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/agg_exp_w;
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
@@ -730,7 +730,7 @@
                             end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/total_comp_episodes;
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/agg_comp_w;
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_exp_episodes = 0 then comp_std0_char = 'NaN';
@@ -745,7 +745,7 @@
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
-                            ad0 = exp_mean0/agg_exp_w - comp_mean0/agg_comp_w;
+                            ad0 = (exp_mean0/agg_exp_w) - (comp_mean0/agg_comp_w);
                             ad0_char=compress(put(ad0,8.3));
 
                             /*standardized difference*/
@@ -768,8 +768,8 @@
                         else do;
                         ad0=.;
                         sd0=.;
-                        ad0_char='NaN';
-                        sd0_char='NaN';
+                        ad0_char='N/A';
+                        sd0_char='N/A';
                         end;
                     %end;
 
@@ -929,8 +929,8 @@
                         comp_std0_char = '.';
                         ad0 = .;
                         sd0 = .;
-                        ad0_char = 'NaN';
-                        sd0_char = 'NaN';
+                        ad0_char = 'N/A';
+                        sd0_char = 'N/A';
                     end;
                 %end;
 				/*Removing FOLLOWUPTIME/EVENT rows*/
