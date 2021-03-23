@@ -866,7 +866,7 @@
             %end;
         %end;
         %else %do;
-            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and/or PS histograms. Effect estimates and/or PS histograms will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;
 
         /****************************/

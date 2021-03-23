@@ -321,10 +321,9 @@
 	                  run; 
 
 		            %do j = %eval(&look_start) %to %eval(&look_end);
-	                %if %eval(&look_start) ne %eval(&look_end) %then %let displayperiodid = (MP &j.);
 		                %tableletter();
 		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
-		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. &displayperiodid. from &startdateformatted. to &&enddate&j.formatted.))
+		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 		            %end; /* loop periods */
 				%end; /* loop comparisons */
 	        %end; /*Histograms*/
@@ -333,6 +332,13 @@
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
+
+						%if &OutputPSDistribution. = Y %then %do;
+						%let figurenum=2;
+						%let tableletter=a;
+						%let tablecount = 1 /*%eval(&tablecount. + 1)*/;
+						%end; 
+
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;
 	                    %let forest_title = ;

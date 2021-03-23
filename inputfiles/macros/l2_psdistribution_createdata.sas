@@ -151,7 +151,7 @@
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 
-	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=output.&runid._histogram_&loopcount._&periodid. force; run;
+	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=repdata.&runid._histogram_&loopcount._&periodid. force; run;
 
 	                proc datasets noprint nowarn lib=work; delete raw:; quit;
 
