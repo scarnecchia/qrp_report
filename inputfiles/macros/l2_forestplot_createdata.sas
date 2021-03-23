@@ -27,9 +27,9 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-
+     
       /* Join all data together to estimate table for processing downstream for forest dataset */
-      proc sql noprint undo_policy=none;
+      proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
         select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
@@ -42,6 +42,47 @@
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
         where b.outputforestplot = 'Y';
+
+        select distinct runid
+        into :micohort_runid separated by ' '
+        from forest_l2_effectestimates_&periodid.;
+      quit;
+
+      /* Stack all potential micohort files to join onto effect estimates table */
+      %if &reporttype = T4L2 %then %do;
+          data stack_micohort;
+            length runid $5;
+            set 
+            %do n = 1 %to %sysfunc(countw(&micohort_runid));
+              %let runid = %scan(&micohort_runid.,&n);
+              %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+              infolder.&&&runid._micohortfile(in=&runid)
+              %end;
+            %end;
+            ;
+            %do n = 1 %to %sysfunc(countw(&micohort_runid));
+              %let runid = %scan(&micohort_runid.,&n);
+              if &runid then runid = "&runid";
+            %end;
+          run;
+      %end;
+
+      /* Link agegroupnum for T2/T4 */
+      proc sql noprint undo_policy=none;
+        create table forest_l2_effectestimates_&periodid. as
+        select a.*, b.agegroupnum
+        from forest_l2_effectestimates_&periodid. a
+        %if &reporttype = T2L2 %then %do;
+        left join agefmtsort b
+        on a.medicalproduct = b.cohortgrp and a.runid = b.runid and a.subgroupcat = b.agegroup
+        %end;
+        %else %do;
+        left join stack_micohort c
+        on scan(a.medicalproduct,1,'_') = c.milgrp
+        left join agefmtsort b 
+        on b.cohortgrp = c.groupname and a.runid = b.runid and a.subgroupcat = b.agegroup
+        %end;
+        ;
       quit;
 
       /* Check to see if covariates file exists */
@@ -68,6 +109,7 @@
                  est.ceiling,
                  est.caliper,
                  est.ratio,
+                 est.agegroupnum,
                  %if %eval(&nobs.>0) %then %do;
                  cov.studyname as covarlabel
                  %end;
@@ -114,6 +156,7 @@
                  est.ceiling,
                  est.caliper,
                  est.ratio,
+                 est.agegroupnum,
                  %if %eval(&nobs.>0) %then %do;
                  cov.studyname as covarlabel
                  %end;
@@ -154,6 +197,7 @@
           label='';
           %end;
           /*Assign labels*/
+          sort3 = 0;
           if id1 then do;
               id = 2;
               /*covarnum 0 = Overall - apply analysisgrp label*/
@@ -161,6 +205,7 @@
                   id = 1;
                   if missing(label) then title=analysisgrp;
                   else title=label;
+                  sort3 = -2;
               end;
               /*covarnum 1000 = Sex*/
               else if covarnum = 1000 then do;
@@ -180,7 +225,7 @@
               end;
               /*covarnum 1003 = Time*/
               else if covarnum = 1003 then do;
-                  title = 'Time';
+                  title = 'Monitoring Period';
               end;
               /*covarnum 1012 = Race*/
               else if covarnum = 1012 then do;
@@ -213,74 +258,70 @@
               if covarnum = 0 then do;
                   id = 2;
                   title = "Overall";
+                  sort3= -1;
               end;
               /*covarnum 1-999 = covariates*/
               else if covarnum >=1 and covarnum <=999 then do;
-                  if subgroupcat = '0' then title = catx(' ','No', covarlabel);
-                  if subgroupcat = '1' then title = covarlabel;
+                  if subgroupcat = '0' then do;
+                  title = catx(' ','No', covarlabel);
+                  sort3=0;
+                  end;
+                  if subgroupcat = '1' then do;
+                  title = covarlabel;
+                  sort3=1;
+                  end;
               end;
               /*covarnum 1000 = Sex*/
               else if covarnum = 1000 then do;
-                  if subgroupcat = 'M' then title = 'Male';
-                  if subgroupcat = 'F' then title = 'Female';
+                  title = put(subgroupcat,$sexfmt.);
+                  sort3 = put(subgroupcat,$sexsort.);
               end;
               /*covarnum 1012 = Race*/
               else if covarnum = 1012 then do;
-                  if subgroupcat = '0' then title = 'Unknown';
-                  if subgroupcat = '1' then title = 'American Indian or Alaska Native';
-                  if subgroupcat = '2' then title = 'Asian';
-                  if subgroupcat = '3' then title = 'Black or African American';
-                  if subgroupcat = '4' then title = 'Native Hawaiian or Other Pacific Islander';
-                  if subgroupcat = '5' then title = 'White';
+                  title = put(subgroupcat,$racefmt.);
+                  sort3 = put(subgroupcat,$racesort.);
               end;
               /*covarnum 1013 = Hispanic*/
               else if covarnum = 1013 then do;
-                  if subgroupcat = 'U' then title = 'Unknown';
-                  if subgroupcat = 'Y' then title = 'Yes';
-                  if subgroupcat = 'N' then title = 'No';
+                  title = put(subgroupcat,$hispanicfmt.);
+                  sort3 = put(subgroupcat,$hispanicsort.);
               end;
               /*covarnum 1014 = Pre-Post Indicator*/
               else if covarnum = 1014 then do;
-                if subgroupcat = 'NONE' then title = 'Unknown Term';
-                if subgroupcat = 'PRE' then title = 'Pre-Term (0-258 days)';
-                if subgroupcat = 'POST' then title = 'Post-Term (281-301 days)';
-                if subgroupcat = 'TERM' then title = 'Term (259-280 days)';
+                  title = put(subgroupcat,$deliveryfmt.);
+                  sort3 = put(subgroupcat,$deliverysort.);
               end;
               /*covarnum 2000 = Match Method*/
               else if covarnum = 2000 then do;
-                if subgroupcat = 'BC' then title = 'Birth Certificate';
-                if subgroupcat = 'RE' then title = 'Birth Registry';
-                if subgroupcat = 'SI' then title = 'Health plan subscriber or family number';
-                if subgroupcat = 'LA' then title = 'Exact or probabilistic last name and address match based upon health plan administrative data';
-                if subgroupcat = 'OT' then title = 'Other';
-                if subgroupcat = 'N1' then title = 'No subscriber/family IDs available for linkage';
-                if subgroupcat = 'N2' then title = 'No name/address available for linkage';
-                if subgroupcat = 'N3' then title = 'Neither subscriber/family IDs nor name/address available for linkage';
-                if subgroupcat = 'NA' then title = 'No linkage made; any other reasons';
+                  title = put(subgroupcat,$matchfmt.);
+                  sort3 = put(subgroupcat,$matchsort.);            
               end;
               /*covarnum 2001 = Birth Type */
               else if covarnum = 2001 then do;
-                if subgroupcat = '0' then title = 'Unspecified # of live births';
-                if subgroupcat = '1' then title = '1 live birth';
-                if subgroupcat = '2' then title = '2 live births';
-                if subgroupcat = '3' then title = '3 live births';
-                if subgroupcat = '4' then title = '4 live births';
-                if subgroupcat = '5' then title = '5 live births';
-                if subgroupcat = '8' then title = 'Multiple live births, unspecified number';
-                if subgroupcat = '9' then title = 'Conflicting code(s) for number of live births';
+                  title = put(subgroupcat,$birthtypefmt.);
+                  sort3 = put(subgroupcat,$birthtypesort.);
               end;
               /*covarnum 1001 = Age Groups*/
-              /*covarnum 1002 = Year*/
+              else if covarnum = 1001 then do;
+                  title = subgroupcat;
+                  sort3 = agegroupnum;
+              end;
               /*covarnum 1003 = Time*/
-              /*covarnum 9000 = By Data Parnter*/
-              else if covarnum in (1001, 1002, 1003, 9000) then do; 
-                  title = subgroupcat; 
+              else if covarnum = 1003 then do;
+                  title = put(subgroupcat,$timefmt.);
+                  sort3 = put(subgroupcat,$timesort.);
+              end;
+              /*covarnum 1002 = Year*/
+              /*covarnum 9000 = By Data Partner*/
+              else if covarnum in (1002, 9000) then do; 
+                title = subgroupcat; 
+                sort3=1;
               end;
           end;
       run;
 
       proc sort data = forest_&periodid. nodupkey;
-        by analysisgrpsort analysis id covarnum catnum subgroupcat sort1 sort2 runid;
+        by analysisgrpsort analysis id covarnum sort3 subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
@@ -362,11 +403,11 @@
                                                                                  %end;
                                                                                  LCL UCL id file
                                                                                  );
-      by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2;
+      by analysisgrpsort analysis COVARNUM sort3 subgroupcat sort1 sort2;
       run;
-
+      
       proc datasets nowarn noprint lib=work;
-        delete id_: forest_l2_effectestimates_&periodid.;
+        delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
 
 %mend l2_forestplot_createdata;
