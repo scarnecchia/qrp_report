@@ -30,6 +30,7 @@
      
         /*Initialize macro variables for the analysisgrp loop*/
 		%let OutputPSDistribution = ;
+		%let ratio = ;
 
         /*set parameters from l2comparisonfile for this loop*/
         data _null_;
@@ -131,27 +132,49 @@
 	                    by type weight ps_cat;
 	                run;
 
+					/*defensive coding to avoid errors with group names with more than 32 charac*/
+					data raw_histogram;
+					set raw_histogram;
+					if group="&eoi." then group = "eoi";
+					if group="&ref." then group = "ref";
+					run;
+
 	                proc transpose data=raw_histogram out=raw_histogram1 prefix = _;
 	                    by type weight ps_cat;
 	                    id group;
 	                    var npts;
 	                run;
 
+					%isdata(dataset=labelfile);
+					%let eoilabel=&eoi.;
+					%let reflabel=&ref.;
+
+			    	%if %eval(&nobs>0) %then %do;
+					  data _NULL_;
+					  set labelfile(where=(lowcase(labeltype)='grouplabel'));
+				 	  if group="&eoi." then call symputx('eoilabel', Label);
+				 	  if group="&ref." then call symputx('reflabel', Label);
+				 	  run;
+				 	  %put &eoilabel.;
+				 	  %put &reflabel.;
+					%end;
+
+
 	                proc sql noprint;
 	                    create table raw_histogram_&loopcount._&dps._&periodid. as
-	                    select    x._&eoi.
-	                            , x._&ref.
+	                    select    x._eoi
+	                            , x._ref
 	                            , y.type
 	                            , y.ps_cat
 	                            , y.weight
 	                            , "&analysisgrp" as analysisgrp format=$40.
-	                            , y.bin_eoi label="Histogram of &eoi."
-	                            , y.bin_ref label="Histogram of &ref."
+	                            , y.bin_eoi label="Histogram of &eoilabel."
+	                            , y.bin_ref label="Histogram of &reflabel."
 	                            , "&dpsiteid." as dp length=6
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 
-	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=repdata.&runid._histogram_&loopcount._&periodid. force; run;
+	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=&runid._histogram_&loopcount._&periodid. force; run;
 
 	                proc datasets noprint nowarn lib=work; delete raw:; quit;
 

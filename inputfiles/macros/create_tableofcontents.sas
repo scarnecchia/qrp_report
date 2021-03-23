@@ -289,6 +289,8 @@
 		            call symputx('OutputPSDistribution', OutputPSDistribution);
 		       		run;
 
+				  %if &OutputPSDistribution. = Y %then %do;
+
 					%isdata(dataset=labelfile);
 					%let grouplabel=&analysisgrp.;
 
@@ -325,7 +327,8 @@
 		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
 		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 		            %end; /* loop periods */
-				%end; /* loop comparisons */
+				%end; /* OutputPSDistribution */
+			  %end; /* loop comparisons */ 
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
@@ -333,10 +336,16 @@
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
+				/*		%let OutputPSDistribution=;
+						data _NULL_;
+						set l2comparisonfile;
+                		if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+						run;*/
+
 						%if &OutputPSDistribution. = Y %then %do;
 						%let figurenum=2;
 						%let tableletter=a;
-						%let tablecount = 1 /*%eval(&tablecount. + 1)*/;
+						%let tablecount = 1;
 						%end; 
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);

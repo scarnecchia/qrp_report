@@ -27,9 +27,14 @@
 %macro l2_psdistribution_output;
 
 	%macro output_histogram(type=, weight=);
-		proc sgplot data=repdata.&runid._histogram_&loopcount._&i.;  
-			histogram bin_eoi / freq = _&eoi.    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
-			histogram bin_ref / freq =_&ref.  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
+		
+		data repdata.Figure1&tableletter.;
+		set &runid._histogram_&loopcount._&i.;
+		run;
+
+		proc sgplot data=&runid._histogram_&loopcount._&i.;  
+			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
+			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
 			keylegend / location=outside position=bottom noborder valueattrs=(size=7);
 			xaxis label = "PS" labelattrs=(size=7 color=gray) valueattrs=(size=7 color=gray) values=(0 to 1 by .2) offsetmax = .02;
 			yaxis display=(noline) label="Percent" labelattrs=(size=7 color=gray) valueattrs=(size=7 color=gray);
@@ -152,7 +157,8 @@
                 ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue");
 
                 proc odstext pagebreak=yes;
-				  p "^S={just=L font_weight=bold color=black bordertopcolor=black borderbottomcolor=black}Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database.";
+	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database.") /
+	                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
                 run;
 
                 %let maskeddpid = agg;
@@ -160,11 +166,11 @@
                 %let hisanalysis = Unadjusted;
                 %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
                   proc odstext ;
-					p "^S={color=black just=L}Unweighted Propensity Score Distribution Before Trimming";
+					p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
                 %end;
 				%else %do;
 				  proc odstext ;
-					p "^S={color=black just=L}Unadjusted Propensity Score Distribution";
+					p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
 				%end;
 				
                 %output_histogram(type=Unadjusted, weight=Unweighted);
@@ -172,7 +178,7 @@
                   %if "&matchtype" = "F" %then %do;
 	                  proc odstext ;
 						p " ";
-						p "^S={color=black just=L}Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist.";
+						p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
 	                  %let hisanalysis = Adjusted;
 	                  %output_histogram(type=Adjusted, weight=Unweighted);
                   %end;
@@ -183,7 +189,7 @@
                       select distinct(weight)
                       into :weight_type 
                       separated by ' '
-                      from repdata.&runid._histogram_&loopcount._&i.;
+                      from &runid._histogram_&loopcount._&i.;
                     quit;
 
                     %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
@@ -193,12 +199,12 @@
                         ods startpage = now;
 						proc odstext ;
 							p " ";
-							p "^S={color=black just=L}Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong.";
+							p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
                       %end;
 					  %else %do;
 					    proc odstext ;
 							p " ";
-							p "^S={color=black just=L}Unweighted Propensity Score Distribution After Trimming";
+							p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
 					  %end;
                       
                       %let hisanalysis = Adjusted;
@@ -228,24 +234,24 @@
                     %let hisanalysis = Unadjusted;
                     %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
                       proc odstext ;
-						p "^S={color=black just=L}Unweighted Propensity Score Distribution Before Trimming";
+						p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
                     %end;
 				    %else %do;
 				      proc odstext ;
-						p "^S={color=black just=L}Unadjusted Propensity Score Distribution";
+						p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
 				    %end;
 					proc odstext ;
-						p "^S={color=black just=L}Data Partner %substr(&MaskedDPID.,3)";
-						p "^S={color=black just=L}C-Stat for &hisanalysis. Cohort: &cstat";
+						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+						p "C-Stat for &hisanalysis. Cohort: &cstat" / style=[just=L color=black];
                     %output_histogram(type=Unadjusted, weight=Unweighted);
 
                     %if "&matchtype" = "F" %then %do;
                       %let hisanalysis = Adjusted;
                       proc odstext ;
 						p " ";
-						p "^S={color=black just=L}Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist.";
-						p "^S={color=black just=L}Data Partner %substr(&MaskedDPID.,3)";
-						p "^S={color=black just=L}C-Stat for &hisanalysis. Cohort: &cstat";
+						p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
+						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+						p "C-Stat for &hisanalysis. Cohort: &cstat" / style=[just=L color=black];
                       %output_histogram(type=Adjusted, weight=Unweighted);
                     %end;
 					
@@ -255,7 +261,7 @@
                         select distinct(weight)
                         into :weight_type 
                         separated by ' '
-                        from repdata.&runid._histogram_&loopcount._&i.;
+                        from &runid._histogram_&loopcount._&i.;
                       quit;
 					  
                       %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
@@ -265,15 +271,15 @@
                           ods startpage = now;
 						  proc odstext ;
 							p " ";
-							p "^S={color=black just=L}Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong.";
+							p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
                         %end;
 						%else %do;
                           proc odstext ;
 							p " ";
-							p "^S={color=black just=L}Unweighted Propensity Score Distribution After Trimming";
+							p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
 						%end;
 						proc odstext ;
-							p "^S={color=black just=L}Data Partner %substr(&MaskedDPID.,3)";
+							p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
 						%let hisanalysis = Adjusted;
                         %output_histogram(type=Adjusted, weight=&analysisgrp_type);
                       %end; *analysisgrpcount;

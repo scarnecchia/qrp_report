@@ -34,7 +34,13 @@
 
       %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
-		%if &OutputPSDistribution. = Y %then %let figurenum=2; %else %let figurenum=1;
+	  	%let OutputPSDistribution=;
+		data _NULL_;
+		set l2comparisonfile;
+        if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+		run;
+
+		%if &OutputPSDistribution. = Y %then %let figurenum=2; 
 
         /* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" %then %do;
