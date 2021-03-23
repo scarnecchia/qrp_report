@@ -1147,12 +1147,14 @@
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
 
-            if MetVar = 'PATIENT' %if %index(&reporttype,L2) or %str("&cohort") ^= %str("mi") %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
+            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
+            %if %str("&cohort") ^= %str("mi") %then %do;
             else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
             %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
+            %end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
             %assignbaselinevars(label="Number of weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
             end;
