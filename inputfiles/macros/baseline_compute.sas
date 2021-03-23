@@ -626,6 +626,10 @@
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
                         if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0 = 0 then do;
+                            if total_exp_patients = . or total_exp_episodes = . then do;
+                                exp_mean0_char = '.';
+                                exp_std0_char = '.';
+                            end;
                             if total_exp_patients = 0 or total_exp_episodes = 0 then do; 
                             exp_mean0_char = '.';
                             exp_std0_char = '.';
@@ -636,6 +640,10 @@
                         comp_std0_char=compress(put(comp_std0,percent10.1)); 
                         if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0 = 0 then do;
+                            if total_comp_patients = . or total_comp_episodes = . then do;
+                                comp_mean0_char = '.';
+                                comp_std0_char = '.';
+                            end;
                             if total_comp_patients = 0 or total_comp_episodes = 0 then do;
                             comp_mean0_char = '.';
                             comp_std0_char = '.';
@@ -747,6 +755,10 @@
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0=0 then do;
+                            if total_exp_patients = . or total_exp_episodes = . then do;
+                                exp_mean0_char = '.';
+                                exp_std0_char = '.';
+                            end;
                             if total_exp_patients = 0 or total_exp_episodes = 0 then do;
                                 exp_mean0_char = '.';
                                 exp_std0_char = '.';
@@ -758,6 +770,10 @@
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
+                            if total_comp_patients = . or total_comp_episodes = . then do;
+                                comp_mean0_char = '.';
+                                comp_std0_char = '.';
+                            end;
                             if total_comp_patients = 0 or total_comp_episodes = 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
