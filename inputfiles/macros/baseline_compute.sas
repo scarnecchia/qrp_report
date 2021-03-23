@@ -898,7 +898,6 @@
                         
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = exp_mean_num/agg_exp_w ;
                     exp_mean0_char = compress(put(exp_mean0,8.1));
-                    if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
@@ -911,10 +910,12 @@
                     %if "&weight" = "Weighted" %then %do;
                         if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(agg_sw_exp/agg_v_exp) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
+                        if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
                         if missing(agg_sw_exp) then exp_std0_char = '.';
                         if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(agg_sw_comp/agg_v_comp) ;
                         comp_std0_char = compress(put(comp_std0,8.1));
+                        if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
                         if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
@@ -926,8 +927,8 @@
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(comp_std_sum/(total_comp_episodes - count));
-                        if missing(comp_std0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,8.1));
+                        if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
                         %end;
