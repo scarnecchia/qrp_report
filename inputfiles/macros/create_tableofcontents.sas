@@ -336,12 +336,6 @@
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
-				/*		%let OutputPSDistribution=;
-						data _NULL_;
-						set l2comparisonfile;
-                		if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
-						run;*/
-
 						%if &OutputPSDistribution. = Y %then %do;
 						%let figurenum=2;
 						%let tableletter=a;
