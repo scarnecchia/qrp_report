@@ -51,6 +51,7 @@
       /* Stack all potential micohort files to join onto effect estimates table */
       %if &reporttype = T4L2 %then %do;
           data stack_micohort;
+            length runid $5;
             set 
             %do n = 1 %to %sysfunc(countw(&micohort_runid));
               %let runid = %scan(&micohort_runid.,&n);
