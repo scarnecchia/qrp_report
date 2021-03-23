@@ -197,7 +197,35 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+
+			  /*Italicize covariates*/
+	          %if %length(&baselinerowitalics.) > 0 %then %do;             
+              if upcase(metvar) in (&baselinerowitalics.) then do;
+                call define(_row_,'style','style={fontstyle=italic}');					
+              end;
+        	  %end;
             endcomp;
+
+			/*Change font color to blue if abs(SD) > threshold value*/
+        	%if &computebalance. = Y and %length(&sdthreshold.) > 0 %then %do;
+            compute sd&dpnum._char;
+                if upcase(strip(sd&dpnum._char)) not in ("", "N/A", "NAN") then do;
+                    if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
+                        %if %str(&baselinerowitalics) ne %str() %then %do;
+                            if upcase(metvar) in (&baselinerowitalics.) then do;
+                                call define(_row_,'style','style={fontstyle=italic foreground=blue}');
+                            end;
+                            else do;
+                                call define(_row_,'style','style={foreground=blue}');
+                            end;
+                        %end;
+                        %else %do;
+                            call define(_row_,'style','style={foreground=blue}');
+                        %end;
+                    end;
+                end;
+            endcomp;
+        	%end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black

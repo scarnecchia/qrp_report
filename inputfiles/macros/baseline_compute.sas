@@ -105,6 +105,10 @@
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
                 else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+				if missing(sdthreshold) then call symputx('sdthreshold', '');
+                else call symputx('sdthreshold', sdthreshold);
+				if missing(baselinerowitalics) then call symputx('baselinerowitalics', '');
+                else call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -143,7 +147,57 @@
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
             run;
+
+			/*Defensive check for sdthreshold and baselinerowitalics parameters*/
+			proc sql noprint;
+			create table baseline_unique_check as
+			select a.analysisgrp,
+				   a.psestimategrp,
+				   a.sdthreshold,
+				   a.baselinerowitalics
+			from baselinefile as a
+			left join pscs_masterinputs as b
+			on a.analysisgrp = b.analysisgrp and
+			a.psestimategrp = a.psestimategrp
+			where b.covarnum=0
+			order by a.order;
+			quit;
+
+			proc sql noprint;
+			select psestimategrp into :psestimategrp_forbaseline trimmed
+			from baseline_unique_check
+			where analysisgrp = "&analysisgrp.";			
+			quit;
+
+			proc sql noprint;
+			select count (distinct sdthreshold) into :sdthreshold_count trimmed
+			from baseline_unique_check
+			where psestimategrp = "&psestimategrp_forbaseline";
+
+			select count (distinct baselinerowitalics) into :baselinerowitalics_count trimmed
+			from baseline_unique_check
+			where psestimategrp = "&psestimategrp_forbaseline";
+			quit;
+
+			%if %eval(&sdthreshold_count. > 1) or %eval(&baselinerowitalics_count. > 1) %then %do;
+				%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
+				%put PSESTIMATEGRP=&psestimategrp_forbaseline has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
+				
+				/* Assing first available value (already sorted by order)*/
+				data _null_;
+				set baseline_unique_check(where=(psestimategrp = "&psestimategrp_forbaseline"));
+				if _N_=1;
+				if missing(sdthreshold) then call symputx('sdthreshold', '');
+                else call symputx('sdthreshold', sdthreshold);
+				if missing(baselinerowitalics) then call symputx('baselinerowitalics', '');
+                else call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+				run;
+			%end;
         %end;
+
+		%if %length(&baselinerowitalics.) > 0 %then %do;
+			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics);
+		%end;
 
         *************************************************************
         * Processing - need to:
