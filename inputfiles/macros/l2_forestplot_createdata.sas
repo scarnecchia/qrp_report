@@ -73,13 +73,13 @@
         from forest_l2_effectestimates_&periodid. a
         %if &reporttype = T2L2 %then %do;
         left join agefmtsort b
-        on a.medicalproduct = b.cohortgrp and a.runid = b.runid
+        on a.medicalproduct = b.cohortgrp and a.runid = b.runid and a.subgroupcat = b.agegroup
         %end;
         %else %do;
         left join stack_micohort c
         on scan(a.medicalproduct,1,'_') = c.milgrp
         left join agefmtsort b 
-        on b.cohortgrp = c.groupname and a.runid = b.runid
+        on b.cohortgrp = c.groupname and a.runid = b.runid and a.subgroupcat = b.agegroup
         %end;
         ;
       quit;
