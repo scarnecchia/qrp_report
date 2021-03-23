@@ -1,7 +1,7 @@
 *                                           PROGRAM OVERVIEW
 ****************************************************************************************************
 *
-* PROGRAM: create_lookuptables.sas  
+* PROGRAM: create_lookup.sas  
 * Created (mm/dd/yyyy): 03/23/2021
 *
 *--------------------------------------------------------------------------------------------------
@@ -29,7 +29,8 @@
  /* Define libname for location of templatefiles folder */
   libname lookup "";
   options noquotelenmax;
-  %macro create_lookuptables();
+  
+  %macro create_lookup();
      data lookup.lookup_footnotes;
 	   attrib order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
@@ -51,7 +52,7 @@
 	   order = 16; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
 	   order = 17; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
 	 run;  
-  %mend create_lookuptables;
-  %create_lookuptables();
+  %mend create_lookup;
+  %create_lookup();
 
 
