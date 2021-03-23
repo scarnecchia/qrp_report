@@ -27,27 +27,9 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-
-      /* Stack all potential micohort files to join onto effect estimates table */
-      %if &reporttype = T4L2 %then %do;
-          data stack_micohort;
-            set 
-            %do n = 1 %to &numrunid;
-              %let runid = %scan(&runidlist.,&n);
-              %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
-              infolder.&&&runid._micohortfile(in=&runid)
-              %end;
-            %end;
-            ;
-            %do n = 1 %to &numrunid;
-              %let runid = %scan(&runidlist.,&n);
-              if &runid then runid = "&runid";
-            %end;
-          run;
-      %end;
      
       /* Join all data together to estimate table for processing downstream for forest dataset */
-      proc sql noprint undo_policy=none;
+      proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
         select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
@@ -61,7 +43,31 @@
         on a.analysisgrp = b.analysisgrp
         where b.outputforestplot = 'Y';
 
-        /* Link agegroupnum for T2/T4 */
+        select distinct runid
+        into :micohort_runid separated by ' '
+        from forest_l2_effectestimates_&periodid.;
+      quit;
+
+      /* Stack all potential micohort files to join onto effect estimates table */
+      %if &reporttype = T4L2 %then %do;
+          data stack_micohort;
+            set 
+            %do n = 1 %to %sysfunc(countw(&micohort_runid));
+              %let runid = %scan(&micohort_runid.,&n);
+              %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+              infolder.&&&runid._micohortfile(in=&runid)
+              %end;
+            %end;
+            ;
+            %do n = 1 %to %sysfunc(countw(&micohort_runid));
+              %let runid = %scan(&micohort_runid.,&n);
+              if &runid then runid = "&runid";
+            %end;
+          run;
+      %end;
+
+      /* Link agegroupnum for T2/T4 */
+      proc sql noprint undo_policy=none;
         create table forest_l2_effectestimates_&periodid. as
         select a.*, b.agegroupnum
         from forest_l2_effectestimates_&periodid. a
