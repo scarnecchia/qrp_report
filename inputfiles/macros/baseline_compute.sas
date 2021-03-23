@@ -564,7 +564,7 @@
                     end;
 
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
-                    if missing(exp_std&i) or exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = 'NaN';
+                    if missing(exp_std&i) or exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = '0.0';
                     if missing(exp_mean&i) then exp_std&i._char = '.';
                     %end;
                     %else %do;
@@ -579,7 +579,7 @@
                         comp_std&i._char = '.';
                     end;
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
-                    if missing(comp_std&i) or comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = 'NaN';
+                    if missing(comp_std&i) or comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = '0.0';
                     if missing(comp_mean&i) then comp_std&i._char = '.';
                     %end;
                     %else %do;
@@ -865,35 +865,35 @@
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = exp_mean_num/agg_exp_w ;
                     exp_mean0_char = compress(put(exp_mean0,8.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
-                    if missing(exp_mean_num) /* or exp_mean_num = 0 */ then exp_mean0_char = '.';
+                    if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = comp_mean_num/agg_comp_w ;
                     comp_mean0_char = compress(put(comp_mean0,8.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
-                    if missing(comp_mean_num) /* or comp_mean_num = 0  */then comp_mean0_char = '.';
+                    if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
                         if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(agg_sw_exp/agg_v_exp) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
-                        if missing(agg_sw_exp) or agg_sw_exp = 0 then exp_std0_char = '.';
+                        if missing(agg_sw_exp) then exp_std0_char = '.';
                         if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(agg_sw_comp/agg_v_comp) ;
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
-                        if missing(agg_sw_comp) /* or agg_sw_comp = 0  */then comp_std0_char = '.';
+                        if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
                         if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
-                        if missing(exp_std_sum) /* or exp_std_sum = 0  */then exp_std0_char = '.';
+                        if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(comp_std_sum/(total_comp_episodes - count));
                         if missing(comp_std0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
-                        if missing(comp_std_sum) /* or comp_std_sum = 0 */ then comp_std0_char = '.';
+                        if missing(comp_std_sum) then comp_std0_char = '.';
                         %end;
                     %end;
 
