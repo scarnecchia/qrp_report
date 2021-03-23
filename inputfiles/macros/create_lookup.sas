@@ -44,14 +44,14 @@
 	   order = 8;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are weighted by the proportion of treated patients in the trimmed population divided by the inverse of their propensity score (PS). Reference patients are weighted by 1 minus the proportion of treated patients in the trimmed population divided by 1 minus their PS."; output;
 	   order = 9;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1. Reference patients are weighted by their propensity score (PS) divided by 1 minus their PS."; output;
 	   order = 10; description = "With variable ratio matching, each exposed subject is matched to a variable number of comparator subjects. The weight for each treated subject equals 1 (wi = 1 for i = 1, ..., nt). The weight for each control subject equals the inverse of the matching ratio for that specific matched set."; output;
-	   order = 11; description = "Value represents standard deviation where no % follows the value."; output;
-       order = 12; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for preterm and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
-	   order = 13; description = "Baseline period in reference to user defined index date (pregnancy start, exposure date, or delivery date)."; output;
-	   order = 14; description = "Represents proportion of episodes with first switch."; output;
-	   order = 15; description = "Represents proportion of first switch episodes with second switch"; output;
-	   order = 16; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	   order = 11; description = "Baseline period in reference to user defined index date (pregnancy start, exposure date, or delivery date)."; output;
+	   order = 12; description = "Represents proportion of episodes with first switch."; output;
+	   order = 13; description = "Represents proportion of first switch episodes with second switch."; output;
+	   order = 14; description = "Value represents standard deviation where no % follows the value."; output;
+       order = 15; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	   order = 16; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for preterm and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
 	   order = 17; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
-	 run;  
+	   run;  
   %mend create_lookup;
   %create_lookup();
 
