@@ -89,6 +89,7 @@
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
                 call symputx('cohort', cohort);
+				call symputx("cohort_&b.", cohort,'G');
 				call symputx('unique_psestimate',unique_psestimate);
                 /*computebalance defaults to Y for L2 tables*/
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -1156,12 +1157,11 @@
         ***********************************************************************************************;
 
         /*utility macro to assign label, grouper, sortorder, sortorder2*/
-        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=, footnotevar=);
+        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=);
             %if %length(&label)>0 %then %do; label= &label; %end;
             %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
             %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
             %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
-			%if %length(&footnotevar.)>0 %then %do; %let &footnotevar. = &&footnotevar.. %end;
         %mend;
 
         data baseline_aggregatelabels;
@@ -1348,7 +1348,8 @@
 
                 /*Assign labels and sortorder2*/
                 if metvar = 'COMORBIDSCORE' then do;
-                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0, footnotevar=comorbidscore);
+                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
+				call symputx('comorbidscore','Y');
                 end;
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);

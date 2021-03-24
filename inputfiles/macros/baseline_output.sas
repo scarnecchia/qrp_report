@@ -102,7 +102,53 @@
                 ;
             run;
         %end;
-
+		
+		/* Select Footnotes */  
+	     data _footnotes;
+	       set infolder.lookup_footnotes;
+		   length placement $25;
+	       if order in (14 15
+		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
+		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("MI"))%then %do; 1 %end;
+		   %if &threshold. > 0 %then %do; 2 %end;
+		   %if %index(&reporttype,L2) %then %do;
+		     %if %str("&baselinerowitalics.") ne %str("") %then %do; 3 %end; /*JOLENE: Need to determine where baselinerowitalics is assigned*/
+		     %if &psfile. = stratificationfile %then %do;
+			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
+			   %else %if "&weightscheme." = "ATT" %then %do; 6 %end;
+			   %else %do; 5 %end;
+			 %end;
+			 %if &psfile. = iptwfile %then %do;
+			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
+			   %else %if "&weightscheme." = "ATES" %then %do; 8 %end;
+			   %else %if "&weightscheme." = "ATT" %then %do; 9 %end;
+			 %end;
+			 %if &psfile = psmatchfile and &ratio. = V %then %do; 10 %end;
+		  %end; 
+		  %if %index(&reporttype,T4) and %str("&cohort.") = %str("MI") %then %do; 11 %end;
+		  %if %str("&reporttype.") = %str("T6") %then %do; 12 13 %end;
+		  %if %index(&reporttype,T4) %then %do; 16 %end;
+		  %if &comorbidscore = Y %then %do; 17 %end;
+		   );
+	    run;
+		
+		%let super_character =;
+		
+		proc sql noprint;
+		  select count(order) into: num_fn trimmed
+		  from _footnotes;
+		  
+		  select description into: fn1 - fn&numfn.
+		  from _footnotes
+		  order by order;
+		  
+		  select order into: super_character separated by 'super '
+		  from _footnotes where order in in (1 2 4 5 6 7 8 9 10 11);
+		  %if %str("&super_character.") ne %str("") %then %do;
+		    %let super_character = ^{&super_character.};
+		  %end;
+	    quit;
+		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
         %let width = 1.15;
@@ -151,7 +197,7 @@
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
-            define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
+            define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = lightgrey just=L borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
@@ -161,7 +207,7 @@
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation^{super 14}" style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
@@ -203,6 +249,12 @@
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
+            endcomp;
+			compute after;
+             line '';
+			  %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+			  %end;
             endcomp;
         run;   
     %mend;
@@ -253,6 +305,7 @@
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
                 call symputx('unique_psestimate',unique_psestimate);
+				call symputx('threshold',sdthreshold);
 
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -543,7 +596,7 @@
                   grp3_label=&grp3_label.,
                   computebalance = &computebalance.);
                 %end;
-
+					
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
                 %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
                     %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
