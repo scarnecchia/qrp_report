@@ -981,7 +981,7 @@
                                 sd&i._char = 'N/A';
                           end;
                           else do;
-						  if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd&i.) then sd&i._char = 'NaN';
+						  if exp_mean&i. > 0 and comp_mean&i > 0 and missing(sd&i.) then sd&i._char = 'NaN';
                           if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
                                 ad&i._char = '.';
                                 sd&i._char = '.';
