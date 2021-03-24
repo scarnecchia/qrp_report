@@ -159,7 +159,10 @@
                 proc odstext pagebreak=yes;
 	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database.") /
 	                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
+					ODS PDF BOOKMARKGEN = ON; 
+					ods proclabel = "Figure &figurenum.&tableletter.";
                 run;
+				ODS PDF BOOKMARKGEN = OFF; 
 
                 %let maskeddpid = agg;
                 %let dps= 0;
