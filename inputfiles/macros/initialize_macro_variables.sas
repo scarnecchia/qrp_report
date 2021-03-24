@@ -83,6 +83,7 @@
     /*baseline table variables*/
     %global numbaselinetablegrp;
     %let numbaselinetablegrp =0;	
+	%global baselinerowitalics;	
 
     /*L2 report variables*/
     %global numl2comparisons;
