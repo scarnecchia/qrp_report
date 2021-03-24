@@ -280,6 +280,11 @@
 	        /*F1: PS distribution histograms*/
 	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
 
+				proc sql noprint;
+					select count(distinct AnalysisGrp) into: numPScomparisons
+            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
+				quit;
+
 				%do loopcount = 1 %to &numl2comparisons.; 
 
 					data _NULL_;
@@ -304,6 +309,13 @@
 					%end;
 
 					%let andafter=;
+
+					proc sql noprint;
+		            select strip(file) into: psfile
+		            from pscs_masterinputs
+		            where analysisgrp = "&analysisgrp.";
+			        quit;
+             %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				      data _null_; 
 	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
 	                    call symputx("psestimategrp", lowcase(psestimategrp));
@@ -323,18 +335,29 @@
 	                  run; 
 
 		            %do j = %eval(&look_start) %to %eval(&look_end);
+
+						%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %do;
+							%let tablecount = 0;
+						%end;
 		                %tableletter();
 		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
 		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 		            %end; /* loop periods */
 				%end; /* OutputPSDistribution */
 			  %end; /* loop comparisons */ 
+			 %end; /*psfile*/
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
+
+				/*		%let OutputPSDistribution=;
+						data _NULL_;
+						set l2comparisonfile;
+                		if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+						run;*/
 
 						%if &OutputPSDistribution. = Y %then %do;
 						%let figurenum=2;

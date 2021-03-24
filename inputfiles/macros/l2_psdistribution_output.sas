@@ -27,10 +27,13 @@
 %macro l2_psdistribution_output;
 
 	%macro output_histogram(type=, weight=);
-		
+
+		%isdata(dataset=repdata.Figure1&tableletter.);
+		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure1&tableletter.;
 		set &runid._histogram_&loopcount._&i.;
 		run;
+		%end;
 
 		proc sgplot data=&runid._histogram_&loopcount._&i.;  
 			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
@@ -64,7 +67,7 @@
 			  data _NULL_;
 			  set labelfile(where=(lowcase(labeltype)='grouplabel'));
 			  if group="&analysisgrp.";
-              call symputx('grouplabel', Label);
+              call symputx("grouplabel",  %quote(Label));
 			  run;
 			  %put &grouplabel.;
 			%end;
@@ -124,13 +127,6 @@
                     call symputx('ref', ref) ;    
                 run;
 
-              /*Assign group labels if specified*/
-              %if %Symexist(&&eoi.) = 0 %then %let comparisonlabel = %sysfunc(propcase(%sysfunc(translate(&eoi,' ','_')))); 
-              %else %let comparisonlabel = &&eoi.;
-              %if %Symexist(&&ref.) = 0 %then %let controllabel = %sysfunc(propcase(%sysfunc(translate(&ref,' ','_')))); 
-              %else %let controllabel = &&ref.;
-              %put &comparisonlabel &controllabel; 
-
               %let num_loops = 0;
               %if &stratifybydp. = Y %then %do;
                 %let num_loops = &num_dp;
@@ -153,16 +149,27 @@
                 ods select all;
 				%end;
 
-                %tableletter();
-                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue");
+				proc sql noprint;
+					select count(distinct AnalysisGrp) into: numPScomparisons
+            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
+				quit;
 
+				%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %let tablecount = 0;
+                %tableletter();
+                %if &destination. = excel %then %do;
+                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue");
+                %end;
                 proc odstext pagebreak=yes;
-	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database.") /
+	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&i.formatted.") /
 	                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
-					ODS PDF BOOKMARKGEN = ON; 
-					ods proclabel = "Figure &figurenum.&tableletter.";
+					%if &destination. = pdf %then %do;
+						ODS PDF BOOKMARKGEN = ON; 
+						ods proclabel = "Figure &figurenum.&tableletter.";
+					%end;
                 run;
+				%if &destination. = pdf %then %do;
 				ODS PDF BOOKMARKGEN = OFF; 
+				%end;
 
                 %let maskeddpid = agg;
                 %let dps= 0;
@@ -288,7 +295,7 @@
                       %end; *analysisgrpcount;
 					%end; *iptwfile;  
                   %end; * dps;  
-                %end; *strtify by DP;
+                %end; *stratify by DP;
               %end; *look;
 			  ods startpage = now;
 			%end; *psfile;

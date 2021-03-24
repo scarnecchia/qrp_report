@@ -134,7 +134,7 @@
 *   Clean Work                                                                                 
 ***************************************************************************************************;
 
-   /* proc datasets nowarn nolist lib=work kill; quit;*/
+    proc datasets nowarn nolist lib=work kill; quit;
 
     /* End log */
     proc printto;

@@ -6,7 +6,7 @@
 * Created (mm/dd/yyyy): 03/17/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro creates both aggregated and DP specific PS histograms
+* PURPOSE: The macro creates both aggregated and DP specific PS distribution datasets
 *                                        
 *  Program inputs:                                                                                   
 * 
@@ -41,14 +41,14 @@
         run;
 
 		%if &OutputPSDistribution.=Y %then %do;
-        /* only psmatchfile and stratificationfile have histogram */
+        /* only psmatchfile, stratificationfile, and iptwfile have histogram */
 	        proc sql noprint;
 	            select strip(file) into: psfile
 	            from pscs_masterinputs
 	            where analysisgrp = "&analysisgrp.";
 	        quit;
 
-	        %put now computing effect estimates for &analysisgrp.;
+	        %put now computing PS distributions for &analysisgrp.;
 
 			%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				data _null_; 
@@ -152,8 +152,8 @@
 			    	%if %eval(&nobs>0) %then %do;
 					  data _NULL_;
 					  set labelfile(where=(lowcase(labeltype)='grouplabel'));
-				 	  if group="&eoi." then call symputx('eoilabel', Label);
-				 	  if group="&ref." then call symputx('reflabel', Label);
+				 	  if group="&eoi." then call symputx('eoilabel', %quote(Label));
+				 	  if group="&ref." then call symputx('reflabel', %quote(Label));
 				 	  run;
 				 	  %put &eoilabel.;
 				 	  %put &reflabel.;
