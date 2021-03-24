@@ -81,8 +81,10 @@
     %let figurelist = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp;
+    %global numbaselinetablegrp comorbidscore;
     %let numbaselinetablegrp =0;
+	%let comorbidscore =;
+	%let cohortdef =;
 
     /*L2 report variables*/
     %global numl2comparisons;

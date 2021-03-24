@@ -1156,11 +1156,12 @@
         ***********************************************************************************************;
 
         /*utility macro to assign label, grouper, sortorder, sortorder2*/
-        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=);
+        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=, footnotevar=);
             %if %length(&label)>0 %then %do; label= &label; %end;
             %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
             %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
             %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
+			%if %length(&footnotevar.)>0 %then %do; %let &footnotevar. = &&footnotevar.. %end;
         %mend;
 
         data baseline_aggregatelabels;
@@ -1347,7 +1348,7 @@
 
                 /*Assign labels and sortorder2*/
                 if metvar = 'COMORBIDSCORE' then do;
-                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
+                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0, footnotevar=comorbidscore);
                 end;
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
