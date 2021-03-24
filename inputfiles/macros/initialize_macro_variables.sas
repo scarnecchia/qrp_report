@@ -82,11 +82,7 @@
 
     /*baseline table variables*/
     %global numbaselinetablegrp;
-    %let numbaselinetablegrp =0;
-	%global sdthreshold;
-	%let sdthreshold=;
-	%global baselinerowitalics;
-	%let baselinerowitalics=;
+    %let numbaselinetablegrp =0;	
 
     /*L2 report variables*/
     %global numl2comparisons;
