@@ -54,6 +54,29 @@
 
 	%put =====> MACRO CALLED: baseline_compute;
 
+    /* Create a labels dataset for subgroup header creation */
+    data init_labels;
+        length label $70 sortorder1 sortorder2 3;
+        grouper='Demographic Characteristics';
+        sortorder2=0;
+        sortorder1=3;
+        label='Age categories';
+        output;
+        sortorder1=4;
+        label='Sex';
+        output;
+        sortorder1=5;
+        label='Race categories';
+        output;
+        sortorder1=6;
+        label='Hispanic origin';
+        output;
+        sortorder1=8;
+        label='Year';
+        output;
+    run;
+
+
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
@@ -339,7 +362,7 @@
 	    ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
-        %macro baselinecomputemetrics(table=, weight=, dataout=);  
+        %macro baselinecomputemetrics(table=, weight=, dataout=, labelout=);  
          
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
@@ -413,8 +436,6 @@
                 length metvar $30;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
-                format eoi_a 8.1 eoi_b 8.3 %if "&includecomp" = "Y" %then %do; ref_a 8.1 ref_b 8.3 %end; ;
-
                 /*set up total count variables and arrays*/
                 total_exp_episodes = "&&total_&table._exp_episodes."; /*Sum of episodes in group1*/ 
                 total_exp_patients = "&&total_&table._exp_patients."; /*Sum of patients in group1*/ 
@@ -467,11 +488,133 @@
                     end;
                 %end;
 
+                /* Character variables - export exposed and comparison groups when DPs are requested */
+                %if "&stratifybydp" = "Y" %then %do;
+                %do i = 1 %to &num_dp;
+                if lowcase(vartype) = 'dichotomous' then do;
+                    exp_mean&i._char = compress(put(exp_mean&i,comma12.));
+                    exp_std&i._char = compress(put(exp_std&i,percent10.1));
+                    if metvar = 'PATIENT' then do;
+                        %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                        exp_std&i._char = 'N/A';
+                        %end;
+                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
+                        exp_mean&i._char = '0';
+                        exp_std&i._char = 'N/A';
+                        end;
+                    end;
+                    else if metvar = 'N_EPISODES' then do;
+                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
+                        exp_mean&i._char = '0';
+                        %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
+                        exp_std&i._char = '0.0%';
+                        %end;
+                        %else %do;
+                        exp_std&i._char = 'NaN';
+                        %end;
+                        end;
+                    end;
+                    else do;
+                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
+                            if total_exp_patients = 0 then do; 
+                            exp_mean&i._char = '.';
+                            exp_std&i._char = '.';
+                            end;
+                        end;
+                    end;
+                    %if "&includecomp" = "Y" %then %do;
+                    comp_mean&i._char = compress(put(comp_mean&i,comma12.));
+                    comp_std&i._char = compress(put(comp_std&i,percent10.1));
+                    if metvar = 'PATIENT' then do;
+                        %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                        comp_std&i._char = 'N/A';
+                        %end;
+                        if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        comp_mean&i._char = '0';
+                        comp_std&i._char = 'N/A';
+                        end;
+                    end;
+                    else if metvar = 'N_EPISODES' then do;
+                        if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        comp_mean&i._char = '0';
+                        %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
+                        comp_std&i._char = '0.0%';
+                        %end;
+                        %else %do;
+                        comp_std&i._char = 'NaN';
+                        %end;
+                        end;
+                    end;
+                    else do;
+                        if missing(comp_mean&i) or comp_mean&i = 0 then do;						
+                            if total_comp_patients = 0 then do; 
+                            comp_mean&i._char = '.';
+                            comp_std&i._char = '.';
+                            end;
+                        end;
+                    end;
+                    %end;
+                end;
+                else do;
+                    exp_mean&i._char = compress(put(exp_mean&i,8.1));
+                    exp_std&i._char = compress(put(exp_std&i,8.1));
+                    if exp_mean&i = 0 and exp_std&i = 0 and total_exp_patients = 0 then do;
+                        exp_mean&i._char = '.';
+                        exp_std&i._char = '.';
+                    end;
+
+                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
+                    if missing(exp_std&i) or exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = 'NaN';
+                    if missing(exp_mean&i) then exp_std&i._char = '.';
+                    %end;
+                    %else %do;
+                    if (missing(exp_mean&i) or exp_mean&i = 0) and (missing(exp_std&i) or exp_std&i = 0) then do;
+                        if total_exp_episodes > 0 then do;
+                        exp_mean&i._char = '0.0';
+                        exp_std&i._char = 'NaN';
+                        end;
+                        else do;
+                        exp_mean&i._char = '.';
+                        exp_std&i._char = '.';
+                        end;
+                    end;
+                    %end;
+                    %if "&includecomp" = "Y" %then %do;
+                    comp_mean&i._char = compress(put(comp_mean&i,8.1));
+                    comp_std&i._char = compress(put(comp_std&i,8.1));
+
+                    if comp_mean&i = 0 and comp_std&i = 0 and total_comp_patients = 0 then do;
+                        comp_mean&i._char = '.';
+                        comp_std&i._char = '.';
+                    end;
+                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                    if missing(comp_std&i) or comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = 'NaN';
+                    if missing(comp_mean&i) then comp_std&i._char = '.';
+                    %end;
+                    %else %do;
+                    if (missing(comp_mean&i) or comp_mean&i = 0) and (missing(comp_std&i) or comp_std&i = 0) then do;
+                        if total_comp_episodes > 0 then do;
+                        comp_mean&i._char = '0.0';
+                        comp_std&i._char = 'NaN';
+                        end;
+                        else do;
+                        comp_mean&i._char = '.';
+                        comp_std&i._char = '.';
+                        end;
+                    end;
+                    %end;
+                    %end;
+                end;
+                %end;
+                %end;
+
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-                    eoi_a=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
+                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
+                    exp_mean0_char=compress(put(exp_mean0,comma12.)); /* Character copy of exposed group */
                     %if "&includecomp" = "Y" %then %do;
-                    ref_a=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/
+                    comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
+                    comp_mean0_char=compress(put(comp_mean0,comma12.)); /* Character copy of reference group */
                     %end;
 
                     %if "&weight" = "Weighted" %then %do;
@@ -484,9 +627,9 @@
                     %end;
 
                     /*initialize to 0*/
-                    eoi_b = 0;
+                    exp_std0 = 0;
                     %if "&includecomp" = "Y" %then %do;
-                    ref_b = 0;
+                    comp_std0 = 0;
                     %end;
 
                     ** Calculate aggregated percent: 
@@ -496,54 +639,175 @@
                             - L1: do not fill in %, 
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
-                    if index(metvar, 'SEX') >0 | index(metvar, 'RACE') >0 | index(metvar, 'HISPANIC') >0 then do;
-                        if ^missing(eoi_a) and (total_exp_patients gt 0) then eoi_b = eoi_a/total_exp_patients;
+                    if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
+                        if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = exp_mean0/total_exp_patients;
+                        exp_std0_char=compress(put(exp_std0,percent10.1)); 
+                        if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
+                        if missing(exp_mean0) or exp_mean0 = 0 then do;
+                            if total_exp_patients = . or total_exp_episodes = . then do;
+                                exp_mean0_char = '.';
+                                exp_std0_char = '.';
+                            end;
+                            if total_exp_patients = 0 or total_exp_episodes = 0 then do; 
+                            exp_mean0_char = '.';
+                            exp_std0_char = '.';
+                            end;
+                        end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(ref_a) and (total_comp_patients gt 0) then ref_b = ref_a/total_comp_patients;
+                        if ^missing(comp_mean0) and (total_comp_patients gt 0) then comp_std0 = comp_mean0/total_comp_patients;
+                        comp_std0_char=compress(put(comp_std0,percent10.1)); 
+                        if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN';
+                        if missing(comp_mean0) or comp_mean0 = 0 then do;
+                            if total_comp_patients = . or total_comp_episodes = . then do;
+                                comp_mean0_char = '.';
+                                comp_std0_char = '.';
+                            end;
+                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
+                            comp_mean0_char = '.';
+                            comp_std0_char = '.';
+                            end;
+                        end;
                         %end;
                     end;
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
-                        eoi_b = .;
-                        ref_b = .;
+                        exp_std0 = .;
+                        comp_std0 = .;
                         %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
                             ("&table" ="Switchstep_0") %then %do;
-                            eoi_b = 1;
+                            exp_std0 = 1;
+                            if metvar = 'PATIENT' then exp_std0_char = 'N/A';
+                            if metvar = 'N_EPISODES' then do;
+                                exp_std0_char=compress(put(exp_std0,percent10.1));
+                                if exp_mean0 = 0 then exp_std0_char = 'NaN';
+                            end;
                             %if "&includecomp" = "Y" %then %do;
-                            ref_b = 1;
+                            comp_std0 = 1;
+                            if metvar = 'PATIENT' then comp_std0_char = 'N/A';
+                            if metvar = 'N_EPISODES' then do;
+                                comp_std0_char=compress(put(comp_std0,percent10.1));
+                                if comp_mean0 = 0 then comp_std0_char = 'NaN';
+                            end;
                             %end;
                         %end;
 						%else %if %str("&reporttype") = %str("T6") and &switch_count > 0  %then %do;
 						  %let switch_b = %eval(&switch_count.-1);
+                          if metvar = 'PATIENT' then exp_std0_char = 'N/A';
 						  if metvar = 'N_EPISODES' then do;
-                            if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&&total_Switchstep_&switch_b._exp_episodes;
+                            if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do;
+                            exp_std0 = exp_mean0/&&total_Switchstep_&switch_b._exp_episodes;
+                            exp_std0_char = compress(put(exp_std0,percent10.1));
+                            end;
+                            if exp_mean0 > 0 and &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
+                            %if "&table" = "Switchstep_0" %then %do;
+                            if &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
+                            %end;
+                            %else %if "&table" = "Switchstep_1" %then %do;
+                            if &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
+                            else if &&total_Switchstep_&switch_b._exp_episodes > 0 and exp_mean0 = 0 then exp_std0_char = '0.0%';
+                            %end;
+                            %else %if "&table" = "Switchstep_2" %then %do;
+                            if &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
+                            else if &&total_Switchstep_&switch_b._exp_episodes > 0 and exp_mean0 = 0 then exp_std0_char = '0.0%';
+                            %end;
 						    %if "&stratifybydp" = "Y" %then %do;
 						      %do nu_d = 1 %to &num_dp.;
-							    exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+							    if ^missing(exp_mean&nu_d.) and (total_exp_episodes gt 0) then do;
+                                exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+                                exp_std&nu_d._char = compress(put(exp_std&nu_d.,percent10.1));
+                                end;
+                            %if "&table" = "Switchstep_0" %then %do;
+                            if &&&n_Switchstep_&switch_b._episodes_exp&nu_d. = 0 then exp_std&nu_d._char = 'NaN';
+                            %end;
+                            %else %if "&table" = "Switchstep_1" %then %do;
+                            if &&&n_Switchstep_&switch_b._episodes_exp&nu_d. = 0 then exp_std&nu_d._char = 'NaN';
+                            else if &&&n_Switchstep_&switch_b._episodes_exp&nu_d. > 0 and exp_mean&nu_d = 0 then exp_std&nu_d._char = '0.0%';
+                            %end;
+                            %else %if "&table" = "Switchstep_2" %then %do;
+                            if &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std&nu_d._char = 'NaN';
+                            else if &&&n_Switchstep_&switch_b._episodes_exp&nu_d. > 0 and exp_mean&nu_d = 0 then exp_std&nu_d._char = '0.0%';
+                            %end;
 							  %end;
                             %end;
 						  end;
 						%end;
 						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
-                          if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/&total_unadjusted_exp_episodes.;
+                          if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do; 
+                          exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
+                          exp_std0_char = compress(put(exp_std0,percent10.1));
+                          end;
+                          if exp_mean0 > 0 and &total_unadjusted_exp_episodes. = 0 then exp_std0_char = 'NaN';
+                          if missing(exp_mean0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
+                          if missing(exp_std0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
                           %if "&includecomp" = "Y" %then %do;
-                            if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/&total_unadjusted_comp_episodes.;
+                            if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;
+                            comp_std0_char = compress(put(comp_std0,percent10.1));
+                            if comp_mean0 > 0 and &total_unadjusted_comp_episodes. = 0 then comp_std0_char = 'NaN';
+                            if missing(comp_mean0) or comp_mean0 = 0 then comp_std0_char = 'NaN';
+                            if missing(comp_std0) or comp_std0 = 0 then comp_std0_char = 'NaN';
                           %end;
 						%end;
+                        %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
+                        if ^missing(exp_mean0) and (total_exp_episodes >= 0) then do;
+                        exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
+                        if metvar = 'PATIENT' and total_exp_episodes >= 0 then exp_std0_char = 'N/A';
+                        if metvar = 'N_EPISODES' then do;
+                            exp_std0_char = compress(put(exp_std0,percent10.1));
+                            if missing(exp_std0) then exp_std0_char = 'NaN';
+                        end;
+                        end;
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(comp_mean0) and (total_comp_episodes >= 0) then do;
+                        comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;   
+                        if metvar = 'PATIENT'  and total_comp_episodes >= 0 then comp_std0_char = 'N/A';
+                        if metvar = 'N_EPISODES' then do;
+                            comp_std0_char = compress(put(comp_std0,percent10.1));
+                            if missing(comp_std0) then comp_std0_char = 'NaN';
+                        end;
+                        end;
+                        %end;
+                        %end;
                     end;
                     else do;
-                        if ^missing(eoi_a) and (total_exp_episodes gt 0) then eoi_b = eoi_a/total_exp_episodes;
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/agg_exp_w;
+                        if missing(exp_mean0) then exp_std0 = .;
+                        exp_std0_char = compress(put(exp_std0,percent10.1));
+                        if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
+                        if missing(exp_mean0) or exp_mean0=0 then do;
+                            if total_exp_patients = . or total_exp_episodes = . then do;
+                                exp_mean0_char = '.';
+                                exp_std0_char = '.';
+                            end;
+                            if total_exp_patients = 0 or total_exp_episodes = 0 then do;
+                                exp_mean0_char = '.';
+                                exp_std0_char = '.';
+                            end;
+                        end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(ref_a) and (total_comp_episodes gt 0) then ref_b = ref_a/total_comp_episodes;
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/agg_comp_w;
+                        if missing(comp_mean0) then comp_std0 = .;
+                        comp_std0_char = compress(put(comp_std0,percent10.1));
+                        if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
+                        if missing(comp_mean0) or comp_mean0=0 then do;
+                            if total_comp_patients = . or total_comp_episodes = . then do;
+                                comp_mean0_char = '.';
+                                comp_std0_char = '.';
+                            end;
+                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
+                                comp_mean0_char='.';
+                                comp_std0_char = '.';
+                            end;
+                        end;
                         %end;
                     end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
-                            ad = compress(put((100*(eoi_a/agg_exp_w)) - (100*(ref_a/agg_comp_w)), 8.3)) ;
+                            ad0 = 100*(exp_mean0/agg_exp_w) - 100*(comp_mean0/agg_comp_w);
+                            ad0_char=compress(put(ad0,8.3));
 
                             /*standardized difference*/
-                            a = (eoi_a/agg_exp_w);
-                            b = (ref_a/agg_comp_w);
+                            a = (exp_mean0/agg_exp_w);
+                            b = (comp_mean0/agg_comp_w);
                             %if "&weight" = "Weighted" %then %do; /*Weighted Adjusted*/  
                                 stw = agg_sw_exp / agg_v_exp;
                                 scw = agg_sw_comp / agg_v_comp;
@@ -553,21 +817,33 @@
                                 c = sqrt(((a*(1-a)) + (b*(1-b))) / 2);
                             %end;
                             /*SD*/
-                            if (eoi_a > 0) AND (ref_a > 0) AND (c>0) then sd = compress(put(((a-b) / c), 8.3));
-                            else sd = '-';
-
-                            %if "&stratifybydp" = "Y" %then %do;
+                            if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = ((a-b) / c);
+                            else sd0 = .;
+                            sd0_char=compress(put(sd0,8.3));
+							if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd0) then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and (ad0 = 0 or missing(ad0)) then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0  then sd0_char = 'NaN';
+                        end;
+                        else do;
+                        ad0=.;
+                        sd0=.;
+                        ad0_char='N/A';
+                        sd0_char='N/A';
+                        end;
+                        %if "&stratifybydp" = "Y" %then %do;
                                 %do i =1 %to &num_dp.;
                                 if missing(ad&i.)=0 then ad&i. = ad&i.*100;
                                 %end;
-                            %end;
-                        end;
+                        %end;
                     %end;
 
-                    /*round eoi_a and eoi_b - will be a decimal for weighted tables*/
-                    eoi_a = round(eoi_a, 1);
+                    /*round exp_mean0 and exp_std0 - will be a decimal for weighted tables*/
+                    exp_mean0 = round(exp_mean0, 1);
                     %if "&includecomp" = "Y" %then %do;
-                    ref_a = round(ref_a, 1);
+                    comp_mean0 = round(comp_mean0, 1);
                     %end;
                     %if "&stratifybydp" = "Y" %then %do;
                         %do i =1 %to &num_dp.;
@@ -620,67 +896,109 @@
                         %end;
                     end;
                         
-                    if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then eoi_a = exp_mean_num/agg_exp_w ;
+                    if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = exp_mean_num/agg_exp_w ;
+                    exp_mean0_char = compress(put(exp_mean0,8.1));
+                    if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
+                    if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
-                    if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then ref_a = comp_mean_num/agg_comp_w ;
+                    if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = comp_mean_num/agg_comp_w ;
+                    comp_mean0_char = compress(put(comp_mean0,8.1));
+                    if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
+                    if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
-                        if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then eoi_b = sqrt(agg_sw_exp/agg_v_exp) ;
-                        if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then ref_b = sqrt(agg_sw_comp/agg_v_comp) ;
+                        if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(agg_sw_exp/agg_v_exp) ;
+                        exp_std0_char = compress(put(exp_std0,8.1));
+                        if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
+                        if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
+                        if missing(agg_sw_exp) then exp_std0_char = '.';
+                        if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(agg_sw_comp/agg_v_comp) ;
+                        comp_std0_char = compress(put(comp_std0,8.1));
+                        if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
+                        if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
+                        if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
-                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then eoi_b = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
+                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
+                        exp_std0_char = compress(put(exp_std0,8.1));
+                        if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
+                        if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
+                        if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then ref_b = sqrt(comp_std_sum/(total_comp_episodes - count));
+                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(comp_std_sum/(total_comp_episodes - count));
+                        comp_std0_char = compress(put(comp_std0,8.1));
+                        if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
+                        if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
+                        if missing(comp_std_sum) then comp_std0_char = '.';
                         %end;
                     %end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
-                        ad = compress(put(eoi_a - ref_a, 8.3)) ;
-
+                        ad0 = exp_mean0 - comp_mean0;
+                        ad0_char = compress(put(ad0,8.3));
                         %if "&weight" = "Weighted" %then %do; /*Weighted SD*/
                             /*standardized difference*/
-                            a = eoi_a - ref_a;
+                            a = exp_mean0 - comp_mean0;
                             stw = agg_sw_exp / agg_v_exp;
                             scw = agg_sw_comp/agg_v_comp;
                             c = sqrt( (stw + scw) / 2);
-                            if (^missing(a)) AND (c>0) then sd = compress(put(a/c, 8.3));
-                            else sd = '-';
+                            if (^missing(a)) AND (c>0) then sd0 = a/c;
+                            else sd0 = .;
+                            sd0_char = compress(put(sd0,8.3));
+							if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd0) then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and (ad0 = 0 or missing(ad0)) then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
                         %end;
                         %else %do; /*unweighted SD*/
-                            if (eoi_b > 0) AND (ref_b > 0) then sd = compress(put((eoi_a - ref_a)/(sqrt((eoi_b*eoi_b + ref_b*ref_b)/2)), 8.3)) ;
-                            else sd = '-';
+                            if (exp_std0 > 0) AND (comp_std0 > 0) then sd0 = (exp_mean0 - comp_mean0)/(sqrt((exp_std0*exp_std0 + comp_std0*comp_std0)/2));
+                            else sd0 = .;
+                            sd0_char=compress(put(sd0,8.3));
+							if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd0) then sd0_char = 'NaN';
+                            if total_exp_episodes = 0 and total_comp_episodes = 0 and (ad0 = 0 or missing(ad0)) then do;
+                                sd0_char = '.';
+                                ad0_char = '.';
+                            end;
+                            if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
                         %end;
                     %end;
-
                     drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
                 end;
 
                 /*reformat DP specific vars*/
                 %if "&stratifybydp" = "Y" & "&computebalance." = "Y" %then %do;
                     %do i = 1 %to &num_dp.;
-                        adchar&i. = strip(compress(put(ad&i., 8.3)));
-                        sdchar&i. = strip(compress(put(sd&i., 8.3)));
+                        ad&i._char = strip(compress(put(ad&i., 8.3)));
+                        sd&i._char = strip(compress(put(sd&i., 8.3)));
                 
                         if metvar ne 'MAHALANOBIS' then do;
-                          if adchar&i. = '.' then adchar&i. = '-';
-                          if sdchar&i. = '.' then sdchar&i. = '-';
+                          if exp_mean&i >= 0 and ad&i. = 0 then sd&i._char = 'NaN';
+                          if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
+                                ad&i._char = 'N/A';
+                                sd&i._char = 'N/A';
+                          end;
+                          else do;
+						  if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd&i.) then sd&i._char = 'NaN';
+                          if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
+                                ad&i._char = '.';
+                                sd&i._char = '.';
+                          end;
+                          end;
                         end;
                     %end;
                 %end;
-                %if "&stratifybydp" = "Y" %then %do;
-                    format exp_mean: 8.1 exp_std: 8.3 %if "&includecomp" = "Y" %then %do; comp_mean: 8.1 comp_std: 8.3 %end; ;
-                %end;
 
-                keep metvar analysisgrp order vartype weight table eoi_a eoi_b 
+                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
-                    %if "&includecomp" = "Y" %then %do; ref_a ref_b
+                    %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                        %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
+                        %if "&computebalance." = "Y" %then %do; ad: sd: %end;
                       %end;   
                       %else %do;
-                        %if "&computebalance." = "Y" %then %do; ad sd %end;
+                        %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                       %end;
                     %end; 
                     ;
@@ -689,14 +1007,34 @@
                 %if &psfile. = iptwfile | "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %do; 
                     if metvar = 'N_EPISODES' then delete;
                     if MetVar = 'TOTAL_WEIGHTED' then do;
-                        eoi_b = .;
-                        ref_b = .;
-                        ad = '-';
-                        sd = '-';
+                        exp_std0 = .;
+                        comp_std0 = .;
+                        ad0 = .;
+                        sd0 = .;
+                        if exp_mean0 > 0 or comp_mean0 > 0 then do;
+                        ad0_char = 'N/A';
+                        sd0_char = 'N/A';
+                        end;
+                        else do;
+                        ad0_char = '.';
+                        sd0_char = '.';
+                        end;
                     end;
                 %end;
 				/*Removing FOLLOWUPTIME/EVENT rows*/
                  if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
+            run;
+
+
+            /* Assign necessary variables for labeling */
+
+            data &labelout;
+                set init_labels;
+                length analysisgrp $40 table weight $30;
+                order=&b;
+                analysisgrp="&analysisgrp.";
+                table="&table";
+                weight="&weight";
             run;
 
         %mend baselinecomputemetrics;
@@ -706,36 +1044,36 @@
         ***********************************************************************************************;
         %let switch_count = 0;
         %if %str("&reporttype") = %str("T6") %then %do;
-		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1);
+		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
 		%end;
         /*All - unweighted*/
 		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
-          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1);
+          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
         %end;
         /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
         %if &psfile. = psmatchfile %then %do;
             %if "&ratio" = "F" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2);
             %end;
             %if "&ratio" = "V" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3);
             %end;
         %end;
 
         /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
         %if &psfile. = stratificationfile %then %do;
             %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
-		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4);
+		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4);
 		    %end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5);
         %end;
 
         /*IPTW - Adjusted cohort - Unweighted and Weighted */
         %if &psfile. = iptwfile %then %do;
 		    %if %eval(&unique_psestimate.) = 1 %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6);
+            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6);
 			%end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7);
+            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7);
         %end;
 
         /*Type 6 switching tables - Switch 1 and Switch 2*/
@@ -745,7 +1083,7 @@
             quit;
 
             %do switch_count = 1 %to &switch_counter;
-		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.));
+		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.), labelout=baseline_labels%eval(7+&switch_count));
             %end;
         %end;
 		
@@ -842,23 +1180,29 @@
             /***************************/
             /* Patient Characteristics */
             /***************************/
-            if MetVar = 'PATIENT' then do;
-            %assignbaselinevars(label="Number of unique patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=1);
+
+            %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
+            %else %let grouperlabel = Patient;
+
+            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
+            %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
+            %if %str("&cohort") ^= %str("mi") %then %do;
             else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
-            %assignbaselinevars(label="Number of episodes", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=2);
+            %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
+            %end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
-            %assignbaselinevars(label="Number of weighted patients", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=3);
+            %assignbaselinevars(label="Number of weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
             end;
 
             /*infant characteristics*/
             %if "&outputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
-                %assignbaselinevars(label="Mean enrollment time after birth", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=4);
+                %assignbaselinevars(label="Mean enrollment time after birth (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=4);
                 end;
                 else if MetVar = 'ENROLL_DIFF' then do;
-                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment", grouper="Patient Characteristics", sortorder1 = 1, sortorder2=5);
+                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=5);
                 end;
             %end;
 
@@ -940,16 +1284,16 @@
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
-                    %assignbaselinevars(label="Preterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
+                    %assignbaselinevars(label="Pre-Term (0-258 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
                     end;
                     if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label="Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
+                    %assignbaselinevars(label="Term (259-280 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
-                    %assignbaselinevars(label="Postterm", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
+                    %assignbaselinevars(label="Post-Term (281-301 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
                     end;
                     if MetVar= 'PREPOSTIND_NONE' then do;
-                    %assignbaselinevars(label="Unknown term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
+                    %assignbaselinevars(label="Unknown Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
                     end;
                     if MetVar= 'GA_BIRTH' then do;
                     %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
@@ -1047,14 +1391,14 @@
             
             if missing(label) then delete;
 
-            keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper eoi_a eoi_b
+            keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
-                %if "&includecomp" = "Y" %then %do; ref_a ref_b
+                %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
-                    %if "&computebalance." = "Y" %then %do; adchar: sdchar: ad sd %end;
+                    %if "&computebalance." = "Y" %then %do; ad: sd: %end;
                   %end;   
                   %else %do;
-                    %if "&computebalance." = "Y" %then %do; ad sd %end;
+                    %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                   %end;
                 %end; 
                 ;
@@ -1077,6 +1421,10 @@
             drop agegroup agegroupnum;
         run;
 
+        data baseline_aggregatefinal;
+            set baseline_aggregatefinal baseline_labels:;
+        run;
+
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
             by table weight sortorder1 sortorder2;
@@ -1095,10 +1443,10 @@
                 set &dataout. baseline_aggregatefinal;
             run;
         %end;
-		
+
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
-            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel covarname_baseline _tempcohort;
+            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel baseline_labels: covarname_baseline _tempcohort;
         quit;
 
         %symdel agestrat1;
