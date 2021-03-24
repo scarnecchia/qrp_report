@@ -209,7 +209,7 @@
 			/*Change font color to blue if abs(SD) > threshold value*/
         	%if &computebalance. = Y and %length(&sdthreshold.) > 0 %then %do;
             compute sd&dpnum._char;
-                if upcase(strip(sd&dpnum._char)) not in ("", "N/A", "NAN") then do;
+                if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
                     if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
                         %if %str(&baselinerowitalics) ne %str() %then %do;
                             if upcase(metvar) in (&baselinerowitalics.) then do;
@@ -398,7 +398,7 @@
 					%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
 					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
 					
-					/* If multiple values are detected for a same psestimategrp, assing the first available value for this psestimategrp (already sorted by order)*/
+					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
 					data _null_;
 					set baseline_unique_check(where=(psestimategrp = "&psestimategrp"));
 					if _N_=1;
