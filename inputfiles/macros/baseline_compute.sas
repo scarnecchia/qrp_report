@@ -437,8 +437,8 @@
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
                 /*set up total count variables and arrays*/
-                total_exp_episodes = "&&total_&table._exp_episodes."; /*Sum of episodes in group1*/ 
-                total_exp_patients = "&&total_&table._exp_patients."; /*Sum of patients in group1*/ 
+                total_exp_episodes = &&total_&table._exp_episodes.; /*Sum of episodes in group1*/ 
+                total_exp_patients = &&total_&table._exp_patients.; /*Sum of patients in group1*/ 
                 agg_exp_w = 0; /*Sum of weights*/
                 agg_exp_w2 = 0;
                 array num_exp(&num_dp.) exp_mean1-exp_mean&num_dp.;
@@ -448,8 +448,8 @@
                 array exp_w2(&num_dp.) exp_w2_1-exp_w2_&num_dp.;
 
                 %if "&includecomp" = "Y" %then %do;
-                total_comp_episodes = "&&total_&table._comp_episodes."; /*Sum of episodes in group2*/ 
-                total_comp_patients = "&&total_&table._comp_patients."; /*Sum of patients in group2*/
+                total_comp_episodes = &&total_&table._comp_episodes.; /*Sum of episodes in group2*/ 
+                total_comp_patients = &&total_&table._comp_patients.; /*Sum of patients in group2*/
                 agg_comp_w = 0;
                 agg_comp_w2 = 0; 
                 array num_comp(&num_dp.) comp_mean1-comp_mean&num_dp.;
@@ -639,16 +639,12 @@
                             - L1: do not fill in %, 
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
-                    if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
+                    if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE|OTHER/',metvar) > 0 then do;
                         if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = exp_mean0/total_exp_patients;
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
                         if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0 = 0 then do;
-                            if total_exp_patients = . or total_exp_episodes = . then do;
-                                exp_mean0_char = '.';
-                                exp_std0_char = '.';
-                            end;
-                            if total_exp_patients = 0 or total_exp_episodes = 0 then do; 
+                            if total_exp_patients <= 0 then do; 
                             exp_mean0_char = '.';
                             exp_std0_char = '.';
                             end;
@@ -658,11 +654,7 @@
                         comp_std0_char=compress(put(comp_std0,percent10.1)); 
                         if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0 = 0 then do;
-                            if total_comp_patients = . or total_comp_episodes = . then do;
-                                comp_mean0_char = '.';
-                                comp_std0_char = '.';
-                            end;
-                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
+                            if total_comp_patients <= 0 then do;
                             comp_mean0_char = '.';
                             comp_std0_char = '.';
                             end;
@@ -773,11 +765,7 @@
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0=0 then do;
-                            if total_exp_patients = . or total_exp_episodes = . then do;
-                                exp_mean0_char = '.';
-                                exp_std0_char = '.';
-                            end;
-                            if total_exp_patients = 0 or total_exp_episodes = 0 then do;
+                            if total_exp_patients <= 0 then do;
                                 exp_mean0_char = '.';
                                 exp_std0_char = '.';
                             end;
@@ -788,11 +776,7 @@
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
-                            if total_comp_patients = . or total_comp_episodes = . then do;
-                                comp_mean0_char = '.';
-                                comp_std0_char = '.';
-                            end;
-                            if total_comp_patients = 0 or total_comp_episodes = 0 then do;
+                            if total_comp_patients <= 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
                             end;
@@ -857,9 +841,9 @@
                 if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
                     /*assign dp specific patient and episode count*/
                     %do a = 1 %to &num_dp.; 
-                        exp_episodes&a. = "&&&&n_&table._episodes_exp&a."; /*Total number of patients in the exposed*/
+                        exp_episodes&a. = &&&&n_&table._episodes_exp&a.; /*Total number of patients in the exposed*/
                         %if "&includecomp" = "Y" %then %do;
-                        comp_episodes&a. = "&&&&n_&table._episodes_comp&a."; /*Total number of patients in the reference group*/
+                        comp_episodes&a. = &&&&n_&table._episodes_comp&a.; /*Total number of patients in the reference group*/
                         %end;
                     %end;
                     array exp_episodes(&num_dp.) exp_episodes1-exp_episodes&num_dp.;
@@ -882,8 +866,8 @@
                         %end;
 
                         %if "&weight" = "Weighted" %then %do;
-                            if num_exp(i) & exp_s2(i)>= 0 then agg_sw_exp = agg_sw_exp + ( (exp_s2(i))*(vk_exp(i))); /*Numerator of Sw2 for SD calculation*/
-                            if num_comp(i)& comp_s2(i)>= 0 then agg_sw_comp = agg_sw_comp + ( (comp_s2(i))*(vk_comp(i))); 
+                            if num_exp(i) >= 0 and exp_s2(i)>= 0 then agg_sw_exp = agg_sw_exp + ( (exp_s2(i))*(vk_exp(i))); /*Numerator of Sw2 for SD calculation*/
+                            if num_comp(i) >= 0 and comp_s2(i)>= 0 then agg_sw_comp = agg_sw_comp + ( (comp_s2(i))*(vk_comp(i))); 
                         %end;
                         %else %do;
                             ** Get weighted Std Dev for pooled Standard Deviation calculation  ** ;
