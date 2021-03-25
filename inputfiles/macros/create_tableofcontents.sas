@@ -343,21 +343,15 @@
 		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
 		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 		            %end; /* loop periods */
-				%end; /* OutputPSDistribution */
-			  %end; /* loop comparisons */ 
-			 %end; /*psfile*/
+				%end; /*psfile*/
+			  %end; /* OutputPSDistribution */
+			 %end; /* loop comparisons */ 
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
-
-				/*		%let OutputPSDistribution=;
-						data _NULL_;
-						set l2comparisonfile;
-                		if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
-						run;*/
 
 						%if &OutputPSDistribution. = Y %then %do;
 						%let figurenum=2;

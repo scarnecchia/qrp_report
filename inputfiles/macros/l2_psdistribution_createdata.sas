@@ -110,7 +110,7 @@
 
 	                /*Aggregate across DPs*/
 	                %if &dps = 0 %then %do;
-	                    proc means data=agg_psdistribution_&periodid. noprint nway;
+	                    proc means data=agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and runid="&runid.")) noprint nway;
 	                        var npts;
 	                        class group type weight ps_cat analysisgrp;
 	                        output out=hist_0(drop=_:) sum=;
@@ -123,8 +123,8 @@
 	                %end; /* end dp assignment for non-agg do statement */
 
 	                data raw_histogram;
-	                   set %if &dps=0 %then %do; hist_&dps.(where=(lowcase(analysisgrp)="&analysisgrp.")); %end;
-	                       %else %do; agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and dpidsiteid="&dpsiteid.")); %end;
+	                   set %if &dps=0 %then %do; hist_&dps.; %end;
+	                       %else %do; agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and dpidsiteid="&dpsiteid." and runid="&runid.")); %end;
 	                run;
 
 	                /*Transpose to create separate column for exposure and comparator counts*/
@@ -171,10 +171,12 @@
 	                            , y.bin_eoi label="Histogram of &eoilabel."
 	                            , y.bin_ref label="Histogram of &reflabel."
 	                            , "&dpsiteid." as dp length=6
+								, "&runid." as runid length=3
+								, "&loopcount." as order length=3
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 
-	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=&runid._histogram_&loopcount._&periodid. force; run;
+	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=histogram_&periodid. force; run;
 
 	                proc datasets noprint nowarn lib=work; delete raw:; quit;
 

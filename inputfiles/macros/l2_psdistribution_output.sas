@@ -31,11 +31,11 @@
 		%isdata(dataset=repdata.Figure1&tableletter.);
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure1&tableletter.;
-		set &runid._histogram_&loopcount._&i.;
+		set histogram_&i. (where=(runid="&runid." and order="&loopcount."));
 		run;
 		%end;
 
-		proc sgplot data=&runid._histogram_&loopcount._&i.;  
+		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount."));  
 			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
 			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
 			keylegend / location=outside position=bottom noborder valueattrs=(size=7);
@@ -199,7 +199,7 @@
                       select distinct(weight)
                       into :weight_type 
                       separated by ' '
-                      from &runid._histogram_&loopcount._&i.;
+                      from histogram_&i. (where=(runid="&runid." and order="&loopcount."));
                     quit;
 
                     %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
@@ -271,7 +271,7 @@
                         select distinct(weight)
                         into :weight_type 
                         separated by ' '
-                        from &runid._histogram_&loopcount._&i.;
+                        from histogram_&i. (where=(runid="&runid." and order="&loopcount."));
                       quit;
 					  
                       %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
