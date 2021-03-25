@@ -248,10 +248,6 @@
         %end;
 			
     %end; /*level 2 baseline tables*/
-
-    data output.&outdata;
-        set &outdata;
-    run;
 					
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
