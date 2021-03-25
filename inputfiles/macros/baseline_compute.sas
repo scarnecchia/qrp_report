@@ -526,7 +526,6 @@
                     end;
 
                     %if "&includecomp" = "Y" %then %do;
-
                     /*if 0 patients in a category, set to 0*/
                     if comp_mean&i. = . then comp_mean&i. = 0;
                     if comp_std&i. = . then comp_std&i. = 0;
@@ -743,7 +742,7 @@
                           %end;
 						%end;
                         %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
-                        if ^missing(exp_mean0) and (total_exp_episodes >= 0) then do;
+                        if ^missing(exp_mean0) and (total_exp_episodes > 0) then do;
                         exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
                         if metvar = 'PATIENT' and total_exp_episodes >= 0 then exp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
@@ -752,7 +751,7 @@
                         end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes >= 0) then do;
+                        if ^missing(comp_mean0) and (total_comp_episodes > 0) then do;
                         comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;   
                         if metvar = 'PATIENT'  and total_comp_episodes >= 0 then comp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
