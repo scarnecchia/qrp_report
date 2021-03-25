@@ -488,54 +488,63 @@
                     end;
                 %end;
 
-                /* Character variables - export exposed and comparison groups when DPs are requested */
+                /* Character variables - format exposed and comparison groups when DP stratification is requested */
                 %if "&stratifybydp" = "Y" %then %do;
                 %do i = 1 %to &num_dp;
                 if lowcase(vartype) = 'dichotomous' then do;
+
+                    /*if 0 patients in a category, set to 0*/
+                    if exp_mean&i. = . then exp_mean&i. = 0;
+                    if exp_std&i. = . then exp_std&i. = 0;
+
+                    /*format as character*/
                     exp_mean&i._char = compress(put(exp_mean&i,comma12.));
                     exp_std&i._char = compress(put(exp_std&i,percent10.1));
                     if metvar = 'PATIENT' then do;
+                        /*patient row always N/A for L1 queries, for L2, % is computed except if 0 patients*/
                         %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         exp_std&i._char = 'N/A';
                         %end;
-                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
-                        exp_mean&i._char = '0';
+                        if exp_mean&i = 0 then do;
                         exp_std&i._char = 'N/A';
                         end;
                     end;
                     else if metvar = 'N_EPISODES' then do;
-                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
-                        exp_mean&i._char = '0';
-                        %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
-                        exp_std&i._char = '0.0%';
-                        %end;
-                        %else %do;
-                        exp_std&i._char = 'NaN';
-                        %end;
+                        if exp_mean&i = 0 then do;
+                            %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
+                            exp_std&i._char = '0.0%';
+                            %end;
+                            %else %do;
+                            exp_std&i._char = 'NaN';
+                            %end;
                         end;
                     end;
                     else do;
-                        if missing(exp_mean&i) or exp_mean&i = 0  then do;
-                            if total_exp_patients = 0 then do; 
+                        /*set to . if no patients in cohort*/
+                        if exp_mean&i = 0 and total_exp_patients = 0 then do;
                             exp_mean&i._char = '.';
                             exp_std&i._char = '.';
-                            end;
                         end;
                     end;
+
                     %if "&includecomp" = "Y" %then %do;
+
+                    /*if 0 patients in a category, set to 0*/
+                    if comp_mean&i. = . then comp_mean&i. = 0;
+
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
                     comp_std&i._char = compress(put(comp_std&i,percent10.1));
                     if metvar = 'PATIENT' then do;
                         %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         comp_std&i._char = 'N/A';
                         %end;
-                        if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        if missing(comp_mean&i) or comp_mean&i = 0 then do;
                         comp_mean&i._char = '0';
                         comp_std&i._char = 'N/A';
                         end;
                     end;
                     else if metvar = 'N_EPISODES' then do;
-                        if missing(comp_mean&i) or comp_mean&i = 0  then do;
+                        if missing(comp_mean&i) or comp_mean&i = 0 then do;
                         comp_mean&i._char = '0';
                         %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
                         comp_std&i._char = '0.0%';
@@ -556,6 +565,7 @@
                     %end;
                 end;
                 else do;
+                    /*continuous metrics*/
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
                     if exp_mean&i = 0 and exp_std&i = 0 and total_exp_patients = 0 then do;
@@ -1011,7 +1021,6 @@
 
 
             /* Assign necessary variables for labeling */
-
             data &labelout;
                 set init_labels;
                 length analysisgrp $40 table weight $30;
