@@ -1215,53 +1215,53 @@
 
                 /*sex - only keep F if type 4 and remove rows not requested in cohortfile*/
                 else if MetVar in ('FEMALE', 'SEX_F') and 'F' in (&sex.) then do;
-                %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('F', sexsort.));
+                %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('F', sexsort.),1.));
                 end;
                 else if MetVar in ('MALE', 'SEX_M') and 'M' in (&sex.) then do; 
                     %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
-                        %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('M', sexsort.));
+                        %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('M', sexsort.),1.));
                     %end;
                 end;
                 else if MetVar in ('SEX_OTHER', 'SEX_O') and 'O' in (&sex.) then do;
                     %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
-                    %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=put('O', sexsort.));
+                    %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('O', sexsort.),1.));
                     %end;
                 end;
 
                 /*race - remove rows not requested in cohortfile*/
                 else if MetVar in ('AMERICANINDIAN', 'RACE_1') and '1' in (&race.) then do; 
-                %assignbaselinevars(label=put('1', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('1', racesort.));
+                %assignbaselinevars(label=put('1', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('1', racesort.),1.));
                 end;
                 else if MetVar in ('ASIAN', 'RACE_2') and '2' in (&race.) then do; 
-                %assignbaselinevars(label=put('2', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('2', racesort.));
+                %assignbaselinevars(label=put('2', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('2', racesort.),1.));
                 end;
                 else if MetVar in ('BLACK', 'RACE_3') and '3' in (&race.) then do; 
-                %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('3', racesort.));
+                %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('3', racesort.),1.));
                 end;
                 else if MetVar in ('PACIFICISLANDER', 'RACE_4') and '4' in (&race.) then do; 
-                %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('4', racesort.));
+                %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('4', racesort.),1.));
                 end;
                 else if MetVar in ('RACE_UNKNOWN', 'RACE_0') and '0' in (&race.) then do; 
-                %assignbaselinevars(label=put('0', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('0', racesort.));
+                %assignbaselinevars(label=put('0', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('0', racesort.),1.));
                 end;
                 else if MetVar in ('WHITE', 'RACE_5') and '5' in (&race.) then do; 
-                %assignbaselinevars(label=put('5', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=put('5', racesort.));
+                %assignbaselinevars(label=put('5', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('5', racesort.),1.));
                 end;
 
                 /*hispanic - remove rows not requested in cohortfile*/
                 else if substr(MetVar, 1,10) = 'HISPANIC_Y' and 'Y' in (&hispanic.) then do; 
-                %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('Y', hispanicsort.));
+                %assignbaselinevars(label=put('Y', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=input(put('Y', hispanicsort.),1.));
                 end;
                 else if substr(MetVar, 1,10) = 'HISPANIC_N' and 'N' in (&hispanic.) then do; 
-                %assignbaselinevars(label=put('N', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('N', hispanicsort.));
+                %assignbaselinevars(label=put('N', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=input(put('N', hispanicsort.),1.));
                 end;
                 else if substr(MetVar, 1,10) = 'HISPANIC_U' and 'U' in (&hispanic.) then do; 
-                %assignbaselinevars(label=put('U', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=put('U', hispanicsort.));
+                %assignbaselinevars(label=put('U', $hispanicfmt.), grouper="Demographic Characteristics", sortorder1 = 6, sortorder2=input(put('U', hispanicsort.),1.));
                 end;
 
                 /*year*/
                 else if index((MetVar),'YEAR') > 0 then do;
-                %assignbaselinevars(label=compress(substr(MetVar,6)), grouper="Demographic Characteristics", sortorder1 = 8, sortorder2=compress(substr(MetVar,6)));
+                %assignbaselinevars(label=compress(substr(MetVar,6)), grouper="Demographic Characteristics", sortorder1 = 8, sortorder2=input(compress(substr(MetVar,6)),4.));
                 end;
 
             /*******************************************************************/
@@ -1270,16 +1270,16 @@
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
-                    %assignbaselinevars(label=put('PRE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('PRE', deliverysort.));
+                    %assignbaselinevars(label=put('PRE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('PRE', deliverysort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label=put('TERM', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('TERM', deliverysort.));
+                    %assignbaselinevars(label=put('TERM', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('TERM', deliverysort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
-                    %assignbaselinevars(label=put('POST', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('POST', deliverysort.));
+                    %assignbaselinevars(label=put('POST', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('POST', deliverysort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_NONE' then do;
-                    %assignbaselinevars(label=put('NONE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('NONE', deliverysort.));
+                    %assignbaselinevars(label=put('NONE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NONE', deliverysort.),1.));
                     end;
                     if MetVar= 'GA_BIRTH' then do;
                     %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
@@ -1365,7 +1365,7 @@
                     %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=alphabeticalorder);
                     %end;
                     %else %if %str("&covarsort") = %str("C") %then %do;
-                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=substr(metvar,6));
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=input(substr(metvar,6),4.));
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
