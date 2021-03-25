@@ -47,7 +47,7 @@
 
   options orientation=portrait;
   options nocenter;
-  ods startpage = no;
+  ods startpage = now;
     %let tablecount=1;
     %let tableletter=a;
 
@@ -69,7 +69,6 @@
 			  if group="&analysisgrp.";
               call symputx("grouplabel",  %quote(Label));
 			  run;
-			  %put &grouplabel.;
 			%end;
 
   			%if &OutputPSDistribution. = Y %then %do;
@@ -135,8 +134,6 @@
               %do i = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
                 ods graphics on / width=5in scale=on;
-				proc printto;
-				run;
 
                 /*Trick excel to create new sheet*/
 				%if &destination. = excel %then %do;
@@ -302,6 +299,7 @@
 		    %end; *OutputPSDistribution;
 	    %end; *numl2comparisons;
 
+		ODS PDF BOOKMARKGEN = ON; 
 		%let figurenum = %eval(&figurenum.+1); 
 
 %mend l2_psdistribution_output;

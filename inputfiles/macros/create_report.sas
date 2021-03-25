@@ -86,10 +86,6 @@
 			%l2_effect_estimate_driver();
 		%if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
-
-			proc datasets nowarn noprint lib=work;
-			delete hist: bins;
-			quit;
 		%end;
         %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
             %l2_forestplot_createdata;

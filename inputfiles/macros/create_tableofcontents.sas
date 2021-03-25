@@ -315,8 +315,7 @@
 		            from pscs_masterinputs
 		            where analysisgrp = "&analysisgrp.";
 			        quit;
-
-                    %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+             %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				      data _null_; 
 	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
 	                    call symputx("psestimategrp", lowcase(psestimategrp));
@@ -335,19 +334,19 @@
 	                        %end;
 	                  run; 
 
-		              %do j = %eval(&look_start) %to %eval(&look_end);
+		            %do j = %eval(&look_start) %to %eval(&look_end);
+
 						%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %do;
 							%let tablecount = 0;
 						%end;
 		                %tableletter();
 		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
 		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
-		              %end; /* loop periods */
+		            %end; /* loop periods */
 				%end; /*psfile*/
 			  %end; /* OutputPSDistribution */
-			 %end; /* loop comparisons */ 
-
-             %let figurenum = %eval(&figurenum.+1);
+			 %end; /* loop comparisons */
+			 %let figurenum = %eval(&figurenum.+1); 
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
@@ -355,8 +354,8 @@
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
-				%let tableletter=a;
-				%let tablecount = 1;
+						%let tableletter=a;
+						%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;

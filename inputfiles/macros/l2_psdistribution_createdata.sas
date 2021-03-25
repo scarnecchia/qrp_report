@@ -155,8 +155,6 @@
 				 	  if group="&eoi." then call symputx('eoilabel', %quote(Label));
 				 	  if group="&ref." then call symputx('reflabel', %quote(Label));
 				 	  run;
-				 	  %put &eoilabel.;
-				 	  %put &reflabel.;
 					%end;
 
 
@@ -167,7 +165,7 @@
 	                            , y.type
 	                            , y.ps_cat
 	                            , y.weight
-	                            , "&analysisgrp" as analysisgrp format=$40.
+	                            , "&analysisgrp" as analysisgrp format=$40. length=40
 	                            , y.bin_eoi label="Histogram of &eoilabel."
 	                            , y.bin_ref label="Histogram of &reflabel."
 	                            , "&dpsiteid." as dp length=6
@@ -184,5 +182,9 @@
 	        %end; /*if PS analysis (matching/stratification)*/
     	%end; /*OutputPSDistribution*/
 	%end;  /*loop through comparisons*/
+
+		proc datasets nowarn noprint lib=work;
+		delete raw: hist_: bins;
+		quit;
 
 %mend l2_psdistribution_createdata;
