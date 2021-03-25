@@ -302,4 +302,6 @@
 		    %end; *OutputPSDistribution;
 	    %end; *numl2comparisons;
 
+		%let figurenum = %eval(&figurenum.+1); 
+
 %mend l2_psdistribution_output;
