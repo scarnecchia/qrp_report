@@ -106,12 +106,12 @@
 		/* Select Footnotes */  
 	     data _footnotes;
 		   length footnote_order 3; 
-	       set infolder.lookup_footnotes (where = (order in (14 15
+	       set lookup.lookup_footnotes (where = (order in (14 15
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("MI"))%then %do; 1 %end;
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
-		     %if %str("&baselinerowitalics.") ne %str("") %then %do; 3 %end;
+		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
 		     %if &psfile. = stratificationfile %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
 			   %else %if "&weightscheme." = "ATT" %then %do; 6 %end;
@@ -137,27 +137,28 @@
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
 		  
-		  select description into: fn1 - fn&numfn.
+		  select description into: fn1 - :fn&num_fn.
 		  from _footnotes
 		  order by order;
 		quit;
         
 		%macro assign_superscripts(type =, order =);
+		  %global super_&type.;
 		  %let super_&type. =;
 		  
-		  select footnote_order into: super_&type. separated by 'super '
-		  from _footnotes where order in in (&order.);
-		  %if %str("&&super_&type..") ne %str("") %then %do;
-		    %let super_&type. = ^{&&super_&type..};
-		  %end;
-	    quit;
-		%assign_superscripts(type =character, order = 1 2 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =race, order = 15);
-		%assign_superscripts(type =stdev, order = 14);
-		%assign_superscripts(type =comorbid, order = 17);
-		%assign_superscripts(type =switch1, order = 12);
-		%assign_superscripts(type =switch2, order = 13);
-		%assign_superscripts(type =gestage, order = 16);
+		  proc sql noprint;
+		    select cats('^{Super ',footnote_order,'}') into: super_&type. separated by ' '
+		    from _footnotes where order in (&order.);
+		  quit;
+		  
+		%mend assign_superscripts;
+		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
+		%assign_superscripts(type =race, order =15);
+		%assign_superscripts(type =stdev, order =14);
+		%assign_superscripts(type =comorbidscore, order =17);
+		%assign_superscripts(type =switch1, order =12);
+		%assign_superscripts(type =switch2, order =13);
+		%assign_superscripts(type =gestage, order =16);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -291,7 +292,7 @@
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
-			compute after;
+			compute after / style=[just=L];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";

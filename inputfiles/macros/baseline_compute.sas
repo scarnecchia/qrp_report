@@ -228,11 +228,8 @@
         %end;
 		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             data _null_;
-			
 			  set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
-                call symputx('cohortgrp', strip(group))
-		    ;
-            
+                call symputx('cohortgrp', strip(group));
             run;
         %end;
 
@@ -282,7 +279,6 @@
               call symputx('cohortdef', strip(switchcohortdef));
             run;
         %end;
-
 
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
