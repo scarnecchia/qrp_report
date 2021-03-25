@@ -876,8 +876,8 @@
                         %end;
 
                         %if "&weight" = "Weighted" %then %do;
-                            if num_exp(i) >= 0 and exp_s2(i)>= 0 then agg_sw_exp = agg_sw_exp + ( (exp_s2(i))*(vk_exp(i))); /*Numerator of Sw2 for SD calculation*/
-                            if num_comp(i) >= 0 and comp_s2(i)>= 0 then agg_sw_comp = agg_sw_comp + ( (comp_s2(i))*(vk_comp(i))); 
+                            if num_exp(i) and exp_s2(i)>= 0 then agg_sw_exp = agg_sw_exp + ( (exp_s2(i))*(vk_exp(i))); /*Numerator of Sw2 for SD calculation*/
+                            if num_comp(i) and comp_s2(i)>= 0 then agg_sw_comp = agg_sw_comp + ( (comp_s2(i))*(vk_comp(i))); 
                         %end;
                         %else %do;
                             ** Get weighted Std Dev for pooled Standard Deviation calculation  ** ;
