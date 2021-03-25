@@ -505,9 +505,7 @@
                         %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         exp_std&i._char = 'N/A';
                         %end;
-                        if exp_mean&i = 0 then do;
-                        exp_std&i._char = 'N/A';
-                        end;
+                        if exp_mean&i = 0 then exp_std&i._char = 'N/A';
                     end;
                     else if metvar = 'N_EPISODES' then do;
                         if exp_mean&i = 0 then do;
@@ -531,6 +529,7 @@
 
                     /*if 0 patients in a category, set to 0*/
                     if comp_mean&i. = . then comp_mean&i. = 0;
+                    if comp_std&i. = . then comp_std&i. = 0;
 
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
                     comp_std&i._char = compress(put(comp_std&i,percent10.1));
@@ -538,14 +537,10 @@
                         %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         comp_std&i._char = 'N/A';
                         %end;
-                        if missing(comp_mean&i) or comp_mean&i = 0 then do;
-                        comp_mean&i._char = '0';
-                        comp_std&i._char = 'N/A';
-                        end;
+                        if comp_mean&i = 0 then comp_std&i._char = 'N/A';
                     end;
                     else if metvar = 'N_EPISODES' then do;
-                        if missing(comp_mean&i) or comp_mean&i = 0 then do;
-                        comp_mean&i._char = '0';
+                        if comp_mean&i = 0 then do;
                         %if %index(&reporttype,T6) and "&table" ^= "Switchstep_0" %then %do;
                         comp_std&i._char = '0.0%';
                         %end;
@@ -555,11 +550,10 @@
                         end;
                     end;
                     else do;
-                        if missing(comp_mean&i) or comp_mean&i = 0 then do;						
-                            if total_comp_patients = 0 then do; 
+                        /*set to . if no patients in cohort*/
+                        if comp_mean&i = 0 and &&&n_&table._episodes_comp&i = 0 then do; 
                             comp_mean&i._char = '.';
                             comp_std&i._char = '.';
-                            end;
                         end;
                     end;
                     %end;
@@ -574,11 +568,11 @@
                     end;
 
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
-                    if missing(exp_std&i) or exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = 'NaN';
-                    if missing(exp_mean&i) then exp_std&i._char = '.';
+                    if exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = 'NaN';
+                    if exp_mean&i = 0 then exp_std&i._char = '.';
                     %end;
                     %else %do;
-                    if (missing(exp_mean&i) or exp_mean&i = 0) and (missing(exp_std&i) or exp_std&i = 0) then do;
+                    if exp_mean&i = 0 and exp_std&i = 0 then do;
                         if total_exp_episodes > 0 then do;
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
@@ -598,11 +592,11 @@
                         comp_std&i._char = '.';
                     end;
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
-                    if missing(comp_std&i) or comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = 'NaN';
-                    if missing(comp_mean&i) then comp_std&i._char = '.';
+                    if comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = 'NaN';
+                    if comp_mean&i = 0 then comp_std&i._char = '.';
                     %end;
                     %else %do;
-                    if (missing(comp_mean&i) or comp_mean&i = 0) and (missing(comp_std&i) or comp_std&i = 0) then do;
+                    if comp_mean&i = 0 and comp_std&i = 0 then do;
                         if total_comp_episodes > 0 then do;
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
