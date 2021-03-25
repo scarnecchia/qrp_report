@@ -561,18 +561,20 @@
                     /*continuous metrics*/
                     exp_mean&i._char = compress(put(exp_mean&i,8.1));
                     exp_std&i._char = compress(put(exp_std&i,8.1));
-                    if exp_mean&i = 0 and exp_std&i = 0 and total_exp_patients = 0 then do;
+                    if exp_mean&i = 0 and exp_std&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                         exp_mean&i._char = '.';
                         exp_std&i._char = '.';
                     end;
 
+                    if exp_mean&i > 0 and exp_std&i = . then exp_std&i._char = 'NaN';
+					
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
-                    if exp_std&i = 0 and total_exp_episodes > 0 then exp_std&i._char = 'NaN';
+                    if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
                     if exp_mean&i = 0 then exp_std&i._char = '.';
                     %end;
                     %else %do;
                     if exp_mean&i = 0 and exp_std&i = 0 then do;
-                        if total_exp_episodes > 0 then do;
+                        if &&&n_&table._episodes_exp&i > 0 then do;
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
                         end;
@@ -586,17 +588,20 @@
                     comp_mean&i._char = compress(put(comp_mean&i,8.1));
                     comp_std&i._char = compress(put(comp_std&i,8.1));
 
-                    if comp_mean&i = 0 and comp_std&i = 0 and total_comp_patients = 0 then do;
+                    if comp_mean&i = 0 and comp_std&i = 0 and &&&n_&table._episodes_comp&i = 0 then do;
                         comp_mean&i._char = '.';
                         comp_std&i._char = '.';
                     end;
+
+                    if comp_mean&i > 0 and comp_std&i = . then comp_std&i._char = 'NaN';
+					
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
-                    if comp_std&i = 0 and total_comp_episodes > 0 then comp_std&i._char = 'NaN';
+                    if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
                     if comp_mean&i = 0 then comp_std&i._char = '.';
                     %end;
                     %else %do;
                     if comp_mean&i = 0 and comp_std&i = 0 then do;
-                        if total_comp_episodes > 0 then do;
+                        if &&&n_&table._episodes_comp&i > 0 then do;
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
                         end;
@@ -742,8 +747,8 @@
                           %end;
 						%end;
                         %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
-                        if ^missing(exp_mean0) and (total_exp_episodes > 0) then do;
-                        exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
+                        if ^missing(exp_mean0) and (total_exp_episodes >= 0) then do;
+                        exp_std0 = divide(exp_mean0,&total_unadjusted_exp_episodes.);
                         if metvar = 'PATIENT' and total_exp_episodes >= 0 then exp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
                             exp_std0_char = compress(put(exp_std0,percent10.1));
@@ -751,8 +756,8 @@
                         end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes > 0) then do;
-                        comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;   
+                        if ^missing(comp_mean0) and (total_comp_episodes >= 0) then do;
+                        comp_std0 = divide(comp_mean0,&total_unadjusted_comp_episodes.);   
                         if metvar = 'PATIENT'  and total_comp_episodes >= 0 then comp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
                             comp_std0_char = compress(put(comp_std0,percent10.1));
@@ -807,6 +812,10 @@
                             if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = ((a-b) / c);
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
+							if exp_mean0 = 0 or comp_mean0 = 0 or exp_mean0 = . or comp_mean0 = . then do;
+                                ad0_char = 'NaN';
+                                sd0_char = 'NaN';
+							end;
 							if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd0) then sd0_char = 'NaN';
                             if total_exp_episodes = 0 and total_comp_episodes = 0 and (ad0 = 0 or missing(ad0)) then do;
                                 sd0_char = '.';
@@ -910,12 +919,14 @@
                         if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
+                        if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(comp_std_sum/(total_comp_episodes - count));
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
+                        if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
                         %end;
@@ -944,6 +955,10 @@
                             if (exp_std0 > 0) AND (comp_std0 > 0) then sd0 = (exp_mean0 - comp_mean0)/(sqrt((exp_std0*exp_std0 + comp_std0*comp_std0)/2));
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
+							if exp_mean0 = 0 or comp_mean0 = 0 or exp_mean0 = . or comp_mean0 = . then do;
+                                ad0_char = 'NaN';
+                                sd0_char = 'NaN';
+							end;
 							if total_exp_episodes > 0 and total_comp_episodes > 0 and missing(sd0) then sd0_char = 'NaN';
                             if total_exp_episodes = 0 and total_comp_episodes = 0 and (ad0 = 0 or missing(ad0)) then do;
                                 sd0_char = '.';
@@ -962,14 +977,18 @@
                         sd&i._char = strip(compress(put(sd&i., 8.3)));
                 
                         if metvar ne 'MAHALANOBIS' then do;
-                          if exp_mean&i >= 0 and ad&i. = 0 then sd&i._char = 'NaN';
+                          if exp_mean&i >= 0  and ad&i. = 0 then sd&i._char = 'NaN';
                           if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
                                 ad&i._char = 'N/A';
                                 sd&i._char = 'N/A';
                           end;
                           else do;
+						  if exp_mean&i. = 0 or comp_mean&i = 0 or exp_mean&i. = . or comp_mean&i = . then do;
+                                ad&i._char = 'NaN';
+                                sd&i._char = 'NaN';
+						  end;
 						  if exp_mean&i. > 0 and comp_mean&i > 0 and missing(sd&i.) then sd&i._char = 'NaN';
-                          if total_exp_episodes = 0 and total_comp_episodes = 0 and ad&i = 0 then do;
+                          if &&&n_&table._episodes_exp&i = 0 and &&&n_&table._episodes_comp&i = 0 and ad&i = 0 then do;
                                 ad&i._char = '.';
                                 sd&i._char = '.';
                           end;
