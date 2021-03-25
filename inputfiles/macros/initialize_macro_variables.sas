@@ -81,9 +81,10 @@
     %let figurelist = ;
 
     /*baseline table variables comorbidscore*/
-    %global numbaselinetablegrp;
+    %global numbaselinetablegrp baselinerowitalics comorbidscore;
     %let numbaselinetablegrp =0;
 	%let comorbidscore =;
+	%let baselinerowitalics=;
 
     /*L2 report variables*/
     %global numl2comparisons;
@@ -92,6 +93,9 @@
     /*label file variables */
     %global label_length;
     %let label_length = 250;
+
+    /*Age stratification format */
+    %global agefmt;
 
     /*Output counter variables*/
     %global tableletter tablecount;

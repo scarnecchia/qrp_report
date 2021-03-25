@@ -105,7 +105,7 @@
                 if missing(medproduse) then call symputx('medproduse', 'missing');
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
-                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -143,8 +143,8 @@
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
-            run;
-        %end;
+            run;			
+		%end;
 
         *************************************************************
         * Processing - need to:
@@ -1285,16 +1285,16 @@
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
-                    %assignbaselinevars(label="Pre-Term (0-258 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=1);
+                    %assignbaselinevars(label=put('PRE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('PRE', deliverysort.));
                     end;
                     if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label="Term (259-280 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=2);
+                    %assignbaselinevars(label=put('TERM', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('TERM', deliverysort.));
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
-                    %assignbaselinevars(label="Post-Term (281-301 days)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=3);
+                    %assignbaselinevars(label=put('POST', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('POST', deliverysort.));
                     end;
                     if MetVar= 'PREPOSTIND_NONE' then do;
-                    %assignbaselinevars(label="Unknown Term", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=4);
+                    %assignbaselinevars(label=put('NONE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=put('NONE', deliverysort.));
                     end;
                     if MetVar= 'GA_BIRTH' then do;
                     %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
