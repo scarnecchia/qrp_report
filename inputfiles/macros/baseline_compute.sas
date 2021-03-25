@@ -519,7 +519,7 @@
                     end;
                     else do;
                         /*set to . if no patients in cohort*/
-                        if exp_mean&i = 0 and total_exp_patients = 0 then do;
+                        if exp_mean&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                             exp_mean&i._char = '.';
                             exp_std&i._char = '.';
                         end;
