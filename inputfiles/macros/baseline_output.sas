@@ -320,7 +320,7 @@
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end; flow];
+			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end;];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
