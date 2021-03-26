@@ -73,7 +73,6 @@
 			%end;
 
   			%if &OutputPSDistribution. = Y %then %do;
-				%let figurenum=1;
 
 				proc sql noprint;
 		        select strip(file) into: psfile
@@ -94,15 +93,9 @@
                   set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
                     call symputx("psestimategrp", lowcase(psestimategrp));
                         %if &psfile. = psmatchfile  %then %do;
-                            if upcase(ratio) = "F" then do;
-							    call symput("andafter", " and After");
-                                call symputx("matchtype",'F');
-                                call symputx("ratiohist","1:"||strip(ceiling)); 
-                            end;
-                            else if upcase(ratio) = "V" then do;
-                                call symputx("matchtype",'V');
-                                call symputx("ratiohist","1:"||strip(ceiling));
-                            end;
+							call symputx("matchtype",strip(upcase(ratio)));
+							call symputx("ratiohist","1:"||strip(ceiling));
+                            if upcase(ratio) = "F" then call symput("andafter", " and After");
                             call symputx("caliperhist", caliper);
                         %end;
                         %if &psfile = iptwfile %then %do;
