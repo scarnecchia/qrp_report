@@ -40,9 +40,10 @@
 	  %let super_&type. =;
 	  
 	  proc sql noprint;
-	    select catx('^{Super ',footnote_order,'}') into: super_&type. separated by ','
+	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by ','
 	    from _footnotes where order in (&order.);
 	  quit;
+	  %put super_&type. = &&super_&type.;
 	%mend assign_superscripts;
 
     /*********************************************************************************************/
@@ -278,8 +279,8 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if index(label,'Race') > 0 then label = catx(label,"&super_race.");
-			  else if index(label,'Charlson/Elixhauser') > 0 then label = catx(label,"&super_comorbidscore.");
+			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
+			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Mean gestational age at delivery" then label = "Mean gestational age&super_gestage. at delivery";
 			  else if label = "Mean gestational age of first exposure (weeks)" then label = "Mean gestational age&super_gestage. of first exposure (weeks)";
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
