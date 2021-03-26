@@ -28,9 +28,9 @@
 
 	%macro output_histogram(type=, weight=);
 
-		%isdata(dataset=repdata.Figure1&tableletter.);
+		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
-		data repdata.Figure1&tableletter.;
+		data repdata.Figure&figurenum.&tableletter.;
 		set histogram_&i. (where=(runid="&runid." and order="&loopcount."));
 		run;
 		%end;
@@ -38,9 +38,9 @@
 		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount."));  
 			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
 			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
-			keylegend / location=outside position=bottom noborder valueattrs=(size=7);
-			xaxis label = "PS" labelattrs=(size=7 color=gray) valueattrs=(size=7 color=gray) values=(0 to 1 by .2) offsetmax = .02;
-			yaxis display=(noline) label="Percent" labelattrs=(size=7 color=gray) valueattrs=(size=7 color=gray);
+			keylegend / location=outside position=bottom noborder valueattrs=(size=&fontsize. family=&font.);
+			xaxis label = "PS" labelattrs=(size=&fontsize. family=&font. color=gray) valueattrs=(size=&fontsize. family=&font. color=gray) values=(0 to 1 by .2) offsetmax = .02;
+			yaxis display=(noline) label="Percent" labelattrs=(size=&fontsize. family=&font. color=gray) valueattrs=(size=&fontsize. family=&font. color=gray);
 			where type = "&type." and weight="&weight." and dp = "&maskeddpid." and lowcase(analysisgrp) = "&analysisgrp.";
 		run;
 	%mend output_histogram;
@@ -48,6 +48,7 @@
   options orientation=portrait;
   options nocenter;
   ods startpage = now;
+  ods startpage = no;
     %let tablecount=1;
     %let tableletter=a;
 
@@ -299,7 +300,9 @@
 		    %end; *OutputPSDistribution;
 	    %end; *numl2comparisons;
 
-		ODS PDF BOOKMARKGEN = ON; 
+		%if &destination. = pdf %then %do;
+		 ODS PDF BOOKMARKGEN = ON;
+		%end; 
 		%let figurenum = %eval(&figurenum.+1); 
 
 %mend l2_psdistribution_output;

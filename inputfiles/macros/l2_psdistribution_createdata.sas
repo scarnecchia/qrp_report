@@ -70,10 +70,10 @@
 	            /* Determine weights on input dataset to use for squaring */
 	            proc sql noprint;
 	              select count(distinct(weight)) into: numweights trimmed
-	              from agg_psdistribution_&periodid.;
+	              from agg_psdistribution_&periodid. (where=(runid="&runid." and lowcase(analysisgrp)="&analysisgrp."));
 	              
 	              select distinct(weight) into: weight1 - :weight&numweights.
-	              from agg_psdistribution_&periodid.;
+	              from agg_psdistribution_&periodid. (where=(runid="&runid." and lowcase(analysisgrp)="&analysisgrp."));
 	            quit;
 
 	            /*Create bins dataset*/
@@ -125,19 +125,14 @@
 	                data raw_histogram;
 	                   set %if &dps=0 %then %do; hist_&dps.; %end;
 	                       %else %do; agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and dpidsiteid="&dpsiteid." and runid="&runid.")); %end;
+							if group="&eoi." then group = "eoi";
+					        if group="&ref." then group = "ref";
 	                run;
 
 	                /*Transpose to create separate column for exposure and comparator counts*/
 	                proc sort data=raw_histogram;
 	                    by type weight ps_cat;
 	                run;
-
-					/*defensive coding to avoid errors with group names with more than 32 charac*/
-					data raw_histogram;
-					set raw_histogram;
-					if group="&eoi." then group = "eoi";
-					if group="&ref." then group = "ref";
-					run;
 
 	                proc transpose data=raw_histogram out=raw_histogram1 prefix = _;
 	                    by type weight ps_cat;
