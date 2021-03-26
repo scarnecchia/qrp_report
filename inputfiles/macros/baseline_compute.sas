@@ -572,7 +572,7 @@
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
                     %end;
                     %else %do;
-                    if exp_mean&i = 0 and exp_std&i = 0 then do;
+                    if (exp_mean&i = 0 and exp_std&i = 0) or (missing(exp_mean&i) and missing(exp_std&i)) then do;
                         if &&&n_&table._episodes_exp&i > 0 then do;
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
@@ -598,7 +598,7 @@
                     if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
                     %end;
                     %else %do;
-                    if comp_mean&i = 0 and comp_std&i = 0 then do;
+                    if (comp_mean&i = 0 and comp_std&i = 0) or (missing(comp_mean&i) and missing(comp_std&i)) then do;
                         if &&&n_&table._episodes_comp&i > 0 then do;
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
