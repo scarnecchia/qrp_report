@@ -50,7 +50,6 @@
 /*-----------------------------------------------------------------------------------------------*/
 
 /* System options */
-*options nosymbolgen nomlogic;
 options nosymbolgen nomlogic;
 options ls=100 nocenter ;
 options obs=MAX ;
@@ -134,15 +133,15 @@ options validvarname = v7;
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
-%let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
+%soc_lib(lookup, &REPORTROOT.inputfiles/);
+%let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/macros/lookuptables/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+%let lookup = %soc_clean_paths(&input.macros/lookuptables/);
 
 /* Create reportdata and lookup folder */
 %let repdata = &output.reportdata.;
-%let lookup = &input.macros/lookuptables/;
 options DLCREATEDIR ;
 libname repdata "&repdata" ;
-libname lookup "&lookup" ;
 options NODLCREATEDIR;
 
 /* Assign ods template path */
@@ -178,14 +177,11 @@ ods path(prepend) work.templat(update);
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
 %include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
-%include "&reportroot.inputfiles/macros/l2_psdistribution_createdata.sas";
-%include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_pl.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
