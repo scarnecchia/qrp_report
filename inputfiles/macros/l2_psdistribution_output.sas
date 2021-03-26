@@ -67,7 +67,7 @@
 		    %if %eval(&nobs>0) %then %do;
 			  data _NULL_;
 			  set labelfile(where=(lowcase(labeltype)='grouplabel'));
-			  if group="&analysisgrp.";
+			  if group="&analysisgrp." and runid="&runid.";
               call symputx("grouplabel",  %quote(Label));
 			  run;
 			%end;
