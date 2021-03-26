@@ -43,7 +43,7 @@
 	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by ','
 	    from _footnotes where order in (&order.);
 	  quit;
-	  %put super_&type. = &&super_&type.;
+	  
 	%mend assign_superscripts;
 
     /*********************************************************************************************/
@@ -65,10 +65,6 @@
         %isdata(dataset=repdata.table1&tableletter.);
         %if %eval(&nobs.<1) %then %do;
             %let dataset = table1_&periodid.;
-			/* Set default for cohortdef and comorbidscore */
-			%global comorbidscore cohortdef;
-			%let comorbidscore =;
-			%let cohortdef =;
 
             /*if T6 - merge all switchsteps and create new columns*/
             %if &reporttype. = T6 %then %do;
@@ -112,10 +108,6 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
-				if label="Charlson/Elixhauser combined comorbidity score" then do;
-				  call symputx('comorbidscore','Y');
-				end;
-				call symputx('cohortdef',cohortdef);
                 keep label grouper metvar analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
@@ -159,7 +151,12 @@
 		   /* T4L2 or T4L1 with MIL */
 		   %if %index(&reporttype,T4) and %str("&cohort.") = %str("mi") %then %do; 11 %end;
 		   /* T6 Switching */
-		   %if %str("&reporttype.") = %str("T6") %then %do; 12 13 %end;
+		   %if %str("&reporttype.") = %str("T6") %then %do; 
+		     /* 1st switch */
+		     %if %eval(&maxswitch > 0) %then %do; 12 %end;
+		   /* 2nd Switch */
+		     %if %eval(&maxswitch=2) %then %do; 13 %end;
+		   %end;
 		   /* T4 L1 or L2 */
 		   %if %index(&reporttype,T4) %then %do; 16 %end;
 		   /* Comorbidscore is specified */
@@ -180,7 +177,7 @@
         
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =weighted, order =4 5 6 7 8 9 10);
+		%assign_superscripts(type =weighted, order =4 5 6 7 8 9 10 17);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
@@ -322,7 +319,7 @@
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end; overflow=auto];
+			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=1.25in %end; nobreakspace=off];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
@@ -376,11 +373,12 @@
                 call symputx('analysisgrp', strip(analysisgrp));
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
+				call symputx('cohordef',cohortdef);
+				call symputx('comorbidscore',comorbidscore);
                 call symputx('unique_psestimate',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);				
                 call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
-
 
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');

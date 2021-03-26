@@ -278,6 +278,22 @@
               call symputx('cohortdef', strip(switchcohortdef));
             run;
         %end;
+		
+		/* Add cohortdef and comorbidscore to baselinefile */
+		%let comorbidscore =;
+		data _null_;
+		  set &datain.;
+		  if metvar = "COMORBIDSCORE" then do;
+		    call symputx('comorbidscore','Y');
+		  end;
+		run;
+		
+		data baselinefile;
+		  length comorbidscore $1 cohortdef $2;
+		  set baselinefile;
+		  comorbidscore = "&comorbidscore.";
+		  cohortdef = "&cohortdef.";
+		run;
 
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
@@ -1418,9 +1434,7 @@
         run;
 
         data baseline_aggregatefinal;
-		    length cohortdef $2.;
             set baseline_aggregatefinal baseline_labels:;
-			cohortdef = "&cohortdef.";
         run;
 
         /*Final sort*/;
