@@ -155,10 +155,11 @@
 				%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %let tablecount = 0;
                 %tableletter();
                 %if &destination. = excel %then %do;
-                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue");
+                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue" flow='none');
                 %end;
+
                 proc odstext pagebreak=yes;
-	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&i.formatted.") /
+	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. ^{newline} in the &database. from &startdateformatted. to &&enddate&i.formatted.") /
 	                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
 					%if &destination. = pdf %then %do;
 						ODS PDF BOOKMARKGEN = ON; 
