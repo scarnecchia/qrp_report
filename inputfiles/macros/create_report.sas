@@ -39,7 +39,7 @@
 
     /*clear work and output*/
     proc datasets nowarn nolist lib=work kill; quit;
-    proc datasets nowarn nolist lib=output kill; quit;
+    proc datasets nowarn nolist lib=repdata kill; quit;
 
     /*Initialize global macro variables*/
     %initialize_macro_variables();
@@ -125,11 +125,6 @@
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt);
     %end;
-
-
-    /*Create PDF and Excel templates*/
-
-    /*driver macro*/
 
 ***************************************************************************************************;
 *   Clean Work                                                                                 

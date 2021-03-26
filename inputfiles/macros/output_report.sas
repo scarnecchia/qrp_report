@@ -15,7 +15,7 @@
 *   - qrp_report.pdf
 *   - qrp_report.xlsx
 *
-*  PARAMETERS:        
+*  PARAMETERS:                                                                       
 *   - destination: ODS destination. Valid values: excel or pdf
 *   - font: font
 *   - fontsize = font size
@@ -49,11 +49,11 @@
     %if &destination. = excel %then %do;
     ods excel file="&REPORTROOT.output/qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
-                sheet_interval="proc"
-                gridlines="off"
-                frozen_headers = "yes"
-                embedded_footnotes= "yes" 
-                flow="tables");
+            sheet_interval="proc"
+            gridlines="off"
+            frozen_headers = "yes"
+            embedded_footnotes= "yes" 
+            flow="tables");
     %end;
     %if &destination. = pdf %then %do;
     ods pdf file="&REPORTROOT.output/qrp_report.pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
@@ -77,7 +77,7 @@
     ods proclabel = "Table of Contents";
 
     proc report data = tableofcontents nofs nowd headline headskip split="*" 
-	    style(report) = {rules = none frame = box borderwidth =1pt bordercolor = black};           
+	    style(report) = {rules = none frame = box borderwidth =1pt bordercolor = black cellpadding=1.75pt};           
         columns ( "Table of Contents" tabnum caption);            
         define tabnum / order=data ' ' style(column)=[just=R width=1.1in fontweight=bold textdecoration=underline];
         define caption / order=data  ' ' style(column)=[just=L];
@@ -86,6 +86,8 @@
 ***************************************************************************************************;
 * Baseline tables                                                      
 ***************************************************************************************************;
+
+    %baseline_output();
 
 ***************************************************************************************************;
 * Forest Plots                                                    

@@ -277,7 +277,7 @@
 
             proc sql noprint;    
                 create table covarname_&runid. as 
-                select distinct covarnum, studyname, "&runid" as runid length=5
+                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
                 from infolder.&&&runid._covariatecodes.;
 
                	select length
@@ -303,6 +303,30 @@
         delete studylen covarname_:; 
    quit;    
    
+
+/***************************************************************************************************
+*  Small cell count formats                                            
+***************************************************************************************************/
+
+    %if &small_cellcounts. = Y %then %let smallcellcolor = yellow;
+    %else %let smallcellcolor = white;
+
+    proc format;  
+        value $backgroundfmt 
+		'1'  = "&smallcellcolor."
+		'2'  = "&smallcellcolor."
+		'3'  = "&smallcellcolor."
+		'4'  = "&smallcellcolor."
+		'5'  = "&smallcellcolor."
+		'6'  = "&smallcellcolor."
+		'7'  = "&smallcellcolor."
+		'8'  = "&smallcellcolor."
+		'9'  = "&smallcellcolor."
+		'10' = "&smallcellcolor.";
+		
+	    value background_n_fmt 
+		1-10 = "&smallcellcolor.";
+    run;
 
 /***************************************************************************************************
 *  Create the formats for use with the Diagnosis and Procedure appendices output                                                         
