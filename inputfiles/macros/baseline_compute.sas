@@ -89,7 +89,6 @@
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
                 call symputx('cohort', cohort);
-				call symputx("cohort_&b.", cohort,'G');
 				call symputx('unique_psestimate',unique_psestimate);
                 /*computebalance defaults to Y for L2 tables*/
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -1345,7 +1344,6 @@
                 /*Assign labels and sortorder2*/
                 if metvar = 'COMORBIDSCORE' then do;
                 %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
-				call symputx('comorbidscore','Y');
                 end;
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
@@ -1420,7 +1418,9 @@
         run;
 
         data baseline_aggregatefinal;
+		    length cohortdef $2.;
             set baseline_aggregatefinal baseline_labels:;
+			cohortdef = "&cohortdef.";
         run;
 
         /*Final sort*/;

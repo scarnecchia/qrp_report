@@ -32,6 +32,18 @@
     %put =====> MACRO CALLED: baseline_output;
 
     %if %eval(&numbaselinetablegrp.>0) %then %do;
+    /*********************************************************************************************/
+    /*   Define macro variables for superscripts that correspond to required footnotes           */
+    /*********************************************************************************************/  	
+	%macro assign_superscripts(type =, order =);
+	  %global super_&type.;
+	  %let super_&type. =;
+	  
+	  proc sql noprint;
+	    select catx('^{Super ',footnote_order,'}') into: super_&type. separated by ','
+	    from _footnotes where order in (&order.);
+	  quit;
+	%mend assign_superscripts;
 
     /*********************************************************************************************/
     /*   proc report                                                                             */
@@ -52,6 +64,9 @@
         %isdata(dataset=repdata.table1&tableletter.);
         %if %eval(&nobs.<1) %then %do;
             %let dataset = table1_&periodid.;
+			/* Set default for cohortdef and comorbidscore */
+			%let comorbidscore =;
+			%let cohortdef =;
 
             /*if T6 - merge all switchsteps and create new columns*/
             %if &reporttype. = T6 %then %do;
@@ -95,6 +110,10 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
+				if label="Charlson/Elixhauser combined comorbidity score" then do;
+				  call symputx('comorbidscore','Y');
+				end;
+				call symputx('cohortdef',cohortdef);
                 keep label grouper metvar analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
@@ -106,28 +125,43 @@
 		/* Select Footnotes */  
 	     data _footnotes;
 		   length footnote_order 3; 
+		   /* Always displayed across all types */
 	       set lookup.lookup_footnotes (where = (order in (14 15
+		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
-		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("MI"))%then %do; 1 %end;
+		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi"))%then %do; 1 %end;
+		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
+		   /* L2 baselinerowitalics specified */
 		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
+		   /* L2 weighted table for PS stratification where weight is ATE */
 		     %if &psfile. = stratificationfile %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
+		   /* L2 weighted table for PS stratification where weight is ATT */
 			   %else %if "&weightscheme." = "ATT" %then %do; 6 %end;
+		   /* L2 weighted table for PS stratification where weight is Blank */
 			   %else %do; 5 %end;
 			 %end;
 			 %if &psfile. = iptwfile %then %do;
+		   /* L2 weighted table for IPTW where weight is ATE */
 			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
+		   /* L2 weighted table for IPTW where weight is ATES */
 			   %else %if "&weightscheme." = "ATES" %then %do; 8 %end;
+		   /* L2 weighted table for IPTW where weight is ATT */
 			   %else %if "&weightscheme." = "ATT" %then %do; 9 %end;
 			 %end;
+		   /* L2 weighted table for variable ratio matching */
 			 %if &psfile = psmatchfile and &ratio. = V %then %do; 10 %end;
-		  %end; 
-		  %if %index(&reporttype,T4) and %str("&cohort.") = %str("MI") %then %do; 11 %end;
-		  %if %str("&reporttype.") = %str("T6") %then %do; 12 13 %end;
-		  %if %index(&reporttype,T4) %then %do; 16 %end;
-		  %if &comorbidscore = Y %then %do; 17 %end;
+		   %end; 
+		   /* T4L2 or T4L1 with MIL */
+		   %if %index(&reporttype,T4) and %str("&cohort.") = %str("mi") %then %do; 11 %end;
+		   /* T6 Switching */
+		   %if %str("&reporttype.") = %str("T6") %then %do; 12 13 %end;
+		   /* T4 L1 or L2 */
+		   %if %index(&reporttype,T4) %then %do; 16 %end;
+		   /* Comorbidscore is specified */
+		   %if &comorbidscore = Y %then %do; 17 %end;
 		   )));
 		  by order;
 		  footnote_order = _n_;
@@ -142,23 +176,15 @@
 		  order by order;
 		quit;
         
-		%macro assign_superscripts(type =, order =);
-		  %global super_&type.;
-		  %let super_&type. =;
-		  
-		  proc sql noprint;
-		    select cats('^{Super ',footnote_order,'}') into: super_&type. separated by ' '
-		    from _footnotes where order in (&order.);
-		  quit;
-		  
-		%mend assign_superscripts;
+		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =race, order =15);
-		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =comorbidscore, order =17);
+		%assign_superscripts(type =weighted, order =4 5 6 7 8 9 10);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
+		%assign_superscripts(type =stdev, order =14);
+		%assign_superscripts(type =race, order =15);
 		%assign_superscripts(type =gestage, order =16);
+		%assign_superscripts(type =comorbidscore, order =17);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -194,13 +220,13 @@
 
             column (metvar grouper label
                     %if &computebalance. = Y %then %do; ("^S={background=white}&cohortheaderlabel." %end;
-                    ("^S={background=white borderleftcolor=white}&grp1_label.&super_switch1." exp_mean&dpnum._char exp_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp2_label.&super_switch2." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp3_label." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 
                     ('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
@@ -251,9 +277,10 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if index(label,'Race') > 0 then label = cats(label,"&super_race.");
-			  else if index(label,'Charlson/Elixhauser') > 0 then label = cats(label,"&super_comorbidscore.");
-			  else if index(label,'gestational') > 0 then label = cats(label,"&super_gestage.");
+			  if index(label,'Race') > 0 then label = catx(label,"&super_race.");
+			  else if index(label,'Charlson/Elixhauser') > 0 then label = catx(label,"&super_comorbidscore.");
+			  else if label = "Mean gestational age at delivery" then label = "Mean gestational age&super_gestage. at delivery";
+			  else if label = "Mean gestational age of first exposure (weeks)" then label = "Mean gestational age&super_gestage. of first exposure (weeks)";
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
@@ -292,7 +319,8 @@
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
-			compute after / style=[just=L];
+			/* Add Footnotes */
+			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end; flow];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
