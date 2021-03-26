@@ -972,7 +972,6 @@
                         sd&i._char = strip(compress(put(sd&i., 8.3)));
                 
                         if metvar ne 'MAHALANOBIS' then do;
-                          if exp_mean&i >= 0  and ad&i. = 0 then sd&i._char = 'NaN';
                           if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
                                 ad&i._char = 'N/A';
                                 sd&i._char = 'N/A';
