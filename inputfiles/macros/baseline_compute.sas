@@ -646,7 +646,7 @@
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
                     if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE|OTHER/',metvar) > 0 then do;
-                        if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = exp_mean0/total_exp_patients;
+                        if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = divide(exp_mean0,total_exp_patients);
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
                         if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0 = 0 then do;
@@ -656,7 +656,7 @@
                             end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_patients gt 0) then comp_std0 = comp_mean0/total_comp_patients;
+                        if ^missing(comp_mean0) and (total_comp_patients gt 0) then comp_std0 = divide(comp_mean0,total_comp_patients);
                         comp_std0_char=compress(put(comp_std0,percent10.1)); 
                         if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0 = 0 then do;
@@ -692,7 +692,7 @@
                           if metvar = 'PATIENT' then exp_std0_char = 'N/A';
 						  if metvar = 'N_EPISODES' then do;
                             if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do;
-                            exp_std0 = exp_mean0/&&total_Switchstep_&switch_b._exp_episodes;
+                            exp_std0 = divide(exp_mean0,&&total_Switchstep_&switch_b._exp_episodes);
                             exp_std0_char = compress(put(exp_std0,percent10.1));
                             end;
                             if exp_mean0 > 0 and &&total_Switchstep_&switch_b._exp_episodes = 0 then exp_std0_char = 'NaN';
@@ -710,7 +710,7 @@
 						    %if "&stratifybydp" = "Y" %then %do;
 						      %do nu_d = 1 %to &num_dp.;
 							    if ^missing(exp_mean&nu_d.) and (total_exp_episodes gt 0) then do;
-                                exp_std&nu_d. = exp_mean&nu_d./&&&n_Switchstep_&switch_b._episodes_exp&nu_d.;
+                                exp_std&nu_d. = divide(exp_mean&nu_d.,&&&n_Switchstep_&switch_b._episodes_exp&nu_d.);
                                 exp_std&nu_d._char = compress(put(exp_std&nu_d.,percent10.1));
                                 end;
                             %if "&table" = "Switchstep_0" %then %do;
@@ -730,14 +730,14 @@
 						%end;
 						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                           if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do; 
-                          exp_std0 = exp_mean0/&total_unadjusted_exp_episodes.;
+                          exp_std0 = divide(exp_mean0,&total_unadjusted_exp_episodes.);
                           exp_std0_char = compress(put(exp_std0,percent10.1));
                           end;
                           if exp_mean0 > 0 and &total_unadjusted_exp_episodes. = 0 then exp_std0_char = 'NaN';
                           if missing(exp_mean0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
                           if missing(exp_std0) or exp_mean0 = 0 then exp_std0_char = 'NaN';
                           %if "&includecomp" = "Y" %then %do;
-                            if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/&total_unadjusted_comp_episodes.;
+                            if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,&total_unadjusted_comp_episodes.);
                             comp_std0_char = compress(put(comp_std0,percent10.1));
                             if comp_mean0 > 0 and &total_unadjusted_comp_episodes. = 0 then comp_std0_char = 'NaN';
                             if missing(comp_mean0) or comp_mean0 = 0 then comp_std0_char = 'NaN';
@@ -766,7 +766,7 @@
                         %end;
                     end;
                     else do;
-                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = exp_mean0/agg_exp_w;
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
@@ -777,7 +777,7 @@
                             end;
                         end;
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = comp_mean0/agg_comp_w;
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
@@ -792,22 +792,22 @@
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
-                            ad0 = 100*(exp_mean0/agg_exp_w) - 100*(comp_mean0/agg_comp_w);
+                            ad0 = 100*divide(exp_mean0,agg_exp_w) - 100*divide(comp_mean0,agg_comp_w);
                             ad0_char=compress(put(ad0,8.3));
 
                             /*standardized difference*/
-                            a = (exp_mean0/agg_exp_w);
-                            b = (comp_mean0/agg_comp_w);
+                            a = divide(exp_mean0,agg_exp_w);
+                            b = divide(comp_mean0,agg_comp_w);
                             %if "&weight" = "Weighted" %then %do; /*Weighted Adjusted*/  
-                                stw = agg_sw_exp / agg_v_exp;
-                                scw = agg_sw_comp / agg_v_comp;
-                                c = sqrt( (stw + scw) / 2);
+                                stw = divide(agg_sw_exp,agg_v_exp);
+                                scw = divide(agg_sw_comp,agg_v_comp);
+                                c = sqrt(divide(stw+scw, 2));
                             %end;
                             %else %do; /*Unweighted*/
-                                c = sqrt(((a*(1-a)) + (b*(1-b))) / 2);
+                                c = sqrt(divide(a*(1-a) + b*(1-b), 2));
                             %end;
                             /*SD*/
-                            if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = ((a-b) / c);
+                            if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = divide((a-b),c);
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
 							if exp_mean0 = 0 or comp_mean0 = 0 or exp_mean0 = . or comp_mean0 = . then do;
@@ -890,38 +890,38 @@
                         %end;
                     end;
                         
-                    if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = exp_mean_num/agg_exp_w ;
+                    if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = divide(exp_mean_num,agg_exp_w) ;
                     exp_mean0_char = compress(put(exp_mean0,8.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
-                    if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = comp_mean_num/agg_comp_w ;
+                    if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
                     comp_mean0_char = compress(put(comp_mean0,8.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
                     if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
-                        if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(agg_sw_exp/agg_v_exp) ;
+                        if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(divide(agg_sw_exp,agg_v_exp)) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
                         if missing(agg_sw_exp) then exp_std0_char = '.';
-                        if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(agg_sw_comp/agg_v_comp) ;
+                        if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(divide(agg_sw_comp,agg_v_comp)) ;
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
                         if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
-                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(exp_std_sum/(total_exp_episodes - count)) ;
+                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(total_exp_episodes - count))) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(comp_std_sum/(total_comp_episodes - count));
+                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(total_comp_episodes - count)));
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
