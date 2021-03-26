@@ -65,6 +65,7 @@
         %if %eval(&nobs.<1) %then %do;
             %let dataset = table1_&periodid.;
 			/* Set default for cohortdef and comorbidscore */
+			%global comorbidscore cohortdef;
 			%let comorbidscore =;
 			%let cohortdef =;
 
@@ -320,7 +321,7 @@
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end;];
+			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=0.8in %end; overflow=auto];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
