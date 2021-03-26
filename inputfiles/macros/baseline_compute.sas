@@ -820,6 +820,7 @@
                                 ad0_char = '.';
                             end;
                             if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0  then sd0_char = 'NaN';
+                            if ad0 = 0 and exp_std0 = 1 and comp_std0 = 1 then sd0_char = '0.000';
                         end;
                         else do;
                         ad0=.;
@@ -948,6 +949,7 @@
                                 ad0_char = '.';
                             end;
                             if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
+                            if ad0 = 0 and exp_std0 = 1 and comp_std0 = 1 then sd0_char = '0.000';
                         %end;
                         %else %do; /*unweighted SD*/
                             if (exp_std0 > 0) AND (comp_std0 > 0) then sd0 = (exp_mean0 - comp_mean0)/(sqrt((exp_std0*exp_std0 + comp_std0*comp_std0)/2));
@@ -963,6 +965,7 @@
                                 ad0_char = '.';
                             end;
                             if total_exp_episodes > 0 and total_comp_episodes > 0 and ad0 = 0 then sd0_char = 'NaN';
+                            if ad0 = 0 and exp_std0 = 1 and comp_std0 = 1 then sd0_char = '0.000';
                         %end;
                     %end;
                     drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
@@ -986,6 +989,7 @@
                                 sd&i._char = 'NaN';
 						  end;
 						  if exp_mean&i. > 0 and comp_mean&i > 0 and missing(sd&i.) then sd&i._char = 'NaN';
+                          if ad&i = 0 and exp_std&i = 1 and comp_std&i = 1 then sd&i._char = '0.000';
                           if &&&n_&table._episodes_exp&i = 0 and &&&n_&table._episodes_comp&i = 0 and ad&i = 0 then do;
                                 ad&i._char = '.';
                                 sd&i._char = '.';
