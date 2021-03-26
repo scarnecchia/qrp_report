@@ -439,6 +439,7 @@
                     if upcase(ipweight)= 'ATE' then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
+					call symputx('weightscheme', ipweight);
                     call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
                 end;
             run;
