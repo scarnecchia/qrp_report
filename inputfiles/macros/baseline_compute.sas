@@ -570,7 +570,6 @@
 					
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
-                    if exp_mean&i = 0 then exp_std&i._char = '.';
                     %end;
                     %else %do;
                     if exp_mean&i = 0 and exp_std&i = 0 then do;
@@ -597,7 +596,6 @@
 					
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                     if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
-                    if comp_mean&i = 0 then comp_std&i._char = '.';
                     %end;
                     %else %do;
                     if comp_mean&i = 0 and comp_std&i = 0 then do;
