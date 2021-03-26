@@ -280,18 +280,11 @@
         %end;
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
-		%let comorbidscore =;
-		data _null_;
-		  set &datain.;
-		  if metvar = "COMORBIDSCORE" then do;
-		    call symputx('comorbidscore','Y');
-		  end;
-		run;
-		
 		data baselinefile;
 		  length comorbidscore $1 cohortdef $2;
 		  set baselinefile;
-		  comorbidscore = "&comorbidscore.";
+		  if index(upcase(healthchar),'COMORBIDSCORE') > 0 then comorbidscore = "Y";
+		  else comorbidscore = "N";
 		  cohortdef = "&cohortdef.";
 		run;
 

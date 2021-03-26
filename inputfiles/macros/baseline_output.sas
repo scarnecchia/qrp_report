@@ -373,7 +373,7 @@
                 call symputx('analysisgrp', strip(analysisgrp));
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
-				call symputx('cohordef',cohortdef);
+				call symputx('cohortdef',cohortdef);
 				call symputx('comorbidscore',comorbidscore);
                 call symputx('unique_psestimate',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
