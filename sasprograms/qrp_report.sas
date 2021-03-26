@@ -134,9 +134,9 @@ options validvarname = v7;
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 %soc_lib(lookup, &REPORTROOT.inputfiles/);
-%let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/macros/lookuptables/);
+%let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
-%let lookup = %soc_clean_paths(&input.macros/lookuptables/);
+%let LOOKUP = %soc_clean_paths(&input.macros/lookuptables/);
 
 /* Create reportdata and lookup folder */
 %let repdata = &output.reportdata.;
