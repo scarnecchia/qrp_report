@@ -157,7 +157,12 @@
                 MonitoringPeriod = &periodid.;
                 Analysis= &analysis.;
                 subgroupcat = "&subgroupcat.";
-                HR_pvalue = '-'; /*no p value*/
+                HR_pvalue = 'N/A'; /*no p value*/
+
+                /* set HR_95CI to NaN if not computed */
+                if nmiss(HR, LCL, UCL)=3 then do;
+                   HR_95CI='NaN';
+                end;
 
                 HR_95CI = strip(put(HR, 5.2))|| " ("||strip(put(LCL, 5.2))||", "|| strip(put(UCL, 5.2))||")";
                 label MonitoringPeriod = "Monitoring Period";
@@ -194,16 +199,16 @@
 	  		length HR_95CI $30. HR_pvalue $6.;
 	  		MonitoringPeriod = &periodid.;
 
-			HR_95CI = "-";
+			HR_95CI = ".";
 		    HR_se = .;
             HR_coef = .;
-			HR_pvalue = "-";
+			HR_pvalue = ".";
             HR = .;
             LCL = .;
             UCL = .;
 			%if %eval(&redactevents.>0) %then %do;
-				HR_pvalue = '';
-				HR_95CI='';
+				HR_pvalue = '.';
+				HR_95CI='.';
 			%end;
 	    run; 
 	%end;

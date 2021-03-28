@@ -241,17 +241,17 @@
             AvgFUTime_Ychar = strip(put(AvgFUTime_Y, comma12.2));
 
             %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
-                EVchar = '';
-                rrchar = '';
-                IR_1000PYchar = '';
-                IRDiff_1000PYchar = '';
-                RD_1000NUchar = '';
-                risk_1000NUchar = '';
+                EVchar = 'N/A';
+                rrchar = 'N/A';
+                IR_1000PYchar = 'N/A';
+                IRDiff_1000PYchar = 'N/A';
+                RD_1000NUchar = 'N/A';
+                risk_1000NUchar = 'N/A';
             %end;
             %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
-                FUTime_Ychar = '';
-                AvgFUTime_Dchar = '';
-                AvgFUTime_Ychar = '';
+                FUTime_Ychar = 'N/A';
+                AvgFUTime_Dchar = 'N/A';
+                AvgFUTime_Ychar = 'N/A';
             %end;
 
             /*Assign sort vars - will eventually sort dataset */
@@ -307,7 +307,7 @@
                 par =.;
                 rr = .;
             
-                RD_95CI = "";
+                RD_95CI = ".";
 
                 label poprisk = "Pop. Risk among new users of exposure AND control";
                 label NNT = "Number needed to treat (or harm)";
@@ -329,17 +329,17 @@
                 AvgFUTime_Dchar = put(AvgFUTime_D, comma12.2);
                 AvgFUTime_Ychar = put(AvgFUTime_Y, comma12.2);
                 %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
-                    EVchar = '';
-                    rrchar = '';
-                    IR_1000PYchar = '';
-                    IRDiff_1000PYchar = '';
-                    RD_1000NUchar = '';
-                    risk_1000NUchar = '';
+                    EVchar = '.';
+                    rrchar = '.';
+                    IR_1000PYchar = '.';
+                    IRDiff_1000PYchar = '.';
+                    RD_1000NUchar = '.';
+                    risk_1000NUchar = '.';
                 %end;
                 %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
-                    FUTime_Ychar = '';
-                    AvgFUTime_Dchar = '';
-                    AvgFUTime_Ychar = '';
+                    FUTime_Ychar = '.';
+                    AvgFUTime_Dchar = '.';
+                    AvgFUTime_Ychar = '.';
                 %end;
                     
                 /*Assign sort vars - will eventually sort dataset */

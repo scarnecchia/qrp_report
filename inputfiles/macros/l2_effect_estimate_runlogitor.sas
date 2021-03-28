@@ -221,14 +221,14 @@
 		    or = .;
             lcl = .;
             ucl = .;
-            or_95ci="N/A";
+            or_95ci= ".";
             or_se = .;
 
             *adjusted odds ratio;
             adjor = .;
             adjor_lcl = .;
             adjor_ucl = .;
-            adjor_95ci = 'N/A';		
+            adjor_95ci = '.';		
         run; 
     %end; /* end do statement for analysis when not events and nonevents */
 

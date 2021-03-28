@@ -75,6 +75,11 @@
             LCL =  put(exp(LowerWaldCL), 5.2);
             UCL =  put(exp(UpperWaldCL), 5.2);
 
+            /* set HR_95CI to NaN if not computed */
+            if nmiss(HR, LCL, UCL)=3 then do;
+               HR_95CI='NaN';
+            end;
+
   			label MonitoringPeriod = "Monitoring Period";
   			label hr_95CI = "Hazard Ratio (95% CI)";
   			label HR_pvalue = "Wald P-Value";
@@ -102,18 +107,18 @@
 	  		length HR_95CI $30. HR_pvalue $6.;
 	  		MonitoringPeriod = &periodid.;
 
-			HR_95CI = "-";
+			HR_95CI = ".";
 		    format HR_coef HR LCL UCL 5.2 HR_se 8.4; 
 		    HR_coef = .;
 		    HR_se = .;
-			HR_pvalue = "-";
+			HR_pvalue = ".";
             HR = .;
             LCL = .;
             UCL = .;
 
 			%if %eval(&redactevents.>0) %then %do;
-				HR_pvalue = '';
-				HR_95CI='';
+				HR_pvalue = '.';
+				HR_95CI='.';
 			%end;
 	    run; 
 	%end;
