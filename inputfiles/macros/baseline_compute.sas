@@ -104,7 +104,7 @@
                 if missing(medproduse) then call symputx('medproduse', 'missing');
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
-                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -142,8 +142,8 @@
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
-            run;
-        %end;
+            run;			
+		%end;
 
         *************************************************************
         * Processing - need to:

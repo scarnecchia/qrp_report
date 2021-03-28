@@ -197,7 +197,35 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+
+			  /*Italicize covariates*/
+	          %if %length(&baselinerowitalics.) > 0 %then %do;             
+              if upcase(metvar) in (&baselinerowitalics.) then do;
+                call define(_row_,'style','style={fontstyle=italic}');					
+              end;
+        	  %end;
             endcomp;
+
+			/*Change font color to blue if abs(SD) > threshold value*/
+        	%if &computebalance. = Y and %length(&sdthreshold.) > 0 %then %do;
+            compute sd&dpnum._char;
+                if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
+                    if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
+                        %if %str(&baselinerowitalics) ne %str() %then %do;
+                            if upcase(metvar) in (&baselinerowitalics.) then do;
+                                call define(_row_,'style','style={fontstyle=italic foreground=blue}');
+                            end;
+                            else do;
+                                call define(_row_,'style','style={foreground=blue}');
+                            end;
+                        %end;
+                        %else %do;
+                            call define(_row_,'style','style={foreground=blue}');
+                        %end;
+                    end;
+                end;
+            endcomp;
+        	%end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -253,6 +281,9 @@
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
                 call symputx('unique_psestimate',unique_psestimate);
+				if missing(sdthreshold) then call symputx('sdthreshold', '');
+                else call symputx('sdthreshold', sdthreshold);				
+                call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
 
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -336,6 +367,47 @@
                 call symputx('ref', strip(ref));
             run;
             %end;
+
+			/*Defensive check for sdthreshold and baselinerowitalics parameters*/
+			%if %eval(&unique_psestimate.) ne 1 %then %do;
+				proc sql noprint;
+				create table baseline_unique_check as
+				select a.analysisgrp,
+					   a.psestimategrp,
+					   a.sdthreshold,
+					   a.baselinerowitalics
+				from baselinefile as a
+				left join pscs_masterinputs as b
+				on a.analysisgrp = b.analysisgrp and
+				a.psestimategrp = a.psestimategrp
+				where b.covarnum=0
+				order by a.order;
+				quit;
+
+				proc sql noprint;
+				select count (distinct sdthreshold) into :sdthreshold_count trimmed
+				from baseline_unique_check
+				where psestimategrp = "&psestimategrp";
+
+				select count (distinct baselinerowitalics) into :baselinerowitalics_count trimmed
+				from baseline_unique_check
+				where psestimategrp = "&psestimategrp";
+				quit;
+
+				%if %eval(&sdthreshold_count. > 1) or %eval(&baselinerowitalics_count. > 1) %then %do;
+					%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
+					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
+					
+					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
+					data _null_;
+					set baseline_unique_check(where=(psestimategrp = "&psestimategrp"));
+					if _N_=1;
+					if missing(sdthreshold) then call symputx('sdthreshold', '');
+	                else call symputx('sdthreshold', sdthreshold);
+					call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+					run;
+				%end;
+			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             /*determine maximum switch*/
@@ -353,6 +425,10 @@
                 %end; 
             run;
         %end;
+
+		%if %length(&baselinerowitalics.) > 0 %then %do;
+			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics);
+		%end;
 
         /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
         - 1 monitoring period
