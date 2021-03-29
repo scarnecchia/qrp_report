@@ -40,7 +40,7 @@
 	  %let super_&type. =;
 	  
 	  proc sql noprint;
-	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by ','
+	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super , }'
 	    from _footnotes where order in (&order.);
 	  quit;
 	  
@@ -130,14 +130,14 @@
 		   /* L2 baselinerowitalics specified */
 		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */
-		     %if &psfile. = stratificationfile %then %do;
+		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
 		   /* L2 weighted table for PS stratification where weight is ATT */
 			   %else %if "&weightscheme." = "ATT" %then %do; 6 %end;
 		   /* L2 weighted table for PS stratification where weight is Blank */
 			   %else %do; 5 %end;
 			 %end;
-			 %if &psfile. = iptwfile %then %do;
+			 %if &psfile. = iptwfile and %str("&table.") = %str("Adjusted") %then %do;
 		   /* L2 weighted table for IPTW where weight is ATE */
 			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
 		   /* L2 weighted table for IPTW where weight is ATES */
@@ -439,7 +439,7 @@
                     if upcase(ipweight)= 'ATE' then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
-					call symputx('weightscheme', ipweight);
+					call symputx('weightscheme', upcase(ipweight));
                     call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
                 end;
             run;
