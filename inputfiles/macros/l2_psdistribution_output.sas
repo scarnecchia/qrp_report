@@ -222,6 +222,11 @@
 				  run;
 				  
                   %do dps = 1 %to &num_loops;
+                  	ods startpage = now;
+					proc odstext pagebreak=yes;
+		                p " ";
+					run;
+                 
                     %let DPSITEID = %scan(&random_dplist,&dps);
                     %let maskeddpid = %scan(&masked_dplist,&dps);
                      
