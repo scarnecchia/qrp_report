@@ -133,9 +133,14 @@ options validvarname = v7;
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
-
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+
+/* Create reportdata folder */
+%let repdata = &output.reportdata.;
+options DLCREATEDIR ;
+libname repdata "&repdata" ;
+options NODLCREATEDIR;
 
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
@@ -165,6 +170,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
+%include "&reportroot.inputfiles/macros/baseline_output.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
@@ -174,7 +180,6 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_pl.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
@@ -188,9 +193,15 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/output_report.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 %include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
-%include "&reportroot.inputfiles/macros/output_report_dates.sas";
+%include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
+
+/*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
 %include "&reportroot.inputfiles/macros/appendix_output.sas";
+
+/*report formatting and output macros*/
+%include "&reportroot.inputfiles/macros/output_report.sas";
+%include "&reportroot.inputfiles/macros/output_report_dates.sas";
 %include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
 
 /*-----------------------------------------------------------------------------------------------*/

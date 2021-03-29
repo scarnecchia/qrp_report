@@ -82,7 +82,8 @@
 
     /*baseline table variables*/
     %global numbaselinetablegrp;
-    %let numbaselinetablegrp =0;
+    %let numbaselinetablegrp =0;	
+	%global baselinerowitalics;	
 
     /*L2 report variables*/
     %global numl2comparisons;
@@ -91,6 +92,9 @@
     /*label file variables */
     %global label_length;
     %let label_length = 250;
+
+    /*Age stratification format */
+    %global agefmt;
 
     /*Output counter variables*/
     %global tableletter tablecount;

@@ -67,10 +67,10 @@
 	%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
+
     /******************/
     /* Baseline Table */
     /******************/
-    
     %if %eval(&numbaselinetablegrp.>0) %then %do;
 
         /*counter for determining table letter*/
@@ -252,9 +252,7 @@
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
         		        %let maskedID = %scan(&masked_dplist,&dps); 
-                        %if %eval(&unique_psestimate.) = 1 %then %do;
-                            %baselinetoc(&maskedid.);
-                        %end;
+                        %baselinetoc(&maskedid.);
                     %end;
                 %end; /*DP stratification*/
             %end; /*loop through each periodid*/

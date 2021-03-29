@@ -207,6 +207,8 @@
             if metvar = 'TOTAL' then do;
                 metvar = 'N_EPISODES';
                 vartype = 'dichotomous';
+                if exp_mean=. then exp_mean = 0;
+                if comp_mean=. then comp_mean = 0;
             end;
         run;
 

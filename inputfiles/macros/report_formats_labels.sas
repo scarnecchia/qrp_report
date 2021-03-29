@@ -22,6 +22,16 @@
 *   -racesort
 *   -hispanicfmt
 *   -hispanicsort
+*   -deliveryfmt
+*   -deliverysort
+*   -birthtypefmt
+*   -birthtypesort
+*   -matchfmt
+*   -matchsort
+*   -timefmt
+*   -timesort
+*
+*
 *
 *  PARAMETERS:                                                                       
 *            
@@ -86,7 +96,7 @@
 				start=tranwrd(start,'Y',' years');
 				start=tranwrd(start,'Q',' quarters');
 				start=tranwrd(start,'D',' days');	
-				formatAge=strip('^{unicode "2265"x} ')||""||strip(start);
+				formatAge=strip("(*ESC*){unicode '2265'x} ")||""||strip(start);
 			end;
 			else do;
 			 *if missing period = years;
@@ -113,7 +123,7 @@
 					formatAge=strip(end);	
 				end;
 			end;
-			label_fmt="'"||strip(var2)||"'='"||strip(formatAge)||"'";
+			label_fmt='"'||strip(var2)||'"="'||strip(formatAge)||'"';
 			output _agefmt;
             output agefmtsort; 
 		end;
@@ -121,11 +131,11 @@
     run;
 
 	proc sql noprint;
-      select distinct label_fmt into: AGESTRAT  separated by ' '    
+      select distinct label_fmt into: AGEFMT  separated by ' '    
       from _agefmt;
     quit; 
 
-	%put &=AGESTRAT;
+	%put &=AGEFMT;
 
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
@@ -138,7 +148,7 @@
 
         /*Age Format*/
         value $agefmt
-        &AGESTRAT.;
+        &AGEFMT.;
 
         /*Sex Format*/
         value $sexfmt
@@ -178,6 +188,76 @@
         "Y"   = 1
         "N"   = 2
         "U"   = 3;
+
+        /* Delivery Status format */
+        value $deliveryfmt
+        "PRE" = "Pre-Term (0-258 days)"
+        "TERM" = "Term (259-280 days)"
+        "POST" = "Post-Term (281-301 days)"
+        "NONE" = "Unknown Term";
+
+        value $deliverysort
+        "PRE" = 1
+        "TERM" = 2
+        "POST" = 3
+        "NONE" = 4;
+
+        /* Birth Type format */
+        value $birthtypefmt
+        "0" = "Unspecified # of live births"
+        "1" = "1 live birth"
+        "2" = "2 live births"
+        "3" = "3 live births"
+        "4" = "4 live births"
+        "5" = "5 live births"
+        "8" = "Multiple live births, unspecified number"
+        "9" = "Conflicting code(s) for number of live births";
+
+        value $birthtypesort
+        "0" = 1
+        "1" = 2
+        "2" = 3
+        "3" = 4
+        "4" = 5
+        "5" = 6
+        "8" = 7
+        "9" = 8;
+
+        /* Match method format */
+        value $matchfmt
+        "BC" = "Birth Certificate"
+        "RE" = "Birth Registry"
+        "SI" = "Health plan subscriber or family number"
+        "LA" = "Exact or probabilistic last name and address match based upon health plan administrative data"
+        "OT" = "Other"
+        "N1" = "No subscriber/family IDs available for linkage"
+        "N2" = "No name/address available for linkage"
+        "N3" = "Neither subscriber/family IDs nor name/address available for linkage"
+        "NA" = "No linkage made; any other reasons";
+
+        value $matchsort
+        "BC" = 1
+        "RE" = 2
+        "LA" = 3
+        "SI" = 4
+        "N3" = 5
+        "NA" = 6
+        "N2" = 7
+        "N1" = 8
+        "OT" = 9;
+
+        /* Time format */
+        value $timefmt
+        %do n = &look_start %to &look_end;
+        "&n" = "&startdateformatted to &&enddate&n.formatted"
+        %end;
+        ;
+
+        value $timesort
+        %do n = &look_start %to &look_end;
+        "&n" = &n
+        %end;
+        ;
     run;
 
 
@@ -197,7 +277,7 @@
 
             proc sql noprint;    
                 create table covarname_&runid. as 
-                select distinct covarnum, studyname, "&runid" as runid length=5
+                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
                 from infolder.&&&runid._covariatecodes.;
 
                	select length
@@ -223,6 +303,30 @@
         delete studylen covarname_:; 
    quit;    
    
+
+/***************************************************************************************************
+*  Small cell count formats                                            
+***************************************************************************************************/
+
+    %if &small_cellcounts. = Y %then %let smallcellcolor = yellow;
+    %else %let smallcellcolor = white;
+
+    proc format;  
+        value $backgroundfmt 
+		'1'  = "&smallcellcolor."
+		'2'  = "&smallcellcolor."
+		'3'  = "&smallcellcolor."
+		'4'  = "&smallcellcolor."
+		'5'  = "&smallcellcolor."
+		'6'  = "&smallcellcolor."
+		'7'  = "&smallcellcolor."
+		'8'  = "&smallcellcolor."
+		'9'  = "&smallcellcolor."
+		'10' = "&smallcellcolor.";
+		
+	    value background_n_fmt 
+		1-10 = "&smallcellcolor.";
+    run;
 
 /***************************************************************************************************
 *  Create the formats for use with the Diagnosis and Procedure appendices output                                                         

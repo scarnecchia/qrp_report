@@ -186,9 +186,19 @@
 
                     proc format;
                         value $ grpuni
-                        &footnoteformat.;
+                        &footnoteformat.
+                        &agefmt.
+                        other=[$200.];
                     run;
                 %end; /*Create footnote format*/
+
+                %if &forestfootnote = N %then %do;
+                proc format;
+                    value $ grpuni
+                    &agefmt.
+                    other=[$200.];
+                run;
+                %end;
 
                 ods startpage=now;
 
@@ -221,9 +231,7 @@
 
                 proc sgrender data=forest template=forestAxisTable;
                 dynamic _headerColor='cxd0d0d0';
-                %if &forestfootnote = Y %then %do;
                 format title $grpuni.;
-                %end;
                 run;
 
                 %if "&forestnohrfootnote" = "Y" %then %do;
