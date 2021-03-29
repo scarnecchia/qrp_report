@@ -146,7 +146,7 @@
 			   %else %if "&weightscheme." = "ATT" %then %do; 9 %end;
 			 %end;
 		   /* L2 weighted table for variable ratio matching */
-			 %if &psfile = psmatchfile and &ratio. = V %then %do; 10 %end;
+			 %if &psfile = psmatchfile and &ratio. = V  and %index(&table.,Adjusted) > 0 %then %do; 10 %end;
 		   %end; 
 		   /* T4L2 or T4L1 with MIL */
 		   %if %index(&reporttype,T4) and %str("&cohort.") = %str("mi") %then %do; 11 %end;
