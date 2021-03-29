@@ -138,7 +138,7 @@ options validvarname = v7;
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
 %let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
-/* Create reportdata and lookup folder */
+/* Create reportdata folder */
 %let repdata = &output.reportdata.;
 options DLCREATEDIR ;
 libname repdata "&repdata" ;

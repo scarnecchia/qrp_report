@@ -137,7 +137,7 @@
 		   /* L2 weighted table for PS stratification where weight is Blank */
 			   %else %do; 5 %end;
 			 %end;
-			 %if &psfile. = iptwfile and %str("&table.") = %str("Adjusted") %then %do;
+			 %if &psfile. = iptwfile and %index(&table.,Adjusted) > 0 %then %do;
 		   /* L2 weighted table for IPTW where weight is ATE */
 			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
 		   /* L2 weighted table for IPTW where weight is ATES */
