@@ -40,7 +40,7 @@
 	  %let super_&type. =;
 	  
 	  proc sql noprint;
-	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super , }'
+	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
 	    from _footnotes where order in (&order.);
 	  quit;
 	  
@@ -137,7 +137,7 @@
 		   /* L2 weighted table for PS stratification where weight is Blank */
 			   %else %do; 5 %end;
 			 %end;
-			 %if &psfile. = iptwfile and %index(&table.,Adjusted) > 0 %then %do;
+			 %if &psfile. = iptwfile and %index(&table.,Adjusted) > 0 and %index(&weight.,Weighted) > 0 %then %do;
 		   /* L2 weighted table for IPTW where weight is ATE */
 			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
 		   /* L2 weighted table for IPTW where weight is ATES */
@@ -176,7 +176,7 @@
 		quit;
         
 		/* Assign macro variables for superscipts */
-		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
+		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
 		%assign_superscripts(type =weighted, order =4 5 6 7 8 9 10 17);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
@@ -210,7 +210,7 @@
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
         %let linebreak = ; /*reset line break and headerheight*/
         %let headerheight = .3;
-        %if %eval(&numcolumns.=6) %then %let width = .95;
+        %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
