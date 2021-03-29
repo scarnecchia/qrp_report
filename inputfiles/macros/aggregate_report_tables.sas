@@ -19,6 +19,8 @@
 *			-[RUNID]_t2_epigap.sas7bdat 
 *			-[RUNID]_t2_overlap.sas7bdat 
 
+*			-[RUNID]_psdistribution_[LOOK].sas7bdat 
+
 *			-[RUNID]_t4_cida_preg.sas7bdat 
 *			-[RUNID]_t4_cida_preg_gestwk.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
@@ -142,6 +144,14 @@
 			  %agg_report(infile=t2_overlap, outfile=agg_t2overlap, name=analysisgrp); 
 			%end;
 		%end; *T2L1;
+
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+			%if %index(&figurelist,F1) > 0 %then %do;
+			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp);
+			%end;
+		%end; *T2L2 and T4L2;
+	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
 			%if %index(&datasetlist.,t4preg) > 0 %then %do;

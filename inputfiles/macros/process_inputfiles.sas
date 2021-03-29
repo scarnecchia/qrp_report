@@ -293,12 +293,19 @@
      %end;
 
 /***************************************************************************************************
-*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6                                             
+*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2                                            
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
 		data groupsfile;
-			set input.&groupsfile.;
+			set 
+			%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+				input.&groupsfile.
+			%end;
+			%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
+        		input.&l2comparisonfile. (rename=AnalysisGrp=group)
+			%end;
+			;
 			runid = lowcase(runid);
 			group = lowcase(group);
 		run;
@@ -800,7 +807,8 @@
         /******************/
         %isdata(dataset=input.&l2comparisonfile.);
         %if %eval(&nobs.>0) %then %do; 
-            %let outputforestplot = N;
+            %let outputforestplot      = N;
+            %let OutputPSDistribution  = N;
             data l2comparisonfile;
                 set input.&l2comparisonfile.;
                 /*defensive*/
@@ -814,6 +822,10 @@
                 if missing(outputforestplot) then outputforestplot = 'N';
                 else outputforestplot=strip(upcase(outputforestplot));
                 if outputforestplot = 'Y' then call symputx('outputforestplot', 'Y');
+
+                if missing(OutputPSDistribution) then OutputPSDistribution = 'N';
+                else OutputPSDistribution=strip(upcase(OutputPSDistribution));
+                if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
             run;
 
             %let numl2comparisons = &nobs.;
@@ -835,9 +847,26 @@
                     where figure ne 'F2';
                 quit;
             %end;
+            /*Defensive check - if any comparisons request histogram, then F1 in FIGUREFILE must be requested*/
+            %if %index(&figurelist.,F1)=0 & &OutputPSDistribution=Y %then %do;
+                %put WARNING: (Sentinel) PS Histograms not requested in FIGUREFILE, however OutputPSDistribution set to Y in L2COMPARISONFILE.;
+                %put WARNING: (Sentinel) PS Histograms will not be produced;
+                data l2comparisonfile;
+                    set l2comparisonfile;
+                    OutputPSDistribution = 'N'; 
+                run;
+            %end;
+            %if %index(&figurelist.,F1)>0 & &OutputPSDistribution=N %then %do;
+                %put WARNING: (Sentinel) PS Histograms requested in FIGUREFILE, however OutputPSDistribution set to N for all rows in L2COMPARISONFILE;
+                proc sql noprint;
+                    select distinct figure into: figurelist separated by ' '
+                    from figurefile
+                    where figure ne 'F1';
+                quit;
+            %end;
         %end;
         %else %do;
-            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates. Effect estimates will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;
 
         /****************************/
@@ -866,6 +895,11 @@
                    caliper ceiling percentiles covarnum truncweight 8 unconditional $1.;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional);
+            stop;
+        run;
+        data psest_masterinputs;
+            length runid $5 psestimategrp eoi ref $40;
+            call missing(runid, psestimategrp, eoi, ref);
             stop;
         run;
 
@@ -909,6 +943,21 @@
                 keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional;
             run;
+
+			data psest_masterinputs;
+               set psest_masterinputs(in=x)
+               %if %str("&&&runid._psestimationfile") ne %str("") %then %do;
+                   infolder.&&&runid._psestimationfile(in=a)
+               %end;
+			   ;
+                if not x then do;
+                runid = "&runid.";
+                end;
+                psestimategrp = lowcase(psestimategrp);
+                eoi = lowcase(eoi);
+                ref = lowcase(ref);
+			run;
+
         %end;
 
         proc sort data=pscs_masterinputs nodupkey;

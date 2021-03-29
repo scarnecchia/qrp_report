@@ -29,10 +29,10 @@
 
       ods graphics on / width=6.5in scale=on;
 
-      %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-
-        %let tablecount=1;
+	    %let tablecount=1;
         %let tableletter=a;
+
+      %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
         /* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" %then %do;

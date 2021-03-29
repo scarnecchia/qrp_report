@@ -187,6 +187,8 @@ ods path(prepend) work.templat(update);
 
 /*Figure macros */
 %include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
+%include "&reportroot.inputfiles/macros/l2_psdistribution_createdata.sas";
+%include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 
 /*Appendices macros*/
