@@ -283,9 +283,11 @@
 		data baselinefile;
 		  length comorbidscore $1 cohortdef $2;
 		  set baselinefile;
-		  if index(upcase(healthchar),'COMORBIDSCORE') > 0 then comorbidscore = "Y";
-		  else comorbidscore = "N";
-		  cohortdef = "&cohortdef.";
+		  if order=&b. then do;
+		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 then comorbidscore = "Y";
+		    else comorbidscore = "N";
+		    cohortdef = "&cohortdef.";
+		  end;
 		run;
 
         ***********************************************************************************************
