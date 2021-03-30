@@ -138,7 +138,7 @@
         %let subgroupvar = prepostind;
         %let sublabel = Delivery Status;
         %let numsubcat = 4;
-        %let subcategorization = NONE PRE POST TERM;
+        %let subcategorization = PRE TERM POST NONE;
     %end;
     %else %if &covarnum. = 2000 %then %do;
         %let subgroupvar = MatchMethod;
