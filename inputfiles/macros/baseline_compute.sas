@@ -227,11 +227,8 @@
         %end;
 		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             data _null_;
-			
 			  set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
-                call symputx('cohortgrp', strip(group))
-		    ;
-            
+                call symputx('cohortgrp', strip(group));
             run;
         %end;
 
@@ -281,7 +278,20 @@
               call symputx('cohortdef', strip(switchcohortdef));
             run;
         %end;
-
+		
+		/* Add cohortdef and comorbidscore to baselinefile */
+		data baselinefile;
+		  length comorbidscore gestationalage $1 cohortdef $2;
+		  set baselinefile;
+		  if order=&b. then do;
+		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
+			  then comorbidscore = "Y";
+		      else comorbidscore = "N";
+			if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
+		      else gestationalage = "N";
+		    cohortdef = "&cohortdef.";
+		  end;
+		run;
 
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals

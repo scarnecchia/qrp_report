@@ -31,13 +31,13 @@
 %let INFOLDER =;
 
 /* Location of data folder */
-%let DATAROOT =;
+%let DATAROOT =; 
 
 /* Location of QRP report package */
 %let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =;
+%let CREATEREPORTFILE =; 
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
@@ -133,8 +133,10 @@ options validvarname = v7;
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
+%soc_lib(lookup, &REPORTROOT.inputfiles/macros/lookuptables/);
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+%let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
 /* Create reportdata folder */
 %let repdata = &output.reportdata.;
