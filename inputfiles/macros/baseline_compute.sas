@@ -281,13 +281,14 @@
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
 		data baselinefile;
-		  length comorbidscore ga_birth $1 cohortdef $2;
+		  length comorbidscore gestationalage $1 cohortdef $2;
 		  set baselinefile;
 		  if order=&b. then do;
-		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 then comorbidscore = "Y";
-		    else comorbidscore = "N";
-			if index(upcase(healthchar),'GA_BIRTH') > 0 then ga_birth = "Y";
-		    else ga_birth = "N";
+		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity)),'COMORBIDSCORE')
+			  then comorbidscore = "Y";
+		      else comorbidscore = "N";
+			if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
+		      else gestationalage = "N";
 		    cohortdef = "&cohortdef.";
 		  end;
 		run;

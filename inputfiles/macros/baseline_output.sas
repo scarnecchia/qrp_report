@@ -158,7 +158,7 @@
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
 		   /* T4 L1 or L2 gestational age specified*/
-		   %if %index(&reporttype,T4) and &ga_birth. = Y %then %do; 16 %end;
+		   %if %index(&reporttype,T4) and &gestationalage. = Y %then %do; 16 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 17 %end;
 		   )));
@@ -320,7 +320,7 @@
             endcomp;
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off 
-			                       %if &ga_birth. = Y %then %do; height=1.75in %end;
+			                       %if &gestationalage. = Y %then %do; height=1.75in %end;
 			                       %else %if %length(&super_max_cell_width.) > 0 %then %do; height=1.25in %end;];
              line '';
 			  %do f = 1 %to &num_fn.;
@@ -377,7 +377,7 @@
                 call symputx('cohort', cohort);
 				call symputx('cohortdef',cohortdef);
 				call symputx('comorbidscore',comorbidscore);
-				call symputx('ga_birth',ga_birth);
+				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);				
