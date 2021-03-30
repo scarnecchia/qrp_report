@@ -123,7 +123,7 @@
 	       set lookup.lookup_footnotes (where = (order in (14 15
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
-		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi"))%then %do; 1 %end;
+		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
@@ -149,7 +149,7 @@
 			 %if &psfile = psmatchfile and &ratio. = V  and %index(&table.,Adjusted) > 0 %then %do; 10 %end;
 		   %end; 
 		   /* T4L2 or T4L1 with MIL */
-		   %if %index(&reporttype,T4) and %str("&cohort.") = %str("mi") %then %do; 11 %end;
+		   %if (%str("&reporttype.") = %str("T4L1") and %str("&cohort.") = %str("mi")) | %str("&reporttype.") = %str("T4L2") %then %do; 11 %end;
 		   /* T6 Switching */
 		   %if %str("&reporttype.") = %str("T6") %then %do; 
 		     /* 1st switch */
