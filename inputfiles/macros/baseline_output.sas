@@ -133,9 +133,9 @@
 		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
 		   /* L2 weighted table for PS stratification where weight is ATT */
-			   %else %if "&weightscheme." = "ATT" %then %do; 6 %end;
+			   %else %if "&weightscheme." = "ATT" %then %do; 5 %end;
 		   /* L2 weighted table for PS stratification where weight is Blank */
-			   %else %do; 5 %end;
+			   %else %do; 6 %end;
 			 %end;
 			 %if &psfile. = iptwfile and %index(&table.,Adjusted) > 0 and %index(&weight.,Weighted) > 0 %then %do;
 		   /* L2 weighted table for IPTW where weight is ATE */
@@ -157,8 +157,8 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* T4 L1 or L2 */
-		   %if %index(&reporttype,T4) %then %do; 16 %end;
+		   /* T4 L1 or L2 gestational age specified*/
+		   %if %index(&reporttype,T4) and &ga_birth. = Y %then %do; 16 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 17 %end;
 		   )));
@@ -177,7 +177,7 @@
         
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =weighted, order =4 5 6 7 8 9 10 17);
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 16 17);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
@@ -319,7 +319,7 @@
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L %if %length(&super_weighted.) > 0 %then %do; height=1.25in %end; nobreakspace=off];
+			compute after / style=[just=L %if %length(&super_max_cell_width.) > 0 %then %do; height=1.75in %end; nobreakspace=off];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
@@ -375,6 +375,7 @@
                 call symputx('cohort', cohort);
 				call symputx('cohortdef',cohortdef);
 				call symputx('comorbidscore',comorbidscore);
+				call symputx('ga_birth',ga_birth);
                 call symputx('unique_psestimate',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);				
