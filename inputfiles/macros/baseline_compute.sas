@@ -284,7 +284,7 @@
 		  length comorbidscore gestationalage $1 cohortdef $2;
 		  set baselinefile;
 		  if order=&b. then do;
-		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity)),'COMORBIDSCORE')
+		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
 			  then comorbidscore = "Y";
 		      else comorbidscore = "N";
 			if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
