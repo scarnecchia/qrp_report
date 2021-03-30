@@ -177,7 +177,7 @@
         
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 16 17);
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 17);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
@@ -319,7 +319,9 @@
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L %if %length(&super_max_cell_width.) > 0 %then %do; height=1.75in %end; nobreakspace=off];
+			compute after / style=[just=L nobreakspace=off 
+			                       %if &ga_birth. = Y %then %do; height=1.75in %end;
+			                       %else %if %length(&super_max_cell_width.) > 0 %then %do; height=1.25in %end;];
              line '';
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
