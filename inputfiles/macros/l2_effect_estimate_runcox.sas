@@ -74,8 +74,8 @@
 
             /*blank out HR and pvalue that cannot be calculated*/
             if index(HR_95CI, 'E') > 0 or index(HR_95CI, '0.00') or index(HR_95CI, '-') or index(HR_95CI,' . ') then do;
-                HR_95CI = '-';
-                HR_pvalue = '-';
+                HR_95CI = 'N/A';
+                HR_pvalue = 'N/A';
             end;
 
             label hr_95CI = "Hazard Ratio (95% CI)";
@@ -104,17 +104,17 @@
             length HR_95CI $30. HR_pvalue $6.;
             MonitoringPeriod = &periodid.;
 
-            HR_95CI = "-";
+            HR_95CI = ".";
             HR_se = .;
             HR_coef = .;
-            HR_pvalue = "-";
+            HR_pvalue = ".";
             HR = .;
             LCL = .;
             UCL = .;
 
             %if %eval(&redactevents.>0) %then %do;
-                HR_pvalue = '';
-                HR_95CI='';
+                HR_pvalue = 'N/A';
+                HR_95CI='N/A';
             %end;
         run; 
 
