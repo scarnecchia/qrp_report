@@ -117,8 +117,8 @@
             UCL = .;
 
 			%if %eval(&redactevents.>0) %then %do;
-				HR_pvalue = '.';
-				HR_95CI='.';
+				HR_pvalue = 'N/A';
+				HR_95CI='N/A';
 			%end;
 	    run; 
 	%end;
