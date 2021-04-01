@@ -199,10 +199,10 @@
 	  		length HR_95CI $30. HR_pvalue $6.;
 	  		MonitoringPeriod = &periodid.;
 
-			HR_95CI = ".";
+			HR_95CI = "N/A";
 		    HR_se = .;
             HR_coef = .;
-			HR_pvalue = ".";
+			HR_pvalue = "N/A";
             HR = .;
             LCL = .;
             UCL = .;

@@ -68,7 +68,9 @@
 	        from (select a.*, b.label 
 	          			from table&esttablecount a 
 	          			left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-	          			on a.analysisgrp = b.group) c;
+	          			on a.medicalproduct = b.group
+                        where b.runid = "&runid.") c
+            order by c.analysisgrpsort, c.covarnum, c.catnum, c.subgroupcat, c.sort1, c.sort2;
 	    quit;
 	    %end;
 
@@ -88,8 +90,9 @@
 	        from table&esttablecount;
 
 	        /* Store (un)formatted value of analysisgrp for title */
-	        select &medicalproduct into: analysisgrpfmt trimmed
-	        from table&esttablecount;
+	        select label into: analysisgrpfmt trimmed
+	        from labelfile
+            where group = "&analysisgrp." and runid = "&runid.";
         quit;
 
 	    %let MPColumn = ;

@@ -89,6 +89,30 @@
             KEEP analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
         RUN;
     %end;
+    %else %if %eval(&redactevents.>0) %then %do;
+     data coxPHest;
+            FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            length subgroupcat $10. analysis $13. analysisgrp $40;
+
+            analysisgrp = "&analysisgrp.";
+            COVARNUM  = &covarnum.;
+            catnum = &cat.;
+            Analysis= &analysis.;
+            subgroupcat = "&subgroupcat.";
+
+            format MonitoringPeriod 2.;
+            length HR_95CI $30. HR_pvalue $6.;
+            MonitoringPeriod = &periodid.;
+
+            HR_95CI = "N/A";
+            HR_se = .;
+            HR_coef = .;
+            HR_pvalue = "N/A";
+            HR = .;
+            LCL = .;
+            UCL = .;
+        run; 
+    %end;
     %else %do;  *create empty dataset;
         data coxPHest;
             FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
@@ -104,20 +128,14 @@
             length HR_95CI $30. HR_pvalue $6.;
             MonitoringPeriod = &periodid.;
 
-            HR_95CI = ".";
+            HR_95CI = "NaN";
             HR_se = .;
             HR_coef = .;
-            HR_pvalue = ".";
+            HR_pvalue = "NaN";
             HR = .;
             LCL = .;
             UCL = .;
-
-            %if %eval(&redactevents.>0) %then %do;
-                HR_pvalue = 'N/A';
-                HR_95CI='N/A';
-            %end;
         run; 
-
     %end;*End create empty dataset;
 
     proc datasets library=work nowarn noprint;

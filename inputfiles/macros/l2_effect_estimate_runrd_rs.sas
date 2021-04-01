@@ -228,6 +228,7 @@
             %end;
             ;
 
+            if n&exp > 0 then do;
             *Convert to character variables and redact (will keep unredacted as numeric locally);
             EVchar = strip(put(EV, comma10.));
             IR_1000PYchar = strip(put(IR_1000PY, comma8.2));
@@ -239,7 +240,32 @@
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
             AvgFUTime_Ychar = strip(put(AvgFUTime_Y, comma12.2));
+            end;
+            else if n&exp = 0 then do;
+            *Convert to character variables and redact (will keep unredacted as numeric locally);
+            EVchar = '0';
+            IR_1000PYchar = '0.00';
+            IRDiff_1000PYchar = '0.00';
+            RD_1000NUchar = '0.00';
+            risk_1000NUchar = '0.00';
+            rrchar = '0.00';
 
+            FUTime_Ychar = '0.00';
+            AvgFUTime_Dchar = '0.00';
+            AvgFUTime_Ychar = '0.00';  
+            end;
+            else do;
+            EVchar = 'NaN';
+            IR_1000PYchar = 'NaN';
+            IRDiff_1000PYchar = 'NaN';
+            RD_1000NUchar = 'NaN';
+            risk_1000NUchar = 'NaN';
+            rrchar = 'NaN';
+
+            FUTime_Ychar = 'NaN';
+            AvgFUTime_Dchar = 'NaN';
+            AvgFUTime_Ychar = 'NaN';  
+            end;
             %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
@@ -307,7 +333,7 @@
                 par =.;
                 rr = .;
             
-                RD_95CI = ".";
+                RD_95CI = "N/A";
 
                 label poprisk = "Pop. Risk among new users of exposure AND control";
                 label NNT = "Number needed to treat (or harm)";
