@@ -133,8 +133,10 @@ options validvarname = v7;
 %soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
 %soc_lib(OUTPUT, &REPORTROOT.output/);
+%soc_lib(lookup, &REPORTROOT.inputfiles/macros/lookuptables/);
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
+%let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
 /* Create reportdata folder */
 %let repdata = &output.reportdata.;
@@ -188,6 +190,8 @@ ods path(prepend) work.templat(update);
 
 /*Figure macros */
 %include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
+%include "&reportroot.inputfiles/macros/l2_psdistribution_createdata.sas";
+%include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 
 /*Appendices macros*/

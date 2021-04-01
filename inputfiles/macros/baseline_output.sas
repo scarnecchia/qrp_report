@@ -32,6 +32,19 @@
     %put =====> MACRO CALLED: baseline_output;
 
     %if %eval(&numbaselinetablegrp.>0) %then %do;
+    /*********************************************************************************************/
+    /*   Define macro variables for superscripts that correspond to required footnotes           */
+    /*********************************************************************************************/  	
+	%macro assign_superscripts(type =, order =);
+	  %global super_&type.;
+	  %let super_&type. =;
+	  
+	  proc sql noprint;
+	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
+	    from _footnotes where order in (&order.);
+	  quit;
+	  
+	%mend assign_superscripts;
 
     /*********************************************************************************************/
     /*   proc report                                                                             */
@@ -102,7 +115,76 @@
                 ;
             run;
         %end;
-
+		
+		/* Select Footnotes */  
+	     data _footnotes;
+		   length footnote_order 3; 
+		   /* Always displayed across all types */
+	       set lookup.lookup_footnotes (where = (order in (14 15
+		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
+		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
+		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
+		   /* Sdthreshold greater than 0 */
+		   %if &sdthreshold. > 0 %then %do; 2 %end;
+		   %if %index(&reporttype,L2) %then %do;
+		   /* L2 baselinerowitalics specified */
+		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
+		   /* L2 weighted table for PS stratification where weight is ATE */
+		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
+			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
+		   /* L2 weighted table for PS stratification where weight is ATT */
+			   %else %if "&weightscheme." = "ATT" %then %do; 5 %end;
+		   /* L2 weighted table for PS stratification where weight is Blank */
+			   %else %do; 6 %end;
+			 %end;
+			 %if &psfile. = iptwfile and %index(&table.,Adjusted) > 0 and %index(&weight.,Weighted) > 0 %then %do;
+		   /* L2 weighted table for IPTW where weight is ATE */
+			   %if "&weightscheme." = "ATE" %then %do; 7 %end;
+		   /* L2 weighted table for IPTW where weight is ATES */
+			   %else %if "&weightscheme." = "ATES" %then %do; 8 %end;
+		   /* L2 weighted table for IPTW where weight is ATT */
+			   %else %if "&weightscheme." = "ATT" %then %do; 9 %end;
+			 %end;
+		   /* L2 weighted table for variable ratio matching */
+			 %if &psfile = psmatchfile and &ratio. = V  and %index(&table.,Adjusted) > 0 %then %do; 10 %end;
+		   %end; 
+		   /* T4L2 or T4L1 with MIL */
+		   %if (%str("&reporttype.") = %str("T4L1") and %str("&cohort.") = %str("mi")) | %str("&reporttype.") = %str("T4L2") %then %do; 11 %end;
+		   /* T6 Switching */
+		   %if %str("&reporttype.") = %str("T6") %then %do; 
+		     /* 1st switch */
+		     %if %eval(&maxswitch > 0) %then %do; 12 %end;
+		   /* 2nd Switch */
+		     %if %eval(&maxswitch=2) %then %do; 13 %end;
+		   %end;
+		   /* T4 L1 or L2 gestational age specified*/
+		   %if %index(&reporttype,T4) and &gestationalage. = Y %then %do; 16 %end;
+		   /* Comorbidscore is specified */
+		   %if &comorbidscore = Y %then %do; 17 %end;
+		   )));
+		  by order;
+		  footnote_order = _n_;
+	    run;
+		
+		proc sql noprint;
+		  select count(order) into: num_fn trimmed
+		  from _footnotes;
+		  
+		  select description into: fn1 - :fn&num_fn.
+		  from _footnotes
+		  order by order;
+		quit;
+        
+		/* Assign macro variables for superscipts */
+		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 17);
+		%assign_superscripts(type =switch1, order =12);
+		%assign_superscripts(type =switch2, order =13);
+		%assign_superscripts(type =stdev, order =14);
+		%assign_superscripts(type =race, order =15);
+		%assign_superscripts(type =gestage, order =16);
+		%assign_superscripts(type =comorbidscore, order =17);
+		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
         %let width = 1.15;
@@ -128,7 +210,7 @@
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
         %let linebreak = ; /*reset line break and headerheight*/
         %let headerheight = .3;
-        %if %eval(&numcolumns.=6) %then %let width = .95;
+        %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
@@ -139,11 +221,11 @@
                     %if &computebalance. = Y %then %do; ("^S={background=white}&cohortheaderlabel." %end;
                     ("^S={background=white borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp2_label." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp3_label." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=white borderleftcolor=white}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 
                     ('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
@@ -151,23 +233,23 @@
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
-            define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
+            define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = lightgrey just=L borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
-            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
-            define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation" style(column)=[width=&width.in tagattr="type:string"]
+            define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
                             style(header)=[background=lightgrey cellheight=&headerheight.in];
             %end;
 
@@ -194,15 +276,56 @@
 
             /*Indent demographic header lines*/
             compute label;
+			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
+			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
+			  else if label = "Mean gestational age at delivery" then label = "Mean gestational age&super_gestage. at delivery";
+			  else if label = "Mean gestational age of first exposure (weeks)" then label = "Mean gestational age&super_gestage. of first exposure (weeks)";
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+
+			  /*Italicize covariates*/
+	          %if %length(&baselinerowitalics.) > 0 %then %do;             
+              if upcase(metvar) in (&baselinerowitalics.) then do;
+                call define(_row_,'style','style={fontstyle=italic}');					
+              end;
+        	  %end;
             endcomp;
+
+			/*Change font color to blue if abs(SD) > threshold value*/
+        	%if &computebalance. = Y and %length(&sdthreshold.) > 0 %then %do;
+            compute sd&dpnum._char;
+                if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
+                    if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
+                        %if %str(&baselinerowitalics) ne %str() %then %do;
+                            if upcase(metvar) in (&baselinerowitalics.) then do;
+                                call define(_row_,'style','style={fontstyle=italic foreground=blue}');
+                            end;
+                            else do;
+                                call define(_row_,'style','style={foreground=blue}');
+                            end;
+                        %end;
+                        %else %do;
+                            call define(_row_,'style','style={foreground=blue}');
+                        %end;
+                    end;
+                end;
+            endcomp;
+        	%end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
+            endcomp;
+			/* Add Footnotes */
+			compute after / style=[just=L nobreakspace=off 
+			                       %if &gestationalage. = Y %then %do; height=1.75in %end;
+			                       %else %if %length(&super_max_cell_width.) > 0 %then %do; height=1.25in %end;];
+             line '';
+			  %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+			  %end;
             endcomp;
         run;   
     %mend;
@@ -252,7 +375,13 @@
                 call symputx('analysisgrp', strip(analysisgrp));
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
+				call symputx('cohortdef',cohortdef);
+				call symputx('comorbidscore',comorbidscore);
+				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
+                if missing(sdthreshold) then call symputx('sdthreshold', '');
+                else call symputx('sdthreshold', sdthreshold);				
+                call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
 
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
                 call symputx('computebalance', 'Y');
@@ -313,6 +442,7 @@
                     if upcase(ipweight)= 'ATE' then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
+					call symputx('weightscheme', upcase(ipweight));
                     call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
                 end;
             run;
@@ -336,6 +466,47 @@
                 call symputx('ref', strip(ref));
             run;
             %end;
+
+			/*Defensive check for sdthreshold and baselinerowitalics parameters*/
+			%if %eval(&unique_psestimate.) ne 1 %then %do;
+				proc sql noprint;
+				create table baseline_unique_check as
+				select a.analysisgrp,
+					   a.psestimategrp,
+					   a.sdthreshold,
+					   a.baselinerowitalics
+				from baselinefile as a
+				left join pscs_masterinputs as b
+				on a.analysisgrp = b.analysisgrp and
+				a.psestimategrp = a.psestimategrp
+				where b.covarnum=0
+				order by a.order;
+				quit;
+
+				proc sql noprint;
+				select count (distinct sdthreshold) into :sdthreshold_count trimmed
+				from baseline_unique_check
+				where psestimategrp = "&psestimategrp";
+
+				select count (distinct baselinerowitalics) into :baselinerowitalics_count trimmed
+				from baseline_unique_check
+				where psestimategrp = "&psestimategrp";
+				quit;
+
+				%if %eval(&sdthreshold_count. > 1) or %eval(&baselinerowitalics_count. > 1) %then %do;
+					%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
+					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
+					
+					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
+					data _null_;
+					set baseline_unique_check(where=(psestimategrp = "&psestimategrp"));
+					if _N_=1;
+					if missing(sdthreshold) then call symputx('sdthreshold', '');
+	                else call symputx('sdthreshold', sdthreshold);
+					call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+					run;
+				%end;
+			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             /*determine maximum switch*/
@@ -353,6 +524,10 @@
                 %end; 
             run;
         %end;
+
+		%if %length(&baselinerowitalics.) > 0 %then %do;
+			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics);
+		%end;
 
         /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
         - 1 monitoring period
@@ -543,7 +718,7 @@
                   grp3_label=&grp3_label.,
                   computebalance = &computebalance.);
                 %end;
-
+					
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
                 %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
                     %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;

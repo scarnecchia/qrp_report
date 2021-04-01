@@ -35,7 +35,7 @@
 	   attrib order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
 	   order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
-	   order = 2;  description = "Covariates in blue show a standardized difference greater than &threshold.."; output;
+	   order = 2;  description = "Covariates in blue show a standardized difference greater than &sdthreshold.."; output;
 	   order = 3;  description = "Covariates in italics were not included in the propensity score logistic regression model."; output;
 	   order = 4;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated/control patients are weighted by the proportion of the total patient population included in their PS stratum divided by the proportion of the total treated/control patient population included in their PS stratum."; output;
 	   order = 5;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1, and control patients are weighted by the proportion of the total treated patient population included in their PS stratum divided by the proportion of the total control patient population included in their PS stratum."; output;

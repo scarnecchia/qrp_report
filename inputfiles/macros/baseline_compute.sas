@@ -104,7 +104,7 @@
                 if missing(medproduse) then call symputx('medproduse', 'missing');
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
-                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
@@ -142,8 +142,8 @@
 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
-            run;
-        %end;
+            run;			
+		%end;
 
         *************************************************************
         * Processing - need to:
@@ -227,11 +227,8 @@
         %end;
 		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             data _null_;
-			
 			  set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
-                call symputx('cohortgrp', strip(group))
-		    ;
-            
+                call symputx('cohortgrp', strip(group));
             run;
         %end;
 
@@ -281,7 +278,20 @@
               call symputx('cohortdef', strip(switchcohortdef));
             run;
         %end;
-
+		
+		/* Add cohortdef and comorbidscore to baselinefile */
+		data baselinefile;
+		  length comorbidscore gestationalage $1 cohortdef $2;
+		  set baselinefile;
+		  if order=&b. then do;
+		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
+			  then comorbidscore = "Y";
+		      else comorbidscore = "N";
+			if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
+		      else gestationalage = "N";
+		    cohortdef = "&cohortdef.";
+		  end;
+		run;
 
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals

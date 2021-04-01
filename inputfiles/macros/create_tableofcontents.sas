@@ -270,29 +270,108 @@
         %let figurenum = 1; /* Add +1 for additional figure types that are requested */
         %let tablecount = 1;
 
-        /*F2: Forest Plots*/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 and %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+        /***************************************************************************************/
+        /* ReportType = T2L2 or T4L2                                                           */
+        /***************************************************************************************/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 
-        %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
-        %else %let ForestRatioTitle = Odds Ratios (OR);
+	        /*F1: PS distribution histograms*/
+	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
 
-        %do j = %eval(&look_start) %to %eval(&look_end);
-            %do plot = 1 %to 7;
-            %let forest_title = ;
-            data _null_;
-            set forest_&j(where=(plotorder=&plot));
-              call symputx("forest_title",forest_title);
-            run;
+				proc sql noprint;
+					select count(distinct AnalysisGrp) into: numPScomparisons
+            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
+				quit;
 
-            %if %length(&forest_title) > 0 %then %do;
-            %tableletter();
-            %addtotoc(tabnum=Figure &figurenum.&tableletter.,
-            caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
-            %end; /* Forest title exists */
-            %end; /* loop plots */
-        %end; /* loop periods */
+				%do loopcount = 1 %to &numl2comparisons.; 
 
-        %end; /*Forest plots */
+					data _NULL_;
+		            set l2comparisonfile(where=(order=&loopcount.));
+		            call symputx('runid', runid);
+		            call symputx('analysisgrp', analysisgrp);
+		            call symputx('OutputPSDistribution', OutputPSDistribution);
+		       		run;
+
+				  %if &OutputPSDistribution. = Y %then %do;
+
+					%isdata(dataset=labelfile);
+					%let grouplabel=&analysisgrp.;
+
+				    %if %eval(&nobs>0) %then %do;
+					  data _NULL_;
+					  set labelfile(where=(lowcase(labeltype)='grouplabel'));
+					  if group="&analysisgrp." and runid = "&runid";
+		              call symputx('grouplabel', Label);
+					  run;
+					  %put &grouplabel.;
+					%end;
+
+					%let andafter=;
+
+					proc sql noprint;
+		            select strip(file) into: psfile
+		            from pscs_masterinputs
+		            where analysisgrp = "&analysisgrp.";
+			        quit;
+             %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+				      data _null_; 
+	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+	                    call symputx("psestimategrp", lowcase(psestimategrp));
+	                        %if &psfile. = psmatchfile  %then %do;
+	                            if upcase(ratio) = "F" then do;
+								    call symput("andafter", " and After");
+	                            end;
+	                        %end;
+	                        %if &psfile = iptwfile %then %do;
+							   call symput("andafter", " and After");
+	                        %end;
+							%else %if &psfile = stratificationfile %then %do;
+							   if upcase(strataweight) in ("ATE", "ATT") then do;
+							     call symput("andafter", " and After");
+							   end;
+	                        %end;
+	                  run; 
+
+		            %do j = %eval(&look_start) %to %eval(&look_end);
+
+						%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %do;
+							%let tablecount = 0;
+						%end;
+		                %tableletter();
+		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
+		            %end; /* loop periods */
+				%end; /*psfile*/
+			  %end; /* OutputPSDistribution */
+			 %end; /* loop comparisons */
+			 %let figurenum = %eval(&figurenum.+1); 
+	        %end; /*Histograms*/
+
+	        /*F2: Forest Plots*/
+	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
+	            %else %let ForestRatioTitle = Odds Ratios (OR);
+
+						%let tableletter=a;
+						%let tablecount = 1;
+
+	            %do j = %eval(&look_start) %to %eval(&look_end);
+	                %do plot = 1 %to 7;
+	                    %let forest_title = ;
+	                    data _null_;
+	                    set forest_&j(where=(plotorder=&plot));
+	                      call symputx("forest_title",forest_title);
+	                    run;
+
+	                    %if %length(&forest_title) > 0 %then %do;
+	                    %tableletter();
+	                    %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+	                    caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
+	                    %end; /* Forest title exists */
+	                %end; /* loop plots */
+	            %end; /* loop periods */
+	        %end; /*Forest plots */
+        %end; /*L2 figures*/
 
     %end; /* Figure file */
 	
