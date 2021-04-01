@@ -698,7 +698,7 @@
                          when (r.covarnum) = 2000 then put(r.subgroupcat,$matchfmt.)
                          when (r.covarnum) = 2001 then put(r.subgroupcat,$birthtypefmt.)
                          when (r.covarnum) = 1003 then put(r.subgroupcat,$timefmt.)
-                         when (r.covarnum) in (1000, 1001, 1002, 9000) then r.subgroupcat
+                         when (r.covarnum) in (1001, 1002, 9000) then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;

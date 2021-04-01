@@ -24,20 +24,20 @@
 ***************************************************************************************************;
 
 /*-----------------------------------------------------------------------------------------------*/
-/* Section 1: User inputs 															             */
+/* Section 1: User inputs 															                                         */
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
 %let INFOLDER =;
 
 /* Location of data folder */
-%let DATAROOT =;
+%let DATAROOT =; 
 
 /* Location of QRP report package */
 %let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =;
+%let CREATEREPORTFILE =; 
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
@@ -184,6 +184,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_output.sas";
 
 /*Figure macros */
 %include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
