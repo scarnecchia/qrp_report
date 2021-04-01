@@ -1,0 +1,421 @@
+****************************************************************************************************
+*                                           PROGRAM OVERVIEW
+****************************************************************************************************
+*
+* PROGRAM: l2_effect_estimate_output.sas  
+* Created (mm/dd/yyyy): 03/26/2021
+*
+*--------------------------------------------------------------------------------------------------
+* PURPOSE: This macro drives the creation of Effect Estimate Tables proc report output
+*                                        
+*  Program inputs:                                                                                   
+*   - l2_effectestimates_&periodid.
+* 
+*  Program outputs: 
+* 
+* 
+*  PARAMETERS:                                                                       
+*            
+*  Programming Notes:         
+*   Utility macro %l2_effectestimates_report created to execute the proc report for each table 
+*                                                                           
+*
+*--------------------------------------------------------------------------------------------------
+* CONTACT INFO: 
+*  Sentinel Coordinating Center
+*  info@sentinelsystem.org
+*
+***************************************************************************************************;
+
+
+%macro l2_effect_estimate_output();
+
+    %put =====> MACRO CALLED: l2_effect_estimate_output;
+
+    %if &numl2comparisons > 0 %then %do; 
+
+        %let esttablecount = 2;
+
+    /*********************************************************************************************/
+	/*   proc report                                                                             */
+	/*********************************************************************************************/  
+	%macro l2_effectestimates_report(order=);
+
+		%let tablecount = 1;
+	    %let tableletter = a;
+
+		data _null_;
+            set l2comparisonfile(where=(order=&order.));
+            call symputx('runid', runid);
+            call symputx('analysisgrp', analysisgrp);
+        run;
+
+    	/* Subset dataset on analysisgrp with all covarnums */
+    	data table&esttablecount;
+    		set l2_effectestimates_&periodid(where=(analysisgrp="&analysisgrp."));
+    	run;
+
+    	%let medicalproduct = medicalproduct;
+
+    	/* Merge in group labels if they exist */
+      	%isdata(dataset=labelfile);
+
+	    %if %eval(&nobs>0) %then %do;
+	   	%let medicalproduct = medicalproduct_labeled;
+	    proc sql noprint undo_policy=none;
+	        create table table&tablecount as
+	        select c.*, case when not missing(c.label) then label else medicalproduct end as medicalproduct_labeled
+	        from (select a.*, b.label 
+	          			  table&esttablecount a 
+	          			  left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
+	          			  on a.analysisgrp = b.group and a.runid = b.runid); c
+	       quit;
+	    %end;
+
+        proc sql noprint;
+        	/*extract QRP input file associated with analysisgrp*/
+            select distinct strip(file) into: pscsfile trimmed
+            from pscs_masterinputs
+            where analysisgrp = "&analysisgrp.";
+
+            /*Get all values of covarnum for a given analysisgrp */
+            select distinct covarnum 
+            into :covarnumlist separated by ' '
+            from table&esttablecount;
+
+            /*Determine whether to print Monitoring Period column*/
+           	select count(distinct monitoringperiod) into: printMP
+	        from table&esttablecount;
+
+	        /* Store (un)formatted value of analysisgrp for title */
+	        select &medicalproduct into: analysisgrpfmt trimmed
+	        from table&esttablecount;
+        quit;
+
+	    %let MPColumn = ;
+	    %let MPDefine = ;
+
+	    %if %eval(&printMP. > 1) %then %do;
+	        %let MPColumn = MonitoringPeriod;
+	        %let MPDefine = define MonitoringPeriod /
+	            order order=data 'Monitoring*Period' style(column)=[width=.65in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+	    %end;
+
+        /* Save datasets to reportdata */
+        %do covarnumcount = 1 %to %sysfunc(countw(&covarnumlist));
+        	%let covarnum = %scan(&covarnumlist,&covarnumcount);
+        	%tableletter();
+        	data repdata.table&esttablecount.&tableletter;
+        		set table&esttablecount.(where=(covarnum=&covarnum));
+        	run;
+
+
+        %let caliper&order. = ;
+        %let ratio&order. = ;
+        %let percentile&order. = ;
+        %let weightscheme=;
+        %let weightschemelong = ;
+
+        %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+            data _null_; 
+            	set infolder.&&&runid._&pscsfile.(where=(lowcase(analysisgrp)="&analysisgrp."));
+                call symputx("psestimategrp", lowcase(psestimategrp));
+            run; 
+            data _null_; 
+            	set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                call symputx("eoi", lowcase(eoi));
+            run; 
+        %end;
+        %if &pscsfile. = psmatchfile %then %do;
+            data _null_; 
+            	set infolder.&&&runid._psmatchfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                call symputx("caliper&corder.",cat('; Caliper= ',strip(upcase(caliper))));
+                if upcase(ratio) = "F" then call symputx("ratio&corder.","Fixed Ratio 1:"||strip(ceiling));
+                else if upcase(ratio) = "V"  then call symputx("ratio&corder.","Variable Ratio 1:"||strip(ceiling)); 
+	       run; 
+        %end;
+        %if &pscsfile. = stratificationfile %then %do;
+            data _null_; 
+                set infolder.&&&runid._stratificationfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                if not missing(percentiles) then do;
+                call symputx("percentile&corder",cat('; Percentiles= ',strip(percentiles)));
+                end;
+                if not missing(strataweight) then do;
+                call symputx("weightscheme",strip(upcase(strataweight)));
+                if upcase(strataweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect");
+                else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
+                end;
+            run;
+        %end;
+        %if &pscsfile. = iptwfile %then %do;
+            data _null_; 
+                set infolder.&&&runid._iptwfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                call symputx("weightscheme",upcase(IPWEIGHT));
+                if upcase(ipweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect");
+                else if upcase(ipweight)= 'ATES' then call symputx("weightschemelong","Average Treatment Effect, Stabilized");
+                else if upcase(ipweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
+            run;
+        %end;
+        %if &pscsfile. = covstratfile %then %do;
+      	data _null_; 
+                set infolder.&&&runid._covstratfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                   call symputx("eoi", lowcase(eoi));
+                   *convert covariate stratifiers vars to printable format;
+                    cnt = countw(stratvars);
+                    format tmpstratvars stratvars2 $50.;
+                    tmpstratvars = stratvars;
+                    if cnt =2 then do;
+                        tmpstratvars = tranwrd(strip(tmpstratvars),' ', ' and ');
+                    end;
+                    if cnt >2 then do;
+                        stratvars1 = tranwrd(strip(tmpstratvars),' ', ', ');
+                        lastcomma = find(stratvars1,',',-length(stratvars1));
+                        tmpstratvars = cat(substr(stratvars1, 1, lastcomma),' and', substr(stratvars1, lastcomma+1));
+                    end;
+
+                    stratvars2 = tranwrd(propcase(strip(tmpstratvars)), 'Agegroup', 'Age Group');
+                    formattedstratvars = tranwrd(stratvars2,'And', 'and'); 
+                    call symputx("formattedstratvars", formattedstratvars);
+      	run;
+        %end;
+
+        /* Determine what text to append to title based on covarnum */
+        %if &covarnum = 0 %then %do;
+        %let titletext = %str();
+        %end;
+        %else %if &covarnum = 9000 %then %do; 
+        %let titletext = %str(and Data Partner);
+        %end;
+        %else %do;
+        %let subcategorization = ;
+
+        proc sql noprint;
+        	select distinct title 
+        	into :subcategorization separated by '@'
+        	from repdata.table&esttablecount.&tableletter
+        	where covarnum = &covarnum;
+
+        	%if &covarnum < 1000 %then %do;
+        	select distinct strip(studyname) into: subgrouplabel
+            from infolder.&&&runid._covariatecodes
+            where covarnum = &covarnum.;
+            %end;
+        quit;
+
+        %if &covarnum = 1000 %then %let subgrouplabel = Sex;
+        %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
+        %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
+        %else %if &covarnum = 1003 %then %let subgrouplabel = Monitoring Period;
+        %else %if &covarnum = 1012 %then %let subgrouplabel = Race;
+        %else %if &covarnum = 1013 %then %let subgrouplabel = Hispanic Origin;
+        %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
+        %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
+        %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
+
+        %let titletext = %str(and &subgrouplabel);
+        %end;
+
+        /**********************************************************************
+            Output Overall Results to PDF/XLS
+        ***********************************************************************/
+
+        ods escapechar="^";
+
+        ods excel options(sheet_name="Table &esttablecount.&tableletter." tab_color="green");
+        ods proclabel = "Table &esttablecount.&tableletter.";
+
+        proc report data=repdata.table&esttablecount.&tableletter nofs nowd spanrows missing
+                style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+                style(report)=[rules=none frame=box cellpadding=1.5pt];
+
+            columns (
+                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar 
+                %if %eval(&redactevents.<=1) %then %do;
+                    EVchar
+                %end;
+                %if %eval(&redactevents.=2) %then %do;
+                    totalevents
+                %end;
+                IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar HR_95CI HR_pvalue);
+            
+            %if &covarnum ne 0 %then %do;
+            define title / order order=data noprint;
+            %end;
+            define analysis / order order=data noprint  ;
+            define &medicalproduct / display 'Medical Product'
+                style(column)=[width=1.6in just=l indent=30] style(header)=[just=L background=white borderbottomcolor=black];
+            &MPDefine. ;
+            define n / display 'Number of^n New Users'
+                style(column)=[width=.7in just=c background=background_n_fmt.] style(header)=[just=C background=white borderbottomcolor=black];
+            define FUTime_Ychar / display 'Person Years^n at Risk'
+                style(column)=[width=.7in just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+            define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
+                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+            define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
+                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+            %if %eval(&redactevents.<=1) %then %do;
+            define EVchar / display 'Number of Events'
+                style(column)=[width=.7in just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+            %end;
+            %if %eval(&redactevents.=2) %then %do;
+            define totalevents / order 'Total Number of Events'
+                style(column)=[width=.7in vjust=middle just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+            %end;
+            define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
+                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+            define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
+                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+            define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
+                style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
+                style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
+                style(column)=[width=1.2in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            define HR_pvalue / order 'Wald P-Value'
+                style(column)=[width=.65in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+
+            /*Add title*/
+            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
+                                           tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+            line "Table &esttablecount.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titletext";
+            endcomp;
+
+            /*Add spanning description of analysis*/
+            %if &covarnum = 0 %then %do;
+            compute before analysis / style=[background=darkgray foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            %end;
+            %else %do;
+            compute before analysis / style=[background=white foreground=black just=L font_style=italic bordertopcolor=black borderbottomcolor=black];
+            %end;
+
+                length text $100;
+                
+                /*Site Adjusted Analysis for IPTW/PS Weighted Stratification*/
+                %if %length(&weightscheme) > 0 %then %do;
+                if analysis = 'Unadjusted' then do; 
+                    text='Site-Adjusted Analysis, Unweighted'; 
+                    num=100;
+                end;
+                %end;
+                %else %do;
+                if analysis = 'Unadjusted' then do; 
+                    text='Site-Adjusted Analysis'; 
+                    num=100;
+                end;
+                %end;
+
+                /*PS Match Conditional/Unconditional*/
+                %if &pscsfile. = psmatchfile %then %do;
+                else if analysis = 'Conditional' then do; 
+                    text="&&Ratio&corder. Propensity Score Matched Conditional Analysis&&caliper&corder.^{super 1}"; 
+                    num=100; 
+                end;
+                else if analysis = 'Unconditional' then do; 
+                    text="&&Ratio&corder. Propensity Score Matched Unconditional Analysis&&caliper&corder."; 
+                    num=100; 
+                end; 
+                %end;
+
+                /*Covariate Stratified*/
+                %if &pscsfile. = covstratfile %then %do;
+                else if analysis = 'Conditional' then do; 
+                    text="&formattedstratvars. Adjusted Analysis^{super 1}"; 
+                    num=100; 
+                end;
+                %end;
+
+                /*PS Stratified*/
+                %if &pscsfile. = stratificationfile and %length(&weightscheme) = 0 %then %do;
+                else if analysis = 'Conditional' then do; 
+                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.^{super 1}"; 
+                    num=100; 
+                end;
+                %end;
+
+                /*IPTW/PS Weighted Stratification*/
+                %if %length(&weightscheme) > 0 %then %do;
+                else if analysis = 'Unweighted' then do; 
+                    %if &pscsfile. = iptwfile %then %do;
+                    text="Inverse Probability of Treatment Weighted Analysis; Unweighted"; 
+                    %end;
+                    %else %do;
+                    text="Propensity Score Stratum Adjusted Analysis; Unweighted";
+                    %end;
+                    num=100; 
+                end;
+                else if analysis = 'Weighted' then do; 
+                    %if &pscsfile. = iptwfile %then %do;
+                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.^{super 1}"; 
+                    %end;
+                    %else %do;
+                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.^{super 1}";
+                    %end;
+                    num=100; 
+                end;
+                %end;
+                else do; 
+                    text = "";
+                    num=0;
+                end;
+                line text $Varying. num; 
+            endcomp;
+
+            %if &covarnum ne 0 %then %do;
+            /*Add spanning label for subgroup category*/
+                compute before title / style=[background=darkgray foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    length text $100;
+                    %if &covarnum ne 9000 %then %do;
+                        %if %eval(&covarnum. >=1000) %then %do;
+                            %do x = 1 %to %sysfunc(countw(%bquote(&subcategorization.),@));
+                                %let cat = %scan(%bquote(&subcategorization.), &x., @);
+                                if title = "&cat" then do;
+                                    text = "&subgrouplabel: &cat.";
+                                    num=100;
+                                end;
+                                else 
+                            %end;
+                        %end;
+                        %if %eval(&covarnum. <1000) %then %do;
+                            if title = "0" then do;
+                                text = "No &subgrouplabel";
+                                num=100;
+                            end;
+                            else if title = "1" then do;
+                                text = "&subgrouplabel";
+                                num=100;
+                            end;
+                            else
+                        %end;
+                    %end;
+                    %else %do;
+                     %do dps = 1 %to &num_dp.;
+                            %let maskedID = %scan(&masked_dplist., &dps.);
+                            if title = "&maskedID" then do;
+                                text = "Data Partner %substr(&maskedID., 3)";
+                                num=100;
+                            end;
+                            else
+                     %end;
+                    do; 
+                        text = "";
+                        num=0;
+                    end;
+                    %end;
+
+                    line text $Varying. num; 
+                endcomp;
+            %end;
+        run;
+
+        %end;
+    	%mend l2_effectestimates_report;
+
+        /* Loop through all order values */
+        %do corder = 1 %to &numl2comparisons;
+            %l2_effectestimates_report(order=&corder);
+            %let esttablecount = %eval(&esttablecount + 1);
+        %end;
+
+    %end;
+
+%mend l2_effect_estimate_output;
