@@ -48,6 +48,7 @@
             set l2comparisonfile(where=(order=&order.));
             call symputx('runid', runid);
             call symputx('analysisgrp', analysisgrp);
+            call symputx('conditional', upcase(outputconditional));
         run;
 
     	/* Subset dataset on analysisgrp with all covarnums */
@@ -110,6 +111,9 @@
         	%tableletter();
         	data repdata.table&esttablecount.&tableletter;
         		set table&esttablecount.(where=(covarnum=&covarnum));
+                %if &reporttype = T4L2 %then %do;
+                if not missing(adjor) then or_95ci=adjor_95ci;
+                %end;
         	run;
 
 
@@ -182,6 +186,43 @@
       	run;
         %end;
 
+        /* Select Footnotes */  
+         data _footnotes;
+           length footnote_order 3; 
+           /* Always displayed across all types */
+           set lookup.lookup_footnotes_effectest (where=(order in ( 0
+              %if "&conditional" = "Y" and %length(&weightscheme) = 0 %then %do;
+              3
+              %end;
+              %if %length(&weightscheme) > 0 %then %do;
+              4
+              %end;
+              %if &covarnum = 1012 %then %do;
+              1
+              %end;
+              %if &covarnum = 1014 %then %do;
+              2
+              %end;
+            )));
+           by order;
+           footnote_order = _n_;
+        run;
+
+        proc sql noprint;
+          select count(order) into: num_fn trimmed
+          from _footnotes;
+          
+          %if &num_fn > 0 %then %do;
+          select description into: fn1 - :fn&num_fn.
+          from _footnotes
+          order by order;
+          %end;
+        quit;
+
+        /* Assign macro variables for superscipts */
+        %assign_superscripts(type =title, order =1 2);
+        %assign_superscripts(type =line, order =3 4);
+
         /* Determine what text to append to title based on covarnum */
         %if &covarnum = 0 %then %do;
         %let titletext = %str();
@@ -193,13 +234,13 @@
         %let subcategorization = ;
 
         proc sql noprint;
-        	select distinct title 
-        	into :subcategorization separated by '@'
-        	from repdata.table&esttablecount.&tableletter
-        	where covarnum = &covarnum;
+            select distinct title 
+            into :subcategorization separated by '@'
+            from repdata.table&esttablecount.&tableletter
+            where covarnum = &covarnum;
 
-        	%if &covarnum < 1000 %then %do;
-        	select distinct strip(studyname) into: subgrouplabel
+            %if &covarnum < 1000 %then %do;
+            select distinct strip(studyname) into: subgrouplabel
             from infolder.&&&runid._covariatecodes
             where covarnum = &covarnum.;
             %end;
@@ -239,7 +280,14 @@
                 %if %eval(&redactevents.=2) %then %do;
                     totalevents
                 %end;
-                IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar HR_95CI HR_pvalue);
+                IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar 
+                %if &reporttype = T2L2 %then %do;
+                HR_95CI HR_pvalue
+                %end;
+                %else %do;
+                OR_95CI
+                %end;
+                );
             
             %if &covarnum ne 0 %then %do;
             define title / order order=data noprint;
@@ -272,15 +320,21 @@
                 style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
                 style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            %if &reporttype = T2L2 %then %do;
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
                 style(column)=[width=1.2in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_pvalue / order 'Wald P-Value'
                 style(column)=[width=.65in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            %end;
+            %else %do;
+            define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
+                style(column)=[width=1.2in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+            %end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "Table &esttablecount.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titletext";
+            line "Table &esttablecount.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titletext.&super_title.";
             endcomp;
 
             /*Add spanning description of analysis*/
@@ -310,7 +364,7 @@
                 /*PS Match Conditional/Unconditional*/
                 %if &pscsfile. = psmatchfile %then %do;
                 else if analysis = 'Conditional' then do; 
-                    text="&&Ratio&corder. Propensity Score Matched Conditional Analysis&&caliper&corder.^{super 1}"; 
+                    text="&&Ratio&corder. Propensity Score Matched Conditional Analysis&&caliper&corder.&super_line."; 
                     num=100; 
                 end;
                 else if analysis = 'Unconditional' then do; 
@@ -330,7 +384,7 @@
                 /*PS Stratified*/
                 %if &pscsfile. = stratificationfile and %length(&weightscheme) = 0 %then %do;
                 else if analysis = 'Conditional' then do; 
-                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.^{super 1}"; 
+                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&super_line."; 
                     num=100; 
                 end;
                 %end;
@@ -348,10 +402,10 @@
                 end;
                 else if analysis = 'Weighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.^{super 1}"; 
+                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.&super_line."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.^{super 1}";
+                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&super_line.";
                     %end;
                     num=100; 
                 end;
@@ -408,6 +462,17 @@
                     line text $Varying. num; 
                 endcomp;
             %end;
+
+            /* Add Footnotes */
+            %if &num_fn > 0 %then %do;
+            compute after / style=[just=L nobreakspace=off];
+             line '';
+              %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+              %end;
+            endcomp;
+            %end;
+
         run;
 
         %end;

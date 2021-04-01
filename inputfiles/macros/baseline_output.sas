@@ -32,19 +32,6 @@
     %put =====> MACRO CALLED: baseline_output;
 
     %if %eval(&numbaselinetablegrp.>0) %then %do;
-    /*********************************************************************************************/
-    /*   Define macro variables for superscripts that correspond to required footnotes           */
-    /*********************************************************************************************/  	
-	%macro assign_superscripts(type =, order =);
-	  %global super_&type.;
-	  %let super_&type. =;
-	  
-	  proc sql noprint;
-	    select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
-	    from _footnotes where order in (&order.);
-	  quit;
-	  
-	%mend assign_superscripts;
 
     /*********************************************************************************************/
     /*   proc report                                                                             */
@@ -120,7 +107,7 @@
 	     data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-	       set lookup.lookup_footnotes (where = (order in (14 15
+	       set lookup.lookup_footnotes_baseline (where = (order in (14 15
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %str("&cohortdef.") ne %str("01")) 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;

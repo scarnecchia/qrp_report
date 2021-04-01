@@ -31,7 +31,7 @@
   options noquotelenmax;
   
   %macro create_lookup();
-     data lookup.lookup_footnotes;
+     data lookup.lookup_footnotes_baseline;
 	   attrib order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
 	   order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
@@ -51,7 +51,17 @@
        order = 15; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
 	   order = 16; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for preterm and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
 	   order = 17; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
-	   run;  
+	 run; 
+
+     data lookup.lookup_footnotes_effectest;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	   order = 2;  description = "Delivery status based on algorithm-derived pregnancy duration"; output;
+	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
+	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
+	 run;  
+
   %mend create_lookup;
   %create_lookup();
 
