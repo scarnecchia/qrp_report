@@ -63,13 +63,13 @@
 	    %if %eval(&nobs>0) %then %do;
 	   	%let medicalproduct = medicalproduct_labeled;
 	    proc sql noprint undo_policy=none;
-	        create table table&tablecount as
+	        create table table&esttablecount as
 	        select c.*, case when not missing(c.label) then label else medicalproduct end as medicalproduct_labeled
 	        from (select a.*, b.label 
-	          			  table&esttablecount a 
-	          			  left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-	          			  on a.analysisgrp = b.group and a.runid = b.runid); c
-	       quit;
+	          			from table&esttablecount a 
+	          			left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
+	          			on a.analysisgrp = b.group) c;
+	    quit;
 	    %end;
 
         proc sql noprint;
