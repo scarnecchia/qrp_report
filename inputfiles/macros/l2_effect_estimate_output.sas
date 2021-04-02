@@ -43,6 +43,7 @@
 
         /* reset table letter at top of the loop */
 		%let tablecount = 1;
+        %let conditional = N;
 
 		data _null_;
             set l2comparisonfile(where=(order=&order.));
@@ -117,7 +118,7 @@
                 %if &reporttype = T4L2 %then %do;
                 if not missing(adjor) then or_95ci=adjor_95ci;
                 %end;
-                %if &pscsfile = iptwfile %then %do;
+                %if &pscsfile = iptwfile or &pscsfile = stratificationfile %then %do;
                 if analysis = "Unweighted" then do;
                     HR_95CI = 'N/A';
                     HR_pvalue = 'N/A';

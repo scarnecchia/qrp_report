@@ -73,9 +73,9 @@
             end;
 
             /*blank out HR and pvalue that cannot be calculated*/
-            if index(HR_95CI, 'E') > 0 or index(HR_95CI, '0.00') or index(HR_95CI, '-') or index(HR_95CI,' . ') then do;
-                HR_95CI = 'N/A';
-                HR_pvalue = 'N/A';
+            if index(HR_95CI, 'E') > 0 or index(HR_95CI, '0.00') or index(HR_95CI,' . ') then do;
+                HR_95CI = 'NaN';
+                HR_pvalue = 'NaN';
             end;
 
             label hr_95CI = "Hazard Ratio (95% CI)";
