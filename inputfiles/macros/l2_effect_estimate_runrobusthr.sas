@@ -157,7 +157,7 @@
                 MonitoringPeriod = &periodid.;
                 Analysis= &analysis.;
                 subgroupcat = "&subgroupcat.";
-                HR_pvalue = 'N/A'; /*no p value*/
+                HR_pvalue = 'NaN'; /*no p value*/
 
                 /* set HR_95CI to NaN if not computed */
                 if nmiss(HR, LCL, UCL)=3 then do;
