@@ -299,38 +299,38 @@
                 style(column)=[width=1.6in just=l indent=30] style(header)=[just=L background=white borderbottomcolor=black];
             &MPDefine. ;
             define n / display 'Number of^n New Users'
-                style(column)=[just=c background=background_n_fmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
-                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
-                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %if %eval(&redactevents.<=1) %then %do;
             define EVchar / display 'Number of Events'
-                style(column)=[just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %if %eval(&redactevents.=2) %then %do;
             define totalevents / order 'Total Number of Events'
-                style(column)=[vjust=middle just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
-                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %if &reporttype = T2L2 %then %do;
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_pvalue / order 'Wald P-Value'
-                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %else %do;
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
 
             /*Add title*/
