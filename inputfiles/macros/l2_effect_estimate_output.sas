@@ -117,6 +117,12 @@
                 %if &reporttype = T4L2 %then %do;
                 if not missing(adjor) then or_95ci=adjor_95ci;
                 %end;
+                %if &pscsfile = iptwfile %then %do;
+                if analysis = "Unweighted" then do;
+                    HR_95CI = 'N/A';
+                    HR_pvalue = 'N/A';
+                end;
+                %end;
         	run;
 
         %let caliper&order. = ;
@@ -139,8 +145,13 @@
             data _null_; 
             	set infolder.&&&runid._psmatchfile(where=(lowcase(analysisgrp)="&analysisgrp."));
                 call symputx("caliper&corder.",cat('; Caliper= ',strip(upcase(caliper))));
-                if upcase(ratio) = "F" then call symputx("ratio&corder.","Fixed Ratio 1:"||strip(put(ceiling,8.)));
-                else if upcase(ratio) = "V"  then call symputx("ratio&corder.","Variable Ratio 1:"||strip(put(ceiling,8.))); 
+                if upcase(ratio) = "F" then do;
+                    call symputx("ratio&corder.","Fixed Ratio 1:"||strip(put(ceiling,8.)));
+                end;
+                else if upcase(ratio) = "V"  then do;
+                    call symputx("ratio&corder.","Variable Ratio 1:"||strip(put(ceiling,8.))); 
+                    call symputx('conditional', 'Y');
+                end;
 	       run; 
         %end;
         %if &pscsfile. = stratificationfile %then %do;
@@ -154,6 +165,7 @@
                 if upcase(strataweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect");
                 else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
                 end;
+                if missing(strataweight) then call symputx('conditional', 'Y');
             run;
         %end;
         %if &pscsfile. = iptwfile %then %do;
@@ -185,6 +197,7 @@
                     stratvars2 = tranwrd(propcase(strip(tmpstratvars)), 'Agegroup', 'Age Group');
                     formattedstratvars = tranwrd(stratvars2,'And', 'and'); 
                     call symputx("formattedstratvars", formattedstratvars);
+                    call symputx('conditional', 'Y');
       	run;
         %end;
 

@@ -178,7 +178,31 @@
 
                 keep analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se;
             run;        
-        %end;       
+        %end;
+        %else %if %eval(&redactevents.>0) %then %do;
+        data est;
+            format analysisgrp $40. covarnum catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            length subgroupcat $10. analysisgrp $40. analysis $13. covarnum 8;
+
+            analysisgrp = "&analysisgrp.";
+            covarnum  = &covarnum.;
+            catnum = &cat.;
+            Analysis= &analysis.;
+            subgroupcat = "&subgroupcat.";
+
+            format MonitoringPeriod 2.;
+            length HR_95CI $30. HR_pvalue $6.;
+            MonitoringPeriod = &periodid.;
+
+            HR_95CI = "N/A";
+            HR_se = .;
+            HR_coef = .;
+            HR_pvalue = "N/A";
+            HR = .;
+            LCL = .;
+            UCL = .;
+        run; 
+        %end;
         %else %do;
         %goto emptyds;
         %end;
@@ -199,17 +223,13 @@
 	  		length HR_95CI $30. HR_pvalue $6.;
 	  		MonitoringPeriod = &periodid.;
 
-			HR_95CI = "N/A";
+			HR_95CI = "NaN";
 		    HR_se = .;
             HR_coef = .;
-			HR_pvalue = "N/A";
+			HR_pvalue = "NaN";
             HR = .;
             LCL = .;
             UCL = .;
-			%if %eval(&redactevents.>0) %then %do;
-				HR_pvalue = 'N/A';
-				HR_95CI='N/A';
-			%end;
 	    run; 
 	%end;
 
