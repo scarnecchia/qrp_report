@@ -41,8 +41,8 @@
 	/*********************************************************************************************/  
 	%macro l2_effectestimates_report(order=);
 
+        /* reset table letter at top of the loop */
 		%let tablecount = 1;
-	    %let tableletter = a;
 
 		data _null_;
             set l2comparisonfile(where=(order=&order.));
@@ -91,9 +91,12 @@
 	        from table&esttablecount;
 
 	        /* Store (un)formatted value of analysisgrp for title */
+            %let analysisgrpfmt = &analysisgrp.;
+            %if &nobs > 0 %then %do;
 	        select label into: analysisgrpfmt trimmed
 	        from labelfile
             where group = "&analysisgrp." and runid = "&runid.";
+            %end;
         quit;
 
 	    %let MPColumn = ;
@@ -116,7 +119,6 @@
                 %end;
         	run;
 
-
         %let caliper&order. = ;
         %let ratio&order. = ;
         %let percentile&order. = ;
@@ -137,8 +139,8 @@
             data _null_; 
             	set infolder.&&&runid._psmatchfile(where=(lowcase(analysisgrp)="&analysisgrp."));
                 call symputx("caliper&corder.",cat('; Caliper= ',strip(upcase(caliper))));
-                if upcase(ratio) = "F" then call symputx("ratio&corder.","Fixed Ratio 1:"||strip(ceiling));
-                else if upcase(ratio) = "V"  then call symputx("ratio&corder.","Variable Ratio 1:"||strip(ceiling)); 
+                if upcase(ratio) = "F" then call symputx("ratio&corder.","Fixed Ratio 1:"||strip(put(ceiling,8.)));
+                else if upcase(ratio) = "V"  then call symputx("ratio&corder.","Variable Ratio 1:"||strip(put(ceiling,8.))); 
 	       run; 
         %end;
         %if &pscsfile. = stratificationfile %then %do;
@@ -225,10 +227,10 @@
 
         /* Determine what text to append to title based on covarnum */
         %if &covarnum = 0 %then %do;
-        %let titletext = %str();
+        %let titleend = %str();
         %end;
         %else %if &covarnum = 9000 %then %do; 
-        %let titletext = %str(and Data Partner);
+        %let titleend = %str(and Data Partner);
         %end;
         %else %do;
         %let subcategorization = ;
@@ -256,7 +258,7 @@
         %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
         %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
 
-        %let titletext = %str(and &subgrouplabel);
+        %let titleend = %str(and &subgrouplabel);
         %end;
 
         /**********************************************************************
@@ -297,44 +299,44 @@
                 style(column)=[width=1.6in just=l indent=30] style(header)=[just=L background=white borderbottomcolor=black];
             &MPDefine. ;
             define n / display 'Number of^n New Users'
-                style(column)=[width=.7in just=c background=background_n_fmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=background_n_fmt.] style(header)=[just=C background=white borderbottomcolor=black];
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[width=.7in just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
-                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
-                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
             %if %eval(&redactevents.<=1) %then %do;
             define EVchar / display 'Number of Events'
-                style(column)=[width=.7in just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %if %eval(&redactevents.=2) %then %do;
             define totalevents / order 'Total Number of Events'
-                style(column)=[width=.7in vjust=middle just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=c background=$backgroundfmt.] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[width=.7in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black];
             define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
-                style(column)=[width=.7in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             %if &reporttype = T2L2 %then %do;
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
-                style(column)=[width=1.2in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_pvalue / order 'Wald P-Value'
-                style(column)=[width=.65in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %else %do;
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
-                style(column)=[width=1.2in vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "Table &esttablecount.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titletext.&super_title.";
+            line "Table &esttablecount.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.&super_title.";
             endcomp;
 
             /*Add spanning description of analysis*/
