@@ -105,7 +105,7 @@
 	    %if %eval(&printMP. > 1) %then %do;
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
-	            order order=data 'Monitoring*Period' style(column)=[width=.65in just=c] style(header)=[just=C background=white borderbottomcolor=black];
+	            order order=data 'Monitoring*Period' style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
 	    %end;
 
         /* Save datasets to reportdata */
