@@ -109,22 +109,9 @@
 	            order order=data 'Monitoring*Period' style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
 	    %end;
 
-        /* Save datasets to reportdata */
+        /* Create output datasets based on covarnum */
         %do covarnumcount = 1 %to %sysfunc(countw(&covarnumlist));
         	%let covarnum = %scan(&covarnumlist,&covarnumcount);
-        	%tableletter();
-        	data repdata.table&esttablecount.&tableletter;
-        		set table&esttablecount.(where=(covarnum=&covarnum));
-                %if &reporttype = T4L2 %then %do;
-                if not missing(adjor) then or_95ci=adjor_95ci;
-                %end;
-                %if &pscsfile = iptwfile or &pscsfile = stratificationfile %then %do;
-                if analysis = "Unweighted" then do;
-                    HR_95CI = 'N/A';
-                    HR_pvalue = 'N/A';
-                end;
-                %end;
-        	run;
 
         %let caliper&order. = ;
         %let ratio&order. = ;
@@ -201,6 +188,21 @@
                     call symputx('conditional', 'Y');
       	run;
         %end;
+
+        /* Save datasets to reportdata */
+        %tableletter();
+        data repdata.table&esttablecount.&tableletter;
+            set table&esttablecount.(where=(covarnum=&covarnum));
+            %if &reporttype = T4L2 %then %do;
+            if not missing(adjor) then or_95ci=adjor_95ci;
+            %end;
+            %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
+            if analysis = "Unweighted" then do;
+                HR_95CI = 'N/A';
+                HR_pvalue = 'N/A';
+            end;
+            %end;
+        run;
 
         /* Select Footnotes */  
          data _footnotes;
