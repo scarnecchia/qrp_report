@@ -254,6 +254,18 @@
             AvgFUTime_Dchar = '0.00';
             AvgFUTime_Ychar = '0.00';  
             end;
+            else do;
+            EVchar = 'NaN';
+            IR_1000PYchar = 'NaN';
+            IRDiff_1000PYchar = 'NaN';
+            RD_1000NUchar = 'NaN';
+            risk_1000NUchar = 'NaN';
+            rrchar = 'NaN';
+
+            FUTime_Ychar = 'NaN';
+            AvgFUTime_Dchar = 'NaN';
+            AvgFUTime_Ychar = 'NaN';  
+            end;
             %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
@@ -354,6 +366,18 @@
                 FUTime_Ychar = '0.00';
                 AvgFUTime_Dchar = '0.00';
                 AvgFUTime_Ychar = '0.00';  
+                end;
+                else do;
+                EVchar = 'NaN';
+                IR_1000PYchar = 'NaN';
+                IRDiff_1000PYchar = 'NaN';
+                RD_1000NUchar = 'NaN';
+                risk_1000NUchar = 'NaN';
+                rrchar = 'NaN';
+
+                FUTime_Ychar = 'NaN';
+                AvgFUTime_Dchar = 'NaN';
+                AvgFUTime_Ychar = 'NaN';  
                 end;
                 %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
                     EVchar = 'N/A';
