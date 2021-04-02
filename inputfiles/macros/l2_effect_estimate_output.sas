@@ -280,8 +280,9 @@
         ***********************************************************************/
 
         ods escapechar="^";
-
+        %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &esttablecount.&tableletter." tab_color="green");
+        %end;
         ods proclabel = "Table &esttablecount.&tableletter.";
 
         proc report data=repdata.table&esttablecount.&tableletter nofs nowd spanrows missing
