@@ -290,7 +290,15 @@
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-                %end;
+									   
+				%aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                       outfile=aggwd,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(min, max, mean, sd));					   
+                %end; /* aggregate weighted and marginalweights data */		
             %end; /*aggregate risk set data*/
            
             /****************************************************************************************/
