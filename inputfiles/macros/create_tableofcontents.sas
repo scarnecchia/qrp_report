@@ -77,7 +77,7 @@
         /*counter for determining table letter*/
         %let tablecount = 1;
 
-        /* counter for determining table number - for effect estimates table */
+        /* counter for determining table number */
         %let tablenum = 2;
 
         /*loop through each baseline table*/
