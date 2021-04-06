@@ -67,7 +67,7 @@
     /* Counter for figure number */
     %let figurenum=1;
 
-    /* Counter for table numer */
+    /* Counter for table number */
     %let tablenum=1;
 
 ***************************************************************************************************;
