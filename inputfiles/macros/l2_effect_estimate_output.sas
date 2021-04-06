@@ -34,6 +34,12 @@
 
     %if &numl2comparisons > 0 %then %do; 
 
+        %if &look_start ^= &look_end %then %do;
+        data l2_effectestimates_&look_end.;
+            set l2_effectestimates_:;
+        run;
+        %end;
+
         /* Loop through all order values */
         %do corder = 1 %to &numl2comparisons;
 
@@ -48,7 +54,7 @@
 
     	/* Subset dataset on analysisgrp with all covarnums */
     	data table&tablenum;
-    		set l2_effectestimates_&periodid(where=(analysisgrp="&analysisgrp."));
+    		set l2_effectestimates_&look_end.(where=(analysisgrp="&analysisgrp."));
     	run;
 
     	%let medicalproduct = medicalproduct;
@@ -83,7 +89,7 @@
 	          			left join labelfile_est b
 	          			on coalescec(a.medicalproduct, a.analysisgrp) = b.group
                         where b.runid = "&runid.") c
-            order by c.analysisgrpsort, c.covarnum, c.catnum, c.subgroupcat, c.sort1, c.sort2;
+            order by c.analysisgrpsort, c.covarnum, c.catnum, c.subgroupcat, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
 	    quit;
 	    %end;
 
@@ -120,7 +126,7 @@
 	    %if %eval(&printMP. > 1) %then %do;
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
-	            order order=data 'Monitoring*Period' style(column)=[just=c] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
+	            order order=data 'Monitoring*Period' style(column)=[just=c vjust=middle] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
 	    %end;
 
         /* Create output datasets based on covarnum */
@@ -218,8 +224,8 @@
             end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
-            %if &covarnum = 1003 %then %do;
-            MP_char = put(MonitoringPeriod,3.);
+            %if &look_start ^= &look_end %then %do;
+            MP_char = strip(put(MonitoringPeriod,3.));
             drop MonitoringPeriod;
             rename MP_char=MonitoringPeriod;
             %end;
@@ -299,10 +305,10 @@
         %let titleend = %str(and &subgrouplabel);
         %end;
 
+        %let s11 = ;
         %if &reporttype = T4L2 %then %do;
         %isdata(dataset=SelectionProbabilitiesFile);
         %if &nobs > 0 %then %do; 
-            %let s11 = ;
             data _null_;
             set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum.));
                 call symputx('s11', s11);
@@ -400,7 +406,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "Table &tablenum.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.&super_title.";
+            line "Table &tablenum.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.&super_title.";
             endcomp;
 
             /*Add spanning description of analysis*/
