@@ -269,7 +269,6 @@
 
   %if &numl2comparisons > 0 %then %do; 
 
-    %do periodid = %eval(&look_start) %to %eval(&look_end);
         /*loop through each baseline table*/
         %do c = 1 %to &numl2comparisons;
 
@@ -297,7 +296,7 @@
                 select distinct covarnum
                 into :covarlist
                 separated by ' '
-                from l2_effectestimates_&periodid.
+                from l2_effectestimates_&look_end.
                 where analysisgrp="&analysisgrp.";
             quit;
 
@@ -338,11 +337,10 @@
                 %end;
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.));
+                caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.));
             %end; /* covarcount */
             %let tablenum = %eval(&tablenum + 1);
          %end; /* numl2comparison do loop */
-      %end; /* periodid */
     %end; /* numl2comparison */
 
   /*********************************************************************************************/
