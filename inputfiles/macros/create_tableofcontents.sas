@@ -55,6 +55,7 @@
     run;
 
     %let number = 1;
+    %let tablenum = 1;
 
     /*********************************************************************************************/
     /* Build table of contents                                                                   */
@@ -75,6 +76,9 @@
 
         /*counter for determining table letter*/
         %let tablecount = 1;
+
+        /* counter for determining table number - for effect estimates table */
+        %let tablenum = 2;
 
         /*loop through each baseline table*/
         %do b = 1 %to &numbaselinetablegrp.;
@@ -265,10 +269,6 @@
 
   %if &numl2comparisons > 0 %then %do; 
 
-    /*counter to use for TOC */
-    %if &numbaselinetablegrp > 0 %then %let tablecounter = 2;
-    %else %let tablecounter = 1;
-
     %do periodid = %eval(&look_start) %to %eval(&look_end);
         /*loop through each baseline table*/
         %do c = 1 %to &numl2comparisons;
@@ -337,10 +337,10 @@
                 %let titleend = %str(and &subgrouplabel);
                 %end;
                 %tableletter();
-                %addtotoc(tabnum=Table &tablecounter.&tableletter.,
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
                 caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.));
             %end; /* covarcount */
-            %let tablecounter = %eval(&tablecounter + 1);
+            %let tablenum = %eval(&tablenum + 1);
          %end; /* numl2comparison do loop */
       %end; /* periodid */
     %end; /* numl2comparison */

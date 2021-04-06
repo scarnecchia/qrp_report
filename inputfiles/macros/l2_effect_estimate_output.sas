@@ -34,9 +34,6 @@
 
     %if &numl2comparisons > 0 %then %do; 
 
-        %if &numbaselinetablegrp. > 0 %then %let tablecounter = 2;
-        %else %let tablecounter = 1;
-
         /* Loop through all order values */
         %do corder = 1 %to &numl2comparisons;
 
@@ -50,7 +47,7 @@
         run;
 
     	/* Subset dataset on analysisgrp with all covarnums */
-    	data table&tablecounter;
+    	data table&tablenum;
     		set l2_effectestimates_&periodid(where=(analysisgrp="&analysisgrp."));
     	run;
 
@@ -64,8 +61,8 @@
         /* stack all potential group values with label value */
         data labelfile_est;
             set labelfile
-                table&tablecounter(keep=medicalproduct rename=medicalproduct=group in=a)
-                table&tablecounter(keep=analysisgrp rename=analysisgrp=group in=b);
+                table&tablenum(keep=medicalproduct rename=medicalproduct=group in=a)
+                table&tablenum(keep=analysisgrp rename=analysisgrp=group in=b);
             if missing(label) then do;
             labeltype='grouplabel';
             runid="&runid";
@@ -79,10 +76,10 @@
 
 	   	%let medicalproduct = medicalproduct_labeled;
 	    proc sql noprint undo_policy=none;
-	        create table table&tablecounter as
+	        create table table&tablenum as
 	        select c.*, case when not missing(c.label) then label else medicalproduct end as medicalproduct_labeled
 	        from (select distinct a.*, b.label 
-	          			from table&tablecounter a 
+	          			from table&tablenum a 
 	          			left join labelfile_est b
 	          			on coalescec(a.medicalproduct, a.analysisgrp) = b.group
                         where b.runid = "&runid.") c
@@ -100,11 +97,11 @@
             /*Get all values of covarnum for a given analysisgrp */
             select distinct covarnum 
             into :covarnumlist separated by ' '
-            from table&tablecounter;
+            from table&tablenum;
 
             /*Determine whether to print Monitoring Period column*/
            	select count(distinct monitoringperiod) into: printMP
-	        from table&tablecounter;
+	        from table&tablenum;
 
 	        /* Store (un)formatted value of analysisgrp for title */
             %let analysisgrpfmt = &analysisgrp.;
@@ -209,11 +206,11 @@
         %tableletter();
 
         /* Save datasets to reportdata */
-        %isdata(dataset=repdata.table&tablecounter.&tableletter.);
+        %isdata(dataset=repdata.table&tablenum.&tableletter.);
         %if %eval(&nobs.<1) %then %do;
 
-        data repdata.table&tablecounter.&tableletter;
-            set table&tablecounter.(where=(covarnum=&covarnum));
+        data repdata.table&tablenum.&tableletter;
+            set table&tablenum.(where=(covarnum=&covarnum));
             %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
             if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
@@ -279,7 +276,7 @@
         proc sql noprint;
             select distinct title 
             into :subcategorization separated by '@'
-            from repdata.table&tablecounter.&tableletter
+            from repdata.table&tablenum.&tableletter
             where covarnum = &covarnum;
 
             %if &covarnum < 1000 %then %do;
@@ -302,21 +299,28 @@
         %let titleend = %str(and &subgrouplabel);
         %end;
 
+        %if &reporttype = T4L2 %then %do;
+        %isdata(dataset=SelectionProbabilitiesFile);
+        %if &nobs > 0 %then %do; 
+            %let s11 = ;
+            data _null_;
+            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum.));
+                call symputx('s11', s11);
+            run;
+        %end;
+        %end;
+
         /**********************************************************************
             Output Results
         ***********************************************************************/
 
-        %if &reporttype = T4L2 %then %do;
-        %isdata(dataset=SelectionProbabilitiesFile);
-        %end;
-
         ods escapechar="^";
         %if &destination = excel %then %do;
-        ods excel options(sheet_name="Table &tablecounter.&tableletter." tab_color="green");
+        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
         %end;
-        ods proclabel = "Table &tablecounter.&tableletter.";
+        ods proclabel = "Table &tablenum.&tableletter.";
 
-        proc report data=repdata.table&tablecounter.&tableletter nofs nowd spanrows missing
+        proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
                 style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
 
@@ -333,7 +337,7 @@
                 %end;
                 %else %do;
                 Risk_1000NUchar RD_1000NUchar OR_95CI
-                %if &nobs > 0 %then %do;
+                %if %length(&s11) > 0 %then %do;
                 ADJOR_95CI
                 %end;
                 %end;
@@ -350,11 +354,11 @@
                 style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %if &reporttype = T2L2 %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
-                style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
-                style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %if %eval(&redactevents.<=1) %then %do;
             define EVchar / display 'Number of Events'
@@ -366,13 +370,13 @@
             %end;
             %if &reporttype = T2L2 %then %do;
             define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                style(column)=[vjust=middle just=C width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
-                style(column)=[vjust=middle just=C width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_pvalue / order 'Wald P-Value'
@@ -382,11 +386,11 @@
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
                 style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
             define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
-                style(column)=[vjust=middle just=C width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
 
-            %if &nobs > 0 %then %do;
+            %if %length(&s11) > 0 %then %do;
             define ADJOR_95CI / order 'Adjusted Odds Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];   
             %end;
@@ -396,7 +400,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "Table &tablecounter.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.&super_title.";
+            line "Table &tablenum.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.&super_title.";
             endcomp;
 
             /*Add spanning description of analysis*/
@@ -542,10 +546,10 @@
         %end;
 
         proc datasets nowarn noprint lib=work;
-            delete label_est table&tablecounter _footnotes;
+            delete label_est table&tablenum _footnotes;
         quit;
 
-        %let tablecounter = %eval(&tablecounter + 1);
+        %let tablenum = %eval(&tablenum + 1);
 
         %end;
 
