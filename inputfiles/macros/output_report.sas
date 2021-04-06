@@ -95,11 +95,11 @@
 
     %if %index(&reporttype,L2) %then %do;
     /* Need to set to landscape so PDF tables don't wrap */
-    options nodate nonumber orientation = landscape;
+    options orientation = landscape;
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %l2_effect_estimate_output;
     %end;
-    options nodate nonumber orientation = portrait;
+    options orientation = portrait;
     %end;
 
 ***************************************************************************************************;

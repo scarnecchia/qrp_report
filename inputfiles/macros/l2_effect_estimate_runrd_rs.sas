@@ -194,6 +194,7 @@
 
             *total number of events;
             totalevents = sum(ev0, ev1);
+            if analysis = "Weighted" then totalevents = round(totalevents,1);
 
             /*Stratified incident rate diff - currently  not kept on dataset*/
             length RD_95CI $50.;

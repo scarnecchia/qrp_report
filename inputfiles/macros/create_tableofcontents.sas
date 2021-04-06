@@ -266,7 +266,8 @@
   %if &numl2comparisons > 0 %then %do; 
 
     /*counter to use for TOC */
-    %let esttablecount = 2;
+    %if &numbaselinetablegrp > 0 %then %let tablecounter = 2;
+    %else %let tablecounter = 1;
 
     %do periodid = %eval(&look_start) %to %eval(&look_end);
         /*loop through each baseline table*/
@@ -299,6 +300,8 @@
                 from l2_effectestimates_&periodid.
                 where analysisgrp="&analysisgrp.";
             quit;
+
+            %if &covarlist = 0 %then %let tablecount = 0;
 
             /* loop covarnums and assign subgroup label */
             %do covarcount = 1 %to %sysfunc(countw(&covarlist));
@@ -334,10 +337,10 @@
                 %let titleend = %str(and &subgrouplabel);
                 %end;
                 %tableletter();
-                %addtotoc(tabnum=Table &esttablecount.&tableletter.,
+                %addtotoc(tabnum=Table &tablecounter.&tableletter.,
                 caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Analysis Type &titleend.));
             %end; /* covarcount */
-            %let esttablecount = %eval(&esttablecount + 1);
+            %let tablecounter = %eval(&tablecounter + 1);
          %end; /* numl2comparison do loop */
       %end; /* periodid */
     %end; /* numl2comparison */
