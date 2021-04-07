@@ -258,6 +258,10 @@
         "&n" = &n
         %end;
         ;
+
+        value weightdist
+        .='N/A'
+        other=[8.2];
     run;
 
 

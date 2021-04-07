@@ -121,7 +121,6 @@
                 /*N, min, max*/
                 proc means data=weightdistribution nway noprint;
                     var N min max;
-                    where not missing(n) and not missing(min) and not missing(max);
                     output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
                 run;
 
@@ -129,16 +128,15 @@
                 proc means data=weightdistribution nway noprint;
                     var mean;
                     weight N;
-                    where not missing(mean);
                     output out=part2(drop=_:) mean(mean)=mean;
                 run;
 
                 /*SD*/
-                proc transpose data=weightdistribution(where=(not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
+                proc transpose data=weightdistribution out=sd(drop=_name_) prefix=_sd_;
                     id dpidsiteid;
                     var sd;
                 run;
-                proc transpose data=weightdistribution(where=(not missing(n))) out=n(drop=_name_) prefix=_ncount_;
+                proc transpose data=weightdistribution out=n(drop=_name_) prefix=_ncount_;
                     id dpidsiteid;
                     var n;
                 run;
@@ -171,27 +169,21 @@
 
                 data aggdistribution;
                     merge part1 part2 part3;
-                    sorted=1;
                 run;
 
                 options mergenoby = warn;
 
-                %let atLeastOneNotConverged=0;
                 %tableletter();
                 %isdata(dataset=repdata.appendix&tableletter.&look.)
                 %if &nobs <= 1 %then %do;
                 data repdata.appendix&tableletter.&look.;
                 	length dpidsiteid $10;
-                    set weightdistribution aggdistribution(in=a);
+                    set aggdistribution(in=a) weightdistribution;
                     if a then dpidsiteid="Aggregated";
-                    if missing(n) and missing(min) and missing(max) and missing(mean) and missing(sd) then do;
-                      call missing(N, min, max, mean, sd);
-                      call symputx("atLeastOneNotConverged",1);
-                    end;
                 run;
 
                 proc sort data=repdata.appendix&tableletter.&look.;
-                    by sorted dpidsiteid;
+                    by dpidsiteid;
                 run;
 
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.&look.), 
@@ -208,6 +200,10 @@
             %end; /* corder */
 
         %end; /* periodid */
+
+    proc datasets lib=work nolist;
+		delete part: aggdistribution sd n weightdistribution aggwd;
+	quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 	
