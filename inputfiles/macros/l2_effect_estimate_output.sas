@@ -326,6 +326,9 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
+        %if &reporttype = T2L2 %then %let user_label = Number of^n New Users;
+        %else %let user_label = Number of^n Pregnant Patients; 
+
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
                 style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
@@ -356,7 +359,7 @@
             define &medicalproduct / display 'Medical Product'
                 style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=white borderbottomcolor=black];
             &MPDefine. ;
-            define n / display 'Number of^n New Users'
+            define n / display "&user_label"
                 style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %if &reporttype = T2L2 %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
@@ -389,15 +392,17 @@
                 style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
             %else %do;
-            define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[just=c width=.7in tagattr="format:#,##0.00"] style(header)=[just=C background=white borderbottomcolor=black];
-            define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
+            define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+            define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n Pregnant Patients'
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+            define rrchar / order 'Risk Ratio'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
 
             %if %length(&s11) > 0 %then %do;
-            define ADJOR_95CI / order 'Adjusted Odds Ratio^n (95% Confidence Interval)'
+            define ADJOR_95CI / order 'Odds Ratio Adjusted for Selection Bias^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];   
             %end;
 
