@@ -166,7 +166,7 @@
             data _null_; 
                 set infolder.&&&runid._stratificationfile(where=(lowcase(analysisgrp)="&analysisgrp."));
                 if not missing(percentiles) then do;
-                call symputx("percentile&corder",cat('; Percentiles= ',strip(percentiles)));
+                call symputx("percentile&corder",cat('; Percentiles= ',strip(put(percentiles,8.))));
                 end;
                 if not missing(strataweight) then do;
                 call symputx("weightscheme",strip(upcase(strataweight)));
