@@ -152,7 +152,7 @@
         %if &pscsfile. = psmatchfile %then %do;
             data _null_; 
             	set infolder.&&&runid._psmatchfile(where=(lowcase(analysisgrp)="&analysisgrp."));
-                call symputx("caliper&corder.",cat('; Caliper= ',strip(upcase(caliper))));
+                call symputx("caliper&corder.",cat('; Caliper= ',strip(put(caliper,8.2))));
                 if upcase(ratio) = "F" then do;
                     call symputx("ratio&corder.","Fixed Ratio 1:"||strip(put(ceiling,8.)));
                 end;
