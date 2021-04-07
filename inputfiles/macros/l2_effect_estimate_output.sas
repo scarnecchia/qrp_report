@@ -345,7 +345,7 @@
                 IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar HR_95CI HR_pvalue
                 %end;
                 %else %do;
-                Risk_1000NUchar RD_1000NUchar OR_95CI
+                Risk_1000NUchar RD_1000NUchar rrchar OR_95CI
                 %if %length(&s11) > 0 %then %do;
                 ADJOR_95CI
                 %end;
@@ -384,7 +384,7 @@
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
-            define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n New Users'
+            define RD_1000NUchar / order 'Risk Difference per 1,000^n New Users'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
@@ -394,7 +394,7 @@
             %else %do;
             define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
-            define RD_1000NUchar / order 'Difference in^n Risk per 1,000^n Pregnant Patients'
+            define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define rrchar / order 'Risk Ratio'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
