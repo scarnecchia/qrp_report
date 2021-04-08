@@ -70,7 +70,7 @@
         	/*extract QRP input file associated with analysisgrp*/
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp.";
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
         quit;
 
          %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
