@@ -105,7 +105,7 @@
                 /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
                 %let look = ;
                 %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                   %let look = &periodid.;
+                   %let look = .&periodid.;
                 %end;
 
                 %let analysisgrplabel = ;
