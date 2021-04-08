@@ -57,6 +57,9 @@
 	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
 
 	%do periodid = %eval(&look_start) %to %eval(&look_end);
+
+		%if &periodid >= 2 %then %let tablecount = 2;
+
 	/* Loop through all order values */
         %do corder = 1 %to &numl2comparisons;
 
@@ -104,8 +107,10 @@
 
                 /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
                 %let look = ;
+                %let looktab = ;
                 %if %eval(&look_end.) > %eval(&look_start.) %then %do;
                    %let look = &periodid.;
+                   %let looktab = .&periodid;
                 %end;
 
                 %let analysisgrplabel = ;
@@ -201,6 +206,12 @@
                     if a then dpidsiteid="Aggregated";
                     if missing(n) then Nchar='N/A';
                     else Nchar=strip(put(n,comma12.));
+                    if n = 0 then do;
+                    	min=0;
+                    	max=0;
+                    	mean=0;
+                    	sd=0;
+                    end;
                     drop n;
                     rename nchar=n;
                 run;
@@ -209,7 +220,7 @@
                     by dpidsiteid;
                 run;
 
-				%addtotoc(tabnum= Appendix %upcase(&tableletter.&look.), 
+				%addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
 					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner, Weight: &weightschemelong.),
 					  appendixtype = appendixWeightDist);
                 %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
