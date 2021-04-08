@@ -51,7 +51,7 @@
     %let tablecount = 2; /* Appendix A is tablecount 1 */ 
 
     /*********************************************************************************************/
-    /* Appendix B: Weight Distribution appendices                                      			 */
+    /* Weight Distribution appendices                                      			 			 */
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
