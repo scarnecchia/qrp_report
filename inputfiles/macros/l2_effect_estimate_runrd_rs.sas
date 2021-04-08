@@ -237,6 +237,7 @@
             RD_1000NUchar = strip(put(RD_1000NU, comma8.2));
             risk_1000NUchar = strip(put(risk_1000NU, comma8.2));
             rrchar = strip(put(rr, comma8.2));
+            if missing(rr) then rrchar='0.00';
 
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
@@ -249,7 +250,7 @@
             IRDiff_1000PYchar = 'NaN';
             RD_1000NUchar = 'NaN';
             risk_1000NUchar = 'NaN';
-            rrchar = '0.00';
+            rrchar = 'NaN';
 
             FUTime_Ychar = '0.00';
             AvgFUTime_Dchar = '0.00';
@@ -346,8 +347,10 @@
                 ar par percentn12.2 poprisk best8.4;
 
                 *Convert to character variables and redact (will keep unredacted as numeric locally);
+                if n > 0 then do;
                 EVchar = put(EV, comma10.);
                 rrchar = put(rr, comma8.2);
+                if missing(rr) then rrchar = '0.00';
                 IR_1000PYchar = put(IR_1000PY, comma8.2);
                 IRDiff_1000PYchar = put(IRDiff_1000PY, comma8.2);
                 RD_1000NUchar = put(RD_1000NU, comma8.2);
@@ -355,14 +358,15 @@
                 FUTime_Ychar = put(FUTime_Y, comma12.2);
                 AvgFUTime_Dchar = put(AvgFUTime_D, comma12.2);
                 AvgFUTime_Ychar = put(AvgFUTime_Y, comma12.2);
-                if n <= 0 then do;
+                end;
+                else if n <= 0 then do;
                 *Convert to character variables and redact (will keep unredacted as numeric locally);
                 EVchar = '0';
                 IR_1000PYchar = 'NaN';
                 IRDiff_1000PYchar = 'NaN';
                 RD_1000NUchar = 'NaN';
                 risk_1000NUchar = 'NaN';
-                rrchar = '0.00';
+                rrchar = 'NaN';
 
                 FUTime_Ychar = '0.00';
                 AvgFUTime_Dchar = '0.00';
