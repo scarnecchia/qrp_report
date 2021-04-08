@@ -297,7 +297,7 @@
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(min, max, mean, sd));					   
+                                       settomissvars=%str(n, min, max, mean, sd));					   
                 %end; /* aggregate weighted and marginalweights data */		
             %end; /*aggregate risk set data*/
            
