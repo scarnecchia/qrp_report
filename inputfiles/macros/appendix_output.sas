@@ -206,10 +206,10 @@
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
 		/* Create flag to see if convergence was met */
+		  %let convergence = 1;
 		  data _null_;
 		  	set repdata.&_data;
 		  	if missing(min) and missing(max) and missing(mean) and missing(sd) then call symputx('convergence',0);
-		  	else call symputx('convergence',1);
 		  run;
 
 		  proc report data=repdata.&_data nofs nowd  
