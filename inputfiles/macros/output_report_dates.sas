@@ -53,7 +53,7 @@
         set 
         %do r=1 %to &numrunid.;
             %let runid = %scan(&runidlist., &r.);
-            infolder.&&&runid._monitoringfile(where=(periodid>=&look_start. and periodid<=&look_end.))
+            infolder.&&&runid._monitoringfile(where=(periodid>=1 and periodid<=&look_end.))
         %end;
         ;
     run;
@@ -75,12 +75,13 @@
     %end;
 
     /* loop through looks */
-    %do n = &look_start %to &look_end;
+    %do n = 1 %to &look_end;
     %global enddate&n.formatted maxyear&n.;
 
     proc sql noprint;
         select min(startdate) into: minstartdate
         from _monitoring;
+
         select max(fupenddate) into: maxfupenddate
         from _monitoring
         where missing(fupenddate)=0 and periodid=&n;

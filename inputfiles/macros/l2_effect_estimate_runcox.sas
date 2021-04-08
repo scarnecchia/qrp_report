@@ -73,9 +73,9 @@
             end;
 
             /*blank out HR and pvalue that cannot be calculated*/
-            if index(HR_95CI, 'E') > 0 or index(HR_95CI, '0.00') or index(HR_95CI, '-') or index(HR_95CI,' . ') then do;
-                HR_95CI = '-';
-                HR_pvalue = '-';
+            if index(HR_95CI, 'E') > 0 or index(HR_95CI, '0.00') or index(HR_95CI,' . ') then do;
+                HR_95CI = 'NaN';
+                HR_pvalue = 'NaN';
             end;
 
             label hr_95CI = "Hazard Ratio (95% CI)";
@@ -88,6 +88,30 @@
 
             KEEP analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
         RUN;
+    %end;
+    %else %if %eval(&redactevents.>0) %then %do;
+     data coxPHest;
+            FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            length subgroupcat $10. analysis $13. analysisgrp $40;
+
+            analysisgrp = "&analysisgrp.";
+            COVARNUM  = &covarnum.;
+            catnum = &cat.;
+            Analysis= &analysis.;
+            subgroupcat = "&subgroupcat.";
+
+            format MonitoringPeriod 2.;
+            length HR_95CI $30. HR_pvalue $6.;
+            MonitoringPeriod = &periodid.;
+
+            HR_95CI = "N/A";
+            HR_se = .;
+            HR_coef = .;
+            HR_pvalue = "N/A";
+            HR = .;
+            LCL = .;
+            UCL = .;
+        run; 
     %end;
     %else %do;  *create empty dataset;
         data coxPHest;
@@ -104,20 +128,14 @@
             length HR_95CI $30. HR_pvalue $6.;
             MonitoringPeriod = &periodid.;
 
-            HR_95CI = "-";
+            HR_95CI = "NaN";
             HR_se = .;
             HR_coef = .;
-            HR_pvalue = "-";
+            HR_pvalue = "NaN";
             HR = .;
             LCL = .;
             UCL = .;
-
-            %if %eval(&redactevents.>0) %then %do;
-                HR_pvalue = '';
-                HR_95CI='';
-            %end;
         run; 
-
     %end;*End create empty dataset;
 
     proc datasets library=work nowarn noprint;

@@ -55,6 +55,7 @@
     run;
 
     %let number = 1;
+    %let tablenum = 1;
 
     /*********************************************************************************************/
     /* Build table of contents                                                                   */
@@ -75,6 +76,9 @@
 
         /*counter for determining table letter*/
         %let tablecount = 1;
+
+        /* counter for determining table number */
+        %let tablenum = 2;
 
         /*loop through each baseline table*/
         %do b = 1 %to &numbaselinetablegrp.;
@@ -259,6 +263,85 @@
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
 
+  /*************************/
+  /* Effect estimate table */
+  /*************************/
+
+  %if &numl2comparisons > 0 %then %do; 
+
+        /*loop through each baseline table*/
+        %do c = 1 %to &numl2comparisons;
+
+        /* reset counter to reset table letter */
+        %let tablecount = 1;
+
+            data _null_;
+                set l2comparisonfile(where=(order=&c.));
+                call symputx('analysisgrp', analysisgrp);
+                call symputx('runid', runid);
+            run;
+
+            /* Merge in group labels if they exist */
+            %let grouplabel = &analysisgrp;
+            %isdata(dataset=labelfile);
+            %if %eval(&nobs>0) %then %do;
+            data _null_;
+                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid")) ;
+                if labeltype = 'grouplabel' then call symputx('grouplabel',label);
+            run;
+            %end;
+
+            /* Store covarnums to determine covar labels */
+            proc sql noprint;
+                select distinct covarnum
+                into :covarlist
+                separated by ' '
+                from l2_effectestimates_&look_end.
+                where analysisgrp="&analysisgrp.";
+            quit;
+
+            %if &covarlist = 0 %then %let tablecount = 0;
+
+            /* loop covarnums and assign subgroup label */
+            %do covarcount = 1 %to %sysfunc(countw(&covarlist));
+                %let covarnum = %scan(&covarlist,&covarcount);
+
+                %if &covarnum = 0 %then %do;
+                %let titleend = %str();
+                %end;
+
+                %else %if &covarnum = 9000 %then %do; 
+                %let titleend = %str(and Data Partner);
+                %end;
+
+                %else %do;
+                %if &covarnum < 1000 %then %do;
+                proc sql noprint;
+                select distinct strip(studyname) into: subgrouplabel
+                from infolder.&&&runid._covariatecodes
+                where covarnum = &covarnum.;
+                quit;
+                %end;
+
+                %if &covarnum = 1000 %then %let subgrouplabel = Sex;
+                %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
+                %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
+                %else %if &covarnum = 1003 %then %let subgrouplabel = Monitoring Period;
+                %else %if &covarnum = 1012 %then %let subgrouplabel = Race;
+                %else %if &covarnum = 1013 %then %let subgrouplabel = Hispanic Origin;
+                %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
+                %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
+                %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
+
+                %let titleend = %str(and &subgrouplabel);
+                %end;
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.));
+            %end; /* covarcount */
+            %let tablenum = %eval(&tablenum + 1);
+         %end; /* numl2comparison do loop */
+    %end; /* numl2comparison */
 
   /*********************************************************************************************/
   /*   Figures                                                                                 */

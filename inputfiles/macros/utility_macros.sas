@@ -115,3 +115,16 @@
 %end;
 %else 0;
 %mend varexist;
+
+/*********************************************************************************************/
+/*   Define macro variables for superscripts that correspond to required footnotes           */
+/*********************************************************************************************/   
+  %macro assign_superscripts(type =, order =);
+    %global super_&type.;
+    %let super_&type. =;
+    
+    proc sql noprint;
+      select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
+      from _footnotes where order in (&order.);
+    quit; 
+  %mend assign_superscripts;
