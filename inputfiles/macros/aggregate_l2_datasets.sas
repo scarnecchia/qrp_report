@@ -73,7 +73,30 @@
 				dpidsiteid = "&maskedID.";
         	  	dum0=1;
           		dp=input("&dps.",best.);
-
+                
+				/* Assign codecat and codetype for HDPS Vars */
+				%if &outfile. = agghdps %then %do;
+				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40;
+				   if index(dimension,'ICD') > 0 then do;
+	                 codetype = reverse(substr(strip(reverse(dimension)),1,2));
+	                 codecat = reverse(substr(strip(reverse(dimension)),3,2));
+                   end;
+                   else if index(dimension,'DRUGCLASS') > 0 then do;
+	                 codetype = 'CLASS';
+	                 codecat = 'RX';
+                   end;
+				   else do;
+	                 codetype = scan(dimension,-1,'_');
+	                 codecat = 'PX';
+                   end;
+				   if index(var_name,'Frequent') > 0 then frequency = 'Frequent';
+				   else if index(var_name,'Any') > 0 then frequency = 'Any';
+				   else if index(var_name,'Often') > 0 then frequency = 'Often';
+				   else frequency = substr(var_name, index(var_name, '_Q')+1);
+				   
+				   keep psestimategrp codecat codetype dp frequency ranking code;
+				%end;
+				
                 /*set variables to missing if convergence not met*/
                 %if %eval(&converge.=0) %then %do;
                     call missing(&settomissvars.);
@@ -99,6 +122,10 @@
         quit;	
     		
     %end;*loop through DPs;
+	
+	data output.&outfile.;
+	set &outfile.;
+	run;
 
 	%put NOTE: ******** END OF MACRO: aggregate_l2_datasets ********;
 

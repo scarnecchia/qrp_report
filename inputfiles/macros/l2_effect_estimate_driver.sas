@@ -80,6 +80,8 @@
             call symputx('classvars', classvars);
             call symputx('noclassvars', noclassvars);
             if not missing(convrule) then call symputx('convrule', convrule);
+			if missing(topnhdps) then call symputx('topnhdps',25);
+			else call symputx('topnhdps',topnhdps);
         run;
         %put now computing effect estimates for &analysisgrp.;
        
@@ -214,8 +216,12 @@
             %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
                 data _null_; 
                     set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
-                    call symputx('GRP1', eoi) ;
-                    call symputx('GRP0', ref) ;     
+                    call symputx('GRP1', eoi);
+                    call symputx('GRP0', ref); 
+                    call symputx('HDPS',hdps);
+                    if missing(ranking) then call symputx('ranking','exp_assoc','G');
+                    else if lowcase(ranking) = 'bias' then call symputx('ranking','bias_assoc','G');
+                    else call symputx('ranking',strip(lowcase(ranking)),'G');					
                 run;
             %end;
 
@@ -292,6 +298,16 @@
                                        settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
                 %end;
             %end; /*aggregate risk set data*/
+			%if &hdps. = Y %then %do;
+			   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
+                                       outfile=agghdps,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+									   settomissvars=%str(codecat, codetype, frequency, ranking, code),
+									   renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)));
+			%end;
            
             /****************************************************************************************/
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
