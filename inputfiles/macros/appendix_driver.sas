@@ -105,7 +105,7 @@
                 /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
                 %let look = ;
                 %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                   %let look = .&periodid.;
+                   %let look = &periodid.;
                 %end;
 
                 %let analysisgrplabel = ;
@@ -125,7 +125,12 @@
 
                 data weightdistribution;
                     set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid));
-                    keep analysisgrp dpidsiteid N min max mean sd;
+                    keep analysisgrp dpidsiteid N min max mean sd time;
+                run;
+
+                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup */
+                proc sort data = weightdistribution nodupkey;
+                	by time;
                 run;
 
                 %isdata(dataset=weightdistribution);
@@ -195,7 +200,7 @@
                     set aggdistribution(in=a) weightdistribution;
                     if a then dpidsiteid="Aggregated";
                     if missing(n) then Nchar='N/A';
-                    else Nchar=put(n,comma12.);
+                    else Nchar=strip(put(n,comma12.));
                     drop n;
                     rename nchar=n;
                 run;

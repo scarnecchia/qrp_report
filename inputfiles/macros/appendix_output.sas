@@ -313,7 +313,7 @@
 			  :appendixcnt
 		from tableofcontents
 		where appendixtype is not missing;
-		run;
+		quit;
 
 		%if %eval(&appendixcnt.>0) %then %do;
 	
