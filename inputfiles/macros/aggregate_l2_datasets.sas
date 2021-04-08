@@ -122,10 +122,6 @@
         quit;	
     		
     %end;*loop through DPs;
-	
-	data output.&outfile.;
-	set &outfile.;
-	run;
 
 	%put NOTE: ******** END OF MACRO: aggregate_l2_datasets ********;
 
