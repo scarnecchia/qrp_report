@@ -87,7 +87,7 @@
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp.";
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
         quit;
         
         %if %str("&pscsfile.") = %str("") %then %do;
