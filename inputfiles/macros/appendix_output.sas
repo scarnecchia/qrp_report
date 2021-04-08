@@ -221,7 +221,7 @@
                   define dpidsiteid / display 'Data Partner (Masked)' 
                     style(column)=[width=1in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black];
                   define N / display 'Number of Patients' 
-                    style(column)=[width=1.25in just=C tagattr='type:number format:#,###']  style(header)=[just=C background=lightgrey borderbottomcolor=black];
+                    style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background=lightgrey borderbottomcolor=black];
                   define min / display 'Minimum' 
                     style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.;
                   define max / display 'Maximum' 

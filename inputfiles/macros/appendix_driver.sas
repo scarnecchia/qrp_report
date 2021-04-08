@@ -124,7 +124,7 @@
 		    	%if %length(&analysisgrplabel) = 0 %then %let analysisgrplabel = &analysisgrp;
 
                 data weightdistribution;
-                    set aggwd(where=(analysisgrp="&analysisgrp."));
+                    set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid));
                     keep analysisgrp dpidsiteid N min max mean sd;
                 run;
 
@@ -195,7 +195,7 @@
                     set aggdistribution(in=a) weightdistribution;
                     if a then dpidsiteid="Aggregated";
                     if missing(n) then Nchar='N/A';
-                    else Nchar=put(n,8.);
+                    else Nchar=put(n,comma12.);
                     drop n;
                     rename nchar=n;
                 run;
