@@ -248,13 +248,13 @@
 
         /* Time format */
         value $timefmt
-        %do n = &look_start %to &look_end;
+        %do n = 1 %to &look_end;
         "&n" = "&startdateformatted to &&enddate&n.formatted"
         %end;
         ;
 
         value $timesort
-        %do n = &look_start %to &look_end;
+        %do n = 1 %to &look_end;
         "&n" = &n
         %end;
         ;

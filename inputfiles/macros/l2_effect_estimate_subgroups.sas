@@ -67,14 +67,14 @@
         %let subgroupvar = Sex;
         %let sublabel = Gender;
         %let numsubcat = 2;
-        %let subcategorization = M F; /*O is excluded due to low patient counts*/
+        %let subcategorization = F M; /*O is excluded due to low patient counts*/
     %end;
     %else %if &covarnum. = 1001 %then %do;
         %let subgroupvar = age_cat;
         %let sublabel = Age Group;
 
         %if &computecategories. = Y %then %do;
-            /*if reporttype = T4L2, extract original cohorgrp*/
+            /*if reporttype = T4L2, extract original cohortgrp*/
             %if %str("&reporttype.") = ("T4L2") %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&grp1.",1,length("&grp1")-4)));
@@ -126,7 +126,7 @@
         %let subgroupvar = Race;
         %let sublabel = Race;
         %let numsubcat = 6;
-        %let subcategorization = 0 1 2 3 4 5;
+        %let subcategorization = 1 2 3 4 0 5 ; /* Determines ordering */
     %end;
     %else %if &covarnum. = 1013 %then %do;
         %let subgroupvar = Hispanic;
@@ -138,7 +138,7 @@
         %let subgroupvar = prepostind;
         %let sublabel = Delivery Status;
         %let numsubcat = 4;
-        %let subcategorization = NONE PRE POST TERM;
+        %let subcategorization = PRE TERM POST NONE;
     %end;
     %else %if &covarnum. = 2000 %then %do;
         %let subgroupvar = MatchMethod;

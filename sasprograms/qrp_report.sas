@@ -24,7 +24,7 @@
 ***************************************************************************************************;
 
 /*-----------------------------------------------------------------------------------------------*/
-/* Section 1: User inputs 															             */
+/* Section 1: User inputs 															                                         */
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
@@ -186,6 +186,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_output.sas";
 
 /*Figure macros */
 %include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";

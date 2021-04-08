@@ -157,7 +157,12 @@
                 MonitoringPeriod = &periodid.;
                 Analysis= &analysis.;
                 subgroupcat = "&subgroupcat.";
-                HR_pvalue = '-'; /*no p value*/
+                HR_pvalue = 'NaN'; /*no p value*/
+
+                /* set HR_95CI to NaN if not computed */
+                if nmiss(HR, LCL, UCL)=3 then do;
+                   HR_95CI='NaN';
+                end;
 
                 HR_95CI = strip(put(HR, 5.2))|| " ("||strip(put(LCL, 5.2))||", "|| strip(put(UCL, 5.2))||")";
                 label MonitoringPeriod = "Monitoring Period";
@@ -173,7 +178,31 @@
 
                 keep analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se;
             run;        
-        %end;       
+        %end;
+        %else %if %eval(&redactevents.>0) %then %do;
+        data est;
+            format analysisgrp $40. covarnum catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            length subgroupcat $10. analysisgrp $40. analysis $13. covarnum 8;
+
+            analysisgrp = "&analysisgrp.";
+            covarnum  = &covarnum.;
+            catnum = &cat.;
+            Analysis= &analysis.;
+            subgroupcat = "&subgroupcat.";
+
+            format MonitoringPeriod 2.;
+            length HR_95CI $30. HR_pvalue $6.;
+            MonitoringPeriod = &periodid.;
+
+            HR_95CI = "N/A";
+            HR_se = .;
+            HR_coef = .;
+            HR_pvalue = "N/A";
+            HR = .;
+            LCL = .;
+            UCL = .;
+        run; 
+        %end;
         %else %do;
         %goto emptyds;
         %end;
@@ -194,17 +223,13 @@
 	  		length HR_95CI $30. HR_pvalue $6.;
 	  		MonitoringPeriod = &periodid.;
 
-			HR_95CI = "-";
+			HR_95CI = "NaN";
 		    HR_se = .;
             HR_coef = .;
-			HR_pvalue = "-";
+			HR_pvalue = "NaN";
             HR = .;
             LCL = .;
             UCL = .;
-			%if %eval(&redactevents.>0) %then %do;
-				HR_pvalue = '';
-				HR_95CI='';
-			%end;
 	    run; 
 	%end;
 

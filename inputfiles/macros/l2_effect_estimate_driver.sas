@@ -699,7 +699,16 @@
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, 
+        select r.*, case when (r.covarnum) = 1000 then put(r.subgroupcat,$sexfmt.)
+                         when (r.covarnum) = 1012 then put(r.subgroupcat,$racefmt.)
+                         when (r.covarnum) = 1013 then put(r.subgroupcat,$hispanicfmt.)
+                         when (r.covarnum) = 1014 then put(r.subgroupcat,$deliveryfmt.)
+                         when (r.covarnum) = 2000 then put(r.subgroupcat,$matchfmt.)
+                         when (r.covarnum) = 2001 then put(r.subgroupcat,$birthtypefmt.)
+                         when (r.covarnum) = 1003 then put(r.subgroupcat,$timefmt.)
+                         when (r.covarnum) in (1001, 1002, 9000) then r.subgroupcat
+                         else r.subgroupcat
+                         end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;
             HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
             %end;

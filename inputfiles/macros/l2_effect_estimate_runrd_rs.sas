@@ -194,6 +194,7 @@
 
             *total number of events;
             totalevents = sum(ev0, ev1);
+            if analysis = "Weighted" then totalevents = round(totalevents,1);
 
             /*Stratified incident rate diff - currently  not kept on dataset*/
             length RD_95CI $50.;
@@ -228,6 +229,7 @@
             %end;
             ;
 
+            if n > 0 then do;
             *Convert to character variables and redact (will keep unredacted as numeric locally);
             EVchar = strip(put(EV, comma10.));
             IR_1000PYchar = strip(put(IR_1000PY, comma8.2));
@@ -235,23 +237,49 @@
             RD_1000NUchar = strip(put(RD_1000NU, comma8.2));
             risk_1000NUchar = strip(put(risk_1000NU, comma8.2));
             rrchar = strip(put(rr, comma8.2));
+            if missing(rr) then rrchar='0.00';
 
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
             AvgFUTime_Ychar = strip(put(AvgFUTime_Y, comma12.2));
+            end;
+            else if n <= 0 then do;
+            *Convert to character variables and redact (will keep unredacted as numeric locally);
+            EVchar = '0';
+            IR_1000PYchar = 'NaN';
+            IRDiff_1000PYchar = 'NaN';
+            RD_1000NUchar = 'NaN';
+            risk_1000NUchar = 'NaN';
+            rrchar = 'NaN';
 
+            FUTime_Ychar = '0.00';
+            AvgFUTime_Dchar = '0.00';
+            AvgFUTime_Ychar = '0.00';  
+            end;
+            else do;
+            EVchar = 'NaN';
+            IR_1000PYchar = 'NaN';
+            IRDiff_1000PYchar = 'NaN';
+            RD_1000NUchar = 'NaN';
+            risk_1000NUchar = 'NaN';
+            rrchar = 'NaN';
+
+            FUTime_Ychar = 'NaN';
+            AvgFUTime_Dchar = 'NaN';
+            AvgFUTime_Ychar = 'NaN';  
+            end;
             %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
-                EVchar = '';
-                rrchar = '';
-                IR_1000PYchar = '';
-                IRDiff_1000PYchar = '';
-                RD_1000NUchar = '';
-                risk_1000NUchar = '';
+                EVchar = 'N/A';
+                rrchar = 'N/A';
+                IR_1000PYchar = 'N/A';
+                IRDiff_1000PYchar = 'N/A';
+                RD_1000NUchar = 'N/A';
+                risk_1000NUchar = 'N/A';
             %end;
             %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
-                FUTime_Ychar = '';
-                AvgFUTime_Dchar = '';
-                AvgFUTime_Ychar = '';
+                FUTime_Ychar = 'N/A';
+                AvgFUTime_Dchar = 'N/A';
+                AvgFUTime_Ychar = 'N/A';
             %end;
 
             /*Assign sort vars - will eventually sort dataset */
@@ -291,7 +319,7 @@
                 subgroupcat = "&subgroupcat.";
                 MedicalProduct = "&&grp&exp.";
 
-                n = .;
+                n = 0;
                 FUTime_Y = .;
                 AvgFUTime_D = .;
                 AvgFUTime_Y = .;
@@ -307,7 +335,7 @@
                 par =.;
                 rr = .;
             
-                RD_95CI = "";
+                RD_95CI = "N/A";
 
                 label poprisk = "Pop. Risk among new users of exposure AND control";
                 label NNT = "Number needed to treat (or harm)";
@@ -319,8 +347,10 @@
                 ar par percentn12.2 poprisk best8.4;
 
                 *Convert to character variables and redact (will keep unredacted as numeric locally);
+                if n > 0 then do;
                 EVchar = put(EV, comma10.);
                 rrchar = put(rr, comma8.2);
+                if missing(rr) then rrchar = '0.00';
                 IR_1000PYchar = put(IR_1000PY, comma8.2);
                 IRDiff_1000PYchar = put(IRDiff_1000PY, comma8.2);
                 RD_1000NUchar = put(RD_1000NU, comma8.2);
@@ -328,18 +358,44 @@
                 FUTime_Ychar = put(FUTime_Y, comma12.2);
                 AvgFUTime_Dchar = put(AvgFUTime_D, comma12.2);
                 AvgFUTime_Ychar = put(AvgFUTime_Y, comma12.2);
+                end;
+                else if n <= 0 then do;
+                *Convert to character variables and redact (will keep unredacted as numeric locally);
+                EVchar = '0';
+                IR_1000PYchar = 'NaN';
+                IRDiff_1000PYchar = 'NaN';
+                RD_1000NUchar = 'NaN';
+                risk_1000NUchar = 'NaN';
+                rrchar = 'NaN';
+
+                FUTime_Ychar = '0.00';
+                AvgFUTime_Dchar = '0.00';
+                AvgFUTime_Ychar = '0.00';  
+                end;
+                else do;
+                EVchar = 'NaN';
+                IR_1000PYchar = 'NaN';
+                IRDiff_1000PYchar = 'NaN';
+                RD_1000NUchar = 'NaN';
+                risk_1000NUchar = 'NaN';
+                rrchar = 'NaN';
+
+                FUTime_Ychar = 'NaN';
+                AvgFUTime_Dchar = 'NaN';
+                AvgFUTime_Ychar = 'NaN';  
+                end;
                 %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
-                    EVchar = '';
-                    rrchar = '';
-                    IR_1000PYchar = '';
-                    IRDiff_1000PYchar = '';
-                    RD_1000NUchar = '';
-                    risk_1000NUchar = '';
+                    EVchar = 'N/A';
+                    rrchar = 'N/A';
+                    IR_1000PYchar = 'N/A';
+                    IRDiff_1000PYchar = 'N/A';
+                    RD_1000NUchar = 'N/A';
+                    risk_1000NUchar = 'N/A';
                 %end;
                 %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
-                    FUTime_Ychar = '';
-                    AvgFUTime_Dchar = '';
-                    AvgFUTime_Ychar = '';
+                    FUTime_Ychar = 'N/A';
+                    AvgFUTime_Dchar = 'N/A';
+                    AvgFUTime_Ychar = 'N/A';
                 %end;
                     
                 /*Assign sort vars - will eventually sort dataset */

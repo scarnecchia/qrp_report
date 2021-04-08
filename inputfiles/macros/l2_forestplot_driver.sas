@@ -105,7 +105,7 @@
                  - only 8 additional footnotes are possible
                  - start assigning footnotes at 2
                  - modify &displayperiodid to add superscript */
-              if &ForestCI95 = '-' then do;
+              if &ForestCI95 in ('N/A','NaN','.') then do;
                 call symputx('forestnohrfootnote', 'Y');
                 call symputx('nummaxforestfootnote', 8);
                 call symputx('unicode_list', '00b2 00b3 2074 2075 2076 2077 2078 2079');
