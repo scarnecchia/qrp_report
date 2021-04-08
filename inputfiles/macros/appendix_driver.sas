@@ -174,7 +174,7 @@
 
                 %tableletter();
                 %isdata(dataset=repdata.appendix&tableletter.&look.)
-                %if &nobs <= 1 %then %do;
+                %if &nobs < 1 %then %do;
                 data repdata.appendix&tableletter.&look.;
                 	length dpidsiteid $10;
                     set aggdistribution(in=a) weightdistribution;
