@@ -191,10 +191,13 @@
                 %isdata(dataset=repdata.appendix&tableletter.&look.)
                 %if &nobs < 1 %then %do;
                 data repdata.appendix&tableletter.&look.;
-                	length dpidsiteid $10;
+                	length dpidsiteid $10 nchar $20;
                     set aggdistribution(in=a) weightdistribution;
                     if a then dpidsiteid="Aggregated";
-                    if missing(min) and missing(max) and missing(mean) and missing(sd) then N=.;
+                    if missing(n) then Nchar='N/A';
+                    else Nchar=put(n,8.);
+                    drop n;
+                    rename nchar=n;
                 run;
 
                 proc sort data=repdata.appendix&tableletter.&look.;
