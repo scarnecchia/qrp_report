@@ -120,6 +120,7 @@
                 /*N, min, max*/
                 proc means data=weightdistribution nway noprint;
                     var N min max;
+                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
                     output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
                 run;
 
@@ -127,15 +128,16 @@
                 proc means data=weightdistribution nway noprint;
                     var mean;
                     weight N;
+                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
                     output out=part2(drop=_:) mean(mean)=mean;
                 run;
 
                 /*SD*/
-                proc transpose data=weightdistribution out=sd(drop=_name_) prefix=_sd_;
+                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
                     id dpidsiteid;
                     var sd;
                 run;
-                proc transpose data=weightdistribution out=n(drop=_name_) prefix=_ncount_;
+                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
                     id dpidsiteid;
                     var n;
                 run;
