@@ -104,7 +104,7 @@
 		        from (select a.*, b.label
 		        	  from aggwd a left join labelfile(where=(labeltype='grouplabel')) b
 		              on a.analysisgrp = b.group
-		              where a.analysisgrp = "&analysisgrp") as c;
+		              where a.analysisgrp = "&analysisgrp" and b.runid = "&runid") as c;
 		    	quit;
 		    	%end;
 
