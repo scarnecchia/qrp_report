@@ -95,7 +95,6 @@
                    %let look = &periodid.;
                 %end;
 
-
                 %let analysisgrplabel = ;
                 %isdata(dataset=labelfile);
                 %if &nobs > 0 %then %do;

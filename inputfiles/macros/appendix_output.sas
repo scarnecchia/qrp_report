@@ -219,17 +219,17 @@
                   column (dpidsiteid N min max mean sd); 
 
                   define dpidsiteid / display 'Data Partner (Masked)' 
-                    style(column)=[width=1in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold];
+                    style(column)=[width=1in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black];
                   define N / display 'Number of Patients' 
-                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold] format=comma12.;
+                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black] format=comma12.;
                   define min / display 'Minimum' 
-                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold] format=weightdist.;
+                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.;
                   define max / display 'Maximum' 
-                    style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold] format=weightdist.; 
+                    style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
                   define mean / display 'Mean' 
-                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold] format=weightdist.; 
+                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
                   define sd / display 'Standard^n Deviation' 
-                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black font_weight = bold] format=weightdist.; 
+                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
 
                   compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
 			                    borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
