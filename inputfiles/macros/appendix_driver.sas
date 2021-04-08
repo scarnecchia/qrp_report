@@ -207,10 +207,10 @@
                     if missing(n) then Nchar='N/A';
                     else Nchar=strip(put(n,comma12.));
                     if n = 0 then do;
-                    	min=0;
-                    	max=0;
-                    	mean=0;
-                    	sd=0;
+                    	min=.z;
+                    	max=.z;
+                    	mean=.z;
+                    	sd=.z;
                     end;
                     drop n;
                     rename nchar=n;
