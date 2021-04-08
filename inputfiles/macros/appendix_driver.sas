@@ -79,12 +79,25 @@
                 %if &pscsfile = stratificationfile %then %do;
                     data _null_;
                         set infolder.&&&runid._stratificationfile(where=(lowcase(analysisgrp)="&analysisgrp."));
-                        if missing(strataweight) then call symputx('outputdistweight', 'N');
+                        if missing(strataweight) then do;
+                        	call symputx('outputdistweight', 'N');
+                        end;
+                        else do;
+                            call symputx('weightdisttitle', 'Propensity Score Stratum');
+					    	if upcase(strataweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect (ATE)");
+                            else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated (ATT)");
+                        end;
                         call symputx('weightdisttitle', 'Propensity Score Stratum');
                     run;
                 %end;
                 %else %if &pscsfile = iptwfile %then %do;
                     %let weightdisttitle= Inverse Probability of Treatment;
+                    data _null_;
+                        set infolder.&&&runid._iptwfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                            if upcase(ipweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect (ATE)");
+                            else if upcase(ipweight)= 'ATES' then call symputx("weightschemelong","Average Treatment Effect, Stabilized (ATES)");
+                            else if upcase(ipweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated (ATT)");
+                    run;
                 %end;
 
                 %if &outputdistweight. = Y %then %do;
@@ -181,6 +194,7 @@
                 	length dpidsiteid $10;
                     set aggdistribution(in=a) weightdistribution;
                     if a then dpidsiteid="Aggregated";
+                    if missing(min) and missing(max) and missing(mean) and missing(sd) then N=.;
                 run;
 
                 proc sort data=repdata.appendix&tableletter.&look.;
@@ -188,7 +202,7 @@
                 run;
 
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.&look.), 
-					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner),
+					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner, Weight: &weightschemelong.),
 					  appendixtype = appendixWeightDist);
                 %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
 
@@ -198,13 +212,17 @@
 
               %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
 
+              proc datasets lib=work nolist;
+				delete part: aggdistribution sd n weightdistribution;
+			  quit;
+
             %end; /* corder */
 
         %end; /* periodid */
 
-    proc datasets lib=work nolist;
-		delete part: aggdistribution sd n weightdistribution aggwd;
-	quit;
+	        proc datasets lib=work nolist;
+				delete aggwd;
+			quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 	

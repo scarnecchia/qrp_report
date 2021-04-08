@@ -261,7 +261,7 @@
 
         value weightdist
         .='N/A'
-        other=[8.2];
+        other=[8.3];
     run;
 
 
