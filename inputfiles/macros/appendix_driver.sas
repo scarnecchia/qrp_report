@@ -234,7 +234,7 @@
 				delete part: aggdistribution sd n weightdistribution;
 			  quit;
 
-            %end;/* Outputweightdist = Y */ /* periodid */
+            %end;/* Outputweightdist = Y */
 
         %end; /* corder */
 
