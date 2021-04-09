@@ -56,12 +56,8 @@
 	%isdata(dataset=aggwd);
 	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
 
-	%do periodid = %eval(&look_start) %to %eval(&look_end);
-
-		%if &periodid >= 2 %then %let tablecount = 2;
-
-	/* Loop through all order values */
-        %do corder = 1 %to &numl2comparisons;
+    /* Loop through all order values */
+    %do corder = 1 %to &numl2comparisons;
 
 		data _null_;
             set l2comparisonfile(where=(order=&corder.));
@@ -77,6 +73,7 @@
         quit;
 
          %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
+
 
                 %let outputdistweight = Y;
                 %if &pscsfile = stratificationfile %then %do;
@@ -104,6 +101,8 @@
                 %end;
 
                 %if &outputdistweight. = Y %then %do;
+
+                %do periodid = %eval(&look_start) %to %eval(&look_end);
 
                 /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
                 %let look = ;
@@ -133,9 +132,9 @@
                     keep analysisgrp dpidsiteid N min max mean sd time;
                 run;
 
-                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup */
+                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
                 proc sort data = weightdistribution nodupkey;
-                	by time;
+                	by time dpidsiteid;
                 run;
 
                 %isdata(dataset=weightdistribution);
@@ -197,7 +196,7 @@
 
                 options mergenoby = warn;
 
-                %tableletter();
+                %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
                 %isdata(dataset=repdata.appendix&tableletter.&look.)
                 %if &nobs < 1 %then %do;
                 data repdata.appendix&tableletter.&look.;
@@ -227,7 +226,7 @@
 
                 %end; /* Nobs > 0 weightdistribution */
 
-                %end; /* Outputweightdist = Y */
+                %end; /* periodid */
 
               %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
 
@@ -235,13 +234,13 @@
 				delete part: aggdistribution sd n weightdistribution;
 			  quit;
 
-            %end; /* corder */
+            %end;/* Outputweightdist = Y */ /* periodid */
 
-        %end; /* periodid */
+        %end; /* corder */
 
-	        proc datasets lib=work nolist;
-				delete aggwd;
-			quit;
+	    proc datasets lib=work nolist;
+			delete aggwd;
+		quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 	
