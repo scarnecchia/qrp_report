@@ -67,15 +67,14 @@
 		   	left join pscs_masterinputs (where = (covarnum = 0)) as pscs
 		   	  on base.runid = pscs.runid
 			  and base.analysisgrp = pscs.analysisgrp
-		      order by psestimategrp
-			          ,order;
+		      order by runid, psestimategrp, order;
 		   quit;
 		   
 		   data &outdata.;
 		     set &outdata._ps (drop = unique_psestimate); /* Remove default value */
 		     length unique_psestimate 3;
 		     retain unique_psestimate;
-		     by psestimategrp order;
+		     by runid psestimategrp order;
 		     unique_psestimate +1;
              if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
 		   run;

@@ -39,15 +39,16 @@
                              convrule=,
                              convdata=,
                              settomissvars=,
-                             renameclause=);
+                             renameclause=,
+                             runidvar=);
 
     %put =====> MACRO CALLED: aggregate_l2_datasets;
-    
-	%if %index(&infile.,varinfo) = 0 %then %do;
-      proc datasets library = work nolist nowarn; 
-          delete &outfile.; 
+
+    %if &outfile ^= aggwd and %index(&infile.,varinfo) = 0 %then %do;
+  	  proc datasets library = work nolist nowarn; 
+        delete &outfile.; 
       quit;
-	%end;
+    %end;
 
     %do dps = 1 %to %eval(&num_dp.); 
         %let dpidsiteid = %scan(&random_dplist,&dps); 
@@ -106,7 +107,10 @@
 				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code rank_variable topnhdps;
 				   if _n_ le &topnhdps. then output;
 				%end;
-				
+                %if %length(&runidvar) > 0 %then %do;
+                  length runid $5.;
+                  runid="&runid.";
+                %end;
                 /*set variables to missing if convergence not met*/
                 %if %eval(&converge.=0) %then %do;
                     call missing(&settomissvars.);

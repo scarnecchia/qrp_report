@@ -89,7 +89,7 @@
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp.";
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
         quit;
         
         %if %str("&pscsfile.") = %str("") %then %do;
@@ -296,11 +296,20 @@
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-                %end;
+									   
+				%aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                       outfile=aggwd,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(n, min, max, mean, sd),
+                                       runidvar=&runid.);					   
+                %end; /* aggregate weighted and marginalweights data */		
             %end; /*aggregate risk set data*/
 			%if &hdps. = Y %then %do;
 			   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
-                                      outfile=repdata.&runid._varinfo_aggregate_&periodid.,
+                                      outfile=&runid._agghdps_&periodid.,
                                       pscsfile=&pscsfile.,
                                       whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
                                       convrule=%quote(&convrule.),
