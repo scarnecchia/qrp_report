@@ -49,6 +49,200 @@
 	%mend xlsx_exist;
 
     %let tablecount = 2; /* Appendix A is tablecount 1 */ 
+
+    /*********************************************************************************************/
+    /* Weight Distribution appendices                                      			 			 */
+    /*********************************************************************************************/	
+	%isdata(dataset=aggwd);
+	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
+
+    /* Loop through all order values */
+    %do corder = 1 %to &numl2comparisons;
+
+		data _null_;
+            set l2comparisonfile(where=(order=&corder.));
+            call symputx('runid', runid);
+            call symputx('analysisgrp', analysisgrp);
+        run;
+
+        proc sql noprint;
+        	/*extract QRP input file associated with analysisgrp*/
+            select distinct strip(file) into: pscsfile trimmed
+            from pscs_masterinputs
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
+        quit;
+
+         %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
+
+
+                %let outputdistweight = Y;
+                %if &pscsfile = stratificationfile %then %do;
+                    data _null_;
+                        set infolder.&&&runid._stratificationfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                        if missing(strataweight) then do;
+                        	call symputx('outputdistweight', 'N');
+                        end;
+                        else do;
+                            call symputx('weightdisttitle', 'Propensity Score Stratum');
+					    	if upcase(strataweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect (ATE)");
+                            else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated (ATT)");
+                        end;
+                        call symputx('weightdisttitle', 'Propensity Score Stratum');
+                    run;
+                %end;
+                %else %if &pscsfile = iptwfile %then %do;
+                    %let weightdisttitle= Inverse Probability of Treatment;
+                    data _null_;
+                        set infolder.&&&runid._iptwfile(where=(lowcase(analysisgrp)="&analysisgrp."));
+                            if upcase(ipweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect (ATE)");
+                            else if upcase(ipweight)= 'ATES' then call symputx("weightschemelong","Average Treatment Effect, Stabilized (ATES)");
+                            else if upcase(ipweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated (ATT)");
+                    run;
+                %end;
+
+                %if &outputdistweight. = Y %then %do;
+
+                %do periodid = %eval(&look_start) %to %eval(&look_end);
+
+                /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
+                %let look = ;
+                %let looktab = ;
+                %if %eval(&look_end.) > %eval(&look_start.) %then %do;
+                   %let look = &periodid.;
+                   %let looktab = .&periodid;
+                %end;
+
+                %let analysisgrplabel = ;
+                %isdata(dataset=labelfile);
+                %if &nobs > 0 %then %do;
+                proc sql noprint;
+		        select c.label 
+		        into :analysisgrplabel trimmed
+		        from (select a.*, b.label
+		        	  from aggwd a left join labelfile(where=(labeltype='grouplabel')) b
+		              on a.analysisgrp = b.group
+		              where a.analysisgrp = "&analysisgrp" and b.runid = "&runid") as c;
+		    	quit;
+		    	%end;
+
+		    	%if %length(&analysisgrplabel) = 0 %then %let analysisgrplabel = &analysisgrp;
+
+                data weightdistribution;
+                    set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid));
+                    keep analysisgrp dpidsiteid N min max mean sd time;
+                run;
+
+                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
+                proc sort data = weightdistribution nodupkey;
+                	by time dpidsiteid;
+                run;
+
+                %isdata(dataset=weightdistribution);
+                %if &nobs > 0 %then %do;
+                /*N, min, max*/
+                proc means data=weightdistribution nway noprint;
+                    var N min max;
+                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                    output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
+                run;
+
+                /*Mean*/
+                proc means data=weightdistribution nway noprint;
+                    var mean;
+                    weight N;
+                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                    output out=part2(drop=_:) mean(mean)=mean;
+                run;
+
+                /*SD*/
+                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
+                    id dpidsiteid;
+                    var sd;
+                run;
+                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
+                    id dpidsiteid;
+                    var n;
+                run;
+
+                options mergenoby = nowarn;
+                data part3;
+                    merge sd n;
+
+                    array npts(*) _ncount_:;
+                    array stddev(*) _sd_:;
+                           
+                    weighted_std = 0;
+                    std = 0;
+                    count = 0;
+
+                    totpts = sum(of _ncount_:);
+
+                    do i = 1 to dim(npts);
+                    ** Calculate weighted standard deviation;
+                        if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
+                        if ^missing(stddev(i)) then count = count + 1 ;
+                    end;
+
+                    ** Calculate pooled standard deviation;
+                    if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
+                    else sd = .;
+                          
+                    keep sd;
+                run;
+
+                data aggdistribution;
+                    merge part1 part2 part3;
+                run;
+
+                options mergenoby = warn;
+
+                %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
+                %isdata(dataset=repdata.appendix&tableletter.&look.)
+                %if &nobs < 1 %then %do;
+                data repdata.appendix&tableletter.&look.;
+                	length dpidsiteid $10 nchar $20;
+                    set aggdistribution(in=a) weightdistribution;
+                    if a then dpidsiteid="Aggregated";
+                    if missing(n) then Nchar='N/A';
+                    else Nchar=strip(put(n,comma12.));
+                    if n = 0 then do;
+                    	min=.z;
+                    	max=.z;
+                    	mean=.z;
+                    	sd=.z;
+                    end;
+                    drop n;
+                    rename nchar=n;
+                run;
+
+                proc sort data=repdata.appendix&tableletter.&look.;
+                    by dpidsiteid;
+                run;
+
+				%addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
+					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner, Weight: &weightschemelong.),
+					  appendixtype = appendixWeightDist);
+                %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
+
+                %end; /* Nobs > 0 weightdistribution */
+
+                %end; /* periodid */
+
+              %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
+
+              proc datasets lib=work nolist;
+				delete part: aggdistribution sd n weightdistribution;
+			  quit;
+
+            %end;/* Outputweightdist = Y */
+
+        %end; /* corder */
+
+	    proc datasets lib=work nolist;
+			delete aggwd;
+		quit;
+
+	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 	
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
@@ -339,7 +533,6 @@
 			%end;
 		%end; /*TYPE dataset exists*/ 
 	%end; /*maxapporder i-loop*/
-
 
     /********************************************/
     /* delete xls_sheets file and temp datasets */

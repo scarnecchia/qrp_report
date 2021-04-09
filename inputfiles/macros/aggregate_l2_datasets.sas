@@ -39,13 +39,16 @@
                              convrule=,
                              convdata=,
                              settomissvars=,
-                             renameclause=);
+                             renameclause=,
+                             runidvar=);
 
     %put =====> MACRO CALLED: aggregate_l2_datasets;
 
+    %if &outfile ^= aggwd %then %do;
   	proc datasets library = work nolist nowarn; 
         delete &outfile.; 
     quit;
+    %end;
 
     %do dps = 1 %to %eval(&num_dp.); 
         %let dpidsiteid = %scan(&random_dplist,&dps); 
@@ -73,6 +76,10 @@
 				dpidsiteid = "&maskedID.";
         	  	dum0=1;
           		dp=input("&dps.",best.);
+                %if %length(&runidvar) > 0 %then %do;
+                length runid $5.;
+                runid="&runid.";
+                %end;
 
                 /*set variables to missing if convergence not met*/
                 %if %eval(&converge.=0) %then %do;

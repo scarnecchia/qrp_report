@@ -77,7 +77,7 @@
 				proc sql noprint;
 		        select strip(file) into: psfile
 		        from pscs_masterinputs
-		        where analysisgrp = "&analysisgrp.";
+		        where analysisgrp = "&analysisgrp." and runid = "&runid";
 		        quit;
 
 				%let ratiohist =;

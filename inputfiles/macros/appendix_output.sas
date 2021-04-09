@@ -197,6 +197,55 @@
 		run;
 	%mend appendixDXPX;
 
+	/********************************************/
+	/* Create Weight Distribution Appendix      */
+	/********************************************/	
+	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);
+
+		ods proclabel = "&_tab.";
+		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
+
+		/* Create flag to see if convergence was met */
+		  %let convergence = 1;
+		  data _null_;
+		  	set repdata.&_data;
+		  	if missing(min) and missing(max) and missing(mean) and missing(sd) then call symputx('convergence',0);
+		  run;
+
+		  proc report data=repdata.&_data nofs nowd  
+                  style(header)=[rules=none foreground = black font_weight=bold vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
+                  style(report)=[rules=none frame=box];
+
+                  column (dpidsiteid N min max mean sd); 
+
+                  define dpidsiteid / display 'Data Partner (Masked)' 
+                    style(column)=[width=1in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black];
+                  define N / display 'Number of Patients' 
+                    style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background=lightgrey borderbottomcolor=black];
+                  define min / display 'Minimum' 
+                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.;
+                  define max / display 'Maximum' 
+                    style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
+                  define mean / display 'Mean' 
+                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
+                  define sd / display 'Standard^n Deviation' 
+                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
+
+                  compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
+			                    borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+				  line "&apptitle.";
+				  endcomp;
+
+
+                %if &convergence. = 0 %then %do;
+                  compute after / style=[just=L foreground=black bordertopcolor=black];
+                    line "Note: N/A represent PS models that did not reach convergence.";
+                  endcomp;
+                %end;
+          run;
+
+	%mend appendixWeightDist;
+
 ***************************************************************************************************;
 * Appendix A: list of DPs                                            
 ***************************************************************************************************;
@@ -264,12 +313,22 @@
 			  :appendixcnt
 		from tableofcontents
 		where appendixtype is not missing;
-		run;
+
+		/* need to keep digit on tabnum */
+		%let apxweightdata = ;
+		select compress(tabnum,,'kad')
+		into  :apxweightdata separated by "*"
+		from tableofcontents
+		where appendixtype = 'appendixWeightDist';
+		quit;
 
 		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
-				%let _apxdata = %scan(&apxdata., &p, %str(*));				
+				%let _apxdata = %scan(&apxdata., &p, %str(*));
+				%if %length(&apxweightdata) > 0 %then %do;	
+				%let _apxweightdata = %scan(&apxweightdata., &p, %str(*));	
+				%end;		
 				%let _apxtype = %scan(&apxtype., &p., %str(*));				
 				%let _apxname = %scan(&apxname., &p., %str(*));			
 				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
@@ -288,6 +347,9 @@
 				%end;
 				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC" %then %do;
 					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%end;
+				%else %if "%upcase(&_apxtype.)" = "APPENDIXWEIGHTDIST" %then %do;
+				%appendixWeightDist(_data=&_apxweightdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
 			%end;
 		%end;
