@@ -817,7 +817,7 @@
                                 c = sqrt(divide(a*(1-a) + b*(1-b), 2));
                             %end;
                             /*SD*/
-                            if (exp_mean0 > 0) AND (comp_mean0 > 0) AND (c>0) then sd0 = divide((a-b),c);
+                            if (total_exp_episodes > 0) AND (total_comp_episodes > 0) AND (c>0) then sd0 = divide((a-b),c);
                             else sd0 = .;
                             sd0_char=compress(put(sd0,8.3));
 							if exp_mean0 = 0 or comp_mean0 = 0 or exp_mean0 = . or comp_mean0 = . then do;
