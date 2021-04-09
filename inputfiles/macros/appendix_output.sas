@@ -282,10 +282,6 @@
 * codes, Censor defining codes, Outcome defining codes, Outcome incidence defining codes, Inclusion  
 * defining codes and Covariate defining codes)                                      
 ***************************************************************************************************;
-data output.tableofcontents;
-set tableofcontents;
-run;
-
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
