@@ -219,6 +219,7 @@
                 %if &destination. = excel %then %do;
                 ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&TABLELETTER" tab_color="blue" flow='none');
                 %end;
+                ods proclabel = "Figure &figurenum.&TABLELETTER";
                 proc odstext pagebreak=yes;
                 p "Figure &figurenum.&TABLELETTER.. Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title ^{newline}in the &database. from &startdateformatted. to &&enddate&j.formatted.&forestnohrsuper." /
                 style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
@@ -229,6 +230,9 @@
                                      lowerci=&Forestlowerci, upperci=&Forestupperci, 
                                      ci95=&Forestci95, cilabel=&forestratiolabel, font=&fontfamily);
 
+                %if &destination = pdf %then %do;
+                ODS PDF BOOKMARKGEN = OFF;
+                %end;
                 proc sgrender data=forest template=forestAxisTable;
                 dynamic _headerColor='cxd0d0d0';
                 format title $grpuni.;
@@ -249,6 +253,10 @@
                     p "^{super &fncount1}&fn" / style=[just=L fontsize=&footfontsize.];
                     run;
                 %end;
+                %end;
+
+                %if &destination = pdf %then %do;
+                ODS PDF BOOKMARKGEN = ON;
                 %end;
 
             %end; /*produce plot*/
