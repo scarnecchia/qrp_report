@@ -1014,7 +1014,7 @@
                     ;
 
                 /*Removing unweighted total row for IPTW and PS stratum weighted table 1. Will use TOTAL_WEIGHTED row*/
-                %if &psfile. = iptwfile | "&weightscheme." = "ATE" | "&weightscheme." = "ATT" and "&weight" = "Weighted" %then %do; 
+                %if (&psfile. = iptwfile | "&weightscheme." = "ATE" | "&weightscheme." = "ATT") and "&weight" = "Weighted" %then %do; 
                     if metvar = 'N_EPISODES' then delete;
                     if MetVar = 'TOTAL_WEIGHTED' then do;
                         exp_std0 = .;
