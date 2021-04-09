@@ -208,9 +208,8 @@
             style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=lightgrey] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
 			
-            column (psestimategrp dpidsiteid code codecat codetype frequency ranking);
+            column (dpidsiteid code codecat codetype frequency ranking);
 		    		
-            define psestimategrp / noprint;
 		    define dpidsiteid    / display 'Data Partner'  style(column)=[width=1.2in just=C];
             define code          / display 'Code'          style(column)=[width=1.2in just=C];
             define codecat       / display 'Code Category' style(column)=[width=1.2in just=C]; 

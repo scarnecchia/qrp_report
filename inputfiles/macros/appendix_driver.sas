@@ -54,55 +54,66 @@
     /* Create HDPS Var Info appendices                                                           */
     /*********************************************************************************************/
     /* Create appendix for each unique runid periodid combination */	
-	%do n = 1 %to &numrunid.;
-      %let runid = %scan(&runidlist, &n); 
-	  %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-	    
-		/* Flag to indicate if an HDPS table exists */
-		%let hdps_found = 0;
+	%isdata(dataset=agghdps);
+    %if &nobs > 0  and &numl2comparisons > 0 %then %do;
+	  /* Rank hdps vars */
+	   proc sort data = agghdps;
+		  by dpidsiteid psestimategrp periodid descending ranking;
+	   run;
 		
-	    %isdata(dataset=&runid._agghdps_&periodid.);
-        %if %eval(&nobs.>0) %then %do;
-		  %let hdps_found = 1;
+	   data agghdps;
+	     set agghdps;
+	     by dpidsiteid psestimategrp periodid descending ranking;
+	     hdpsnum+1;
+	     if first.periodid then hdpsnum = 1;
+	   run;
+	   
+	   data output.agghdps;
+	   set agghdps;
+	   run;
+	
+       /* Loop through all order values */
+       %do corder = 1 %to &numl2comparisons;
+
+		  data _null_;
+            set l2comparisonfile(where=(order=&corder.));
+            call symputx('runid', runid);
+		  	call symputx('psestimategrp', psestimategrp);
+		  	call symputx('unique_psestimate',unique_psestimate);
+		  	if missing(topnhdps) then call symputx('topnhdps',25);
+		  	else call symputx('topnhdps',topnhdps);
+          run;
 		  
-	      /* Determine the psestimategrps on the agghdps file */
-	       proc sql noprint;
-	         select count(distinct(psestimategrp)) into: num_psgrps trimmed
-		     from repdata.&runid._varinfo_aggregate_&periodid.;
-		     
-		     select distinct(rank_variable)
-          		   ,psestimategrp
-				   ,topnhdps
-			   into: rank1 - :rank&num_psgrps.
-			        ,:psestimate1 - :psestimate&num_psgrps.
-					,:topnhdps1 - :topnhdps&num_psgrps.
-		     from repdata.&runid._varinfo_aggregate_&periodid.;
-		   quit;
-		   
-		   %do ps = 1 %to &num_psgrps.;
-		     /* Output one dataset per Appendix */
-			 %if %eval(&num_psgrps.) > 1 %then %do;
-			   %let tableid = %upcase(&tableletter.)&ps.;
-			 %end;
-			 %else %do;
-			   %let tableid = %upcase(&tableletter.);
-			 %end;
-			  
-		     data appendix&tableid.;
-			   set repdata.&runid._varinfo_aggregate_&periodid. (where = (psestimategrp = "&&psestimate&ps."));
-			 run;
-		   
-	         %addtotoc(tabnum = Appendix &tableid., 
-		  	  	       caption = %bquote(Top &&topnhdps&ps. codes ranked by &&rank&ps. selected by the high dimensional propensity score algorithm, by Data Partner; &&psestimate&ps.),
-		  	  	       appendixtype = appendixhdps);
-		   %end;
-	    %end;
-	  %end;
-	  /* Increment table count on last runid if HDPS Var Info appendix was output */
-	  %if &n. = &numrunid. and &hdps_found. = 1 %then %do;
-		%let tablecount = %eval(&tablecount + 1);
-	  %end;
-	%end;
+		  %if &unique_psestimate. = 1 %then %do;
+		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	           /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
+                %let look = %upcase(&tableletter.);
+                %let looktab = %upcase(&tableletter.);
+                %if %eval(&look_end.) > %eval(&look_start.) %then %do;
+                   %let look = %upcase(&tableletter.)&periodid.;
+                   %let looktab = %upcase(&tableletter.).&periodid;
+                %end;
+		  	
+                data repdata.appendix&look. (drop = hdpsnum);
+		  	      set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	    run;			
+		  	  
+		        proc sql noprint;
+	              select distinct(rank_variable) into: rank
+	              from repdata.appendix&look.;
+	            quit;
+		  	  
+		  	    %addtotoc(tabnum = Appendix &looktab., 
+		    	  	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrp.),
+		    	  	      appendixtype = appendixhdps);
+		     %end;/* periodid */
+		  %end; /* unique psestimategrp */
+		  /* Increment table count on last runid if HDPS Var Info appendix was output */
+	      %if &corder. = &numl2comparisons. %then %do;
+		    %let tablecount = %eval(&tablecount + 1);
+	      %end;
+	    %end; /* comparison file order */
+	%end; /* aggregated hdps data exists */
 
     /*********************************************************************************************/
     /* Weight Distribution appendices                                      			 			 */
