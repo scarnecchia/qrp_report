@@ -42,10 +42,12 @@
                              renameclause=);
 
     %put =====> MACRO CALLED: aggregate_l2_datasets;
-
-  	proc datasets library = work nolist nowarn; 
-        delete &outfile.; 
-    quit;
+    
+	%if %index(&infile.,varinfo) = 0 %then %do;
+      proc datasets library = work nolist nowarn; 
+          delete &outfile.; 
+      quit;
+	%end;
 
     %do dps = 1 %to %eval(&num_dp.); 
         %let dpidsiteid = %scan(&random_dplist,&dps); 
@@ -75,8 +77,8 @@
           		dp=input("&dps.",best.);
                 
 				/* Assign codecat and codetype for HDPS Vars */
-				%if &outfile. = agghdps %then %do;
-				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40;
+				%if %index(&infile.,varinfo) > 0 %then %do;
+				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40 rank_variable $25 topnhdps 3;
 				   if index(dimension,'ICD') > 0 then do;
 	                 codetype = reverse(substr(strip(reverse(dimension)),1,2));
 	                 codecat = reverse(substr(strip(reverse(dimension)),3,2));
@@ -89,12 +91,20 @@
 	                 codetype = scan(dimension,-1,'_');
 	                 codecat = 'PX';
                    end;
+				   
 				   if index(var_name,'Frequent') > 0 then frequency = 'Frequent';
 				   else if index(var_name,'Any') > 0 then frequency = 'Any';
 				   else if index(var_name,'Often') > 0 then frequency = 'Often';
 				   else frequency = substr(var_name, index(var_name, '_Q')+1);
 				   
-				   keep psestimategrp codecat codetype dp frequency ranking code;
+				   %if &ranking. = exp_assoc %then %do; rank_variable = "exposure association"; %end;
+				   %else %if &ranking. = outcome_assoc %then %do; rank_variable = "outcome association"; %end;
+				   %else %do; rank_variable = "bias potential"; %end; 
+				   
+				   topnhdps = &topnhdps.;
+				   
+				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code rank_variable topnhdps;
+				   if _n_ le &topnhdps. then output;
 				%end;
 				
                 /*set variables to missing if convergence not met*/

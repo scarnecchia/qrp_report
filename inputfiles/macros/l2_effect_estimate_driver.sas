@@ -80,8 +80,8 @@
             call symputx('classvars', classvars);
             call symputx('noclassvars', noclassvars);
             if not missing(convrule) then call symputx('convrule', convrule);
-			if missing(topnhdps) then call symputx('topnhdps',25);
-			else call symputx('topnhdps',topnhdps);
+			if missing(topnhdps) then call symputx('topnhdps',25,'G');
+			else call symputx('topnhdps',topnhdps,'G');
         run;
         %put now computing effect estimates for &analysisgrp.;
        
@@ -300,13 +300,13 @@
             %end; /*aggregate risk set data*/
 			%if &hdps. = Y %then %do;
 			   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
-                                       outfile=agghdps,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-									   settomissvars=%str(codecat, codetype, frequency, ranking, code),
-									   renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)));
+                                      outfile=repdata.&runid._varinfo_aggregate_&periodid.,
+                                      pscsfile=&pscsfile.,
+                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
+                                      convrule=%quote(&convrule.),
+                                      convdata=&runid._estimates_&periodid.,
+									  settomissvars=%str(codecat, codetype, frequency, ranking, code, rank_variable, topnhdps),
+									  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)));
 			%end;
            
             /****************************************************************************************/

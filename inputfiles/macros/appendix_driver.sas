@@ -49,7 +49,59 @@
 	%mend xlsx_exist;
 
     %let tablecount = 2; /* Appendix A is tablecount 1 */ 
-	
+	/*********************************************************************************************/
+    /* Create HDPS Var Info appendices                                                           */
+    /*********************************************************************************************/
+    /* Create appendix for each unique runid periodid combination */	
+	%do n = 1 %to &numrunid.;
+      %let runid = %scan(&runidlist, &n); 
+	  %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	    
+		/* Flag to indicate if an HDPS table exists */
+		%let hdps_found = 0;
+		
+	    %isdata(dataset=repdata.&runid._varinfo_aggregate_&periodid.);
+        %if %eval(&nobs.>0) %then %do;
+		  %let hdps_found = 1;
+		  
+	      /* Determine the psestimategrps on the agghdps file */
+	       proc sql noprint;
+	         select count(distinct(psestimategrp)) into: num_psgrps trimmed
+		     from repdata.&runid._varinfo_aggregate_&periodid.;
+		     
+		     select distinct(rank_variable)
+          		   ,psestimategrp
+				   ,topnhdps
+			   into: rank1 - :rank&num_psgrps.
+			        ,:psestimate1 - :psestimate&num_psgrps.
+					,:topnhdps1 - :topnhdps&num_psgrps.
+		     from repdata.&runid._varinfo_aggregate_&periodid.;
+		   quit;
+		   
+		   %do ps = 1 %to &num_psgrps.;
+		     /* Output one dataset per Appendix */
+			 %if %eval(&num_psgrps.) > 1 %then %do;
+			   %let tableid = %upcase(&tableletter.)&ps.;
+			 %end;
+			 %else %do;
+			   %let tableid = %upcase(&tableletter.);
+			 %end;
+			  
+		     data appendix&tableid.;
+			   set repdata.&runid._varinfo_aggregate_&periodid. (where = (psestimategrp = "&&psestimate&ps."));
+			 run;
+		   
+	         %addtotoc(tabnum = Appendix &tableid., 
+		  	  	       caption = %bquote(Top &&topnhdps&ps. codes ranked by &&rank&ps. selected by the high dimensional propensity score algorithm, by Data Partner; &&psestimate&ps.),
+		  	  	       appendixtype = appendixhdps);
+		   %end;
+	    %end;
+	  %end;
+	  /* Increment table count on last runid if HDPS Var Info appendix was output */
+	  %if &n. = &numrunid. and &hdps_found. = 1 %then %do;
+		%let tablecount = %eval(&tablecount + 1);
+	  %end;
+	%end;
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
     /*********************************************************************************************/		
