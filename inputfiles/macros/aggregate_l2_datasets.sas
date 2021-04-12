@@ -82,7 +82,7 @@
                 %end;
 				/* Assign codecat and codetype for HDPS Vars */
 				%if %index(&infile.,varinfo) > 0 %then %do;
-				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40 periodid 3;
+				   length ranking 8 frequency $18 codetype $5 codecat $2 periodid 3;
 				   if index(dimension,'ICD') > 0 then do;
 	                 codetype = reverse(substr(strip(reverse(dimension)),1,2));
 	                 codecat = reverse(substr(strip(reverse(dimension)),3,2));
