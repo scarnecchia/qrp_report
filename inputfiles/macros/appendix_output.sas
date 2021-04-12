@@ -204,7 +204,7 @@
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
-		proc report data=&_data nofs nowd
+		proc report data=repdata.&_data nofs nowd
             style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=lightgrey] split='*'
 			style(report)=[rules=none frame=box cellpadding =1.75pt];
 			

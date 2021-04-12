@@ -85,7 +85,7 @@
     ***********************************************************************************************;
     * Loop through each AnalysisGrp                               
     ***********************************************************************************************;
-
+%put numl2comparisons = &numl2comparisons.;
     %do loopcount = 1 %to &numl2comparisons.; 
      
         /*Initialize macro variables for the analysisgrp loop*/

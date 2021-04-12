@@ -68,9 +68,11 @@
 	     if first.periodid then hdpsnum = 1;
 	   run;
 	   
-	   data output.agghdps;
-	   set agghdps;
-	   run;
+	   /* Identify the first unique psestimategrp */
+		 proc sql noprint;
+		   select min(order) into: first_uniquegrp
+		   from l2comparisonfile where unique_psestimate = 1;
+		 quit;
 	
        /* Loop through all order values */
        %do corder = 1 %to &numl2comparisons;
@@ -84,9 +86,24 @@
 		  	else call symputx('topnhdps',topnhdps);
           run;
 		  
-		  %if &unique_psestimate. = 1 %then %do;
+		  %isdata(dataset=labelfile);
+          %if &nobs > 0 %then %do;
+            proc sql noprint;
+		      select c.label 
+		      into :psestimategrplabel trimmed
+		    from (select a.*, b.label
+		    	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
+		          on a.psestimategrp = b.group
+		          where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
+		    quit;
+		  %end;
+		  
+		  %if %eval(&unique_psestimate. = 1) %then %do;
+		     /* If not the first unique_psestimate then increment table letter */
+			 %if %eval(&first_uniquegrp > 1) %then %tableletter();
+			 
 		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-	           /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
+			   /* Assign numeric suffix associated with table number*/
                 %let look = %upcase(&tableletter.);
                 %let looktab = %upcase(&tableletter.);
                 %if %eval(&look_end.) > %eval(&look_start.) %then %do;
@@ -97,16 +114,22 @@
                 data repdata.appendix&look. (drop = hdpsnum);
 		  	      set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
 		  	    run;			
-		  	  
-		        proc sql noprint;
-	              select distinct(rank_variable) into: rank
-	              from repdata.appendix&look.;
-	            quit;
-		  	  
-		  	    %addtotoc(tabnum = Appendix &looktab., 
-		    	  	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrp.),
-		    	  	      appendixtype = appendixhdps);
-		     %end;/* periodid */
+		  	    
+				%isdata(dataset=repdata.appendix&look. );
+                %if &nobs > 0 %then %do;
+		          proc sql noprint;
+	                select distinct(rank_variable) into: rank trimmed
+	                from repdata.appendix&look.;
+	              quit;
+				  
+		  	      %addtotoc(tabnum = Appendix &looktab., 
+		    	    	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
+		    	    	      appendixtype = appendixhdps);
+				  
+				  /* Increment table letter for the next psestimategrp */
+				  
+			    %end; /* hdps data for runid and psestimategrp */
+		     %end; /* periodid */
 		  %end; /* unique psestimategrp */
 		  /* Increment table count on last runid if HDPS Var Info appendix was output */
 	      %if &corder. = &numl2comparisons. %then %do;
