@@ -86,19 +86,31 @@
 		  	else call symputx('topnhdps',topnhdps);
           run;
 		  
-		  %isdata(dataset=labelfile);
-          %if &nobs > 0 %then %do;
-            proc sql noprint;
-		      select c.label 
-		      into :psestimategrplabel trimmed
-		    from (select a.*, b.label
-		    	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
-		          on a.psestimategrp = b.group
-		          where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
-		    quit;
-		  %end;
+		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+             data _null_; 
+                 set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                 call symputx('HDPS',hdps);
+                 if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
+                 else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
+                 else call symputx('rank','Outcome Association');			 
+             run;
+          %end;
 		  
-		  %if %eval(&unique_psestimate. = 1) %then %do;
+		  %if &hdps. = Y and %eval(&unique_psestimate. = 1) %then %do;
+		     %let psestimategrplabel = &psestimategrp.;
+		     
+		     %isdata(dataset=labelfile);
+             %if &nobs > 0 %then %do;
+               proc sql noprint;
+		         select c.label 
+		         into :psestimategrplabel trimmed
+		       from (select a.*, b.label
+		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
+		             on a.psestimategrp = b.group
+		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
+		       quit;
+		     %end;
+		  
 		     /* If not the first unique_psestimate then increment table letter */
 			 %if %eval(&first_uniquegrp > 1) %then %tableletter();
 			 
@@ -110,27 +122,22 @@
                    %let look = %upcase(&tableletter.)&periodid.;
                    %let looktab = %upcase(&tableletter.).&periodid;
                 %end;
-		  	
-                data repdata.appendix&look. (drop = hdpsnum);
-		  	      set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
-		  	    run;			
 		  	    
-				%isdata(dataset=repdata.appendix&look. );
-                %if &nobs > 0 %then %do;
-		          proc sql noprint;
-	                select distinct(rank_variable) into: rank trimmed
-	                from repdata.appendix&look.;
-	              quit;
-				  
-		  	      %addtotoc(tabnum = Appendix &looktab., 
-		    	    	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
-		    	    	      appendixtype = appendixhdps);
-				  
-				  /* Increment table letter for the next psestimategrp */
-				  
-			    %end; /* hdps data for runid and psestimategrp */
+				/* Do not re-create appendix data that already exists */
+				%if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
+                  data repdata.appendix&look. (drop = hdpsnum);
+		  	        set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	      run;			
+		  	      
+				  %isdata(dataset=repdata.appendix&look. );
+		  	        %addtotoc(tabnum = Appendix &looktab., 
+		    	      	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
+		    	      	      appendixtype = appendixhdps);
+				    
+			      %end; /* hdps data for runid and psestimategrp */
+				%end; /* Determine if appendix data already exists */
 		     %end; /* periodid */
-		  %end; /* unique psestimategrp */
+		  %end; /* HDPS and unique psestimategrp */
 		  /* Increment table count on last runid if HDPS Var Info appendix was output */
 	      %if &corder. = &numl2comparisons. %then %do;
 		    %let tablecount = %eval(&tablecount + 1);
@@ -142,7 +149,7 @@
     /* Weight Distribution appendices                                      			 			 */
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
-	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
+	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
 
     /* Loop through all order values */
     %do corder = 1 %to &numl2comparisons;

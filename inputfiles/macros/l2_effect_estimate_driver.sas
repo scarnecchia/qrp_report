@@ -245,9 +245,9 @@
                     call symputx('GRP1', eoi);
                     call symputx('GRP0', ref); 
                     call symputx('HDPS',hdps);
-                    if missing(ranking) then call symputx('ranking','exp_assoc','G');
-                    else if lowcase(ranking) = 'bias' then call symputx('ranking','bias_assoc','G');
-                    else call symputx('ranking',strip(lowcase(ranking)),'G');					
+                    if missing(ranking) then call symputx('ranking','exp_assoc');
+                    else if lowcase(ranking) = 'bias' then call symputx('ranking','bias_assoc');
+                    else call symputx('ranking',strip(lowcase(ranking)));					
                 run;
             %end;
 
@@ -314,33 +314,35 @@
                         logodds=log(odds);
                     end;
                 run;
-                %if &marginalweights. = Y %then %do;
-                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-                                       outfile=aggmw,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-									   
-				%aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                       outfile=aggwd,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(n, min, max, mean, sd),
-                                       runidvar=&runid.);					   
-                %end; /* aggregate weighted and marginalweights data */		
+				%if &covarnum = 0 %then %do;
+                   %if &marginalweights. = Y %then %do;
+                   %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+                                          outfile=aggmw,
+                                          pscsfile=&pscsfile.,
+                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                          convrule=%quote(&convrule.),
+                                          convdata=&runid._estimates_&periodid.,
+                                          settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
+				   					   
+				   %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                          outfile=aggwd,
+                                          pscsfile=&pscsfile.,
+                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                          convrule=%quote(&convrule.),
+                                          convdata=&runid._estimates_&periodid.,
+                                          settomissvars=%str(n, min, max, mean, sd),
+                                          runidvar=&runid.);					   
+                   %end; /* aggregate weighted and marginalweights data */	
+                %end; /* Only run for overall data */		   
             %end; /*aggregate risk set data*/
-			%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
+			%if &hdps. = Y and &unique_psestimate. = 1 and &covarnum. = 0 %then %do;
 			   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
                                       outfile=agghdps,
                                       pscsfile=&pscsfile.,
                                       whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
                                       convrule=%quote(&convrule.),
                                       convdata=&runid._estimates_&periodid.,
-									  settomissvars=%str(codecat, codetype, frequency, ranking, code, rank_variable),
+									  settomissvars=%str(codecat, codetype, frequency, ranking, code),
 									  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
                                       runidvar=&runid.);	
 			%end;/*aggregate hdps vars for unique psestimategrps*/

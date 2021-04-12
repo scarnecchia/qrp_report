@@ -82,7 +82,7 @@
                 %end;
 				/* Assign codecat and codetype for HDPS Vars */
 				%if %index(&infile.,varinfo) > 0 %then %do;
-				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40 rank_variable $25 periodid 3;
+				   length ranking 8 code frequency $18 codetype $5 codecat $2 psestimategrp $40 periodid 3;
 				   if index(dimension,'ICD') > 0 then do;
 	                 codetype = reverse(substr(strip(reverse(dimension)),1,2));
 	                 codecat = reverse(substr(strip(reverse(dimension)),3,2));
@@ -101,12 +101,9 @@
 				   else if index(var_name,'Often') > 0 then frequency = 'Often';
 				   else frequency = substr(var_name, index(var_name, '_Q')+1);
 				   
-				   %if &ranking. = exp_assoc %then %do; rank_variable = "Exposure Association"; %end;
-				   %else %if &ranking. = outcome_assoc %then %do; rank_variable = "Outcome Association"; %end;
-				   %else %do; rank_variable = "Bias Potential"; %end; 
 				   periodid = &periodid.;
 				   
-				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code rank_variable periodid runid;
+				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code periodid runid;
 				%end;
                 
                 /*set variables to missing if convergence not met*/
