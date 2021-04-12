@@ -55,7 +55,7 @@
     /*********************************************************************************************/
     /* Create appendix for each unique runid periodid combination */	
 	%isdata(dataset=agghdps);
-    %if &nobs > 0  and &numl2comparisons > 0 %then %do;
+    %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	  /* Rank hdps vars */
 	   proc sort data = agghdps;
 		  by dpidsiteid psestimategrp periodid descending ranking;
@@ -84,7 +84,19 @@
 		  	call symputx('unique_psestimate',unique_psestimate);
 		  	if missing(topnhdps) then call symputx('topnhdps',25);
 		  	else call symputx('topnhdps',topnhdps);
+			call symputx('analysisgrp', analysisgrp);
           run;
+
+          /* Defaults */
+		  %let pscsfile = ;
+		  %let hdps = N;
+		  
+          proc sql noprint;
+        	/*extract QRP input file associated with analysisgrp*/
+            select distinct strip(file) into: pscsfile trimmed
+            from pscs_masterinputs
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
+          quit;
 		  
 		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
              data _null_; 
@@ -112,31 +124,36 @@
 		     %end;
 			 
 		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-			    /* If not the first unique_psestimate then increment table letter */
-			    %if %eval(&first_uniquegrp > 1) and &periodid = %eval(&look_start.) %then %tableletter();
-			   
-			   /* Assign numeric suffix associated with table number*/
-                %let look = %upcase(&tableletter.);
-                %let looktab = %upcase(&tableletter.);
-                %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                   %let look = %upcase(&tableletter.)&periodid.;
-                   %let looktab = %upcase(&tableletter.).&periodid;
-                %end;
-		  	    
-				/* Do not re-create appendix data that already exists */
-				%if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
-                  data repdata.appendix&look. (drop = hdpsnum);
-		  	        set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
-		  	      run;			
-		  	      
-				  %isdata(dataset=repdata.appendix&look. );
-				  %if nobs > 0 %then %do;
-		  	        %addtotoc(tabnum = Appendix &looktab., 
-		    	      	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
-		    	      	      appendixtype = appendixhdps);
-				    
-			      %end; /* hdps data for runid and psestimategrp */
-				%end; /* Determine if appendix data already exists */
+			    /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid */
+				proc sql noprint;
+				 select count(psestimategrp) into: nobs trimmed
+                 from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid.;
+				run;
+				
+				%if &nobs. > 0 %then %do;
+			       /* If not the first unique_psestimate then increment table letter */
+			       %if &corder. > &first_uniquegrp and &periodid = %eval(&look_start.) %then %tableletter();
+				   
+			       /* Assign numeric suffix associated with table number*/
+                   %let look = %upcase(&tableletter.);
+                   %let looktab = %upcase(&tableletter.);
+                   %if %eval(&look_end.) > %eval(&look_start.) %then %do;
+                      %let look = %upcase(&tableletter.)&periodid.;
+                      %let looktab = %upcase(&tableletter.).&periodid;
+                   %end;
+		  	       
+				   /* Do not re-create appendix data that already exists */
+				   %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
+                     data repdata.appendix&look. (drop = hdpsnum);
+		  	           set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	         run;		
+				  
+		  	         %addtotoc(tabnum = Appendix &looktab., 
+		    	     	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
+		    	     	        appendixtype = appendixhdps);
+				   
+			       %end; /* Determine if appendix data already exists */
+				%end; /* hdps data for runid and psestimategrp */
 		     %end; /* periodid */
 		  %end; /* HDPS and unique psestimategrp */
 		  /* Increment table count on last runid if HDPS Var Info appendix was output */
