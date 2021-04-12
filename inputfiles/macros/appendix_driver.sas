@@ -131,8 +131,6 @@
 				run;
 				
 				%if &nobs. > 0 %then %do;
-			       /* If not the first unique_psestimate then increment table letter */
-			       %if &corder. > &first_uniquegrp and &periodid = %eval(&look_start.) %then %tableletter();
 				   
 			       /* Assign numeric suffix associated with table number*/
                    %let look = %upcase(&tableletter.);
