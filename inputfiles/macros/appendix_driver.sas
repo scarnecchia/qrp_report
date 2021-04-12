@@ -110,11 +110,11 @@
 		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
 		       quit;
 		     %end;
-		  
-		     /* If not the first unique_psestimate then increment table letter */
-			 %if %eval(&first_uniquegrp > 1) %then %tableletter();
 			 
 		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+			    /* If not the first unique_psestimate then increment table letter */
+			    %if %eval(&first_uniquegrp > 1) and &periodid = %eval(&look_start.) %then %tableletter();
+			   
 			   /* Assign numeric suffix associated with table number*/
                 %let look = %upcase(&tableletter.);
                 %let looktab = %upcase(&tableletter.);
@@ -130,6 +130,7 @@
 		  	      run;			
 		  	      
 				  %isdata(dataset=repdata.appendix&look. );
+				  %if nobs > 0 %then %do;
 		  	        %addtotoc(tabnum = Appendix &looktab., 
 		    	      	      caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
 		    	      	      appendixtype = appendixhdps);
