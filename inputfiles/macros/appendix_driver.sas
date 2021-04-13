@@ -67,12 +67,6 @@
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
-	   
-	   /* Identify the first unique psestimategrp */
-		 proc sql noprint;
-		   select min(order) into: first_uniquegrp
-		   from l2comparisonfile where unique_psestimate = 1;
-		 quit;
 	
        /* Loop through all order values */
        %do corder = 1 %to &numl2comparisons;
@@ -128,9 +122,11 @@
 				proc sql noprint;
 				 select count(psestimategrp) into: nobs trimmed
                  from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid.;
-				run;
+				quit;
 				
 				%if &nobs. > 0 %then %do;
+				   /* Increment table letter when periodid equals look start */
+				   %if %eval(&periodid. = &look_start.) %then %tableletter(); 
 				   
 			       /* Assign numeric suffix associated with table number*/
                    %let look = %upcase(&tableletter.);
@@ -154,10 +150,6 @@
 				%end; /* hdps data for runid and psestimategrp */
 		     %end; /* periodid */
 		  %end; /* HDPS and unique psestimategrp */
-		  /* Increment table count on last runid if HDPS Var Info appendix was output */
-	      %if &corder. = &numl2comparisons. %then %do;
-		    %let tablecount = %eval(&tablecount + 1);
-	      %end;
 	    %end; /* comparison file order */
 	%end; /* aggregated hdps data exists */
 

@@ -333,7 +333,7 @@
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
-		select compress(tabnum,,'ka'), tabnum, appendixtype, caption, count(*)
+		select compress(tabnum,,'kad'), tabnum, appendixtype, caption, count(*)
 		into  :apxdata separated by "*", 
 			  :apxname separated by "*",
 			  :apxtype separated by "*", 
@@ -341,22 +341,12 @@
 			  :appendixcnt
 		from tableofcontents
 		where appendixtype is not missing;
-
-		/* need to keep digit on tabnum */
-		%let apxweightdata = ;
-		select compress(tabnum,,'kad')
-		into  :apxweightdata separated by "*"
-		from tableofcontents
-		where appendixtype = 'appendixWeightDist';
 		quit;
 
 		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
 				%let _apxdata = %scan(&apxdata., &p, %str(*));
-				%if %length(&apxweightdata) > 0 %then %do;	
-				%let _apxweightdata = %scan(&apxweightdata., &p, %str(*));	
-				%end;		
 				%let _apxtype = %scan(&apxtype., &p., %str(*));				
 				%let _apxname = %scan(&apxname., &p., %str(*));			
 				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
@@ -380,7 +370,7 @@
 					%appendixhdps(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 			    %end;
 				%else %if "%upcase(&_apxtype.)" = "APPENDIXWEIGHTDIST" %then %do;
-				    %appendixWeightDist(_data=&_apxweightdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				    %appendixWeightDist(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
 			%end;
 		%end;
