@@ -333,7 +333,12 @@
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
-		select compress(tabnum,,'kad'), tabnum, appendixtype, caption, count(*)
+		select case when upcase(appendixtype) = "APPENDIXNDC" then compress(tabnum,,'ka')
+		       else compress(tabnum,,'kad') end
+		      ,tabnum
+			  ,appendixtype
+			  ,caption
+			  ,count(*)
 		into  :apxdata separated by "*", 
 			  :apxname separated by "*",
 			  :apxtype separated by "*", 
