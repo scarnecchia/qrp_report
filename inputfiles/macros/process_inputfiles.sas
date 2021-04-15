@@ -321,6 +321,19 @@
 				quit;
 				%put &&grouplist_&n..;
 	     %end;
+
+		 /* Check if code distribution is required */
+		 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+			 %let codedistcount = 0;
+
+			 proc sql noprint;
+			 select count(*) into :codedistcount 
+			 from input.&groupsfile. where strip(CodeDist) ne '';
+			 quit;
+
+			 %if %eval(&codedistcount. > 0) %then %let output_code_distribution = Y;
+			 %put &=output_code_distribution;
+		 %end;
 	 %end;
  
 /***************************************************************************************************
