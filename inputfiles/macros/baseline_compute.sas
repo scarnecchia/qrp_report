@@ -204,12 +204,14 @@
                 data _null_;
                     set infolder.&&&runid._psestimationfile(where=(psestimategrp="&psestimategrp."));
                     call symputx('eoi', strip(eoi));
+					call symputx('ref', strip(ref));				 
                 run;
             %end;
             %else %if &psfile. = covstratfile %then %do;
                 data _null_;
                     set infolder.&&&runid._covstratfile(where=(analysisgrp="&analysisgrp."));
                     call symputx('eoi', strip(eoi));
+					call symputx('ref', strip(ref));				 
                 run;
             %end;
 
@@ -267,7 +269,18 @@
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            %let cohortdef = 01;
+			 %if %length(&baselinegroupnum.)>0 %then %do;
+		     proc sql noprint;
+			   select distinct(%if &reporttype. = T2L2 %then %do; t2cohortdef %end; 
+			                   %else %do; t4cohortdef %end;) 
+			   into: cohortdef separated by ' '
+			   from %if &reporttype. = T2L2 %then %do; infolder.&&&runid._type2file(where=(group in ("&cohortgrp." "&ref."))) %end; 
+			        %else %do; infolder.&&&runid._type4file(where=(group in ("&cohortgrp." "&ref."))) %end;;
+			 quit;
+		   %end;
+		   %else %do;
+             %let cohortdef = 01;
+		   %end;
         %end;
         %else %if %str("&reporttype") = %str("T5") %then %do;
             %let cohortdef = 04;
@@ -281,7 +294,7 @@
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
 		data baselinefile;
-		  length comorbidscore gestationalage $1 cohortdef $2;
+		  length comorbidscore gestationalage $1 cohortdef $5;
 		  set baselinefile;
 		  if order=&b. then do;
 		    if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
@@ -1193,11 +1206,11 @@
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
 
-            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
+            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and %index(&cohortdef.,01) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             %if %str("&cohort") ^= %str("mi") %then %do;
-            else if MetVar = 'N_EPISODES' and (&cohortdef.=02 | &cohortdef.=03) then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
+            else if MetVar = 'N_EPISODES' and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
             %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             %end;
