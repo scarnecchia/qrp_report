@@ -165,18 +165,21 @@
                 data _null_;
                     set infolder.&&&runid._multeventfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
+					call symputx('ref',strip(secondary));
                 run;
             %end;
             %if %str("&cohort") = %str("overlap") %then %do;
                 data _null_;
                     set infolder.&&&runid._overlapfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
+					call symputx('ref',strip(secondary));
                 run;
             %end;
             %if %str("&cohort") = %str("concomitance") %then %do;
                 data _null_;
                     set infolder.&&&runid._concfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
+					call symputx('ref',strip(secondary));
                 run;
             %end;
         %end;
@@ -203,15 +206,13 @@
                 run;
                 data _null_;
                     set infolder.&&&runid._psestimationfile(where=(psestimategrp="&psestimategrp."));
-                    call symputx('eoi', strip(eoi));
-					call symputx('ref', strip(ref));				 
+                    call symputx('eoi', strip(eoi));		 
                 run;
             %end;
             %else %if &psfile. = covstratfile %then %do;
                 data _null_;
                     set infolder.&&&runid._covstratfile(where=(analysisgrp="&analysisgrp."));
-                    call symputx('eoi', strip(eoi));
-					call symputx('ref', strip(ref));				 
+                    call symputx('eoi', strip(eoi));				 
                 run;
             %end;
 
@@ -257,30 +258,21 @@
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
-            data _null_;
-                set infolder.&&&runid._type2file(where=(group="&cohortgrp."));
-                call symputx("cohortdef", strip(t2cohortdef));
-            run;
+		   proc sql noprint;
+		     select distinct(t2cohortdef) 
+		     into: cohortdef separated by ' '
+		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if %length(&baselinegroupnum.)>0 %then %do; "&ref." %end;)));
+		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
                 set infolder.&&&runid._type4file(where=(group="&cohortgrp."));
-                call symputx("cohortdef", strip(t4cohortdef));
+				if t4cohortdef = t4cohortdef2 then call symputx("cohortdef", strip(t4cohortdef));
+				else call symputx("cohortdef",catx(' ',t4cohortdef,t4cohortdef2));
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-			 %if %length(&baselinegroupnum.)>0 %then %do;
-		     proc sql noprint;
-			   select distinct(%if &reporttype. = T2L2 %then %do; t2cohortdef %end; 
-			                   %else %do; t4cohortdef %end;) 
-			   into: cohortdef separated by ' '
-			   from %if &reporttype. = T2L2 %then %do; infolder.&&&runid._type2file(where=(group in ("&cohortgrp." "&ref."))) %end; 
-			        %else %do; infolder.&&&runid._type4file(where=(group in ("&cohortgrp." "&ref."))) %end;;
-			 quit;
-		   %end;
-		   %else %do;
              %let cohortdef = 01;
-		   %end;
         %end;
         %else %if %str("&reporttype") = %str("T5") %then %do;
             %let cohortdef = 04;
@@ -1206,11 +1198,11 @@
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
 
-            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and %index(&cohortdef.,01) %end; then do;
+            if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and index(&cohortdef,01)) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             %if %str("&cohort") ^= %str("mi") %then %do;
-            else if MetVar = 'N_EPISODES' and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
+            else if MetVar = 'N_EPISODES' and prxmatch(m/02|03/i,&cohortdef.) > 0  then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
             %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             %end;
