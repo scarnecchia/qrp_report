@@ -196,6 +196,34 @@
 			endcomp;
 		run;
 	%mend appendixDXPX;
+	
+	/**********************************/
+	/* Geographic Location Appendices */
+	/**********************************/	
+	%macro appendixhdps(_data=, _rptlabel=, _tab=);
+		ods proclabel = "&_tab.";
+		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
+		
+		proc report data=repdata.&_data nofs nowd
+            style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=lightgrey] split='*'
+			style(report)=[rules=none frame=box cellpadding =1.75pt];
+			
+            column (dpidsiteid code codecat codetype frequency ranking);
+		    		
+		    define dpidsiteid    / display 'Data Partner'  style(column)=[width=1.2in just=C];
+            define code          / display 'Code'          style(column)=[width=1.2in just=C];
+            define codecat       / display 'Code Category' style(column)=[width=1.2in just=C]; 
+            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C]; 
+            define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C];
+            define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C]; 
+			
+		  compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+            line "&apptitle.";
+          endcomp;
+		
+        run;
+		
+	%mend appendixhdps;	
 
 	/********************************************/
 	/* Create Weight Distribution Appendix      */
@@ -305,7 +333,12 @@
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
-		select compress(tabnum,,'ka'), tabnum, appendixtype, caption, count(*)
+		select case when upcase(appendixtype) = "APPENDIXNDC" then compress(tabnum,,'ka')
+		       else compress(tabnum,,'kad') end
+		      ,tabnum
+			  ,appendixtype
+			  ,caption
+			  ,count(*)
 		into  :apxdata separated by "*", 
 			  :apxname separated by "*",
 			  :apxtype separated by "*", 
@@ -313,22 +346,12 @@
 			  :appendixcnt
 		from tableofcontents
 		where appendixtype is not missing;
-
-		/* need to keep digit on tabnum */
-		%let apxweightdata = ;
-		select compress(tabnum,,'kad')
-		into  :apxweightdata separated by "*"
-		from tableofcontents
-		where appendixtype = 'appendixWeightDist';
 		quit;
 
 		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
 				%let _apxdata = %scan(&apxdata., &p, %str(*));
-				%if %length(&apxweightdata) > 0 %then %do;	
-				%let _apxweightdata = %scan(&apxweightdata., &p, %str(*));	
-				%end;		
 				%let _apxtype = %scan(&apxtype., &p., %str(*));				
 				%let _apxname = %scan(&apxname., &p., %str(*));			
 				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
@@ -348,8 +371,11 @@
 				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC" %then %do;
 					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
+				%else %if "%upcase(&_apxtype.)" = "APPENDIXHDPS" %then %do;
+					%appendixhdps(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+			    %end;
 				%else %if "%upcase(&_apxtype.)" = "APPENDIXWEIGHTDIST" %then %do;
-				%appendixWeightDist(_data=&_apxweightdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				    %appendixWeightDist(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
 			%end;
 		%end;

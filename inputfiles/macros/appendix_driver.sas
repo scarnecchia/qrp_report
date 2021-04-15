@@ -49,12 +49,115 @@
 	%mend xlsx_exist;
 
     %let tablecount = 2; /* Appendix A is tablecount 1 */ 
+	
+	/*********************************************************************************************/
+    /* Create HDPS Var Info appendices                                                           */
+    /*********************************************************************************************/
+    /* Create appendix for each unique runid periodid combination */	
+	%isdata(dataset=agghdps);
+    %if &nobs > 0 and &numl2comparisons > 0 %then %do;
+	  /* Rank hdps vars */
+	   proc sort data = agghdps;
+		  by dpidsiteid psestimategrp periodid descending ranking;
+	   run;
+		
+	   data agghdps;
+	     set agghdps;
+	     by dpidsiteid psestimategrp periodid descending ranking;
+	     hdpsnum+1;
+	     if first.periodid then hdpsnum = 1;
+	   run;
+	
+       /* Loop through all order values */
+       %do corder = 1 %to &numl2comparisons;
+
+		  data _null_;
+            set l2comparisonfile(where=(order=&corder.));
+            call symputx('runid', runid);
+		  	call symputx('psestimategrp', psestimategrp);
+		  	call symputx('unique_psestimate',unique_psestimate);
+		  	if missing(topnhdps) then call symputx('topnhdps',25);
+		  	else call symputx('topnhdps',topnhdps);
+			call symputx('analysisgrp', analysisgrp);
+          run;
+
+          /* Defaults */
+		  %let pscsfile = ;
+		  %let hdps = N;
+		  
+          proc sql noprint;
+        	/*extract QRP input file associated with analysisgrp*/
+            select distinct strip(file) into: pscsfile trimmed
+            from pscs_masterinputs
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
+          quit;
+		  
+		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+             data _null_; 
+                 set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                 call symputx('HDPS',hdps);
+                 if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
+                 else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
+                 else call symputx('rank','Outcome Association');			 
+             run;
+          %end;
+		  
+		  %if &hdps. = Y and %eval(&unique_psestimate. = 1) %then %do;
+		     %let psestimategrplabel = &psestimategrp.;
+		     
+		     %isdata(dataset=labelfile);
+             %if &nobs > 0 %then %do;
+               proc sql noprint;
+		         select c.label 
+		         into :psestimategrplabel trimmed
+		       from (select a.*, b.label
+		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
+		             on a.psestimategrp = b.group
+		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
+		       quit;
+		     %end;
+			 
+		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+			    /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid */
+				proc sql noprint;
+				 select count(psestimategrp) into: nobs trimmed
+                 from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid.;
+				quit;
+				
+				%if &nobs. > 0 %then %do;
+				   /* Increment table letter when periodid equals look start */
+				   %if %eval(&periodid. = &look_start.) %then %tableletter(); 
+				   
+			       /* Assign numeric suffix associated with table number*/
+                   %let look = %upcase(&tableletter.);
+                   %let looktab = %upcase(&tableletter.);
+                   %if %eval(&look_end.) > %eval(&look_start.) %then %do;
+                      %let look = %upcase(&tableletter.)&periodid.;
+                      %let looktab = %upcase(&tableletter.).&periodid;
+                   %end;
+		  	       
+				   /* Do not re-create appendix data that already exists */
+				   %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
+                     data repdata.appendix&look. (drop = hdpsnum);
+		  	           set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	         run;		
+				  
+		  	         %addtotoc(tabnum = Appendix &looktab., 
+		    	     	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
+		    	     	        appendixtype = appendixhdps);
+				   
+			       %end; /* Determine if appendix data already exists */
+				%end; /* hdps data for runid and psestimategrp */
+		     %end; /* periodid */
+		  %end; /* HDPS and unique psestimategrp */
+	    %end; /* comparison file order */
+	%end; /* aggregated hdps data exists */
 
     /*********************************************************************************************/
     /* Weight Distribution appendices                                      			 			 */
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
-	%if &nobs > 0  and &numl2comparisons > 0 %then %do;
+	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
 
     /* Loop through all order values */
     %do corder = 1 %to &numl2comparisons;
@@ -243,7 +346,6 @@
 		quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
-	
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
     /*********************************************************************************************/		

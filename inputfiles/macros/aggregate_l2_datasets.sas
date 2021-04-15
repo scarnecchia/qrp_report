@@ -44,10 +44,10 @@
 
     %put =====> MACRO CALLED: aggregate_l2_datasets;
 
-    %if &outfile ^= aggwd %then %do;
-  	proc datasets library = work nolist nowarn; 
+    %if &outfile ^= aggwd and %index(&infile.,varinfo) = 0 %then %do;
+  	  proc datasets library = work nolist nowarn; 
         delete &outfile.; 
-    quit;
+      quit;
     %end;
 
     %do dps = 1 %to %eval(&num_dp.); 
@@ -77,10 +77,35 @@
         	  	dum0=1;
           		dp=input("&dps.",best.);
                 %if %length(&runidvar) > 0 %then %do;
-                length runid $5.;
-                runid="&runid.";
+                  length runid $5.;
+                  runid="&runid.";
                 %end;
-
+				/* Assign codecat and codetype for HDPS Vars */
+				%if %index(&infile.,varinfo) > 0 %then %do;
+				   length ranking 8 frequency $18 codetype $5 codecat $2 periodid 3;
+				   if index(dimension,'ICD') > 0 then do;
+	                 codetype = reverse(substr(strip(reverse(dimension)),1,2));
+	                 codecat = reverse(substr(strip(reverse(dimension)),3,2));
+                   end;
+                   else if index(dimension,'DRUGCLASS') > 0 then do;
+	                 codetype = 'CLASS';
+	                 codecat = 'RX';
+                   end;
+				   else do;
+	                 codetype = scan(dimension,-1,'_');
+	                 codecat = 'PX';
+                   end;
+				   
+				   if index(var_name,'Frequent') > 0 then frequency = 'Frequent';
+				   else if index(var_name,'Any') > 0 then frequency = 'Any';
+				   else if index(var_name,'Often') > 0 then frequency = 'Often';
+				   else frequency = substr(var_name, index(var_name, '_Q')+1);
+				   
+				   periodid = &periodid.;
+				   
+				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code periodid runid;
+				%end;
+                
                 /*set variables to missing if convergence not met*/
                 %if %eval(&converge.=0) %then %do;
                     call missing(&settomissvars.);
