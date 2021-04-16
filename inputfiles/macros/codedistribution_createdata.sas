@@ -142,7 +142,7 @@
     %if %str("&CodeDescriptionsFile.") ne %str("") %then %do; 
 		proc sql noprint; 
 		create table _codedescription as
-		select code
+		select distinct code
 		      , compress(code,'.') as codef
 		      , codecat
 		      , codetype

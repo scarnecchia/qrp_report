@@ -343,6 +343,71 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
+
+  /*********************************************************************************************/
+  /*   Code Distribution Tables                                                                */
+  /*********************************************************************************************/ 
+  %if &output_code_distribution. eq Y %then %do;
+
+    /* This macros output a specific distribution type (EXP or HOI) entries in the table of content */
+	%macro codedistribution_type_toc(distindextype=);
+        /* Compute group label to display in title */
+		%let grouplabel=;
+		%isdata(dataset=labelfile);
+    	%if %eval(&nobs>0) %then %do;
+			proc sql noprint;
+			select label into :grouplabel trimmed from labelfile
+			where lower(group)="&group." and runid = "&runid" and
+			%if &distindextype. eq exp %then %do;
+				lower(labeltype)="grouplabel";
+			%end;
+			%else %do;
+				lower(labeltype)="outcomelabel";
+			%end;
+			quit;
+		%end;
+
+		%if %str("&grouplabel.") eq %str("") %then %let grouplabel = %trim(&group.);
+
+		/* Full Code Distribution Table */
+		%tableletter();
+		%addtotoc(tabnum=Table &tablenum.&tableletter.,
+                  caption=%quote(Full Code Distribution of &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+
+		/* Total Code Counts Table */
+		%tableletter();
+		%addtotoc(tabnum=Table &tablenum.&tableletter.,
+                  caption=%quote(Total Code Counts of &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+	%mend codedistribution_type_toc; 
+
+	/* reset counter to reset table letter */
+	%let tablecount=1;
+    
+	proc sql noprint;
+	select count(*) into :numgroupscodedist trimmed 
+	from GroupsDist;
+	quit;
+	
+    %do loopcount = 1 %to &numgroupscodedist.; 
+
+		%let codedistexp = N;
+		%let codedisthoi = N;
+
+        data _null_;
+            set GroupsDist;
+			if &loopcount. = _N_;
+            call symputx('runid', runid);
+            call symputx('group', group);			
+            if index(upcase(codedist), "EXP") > 0 then call symputx('codedistexp', 'Y');
+			if index(upcase(codedist), "HOI") > 0 then call symputx('codedisthoi', 'Y');
+        run;
+				
+		%if &codedistexp. eq Y %then %codedistribution_type_toc(distindextype=exp);
+		%if &codedisthoi. eq Y %then %codedistribution_type_toc(distindextype=hoi);
+	%end; *numgroupscodedist;
+  %end;
+
+
   /*********************************************************************************************/
   /*   Figures                                                                                 */
   /*********************************************************************************************/  
