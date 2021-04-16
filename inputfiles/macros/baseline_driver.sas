@@ -201,6 +201,11 @@
     proc sql noprint;
         select max(order) into: numbaselinetablegrp
         from baselinefile;
+
+        /* Check to see if profilecovarstoinclude is populated */
+        select profilecovarstoinclude into: profilecovarstoinclude
+        from baselinefile
+        where not missing(profilecovarstoinclude);
     quit;
 
     ***********************************************************************************************;
