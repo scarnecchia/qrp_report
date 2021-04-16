@@ -184,7 +184,7 @@
                 end;
             %end;
             %else %do;
-                adjor_95ci = 'N/A';
+                adjor_95ci = 'NaN';
             %end;
 
   			label MonitoringPeriod = "Monitoring Period";
@@ -221,14 +221,14 @@
 		    or = .;
             lcl = .;
             ucl = .;
-            or_95ci= "N/A";
+            or_95ci= "NaN";
             or_se = .;
 
             *adjusted odds ratio;
             adjor = .;
             adjor_lcl = .;
             adjor_ucl = .;
-            adjor_95ci = 'N/A';		
+            adjor_95ci = 'NAN';		
         run; 
     %end; /* end do statement for analysis when not events and nonevents */
 
