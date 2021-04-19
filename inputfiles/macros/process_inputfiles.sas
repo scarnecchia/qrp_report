@@ -193,7 +193,7 @@
 		 %end;
 		 %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 		   input.&treeaggfile. (keep = runid)
-		 %end;
+		 %end;;
      run;
 
      proc sql noprint;
@@ -743,8 +743,8 @@
     %end; /*FigureFile specified*/
 
     /*TableFile and FigureFile are optional, but if neither are specified for the following report types then write warning to the log:
-       T1, T2L1, T4L1, T5, T6, ITS, TREE*/
-    %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T4L1|T5|T6|TREE/i,&reporttype.)) & %sysfunc(exist(tablefile))<1 & %sysfunc(exist(figurefile))<1 %then %do;
+       T1, T2L1, T4L1, T5, T6, ITS*/
+    %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T4L1|T5|T6/i,&reporttype.)) & %sysfunc(exist(tablefile))<1 & %sysfunc(exist(figurefile))<1 %then %do;
         %put WARNING: (Sentinel) TableFile and FigureFile are not specified. No additional tables or figures will be produced.;
     %end;
 
