@@ -46,20 +46,60 @@
 
 		%if %str("&grouplabel.") eq %str("") %then %let grouplabel = %trim(&group.);
 
-		/*  Full Code Distribution */
+		/* Compute Total Code Counts (must be processed first to restrict to topncodedist */		
+		proc sort data=codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype."))
+			 out=codedistcounts (keep = runid distindexlist code description codetype codecat codetype totalN);
+		by distindexlist descending totalN code;
+		run;
+
+		data codedistcounts; 
+		set codedistcounts;
+		by distindexlist descending totalN code;
+		if first.distindexlist then do;
+			codeCount = TotalN;
+		end;
+		retain codeCount;
+		else do;
+			codeCount = codeCount;
+		end;
+		run;
+
+		proc sql noprint undo_policy = none;
+		create table codedistcounts as 
+		select  distinct code 
+				,description 
+				,codecat 
+				,codetype Label="Code Type"
+				,sum(codeCount) as N
+		from codedistcounts
+		group by code, description, codecat, codetype
+		order by N desc;
+		quit;
+
+		data codedistcounts;
+		set codedistcounts;
+		if _N_ <= &topncodedist.;
+		run;
+		
+
+		/*  Compute and output Full Code Distribution */
 		%tableletter();
 
 		proc sql;
 		create table repdata.table&tablenum.&tableletter as 
-		select  group
-				,distindexlist
-				,code Label="Code"
-				,description Label="Code Description"
-				,codecat Label="Code Category"
-				,codetype Label="Code Type"
-				,caresetting Label="Encounter Care Setting"
-				,totalN as totalN Label="Overall Counts"
-		from codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype."))
+		select  dist.group
+				,dist.distindexlist
+				,dist.code Label="Code"
+				,dist.description Label="Code Description"
+				,dist.codecat Label="Code Category"
+				,dist.codetype Label="Code Type"
+				,dist.caresetting Label="Encounter Care Setting"
+				,dist.totalN as totalN Label="Overall Counts"
+		from codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype.")) as dist
+		join codedistcounts as code
+			on dist.codecat=code.codecat 
+			and dist.codetype=code.codetype 
+			and dist.code=code.code
 		order distindexlist, code;
 		quit;
 
@@ -104,7 +144,7 @@
 		proc sort data=repdata.table&tablenum.&tableletter(drop = _:);
 		by descending totalN;
 		run; 
-
+	
 
 		%let title = %quote(Table &tablenum.&tableletter.. Full Code Distribution of &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.);
 
@@ -148,38 +188,13 @@
       	run;
 	    
 
-		/* Total Code Counts */
+		/* Output Total Code Counts */
 		%tableletter();
 
-		proc sort data=codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype."))
-			 out=codedistcounts (keep = runid distindexlist code description codetype codecat codetype totalN);
-		by distindexlist descending totalN code;
-		run;
-
-		data codedistcounts; 
-		set codedistcounts;
-		by distindexlist descending totalN code;
-		if first.distindexlist then do;
-			codeCount = TotalN;
-		end;
-		retain codeCount;
-		else do;
-			codeCount = codeCount;
-		end;
-		run;
-
-		proc sql noprint undo_policy = none;
-		create table repdata.table&tablenum.&tableletter as 
-		select  distinct code 
-				,description 
-				,codecat 
-				,codetype Label="Code Type"
-				,sum(codeCount) as N
-		from codedistcounts
-		group by code, description, codecat, codetype
-		order by N desc;
-		quit;
-		
+		data repdata.table&tablenum.&tableletter;
+		set codedistcounts;		
+		run;		
+	
 
 		%let title = %quote(Table &tablenum.&tableletter.. Total Code Counts of &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.);
 
@@ -237,7 +252,9 @@
             set GroupsDist;
 			if &loopcount. = _N_;
             call symputx('runid', runid);
-            call symputx('group', group);			
+            call symputx('group', group);	
+			if missing(topncodedist) then call symputx('topncodedist',25);
+		  	else call symputx('topncodedist',topncodedist);	
             if index(upcase(codedist), "EXP") > 0 then call symputx('codedistexp', 'Y');
 			if index(upcase(codedist), "HOI") > 0 then call symputx('codedisthoi', 'Y');
         run;
