@@ -151,6 +151,16 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp);
 			%end;
 		%end; *T2L2 and T4L2;
+		%if %str("&reporttype") = %str("TREE2") %then %do;
+		   %agg_report(infile=t2_tree_analysis_&periodid., outfile=agg_t2_tree_analysis_&periodid., name=treeanalysisgrp);
+		%end; *TREE2;
+		%else %if %str("&reporttype") = %str("TREE3") %then %do;
+		   %agg_report(infile=t3_tree_analysis_&periodid., outfile=agg_t3_tree_analysis_&periodid., name=treeanalysisgrp);
+		   %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp);
+		%end; *TREE2;
+		%else %if %str("&reporttype") = %str("TREE4") %then %do;
+		   %agg_report(infile=t4_tree_analysis_&periodid., outfile=agg_t4_tree_analysis_&periodid., name=treeanalysisgrp);
+		%end; *TREE2;
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;

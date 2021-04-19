@@ -193,7 +193,7 @@
 		 %end;
 		 %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 		   input.&treeaggfile. (keep = runid)
-		 %end;;
+		 %end;
      run;
 
      proc sql noprint;
@@ -293,10 +293,10 @@
      %end;
 
 /***************************************************************************************************
-*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2                                            
+*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                            
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
 		data groupsfile;
 			set 
 			%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
@@ -304,6 +304,9 @@
 			%end;
 			%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
         		input.&l2comparisonfile. (rename=AnalysisGrp=group)
+			%end;
+			%if %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
+        		input.&treeaggfile. (rename=treeanalysisGrp=group)
 			%end;
 			;
 			runid = lowcase(runid);
@@ -740,8 +743,8 @@
     %end; /*FigureFile specified*/
 
     /*TableFile and FigureFile are optional, but if neither are specified for the following report types then write warning to the log:
-       T1, T2L1, T4L1, T5, T6, ITS*/
-    %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T4L1|T5|T6/i,&reporttype.)) & %sysfunc(exist(tablefile))<1 & %sysfunc(exist(figurefile))<1 %then %do;
+       T1, T2L1, T4L1, T5, T6, ITS, TREE*/
+    %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T4L1|T5|T6|TREE/i,&reporttype.)) & %sysfunc(exist(tablefile))<1 & %sysfunc(exist(figurefile))<1 %then %do;
         %put WARNING: (Sentinel) TableFile and FigureFile are not specified. No additional tables or figures will be produced.;
     %end;
 
@@ -797,10 +800,11 @@
 *   For L2 reports:
      1: Read in L2ComparisonFile
      2: For T4 reports: read in optional SelectionProbabilitiesFile
-     3: create master PS/CS input file dataset                                               
+     3: create master PS/CS input file dataset      
+     4: Read in Treeaggfile if it exists
 ***************************************************************************************************/
 
-    %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+    %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype,TREE) > 0%then %do;
 
         /******************/
         /*L2ComparisonFile*/
@@ -957,15 +961,61 @@
                 eoi = lowcase(eoi);
                 ref = lowcase(ref);
 			run;
-
+			
+		  /************************************************
+           Output TXT file for treelookup file per runid
+           ************************************************/
+          /* Determine if there is a comma in any row on the lookup file */
+	      %if %str("&&&runid._treelookup") ne %str("") %then %do;
+	         data _&treelookup.;
+	           length comma_in_parent comma_in_child 3.;
+	           set &&&runid._treelookup;
+	            if index(parent,',') > 0 then comma_in_parent = 1;
+	            else comma_in_parent = 0;
+	            if index(child,',') > 0 then comma_in_child = 1;
+	            else comma_in_child = 0;
+	         run;
+			 
+	         proc sql;
+	           select sum(comma_in_parent) as parent_comma
+	                 ,sum(comma_in_child) as child_comma
+	           into :parent_comma
+	               ,:child_comma
+	           from _&treelookup.;
+             quit;
+			 
+	         %let parent_comma = &parent_comma.;
+	         %let child_comma = &child_comma.;
+			 
+	         %if &parent_comma. > 0 or &child_comma. > 0 %then %do;
+               %put WARNING: Commas exist in either the child or parent node. A tab-delimited file will be produced.;
+	           %put &parent_comma. parent, and &child_comma. child nodes have commas.;
+	            proc export data = infolder.&&&runid._treelookup
+   	                  outfile   = "&output.&&&runid._treelookup.txt"
+	           	     dbms      = tab replace;
+	           	     putnames  = NO;
+	            run;
+             %end;	
+	         %else %do;  
+	            proc export data = infolder.&&&runid._treelookup
+   	                  outfile   = "&output.&&&runid._treelookup.txt"
+	           	     dbms      = dlm replace;
+	           	     delimiter = ',';
+	           	     putnames  = NO;
+	            run;
+	         %end;
+	      
+	         /* Clean up work space */
+             proc datasets lib = work;
+              delete _&treelookup.;
+             quit;
+          %end;
         %end;
 
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
         run;
-
-    %end;
-
+		
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
