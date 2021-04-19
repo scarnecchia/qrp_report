@@ -238,10 +238,6 @@
             risk_1000NUchar = strip(put(risk_1000NU, comma8.2));
             rrchar = strip(put(rr, comma8.2));
             if missing(rr) then rrchar='NaN';
-***** dowe *****;
-				rrchar2 = strip(put(rr, comma8.2));
-                if missing(rr) then rrchar2 = '0.00';
-***** dowe *****;
 
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
@@ -299,8 +295,7 @@
 
             /*by analysisgrp*/
             analysisgrpsort = &loopcount.;
-***** dowe *****;
-%macro dowe;
+
             keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
                  /*only include followup time variables for ReportType = T2L2*/
@@ -308,18 +303,8 @@
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  %end;
                  ;
-%mend dowe;
-***** dowe *****;
+
         run;
-	
-***** dowe *****;
-data output.w_est_wide_&runid._&cat._%sysfunc(compress(&analysis.,,ka));
- set est_wide;
-run; 
-data output.v_forRD_&runid._&cat._%sysfunc(compress(&analysis.,,ka));
- set forRD;
-run; 
-***** dowe *****;
     %end;
     %else %do;  *create empty dataset;
         data est;
@@ -367,10 +352,6 @@ run;
                 EVchar = put(EV, comma10.);
                 rrchar = put(rr, comma8.2);
                 if missing(rr) then rrchar = 'NaN';
-***** dowe *****;
-				rrchar2 = strip(put(rr, comma8.2));
-                if missing(rr) then rrchar2 = '0.00';
-***** dowe *****;
                 IR_1000PYchar = put(IR_1000PY, comma8.2);
                 IRDiff_1000PYchar = put(IRDiff_1000PY, comma8.2);
                 RD_1000NUchar = put(RD_1000NU, comma8.2);
@@ -432,8 +413,6 @@ run;
                 /*by analysisgrp*/
                 analysisgrpsort = &loopcount.;
 
-***** dowe *****;
-%macro dowe;
                 keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
                 /*only include followup time variables for ReportType = T2L2*/
@@ -441,29 +420,15 @@ run;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                 %end;
                 ;
-%mend dowe;
-***** dowe *****;
             output;
             %end;
         run;
     %end;
-	
-***** dowe *****;
-data output.x_est_&runid._&cat._%sysfunc(compress(&analysis.,,ka));
- set est;
-run; 
-***** dowe *****;
 
     proc datasets library=work nowarn noprint;
         append base= RDEst data=est force;
         delete est: forRD forrd_exp;
     quit;
-	
-***** dowe *****;
-data output.x_RDEst_&runid._&cat._%sysfunc(compress(&analysis.,,ka));
- set RDEst;
-run; 
-***** dowe *****;
 
     %put NOTE: ******** END OF MACRO: l2_effect_estimate_runrd_rs ********;
 
