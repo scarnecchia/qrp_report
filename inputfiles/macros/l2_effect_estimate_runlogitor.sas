@@ -228,7 +228,7 @@
             adjor = .;
             adjor_lcl = .;
             adjor_ucl = .;
-            adjor_95ci = 'NAN';		
+            adjor_95ci = 'NaN';		
         run; 
     %end; /* end do statement for analysis when not events and nonevents */
 
