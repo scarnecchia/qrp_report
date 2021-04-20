@@ -127,6 +127,7 @@
                 else do;
                    call symputx('includecomp', 'N');
                 end;
+				call symputx('baselinegroupnum',baselinegroupnum);
             end;
         run;
         %put creating baseline table for &analysisgrp;
@@ -1213,7 +1214,7 @@
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             %if %str("&cohort") ^= %str("mi") %then %do;
-            else if MetVar = 'N_EPISODES' and prxmatch(m/02|03/i,&cohortdef.) > 0  then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
+            else if MetVar = 'N_EPISODES' and prxmatch('m/02|03/i',"&cohortdef.") > 0  then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
             %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             %end;
