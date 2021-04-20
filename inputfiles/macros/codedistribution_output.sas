@@ -161,10 +161,10 @@
 		column distindexlist code description codecat codetype totalN caresetting;
         define distindexlist / noprint;
         define code / display 'Code'  
-        	style(column)=[width=.7in just=L tagattr="type:String" width=20%] 
+        	style(column)=[just=L tagattr="type:String" width=20%] 
           	style(header)=[just=L background=white borderbottomcolor=black];
         define description / display 'Code Description'  
-          	style(column)=[width=1.7in just=c tagattr="type:String" width=30%] 
+          	style(column)=[just=c tagattr="type:String" width=30%] 
           	style(header)=[just=C background=white borderbottomcolor=black];
         define codecat / display 'Code Category'  
           	style(column)=[width=.7in just=c tagattr="type:String"] 
@@ -210,10 +210,10 @@
 
 		column code description codecat codetype N  ;
 	    define code / display 'Code' group  order order= data 
-	      	style(column)=[width=.7in just=L tagattr="type:String" width=20%] 
+	      	style(column)=[just=L tagattr="type:String" width=20%] 
 	      	style(header)=[just=L background=white borderbottomcolor=black];
 	    define description / display 'Code Description'  group  order order= data 
-	      	style(column)=[width=1.7in just=c tagattr="type:String" width=30%] 
+	      	style(column)=[just=c tagattr="type:String" width=30%] 
 	      	style(header)=[just=C background=white borderbottomcolor=black];
 	    define codecat / display 'Code Category'  group  order order= data 
 	      	style(column)=[width=.7in just=c tagattr="type:String"] 
