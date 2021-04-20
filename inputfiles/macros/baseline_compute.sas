@@ -129,6 +129,11 @@
                 end;
 				call symputx('baselinegroupnum',baselinegroupnum);
             end;
+			if _n_ = 2 then do;
+              if missing(baselinegroupnum)=0 then do;
+                call symputx('analysisgrp2',analysisgrp);
+              end;
+            end;
         run;
         %put creating baseline table for &analysisgrp;
 
@@ -166,27 +171,18 @@
                 data _null_;
                     set infolder.&&&runid._multeventfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
-					%if %length(&baselinegroupnum.)>0 %then %do; 
-					call symputx('ref',strip(secondary));
-					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("overlap") %then %do;
                 data _null_;
                     set infolder.&&&runid._overlapfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
-					%if %length(&baselinegroupnum.)>0 %then %do; 
-					call symputx('ref',strip(secondary));
-					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("concomitance") %then %do;
                 data _null_;
                     set infolder.&&&runid._concfile(where=(analysisgrp="&analysisgrp"));
                     call symputx('cohortgrp', strip(primary));
-					%if %length(&baselinegroupnum.)>0 %then %do; 
-					call symputx('ref',strip(secondary));
-					%end;
                 run;
             %end;
         %end;
@@ -268,7 +264,7 @@
 		   proc sql noprint;
 		     select distinct(t2cohortdef) 
 		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if %length(&baselinegroupnum.)>0 %then %do; "&ref." %end;)));
+		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if %length(&baselinegroupnum.)>0 %then %do; "&analysisgrp2." %end;)));
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
