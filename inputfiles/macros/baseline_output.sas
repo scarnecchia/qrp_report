@@ -112,7 +112,7 @@
 		   /* Always displayed across all types */
 	       set lookup.lookup_footnotes_baseline (where = (order in (14 15
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
-		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 
+		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.))) > 0 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
