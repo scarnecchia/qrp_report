@@ -157,10 +157,10 @@
 		%else %if %str("&reporttype") = %str("TREE3") %then %do;
 		   %agg_report(infile=t3_tree_analysis_&periodid., outfile=agg_t3_tree_analysis_&periodid., name=treeanalysisgrp);
 		   %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp);
-		%end; *TREE2;
+		%end; *TREE3;
 		%else %if %str("&reporttype") = %str("TREE4") %then %do;
 		   %agg_report(infile=t4_tree_analysis_&periodid., outfile=agg_t4_tree_analysis_&periodid., name=treeanalysisgrp);
-		%end; *TREE2;
+		%end; *TREE4;
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
