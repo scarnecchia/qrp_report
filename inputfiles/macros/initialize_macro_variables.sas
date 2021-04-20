@@ -81,10 +81,10 @@
     %let figurelist = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp baselinerowitalics profilecovarstoinclude;
+    %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;
     %let numbaselinetablegrp =0;
 	%let baselinerowitalics =;
-    %let profilecovarstoinclude=;
+    %let numprofilecovarstoinclude=0;
 
     /*L2 report variables*/
     %global numl2comparisons;

@@ -78,7 +78,7 @@
 * Covariate profile tables                                                      
 ***************************************************************************************************;
 
-    %if &numbaselinetablegrp > 0 and %length(&profilecovarstoinclude) > 0 %then %do;
+    %if &numprofilecovarstoinclude > 0 %then %do;
     %baseline_profile_createdata;
     %end;
 

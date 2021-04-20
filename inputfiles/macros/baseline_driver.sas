@@ -203,7 +203,7 @@
         from baselinefile;
 
         /* Check to see if profilecovarstoinclude is populated */
-        select profilecovarstoinclude into: profilecovarstoinclude
+        select count(profilecovarstoinclude) into: numprofilecovarstoinclude
         from baselinefile
         where not missing(profilecovarstoinclude);
     quit;
