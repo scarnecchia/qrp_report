@@ -28,16 +28,16 @@
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
-%let INFOLDER =U:\dev\test\qrp_dev_8895_nsdp_v01\inputfiles;
+%let INFOLDER =;
 
 /* Location of data folder */
-%let DATAROOT =U:\dev\test\qrp_dev_8895_nsdp_v01\data; 
+%let DATAROOT =; 
 
 /* Location of QRP report package */
-%let REPORTROOT =U:\dev\test\qrp_report\;
+%let REPORTROOT =;
 
 /* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =createreport_File_t4l1; 
+%let CREATEREPORTFILE =; 
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
