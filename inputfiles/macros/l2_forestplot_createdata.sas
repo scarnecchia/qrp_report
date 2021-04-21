@@ -49,7 +49,7 @@
       quit;
 
       /* Stack all potential micohort files to join onto effect estimates table */
-      %if &reporttype = T4L2 %then %do;
+      %if &reporttype = T4L2 | %str("&reporttype.") = %str("TREE4") %then %do;
           data stack_micohort;
             length runid $5;
             set 
@@ -72,7 +72,7 @@
         create table forest_l2_effectestimates_&periodid. as
         select a.*, b.agegroupnum
         from forest_l2_effectestimates_&periodid. a
-        %if &reporttype = T2L2 %then %do;
+        %if &reporttype = T2L2 | %str("&reporttype.") = %str("TREE2") %then %do;
         left join agefmtsort b
         on a.medicalproduct = b.cohortgrp and a.runid = b.runid and a.subgroupcat = b.agegroup
         %end;
@@ -129,11 +129,11 @@
           create table id_2 as 
           select est.analysisgrp, 
                  est.analysis,
-                 %if "&reporttype." = "T2L2" %then %do;
+                 %if "&reporttype." = "T2L2" | %str("&reporttype.") = %str("TREE2") %then %do;
                  est.HR_95ci,
                  est.HR, 
                  %end;
-                 %else %if "&reporttype." = "T4L2" %then %do;
+                 %else %if "&reporttype." = "T4L2"  | %str("&reporttype.") = %str("TREE4") %then %do;
                  est.or_95ci, 
                  est.or, 
                  est.adjor_95ci, 
@@ -334,7 +334,7 @@
 
             end;
           /* Set adjusted ORs if they have been requested */
-          %if "&reporttype." = "T4L2" %then %do;
+          %if "&reporttype." = "T4L2" | %str("&reporttype.") = %str("TREE4") %then %do;
           if not missing(adjor) then do;
           or_95ci=adjor_95ci;
           or=adjor;
@@ -346,10 +346,10 @@
       run;
 
       proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis footnote forest_title plotorder
-                                                                                 %if "&reporttype." = "T2L2" %then %do;
+                                                                                 %if "&reporttype." = "T2L2" | %str("&reporttype.") = %str("TREE2") %then %do;
                                                                                  HR_95ci HR  
                                                                                  %end;
-                                                                                 %else %if "&reporttype." = "T4L2" %then %do;
+                                                                                 %else %if "&reporttype." = "T4L2" | %str("&reporttype.") = %str("TREE4") %then %do;
                                                                                  or_95ci or
                                                                                  %end;
                                                                                  LCL UCL id file

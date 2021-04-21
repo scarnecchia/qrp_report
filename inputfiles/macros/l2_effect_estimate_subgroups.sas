@@ -74,14 +74,14 @@
         %let sublabel = Age Group;
 
         %if &computecategories. = Y %then %do;
-            /*if reporttype = T4L2, extract original cohortgrp*/
-            %if %str("&reporttype.") = ("T4L2") %then %do;
+            /*if reporttype = T4L2 or TREE4, extract original cohortgrp*/
+            %if %str("&reporttype.") = ("T4L2") | %str("&reporttype.") = %str("TREE4") %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&grp1.",1,length("&grp1")-4)));
                     call symputx('cohortgrp', strip(groupname));
                 run;
             %end;
-            %else %if %str("&reporttype.") = ("T2L2") %then %do;
+            %else %if %str("&reporttype.") = ("T2L2") | %str("&reporttype.") = %str("TREE2") %then %do;
                 %let cohortgrp = &grp1.;
             %end;
 

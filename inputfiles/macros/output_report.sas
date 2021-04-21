@@ -96,7 +96,7 @@
 * Effect estimate tables                                                      
 ***************************************************************************************************;
 
-    %if %index(&reporttype,L2) %then %do;
+    %if %index(&reporttype,L2) | &reporttype. = TREE2) | &reporttype. = TREE4 %then %do;
     /* Need to set to landscape so PDF tables don't wrap */
     options orientation = landscape;
         %l2_effect_estimate_output;
@@ -107,7 +107,7 @@
 * PS Histograms                                                    
 ***************************************************************************************************;
 
-    %if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
+    %if (%index(&reporttype,L2) | &reporttype. = TREE2 | &reporttype. = TREE4)) and %index(&figurelist,F1) %then %do;
         %l2_psdistribution_output;
     %end; 
 
@@ -115,7 +115,7 @@
 * Forest Plots                                                    
 ***************************************************************************************************;
    
-    %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+    %if (%index(&reporttype,L2) | &reporttype. = TREE2 | &reporttype. = TREE4)) and %index(&figurelist,F2) %then %do;
         %l2_forestplot_driver;
     %end; 
 

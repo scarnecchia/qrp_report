@@ -804,7 +804,7 @@
      4: Read in Treeaggfile if it exists
 ***************************************************************************************************/
 
-    %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype,TREE) > 0%then %do;
+    %if &reporttype = T2L2 | &reporttype = T4L2 | &reporttype = TREE2 | &reporttype = TREE4 %then %do;
 
         /******************/
         /*L2ComparisonFile*/
@@ -870,7 +870,7 @@
             %end;
         %end;
         %else %do;
-            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2, T4L2, TREE2, or TREE4 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;
 
         /****************************/
@@ -967,21 +967,21 @@
            ************************************************/
           /* Determine if there is a comma in any row on the lookup file */
 	      %if %str("&&&runid._treelookup") ne %str("") %then %do;
-	         data _&treelookup.;
+	         data _treelookup;
 	           length comma_in_parent comma_in_child 3.;
-	           set &&&runid._treelookup;
+	           set infolder.&&&runid._treelookup;
 	            if index(parent,',') > 0 then comma_in_parent = 1;
 	            else comma_in_parent = 0;
 	            if index(child,',') > 0 then comma_in_child = 1;
 	            else comma_in_child = 0;
 	         run;
 			 
-	         proc sql;
+	         proc sql noprint;
 	           select sum(comma_in_parent) as parent_comma
 	                 ,sum(comma_in_child) as child_comma
 	           into :parent_comma
 	               ,:child_comma
-	           from _&treelookup.;
+	           from _treelookup;
              quit;
 			 
 	         %let parent_comma = &parent_comma.;
@@ -1007,7 +1007,7 @@
 	      
 	         /* Clean up work space */
              proc datasets lib = work;
-              delete _&treelookup.;
+              delete _treelookup;
              quit;
           %end;
         %end;
@@ -1015,7 +1015,7 @@
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
         run;
-		
+	%end;	
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/

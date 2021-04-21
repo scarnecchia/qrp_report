@@ -146,21 +146,18 @@
 		%end; *T2L1;
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype.,TREE) > 0 %then %do;
 			%if %index(&figurelist,F1) > 0 %then %do;
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp);
 			%end;
 		%end; *T2L2 and T4L2;
-		%if %str("&reporttype") = %str("TREE2") %then %do;
-		   %agg_report(infile=t2_tree_analysis_&periodid., outfile=agg_t2_tree_analysis_&periodid., name=treeanalysisgrp);
-		%end; *TREE2;
-		%else %if %str("&reporttype") = %str("TREE3") %then %do;
-		   %agg_report(infile=t3_tree_analysis_&periodid., outfile=agg_t3_tree_analysis_&periodid., name=treeanalysisgrp);
-		   %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp);
-		%end; *TREE3;
-		%else %if %str("&reporttype") = %str("TREE4") %then %do;
-		   %agg_report(infile=t4_tree_analysis_&periodid., outfile=agg_t4_tree_analysis_&periodid., name=treeanalysisgrp);
-		%end; *TREE4;
+		%if %index(&reporttype.,TREE) > 0 %then %do;
+		  %let type = %substr(&reporttype,5,1);
+		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp);
+		  %if %str("&reporttype") = %str("TREE3") %then %do;
+		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp);
+		  %end; /*TREE3*/
+		%end; /*TREE*/
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
