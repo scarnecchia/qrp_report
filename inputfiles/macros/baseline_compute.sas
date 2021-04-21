@@ -283,7 +283,7 @@
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
                 set infolder.&&&runid._type4file(where=(group="&cohortgrp."));
-				%if %length(&baselinegroupnum.)>0 %then %do;
+				%if &createcompcolumns. = Y %then %do;
 				  if t4cohortdef = t4cohortdef2 then call symputx("cohortdef", strip(t4cohortdef));
 				  else call symputx("cohortdef",catx(' ',t4cohortdef,t4cohortdef2));
 				%end;
