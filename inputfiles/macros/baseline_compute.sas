@@ -127,7 +127,19 @@
                 else do;
                    call symputx('includecomp', 'N');
                 end;
-				call symputx('baselinegroupnum',baselinegroupnum);
+				
+				if upcase(includenonpregnant) = 'Y' then do;
+                   call symputx('createcompcolumns', 'Y');
+                end;
+                else if cohort = "mi" then do;
+                   call symputx('createcompcolumns', 'Y');
+                end;
+                else if missing(baselinegroupnum)=0 then do;
+                   call symputx('createcompcolumns', 'Y');
+                end;
+                else do;
+                   call symputx('createcompcolumns', 'N');
+                end;
             end;
 			if _n_ = 2 then do;
               if missing(baselinegroupnum)=0 then do;
@@ -233,7 +245,7 @@
         %end;
 		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             data _null_;
-			  set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
+			    set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
                 call symputx('cohortgrp', strip(group));
             run;
         %end;
@@ -255,16 +267,17 @@
 
         /*Extract cohortdef - for L2 queries always 01, for T5 always 04*/
         %if %str("&reporttype") = %str("T1") %then %do;
-            data _null_;
-                set infolder.&&&runid._type1file(where=(group="&cohortgrp."));
-                call symputx("cohortdef", strip(t1cohortdef));
-            run;
+		   proc sql noprint;
+		     select distinct(t1cohortdef) 
+		     into: cohortdef separated by ' '
+		     from infolder.&&&runid._type1file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
+		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
 		   proc sql noprint;
 		     select distinct(t2cohortdef) 
 		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if %length(&baselinegroupnum.)>0 %then %do; "&analysisgrp2." %end;)));
+		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
@@ -286,10 +299,11 @@
             %let cohortdef = 04;
         %end;
 		%else %if %str("&reporttype") = %str("T6") %then %do;
-            data _null_;
-              set infolder.&&&runid._treatmentpathways (where=(analysisgrp="&analysisgrp."));
-              call symputx('cohortdef', strip(switchcohortdef));
-            run;
+		   proc sql noprint;
+		     select distinct(switchcohortdef) 
+		     into: cohortdef separated by ' '
+		     from infolder.&&&runid._treatmentpathways(where=(analysisgrp in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
+		   quit;
         %end;
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
