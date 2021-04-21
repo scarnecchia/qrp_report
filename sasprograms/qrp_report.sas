@@ -28,16 +28,16 @@
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
-%let INFOLDER =;
+%let INFOLDER =U:\dev\test\qrp_dev_8895_nsdp_v01\inputfiles;
 
 /* Location of data folder */
-%let DATAROOT =; 
+%let DATAROOT =U:\dev\test\qrp_dev_8895_nsdp_v01\data; 
 
 /* Location of QRP report package */
-%let REPORTROOT =;
+%let REPORTROOT =U:\dev\test\qrp_report\;
 
 /* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =; 
+%let CREATEREPORTFILE =createreport_File_t4l1; 
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
@@ -173,6 +173,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
 %include "&reportroot.inputfiles/macros/baseline_output.sas";
+%include "&reportroot.inputfiles/macros/baseline_profile_createdata.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";

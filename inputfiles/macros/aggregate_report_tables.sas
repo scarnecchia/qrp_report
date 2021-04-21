@@ -216,6 +216,39 @@
 			%end;
 		%end; *T6;
 
+
+	/* Aggregate covariate profile tables */
+	%if &numprofilecovarstoinclude > 0 %then %do;
+
+		proc sql noprint;
+			select distinct cohort 
+			into :profilecohortlist separated by ' '
+			from baselinefile
+			where not missing(profilecovarstoinclude);
+		quit;
+
+	 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	   %do b = 1 %to %sysfunc(countw(&profilecohortlist));
+	   	%let profilecohort = %scan(&profilecohortlist,&b);
+		%agg_report(infile=profile_&profilecohort._&periodid, outfile=agg_&profilecohort._&periodid, name=group);
+
+		data agg_profile;
+	   	set
+	   	%if %sysfunc(exist(agg_profile)) %then %do;
+	   	 agg_profile
+	   	%end;
+	   	 agg_&profilecohort._&periodid(in=a);
+	   	 length profiletablename $20;
+	   	if a then profiletablename=cats(runid,"_profile_&profilecohort._&periodid.");
+	    run;
+
+	   %end;
+
+	 %end;
+
+	%end;
+
+
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;
