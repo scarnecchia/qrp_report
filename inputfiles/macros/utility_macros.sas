@@ -14,6 +14,7 @@
 *   - %alphabetizevarutil() macro alphabetizes variables in a data step
 *   - %tableletter() macro increments a letter suffix
 *   - %varexist() macro checks for the existence of a variable
+*   - %convert_categories() macro converts categories to mathematical expression
 *
 *  Program inputs:                                                                                   
 *   -
@@ -128,3 +129,49 @@
       from _footnotes where order in (&order.);
     quit; 
   %mend assign_superscripts;
+
+*Macro for converting categories to mathematical expression;
+%macro convert_categories(var=, categories=);
+
+  %global num_categories categories_boolean ;
+  %let num_categories = ;
+  %let categories_boolean = ;
+
+  %let num_categories = %sysfunc(countw(&categories, ' '));
+  %do loop = 1 %to &num_categories;
+    /*variable list*/
+    /*mathematical expressions*/
+    %let cat = %scan(&categories., &loop., ' ');
+    %put &cat.;
+    /*no range of values (i.e. 0, <10, <=20, >60 >=75, 65+)*/
+    %if %index(&cat., -) = 0 %then %do;
+      %if %index(&cat.,+) > 0 %then %do;
+        %let cat = &var>=%sysfunc(tranwrd(&cat., +, ));
+      %end;
+	  %else %if %index(&cat.,<) > 0 or %index(&cat.,=) > 0 or %index(&cat.,>) > 0 %then %do;
+        %let cat = &var.&cat.;
+      %end;
+      %else %do;
+        %let cat = &var.=&cat.;
+      %end;
+    %end;
+    /*range of values inclusive of boundry (i.e. 25-50)*/
+    %else %if %index(&cat., -) > 0 & %index(&cat., <) = 0 & %index(&cat., >) = 0 %then %do;
+      %let cat = %sysfunc(tranwrd(&cat., -, <=&var.<=));
+    %end;
+    /*range of values inclusive of upper boundry, (i.e. 25<-60)*/
+    %else %if %index(&cat., -) > 0 & %index(%scan(&cat., 1, '-'), <) > 0 %then %do;
+      %let cat = %scan(&cat., 1, '-')&var.<=%scan(&cat., 2, '-');
+    %end;
+    /*range of values inclusive of lower bountry, (i.e. 50-<75)*/
+    %else %if %index(&cat., -) > 0 & %index(%scan(&cat., 2, '-'), <) > 0 %then %do;
+      %let cat = %scan(&cat., 1, '-')<=&var.%scan(&cat., 2, '-');
+    %end;
+
+    %let categories_boolean = &categories_boolean. &cat.;
+  %end;
+
+  %put &categories;
+  %put &categories_boolean.;
+
+%mend convert_categories;
