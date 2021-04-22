@@ -146,7 +146,7 @@
 		%end; *T2L1;
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype.,TREE) > 0 %then %do;
+		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
 			%if %index(&figurelist,F1) > 0 %then %do;
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp);
 			%end;

@@ -215,7 +215,7 @@
             %let dpsiteid = %scan(&random_dplist., &dps.);
             %baseline_aggregate(dpsiteid = &dpsiteid.,
                                   dpnumber = &dps.,
-                                  %if %index(&reporttype., L2)>0 | %index(&reporttype., TREE)>0%then %do;
+                                  %if %index(&reporttype., L2)>0 | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
                                   level = 2,
                                   %end;
                                   %else %do;

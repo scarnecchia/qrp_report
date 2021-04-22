@@ -116,7 +116,7 @@
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
-		   %if %index(&reporttype,L2) | %index(&reporttype,TREE)%then %do;
+		   %if %index(&reporttype,L2) | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
 		   /* L2 baselinerowitalics specified */
 		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */

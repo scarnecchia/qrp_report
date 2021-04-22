@@ -91,7 +91,7 @@
                 call symputx('cohort', cohort);
 				call symputx('unique_psestimate',unique_psestimate);
                 /*computebalance defaults to Y for L2 tables*/
-                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype.,TREE) > 0 %then %do;
+                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
