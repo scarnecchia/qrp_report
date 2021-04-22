@@ -104,7 +104,7 @@
 		quit;
 
 		data repdata.table&tablenum.&tableletter;
-		length caresetting codetype codecat$20 description $700 code $100;
+		length caresetting codetype codecat code $200 description $700;
 		set repdata.table&tablenum.&tableletter (rename = 
 						                (code = _code 
 						                 caresetting = _caresetting 
@@ -158,8 +158,9 @@
                 style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
 
-		column distindexlist code description codecat codetype totalN caresetting;
+		column distindexlist code description codecat codetype totalN caresetting row_separator;
         define distindexlist / noprint;
+		define row_separator / analysis noprint;
         define code / display 'Code'  
         	style(column)=[just=L tagattr="type:String" width=20%] 
           	style(header)=[just=L background=white borderbottomcolor=black];
@@ -173,7 +174,7 @@
           	style(column)=[width=.7in just=c tagattr="type:String"] 
           	style(header)=[just=C background=white borderbottomcolor=black];
         define totalN / display 'Overall Counts' format=comma10.0
-          	style(column)=[width=.7in just=c] 
+          	style(column)=[width=.7in just=c vjust=c] 
           	style(header)=[just=C background=white borderbottomcolor=black];
         define caresetting / display 'Encounter Care Setting'  
           	style(column)=[width=.7in just=c] 
@@ -184,6 +185,10 @@
                                        tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
         line "&title.";
         endcomp;
+
+		compute row_separator;
+		call define (_row_,'style','style=[borderbottomcolor=black borderbottomwidth=.5pt] ' );
+		endcomp;
 
       	run;
 	    
