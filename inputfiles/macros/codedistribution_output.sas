@@ -259,9 +259,29 @@
 			if index(upcase(codedist), "HOI") > 0 then call symputx('codedisthoi', 'Y');
         run;
 				
-		%if &codedistexp. eq Y %then %codedistribution_type(distindextype=exp);
-		%if &codedisthoi. eq Y %then %codedistribution_type(distindextype=hoi);
-		
+		%if &codedistexp. eq Y %then %do;
+			* Defensive: make sure the requested data is available;
+			%let obscount=0;
+
+			proc sql noprint;
+			select count(*) into :obscount from codedistdata
+			where lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "exp";
+			quit;
+
+			%if %eval(&obscount. > 0) %then %codedistribution_type(distindextype=exp);
+		%end;
+		%if &codedisthoi. eq Y %then %do;
+			* Defensive: make sure the requested data is available;
+			%let obscount=0;
+
+			proc sql noprint;
+			select count(*) into :obscount from codedistdata
+			where lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "hoi";
+			quit;
+
+			%if %eval(&obscount. > 0) %then %codedistribution_type(distindextype=hoi);
+		%end;
+
 	%end; *numgroupscodedist;
 		
 %mend codedistribution_output;

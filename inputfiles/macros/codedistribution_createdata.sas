@@ -87,8 +87,8 @@
 	set agg_distindexmap (rename = (code = _code));
 	if not missing(stockgroup) then do;
 		codecat = 'RX';
-		enctype = 'NA';
-		codetype = 'NA';
+		enctype = 'N/A';
+		codetype = 'N/A';
 		code = put(stockgroup,30.);
 	end;
 	else code = _code;
@@ -100,7 +100,7 @@
 	select  t.*
 			,m.codecat
 			,m.codetype
-			,case when m.codecat = "RX" then "NA"
+			,case when m.codecat = "RX" then "N/A"
 	      		  else compress(m.enctype||m.pdx) end as caresetting
 			,m.code 
 	from _distindex t   
