@@ -197,7 +197,7 @@
                     /*type 4 fixed ratio match - conditional = N and unconditional = Y*/
                     /*type 2 fixed ratio match - options defined by user below*/
                     /*type 2 variable ratio match - conditional = Y and unconditional = N*/
-                    %if &reporttype. = T4L2 | &reporttype. = TREE4 %then %do;
+                    %if &reporttype. = T4L2 %then %do;
                         if upcase(ratio) = "F" then call symputx('outputunconditional', 'Y');
                     %end;
                     if upcase(ratio) = "V" then do;
@@ -252,7 +252,7 @@
             %end;
 
             /*Set OutputConditional and OutputUnconditional parameters - only an option for PS Fixed Ratio Match for Type 2*/
-            %if &pscsfile. = psmatchfile & &ratio.= F & ("&reporttype." = "T2L2" | "&reporttype." = "TREE2")  %then %do;
+            %if &pscsfile. = psmatchfile & &ratio.= F & &reporttype. = T2L2 %then %do;
                 data _null_;
                     set l2comparisonfile(where=(order=&loopcount.));
                     call symputx('outputconditional', outputconditional);
@@ -268,7 +268,7 @@
             %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
                                    outfile=aggrd,
                                    pscsfile=&pscsfile.,
-                                   %if &pscsfile. = stratificationfile & ("&reporttype" = "T4L2" | "&reporttype" = "TREE4") %then %do;
+                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
                                    whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
                                    %end;
                                    %else %do;
@@ -277,7 +277,7 @@
                                    convrule=%quote(&convrule.),
                                    convdata=&runid._estimates_&periodid.,
                                    settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
-                                   %if &pscsfile. = stratificationfile & ("&reporttype" = "T4L2" | "&reporttype" = "TREE4") %then %do;
+                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
                                    , renameclause=%str( rename=percentilevalue = percentile)
                                    %end;
                                    );
@@ -298,7 +298,7 @@
                     %let individualreturn=N;
                 %end;
             %end; /*aggregate individual level data*/
-            %if &individualreturn. = N & ("&reporttype" = "T2L2" | "&reporttype." = "TREE2") %then %do;
+            %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
                 %aggregate_l2_datasets(infile=&runid._risksetdata_&periodid.,
                                        outfile=aggrs,
                                        pscsfile=&pscsfile.,
@@ -356,7 +356,7 @@
                     %subsetdata(datain=aggpl, dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
                 %end;
                 %if &individualreturn. = N %then %do;
-                    %if %str("&reporttype") = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                    %if %str("&reporttype") = "T2L2" %then %do;
                     %subsetdata(datain=aggrs, dataout=cat_dp_rs, covarnum=&covarnum., cat=&cat.);
                     %end;
                     %if &marginalweights. = Y %then %do;
@@ -365,7 +365,7 @@
                 %end;
                 
                 /*Extract selectprobabilities parameters*/
-                %if "&reporttype" = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                %if %str("&reporttype") = %str("T4L2") %then %do;
                     %isdata(dataset=SelectionProbabilitiesFile);
                     %if %eval(&nobs.>0) %then %do;
                     data _null_;
@@ -401,7 +401,7 @@
 
                 /*Unadjusted*/
                 %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = , donotreport=N);
-                %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                %if %str("&reporttype.") = %str("T2L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runcox(where=missing(subgroupcat), strata=dpidsiteid, analysis= "Unadjusted", subgroupcat = );
                     %end;
@@ -409,7 +409,7 @@
                     %l2_effect_estimate_runlogithr(where=analysis="Unadjusted", analysis= "Unadjusted", subgroupcat = );
                     %end;
                 %end;
-                %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat), analysis="Unadjusted",
                                                    subgroupcat=, ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -430,7 +430,7 @@
                                                  analysis= "Conditional", 
                                                  subgroupcat = , 
                                                  donotreport=&suppresscolumns.);
-                    %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                      %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
                                                    strata=%quote(dpidsiteid &stratavar.),
@@ -443,7 +443,7 @@
                                                      subgroupcat = );
                         %end;
                     %end;
-                    %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                    %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and missing(&stratavar.)=0, analysis="Conditional",
                                                        subgroupcat=, ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -461,7 +461,7 @@
                                                  analysis= "Unconditional", 
                                                  subgroupcat = , 
                                                  donotreport=N);
-                    %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                    %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
                                                    strata=%quote(dpidsiteid), 
@@ -472,7 +472,7 @@
                         %l2_effect_estimate_runlogithr(where=analysis="Unconditional", analysis= "Unconditional", subgroupcat = );
                         %end;
                     %end;
-                    %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                    %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and missing(&stratavar.)=0, analysis="Unconditional",
                                                        subgroupcat=, ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -506,7 +506,7 @@
                         /*Unadjusted*/
                         %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="" and dpidsiteid="&dpname.", 
                                                     analysis= "Unadjusted", subgroupcat = &dpname., donotreport=N);
-                        %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                        %if %str("&reporttype.") = %str("T2L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runcox(where=missing(subgroupcat) and dpidsiteid="&dpname.", 
                                                        strata=dpidsiteid, 
@@ -517,7 +517,7 @@
                             %l2_effect_estimate_runlogithr(where=analysis="Unadjusted" and dpidsiteid="&dpname.", analysis= "Unadjusted",subgroupcat = &dpname.);
                             %end;
                         %end;
-                        %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                        %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and dpidsiteid="&dpname", analysis="Unadjusted",
                                                            subgroupcat=&dpname., ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -534,7 +534,7 @@
                                                          analysis= "Conditional", 
                                                          subgroupcat = &dpname., 
                                                          donotreport=&suppresscolumns.);
-                            %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                            %if %str("&reporttype.") = %str("T2L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
                                                            strata=%quote(dpidsiteid &stratavar.), 
@@ -545,7 +545,7 @@
                                 %l2_effect_estimate_runlogithr(where=analysis="Conditional" and dpidsiteid="&dpname.", analysis= "Conditional", subgroupcat = &dpname.);
                                 %end;
                             %end;
-                            %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                            %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and dpidsiteid="&dpname", analysis="Conditional",
                                                                subgroupcat=&dpname., ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -563,7 +563,7 @@
                                                          analysis= "Unconditional", 
                                                          subgroupcat = &dpname., 
                                                          donotreport=N);
-                            %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                            %if %str("&reporttype.") = %str("T2L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
                                                            strata=%quote(dpidsiteid), 
@@ -574,7 +574,7 @@
                                 %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", analysis= "Unconditional", subgroupcat = &dpname.);
                                 %end;
                             %end;
-                            %else "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                            %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname", analysis="Unconditional",
                                                                subgroupcat=&dpname., ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -618,7 +618,7 @@
                 %if &individualreturn. = Y %then %do;
                     %subgroupdummyvar(datain=aggpl, dataout=aggpl&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
                 %end;
-                %if &individualreturn. = N & ("&reporttype" = "T2L2" | "&reporttype." = "TREE2") %then %do;
+                %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
                     %subgroupdummyvar(datain=aggrs, dataout=aggrs&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
                 %end;
 
@@ -631,12 +631,12 @@
                     %if &individualreturn. = Y %then %do;
                     %subsetdata(datain=aggpl&sub., dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
                     %end;
-                    %if &individualreturn. = N & ("&reporttype" = "T2L2" | "&reporttype." = "TREE2") %then %do;
+                    %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
                     %subsetdata(datain=aggrs&sub., dataout=cat_dp_rs, covarnum=&covarnum., cat=&cat.);
                     %end;
 
                     /*Extract selectprobabilities parameters*/
-                    %if "&reporttype" = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                    %if %str("&reporttype") = %str("T4L2") %then %do;
                         %let s11 = ;
                         %let s01 = ;
                         %let s10 = ;
@@ -659,7 +659,7 @@
 
                     /*Unadjusted*/
                     %l2_effect_estimate_runrd_rs(where=Analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat., donotreport=N);
-                    %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                    %if %str("&reporttype.") = %str("T2L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runcox(where=missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
                     %end;
@@ -667,7 +667,7 @@
                     %l2_effect_estimate_runlogithr(where=analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
                     %end;
                     %end;
-                    %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                    %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat)=0, analysis="Unadjusted",
                                                        subgroupcat=&subgroupcat., ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -681,7 +681,7 @@
                     /*Conditional*/ 
                     %if &outputconditional. = Y %then %do; 
                         %l2_effect_estimate_runrd_rs(where=Analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat., donotreport=&suppresscolumns.);
-                        %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                        %if %str("&reporttype.") = %str("T2L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &stratavar. &subgroupvar.), Analysis= "Conditional", subgroupcat = &subgroupcat.);
                             %end;
@@ -689,7 +689,7 @@
                             %l2_effect_estimate_runlogithr(where=analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat.);
                             %end;
                         %end;
-                        %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                        %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(&stratavar.)=0 and missing(subgroupcat)=0, analysis="Conditional",
                                                            subgroupcat=&subgroupcat., ormethod=&ormethod., s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -704,7 +704,7 @@
                     /*Unconditional - only for FRM PS match analysis*/
                     %if &outputunconditional. = Y %then %do;
                         %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=N);
-                        %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                        %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat.);
                         %end;
@@ -712,7 +712,7 @@
                         %l2_effect_estimate_runlogithr(where=analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat.);
                         %end;
                         %end;
-                        %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                        %else %if %str("&reporttype.") = %str("T4L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(&stratavar.)=0 and missing(subgroupcat)=0, analysis="Unconditional",
                                                            subgroupcat=&subgroupcat., ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -755,10 +755,10 @@
                          when (r.covarnum) in (1001, 1002, 9000) then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
-            %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
+            %if "&reporttype." = "T2L2" %then %do;
             HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
             %end;
-            %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+            %else %if "&reporttype." = "T4L2" %then %do;
             or_95ci, or, LCL, UCL, or_se, adjor_95ci, adjor, adjor_LCL, adjor_UCL
             %end;
         from rdest as r

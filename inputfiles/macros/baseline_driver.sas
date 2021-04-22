@@ -176,7 +176,7 @@
     %end;
 
     /*T2L2 and T4L2: cohort is missing and mergevar = 'analysisgrp'*/
-    %else %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
+    %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
         %assign_cohort_mergevar(cohort=, mergevar=analysisgrp, outdata=baselinefile);
     %end;
 
@@ -215,7 +215,7 @@
             %let dpsiteid = %scan(&random_dplist., &dps.);
             %baseline_aggregate(dpsiteid = &dpsiteid.,
                                   dpnumber = &dps.,
-                                  %if %index(&reporttype., L2)>0 | %index(&reporttype., TREE)>0%then %do;
+                                  %if %index(&reporttype., L2)>0 %then %do;
                                   level = 2,
                                   %end;
                                   %else %do;
@@ -292,7 +292,7 @@
                     data _null_;
                         set baselinefile(where=(order=&b.));
                         if _n_ = 1 then do;
-                            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4") %then %do;
+                            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                             call symputx('includenonpregnant', upcase(includenonpregnant));
                             %end;
                             %else %do;
