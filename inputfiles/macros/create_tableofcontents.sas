@@ -65,7 +65,7 @@
     /* Glossary rows */
     /*****************/
     %addtotoc(tabnum=Glossary (CIDA), caption=List of Terms to Define Cohort Identification and Descriptive Analysis (CIDA) Found in this Report);
-	%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+	%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
 
@@ -125,7 +125,7 @@
                 end;
             run;
          
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
@@ -158,9 +158,9 @@
             - 1 monitoring period
             - DP stratification = N
             - max(order) in baselinefile = 1
-            - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
+            - if reporttype = T2L2, T4L2, TREE2, or TREE4 - then analysis must be covariate stratification*/
             %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
+                %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) = 0 %then %do;
                     %let tablecount = 0;
                 %end;
                 %else %do;
@@ -183,7 +183,7 @@
                         %if %length(&baselinegroupnum.)>0 %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                         %end; 
-                        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
                         labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
                         %end; ;
                     if a then do;
@@ -195,7 +195,7 @@
                         if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
                     end;
                     %end;
-                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
+                    %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 & &psfile. ne covstratfile %then %do;
                     if c then do;
                         if labeltype = 'grouplabel' then call symputx('psestimatelabel',label);
                     end;
@@ -207,7 +207,7 @@
             %if %length(&baselinegroupnum.)>0 %then %do;
             %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
             %end;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
             %let captionlabel = %bquote(&psestimatelabel.);
             %end;         
 
@@ -219,8 +219,8 @@
                  caption=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                 %end;
 
-                /*For L2 tables - up to 2 additional adjusted tables*/
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                /*For L2 and TREE tables - up to 2 additional adjusted tables*/
+                %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
                     /*PS Match Adjusted*/
                     %if &psfile. = psmatchfile %then %do;
                     %tableletter(); 
@@ -354,9 +354,9 @@
         %let tablecount = 1;
 
         /***************************************************************************************/
-        /* ReportType = T2L2 or T4L2                                                           */
+        /* ReportType = T2L2, T4L2, TREE2, or TREE4                                            */
         /***************************************************************************************/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
 
 	        /*F1: PS distribution histograms*/
 	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
@@ -432,7 +432,7 @@
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
-	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
+	            %if %sysfunc(prxmatch(m/T2L2|TREE2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
 						%let tableletter=a;

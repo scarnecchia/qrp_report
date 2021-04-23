@@ -398,7 +398,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
+                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") | %str("&reporttype.") = %str("TREE4") %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';

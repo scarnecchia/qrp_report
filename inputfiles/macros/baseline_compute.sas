@@ -107,7 +107,7 @@
                 else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
-                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4")%then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
                 call symputx('outputinfantchar', strip(upcase(outputinfantchar)));
                 call symputx('exposurechar', upcase(exposurechar));
@@ -154,7 +154,7 @@
 
         %let cohortgrp = ;
         /*L1*/
-        %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+        %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
             %let cohortgrp = &analysisgrp.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
@@ -193,7 +193,7 @@
         %end;
 
         /*L2*/
-        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             /*if file = psmatchfile, stratificationfile, iptwfile - then link to psestimationfile*/
             /*if file = covstratfile, pull directly*/
             %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
@@ -214,11 +214,11 @@
             %end;
 
             *T2: EOI group = cohortgrp;
-            %if %str("&reporttype") = %str("T2L2") %then %do;
+            %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("TREE2") %then %do;
                 %let cohortgrp = &eoi;
             %end;
             *T4: After extracting EOI group - need to link to MICOHORTFILE to grab cohortgrp;
-            %if %str("&reporttype") = %str("T4L2") %then %do;
+            %if %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4")  %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&eoi",1,length("&eoi")-4)));
                     call symputx('cohortgrp', strip(groupname));
@@ -266,7 +266,7 @@
                 call symputx("cohortdef", strip(t4cohortdef));
             run;
         %end;
-        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             %let cohortdef = 01;
         %end;
         %else %if %str("&reporttype") = %str("T5") %then %do;
@@ -356,9 +356,9 @@
               end;
 
               /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
-              if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
+              if "&reporttype."="T2L2" | "&reporttype."="T4L2" |"&reporttype."="TREE2" | "&reporttype."="TREE4" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
               %if "&includecomp" = "Y" %then %do;
-                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
+                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" |"&reporttype."="TREE2" | "&reporttype."="TREE4" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
               %end;
           run;
 
@@ -680,8 +680,8 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
-                          | %str("&reporttype") = %str("T4L2")| ("&table" ="Switchstep_0") %then %do;
+                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE2" | "&reporttype."="TREE4") or
+                          | ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
                             if metvar = 'PATIENT' then exp_std0_char = 'N/A';
                             if metvar = 'N_EPISODES' then do;
@@ -738,7 +738,7 @@
                             %end;
 						  end;
 						%end;
-						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+						%else %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE2" | "&reporttype."="TREE4" %then %do;
                           if ^missing(exp_mean0) and (total_exp_episodes gt 0) then do; 
                           exp_std0 = divide(exp_mean0,&total_unadjusted_exp_episodes.);
                           exp_std0_char = compress(put(exp_std0,percent10.1));
@@ -1107,7 +1107,7 @@
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
-        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE4"%then %do;
         %baseline_expand_parameters(var =pregnancychar);
         %baseline_expand_parameters(var =exposurechar);
         %end;
@@ -1240,12 +1240,12 @@
                 %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('F', sexsort.),1.));
                 end;
                 else if MetVar in ('MALE', 'SEX_M') and 'M' in (&sex.) then do; 
-                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
+                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") & %str("&reporttype") ne %str("TREE4") %then %do;
                         %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('M', sexsort.),1.));
                     %end;
                 end;
                 else if MetVar in ('SEX_OTHER', 'SEX_O') and 'O' in (&sex.) then do;
-                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
+                    %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") & %str("&reporttype") ne %str("TREE4") %then %do;
                     %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('O', sexsort.),1.));
                     %end;
                 end;
@@ -1289,7 +1289,7 @@
             /*******************************************************************/
             /* Type 4 - Pregnancy Characteristics and Exposure Characteristics */
             /*******************************************************************/
-            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
                     %assignbaselinevars(label=put('PRE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('PRE', deliverysort.),1.));

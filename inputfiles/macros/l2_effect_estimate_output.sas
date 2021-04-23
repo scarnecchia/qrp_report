@@ -306,7 +306,7 @@
         %end;
 
         %let s11 = ;
-        %if &reporttype = T4L2 %then %do;
+        %if &reporttype = T4L2 | &reporttype. = TREE4 %then %do;
         %isdata(dataset=SelectionProbabilitiesFile);
         %if &nobs > 0 %then %do; 
             data _null_;
@@ -326,7 +326,7 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
-        %if &reporttype = T2L2 %then %let user_label = Number of^n New Users;
+        %if &reporttype = T2L2 | &reporttype. = TREE2 %then %let user_label = Number of^n New Users;
         %else %let user_label = Number of^n Pregnant Patients; 
 
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
@@ -334,14 +334,15 @@
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
 
             columns (
-                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuT %end;
+                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
+				  %if &reporttype = T2L2 | &reporttype = TREE2  %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
                 %if %eval(&redactevents.<=1) %then %do;
                     EVchar
                 %end;
                 %if %eval(&redactevents.=2) %then %do;
                     totalevents
                 %end;
-                %if &reporttype = T2L2 %then %do;
+                %if &reporttype = T2L2 | &reporttype = TREE2 %then %do;
                 IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar HR_95CI HR_pvalue
                 %end;
                 %else %do;
@@ -361,7 +362,7 @@
             &MPDefine. ;
             define n / display "&user_label"
                 style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
-            %if &reporttype = T2L2 %then %do;
+            %if &reporttype = T2L2 | &reporttype = TREE2  %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
                 style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
@@ -377,7 +378,7 @@
             define totalevents / order 'Total Number of Events'
                 style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
-            %if &reporttype = T2L2 %then %do;
+            %if &reporttype = T2L2 | &reporttype = TREE2  %then %do;
             define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'

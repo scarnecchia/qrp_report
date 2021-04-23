@@ -353,7 +353,7 @@
         %let switch2group = ;
 
         /*parameters for %baseline_procreport*/
-        %if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
+        %if %sysfunc(prxmatch(m/T4L1|T4L2|TREE2|TREE4/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
         %else %let characteristiclabel = Patient;
         %let grp1_label=;
         %let grp2_label=;
@@ -390,7 +390,7 @@
                 
                 /*if reporttype = T2L2, T4L2, T6, TREE2, TREE4 or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
-                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="T6" 
+                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="T6" | "&reporttype."="TREE2" | | "&reporttype."="TREE4" |
 				   | upcase(computebalance)= 'Y' | upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
                    call symputx('includecomp', 'Y');
                 end;
@@ -407,7 +407,7 @@
         run;
 
         /*Additional meta-data and group-specific names for each reporttype*/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
@@ -524,7 +524,7 @@
         - max(order) in baselinefile = 1
         - if reporttype = T2L2, T4L2, TREE2, or TREE4 - then analysis must be covariate stratification*/
         %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) = 0 %then %do;
                 %let tablecount = 0;
             %end;
             %else %do;
@@ -548,7 +548,7 @@
             %end;
         %end;
 
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             %let eoilabel = &eoi.;
             %let reflabel = &ref.;
         %end;
@@ -564,7 +564,7 @@
                     %if %length(&baselinegroupnum.)>0 %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                     %end; 
-                    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                    %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
                         labelfile(in=c where=(group="&psestimategrp" and runid = "&runid"))
                         labelfile(in=d where=(group="&eoi" and runid = "&runid"))
                         labelfile(in=e where=(group="&ref" and runid = "&runid"))
@@ -679,7 +679,7 @@
             %end;
 
             /*For L2 tables - up to 2 additional adjusted tables*/
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
                 /*PS Match Adjusted*/
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 

@@ -787,7 +787,7 @@
         run;
 
         /* Check for populated baselinegroupnum parameter within specific analysis types */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
          %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
          %abort;
         %end;
