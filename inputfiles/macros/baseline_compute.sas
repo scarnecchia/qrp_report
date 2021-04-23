@@ -154,7 +154,7 @@
 
         %let cohortgrp = ;
         /*L1*/
-        %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
+        %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
             %let cohortgrp = &analysisgrp.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
@@ -680,7 +680,7 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE2" | "&reporttype."="TREE4") or
+                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE2" | "&reporttype."="TREE4") 
                           | ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
                             if metvar = 'PATIENT' then exp_std0_char = 'N/A';
