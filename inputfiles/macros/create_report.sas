@@ -102,6 +102,13 @@
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		%aggregate_tree();
     %end;
+
+***************************************************************************************************;
+*   Compute code distribution tables                                                     
+***************************************************************************************************;
+	%if &output_code_distribution. eq Y %then %do;		
+		%codedistribution_createdata;
+	%end;
 	
 ***************************************************************************************************;
 *   Compile table of contents                                            

@@ -243,7 +243,7 @@
             RD_1000NUchar = strip(put(RD_1000NU, comma8.2));
             risk_1000NUchar = strip(put(risk_1000NU, comma8.2));
             rrchar = strip(put(rr, comma8.2));
-            if missing(rr) then rrchar='0.00';
+            if missing(rr) then rrchar='NaN';
 
             FUTime_Ychar = strip(put(FUTime_Y, comma12.2));
             AvgFUTime_Dchar = strip(put(AvgFUTime_D, comma12.2));
@@ -309,6 +309,7 @@
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  %end;
                  ;
+
         run;
     %end;
     %else %do;  *create empty dataset;
@@ -356,7 +357,7 @@
                 if n > 0 then do;
                 EVchar = put(EV, comma10.);
                 rrchar = put(rr, comma8.2);
-                if missing(rr) then rrchar = '0.00';
+                if missing(rr) then rrchar = 'NaN';
                 IR_1000PYchar = put(IR_1000PY, comma8.2);
                 IRDiff_1000PYchar = put(IRDiff_1000PY, comma8.2);
                 RD_1000NUchar = put(RD_1000NU, comma8.2);
