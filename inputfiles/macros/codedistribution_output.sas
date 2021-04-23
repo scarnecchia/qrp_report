@@ -187,7 +187,7 @@
         endcomp;
 
 		compute row_separator;
-		call define (_row_,'style','style=[borderbottomcolor=black borderbottomwidth=.5pt] ' );
+		call define (_row_,'style','style=[borderbottomcolor=lightgrey borderbottomwidth=.5pt] ' );
 		endcomp;
 
       	run;
