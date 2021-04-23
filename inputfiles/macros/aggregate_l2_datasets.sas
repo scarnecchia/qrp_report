@@ -132,6 +132,10 @@
     		
     %end;*loop through DPs;
 
+	%if &output_agg_data. = Y %then %do;
+		%output_datasets(dataset=&outfile., outlib=msocdata);
+	%end;
+
 	%put NOTE: ******** END OF MACRO: aggregate_l2_datasets ********;
 
 %mend aggregate_l2_datasets; 

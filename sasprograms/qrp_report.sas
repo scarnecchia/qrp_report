@@ -144,6 +144,12 @@ options DLCREATEDIR ;
 libname repdata "&repdata" ;
 options NODLCREATEDIR;
 
+/* Create msocdata folder */
+%let msocdata = &output.msocdata.;
+options DLCREATEDIR ;
+libname msocdata "&msocdata" ;
+options NODLCREATEDIR;
+
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
