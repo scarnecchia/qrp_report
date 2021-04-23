@@ -265,23 +265,25 @@
             /******************/
             /* Aggregate data */
             /******************/
-            %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
-                                   outfile=aggrd,
-                                   pscsfile=&pscsfile.,
-                                   %if &pscsfile. = stratificationfile & ("&reporttype" = "T4L2" | "&reporttype" = "TREE4") %then %do;
-                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
-                                   %end;
-                                   %else %do;
-                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                   %end;
-                                   convrule=%quote(&convrule.),
-                                   convdata=&runid._estimates_&periodid.,
-                                   settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
-                                   %if &pscsfile. = stratificationfile & ("&reporttype" = "T4L2" | "&reporttype" = "TREE4") %then %do;
-                                   , renameclause=%str( rename=percentilevalue = percentile)
-                                   %end;
-                                   );
-
+			/* Riskdiffdata does not exist for TREE analysis */
+			%if %index(&reporttype.,TREE) = 0 %then %do;
+              %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
+                                     outfile=aggrd,
+                                     pscsfile=&pscsfile.,
+                                     %if &pscsfile. = stratificationfile & "&reporttype" = "T4L2" %then %do;
+                                     whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
+                                     %end;
+                                     %else %do;
+                                     whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                     %end;
+                                     convrule=%quote(&convrule.),
+                                     convdata=&runid._estimates_&periodid.,
+                                     settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
+                                     %if &pscsfile. = stratificationfile & "&reporttype" = "T4L2" %then %do;
+                                     , renameclause=%str( rename=percentilevalue = percentile)
+                                     %end;
+                                     );
+			%end;
             %if &individualreturn. = Y %then %do;
                 /*[runid]_adjusted_&periodid.*/
                 %aggregate_l2_datasets(infile=&runid._adjusted_&periodid.,
@@ -298,7 +300,7 @@
                     %let individualreturn=N;
                 %end;
             %end; /*aggregate individual level data*/
-            %if &individualreturn. = N & ("&reporttype" = "T2L2" | "&reporttype." = "TREE2") %then %do;
+            %if &individualreturn. = N & "&reporttype" = "T2L2" %then %do;
                 %aggregate_l2_datasets(infile=&runid._risksetdata_&periodid.,
                                        outfile=aggrs,
                                        pscsfile=&pscsfile.,
@@ -351,12 +353,15 @@
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
-                %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
+			    /* Riskdiffdata does not exist for TREE analysis */
+			    %if %index(&reporttype.,TREE) = 0 %then %do;
+                  %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
+				%end;
                 %if &individualreturn. = Y %then %do;
                     %subsetdata(datain=aggpl, dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
                 %end;
                 %if &individualreturn. = N %then %do;
-                    %if %str("&reporttype") = "T2L2" | "&reporttype." = "TREE2" %then %do;
+                    %if %str("&reporttype") = "T2L2" %then %do;
                     %subsetdata(datain=aggrs, dataout=cat_dp_rs, covarnum=&covarnum., cat=&cat.);
                     %end;
                     %if &marginalweights. = Y %then %do;
@@ -400,6 +405,7 @@
                 /**************************************************************************************/
 
                 /*Unadjusted*/
+				/* Empty rdest dataset will be created for TREE analysis */
                 %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = , donotreport=N);
                 %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
                     %if &individualreturn. = Y %then %do;
@@ -413,19 +419,19 @@
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat), analysis="Unadjusted",
                                                    subgroupcat=, ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
-
+				
                     %end;
                     %if &individualreturn. = N %then %do;
                     %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=analysis="Unadjusted", analysis="Unadjusted",
                                                    subgroupcat=, ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
                     %end;
                 %end;
-
                 /*Conditional - 
                     *analysis conditioned on matchid (PS maching) - Type 2 only
                     *analysis conditioned on percentile (PS stratification) - Type 2 and 4
                     *analysis conditioned on covariate (Covariate stratification) - Type 2 and 4 */
                 %if &outputconditional. = Y %then %do; 
+				    /* Empty rdest dataset will be created for TREE analysis */
                     %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="", 
                                                  analysis= "Conditional", 
                                                  subgroupcat = , 
@@ -457,6 +463,7 @@
            
                 /*Unconditional - only for FRM PS match analysis*/
                 %if &outputunconditional = Y %then %do;
+				    /* Empty rdest dataset will be created for TREE analysis */
                     %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="", 
                                                  analysis= "Unconditional", 
                                                  subgroupcat = , 
@@ -504,8 +511,9 @@
                         %put &dpname.; 
 
                         /*Unadjusted*/
+						/* Empty rdest dataset will be created for TREE analysis */
                         %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                    analysis= "Unadjusted", subgroupcat = &dpname., donotreport=N);
+                                                     analysis= "Unadjusted", subgroupcat = &dpname., donotreport=N);
                         %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runcox(where=missing(subgroupcat) and dpidsiteid="&dpname.", 
@@ -529,7 +537,8 @@
                         %end;
 
                         /*Conditional*/ 
-                        %if &outputconditional. = Y %then %do; 
+                        %if &outputconditional. = Y %then %do;
+                            /* Empty rdest dataset will be created for TREE analysis */					
                             %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname.", 
                                                          analysis= "Conditional", 
                                                          subgroupcat = &dpname., 
@@ -559,6 +568,7 @@
                    
                         /*Unconditional - only for FRM PS match analysis*/
                         %if &outputunconditional. = Y %then %do;
+						    /* Empty rdest dataset will be created for TREE analysis */
                             %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="" and dpidsiteid="&dpname.", 
                                                          analysis= "Unconditional", 
                                                          subgroupcat = &dpname., 
@@ -574,7 +584,7 @@
                                 %l2_effect_estimate_runlogithr(where=analysis="Unconditional" and dpidsiteid="&dpname.", analysis= "Unconditional", subgroupcat = &dpname.);
                                 %end;
                             %end;
-                            %else "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
+                            %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runlogitor(individualreturn =&individualreturn., where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname", analysis="Unconditional",
                                                                subgroupcat=&dpname., ormethod=logit, s00=&s00., s01=&s01., s10=&s10., s11=&s11.);
@@ -613,7 +623,10 @@
 
             %if &sub. ne 0 & &marginalweights. = N %then %do;
                 %l2_effect_estimate_subgroups(covarnum=&covarnum., computecategories=Y);
-                %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
+				/* Riskdiffdata does not exist for TREE analysis */
+			    %if %index(&reporttype.,TREE) = 0 %then %do;
+                  %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
+				%end;
                 *Assign generic dummies for automatic selection;
                 %if &individualreturn. = Y %then %do;
                     %subgroupdummyvar(datain=aggpl, dataout=aggpl&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
@@ -627,8 +640,11 @@
                     %let subgroupcat = %scan(&subcategorization., &cat., ' ');
 
                     /*Restrict data to subgroup category*/
-                    %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
-                    %if &individualreturn. = Y %then %do;
+					/* Riskdiffdata does not exist for TREE analysis */
+			        %if %index(&reporttype.,TREE) = 0 %then %do;
+                      %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
+                    %end;
+					%if &individualreturn. = Y %then %do;
                     %subsetdata(datain=aggpl&sub., dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
                     %end;
                     %if &individualreturn. = N & ("&reporttype" = "T2L2" | "&reporttype." = "TREE2") %then %do;
@@ -658,14 +674,15 @@
                     /***************************************************************************************/
 
                     /*Unadjusted*/
+					/* Empty rdest dataset will be created for TREE analysis */
                     %l2_effect_estimate_runrd_rs(where=Analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat., donotreport=N);
                     %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
-                    %if &individualreturn. = Y %then %do;
-                    %l2_effect_estimate_runcox(where=missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
-                    %end;
-                    %if &individualreturn. = N %then %do;
-                    %l2_effect_estimate_runlogithr(where=analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
-                    %end;
+                      %if &individualreturn. = Y %then %do;
+                      %l2_effect_estimate_runcox(where=missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
+                      %end;
+                      %if &individualreturn. = N %then %do;
+                      %l2_effect_estimate_runlogithr(where=analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
+                      %end;
                     %end;
                     %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
                         %if &individualreturn. = Y %then %do;
@@ -680,6 +697,7 @@
 
                     /*Conditional*/ 
                     %if &outputconditional. = Y %then %do; 
+					    /* Empty rdest dataset will be created for TREE analysis */
                         %l2_effect_estimate_runrd_rs(where=Analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat., donotreport=&suppresscolumns.);
                         %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
                             %if &individualreturn. = Y %then %do;
@@ -703,14 +721,15 @@
                
                     /*Unconditional - only for FRM PS match analysis*/
                     %if &outputunconditional. = Y %then %do;
+					    /* Empty rdest dataset will be created for TREE analysis */
                         %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=N);
                         %if "&reporttype." = "T2L2" | "&reporttype." = "TREE2" %then %do;
-                        %if &individualreturn. = Y %then %do;
-                        %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat.);
-                        %end;
-                        %if &individualreturn. = N %then %do;
-                        %l2_effect_estimate_runlogithr(where=analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat.);
-                        %end;
+                          %if &individualreturn. = Y %then %do;
+                          %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat.);
+                          %end;
+                          %if &individualreturn. = N %then %do;
+                          %l2_effect_estimate_runlogithr(where=analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat.);
+                          %end;
                         %end;
                         %else %if "&reporttype." = "T4L2" | "&reporttype." = "TREE4" %then %do;
                             %if &individualreturn. = Y %then %do;

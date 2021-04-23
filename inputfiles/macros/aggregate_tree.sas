@@ -26,10 +26,26 @@
 *
 ***************************************************************************************************;
 
-%macro aggregate_tree;
+%macro aggregate_tree();
 
   %do n = 1 %to &numrunid.;
+   %let runid = %scan(&runidlist., &n.); 
    %let type = %substr(&reporttype,5,1);
+   
+   /***********************************************************************************************
+    Identify EOI and REF for type 2 and 4
+   ***********************************************************************************************/
+   *Get EOI/REF for type 2/4 analysis;
+    %if %eval(&type. ne 3) %then %do;
+        proc sql noprint;
+            create table comparison as
+            select x.analysisgrp, y.eoi, y.ref
+            from infolder.&&&runid._psmatchfile. (keep=analysisgrp psestimategrp) as x
+            inner join infolder.&&&runid._psestimationfile. as y
+            on x.psestimategrp = y.psestimategrp;
+        quit;
+    %end;
+	
   /***********************************************************************************************
     Determine if there is a t3treewkdays dataset created
    ***********************************************************************************************/
@@ -38,7 +54,7 @@
       proc sql;
        select case when count(levelid) > 0 then 'Y'
               else 'N' end into: run_t3wk
-       from infolder.&&&id&n.._userstrata (where = (lowcase(tableid) = 't3treewkdays' and runid= "&&&id&n.._runid."));
+       from infolder.&&&runid._userstrata. (where = (lowcase(tableid) = 't3treewkdays' and runid= "&runid."));
       quit;
    %end;
 	
@@ -51,11 +67,11 @@
      proc sql noprint; 
        select distinct(b.levelvars) into: all_levelvars separated by ' '
   	   from %if "&strata_table." = "t3treewkdays" %then %do; 
-	          infolder.&&&id&n.._userstrata (where = (lowcase(tableid) = "&strata_table.")) b;
+	          infolder.&&&runid._userstrata. (where = (lowcase(tableid) = "&strata_table.")) b;
 			%end;
 			%else %do;
-			  input.&treeaggfile.(where = (runid = "&&&id&n.._runid.")) a 
-  	          inner join infolder.&&&id&n.._userstrata (where = (lowcase(tableid) = "&strata_table.")) b
+			  input.&treeaggfile.(where = (runid = "&runid.")) a 
+  	          inner join infolder.&&&runid._userstrata. (where = (lowcase(tableid) = "&strata_table.")) b
   	          on a.levelid = b.levelid;
 			%end;
      quit;
@@ -94,18 +110,19 @@
   /************************************************************************************************
    collapse data
    ************************************************************************************************/
-    proc means noprint data=agg_t&type._tree_analysis_&periodid. (where = (runid = "&&&id&n.._runid.")) nway missing;
+    proc means noprint data=agg_t&type._tree_analysis_&periodid. (where = (runid = "&runid.")) nway missing;
 	  var nhois;
 	  class treeanalysisgrp group level tte ttc hoi &unique_lvlvars.;
 	  output out=_agg_t&type._tree_analysis_&periodid.(drop=_:) 	
-	  sum nhois=sum_nhois;
+	  sum (nhois)=sum_nhois;
 	run;
+	
 	%if &run_t3wk. = Y %then %do;
-	  proc means noprint data=agg_t3_tree_wkdays_&periodid. (where = (runid = "&&&id&n.._runid.")) nway missing;
+	  proc means noprint data=agg_t3_tree_wkdays_&periodid. (where = (runid = "&runid.")) nway missing;
 	    var count;
 	    class treeanalysisgrp group level orig_hoi hoi wkday  &unique_wklvlvars.;
 	    output out=_agg_t3_tree_wkdays_&periodid.(drop=_:) 	
-	    sum count=sum_count;
+	    sum (count)=sum_count;
 	  run;
 	  
 	  %if &num_unique_wklvlvars. > 0 %then %do;
@@ -113,7 +130,7 @@
 	  %end;
 		
         proc sql noprint;
-		  create table output.&&&id&n.._runid._t3_tree_wkdays_&periodid._agg as
+		  create table output.&runid._runid._t3_tree_wkdays_&periodid._agg as
 		  select treeanalysisgrp              format = $40.
 		        ,group                        format = $40.
 				,level                        format = $3.
@@ -164,7 +181,7 @@
       proc sql noprint;
         select count(treeanalysisid)
     	into: num_treeids trimmed
-    	from input.&treeaggfile. (where = (runid = "&&&id&n.._runid."));
+    	from input.&treeaggfile. (where = (runid = "&runid."));
     	
     	select a.treeanalysisid
 		      ,a.treeanalysisgrp
@@ -186,8 +203,8 @@
 			,:cwstart1     - :cwstart&num_treeids. 
 			,:cwend1       - :cwend&num_treeids.   
 			,:levelvar1    - :levelvar&num_treeids.
-    	from input.&treeaggfile. (where = (runid = "&&&id&n.._runid.")) a 
-		inner join infolder.&&&id&n.._userstrata (where = (lowcase(tableid) = "t&type.treeanalysis")) b
+    	from input.&treeaggfile. (where = (runid = "&runid.")) a 
+		inner join infolder.&&&runid._userstrata (where = (lowcase(tableid) = "t&type.treeanalysis")) b
 	    on a.levelid = b.levelid
 		order by a.treeanalysisid;
       quit;
@@ -212,7 +229,7 @@
 		     %let lbl&lv. = %sysfunc(scan(&&levelnumlbl&t..,&lv.,' '));
 	      %end;
 		  
-	      data _agg_t&type._tree_analysis_&periodid.;
+	      data temp_&runid._t&type._tree_analysis_&periodid._agg;
 		     set _agg_t&type._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." 
 		                                                                   and level = "&&levelid&t.." 
 		  	                                                           %do lv = 1 %to &num_levelvars.;
@@ -221,7 +238,7 @@
 		  run;
 		%end; 
         %else %do;
-		  data _agg_t&type._tree_analysis_&periodid.;
+		  data temp_&runid._t&type._tree_analysis_&periodid._agg;
 		     set _agg_t&type._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." and level = "&&levelid&t.." ));
 		  run;
 		%end;
@@ -229,7 +246,7 @@
         Determine if record count is greater than 0 and output warning if not 
 	    ----------------------------------------------------------------------------------------------*/
   	    data _null_;
-  		  dsid = open("_agg_t&type._tree_analysis_&periodid.");
+  		  dsid = open("temp_&runid._t&type._tree_analysis_&periodid._agg");
   		  call symputx("nobs",attrn(dsid,"nlobs"));
   	    run;
         %if &nobs. = 0 %then %do;
@@ -250,10 +267,11 @@
 		 For type 3:
 		  - map treeanalysisgrp to group from tree_file, which is the cohortgrp
 		----------------------------------------------------------------------------------------------*/
-		  data &&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+		    
+		  data &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
 		    length levelnum levelnumlbl $32 group $40;
 		    if _n_ = 1 then do;
-			  declare hash grp (dataset: "infolder.&treefile.");
+			  declare hash grp (dataset: "infolder.&&&runid._treefile.");
 			  grp.definekey("treeanalysisgrp");
 			  grp.definedata ("group");
 			  grp.definedone();
@@ -261,14 +279,14 @@
 			  
 			  %if &type. ne 3 %then %do;
 			    length eoi ref $40;
-			    declare hash comp (dataset: "psest_masterinputs(where = (runid = "&&&id&n.._runid.") rename = (analysisgrp = group))");
+			    declare hash comp (dataset: "comparison(rename = (analysisgrp = group))");
 			    comp.definekey("group");
 			    comp.definedata ("eoi", "ref");
 			    comp.definedone();
 				call missing(eoi, ref);
 			  %end;
 			end;
-		    set _agg_t&type._tree_analysis_&periodid. (rename = (group = stratagroup));
+		    set temp_&runid._t&type._tree_analysis_&periodid._agg (rename = (group = stratagroup));
 			if grp.find() = 0 then group = group;
 			%if &type. ne 3 %then %do;
 			  if comp.find() = 0 then do;
@@ -288,7 +306,7 @@
 		  
 		  /* Clean up work space */
           proc datasets lib = work;
-            delete _agg:;
+            delete temp_&runid._t&type._tree_analysis_&periodid._agg;
           quit;
 		  
       /*----------------------------------------------------------------------------------------------
@@ -296,7 +314,7 @@
 		----------------------------------------------------------------------------------------------*/
 		  %if &type. ne 3 or (&&rwstart&t.. ne . and &&rwend&t.. ne . and &&cwstart&t.. ne . and &&cwend&t.. ne .) %then %do;	
 		    proc sql noprint;
-			  create table output.&&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table output.&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi
 			        ,nhois_eoi
 					,nhois_ref
@@ -306,20 +324,20 @@
                        else sum(nhois_eoi) end as nhois_eoi  format = 8.
 				  	,case when sum(nhois_ref) < 1 then 0
                        else sum(nhois_ref) end as nhois_ref  format = 8.
-			    from &&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
+			    from &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
 			    group by hoi)
 			  where nhois_eoi > 0 or nhois_ref > 0;
 			quit;
 		  %end;
 	      %else %do;
 	        proc sql noprint;
-			  create table output.&&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table output.&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi                               format = $11.
 			        ,case when sum(sum_nhois) < 1 then 0
 					 else sum(sum_nhois) end as nhois  format = 8.
 			        ,tte                               format = 8.
 					,ttc                               format = 8.
-			  from &&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
+			  from &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
 			  group by hoi
 			          ,tte
 					  ,ttc;
@@ -328,11 +346,9 @@
 		  
 		  /* Clean up work space */
           proc datasets lib = work;
-            delete &&&id&n.._runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+            delete &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
           quit; 
-		  
 		%end; /* data exists */ 
 	  %end; /* treeanalysisid loop */
-    %end; /* periodid loop */	
   %end; /* runid loop */
 %mend aggregate_tree;

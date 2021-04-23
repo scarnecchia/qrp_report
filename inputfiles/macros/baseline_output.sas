@@ -138,7 +138,7 @@
 		   /* L2 weighted table for variable ratio matching */
 			 %if &psfile = psmatchfile and &ratio. = V  and %index(&table.,Adjusted) > 0 %then %do; 10 %end;
 		   %end; 
-		   /* T4L2 or T4L1 with MIL */
+		   /* T4L2, T4L1, or TREE4 with MIL */
 		   %if (%str("&reporttype.") = %str("T4L1") and %str("&cohort.") = %str("mi")) | %str("&reporttype.") = %str("T4L2") | %str("&reporttype.") = %str("TREE4") %then %do; 11 %end;
 		   /* T6 Switching */
 		   %if %str("&reporttype.") = %str("T6") %then %do; 
@@ -147,8 +147,8 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* T4 L1 or L2 gestational age specified*/
-		   %if (%index(&reporttype,T4) | "&reporttype"="TREE4")) and &gestationalage. = Y %then %do; 16 %end;
+		   /* T4 or TREE4 L1 or L2 gestational age specified*/
+		   %if (%index(&reporttype,T4) > 0 | "&reporttype"="TREE4") and &gestationalage. = Y %then %do; 16 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 17 %end;
 		   )));
@@ -373,7 +373,7 @@
                 else call symputx('sdthreshold', sdthreshold);				
                 call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
 
-                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
+                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
@@ -389,7 +389,7 @@
                 %end;
                 if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 
-                /*if reporttype = T2L2 or T4L2 or T6 or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, T6, TREE2, TREE4 or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="TREE2" | "&reporttype."="TREE4" | "&reporttype."="T6" 
 				   | upcase(computebalance)= 'Y' | upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
@@ -523,7 +523,7 @@
         - 1 monitoring period
         - DP stratification = N
         - max(order) in baselinefile = 1
-        - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
+        - if reporttype = T2L2, T4L2, TREE2, or TREE4 - then analysis must be covariate stratification*/
         %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
             %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) = 0 %then %do;
                 %let tablecount = 0;
@@ -588,7 +588,7 @@
                 %if %length(&baselinegroupnum.)>0 %then %do;
                 if b then do; if labeltype = 'grouplabel' then call symputx('grouplabel2',strip(label)); end;
                 %end;
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+                %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
                 if c then do; if labeltype = 'grouplabel' then call symputx('psestimatelabel',strip(label)); end;
                 if d then do; if labeltype = 'grouplabel' then call symputx('eoilabel',strip(label)); end;
                 if e then do; if labeltype = 'grouplabel' then call symputx('reflabel',strip(label)); end;
@@ -611,7 +611,7 @@
         %if %length(&baselinegroupnum.)>0 %then %do;
         %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
         %end;
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
         %let captionlabel = %bquote(&psestimatelabel.);
         %end;         
 
@@ -619,7 +619,7 @@
         %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = %bquote(&grouplabel.);
         %end;
-        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = %bquote(&eoilabel.);
             %let grp2_label = %bquote(&reflabel.);
         %end;

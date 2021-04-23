@@ -120,7 +120,7 @@
 
                 /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
-                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="TREE4"| upcase(computebalance)= 'Y' |
+                if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype"="TREE2" | "&reporttype" = "TREE4" | upcase(computebalance)= 'Y' |
                    upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
                    call symputx('includecomp', 'Y');
                 end;
@@ -135,7 +135,7 @@
         %let ratio = F;
         %let psfile = ;
         %let weightscheme = ;
-        %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %index(&reporttype.,TREE) > 0%then %do;
+        %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
                 call symputx('psfile', strip(file));
@@ -1195,7 +1195,7 @@
             %if %index(&reporttype,T4) | "&reporttype." = "TREE4" %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
 
-            if MetVar = 'PATIENT' %if %index(&reporttype,L2) | %index(&reporttype,TREE)%then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
+            if MetVar = 'PATIENT' %if %index(&reporttype,L2) | %str("&reporttype") = %str("TREE2") | %str("&reporttype") = %str("TREE4") %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             %if %str("&cohort") ^= %str("mi") %then %do;
