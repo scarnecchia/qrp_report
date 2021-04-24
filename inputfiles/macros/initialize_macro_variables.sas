@@ -86,6 +86,10 @@
 	%let baselinerowitalics =;
     %let numprofilecovarstoinclude=0;
 
+	/*groupsfile table variables*/
+    %global output_code_distribution;
+    %let output_code_distribution = N;
+
     /*L2 report variables*/
     %global numl2comparisons;
     %let numl2comparisons = 0;

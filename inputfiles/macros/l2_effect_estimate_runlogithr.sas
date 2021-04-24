@@ -136,7 +136,7 @@
 		    format HR_coef HR LCL UCL 5.2 HR_se 8.4; 
 		    HR_coef = .;
 		    HR_se = .;
-			HR_pvalue = "NaN";
+			HR_pvalue = "N/A";
             HR = .;
             LCL = .;
             UCL = .;

@@ -41,6 +41,9 @@
 *			-[runid]_t6_switchepisdurstats
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
+
+*			-[RUNID]_distindex.sas7bdat 
+*			-[RUNID]_distindexmap.sas7bdat 
 *
 *  Program inputs:                                                                                   
 *  	-
@@ -216,38 +219,42 @@
 			%end;
 		%end; *T6;
 
+		/* Aggregate covariate profile tables */
+		%if &numprofilecovarstoinclude > 0 %then %do;
 
-	/* Aggregate covariate profile tables */
-	%if &numprofilecovarstoinclude > 0 %then %do;
+			proc sql noprint;
+				select distinct cohort 
+				into :profilecohortlist separated by ' '
+				from baselinefile
+				where not missing(profilecovarstoinclude);
+			quit;
 
-		proc sql noprint;
-			select distinct cohort 
-			into :profilecohortlist separated by ' '
-			from baselinefile
-			where not missing(profilecovarstoinclude);
-		quit;
+		 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+		   %do b = 1 %to %sysfunc(countw(&profilecohortlist));
+		   	%let profilecohort = %scan(&profilecohortlist,&b);
+			%agg_report(infile=profile_&profilecohort._&periodid, outfile=agg_&profilecohort._&periodid, name=group);
 
-	 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-	   %do b = 1 %to %sysfunc(countw(&profilecohortlist));
-	   	%let profilecohort = %scan(&profilecohortlist,&b);
-		%agg_report(infile=profile_&profilecohort._&periodid, outfile=agg_&profilecohort._&periodid, name=group);
+			data agg_profile;
+		   	set
+		   	%if %sysfunc(exist(agg_profile)) %then %do;
+		   	 agg_profile
+		   	%end;
+		   	 agg_&profilecohort._&periodid(in=a);
+		   	 length profiletablename $20;
+		   	if a then profiletablename=cats(runid,"_profile_&profilecohort._&periodid.");
+		    run;
 
-		data agg_profile;
-	   	set
-	   	%if %sysfunc(exist(agg_profile)) %then %do;
-	   	 agg_profile
-	   	%end;
-	   	 agg_&profilecohort._&periodid(in=a);
-	   	 length profiletablename $20;
-	   	if a then profiletablename=cats(runid,"_profile_&profilecohort._&periodid.");
-	    run;
+		   %end;
 
-	   %end;
+		 %end;
 
-	 %end;
+		%end;
 
-	%end;
-
+		/* Code distribution */
+		%if &output_code_distribution. eq Y %then %do;
+			%agg_report(infile=distindex, outfile=agg_distindex, name=group);
+			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group);
+		%end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
