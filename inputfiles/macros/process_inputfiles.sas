@@ -1012,14 +1012,14 @@
                %put WARNING: Commas exist in either the child or parent node. A tab-delimited file will be produced.;
 	           %put &parent_comma. parent, and &child_comma. child nodes have commas.;
 	            proc export data = infolder.&&&runid._treelookup
-   	                  outfile   = "&output.&&&runid._treelookup.txt"
+   	                  outfile   = "&output.&&&runid._treelookup..txt"
 	           	     dbms      = tab replace;
 	           	     putnames  = NO;
 	            run;
              %end;	
 	         %else %do;  
 	            proc export data = infolder.&&&runid._treelookup
-   	                  outfile   = "&output.&&&runid._treelookup.txt"
+   	                  outfile   = "&output.&&&runid._treelookup..txt"
 	           	     dbms      = dlm replace;
 	           	     delimiter = ',';
 	           	     putnames  = NO;
