@@ -98,7 +98,7 @@
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
-    /*loop l2 processing by periodid*/
+    /*loop agggregate tree processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		%aggregate_tree();
     %end;

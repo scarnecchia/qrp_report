@@ -107,7 +107,7 @@
                 else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
-                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4")%then %do;
+                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4") %then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
                 call symputx('outputinfantchar', strip(upcase(outputinfantchar)));
                 call symputx('exposurechar', upcase(exposurechar));
@@ -118,7 +118,7 @@
                 call symputx('includenonpregnant', 'N');
                 %end;
 
-                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, TREE2, or TREE4, or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype"="TREE2" | "&reporttype" = "TREE4" | upcase(computebalance)= 'Y' |
                    upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
@@ -236,7 +236,7 @@
                 %let cohortgrp = &eoi;
             %end;
             *T4: After extracting EOI group - need to link to MICOHORTFILE to grab cohortgrp;
-            %if %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4")  %then %do;
+            %if %str("&reporttype") = %str("T4L2") | %str("&reporttype") = %str("TREE4") %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&eoi",1,length("&eoi")-4)));
                     call symputx('cohortgrp', strip(groupname));
@@ -1134,7 +1134,7 @@
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
-        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE4"%then %do;
+        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") | "&reporttype."="TREE4" %then %do;
         %baseline_expand_parameters(var =pregnancychar);
         %baseline_expand_parameters(var =exposurechar);
         %end;
