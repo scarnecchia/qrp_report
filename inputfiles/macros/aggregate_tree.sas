@@ -54,7 +54,7 @@
       proc sql;
        select case when count(levelid) > 0 then 'Y'
               else 'N' end into: run_t3wk
-       from infolder.&&&runid._userstrata. (where = (lowcase(tableid) = 't3treewkdays' and runid= "&runid."));
+       from infolder.&&&runid._userstrata. (where = (lowcase(tableid) = 't3treewkdays' and lowcase(runid)= "&runid."));
       quit;
    %end;
 	
@@ -70,7 +70,7 @@
 	          infolder.&&&runid._userstrata. (where = (lowcase(tableid) = "&strata_table.")) b;
 			%end;
 			%else %do;
-			  input.&treeaggfile.(where = (runid = "&runid.")) a 
+			  input.&treeaggfile.(where = (lowcase(runid)= "&runid.")) a 
   	          inner join infolder.&&&runid._userstrata. (where = (lowcase(tableid) = "&strata_table.")) b
   	          on a.levelid = b.levelid;
 			%end;
@@ -110,7 +110,7 @@
   /************************************************************************************************
    collapse data
    ************************************************************************************************/
-    proc means noprint data=agg_t&type._tree_analysis_&periodid. (where = (runid = "&runid.")) nway missing;
+    proc means noprint data=agg_t&type._tree_analysis_&periodid. (where = (lowcase(runid) = "&runid.")) nway missing;
 	  var nhois;
 	  class treeanalysisgrp group level tte ttc hoi &unique_lvlvars.;
 	  output out=_agg_t&type._tree_analysis_&periodid.(drop=_:) 	
@@ -118,7 +118,7 @@
 	run;
 	
 	%if &run_t3wk. = Y %then %do;
-	  proc means noprint data=agg_t3_tree_wkdays_&periodid. (where = (runid = "&runid.")) nway missing;
+	  proc means noprint data=agg_t3_tree_wkdays_&periodid. (where = (lowcase(runid) = "&runid.")) nway missing;
 	    var count;
 	    class treeanalysisgrp group level orig_hoi hoi wkday  &unique_wklvlvars.;
 	    output out=_agg_t3_tree_wkdays_&periodid.(drop=_:) 	
@@ -181,7 +181,7 @@
       proc sql noprint;
         select count(treeanalysisid)
     	into: num_treeids trimmed
-    	from input.&treeaggfile. (where = (runid = "&runid."));
+    	from input.&treeaggfile. (where = (lowcase(runid) = "&runid."));
     	
     	select a.treeanalysisid
 		      ,a.treeanalysisgrp
