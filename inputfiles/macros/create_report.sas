@@ -99,9 +99,11 @@
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
     /*loop agggregate tree processing by periodid*/
-    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	%if %index(&reporttype.,TREE) > 0 %then %do;
+      %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		%aggregate_tree();
-    %end;
+      %end;
+	%end;
 
 ***************************************************************************************************;
 *   Compute code distribution tables                                                     
