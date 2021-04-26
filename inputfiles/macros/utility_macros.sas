@@ -175,3 +175,17 @@
   %put &categories_boolean.;
 
 %mend convert_categories;
+
+%macro output_datasets (dataset=, outlib=);
+
+	%if &output_agg_data. = Y %then %do;
+
+		proc datasets;
+	    copy out=&outlib. memtype=data;
+	       select &dataset.(memtype=data)
+	              ;
+	 	quit;
+
+	%end;
+
+%mend output_datasets;

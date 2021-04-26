@@ -249,9 +249,7 @@
 			
     %end; /*level 2 baseline tables*/
 
-	%if &output_agg_data. = Y %then %do;
-		%output_datasets(dataset=&outdata., outlib=msocdata);
-	%end;
+	%output_datasets(dataset=&outdata., outlib=msocdata);
 					
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
