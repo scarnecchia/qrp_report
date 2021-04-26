@@ -353,7 +353,7 @@
         %let switch2group = ;
 
         /*parameters for %baseline_procreport*/
-        %if %sysfunc(prxmatch(m/T4L1|T4L2|TREE2|TREE4/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
+        %if %sysfunc(prxmatch(m/T4L1|T4L2|TREE4/i,&reporttype.)) >0 %then %let characteristiclabel = Mother;
         %else %let characteristiclabel = Patient;
         %let grp1_label=;
         %let grp2_label=;
