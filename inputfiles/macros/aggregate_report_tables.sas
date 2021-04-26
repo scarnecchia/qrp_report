@@ -41,6 +41,9 @@
 *			-[runid]_t6_switchepisdurstats
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
+
+*			-[RUNID]_distindex.sas7bdat 
+*			-[RUNID]_distindexmap.sas7bdat 
 *
 *  Program inputs:                                                                                   
 *  	-
@@ -243,6 +246,12 @@
 			  %output_datasets(dataset=agg_t6plotb, outlib=msocdata);
 			%end;
 		%end; *T6;
+
+		/* Code distribution */
+		%if &output_code_distribution. eq Y %then %do;
+			%agg_report(infile=distindex, outfile=agg_distindex, name=group);
+			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group);
+		%end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
