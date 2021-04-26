@@ -203,7 +203,7 @@
 			,:cwstart1     - :cwstart&num_treeids. 
 			,:cwend1       - :cwend&num_treeids.   
 			,:levelvar1    - :levelvar&num_treeids.
-    	from input.&treeaggfile. (where = (runid = "&runid.")) a 
+    	from input.&treeaggfile. (where = (lowcase(runid) = "&runid.")) a 
 		inner join infolder.&&&runid._userstrata (where = (lowcase(tableid) = "t&type.treeanalysis")) b
 	    on a.levelid = b.levelid
 		order by a.treeanalysisid;
