@@ -47,11 +47,6 @@
         from agg_profile;
     quit;
 
-    data output.agg_profile;
-        set agg_profile;
-    run;
-
-
     %do b = 1 %to %sysfunc(countw(&profiletablenames));
         %let profiletable = %scan(&profiletablenames,&b);
             data agg_&profiletable;
@@ -86,5 +81,19 @@
             run;
     %end;
 
+    /* Stack all aggregated datasets together */
+    data final_agg_profile;
+        set agg_group_profile:;
+    run;
+
+    /* Rejoin order and covarsort back onto final dataset */
+    proc sql noprint undo_policy=none;
+        create table final_agg_profile as 
+        select a.*, b.order, b.covarsort 
+        from final_agg_profile a 
+        left join baselinefile b 
+        on a.group = b.group and scan(a.profiletablename,1,'_') = b.runid 
+        order by b.order;
+    quit;
 
 %mend baseline_profile_createdata;

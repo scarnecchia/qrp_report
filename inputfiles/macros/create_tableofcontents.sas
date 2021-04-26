@@ -263,6 +263,75 @@
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
 
+  /***************************/
+  /* Covariate Profile Table */
+  /***************************/
+    %if &numprofilecovarstoinclude > 0 %then %do;
+
+    proc sql noprint ;
+        select distinct profiletablename
+        into :profiletablenames separated by ' '
+        from final_agg_profile;
+    quit;
+
+    %do d = 1 %to %sysfunc(countw(&profiletablenames));
+        %let profiletablename = %scan(&profiletablenames,&d);
+
+        /* reset counter to reset table letter */
+        %let tablecount = 1;
+
+        /* subset on covariate profile table */
+        data final_agg_profile&d;
+            set final_agg_profile(keep=profiletablename group order where=(profiletablename="&profiletablename"));
+        run;
+
+        /* Store order values */
+        proc sql noprint;
+            select distinct order 
+            into :profileorders separated by ' '
+            from final_agg_profile&d;
+        quit;
+
+        /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
+        %isdata(dataset=labelfile);
+        %if &nobs > 0 %then %do;
+        proc sql noprint undo_policy=none;
+            create table final_agg_profile&d as
+            select a.*, b.label as grouplabel
+            from final_agg_profile&d a 
+            left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
+            on a.group = b.group and scan(a.profiletablename,1,'_') = b.runid;
+        quit;
+        %end;
+        %else %do;
+        data final_agg_profile&d;
+            set final_agg_profile&d;
+            call missing(grouplabel);
+        run;
+        %end;
+
+        /* Loop on order */
+        %do e = 1 %to %sysfunc(countw(&profileorders));
+            %let profileorder = %scan(&profileorders,&e);
+
+        data _null_;
+            set final_agg_profile&d(keep=group grouplabel order where=(order=&profileorder));
+            if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
+            else call symputx('grouplabel',group);
+        run;
+
+         %tableletter();
+         %addtotoc(tabnum=Table &tablenum.&tableletter.,
+         caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&look_end.formatted));
+
+        %end;
+
+        %let tablenum = %eval(&tablenum+1);
+
+    %end; /* order loop */
+
+    %end; /* dataset loop */
+
   /*************************/
   /* Effect estimate table */
   /*************************/
