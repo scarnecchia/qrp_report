@@ -144,9 +144,11 @@ options DLCREATEDIR ;
 libname repdata "&repdata" ;
 options NODLCREATEDIR;
 
-/* Create msocdata folder */
-%let msocdata = &output.msocdata.;
+/* Create reportdata and msocdata folders */
+%let repdata = &output.reportdata;
+%let msocdata = &output.msocdata;
 options DLCREATEDIR ;
+libname repdata "&repdata" ;
 libname msocdata "&msocdata" ;
 options NODLCREATEDIR;
 
