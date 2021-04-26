@@ -42,6 +42,9 @@
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
 *
+*			-[RUNID]_distindex.sas7bdat 
+*			-[RUNID]_distindexmap.sas7bdat
+*
 *  Program inputs:                                                                                   
 *  	-
 * 
