@@ -261,11 +261,11 @@
             define label / order=data 'Characteristic Category'
                               style(column)=[rules=none width=4.5in just=L] ;
             define sum_npts / 'Number of Patients'
-                            style(column)=[width=1in just=C background=background_n_fmt.] ;
+                            style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
             define percent_npts /'% of Total*Number of*Patients'
                             style(column)=[width=.65in just=C] ;
             define sum_n_episodes / 'Number of Episodes'
-                            style(column)=[width=1in just=C background=background_n_fmt.] ;
+                            style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
             define percent_episodes / '% of Total*Number of*Episodes'
                             style(column)=[width=.65in just=C] ;
 
