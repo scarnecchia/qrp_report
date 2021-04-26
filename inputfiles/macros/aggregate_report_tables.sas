@@ -250,7 +250,9 @@
 		/* Code distribution */
 		%if &output_code_distribution. eq Y %then %do;
 			%agg_report(infile=distindex, outfile=agg_distindex, name=group);
+			%output_datasets(dataset=agg_distindex, outlib=msocdata);
 			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group);
+			%output_datasets(dataset=agg_distindexmap, outlib=msocdata);
 		%end;
 
 	%put =====> END MACRO: aggregate_report_tables;
