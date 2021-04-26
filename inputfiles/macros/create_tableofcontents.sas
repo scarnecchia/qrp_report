@@ -324,13 +324,13 @@
          %addtotoc(tabnum=Table &tablenum.&tableletter.,
          caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&look_end.formatted));
 
-        %end;
+        %end; /* order loop */
 
         %let tablenum = %eval(&tablenum+1);
 
-    %end; /* order loop */
-
     %end; /* dataset loop */
+
+    %end; /* &numprofilecovarstoinclude > 0 */
 
   /*************************/
   /* Effect estimate table */

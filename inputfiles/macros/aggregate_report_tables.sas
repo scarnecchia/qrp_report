@@ -233,6 +233,7 @@
 				where not missing(profilecovarstoinclude);
 			quit;
 
+		 %if %length(&profilecohortlist) > 0 %then %do;
 		 /* Loop on periodid and cohort list, append names, and reset profilecohort to blank when it is the dummy value */
 		 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		   %do b = 1 %to %sysfunc(countw(&profilecohortlist));
@@ -251,11 +252,13 @@
 		   	if a then profiletablename=cats(runid,"_profile&profilecohort._&periodid.");
 		    run;
 
-		   %end;
+		   %end; /* b */
 
-		 %end;
+		 %end; /* periodid */
 
-		%end;
+		%end; /* %length(&profilecohortlist) */
+
+		%end; /* numprofilecovarstoinclude > 0 */
 
 		/* Code distribution */
 		%if &output_code_distribution. eq Y %then %do;
