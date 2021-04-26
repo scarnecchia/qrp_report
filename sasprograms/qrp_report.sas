@@ -174,6 +174,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
 %include "&reportroot.inputfiles/macros/baseline_output.sas";
 %include "&reportroot.inputfiles/macros/baseline_profile_createdata.sas";
+%include "&reportroot.inputfiles/macros/baseline_profile_output.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
