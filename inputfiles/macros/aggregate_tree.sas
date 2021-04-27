@@ -30,7 +30,12 @@
 
   %do n = 1 %to &numrunid.;
    %let runid = %scan(&runidlist., &n.); 
-   %let type = %substr(&reporttype,5,1);
+   %if %index(&reporttype., TREE) > 0 %then %do;
+     %let type = %substr(&reporttype,5,1);
+   %end;
+   %else %do;
+     %let type = %substr(&reporttype.,2,1);
+   %end;
    
    /***********************************************************************************************
     Identify EOI and REF for type 2 and 4

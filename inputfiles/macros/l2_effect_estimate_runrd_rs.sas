@@ -304,8 +304,8 @@
 
             keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
-                 /*only include followup time variables for ReportType = T2L2 or TREE2 */
-                 %if %str("&reporttype.") = %str("T2L2") | %str("&reporttype.") = %str("TREE2") %then %do;
+                 /*only include followup time variables for ReportType = T2L2 */
+                 %if %str("&reporttype.") = %str("T2L2") %then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  %end;
                  ;
@@ -399,7 +399,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") | %str("&reporttype.") = %str("TREE4") %then %do;
+                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';
@@ -422,7 +422,7 @@
                 keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
                 /*only include followup time variables for ReportType = T2L2 */
-                %if %str("&reporttype.") = %str("T2L2") | %str("&reporttype.") = %str("TREE2") %then %do;
+                %if %str("&reporttype.") = %str("T2L2") %then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                 %end;
                 ;

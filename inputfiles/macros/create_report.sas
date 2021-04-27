@@ -87,10 +87,10 @@
     /*loop l2 processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 			%l2_effect_estimate_driver();
-		%if (%index(&reporttype,L2) | &reporttype = TREE2 | &reporttype = TREE4) and %index(&figurelist,F1) %then %do;
+		%if (%index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
 		%end;
-        %if (%index(&reporttype,L2) | &reporttype = TREE2 | &reporttype = TREE4) and %index(&figurelist,F2) %then %do;
+        %if (%index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
             %l2_forestplot_createdata;
         %end;
     %end;
@@ -99,7 +99,7 @@
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
     /*loop agggregate tree processing by periodid*/
-	%if %index(&reporttype.,TREE) > 0 %then %do;
+	%if %sysfunc(exist(input.&treeaggfile.)) %then %do;
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		%aggregate_tree();
       %end;
@@ -115,9 +115,9 @@
 ***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
-
-    %create_tableofcontents();
-
+    %if %index(&reporttype., TREE) = 0 %then %do;
+      %create_tableofcontents();
+    %end;
 ***************************************************************************************************;
 *   Create appendices                                           
 ***************************************************************************************************;
