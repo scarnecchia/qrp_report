@@ -243,6 +243,7 @@
 		  run;
 		%end; 
         %else %do;
+		  %let num_levelvars = 0;
 		  data temp_&runid._t&type._tree_analysis_&periodid._agg;
 		     set _agg_t&type._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." and level = "&&levelid&t.." ));
 		  run;
