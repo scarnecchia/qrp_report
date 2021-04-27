@@ -81,6 +81,7 @@
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
     %do b = 1 %to %eval(&numbaselinetablegrp.);
+	   
         data _null_;
             set baselinefile(where=(order=&b.));
             if _n_ = 1 then do;
@@ -168,23 +169,29 @@
             %end;
             %if %str("&cohort") = %str("multevent") %then %do;
                 data _null_;
-                    set infolder.&&&runid._multeventfile(where=(analysisgrp in ("&analysisgrp", "&analysisgrp2")));
+                    set infolder.&&&runid._multeventfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
                     if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
 					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("overlap") %then %do;
                 data _null_;
-                    set infolder.&&&runid._overlapfile(where=(analysisgrp in ("&analysisgrp", "&analysisgrp2")));
+                    set infolder.&&&runid._overlapfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
                     if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
 					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("concomitance") %then %do;
                 data _null_;
-                    set infolder.&&&runid._concfile(where=(analysisgrp in ("&analysisgrp", "&analysisgrp2")));
+                    set infolder.&&&runid._concfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
                     if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do;
 					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
         %end;
