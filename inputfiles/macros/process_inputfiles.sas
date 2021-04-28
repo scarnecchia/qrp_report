@@ -293,10 +293,10 @@
      %end;
 	 
 /***************************************************************************************************
-*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                            
+*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2                                          
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
 		data groupsfile;
 			set 
 			%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
@@ -304,9 +304,6 @@
 			%end;
 			%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
         		input.&l2comparisonfile. (rename=AnalysisGrp=group)
-			%end;
-			%if %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
-        		input.&treeaggfile. (rename=treeanalysisGrp=group)
 			%end;
 			;
 			runid = lowcase(runid);
@@ -821,11 +818,10 @@
 *   For L2 reports:
      1: Read in L2ComparisonFile
      2: For T4 reports: read in optional SelectionProbabilitiesFile
-     3: create master PS/CS input file dataset      
-     4: Read in Treeaggfile if it exists
+     3: create master PS/CS input file dataset    
 ***************************************************************************************************/
 
-    %if &reporttype = T2L2 | &reporttype = T4L2 | &reporttype = TREE2 | &reporttype = TREE4 %then %do;
+    %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
 
         /******************/
         /*L2ComparisonFile*/
@@ -891,7 +887,7 @@
             %end;
         %end;
         %else %do;
-            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2, T4L2, TREE2, or TREE4 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2, or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;
 
         /****************************/
@@ -982,11 +978,23 @@
                 eoi = lowcase(eoi);
                 ref = lowcase(ref);
 			run;
-			
-		  /************************************************
-           Output TXT file for treelookup file per runid
-           ************************************************/
-          /* Determine if there is a comma in any row on the lookup file */
+        %end;
+
+        proc sort data=pscs_masterinputs nodupkey;
+            by runid covarnum analysisgrp;
+        run;
+	%end;	
+	
+		
+ /***************************************************************************
+   Read in and Output TXT file for treelookup file per runid when it exsists
+  ***************************************************************************/
+     %if &reporttype = T2L2 | &reporttype = T4L2 | %index(&reporttype.,TREE) > 0 %then %do;
+	   /*Set each table by looping through runIDs*/
+       %do n = 1 %to &numrunid.;
+       %let runid = %scan(&runidlist., &n.);
+	   
+	   /* Determine if there is a comma in any row on the lookup file */
 	      %if %str("&&&runid._treelookup") ne %str("") %then %do;
 	         data _treelookup;
 	           length comma_in_parent comma_in_child 3.;
@@ -1012,14 +1020,14 @@
                %put WARNING: Commas exist in either the child or parent node. A tab-delimited file will be produced.;
 	           %put &parent_comma. parent, and &child_comma. child nodes have commas.;
 	            proc export data = infolder.&&&runid._treelookup
-   	                  outfile   = "&output.&&&runid._treelookup.txt"
+   	                  outfile   = "&output.&&&runid._treelookup..txt"
 	           	     dbms      = tab replace;
 	           	     putnames  = NO;
 	            run;
              %end;	
 	         %else %do;  
 	            proc export data = infolder.&&&runid._treelookup
-   	                  outfile   = "&output.&&&runid._treelookup.txt"
+   	                  outfile   = "&output.&&&runid._treelookup..txt"
 	           	     dbms      = dlm replace;
 	           	     delimiter = ',';
 	           	     putnames  = NO;
@@ -1030,13 +1038,9 @@
              proc datasets lib = work;
               delete _treelookup;
              quit;
-          %end;
-        %end;
-
-        proc sort data=pscs_masterinputs nodupkey;
-            by runid covarnum analysisgrp;
-        run;
-	%end;	
+          %end; /* treelookup exists */
+		%end; /* runid loop */
+	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
