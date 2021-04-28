@@ -990,7 +990,7 @@
 	
 		
  /***************************************************************************
-   Read in and Output TXT file for treelookup file per runid when it exsists
+   Read in and Output TXT file for treelookup file per runid when it exists
   ***************************************************************************/
      %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 	   /*Set each table by looping through runIDs*/
