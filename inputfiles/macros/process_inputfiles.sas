@@ -293,10 +293,10 @@
      %end;
 	 
 /***************************************************************************************************
-*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2                                          
+*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
 ***************************************************************************************************/
 
-	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
+	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
 		data groupsfile;
 			set 
 			%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
@@ -305,6 +305,9 @@
 			%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
         		input.&l2comparisonfile. (rename=AnalysisGrp=group)
 			%end;
+            %if %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
+                input.&treeaggfile. (rename=treeanalysisGrp=group)
+            %end;
 			;
 			runid = lowcase(runid);
 			group = lowcase(group);
@@ -805,7 +808,7 @@
         run;
 
         /* Check for populated baselinegroupnum parameter within specific analysis types */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE4|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
          %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
          %abort;
         %end;
@@ -887,7 +890,7 @@
             %end;
         %end;
         %else %do;
-            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2, or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
+            %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;
 
         /****************************/
@@ -989,7 +992,7 @@
  /***************************************************************************
    Read in and Output TXT file for treelookup file per runid when it exsists
   ***************************************************************************/
-     %if &reporttype = T2L2 | &reporttype = T4L2 | %index(&reporttype.,TREE) > 0 %then %do;
+     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 	   /*Set each table by looping through runIDs*/
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);

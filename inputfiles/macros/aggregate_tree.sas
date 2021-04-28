@@ -2,7 +2,7 @@
 *                                         SENTINEL PROGRAM
 *************************************************************************************************
 * PROGRAM:  aggregate_tree.sas 
-* Created (mm/dd/yy): 06/30/2019
+* Created (mm/dd/yy): 04/28/2021
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: Create analytic datasets that can be used as inputs to TreeScan software
@@ -135,7 +135,7 @@
 	  %end;
 		
         proc sql noprint;
-		  create table output.&&&runid._t3_tree_wkdays_&periodid._agg as
+		  create table output.&&&runid._runid._t3_tree_wkdays_&periodid._agg as
 		  select treeanalysisgrp              format = $40.
 		        ,group                        format = $40.
 				,level                        format = $3.
