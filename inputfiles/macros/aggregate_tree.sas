@@ -54,7 +54,7 @@
       proc sql;
        select case when count(levelid) > 0 then 'Y'
               else 'N' end into: run_t3wk
-       from infolder.&&&runid._userstrata. (where = (lowcase(tableid) = 't3treewkdays' and runid= "&runid."));
+       from infolder.&&&runid._userstrata. (where = (lowcase(tableid) = 't3treewkdays'));
       quit;
    %end;
 	
@@ -130,7 +130,7 @@
 	  %end;
 		
         proc sql noprint;
-		  create table output.&runid._runid._t3_tree_wkdays_&periodid._agg as
+		  create table output.&&&runid._t3_tree_wkdays_&periodid._agg as
 		  select treeanalysisgrp              format = $40.
 		        ,group                        format = $40.
 				,level                        format = $3.
