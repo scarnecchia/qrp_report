@@ -241,7 +241,7 @@
 		   	%if &profilecohort = _nocohort %then %let profilecohort =;
 			%agg_report(infile=profile&profilecohort._&periodid, outfile=agg&profilecohort._&periodid, name=group);
 
-			/* Append datasets and assin profiletablename column */
+			/* Append datasets and add in profiletablename column */
 			data agg_profile;
 		   	set
 		   	%if %sysfunc(exist(agg_profile)) %then %do;

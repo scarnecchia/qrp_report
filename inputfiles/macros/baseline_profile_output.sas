@@ -79,7 +79,7 @@
         %do e = 1 %to %sysfunc(countw(&profileorders));
             %let profileorder = %scan(&profileorders,&e);
 
-        data final_agg_profilegroup&e;
+        data final_agg_profilegroup&d._&e.;
             set final_agg_profile&d(where=(order=&profileorder));
             if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
             call symputx('covarsort', upcase(covarsort));
@@ -93,16 +93,16 @@
         proc sql noprint;
             select sum(sum_npts), sum(sum_nepisodes) 
             into :totalpatients, :totalepisodes
-            from final_agg_profilegroup&e;
+            from final_agg_profilegroup&d._&e.;
         quit;
         %put &totalpatients &totalepisodes;
 
         *Determine covariate label and order;
         data covarlabel;
-            set final_agg_profilegroup&e(keep=covar: obs=0);
+            set final_agg_profilegroup&d._&e.(keep=covar: obs=0);
         run;
 
-        proc transpose data=covarlabel out=covarlabel1;
+        proc transpose data=covarlabel(drop=covarsort) out=covarlabel1;
             var covar:;
         run;
 
@@ -145,7 +145,12 @@
 
         *create label for each row in table;
         data covarswithlabel;
-            set final_agg_profilegroup&e end=eof;
+            set final_agg_profilegroup&d._&e.(drop=covarsort) end=eof;
+            /* set missing covariate values to 0 */
+            %do f=1 %to %eval(&numcovars.);
+                %let covar = %scan(&covarlist., &f.);
+                if missing(&covar) then &covar = 0;
+            %end;
 
             format label $&alllabellength..;
             length label $&alllabellength.;
@@ -185,7 +190,7 @@
             %end;
 
             *Output metrics;
-            format sum_npts sum_n_episodes comma12.0 percent_npts percent_episodes percent8.1;
+            format sum_npts sum_nepisodes comma12.0 percent_npts percent_episodes percent8.1;
                     
             if &totalpatients.>0 then do;
                 percent_npts = sum_npts/&totalpatients.;
@@ -194,7 +199,7 @@
                 percent_npts=0;
             end;
             if &totalepisodes.>0 then do;
-                percent_episodes = sum_n_episodes/&totalepisodes.;
+                percent_episodes = sum_nepisodes/&totalepisodes.;
             end;
             else do;
                 percent_episodes=0;
@@ -205,7 +210,7 @@
             if eof then do;
                 *Defensive - add all/no row if not present;
                 sum_npts = 0;
-                sum_n_episodes = 0;
+                sum_nepisodes = 0;
                 percent_npts=0;
                 percent_episodes=0;
                 %do i = 1 %to %eval(&numcovars.);
@@ -216,7 +221,7 @@
                 output;
 
                 sum_npts = 0;
-                sum_n_episodes = 0;
+                sum_nepisodes = 0;
                 percent_npts=0;
                 percent_episodes=0;
                 %do i = 1 %to %eval(&numcovars.);
@@ -227,7 +232,7 @@
                 output;
             end;
 
-            keep label sortorder sum_npts sum_n_episodes percent_npts percent_episodes covar:;
+            keep label sortorder sum_npts sum_nepisodes percent_npts percent_episodes covar:;
         run;
 
         %tableletter();
@@ -257,14 +262,14 @@
             style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
             style(report)=[rules=none frame=box];
                     
-        columns (label sum_npts percent_npts sum_n_episodes percent_episodes);           
+        columns (label sum_npts percent_npts sum_nepisodes percent_episodes);           
             define label / order=data 'Characteristic Category'
                               style(column)=[rules=none width=4.5in just=L] ;
             define sum_npts / 'Number of Patients'
                             style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
             define percent_npts /'% of Total*Number of*Patients'
                             style(column)=[width=.65in just=C] ;
-            define sum_n_episodes / 'Number of Episodes'
+            define sum_nepisodes / 'Number of Episodes'
                             style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
             define percent_episodes / '% of Total*Number of*Episodes'
                             style(column)=[width=.65in just=C] ;

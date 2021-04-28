@@ -64,6 +64,7 @@
 
                 data agg_profilegroup&c;
                     set agg_&profiletable(where=(group="&profilegroup"));
+                    if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
                     call symputx('profilecovarsnocomma', compress(profilecovarstoinclude,','));
                 run;
 
