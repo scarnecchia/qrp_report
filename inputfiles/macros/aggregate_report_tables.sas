@@ -227,47 +227,6 @@
 			%end;
 		%end; *T6;
 
-		/* Aggregate covariate profile tables */
-		%if &numprofilecovarstoinclude > 0 %then %do;
-
-			%let profilecohortlist = ;
-
-			/* Put in dummy value when no cohort exists to pass in loop */
-			proc sql noprint;
-				select distinct cohort 
-				into :profilecohortlist separated by ' '
-				from (select profilecovarstoinclude, case when(cohort is missing) then 'nocohort' else cohort end as cohort
-					  from baselinefile)
-				where not missing(profilecovarstoinclude);
-			quit;
-
-		 %if %length(&profilecohortlist) > 0 %then %do;
-		 /* Loop on periodid and cohort list, append names, and reset profilecohort to blank when it is the dummy value */
-		 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-		   %do b = 1 %to %sysfunc(countw(&profilecohortlist));
-		   	%let profilecohort = _%scan(&profilecohortlist,&b);
-		   	%if &profilecohort = _nocohort %then %let profilecohort =;
-			%agg_report(infile=profile&profilecohort._&periodid, outfile=agg&profilecohort._&periodid, name=group);
-
-			/* Append datasets and add in profiletablename column */
-			data agg_profile;
-		   	set
-		   	%if %sysfunc(exist(agg_profile)) %then %do;
-		   	 agg_profile
-		   	%end;
-		   	 agg&profilecohort._&periodid(in=a);
-		   	 length profiletablename $20;
-		   	if a then profiletablename=cats(runid,"_profile&profilecohort._&periodid.");
-		    run;
-
-		   %end; /* b */
-
-		 %end; /* periodid */
-
-		%end; /* %length(&profilecohortlist) */
-
-		%end; /* numprofilecovarstoinclude > 0 */
-
 		/* Code distribution */
 		%if &output_code_distribution. eq Y %then %do;
 			%agg_report(infile=distindex, outfile=agg_distindex, name=group);

@@ -3,7 +3,7 @@
 ****************************************************************************************************
 *
 * PROGRAM: baseline_profile_output.sas  
-* Created (mm/dd/yyyy): 04/16/2021
+* Created (mm/dd/yyyy): 04/29/2021
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE:
@@ -41,8 +41,8 @@
         from final_agg_profile;
     quit;
 
-    %do d = 1 %to %sysfunc(countw(&profiletablenames));
-        %let profiletablename = %scan(&profiletablenames,&d);
+    %do d = 1 %to %sysfunc(countw(&profiletablenames,' '));
+        %let profiletablename = %scan(&profiletablenames,&d, ' ');
 
         /* Reset table letter at top of dataset loop */
         %let tablecount = 1;
@@ -65,7 +65,7 @@
             select a.*, b.label as grouplabel
             from final_agg_profile&d a 
             left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-            on a.group = b.group and scan(a.profiletablename,1,'_') = b.runid;
+            on a.group = b.group and a.runid = b.runid;
         quit;
         %end;
         %else %do;

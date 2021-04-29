@@ -274,15 +274,15 @@
         from final_agg_profile;
     quit;
 
-    %do d = 1 %to %sysfunc(countw(&profiletablenames));
-        %let profiletablename = %scan(&profiletablenames,&d);
+    %do d = 1 %to %sysfunc(countw(&profiletablenames,' '));
+        %let profiletablename = %scan(&profiletablenames,&d,' ');
 
         /* reset counter to reset table letter */
         %let tablecount = 1;
 
         /* subset on covariate profile table */
         data final_agg_profile&d;
-            set final_agg_profile(keep=profiletablename group order where=(profiletablename="&profiletablename"));
+            set final_agg_profile(keep=profiletablename group runid order where=(profiletablename="&profiletablename"));
         run;
 
         /* Store order values */
@@ -300,7 +300,7 @@
             select a.*, b.label as grouplabel
             from final_agg_profile&d a 
             left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-            on a.group = b.group and scan(a.profiletablename,1,'_') = b.runid;
+            on a.group = b.group and a.runid = b.runid;
         quit;
         %end;
         %else %do;
