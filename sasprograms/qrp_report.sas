@@ -179,6 +179,7 @@ ods path(prepend) work.templat(update);
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
 %include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
+%include "&reportroot.inputfiles/macros/aggregate_tree.sas";
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";

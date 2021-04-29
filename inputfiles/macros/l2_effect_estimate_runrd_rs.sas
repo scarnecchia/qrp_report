@@ -28,54 +28,60 @@
 %macro l2_effect_estimate_runrd_rs(where=, analysis=, subgroupcat=, donotreport=);
 
     %put =====> MACRO CALLED: l2_effect_estimate_runrd_rs;
-
-    * Aggregate data across DP;
-    proc means data=cat_dp_rd nway noprint;
-        var Exp UnExp EVExp EVUnexp FUTimeExp FUTimeUnexp weight weighted_diff;
-        where &where.;
-        ID covarnum;
-        output out=forRD    sum(Exp)=N1
-                            sum(UnExp)=N0
-                            sum(EVExp)=Ev1
-                            sum(EVUnexp)=Ev0
-                            sum(FUTimeExp)=FuTime1
-                            sum(FUTimeUnexp)=FuTime0
-                            sum(weight)=weight
-                            sum(weighted_diff)=weighted_diff;
-    run;
-
-    *In case data is missing to eliminate e.r.r.o.r message;
-    data forrd_exp;
-        set forRD;
-        where N1 ne .;
-    run;
-    %isdata(dataset=forrd_exp); 
-    %if %eval(&nobs.=0) %THEN %DO;
-        data forRD;
-            set cat_dp_rd(obs=1 keep=covarnum) 
-                forRD;
-            N1=0;N0=0;Ev1=0;Ev0=0;FuTime0=0;FuTime0=0;
-        run;
-
-        *weighted RD calculations for empty case;
-        %let stratifiedratediff =.;
-        %let lower =.;
-        %let upper =.;
+	
+    %if %sysfunc(exist(cat_dp_rd)) > 0 %then %do; 
+       * Aggregate data across DP;
+       proc means data=cat_dp_rd nway noprint;
+           var Exp UnExp EVExp EVUnexp FUTimeExp FUTimeUnexp weight weighted_diff;
+           where &where.;
+           ID covarnum;
+           output out=forRD    sum(Exp)=N1
+                               sum(UnExp)=N0
+                               sum(EVExp)=Ev1
+                               sum(EVUnexp)=Ev0
+                               sum(FUTimeExp)=FuTime1
+                               sum(FUTimeUnexp)=FuTime0
+                               sum(weight)=weight
+                               sum(weighted_diff)=weighted_diff;
+       run;
+	   
+       *In case data is missing to eliminate e.r.r.o.r message;
+       data forrd_exp;
+           set forRD;
+           where N1 ne .;
+       run;
+	   
+       %isdata(dataset=forrd_exp); 
+       %if %eval(&nobs.=0) %THEN %DO;
+           data forRD;
+               set cat_dp_rd(obs=1 keep=covarnum) 
+                   forRD;
+               N1=0;N0=0;Ev1=0;Ev0=0;FuTime0=0;FuTime0=0;
+           run;
+	   
+           *weighted RD calculations for empty case;
+           %let stratifiedratediff =.;
+           %let lower =.;
+           %let upper =.;
+       %end;
+	   
+       * Obtain stratified incidence rate difference estimate with confidence intervals;
+       * include counts of patients, cases and follow up time in output dataset;
+       proc sql noprint;
+           select sum(N1) into: N_1
+           from forRD;
+           select sum(N0) into: N_0
+           from forRD;
+           select sum(weight) into :denom
+           from forRD;
+           select sum(weighted_diff) into :num
+           from forRD;
+       quit;
     %end;
-
-    * Obtain stratified incidence rate difference estimate with confidence intervals;
-    * include counts of patients, cases and follow up time in output dataset;
-    proc sql noprint;
-        select sum(N1) into: N_1
-        from forRD;
-        select sum(N0) into: N_0
-        from forRD;
-        select sum(weight) into :denom
-        from forRD;
-        select sum(weighted_diff) into :num
-        from forRD;
-    quit;
-
+	%else %do;
+	  %let nobs = 0;
+	%end;
+	
     %if %eval(&nobs.>0) %THEN %DO;
        %if %eval(&denom. <= 0) %then %do;
             %let stratifiedratediff =.;
@@ -298,7 +304,7 @@
 
             keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
-                 /*only include followup time variables for ReportType = T2L2*/
+                 /*only include followup time variables for ReportType = T2L2 */
                  %if %str("&reporttype.") = %str("T2L2") %then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  %end;
@@ -415,7 +421,7 @@
 
                 keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
-                /*only include followup time variables for ReportType = T2L2*/
+                /*only include followup time variables for ReportType = T2L2 */
                 %if %str("&reporttype.") = %str("T2L2") %then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                 %end;

@@ -107,7 +107,7 @@
                 else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
-                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
                 call symputx('outputinfantchar', strip(upcase(outputinfantchar)));
                 call symputx('exposurechar', upcase(exposurechar));
@@ -118,7 +118,7 @@
                 call symputx('includenonpregnant', 'N');
                 %end;
 
-                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
                    upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
@@ -293,7 +293,7 @@
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-             %let cohortdef = 01;
+            %let cohortdef = 01;
         %end;
         %else %if %str("&reporttype") = %str("T5") %then %do;
             %let cohortdef = 04;
@@ -385,7 +385,7 @@
               /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
               if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
               %if "&includecomp" = "Y" %then %do;
-                if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
+                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
               %end;
           run;
 
@@ -707,8 +707,8 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
-                            ("&table" ="Switchstep_0") %then %do;
+                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) 
+                          | ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
                             if metvar = 'PATIENT' then exp_std0_char = 'N/A';
                             if metvar = 'N_EPISODES' then do;
@@ -1219,7 +1219,6 @@
 
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
-
             if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;

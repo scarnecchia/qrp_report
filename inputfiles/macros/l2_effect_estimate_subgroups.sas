@@ -74,7 +74,7 @@
         %let sublabel = Age Group;
 
         %if &computecategories. = Y %then %do;
-            /*if reporttype = T4L2, extract original cohortgrp*/
+            /*if reporttype = T4L2 extract original cohortgrp*/
             %if %str("&reporttype.") = ("T4L2") %then %do;
                 data _null_;
                     set infolder.&&&runid._micohortfile(where=(milgrp=substr("&grp1.",1,length("&grp1")-4)));
