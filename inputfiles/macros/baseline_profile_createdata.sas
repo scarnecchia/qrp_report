@@ -36,7 +36,6 @@
 
     /* Aggregate all potential profile datasets */
 
-         /* Loop on periodid and cohort list, append names, and reset profilecohort to blank when it is the dummy value */
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         /*Use GROUPTABLE to create list of baseline tables and create dataset in statement*/
 
@@ -126,10 +125,6 @@
     /*Stack profile tables*/
     data final_agg_profile;
         set _temp_agg_group_profile:;
-    run;
-
-    data output.final_agg_profile;
-        set final_agg_profile;
     run;
 
 %mend baseline_profile_createdata;
