@@ -68,13 +68,13 @@
             %let profiletable = %scan(&profiletables., &b., ' ');
 
             /*Merge table with GROUPSTABLE and only keep Groups/Analysisgrps in the input file*/
-            data _temp_profile_tablenames&b.;
+            data _temp_profile_tablenames&dps._&b.;
                 set _temp_profile_tablenames(where=(profiletablename="&profiletable."));
                 call symputx('mergevar', mergevar);
             run;
 
             proc sql noprint;
-                create table _temp_profile_tablenum&b. as
+                create table _temp_profile_tablenum&dps._&b. as
                 select x.*
                      , y.profiletablename
                      , y.runid
@@ -87,44 +87,58 @@
                      %end;
                      , y.group as group1
                 from &profiletable as x,
-                     _temp_profile_tablenames&b. as y
+                     _temp_profile_tablenames&dps._&b. as y
                 where x.&mergevar. = y.group;
             quit;
 
             proc sql noprint;
                 select distinct order 
                 into :profileorders separated by ' '
-                from _temp_profile_tablenum&b.;
+                from _temp_profile_tablenum&dps._&b.;
             quit;
 
             %do c = 1 %to %sysfunc(countw(&profileorders));
                 %let profileorder = %scan(&profileorders,&c);
 
-                data _temp_profilegroup&c;
-                    set _temp_profile_tablenum&b.(where=(order=&profileorder));
+                data _temp_profilegroup&dps._&b._&c;
+                    set _temp_profile_tablenum&dps._&b.(where=(order=&profileorder));
                     if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
                     call symputx('profilecovarsnocomma', compress(profilecovarstoinclude,','));
                 run;
 
-                proc means data=_temp_profilegroup&c nway missing noprint;
+                proc means data=_temp_profilegroup&dps._&b._&c. nway missing noprint;
                     var npts n_episodes;
                     class profiletablename runid group order &profilecovarsnocomma;
-                    output out=sum_agg_profile&c(drop=_:)   
+                    output out=sum_agg_profile&dps._&b._&c(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
 
             %end;
 
-            data _temp_agg_group_profile&b;
-                set sum_agg_profile:;
-            run;
         %end;
+
         %end;
+
+        /*Stack profile tables within periodid*/
+        data agg_profile_&periodid.;
+            set sum_agg_profile:;
+            periodid=&periodid;
+        run;
+
+        /* Rejoin profilecovarstoinclude to use in output macro */
+        proc sql noprint undo_policy=none;
+            create table agg_profile_&periodid as
+            select a.*, b.profilecovarstoinclude 
+            from agg_profile_&periodid a
+            left join baselinefile b
+            on a.group = b.group and a.runid = b.runid;
+        quit;
+
     %end;
 
-    /*Stack profile tables*/
-    data final_agg_profile;
-        set _temp_agg_group_profile:;
+    /* Stacking periodid datasets together for final aggregation dataset */
+    data aggregate_profile;
+        set agg_profile:;
     run;
 
 %mend baseline_profile_createdata;

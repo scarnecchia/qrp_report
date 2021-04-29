@@ -268,10 +268,13 @@
   /***************************/
     %if &numprofilecovarstoinclude > 0 %then %do;
 
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+
     proc sql noprint ;
         select distinct profiletablename
         into :profiletablenames separated by ' '
-        from final_agg_profile;
+        from aggregate_profile
+        where periodid=&periodid;
     quit;
 
     %do d = 1 %to %sysfunc(countw(&profiletablenames,' '));
@@ -281,31 +284,31 @@
         %let tablecount = 1;
 
         /* subset on covariate profile table */
-        data final_agg_profile&d;
-            set final_agg_profile(keep=profiletablename group runid order where=(profiletablename="&profiletablename"));
+        data final_agg_profile&d._&periodid.;
+            set aggregate_profile(keep=profiletablename group runid order periodid where=(profiletablename="&profiletablename" and periodid=&periodid));
         run;
 
         /* Store order values */
         proc sql noprint;
             select distinct order 
             into :profileorders separated by ' '
-            from final_agg_profile&d;
+            from final_agg_profile&d._&periodid.;
         quit;
 
         /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
         %isdata(dataset=labelfile);
         %if &nobs > 0 %then %do;
         proc sql noprint undo_policy=none;
-            create table final_agg_profile&d as
+            create table final_agg_profile&d._&periodid. as
             select a.*, b.label as grouplabel
-            from final_agg_profile&d a 
+            from final_agg_profile&d._&periodid. a 
             left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
             on a.group = b.group and a.runid = b.runid;
         quit;
         %end;
         %else %do;
-        data final_agg_profile&d;
-            set final_agg_profile&d;
+        data final_agg_profile&d._&periodid.;
+            set final_agg_profile&d._&periodid.;
             call missing(grouplabel);
         run;
         %end;
@@ -313,22 +316,31 @@
         /* Loop on order */
         %do e = 1 %to %sysfunc(countw(&profileorders));
             %let profileorder = %scan(&profileorders,&e);
-
+            %let table = ;
+            
         data _null_;
-            set final_agg_profile&d(keep=group grouplabel order where=(order=&profileorder));
+            set final_agg_profile&d._&periodid.(keep=profiletablename group grouplabel order where=(order=&profileorder));
             if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
             else call symputx('grouplabel',group);
+            %if &stratifybydp = Y %then %do;
+            call symputx('profiletabletitle',scan(upcase(profiletablename),1,'.'));
+            %end;
+            %else %do;
+            call symputx('profiletabletitle','Aggregated');
+            %end;
         run;
 
          %tableletter();
          %addtotoc(tabnum=Table &tablenum.&tableletter.,
-         caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&look_end.formatted));
+         caption=%quote(Characteristic Profile of &grouplabel (&profiletabletitle) in the &database. from &startdateformatted. to &&enddate&look_end.formatted));
 
         %end; /* order loop */
 
         %let tablenum = %eval(&tablenum+1);
 
     %end; /* dataset loop */
+
+    %end;
 
     %end; /* &numprofilecovarstoinclude > 0 */
 
