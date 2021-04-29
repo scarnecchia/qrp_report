@@ -55,6 +55,8 @@
                   dpinfofile = dpinfofile, 
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
+
+    %if ^%index(&reporttype,TREE) %then %do;
 	
 ***************************************************************************************************;
 *   Assign study start and end dates                                               
@@ -74,12 +76,15 @@
 
     %baseline_driver();
 
+    %end;
+
 ***************************************************************************************************;
 * Aggregate MSOC output tables from each DP                                                      
 ***************************************************************************************************;
 
 	%aggregate_report_tables;
 
+%if ^%index(&reporttype,TREE) %then %do;
 ***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
@@ -94,7 +99,7 @@
             %l2_forestplot_createdata;
         %end;
     %end;
-
+	
 
 ***************************************************************************************************;
 *   Compute code distribution tables                                                     
@@ -102,12 +107,12 @@
 	%if &output_code_distribution. eq Y %then %do;		
 		%codedistribution_createdata;
 	%end;
-
+	
 ***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
 
-    %create_tableofcontents();
+      %create_tableofcontents();
 
 ***************************************************************************************************;
 *   Create appendices                                           
@@ -135,6 +140,18 @@
     %if "&report_destination." = "BOTH" | "&report_destination." = "PDF"  %then %do;
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt);
+    %end;
+
+    %end;
+
+***************************************************************************************************;
+*   Create analytic datasets that can be used as inputs to TreeScan software                                             
+***************************************************************************************************;
+    /*loop agggregate tree processing by periodid*/
+    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+      %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+        %aggregate_tree();
+      %end;
     %end;
 
 ***************************************************************************************************;

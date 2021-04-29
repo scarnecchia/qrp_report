@@ -158,7 +158,7 @@
             - 1 monitoring period
             - DP stratification = N
             - max(order) in baselinefile = 1
-            - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
+            - if reporttype = T2L2, T4L2- then analysis must be covariate stratification*/
             %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
                 %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
                     %let tablecount = 0;
@@ -440,7 +440,7 @@
         %let tablecount = 1;
 
         /***************************************************************************************/
-        /* ReportType = T2L2 or T4L2                                                           */
+        /* ReportType = T2L2, T4L2                                            */
         /***************************************************************************************/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 
