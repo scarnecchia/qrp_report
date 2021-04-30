@@ -71,7 +71,7 @@
         run;
         %end;
 
-        data final_agg_profilegroup&d._&periodid.;
+        data final_agg_profilegroup&d._&periodid.(drop=covarsort);
             set _temp_agg_profile;
             if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
             call symputx('covarsort', upcase(covarsort));
