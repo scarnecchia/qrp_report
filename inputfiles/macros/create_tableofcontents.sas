@@ -313,6 +313,7 @@
         run;
 
          %tableletter();
+         %if &numprofilecovarstoinclude = 1 %then %let tableletter =;
          %addtotoc(tabnum=Table &tablenum.&tableletter.,
          caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
 

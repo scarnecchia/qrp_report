@@ -89,6 +89,9 @@
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;
+                     %else %do;
+                     , y.analysisgrp as group
+                     %end;
                      , y.group as group1
                 from &profiletable as x,
                      _temp_profile_tablenames&dps._&b. as y

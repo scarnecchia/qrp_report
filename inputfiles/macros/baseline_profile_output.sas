@@ -231,17 +231,18 @@
 
         %tableletter();
     
+        %if &numprofilecovarstoinclude = 1 %then %let tableletter =;
         %if &covarsort = A %then %do;
         proc sort data=covarswithlabel nodupkey out=repdata.table&tablenum.&tableletter(drop=covar:);
             by sortorder label;
         run;
         %end;
         %else %do;
-        proc sort data=covarswithlabel nodupkey out=covarswithlabel(drop=covar:);
+        proc sort data=covarswithlabel nodupkey out=covarswithlabel;
             by sortorder label;
         run;
 
-        proc sort data=covarswithlabel out=repdata.table&tablenum.&tableletter;
+        proc sort data=covarswithlabel out=repdata.table&tablenum.&tableletter(drop=covar:);
             by sortorder 
             %do i = 1 %to %eval(&numcovars.);
             descending  %scan(&covarlist., &i.) 
