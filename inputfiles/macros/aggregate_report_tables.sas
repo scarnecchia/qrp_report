@@ -44,14 +44,6 @@
 
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat 
-
-*			-[runid]_profile_[LOOK].sas7bdat
-*			-[runid]_profile_mi_[LOOK].sas7bdat
-*		    -[runid]_profile_preg_[LOOK].sas7bdat
-*			-[runid]_profile_nopreg_[LOOK].sas7bdat
-*			-[runid]_profile_concomitance_[LOOK].sas7bdat
-*			-[runid]_profile_multevent_[LOOK].sas7bdat
-*			-[runid]_profile_overlap_[LOOK].sas7bdat
 *
 *  Program inputs:                                                                                   
 *  	-
