@@ -34,10 +34,10 @@
 
 %macro baseline_profile_output;
 
-%do periodid = %eval(&look_start.) %to %eval(&look_end.);
-
     /* Reset table letter at top of dataset loop */
     %let tablecount = 1;
+
+%do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     /* Get group orders */
     proc sql noprint ;
@@ -231,18 +231,24 @@
 
         %tableletter();
     
+        %if &covarsort = A %then %do;
         proc sort data=covarswithlabel nodupkey out=repdata.table&tablenum.&tableletter(drop=covar:);
-            by sortorder
-                %if &covarsort = A %then %do;
-                label
-                %end;
-                %else %do;
-                %do i = 1 %to %eval(&numcovars.);
-                    descending  %scan(&covarlist., &i.) 
-                %end;
-                %end;
-                ;
+            by sortorder label;
         run;
+        %end;
+        %else %do;
+        proc sort data=covarswithlabel nodupkey out=covarswithlabel(drop=covar:);
+            by sortorder label;
+        run;
+
+        proc sort data=covarswithlabel out=repdata.table&tablenum.&tableletter;
+            by sortorder 
+            %do i = 1 %to %eval(&numcovars.);
+            descending  %scan(&covarlist., &i.) 
+            %end;
+            ;
+        run;
+        %end;
 
         %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
@@ -277,9 +283,6 @@
         run;
 
         %end;
-
-        %let tablenum = %eval(&tablenum+1);
-
 %end;
 
 %mend baseline_profile_output;

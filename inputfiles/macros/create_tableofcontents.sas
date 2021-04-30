@@ -268,10 +268,10 @@
   /***************************/
     %if &numprofilecovarstoinclude > 0 %then %do;
 
-    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-
     /* reset counter to reset table letter */
     %let tablecount = 1;
+
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     /* Get group orders */
     proc sql noprint ;
@@ -316,11 +316,9 @@
          %addtotoc(tabnum=Table &tablenum.&tableletter.,
          caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
 
-    %end; /* dataset loop */
+    %end; /* order loop */
 
-        %let tablenum = %eval(&tablenum+1);
-
-    %end;
+    %end; /* periodid loop */
 
     %end; /* &numprofilecovarstoinclude > 0 */
 
