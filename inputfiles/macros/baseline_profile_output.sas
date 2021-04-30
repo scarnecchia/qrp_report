@@ -35,66 +35,50 @@
 %macro baseline_profile_output;
 
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-    /* Get all unique dataset names */
+
+    /* Reset table letter at top of dataset loop */
+    %let tablecount = 1;
+
+    /* Get group orders */
     proc sql noprint ;
-        select distinct profiletablename
-        into :profiletablenames separated by ' '
+        select distinct order
+        into :profiletableorders separated by ' '
         from aggregate_profile
         where periodid=&periodid.;
     quit;
 
-    %do d = 1 %to %sysfunc(countw(&profiletablenames,' '));
-        %let profiletablename = %scan(&profiletablenames,&d, ' ');
+    %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
+        %let profiletableorder = %scan(&profiletableorders,&d, ' ');
 
-        /* Reset table letter at top of dataset loop */
-        %let tablecount = 1;
-
-        data final_agg_profile&d._&periodid.;
-            set aggregate_profile(where=(profiletablename="&profiletablename" and periodid=&periodid));
+        data _temp_agg_profile;
+            set aggregate_profile(where=(order=&profiletableorder and periodid=&periodid));
         run;
-
-        /* Store unique order values as proxy for groups */
-        proc sql noprint;
-            select distinct order 
-            into :profileorders separated by ' '
-            from final_agg_profile&d._&periodid.;
-        quit;
 
         %isdata(dataset=labelfile);
         %if &nobs > 0 %then %do;
         proc sql noprint undo_policy=none;
-            create table final_agg_profile&d._&periodid. as
+            create table _temp_agg_profile as
             select a.*, b.label as grouplabel
-            from final_agg_profile&d._&periodid. a 
+            from _temp_agg_profile a 
             left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
             on a.group = b.group and a.runid = b.runid;
         quit;
         %end;
         %else %do;
-        data final_agg_profile&d._&periodid.;
-            set final_agg_profile&d._&periodid.;
+        data _temp_agg_profile;
+            set _temp_agg_profile;
             call missing(grouplabel);
         run;
         %end;
 
-        /* Loop on order */
-        %do e = 1 %to %sysfunc(countw(&profileorders));
-            %let profileorder = %scan(&profileorders,&e);
-
-        data final_agg_profilegroup&d._&e._&periodid.;
-            set final_agg_profile&d._&periodid.(where=(order=&profileorder));
+        data final_agg_profilegroup&d._&periodid.;
+            set _temp_agg_profile;
             if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
             call symputx('covarsort', upcase(covarsort));
             if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
             else call symputx('grouplabel',group);
             if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
-            call symputx('profilecovarsnocomma', compress(profilecovarstoinclude,','));
-            %if &stratifybydp = Y %then %do;
-            call symputx('profiletabletitle',scan(upcase(profiletablename),1,'.'));
-            %end;
-            %else %do;
-            call symputx('profiletabletitle','Aggregated');
-            %end;
+            call symputx('profilecovarsnocomma', compress(compbl(tranwrd(profilecovarstoinclude,',',', ')),','));
         run;
 
         *Total npts and n_episodes;
@@ -103,13 +87,13 @@
         proc sql noprint;
             select sum(sum_npts), sum(sum_nepisodes) 
             into :totalpatients, :totalepisodes
-            from final_agg_profilegroup&d._&e._&periodid.;
+            from final_agg_profilegroup&d._&periodid.;
         quit;
         %put &totalpatients &totalepisodes;
 
         *Determine covariate label and order;
         data covarlabel;
-            set final_agg_profilegroup&d._&e._&periodid.(keep=&profilecovarsnocomma. obs=0);
+            set final_agg_profilegroup&d._&periodid.(keep=&profilecovarsnocomma. obs=0);
         run;
 
         proc transpose data=covarlabel out=covarlabel1;
@@ -155,7 +139,7 @@
 
         *create label for each row in table;
         data covarswithlabel;
-            set final_agg_profilegroup&d._&e._&periodid. end=eof;
+            set final_agg_profilegroup&d._&periodid. end=eof;
             /* set missing covariate values to 0 */
             %do f=1 %to %eval(&numcovars.);
                 %let covar = %scan(&covarlist., &f.);
@@ -260,7 +244,7 @@
                 ;
         run;
 
-        %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel (&profiletabletitle.) in the &database. from &startdateformatted. to &enddateformatted.);
+        %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
         ods escapechar="^";
         %if &destination = excel %then %do;
@@ -295,8 +279,6 @@
         %end;
 
         %let tablenum = %eval(&tablenum+1);
-
-    %end;
 
 %end;
 

@@ -37,14 +37,16 @@
     /* Aggregate all potential profile datasets */
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-        /*Use GROUPTABLE to create list of baseline tables and create dataset in statement*/
+        /*Use GROUPTABLE to create list of profile tables and create dataset in statement*/
 
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
+            %let maskedID = %scan(&masked_dplist, &dps); 
 
         data _temp_profile_tablenames;
             set baselinefile;
+            if not missing(profilecovarstoinclude);
             length profiletablename $40.;
             if missing(cohort) then do;
                 profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_&periodid"));
@@ -77,6 +79,8 @@
                 create table _temp_profile_tablenum&dps._&b. as
                 select x.*
                      , y.profiletablename
+                     , &periodid. as periodid
+                     , "&maskedID" as dpidsiteid length=6
                      , y.runid
                      , y.order
                      , y.cohort
@@ -91,38 +95,42 @@
                 where x.&mergevar. = y.group;
             quit;
 
+        %end;
+
+        %end;
+
+        /* Stack all DP datasets */
+        data stacked_dps;
+            set _temp_profile_tablenum:;
+        run;
+
             proc sql noprint;
                 select distinct order 
                 into :profileorders separated by ' '
-                from _temp_profile_tablenum&dps._&b.;
+                from stacked_dps;
             quit;
 
             %do c = 1 %to %sysfunc(countw(&profileorders));
                 %let profileorder = %scan(&profileorders,&c);
 
-                data _temp_profilegroup&dps._&b._&c;
-                    set _temp_profile_tablenum&dps._&b.(where=(order=&profileorder));
+                data _temp_profilegroup_&c;
+                    set stacked_dps(where=(order=&profileorder));
                     if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
-                    call symputx('profilecovarsnocomma', compress(profilecovarstoinclude,','));
+                    call symputx('profilecovarsnocomma', compress(compbl(tranwrd(profilecovarstoinclude,',',', ')),','));
                 run;
 
-                proc means data=_temp_profilegroup&dps._&b._&c. nway missing noprint;
+                proc means data=_temp_profilegroup_&c. nway missing noprint;
                     var npts n_episodes;
-                    class profiletablename runid group order &profilecovarsnocomma;
-                    output out=sum_agg_profile&dps._&b._&c(drop=_:)   
+                    class periodid runid group order &profilecovarsnocomma;
+                    output out=sum_agg_profile_&c(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
 
             %end;
 
-        %end;
-
-        %end;
-
         /*Stack profile tables within periodid*/
         data agg_profile_&periodid.;
             set sum_agg_profile:;
-            periodid=&periodid;
         run;
 
         /* Rejoin profilecovarstoinclude to use in output macro */
