@@ -124,7 +124,7 @@
 
                 proc means data=_temp_profilegroup_&c. nway missing noprint;
                     var npts n_episodes;
-                    class periodid runid group order &profilecovarsnocomma;
+                    class periodid runid group order cohort &profilecovarsnocomma;
                     output out=sum_agg_profile_&c(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
@@ -134,6 +134,7 @@
         /*Stack profile tables within periodid*/
         data agg_profile_&periodid.;
             set sum_agg_profile:;
+            if missing(cohort) then cohort='all';
         run;
 
         /* Rejoin profilecovarstoinclude to use in output macro */
