@@ -39,21 +39,34 @@
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         /*Use GROUPTABLE to create list of profile tables and create dataset in statement*/
 
+        %if &reporttype = T6 %then %do;
+        proc sql noprint undo_policy=none;
+            create table baselinefile_profile_&periodid. as 
+            select a.*, b.switchstep 
+            from baselinefile a 
+            left join alldptable1_&periodid. b
+            on a.analysisgrp = b.analysisgrp;
+        quit;
+        %end;
+        %else %do;
+        data baselinefile_profile_&periodid;
+            set baselinefile;
+            switchstep=.;
+        run;
+        %end;
+
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
             %let maskedID = %scan(&masked_dplist, &dps); 
 
         data _temp_profile_tablenames;
-            set baselinefile;
+            set baselinefile_profile_&periodid;
             if not missing(profilecovarstoinclude);
             length profiletablename $40.;
-            if missing(cohort) then do;
-                profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_&periodid"));
-            end;
-            else do;
-                profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_", cohort, "_&periodid"));
-            end;
+            if missing(cohort) then profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_&periodid"));
+            else if cohort = 'switch' then profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_", cohort, "_", switchstep, "_&periodid"));
+            else profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_", cohort, "_&periodid"));
         run;
             
         proc sql noprint;
@@ -93,6 +106,9 @@
                      , y.analysisgrp as group
                      %end;
                      , y.group as group1
+                     %if &reporttype = T6 %then %do;
+                     , y.switchstep
+                     %end;
                 from &profiletable as x,
                      _temp_profile_tablenames&dps._&b. as y
                 where x.&mergevar. = y.group;
@@ -124,11 +140,10 @@
 
                 proc means data=_temp_profilegroup_&c. nway missing noprint;
                     var npts n_episodes;
-                    class periodid runid group order cohort &profilecovarsnocomma;
+                    class periodid runid group order cohort %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
                     output out=sum_agg_profile_&c(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
-
             %end;
 
         /*Stack profile tables within periodid*/
@@ -146,7 +161,7 @@
             on a.group = b.group and a.runid = b.runid;
         quit;
 
-    %end;
+    %end; /* periodid */
 
     /* Stacking periodid datasets together for final aggregation dataset */
     data aggregate_profile;

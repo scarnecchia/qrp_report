@@ -209,14 +209,6 @@
     quit;
 
     ***********************************************************************************************;
-    * Aggregate covariate profile tables across DPs                               
-    ***********************************************************************************************;
-
-    %if &numprofilecovarstoinclude > 0 %then %do;
-    %baseline_profile_createdata;
-    %end;
-
-    ***********************************************************************************************;
     * Aggregate baseline tables across DPs                               
     ***********************************************************************************************;
 
@@ -586,6 +578,14 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
+
+    ***********************************************************************************************;
+    * Aggregate covariate profile tables across DPs                               
+    ***********************************************************************************************;
+
+    %if &numprofilecovarstoinclude > 0 %then %do;
+        %baseline_profile_createdata;
+    %end;
 
     proc datasets nowarn noprint lib=work;
         delete baselinefile_: _temp_: alldptable1_:;

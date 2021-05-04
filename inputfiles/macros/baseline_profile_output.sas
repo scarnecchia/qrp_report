@@ -40,18 +40,20 @@
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     proc sql noprint ;
-        select distinct order
-        into :profiletableorders separated by ' '
+        select distinct group, order 
+        into :profiletableorders separated by ' ', :dummyorders separated by ' '
         from aggregate_profile
-        where periodid=&periodid;
+        where periodid=&periodid
+        order by order;
     quit;
 
     /* Loop to retain table orders */
     %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
         %let profiletableorder = %scan(&profiletableorders,&d, ' ');
 
+
         data _temp_agg_order_profile;
-            set aggregate_profile(where=(order=&profiletableorder and periodid=&periodid));
+            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid));
         run;
 
         /* Get cohort values */
@@ -65,16 +67,29 @@
     %do c = 1 %to %sysfunc(countw(&cohortvalues, ' '));
         %let cohortval = %scan(&cohortvalues,&c,' ');
 
+            %let profileswitches = 0;
+            %if &reporttype = T6 %then %do;
+            proc sql noprint;
+            select max(switchstep) into :profileswitches
+            from _temp_agg_order_profile;
+            quit;
+            %end;
+
+            /* Additional loop for profile switching */
+            %do s = 0 %to &profileswitches;
+
             data _temp_agg_profile;
-                set _temp_agg_order_profile(where=(cohort="&cohortval"));
+                set _temp_agg_order_profile(where=(cohort="&cohortval" %if &reporttype = T6 %then %do; and switchstep = &s %end;));
             run;
 
             /* Only loop when there are observations */
-            %isdata(dataset=_temp_agg_order_profile);
-            %if &nobs > 0 %then %do;
+            %isdata(dataset=_temp_agg_profile);
+            %let ordernobs = &nobs;
+            %if &ordernobs > 0 %then %do;
 
             %isdata(dataset=labelfile);
-            %if &nobs > 0 %then %do;
+            %let labelnobs = &nobs;
+            %if &labelnobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
                 select a.*, b.label as grouplabel
@@ -88,6 +103,15 @@
                 set _temp_agg_profile;
                 call missing(grouplabel);
             run;
+            %end;
+
+            %let appendlabel = ;
+            %if &cohortval = nopreg %then %let appendlabel = %str(Non-Pregnancy);
+            %if &cohortval = preg %then %let appendlabel = %str(Preganancy);
+            %if &reporttype = T6 %then %do;
+            %if &s = 0 %then %let appendlabel = %str(step 0);
+            %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
+            %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
             %end;
 
             data final_agg_profilegroup&d._&periodid.(drop=covarsort);
@@ -251,7 +275,9 @@
             %tableletter();
         
             /* Don't use table letter when there is only one group included */
-            %if &numprofilecovarstoinclude = 1 %then %let tableletter =;
+            %if &numprofilecovarstoinclude = 1 and &reporttype ^= T6 %then %let tableletter =;
+            %else %if &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
+
             %if &covarsort = A %then %do;
             proc sort data=covarswithlabel nodupkey out=repdata.table&tablenum.&tableletter(drop=covar:);
                 by sortorder label;
@@ -271,7 +297,7 @@
             run;
             %end;
 
-            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
+            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
             ods escapechar="^";
             %if &destination = excel %then %do;
@@ -303,9 +329,10 @@
 
             run;
 
-            %end;
-        %end;
-        %end;
-%end;
+            %end; /* _temp_agg_profile > 0  */
+            %end;/* switch  */
+        %end; /* cohort */
+        %end; /* DP */
+%end; /* periodid */
 
 %mend baseline_profile_output;
