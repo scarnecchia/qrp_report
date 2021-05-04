@@ -271,23 +271,23 @@
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
-		   proc sql noprint;
-		     select %if %str("&cohort") = %str("concomitance") %then %do;
-			          distinct(conccohortdef)
-					%end;
-					%else %do;
-					  distinct(t2cohortdef) 
-					%end;
-		     into: cohortdef separated by ' '
-		     from %if %str("&cohort") = %str("concomitance") %then %do; infolder.&&&runid._concfile %end;
-			      %else %do; infolder.&&&runid._type2file %end; 
-				  (where=(%if %str("&cohort") = %str("concomitance") %then %do; analysisgrp in ("&analysisgrp." %end; 
-				          %else %do; group in ("&cohortgrp." %end; 
-				          %if &includecomp. = Y %then %do; 
-							%if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
-							%else %do; "&cohortgrp2." %end;
-						  %end;)));
-		   quit;
+			%if %str("&cohort") = %str("concomitance") %then %do;
+				proc sql noprint;
+				 select distinct(conccohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._concfile (where=(analysisgrp in ("&analysisgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
+				quit
+			%end;
+			%else %do;
+				proc sql noprint;
+				 select distinct(t2cohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._type2file (where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; 
+														             %if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
+														             %else %do; "&cohortgrp2." %end;
+												    %end;)));
+				quit
+			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
