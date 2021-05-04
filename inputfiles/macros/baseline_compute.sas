@@ -281,11 +281,12 @@
 		     into: cohortdef separated by ' '
 		     from %if %str("&cohort") = %str("concomitance") %then %do; infolder.&&&runid._concfile %end;
 			      %else %do; infolder.&&&runid._type2file %end; 
-				  (where=(%if %str("&cohort") = %str("concomitance") %then %do; primary %end; %else %do; group %end; 
-				          in ("&cohortgrp." %if &includecomp. = Y %then %do; 
-												%if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
-												%else %do; "&cohortgrp2." %end;
-										    %end;)));
+				  (where=(%if %str("&cohort") = %str("concomitance") %then %do; analysisgrp in ("&analysisgrp." %end; 
+				          %else %do; group in ("&cohortgrp." %end; 
+				          %if &includecomp. = Y %then %do; 
+							%if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
+							%else %do; "&cohortgrp2." %end;
+						  %end;)));
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
