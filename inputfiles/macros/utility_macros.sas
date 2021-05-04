@@ -186,6 +186,10 @@
 	       select &dataset.(memtype=data)
 	              ;
 	 	quit;
+		proc datasets library = &outlib.;
+			change &dataset. = agg_&infile.;
+		run;
+		quit;
 
 	%end;
 
