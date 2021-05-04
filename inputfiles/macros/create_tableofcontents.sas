@@ -280,13 +280,21 @@
         from aggregate_profile
         where periodid=&periodid.
         order by order;
+
+        select distinct runid 
+        into :runidlist separated by ' '
+        from aggregate_profile
+        where periodid=&periodid;
     quit;
+
+    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
+        %let runid = %scan(&runidlist,&runidloop);
 
     %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
         %let profiletableorder = %scan(&profiletableorders,&d, ' ');
 
         data _temp_agg_order_profile;
-            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid));
+            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
         run;
 
         /* Get cohort values */
@@ -365,6 +373,8 @@
         %end; /* cohort loop */
 
         %end; /* order loop */
+
+        %end; /* runid loop */
 
         %end; /* periodid loop */
 

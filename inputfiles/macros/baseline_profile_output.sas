@@ -40,12 +40,20 @@
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     proc sql noprint ;
-        select distinct group, order 
+        select distinct group, order
         into :profiletableorders separated by ' ', :dummyorders separated by ' '
         from aggregate_profile
-        where periodid=&periodid
+        where periodid=&periodid 
         order by order;
+
+        select distinct runid 
+        into :runidlist separated by ' '
+        from aggregate_profile
+        where periodid=&periodid;
     quit;
+
+    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
+        %let runid = %scan(&runidlist,&runidloop);
 
     /* Loop to retain table orders */
     %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
@@ -53,7 +61,7 @@
 
 
         data _temp_agg_order_profile;
-            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid));
+            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
         run;
 
         /* Get cohort values */
@@ -330,6 +338,7 @@
             run;
 
             %end; /* _temp_agg_profile > 0  */
+            %end; /* runid */
             %end;/* switch  */
         %end; /* cohort */
         %end; /* DP */

@@ -38,29 +38,29 @@
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
-        %if &reporttype = T6 %then %do;
-        proc sql noprint undo_policy=none;
-            create table baselinefile_profile_&periodid. as 
-            select a.*, b.switchstep 
-            from baselinefile a 
-            left join alldptable1_&periodid. b
-            on a.analysisgrp = b.analysisgrp;
-        quit;
-        %end;
-        %else %do;
-        data baselinefile_profile_&periodid;
-            set baselinefile;
-            switchstep=.;
-        run;
-        %end;
-
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
             %let maskedID = %scan(&masked_dplist, &dps); 
 
+        %if &reporttype = T6 %then %do;
+        proc sql noprint undo_policy=none;
+            create table baselinefile_profile_&dps._&periodid. as 
+            select a.*, b.switchstep 
+            from baselinefile a 
+            left join alldptable1_&periodid.(where=(metvar = 'PATIENT' and exp_mean&dps > 0)) b
+            on a.analysisgrp = b.analysisgrp;
+        quit;
+        %end;
+        %else %do;
+        data baselinefile_profile_&dps._&periodid;
+            set baselinefile;
+            switchstep=.;
+        run;
+        %end;
+
         data _temp_profile_tablenames;
-            set baselinefile_profile_&periodid;
+            set baselinefile_profile_&dps._&periodid;
             if not missing(profilecovarstoinclude);
             length profiletablename $40.;
             if missing(cohort) then profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_&periodid"));
@@ -115,7 +115,7 @@
 
         %end;
 
-        %end;
+        %end; /* DPS */
 
         /* Stack all DP datasets */
         data stacked_dps;
