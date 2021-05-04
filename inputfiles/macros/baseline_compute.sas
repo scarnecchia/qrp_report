@@ -81,6 +81,7 @@
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
     %do b = 1 %to %eval(&numbaselinetablegrp.);
+	   
         data _null_;
             set baselinefile(where=(order=&b.));
             if _n_ = 1 then do;
@@ -127,19 +128,6 @@
                 else do;
                    call symputx('includecomp', 'N');
                 end;
-				
-				if upcase(includenonpregnant) = 'Y' then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else if cohort = "mi" then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else if missing(baselinegroupnum)=0 then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else do;
-                   call symputx('createcompcolumns', 'N');
-                end;
             end;
 			if _n_ = 2 then do;
               if missing(baselinegroupnum)=0 then do;
@@ -181,20 +169,29 @@
             %end;
             %if %str("&cohort") = %str("multevent") %then %do;
                 data _null_;
-                    set infolder.&&&runid._multeventfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._multeventfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("overlap") %then %do;
                 data _null_;
-                    set infolder.&&&runid._overlapfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._overlapfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("concomitance") %then %do;
                 data _null_;
-                    set infolder.&&&runid._concfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._concfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do;
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
         %end;
@@ -270,26 +267,32 @@
 		   proc sql noprint;
 		     select distinct(t1cohortdef) 
 		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type1file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
+		     from infolder.&&&runid._type1file(where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
-		   proc sql noprint;
-		     select distinct(t2cohortdef) 
-		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
-		   quit;
+			%if %str("&cohort") = %str("concomitance") %then %do;
+				proc sql noprint;
+				 select distinct(conccohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._concfile (where=(analysisgrp in ("&analysisgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
+				quit;
+			%end;
+			%else %do;
+				proc sql noprint;
+				 select distinct(t2cohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._type2file (where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; 
+														             %if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
+														             %else %do; "&cohortgrp2." %end;
+												    %end;)));
+				quit;
+			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
                 set infolder.&&&runid._type4file(where=(group="&cohortgrp."));
-				%if &createcompcolumns. = Y %then %do;
-				  if t4cohortdef = t4cohortdef2 then call symputx("cohortdef", strip(t4cohortdef));
-				  else call symputx("cohortdef",catx(' ',t4cohortdef,t4cohortdef2));
-				%end;
-				%else %do;
-				  call symputx("cohortdef", strip(t4cohortdef));
-				%end;
+				call symputx("cohortdef", strip(t4cohortdef));
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -299,11 +302,10 @@
             %let cohortdef = 04;
         %end;
 		%else %if %str("&reporttype") = %str("T6") %then %do;
-		   proc sql noprint;
-		     select distinct(switchcohortdef) 
-		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._treatmentpathways(where=(analysisgrp in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
-		   quit;
+		   data _null_;
+              set infolder.&&&runid._treatmentpathways (where=(analysisgrp="&analysisgrp."));
+              call symputx('cohortdef', strip(switchcohortdef));
+            run;
         %end;
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
