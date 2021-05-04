@@ -276,7 +276,7 @@
 				 select distinct(conccohortdef)
 				 into: cohortdef separated by ' '
 				 from infolder.&&&runid._concfile (where=(analysisgrp in ("&analysisgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
-				quit
+				quit;
 			%end;
 			%else %do;
 				proc sql noprint;
@@ -286,7 +286,7 @@
 														             %if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
 														             %else %do; "&cohortgrp2." %end;
 												    %end;)));
-				quit
+				quit;
 			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
