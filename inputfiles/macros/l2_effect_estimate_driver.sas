@@ -267,9 +267,9 @@
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
-				/******************/
-	            /* Aggregate data */
-	            /******************/
+				/*******************************************************/
+	            /* Aggregate data - only needed 1st loop (when &sub=0) */
+	            /*******************************************************/
 	            %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
 	                                   outfile=aggrd,
 	                                   pscsfile=&pscsfile.,
@@ -319,28 +319,28 @@
 	                        logodds=log(odds);
 	                    end;
 	                run;
-					%if &covarnum = 0 %then %do;
-	                   %if &marginalweights. = Y %then %do;
-	                   %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-	                                          outfile=aggmw,
-	                                          pscsfile=&pscsfile.,
-	                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-	                                          convrule=%quote(&convrule.),
-	                                          convdata=&runid._estimates_&periodid.,
-	                                          settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-					   					   
-					   %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-	                                          outfile=aggwd,
-	                                          pscsfile=&pscsfile.,
-	                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-	                                          convrule=%quote(&convrule.),
-	                                          convdata=&runid._estimates_&periodid.,
-	                                          settomissvars=%str(n, min, max, mean, sd),
-	                                          runidvar=&runid.);					   
-	                   %end; /* aggregate weighted and marginalweights data */	
-	                %end; /* Only run for overall data */		   
+					
+                %if &marginalweights. = Y %then %do;
+                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+                                       outfile=aggmw,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
+			   					   
+			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                       outfile=aggwd,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(n, min, max, mean, sd),
+                                       runidvar=&runid.);					   
+                %end; /* aggregate weighted and marginalweights data */	
+	                   
 	            %end; /*aggregate risk set data*/
-				%if &hdps. = Y and &unique_psestimate. = 1 and &covarnum. = 0 %then %do;
+				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
 	                                      outfile=agghdps,
 	                                      pscsfile=&pscsfile.,
@@ -734,6 +734,10 @@
  
             %end; /* if subgroups exist*/
 
+			proc datasets library=work nowarn nolist;
+		        delete cat_:;
+		    quit;
+
         %end; /*end loop through each covarnum*/
 		
     %nextloop:
@@ -741,7 +745,7 @@
     %end; /*loop through each analysisgrp*/
 
 	proc datasets library=work nowarn nolist;
-        delete aggpl: aggrd: aggrs: cat_:;
+        delete aggpl: aggrd: aggrs:;
     quit;
 
     /*Merge together risk metrics and effect estimates*/
