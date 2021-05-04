@@ -37,7 +37,6 @@
     /* Aggregate all potential profile datasets */
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-        /*Use GROUPTABLE to create list of profile tables and create dataset in statement*/
 
         %if &reporttype = T6 %then %do;
         proc sql noprint undo_policy=none;
