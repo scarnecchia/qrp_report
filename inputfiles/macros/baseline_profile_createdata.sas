@@ -48,7 +48,7 @@
             create table baselinefile_profile_&dps._&periodid. as 
             select a.*, b.switchstep 
             from baselinefile a 
-            left join alldptable1_&periodid.(where=(metvar = 'PATIENT' and exp_mean&dps > 0)) b
+            inner join alldptable1_&periodid.(where=(metvar = 'PATIENT' and exp_mean&dps > 0)) b
             on a.analysisgrp = b.analysisgrp;
         quit;
         %end;
