@@ -286,8 +286,8 @@
             %tableletter();
         
             /* Don't use table letter when there is only one group included */
-            %if &numprofilecovarstoinclude = 1 %then %let tableletter =;
-            %if &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
+             %if &numprofilecovarstoinclude = 1 and &reporttype ^= T6 %then %let tableletter =;
+             %else %if &numprofilecovarstoinclude = 1 and &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
 
             %if &covarsort = A %then %do;
             proc sort data=covarswithlabel nodupkey out=repdata.table&tablenum.&tableletter(drop=covar:);

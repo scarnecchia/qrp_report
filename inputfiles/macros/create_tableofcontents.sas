@@ -364,8 +364,8 @@
             run;
 
              %tableletter();
-             %if &numprofilecovarstoinclude = 1 %then %let tableletter =;
-             %if &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
+             %if &numprofilecovarstoinclude = 1 and &reporttype ^= T6 %then %let tableletter =;
+             %else %if &numprofilecovarstoinclude = 1 and &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
              %addtotoc(tabnum=Table &tablenum.&tableletter.,
              caption=%quote(Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
 
