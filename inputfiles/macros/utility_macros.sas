@@ -15,6 +15,7 @@
 *   - %tableletter() macro increments a letter suffix
 *   - %varexist() macro checks for the existence of a variable
 *   - %convert_categories() macro converts categories to mathematical expression
+*	- %output_datasets() macro output SAS datasets  
 *
 *  Program inputs:                                                                                   
 *   -

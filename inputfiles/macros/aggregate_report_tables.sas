@@ -212,7 +212,6 @@
 			%end;
 			%if %index(&datasetlist.,t6switchepisdur) > 0 %then %do;
 			   %agg_report(infile=t6_switchepisdurstats, outfile=agg_t6switchepisdur, name=analysisgrp);
-			   %output_datasets(dataset=agg_t6switchepisdur, outlib=msocdata);
 			%end;
 			%if %index(&datasetlist.,t6plota) > 0 %then %do;
 			  %agg_report(infile=t6_switchplota, outfile=agg_t6plota, name=analysisgrp);
