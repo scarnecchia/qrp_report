@@ -180,4 +180,8 @@
         set agg_profile:;
     run;
 
+    data all_dp_profile;
+        set aggregate_dp_profile:;
+    run;
+
 %mend baseline_profile_createdata;
