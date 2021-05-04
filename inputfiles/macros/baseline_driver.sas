@@ -201,6 +201,11 @@
     proc sql noprint;
         select max(order) into: numbaselinetablegrp
         from baselinefile;
+
+        /* Check to see if profilecovarstoinclude is populated */
+        select count(profilecovarstoinclude) into: numprofilecovarstoinclude
+        from baselinefile
+        where not missing(profilecovarstoinclude);
     quit;
 
     ***********************************************************************************************;
@@ -573,6 +578,14 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
+
+    ***********************************************************************************************;
+    * Aggregate covariate profile tables across DPs                               
+    ***********************************************************************************************;
+
+    %if &numprofilecovarstoinclude > 0 %then %do;
+        %baseline_profile_createdata;
+    %end;
 
     proc datasets nowarn noprint lib=work;
         delete baselinefile_: _temp_: alldptable1_:;

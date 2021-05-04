@@ -81,9 +81,10 @@
     %let figurelist = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp baselinerowitalics;
+    %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;
     %let numbaselinetablegrp =0;
 	%let baselinerowitalics =;
+    %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
     %global output_code_distribution;

@@ -84,7 +84,7 @@
 
 	%aggregate_report_tables;
 
-%if ^%index(&reporttype,TREE) %then %do;
+    %if ^%index(&reporttype,TREE) %then %do;
 ***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
