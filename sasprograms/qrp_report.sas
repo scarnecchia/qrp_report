@@ -175,10 +175,13 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
 %include "&reportroot.inputfiles/macros/baseline_compute.sas";
 %include "&reportroot.inputfiles/macros/baseline_output.sas";
+%include "&reportroot.inputfiles/macros/baseline_profile_createdata.sas";
+%include "&reportroot.inputfiles/macros/baseline_profile_output.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
 %include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
+%include "&reportroot.inputfiles/macros/aggregate_tree.sas";
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";

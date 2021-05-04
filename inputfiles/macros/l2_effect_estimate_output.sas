@@ -334,7 +334,8 @@
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
 
             columns (
-                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
+                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
+				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
                 %if %eval(&redactevents.<=1) %then %do;
                     EVchar
                 %end;

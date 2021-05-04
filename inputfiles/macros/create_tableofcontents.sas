@@ -158,7 +158,7 @@
             - 1 monitoring period
             - DP stratification = N
             - max(order) in baselinefile = 1
-            - if reporttype = T2L2/T4L2 - then analysis must be covariate stratification*/
+            - if reporttype = T2L2, T4L2- then analysis must be covariate stratification*/
             %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
                 %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
                     %let tablecount = 0;
@@ -262,6 +262,125 @@
             %end; /*loop through each periodid*/
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
+
+  /***************************/
+  /* Covariate Profile Table */
+  /***************************/
+    %if &numprofilecovarstoinclude > 0 %then %do;
+
+    /* reset counter to reset table letter */
+    %let tablecount = 1;
+
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+
+    /* Get runid */
+    proc sql noprint ;
+        select distinct runid 
+        into :runidlist separated by ' '
+        from aggregate_profile
+        where periodid=&periodid;
+    quit;
+
+    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
+        %let runid = %scan(&runidlist,&runidloop);
+
+    proc sql noprint ;
+        select distinct group, order
+        into :profiletableorders separated by ' ', :dummyorders separated by ' '
+        from aggregate_profile
+        where periodid=&periodid. and runid="&runid"
+        order by order;
+    quit;
+
+    %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
+        %let profiletableorder = %scan(&profiletableorders,&d, ' ');
+
+        data _temp_agg_order_profile;
+            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
+        run;
+
+        /* Get cohort values */
+        proc sql noprint ;
+            select distinct cohort
+            into :cohortvalues separated by ' '
+            from _temp_agg_order_profile;
+        quit;
+
+        /* Loop on specific cohorts */
+        %do c = 1 %to %sysfunc(countw(&cohortvalues, ' '));
+            %let cohortval = %scan(&cohortvalues,&c,' ');
+
+            %let profileswitches = 0;
+            %if &reporttype = T6 %then %do;
+            proc sql noprint;
+            select max(switchstep) into :profileswitches
+            from _temp_agg_order_profile;
+            quit;
+            %end;
+
+            %do s = 0 %to &profileswitches;
+
+            data _temp_agg_profile;
+                set _temp_agg_order_profile(where=(cohort="&cohortval" %if &reporttype = T6 %then %do; and switchstep = &s %end;));
+            run;
+
+            /* Only loop when there are observations */
+            %isdata(dataset=_temp_agg_profile);
+            %let ordernobs = &nobs;
+            %if &ordernobs > 0 %then %do;
+
+            %let appendlabel =;
+            %if &cohortval = nopreg %then %let appendlabel = %str(Non-Pregnancy Cohort);
+            %if &cohortval = preg %then %let appendlabel = %str(Pregnancy Cohort);
+            %if &reporttype = T6 %then %do;
+            %if &s = 0 %then %let appendlabel = %str(step 0);
+            %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
+            %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
+            %end;
+
+            /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
+            %isdata(dataset=labelfile);
+            %let labelnobs = &nobs;
+            %if &labelnobs > 0 %then %do;
+            proc sql noprint undo_policy=none;
+                create table _temp_agg_profile as
+                select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
+                from _temp_agg_profile a 
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
+                on a.group = b.group and a.runid = b.runid;
+            quit;
+            %end;
+            %else %do;
+            data _temp_agg_profile;
+                set _temp_agg_profile;
+                call missing(grouplabel);
+            run;
+            %end;
+                
+            data _null_;
+                set _temp_agg_profile(keep=group grouplabel order where=(group="&profiletableorder"));
+                if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
+                else call symputx('grouplabel',group);
+            run;
+
+             %tableletter();
+             %if &numprofilecovarstoinclude = 1 and &reporttype ^= T6 %then %let tableletter =;
+             %else %if &numprofilecovarstoinclude = 1 and &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
+             %addtotoc(tabnum=Table &tablenum.&tableletter.,
+             caption=%quote(Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+
+             %end; /* _temp_agg_order_profile */
+        %end; /* switch loop */
+
+        %end; /* cohort loop */
+
+        %end; /* order loop */
+
+        %end; /* runid loop */
+
+        %end; /* periodid loop */
+
+        %end; /* &numprofilecovarstoinclude > 0 */
 
   /*************************/
   /* Effect estimate table */
@@ -440,7 +559,7 @@
         %let tablecount = 1;
 
         /***************************************************************************************/
-        /* ReportType = T2L2 or T4L2                                                           */
+        /* ReportType = T2L2, T4L2                                            */
         /***************************************************************************************/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 

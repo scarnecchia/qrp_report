@@ -81,6 +81,7 @@
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
     %do b = 1 %to %eval(&numbaselinetablegrp.);
+	   
         data _null_;
             set baselinefile(where=(order=&b.));
             if _n_ = 1 then do;
@@ -107,7 +108,7 @@
                 else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
 
                 /*type 4 pregnancy specific parameters*/
-                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+                %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
                 call symputx('pregnancychar', upcase(pregnancychar));
                 call symputx('outputinfantchar', strip(upcase(outputinfantchar)));
                 call symputx('exposurechar', upcase(exposurechar));
@@ -118,7 +119,7 @@
                 call symputx('includenonpregnant', 'N');
                 %end;
 
-                /*if reporttype = T2L2 or T4L2 or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
                    upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
@@ -126,19 +127,6 @@
                 end;
                 else do;
                    call symputx('includecomp', 'N');
-                end;
-				
-				if upcase(includenonpregnant) = 'Y' then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else if cohort = "mi" then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else if missing(baselinegroupnum)=0 then do;
-                   call symputx('createcompcolumns', 'Y');
-                end;
-                else do;
-                   call symputx('createcompcolumns', 'N');
                 end;
             end;
 			if _n_ = 2 then do;
@@ -181,20 +169,29 @@
             %end;
             %if %str("&cohort") = %str("multevent") %then %do;
                 data _null_;
-                    set infolder.&&&runid._multeventfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._multeventfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("overlap") %then %do;
                 data _null_;
-                    set infolder.&&&runid._overlapfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._overlapfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do; 
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
             %if %str("&cohort") = %str("concomitance") %then %do;
                 data _null_;
-                    set infolder.&&&runid._concfile(where=(analysisgrp="&analysisgrp"));
-                    call symputx('cohortgrp', strip(primary));
+                    set infolder.&&&runid._concfile(where=(analysisgrp in ("&analysisgrp" %if &includecomp. = Y %then %do; "&analysisgrp2" %end;)));
+                    if analysisgrp = "&analysisgrp" then call symputx('cohortgrp', strip(primary));
+					%if &includecomp. = Y %then %do;
+					else if analysisgrp = "&analysisgrp2" then call symputx('cohortgrp2', strip(primary));
+					%end;
                 run;
             %end;
         %end;
@@ -270,40 +267,45 @@
 		   proc sql noprint;
 		     select distinct(t1cohortdef) 
 		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type1file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
+		     from infolder.&&&runid._type1file(where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
 		   quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
-		   proc sql noprint;
-		     select distinct(t2cohortdef) 
-		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._type2file(where=(group in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
-		   quit;
+			%if %str("&cohort") = %str("concomitance") %then %do;
+				proc sql noprint;
+				 select distinct(conccohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._concfile (where=(analysisgrp in ("&analysisgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
+				quit;
+			%end;
+			%else %do;
+				proc sql noprint;
+				 select distinct(t2cohortdef)
+				 into: cohortdef separated by ' '
+				 from infolder.&&&runid._type2file (where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; 
+														             %if %str("&cohort") = %str("") %then %do; "&analysisgrp2." %end;
+														             %else %do; "&cohortgrp2." %end;
+												    %end;)));
+				quit;
+			%end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
                 set infolder.&&&runid._type4file(where=(group="&cohortgrp."));
-				%if &createcompcolumns. = Y %then %do;
-				  if t4cohortdef = t4cohortdef2 then call symputx("cohortdef", strip(t4cohortdef));
-				  else call symputx("cohortdef",catx(' ',t4cohortdef,t4cohortdef2));
-				%end;
-				%else %do;
-				  call symputx("cohortdef", strip(t4cohortdef));
-				%end;
+				call symputx("cohortdef", strip(t4cohortdef));
             run;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-             %let cohortdef = 01;
+            %let cohortdef = 01;
         %end;
         %else %if %str("&reporttype") = %str("T5") %then %do;
             %let cohortdef = 04;
         %end;
 		%else %if %str("&reporttype") = %str("T6") %then %do;
-		   proc sql noprint;
-		     select distinct(switchcohortdef) 
-		     into: cohortdef separated by ' '
-		     from infolder.&&&runid._treatmentpathways(where=(analysisgrp in ("&cohortgrp." %if &createcompcolumns. = Y %then %do; "&analysisgrp2." %end;)));
-		   quit;
+		   data _null_;
+              set infolder.&&&runid._treatmentpathways (where=(analysisgrp="&analysisgrp."));
+              call symputx('cohortdef', strip(switchcohortdef));
+            run;
         %end;
 		
 		/* Add cohortdef and comorbidscore to baselinefile */
@@ -385,7 +387,7 @@
               /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
               if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
               %if "&includecomp" = "Y" %then %do;
-                if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
+                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
               %end;
           run;
 
@@ -707,8 +709,8 @@
                     else if metvar in ('N_EPISODES', 'PATIENT') then do;
                         exp_std0 = .;
                         comp_std0 = .;
-                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) or
-                            ("&table" ="Switchstep_0") %then %do;
+                        %if ("&table" = "Unadjusted" & %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2")) 
+                          | ("&table" ="Switchstep_0") %then %do;
                             exp_std0 = 1;
                             if metvar = 'PATIENT' then exp_std0_char = 'N/A';
                             if metvar = 'N_EPISODES' then do;
@@ -1219,7 +1221,6 @@
 
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
-
             if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
             %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
