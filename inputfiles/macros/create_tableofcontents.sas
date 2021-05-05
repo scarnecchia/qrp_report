@@ -273,42 +273,20 @@
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
-    /* Get runid */
     proc sql noprint ;
-        select distinct runid 
-        into :runidlist separated by ' '
-        from aggregate_profile
-        where periodid=&periodid;
+        select 'order='||strip(put(order,8.))||' and runid='||quote(strip(runid))||' and group='||quote(strip(group))||' and cohort='||quote(strip(cohort))
+        into :whereexpr separated by '@'
+        from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
+              from baselinefile
+              where not missing(profilecovarstoinclude));
     quit;
 
-    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
-        %let runid = %scan(&runidlist,&runidloop);
+    %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
+        %let where = %scan(&whereexpr,&wherenum, @);
 
-    proc sql noprint ;
-        select distinct group, order
-        into :profiletableorders separated by ' ', :dummyorders separated by ' '
-        from aggregate_profile
-        where periodid=&periodid. and runid="&runid"
-        order by order;
-    quit;
-
-    %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
-        %let profiletableorder = %scan(&profiletableorders,&d, ' ');
-
-        data _temp_agg_order_profile;
-            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
-        run;
-
-        /* Get cohort values */
-        proc sql noprint ;
-            select distinct cohort
-            into :cohortvalues separated by ' '
-            from _temp_agg_order_profile;
-        quit;
-
-        /* Loop on specific cohorts */
-        %do c = 1 %to %sysfunc(countw(&cohortvalues, ' '));
-            %let cohortval = %scan(&cohortvalues,&c,' ');
+            data _temp_agg_order_profile;
+                set aggregate_profile(where=(periodid=&periodid and &where));
+            run;
 
             %let profileswitches = 0;
             %if &reporttype = T6 %then %do;
@@ -321,7 +299,9 @@
             %do s = 0 %to &profileswitches;
 
             data _temp_agg_profile;
-                set _temp_agg_order_profile(where=(cohort="&cohortval" %if &reporttype = T6 %then %do; and switchstep = &s %end;));
+                set _temp_agg_order_profile
+                %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
+                ;
             run;
 
             /* Only loop when there are observations */
@@ -330,8 +310,8 @@
             %if &ordernobs > 0 %then %do;
 
             %let appendlabel =;
-            %if &cohortval = nopreg %then %let appendlabel = %str(Non-Pregnancy Cohort);
-            %if &cohortval = preg %then %let appendlabel = %str(Pregnancy Cohort);
+            %if %index(&where,cohort="nopreg") %then %let appendlabel = %str(Non-Pregnancy Cohort);
+            %if %index(&where,cohort="preg") %then %let appendlabel = %str(Pregnancy Cohort);
             %if &reporttype = T6 %then %do;
             %if &s = 0 %then %let appendlabel = %str(step 0);
             %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
@@ -358,7 +338,7 @@
             %end;
                 
             data _null_;
-                set _temp_agg_profile(keep=group grouplabel order where=(group="&profiletableorder"));
+                set _temp_agg_profile(keep=group grouplabel order);
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
             run;
@@ -372,11 +352,7 @@
              %end; /* _temp_agg_order_profile */
         %end; /* switch loop */
 
-        %end; /* cohort loop */
-
-        %end; /* order loop */
-
-        %end; /* runid loop */
+        %end; /* where loop */
 
         %end; /* periodid loop */
 

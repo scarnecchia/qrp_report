@@ -40,57 +40,35 @@
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     proc sql noprint ;
-        select distinct runid 
-        into :runidlist separated by ' '
-        from aggregate_profile
-        where periodid=&periodid;
+        select 'order='||strip(put(order,8.))||' and runid='||quote(strip(runid))||' and group='||quote(strip(group))||' and cohort='||quote(strip(cohort))
+        into :whereexpr separated by '@'
+        from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
+              from baselinefile
+              where not missing(profilecovarstoinclude));
     quit;
 
-    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
-        %let runid = %scan(&runidlist,&runidloop);
+    %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
+        %let where = %scan(&whereexpr,&wherenum, @);
 
-    proc sql noprint;
-        select distinct group, order
-        into :profiletableorders separated by ' ', :dummyorders separated by ' '
-        from aggregate_profile
-        where periodid=&periodid and runid="&runid"
-        order by order;
-    quit;
-
-
-    /* Loop to retain table orders */
-    %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
-        %let profiletableorder = %scan(&profiletableorders,&d, ' ');
-
-
-        data _temp_agg_order_profile;
-            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
-        run;
-
-        /* Get cohort values */
-        proc sql noprint ;
-            select distinct cohort
-            into :cohortvalues separated by ' '
-            from _temp_agg_order_profile;
-        quit;
-
-    /* Loop on specific cohorts */
-    %do c = 1 %to %sysfunc(countw(&cohortvalues, ' '));
-        %let cohortval = %scan(&cohortvalues,&c,' ');
+            data _temp_agg_order_profile;
+                set aggregate_profile(where=(periodid=&periodid and &where));
+            run;
 
             %let profileswitches = 0;
             %if &reporttype = T6 %then %do;
-            proc sql noprint;
-            select max(switchstep) into :profileswitches
-            from _temp_agg_order_profile;
-            quit;
+                proc sql noprint;
+                select max(switchstep) into :profileswitches
+                from _temp_agg_order_profile;
+                quit;
             %end;
 
             /* Additional loop for profile switching */
             %do s = 0 %to &profileswitches;
 
             data _temp_agg_profile;
-                set _temp_agg_order_profile(where=(cohort="&cohortval" %if &reporttype = T6 %then %do; and switchstep = &s %end;));
+                set _temp_agg_order_profile
+                %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
+                ;
             run;
 
             /* Only loop when there are observations */
@@ -117,15 +95,15 @@
             %end;
 
             %let appendlabel = ;
-            %if &cohortval = nopreg %then %let appendlabel = %str(Non-Pregnancy);
-            %if &cohortval = preg %then %let appendlabel = %str(Preganancy);
+            %if %index(&where,%str(cohort="nopreg")) %then %let appendlabel = %str(Non-Pregnancy);
+            %if %index(&where,%str(cohort="preg")) %then %let appendlabel = %str(Pregnancy);
             %if &reporttype = T6 %then %do;
             %if &s = 0 %then %let appendlabel = %str(step 0);
             %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
             %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
             %end;
 
-            data final_agg_profilegroup&d._&periodid.(drop=covarsort);
+            data final_agg_profile_&wherenum._&periodid.(drop=covarsort);
                 set _temp_agg_profile;
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
@@ -141,13 +119,13 @@
             proc sql noprint;
                 select sum(sum_npts), sum(sum_nepisodes) 
                 into :totalpatients, :totalepisodes
-                from final_agg_profilegroup&d._&periodid.;
+                from final_agg_profile_&wherenum._&periodid.;
             quit;
             %put &totalpatients &totalepisodes;
 
             *Determine covariate label and order;
             data covarlabel;
-                set final_agg_profilegroup&d._&periodid.(keep=&profilecovarsnocomma. obs=0);
+                set final_agg_profile_&wherenum._&periodid.(keep=&profilecovarsnocomma. obs=0);
             run;
 
             proc transpose data=covarlabel out=covarlabel1;
@@ -193,7 +171,7 @@
 
             *create label for each row in table;
             data covarswithlabel;
-                set final_agg_profilegroup&d._&periodid. end=eof;
+                set final_agg_profile_&wherenum._&periodid. end=eof;
                 /* set missing covariate values to 0 */
                 %do f=1 %to %eval(&numcovars.);
                     %let covar = %scan(&covarlist., &f.);
@@ -341,10 +319,8 @@
             run;
 
             %end; /* _temp_agg_profile > 0  */
-            %end; /* runid */
-            %end;/* switch  */
-        %end; /* cohort */
-        %end; /* DP */
+            %end; /* where */
+            %end; /* switch */
 %end; /* periodid */
 
 %mend baseline_profile_output;
