@@ -296,6 +296,10 @@
             quit;
             %end;
 
+            %isdata(dataset=_temp_agg_order_profile);
+            %let ordernobs = &nobs;
+            %if &ordernobs > 0 %then %do;
+
             %do s = 0 %to &profileswitches;
 
             data _temp_agg_profile;
@@ -303,20 +307,6 @@
                 %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
                 ;
             run;
-
-            /* Only loop when there are observations */
-            %isdata(dataset=_temp_agg_profile);
-            %let ordernobs = &nobs;
-            %if &ordernobs > 0 %then %do;
-
-            %let appendlabel =;
-            %if %index(&where,cohort="nopreg") %then %let appendlabel = %str(Non-Pregnancy Cohort);
-            %if %index(&where,cohort="preg") %then %let appendlabel = %str(Pregnancy Cohort);
-            %if &reporttype = T6 %then %do;
-            %if &s = 0 %then %let appendlabel = %str(step 0);
-            %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
-            %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
-            %end;
 
             /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
             %isdata(dataset=labelfile);
@@ -339,15 +329,39 @@
                 
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order);
+                %if %index(&where,%str(cohort="nopreg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
+                else call symputx('grouplabel',catx(' ', group, 'Non-Pregnancy'));
+                %end;
+                %else %if %index(&where,%str(cohort="preg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
+                else call symputx('grouplabel',catx(' ', group, 'Pregnancy'));
+                %end;
+                %else %if &reporttype = T6 %then %do;
+                %if &s = 0 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0'));
+                else call symputx('grouplabel',catx(' ', group, 'step 0'));
+                %end;
+                %else %if &s = 1 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0 to step 1'));
+                else call symputx('grouplabel',catx(' ', group, 'step 0 to step 1'));
+                %end;
+                %else %if &s = 2 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 1 to step 2'));
+                else call symputx('grouplabel',catx(' ', group, 'step 1 to step 2'));
+                %end;
+                %end;
+                %else %do;
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
+                %end;
             run;
 
              %tableletter();
              %if &numprofilecovarstoinclude = 1 and &reporttype ^= T6 %then %let tableletter =;
              %else %if &numprofilecovarstoinclude = 1 and &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
              %addtotoc(tabnum=Table &tablenum.&tableletter.,
-             caption=%quote(Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+             caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
 
              %end; /* _temp_agg_order_profile */
         %end; /* switch loop */

@@ -62,6 +62,11 @@
                 quit;
             %end;
 
+            /* Only loop when there are observations */
+            %isdata(dataset=_temp_agg_order_profile);
+            %let ordernobs = &nobs;
+            %if &ordernobs > 0 %then %do;
+
             /* Additional loop for profile switching */
             %do s = 0 %to &profileswitches;
 
@@ -70,11 +75,6 @@
                 %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
                 ;
             run;
-
-            /* Only loop when there are observations */
-            %isdata(dataset=_temp_agg_profile);
-            %let ordernobs = &nobs;
-            %if &ordernobs > 0 %then %do;
 
             %isdata(dataset=labelfile);
             %let labelnobs = &nobs;
@@ -94,21 +94,36 @@
             run;
             %end;
 
-            %let appendlabel = ;
-            %if %index(&where,%str(cohort="nopreg")) %then %let appendlabel = %str(Non-Pregnancy);
-            %if %index(&where,%str(cohort="preg")) %then %let appendlabel = %str(Pregnancy);
-            %if &reporttype = T6 %then %do;
-            %if &s = 0 %then %let appendlabel = %str(step 0);
-            %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
-            %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
-            %end;
-
             data final_agg_profile_&wherenum._&periodid.(drop=covarsort);
                 set _temp_agg_profile;
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
+                %if %index(&where,%str(cohort="nopreg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
+                else call symputx('grouplabel',catx(' ', group, 'Non-Pregnancy'));
+                %end;
+                %else %if %index(&where,%str(cohort="preg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
+                else call symputx('grouplabel',catx(' ', group, 'Pregnancy'));
+                %end;
+                %else %if &reporttype = T6 %then %do;
+                %if &s = 0 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0'));
+                else call symputx('grouplabel',catx(' ', group, 'step 0'));
+                %end;
+                %else %if &s = 1 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0 to step 1'));
+                else call symputx('grouplabel',catx(' ', group, 'step 0 to step 1'));
+                %end;
+                %else %if &s = 2 %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 1 to step 2'));
+                else call symputx('grouplabel',catx(' ', group, 'step 1 to step 2'));
+                %end;
+                %end;
+                %else %do;
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
+                %end;
                 if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
                 call symputx('profilecovarsnocomma', compress(compbl(tranwrd(profilecovarstoinclude,',',', ')),','));
             run;
@@ -286,7 +301,7 @@
             run;
             %end;
 
-            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
+            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
             ods escapechar="^";
             %if &destination = excel %then %do;
