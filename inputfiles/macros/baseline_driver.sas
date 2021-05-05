@@ -175,7 +175,7 @@
         run;
     %end;
 
-    /*T2L2, T4L2: cohort is missing and mergevar = 'analysisgrp'*/
+    /*T2L2 and T4L2: cohort is missing and mergevar = 'analysisgrp'*/
     %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
         %assign_cohort_mergevar(cohort=, mergevar=analysisgrp, outdata=baselinefile);
     %end;
@@ -201,11 +201,6 @@
     proc sql noprint;
         select max(order) into: numbaselinetablegrp
         from baselinefile;
-
-        /* Check to see if profilecovarstoinclude is populated */
-        select count(profilecovarstoinclude) into: numprofilecovarstoinclude
-        from baselinefile
-        where not missing(profilecovarstoinclude);
     quit;
 
     ***********************************************************************************************;
@@ -230,6 +225,11 @@
                                   outdata = alldptable1_&periodid.,
                                   periodid = &periodid.);
         %end;
+
+		%output_datasets(dataset=alldptable1_&periodid., outlib=msocdata, 
+		%if %index(&reporttype., L2)>0 %then %do; name=adjusted_baseline_&periodid. %end;
+		%else %do; name=baseline_&periodid. %end;);
+
 
         ***********************************************************************************************;
         * Reformat L1 tables to mimic L2 format                             
@@ -578,14 +578,6 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
-
-    ***********************************************************************************************;
-    * Aggregate covariate profile tables across DPs                               
-    ***********************************************************************************************;
-
-    %if &numprofilecovarstoinclude > 0 %then %do;
-        %baseline_profile_createdata;
-    %end;
 
     proc datasets nowarn noprint lib=work;
         delete baselinefile_: _temp_: alldptable1_:;

@@ -177,7 +177,7 @@
 
 %mend convert_categories;
 
-%macro output_datasets (dataset=, inlib=work, outlib=);
+%macro output_datasets (dataset=, inlib=work, outlib=, name=&infile.);
 
 	%if &output_agg_data. = Y %then %do;
 
@@ -187,7 +187,7 @@
 	              ;
 	 	quit;
 		proc datasets library = &outlib.;
-			change &dataset. = agg_&infile.;
+			change &dataset. = agg_&name.;
 		run;
 		quit;
 

@@ -248,9 +248,7 @@
         %end;
 			
     %end; /*level 2 baseline tables*/
-
-	%output_datasets(dataset=&outdata., outlib=msocdata);
-					
+						
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
         delete _temp_baseline_:;
