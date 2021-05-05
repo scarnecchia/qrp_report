@@ -286,6 +286,7 @@
 
             data _temp_agg_order_profile;
                 set aggregate_profile(where=(periodid=&periodid and &where));
+                grouplabel='';
             run;
 
             %let profileswitches = 0;
@@ -297,64 +298,38 @@
             %end;
 
             %isdata(dataset=_temp_agg_order_profile);
-            %let ordernobs = &nobs;
-            %if &ordernobs > 0 %then %do;
+            %if &nobs > 0 %then %do;
 
             %do s = 0 %to &profileswitches;
 
+            %if &reporttype = T6 %then %do;
             data _temp_agg_profile;
-                set _temp_agg_order_profile
-                %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
-                ;
+                set _temp_agg_order_profile (where=(switchstep = &s)); %end;
             run;
+            %end;
+            %else %do;
+            proc datasets lib=work;
+                change _temp_agg_order_profile = _temp_agg_profile;
+            run;
+            %end;
 
             /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
             %isdata(dataset=labelfile);
-            %let labelnobs = &nobs;
-            %if &labelnobs > 0 %then %do;
+            %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
                 select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
-                from _temp_agg_profile a 
+                from _temp_agg_profile(drop=grouplabel) a 
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
                 on a.group = b.group and a.runid = b.runid;
             quit;
             %end;
-            %else %do;
-            data _temp_agg_profile;
-                set _temp_agg_profile;
-                call missing(grouplabel);
-            run;
-            %end;
                 
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order);
-                %if %index(&where,%str(cohort="nopreg")) %then %do;
-                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
-                else call symputx('grouplabel',catx(' ', group, 'Non-Pregnancy'));
-                %end;
-                %else %if %index(&where,%str(cohort="preg")) %then %do;
-                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
-                else call symputx('grouplabel',catx(' ', group, 'Pregnancy'));
-                %end;
-                %else %if &reporttype = T6 %then %do;
-                %if &s = 0 %then %do;
-                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0'));
-                else call symputx('grouplabel',catx(' ', group, 'step 0'));
-                %end;
-                %else %if &s = 1 %then %do;
-                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 0 to step 1'));
-                else call symputx('grouplabel',catx(' ', group, 'step 0 to step 1'));
-                %end;
-                %else %if &s = 2 %then %do;
-                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'step 1 to step 2'));
-                else call symputx('grouplabel',catx(' ', group, 'step 1 to step 2'));
-                %end;
-                %end;
-                %else %do;
-                if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
+                if _n_ = 1;
+                if not missing(grouplabel) then call symputx('grouplabel'grouplabel);
                 else call symputx('grouplabel',group);
-                %end;
             run;
 
              %tableletter();
@@ -362,6 +337,10 @@
              %else %if &numprofilecovarstoinclude = 1 and &profileswitches = 0 and &reporttype = T6 %then %let tableletter =;
              %addtotoc(tabnum=Table &tablenum.&tableletter.,
              caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+
+            proc datasets library=work nowarn noprint;
+            delete _temp_agg_profile _temp_agg_order_profile;
+            quit;
 
              %end; /* _temp_agg_order_profile */
         %end; /* switch loop */

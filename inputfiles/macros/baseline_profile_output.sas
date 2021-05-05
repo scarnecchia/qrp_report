@@ -52,6 +52,7 @@
 
             data _temp_agg_order_profile;
                 set aggregate_profile(where=(periodid=&periodid and &where));
+                grouplabel='';
             run;
 
             %let profileswitches = 0;
@@ -64,34 +65,31 @@
 
             /* Only loop when there are observations */
             %isdata(dataset=_temp_agg_order_profile);
-            %let ordernobs = &nobs;
-            %if &ordernobs > 0 %then %do;
+            %if &nobs > 0 %then %do;
 
             /* Additional loop for profile switching */
             %do s = 0 %to &profileswitches;
 
+            %if &reporttype = T6 %then %do;
             data _temp_agg_profile;
-                set _temp_agg_order_profile
-                %if &reporttype = T6 %then %do; (where=(switchstep = &s)); %end;
-                ;
+                set _temp_agg_order_profile (where=(switchstep = &s)); %end;
             run;
+            %end;
+            %else %do;
+            proc datasets lib=work;
+                change _temp_agg_order_profile = _temp_agg_profile;
+            run;
+            %end;
 
             %isdata(dataset=labelfile);
-            %let labelnobs = &nobs;
-            %if &labelnobs > 0 %then %do;
+            %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
                 select a.*, b.label as grouplabel
-                from _temp_agg_profile a 
+                from _temp_agg_profile(drop=grouplabel) a 
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
                 on a.group = b.group and a.runid = b.runid;
             quit;
-            %end;
-            %else %do;
-            data _temp_agg_profile;
-                set _temp_agg_profile;
-                call missing(grouplabel);
-            run;
             %end;
 
             data final_agg_profile_&wherenum._&periodid.(drop=covarsort);
@@ -315,7 +313,7 @@
                         
             columns (label sum_npts percent_npts sum_nepisodes percent_episodes);           
                 define label / order=data 'Characteristic Category'
-                                  style(column)=[rules=none width=4.5in just=L] ;
+                                  style(header)=[just=L] style(column)=[rules=none width=4.5in just=L];
                 define sum_npts / 'Number of Patients'
                                 style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
                 define percent_npts /'% of Total*Number of*Patients'
@@ -332,6 +330,10 @@
             endcomp;
 
             run;
+
+            proc datasets library=work nowarn noprint;
+            delete _temp_agg_profile _temp_agg_order_profile;
+            quit;
 
             %end; /* _temp_agg_profile > 0  */
             %end; /* where */
