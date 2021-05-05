@@ -132,7 +132,19 @@
     		
     %end;*loop through DPs;
 
-	%output_datasets(dataset=&outfile., outlib=msocdata);
+    %if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 %then %do;
+		data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
+			set &outfile.;
+		run;		
+	%end;
+	%else %do;
+		data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
+			set msocdata.agg_%scan(&infile.,2,_)_&periodid.
+				&outfile.;
+		run;
+	%end;
+
+	*output_datasets(dataset=&outfile., outlib=msocdata);
 
 	%put NOTE: ******** END OF MACRO: aggregate_l2_datasets ********;
 

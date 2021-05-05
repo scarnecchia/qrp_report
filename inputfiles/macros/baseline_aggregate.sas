@@ -147,12 +147,22 @@
             data &outdata.;
                 set _temp_baseline_transposed;
             run;
+            data _baseline_agg_&periodid.;
+                set _temp_baseline_transposed (rename=(dp&dpnumber.=value));
+				length dpidsiteid $6;
+                dpidsiteid = "%scan(&masked_dplist, &dpnumber.)"; 
+            run;
         %end;
         %else %do;
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar &switch_s;
+            run;
+            data _baseline_agg_&periodid.;
+                set _baseline_agg_&periodid.
+				    _temp_baseline_transposed (in=b rename=(dp&dpnumber.=value));
+                if b then dpidsiteid = "%scan(&masked_dplist, &dpnumber.)"; 
             run;
         %end;
 
@@ -212,6 +222,12 @@
             end;
         run;
 
+		data _temp_baseline_stacked_agg;
+		 set _temp_baseline_stacked ;
+		 length dpidsiteid $6;
+		 dpidsiteid = "%scan(&masked_dplist, &dpnumber.)"; 
+		run;	
+
         /*Add &DPNUMBER suffix to variables*/
         proc datasets library=work noprint;
                 modify _temp_baseline_stacked;    
@@ -238,6 +254,9 @@
             data &outdata.;
                 set _temp_baseline_stacked;
             run;
+            data _baseline_agg_&periodid.;
+                set _temp_baseline_stacked_agg;
+            run;
         %end;
         %else %do;
             data &outdata.;
@@ -245,7 +264,15 @@
                       _temp_baseline_stacked;
                 by analysisgrp runid order table group1 group2 weight vartype metvar; 
             run;
+            data _baseline_agg_&periodid.;
+                set _baseline_agg_&periodid.
+				    _temp_baseline_stacked_agg; 
+            run;
         %end;
+		
+        proc sort data=_baseline_agg_&periodid.; 
+            by dpidsiteid analysisgrp runid order table group1 group2 weight vartype metvar;                 
+        run;
 			
     %end; /*level 2 baseline tables*/
 						

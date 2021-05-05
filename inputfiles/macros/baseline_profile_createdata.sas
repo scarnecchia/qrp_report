@@ -172,6 +172,8 @@
             left join baselinefile b
             on a.group = b.group and a.runid = b.runid;
         quit;
+		
+	%output_datasets(dataset=aggregate_dp_profile_&periodid, outlib=msocdata, name=profile_&periodid);
 
     %end; /* periodid */
 
