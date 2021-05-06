@@ -261,96 +261,98 @@
                     %end;
                 run;
             %end;
-
-            /******************/
-            /* Aggregate data */
-            /******************/
-            %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
-                                   outfile=aggrd,
-                                   pscsfile=&pscsfile.,
-                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
-                                   %end;
-                                   %else %do;
-                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                   %end;
-                                   convrule=%quote(&convrule.),
-                                   convdata=&runid._estimates_&periodid.,
-                                   settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
-                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                   , renameclause=%str( rename=percentilevalue = percentile)
-                                   %end;
-                                   );
-
-            %if &individualreturn. = Y %then %do;
-                /*[runid]_adjusted_&periodid.*/
-                %aggregate_l2_datasets(infile=&runid._adjusted_&periodid.,
-                                       outfile=aggpl,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(matchID,pscore,percentile));
-
-                /*if individual-level data does not exist set individualreturn = N*/
-                %if %sysfunc(exist(aggpl))=0 %then %do; 
-                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid. for covarnum &covarnum.. Risk set data will be used;
-                    %let individualreturn=N;
-                %end;
-            %end; /*aggregate individual level data*/
-            %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
-                %aggregate_l2_datasets(infile=&runid._risksetdata_&periodid.,
-                                       outfile=aggrs,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(risksetpop,Followuptime,RiskSetID,ExposureProbability));
-                /*compute log odds on aggrs dataset*/
-                data aggrs;
-                    set aggrs;
-                    if ExposureProbability not in(0,1) then do;
-                        odds=Exposureprobability/(1-Exposureprobability);
-                        logodds=log(odds);
-                    end;
-                run;
-				%if &covarnum = 0 %then %do;
-                   %if &marginalweights. = Y %then %do;
-                   %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-                                          outfile=aggmw,
-                                          pscsfile=&pscsfile.,
-                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                          convrule=%quote(&convrule.),
-                                          convdata=&runid._estimates_&periodid.,
-                                          settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-				   					   
-				   %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                          outfile=aggwd,
-                                          pscsfile=&pscsfile.,
-                                          whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                          convrule=%quote(&convrule.),
-                                          convdata=&runid._estimates_&periodid.,
-                                          settomissvars=%str(n, min, max, mean, sd),
-                                          runidvar=&runid.);					   
-                   %end; /* aggregate weighted and marginalweights data */	
-                %end; /* Only run for overall data */		   
-            %end; /*aggregate risk set data*/
-			%if &hdps. = Y and &unique_psestimate. = 1 and &covarnum. = 0 %then %do;
-			   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
-                                      outfile=agghdps,
-                                      pscsfile=&pscsfile.,
-                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
-                                      convrule=%quote(&convrule.),
-                                      convdata=&runid._estimates_&periodid.,
-									  settomissvars=%str(codecat, codetype, frequency, ranking, code),
-									  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
-                                      runidvar=&runid.);	
-			%end;/*aggregate hdps vars for unique psestimategrps*/
+            
            
             /****************************************************************************************/
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
+				/*******************************************************/
+	            /* Aggregate data - only needed 1st loop (when &sub=0) */
+	            /*******************************************************/
+	            %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
+	                                   outfile=aggrd,
+	                                   pscsfile=&pscsfile.,
+	                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
+	                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
+	                                   %end;
+	                                   %else %do;
+	                                   whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+	                                   %end;
+	                                   convrule=%quote(&convrule.),
+	                                   convdata=&runid._estimates_&periodid.,
+	                                   settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
+	                                   %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
+	                                   , renameclause=%str( rename=percentilevalue = percentile)
+	                                   %end;
+	                                   );
+
+	            %if &individualreturn. = Y %then %do;
+	                /*[runid]_adjusted_&periodid.*/
+	                %aggregate_l2_datasets(infile=&runid._adjusted_&periodid.,
+	                                       outfile=aggpl,
+	                                       pscsfile=&pscsfile.,
+	                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+	                                       convrule=%quote(&convrule.),
+	                                       convdata=&runid._estimates_&periodid.,
+	                                       settomissvars=%str(matchID,pscore,percentile));
+
+	                /*if individual-level data does not exist set individualreturn = N*/
+	                %if %sysfunc(exist(aggpl))=0 %then %do; 
+	                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid. for covarnum &covarnum.. Risk set data will be used;
+	                    %let individualreturn=N;
+	                %end;
+	            %end; /*aggregate individual level data*/
+	            %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
+	                %aggregate_l2_datasets(infile=&runid._risksetdata_&periodid.,
+	                                       outfile=aggrs,
+	                                       pscsfile=&pscsfile.,
+	                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+	                                       convrule=%quote(&convrule.),
+	                                       convdata=&runid._estimates_&periodid.,
+	                                       settomissvars=%str(risksetpop,Followuptime,RiskSetID,ExposureProbability));
+	                /*compute log odds on aggrs dataset*/
+	                data aggrs;
+	                    set aggrs;
+	                    if ExposureProbability not in(0,1) then do;
+	                        odds=Exposureprobability/(1-Exposureprobability);
+	                        logodds=log(odds);
+	                    end;
+	                run;
+					
+                %if &marginalweights. = Y %then %do;
+                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+                                       outfile=aggmw,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
+			   					   
+			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                       outfile=aggwd,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(n, min, max, mean, sd),
+                                       runidvar=&runid.);					   
+                %end; /* aggregate weighted and marginalweights data */	
+	                   
+	            %end; /*aggregate risk set data*/
+				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
+				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
+	                                      outfile=agghdps,
+	                                      pscsfile=&pscsfile.,
+	                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
+	                                      convrule=%quote(&convrule.),
+	                                      convdata=&runid._estimates_&periodid.,
+										  settomissvars=%str(codecat, codetype, frequency, ranking, code),
+										  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
+	                                      runidvar=&runid.);	
+				%end;/*aggregate hdps vars for unique psestimategrps*/
+
+
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
                 %if &individualreturn. = Y %then %do;
                     %subsetdata(datain=aggpl, dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
@@ -732,15 +734,19 @@
  
             %end; /* if subgroups exist*/
 
-            proc datasets library=work nowarn noprint;
-                delete aggpl: aggrd: aggrs: aggmv: cat_:;
-            quit;
+			proc datasets library=work nowarn nolist;
+		        delete cat_:;
+		    quit;
 
         %end; /*end loop through each covarnum*/
-
+		
     %nextloop:
 
     %end; /*loop through each analysisgrp*/
+
+	proc datasets library=work nowarn nolist;
+        delete aggpl: aggrd: aggrs:;
+    quit;
 
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
