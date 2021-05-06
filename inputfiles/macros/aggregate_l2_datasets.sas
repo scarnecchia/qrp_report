@@ -132,16 +132,18 @@
     		
     %end;*loop through DPs;
 
-    %if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 %then %do;
-		data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
-			set &outfile.;
-		run;		
-	%end;
-	%else %do;
-		data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
-			set msocdata.agg_%scan(&infile.,2,_)_&periodid.
-				&outfile.;
-		run;
+	%if &output_agg_data. = Y %then %do;
+		%if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 %then %do;
+			data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
+				set &outfile.;
+			run;		
+		%end;
+		%else %do;
+			data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
+				set msocdata.agg_%scan(&infile.,2,_)_&periodid.
+					&outfile.;
+			run;
+		%end;
 	%end;
 
 	*output_datasets(dataset=&outfile., outlib=msocdata);

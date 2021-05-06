@@ -218,7 +218,9 @@
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
+			%let maskedid = %scan(&masked_dplist, &dps);
             %baseline_aggregate(dpsiteid = &dpsiteid.,
+								maskedid = &maskedid.,
                                   dpnumber = &dps.,
                                   %if %index(&reporttype., L2)>0 %then %do;
                                   level = 2,
@@ -593,7 +595,7 @@
     %end;
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_: _temp_: alldptable1_:;
+        delete baselinefile_: _temp_: alldptable1_: _baseline_agg_:;
     quit;
 
     %end; /*baselinefile input file exists*/
