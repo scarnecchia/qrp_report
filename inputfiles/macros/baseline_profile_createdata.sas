@@ -171,15 +171,6 @@
             left join baselinefile b
             on a.group = b.group and a.runid = b.runid;
         quit;
-	
-***** dowe *****;
-data output.v_aggregate_dp_profile_&periodid;
- set aggregate_dp_profile_&periodid;
-run; 
-data output.w_aggregate_dp_profile_&periodid;
- set aggregate_dp_profile_&periodid;
-run; 
-***** dowe *****;
 		
 	%output_datasets(dataset=aggregate_dp_profile_&periodid, outlib=msocdata, name=profile_&periodid);
 
@@ -193,15 +184,5 @@ run;
     data all_dp_profile;
         set aggregate_dp_profile:;
     run;
-	
-	
-***** dowe *****;
-data output.x_aggregate_profile;
- set aggregate_profile;
-run; 
-data output.y_all_dp_profile;
- set all_dp_profile;
-run; 
-***** dowe *****;
 
 %mend baseline_profile_createdata;
