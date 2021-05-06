@@ -278,7 +278,8 @@
         into :whereexpr separated by '@'
         from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
               from baselinefile
-              where not missing(profilecovarstoinclude));
+              where not missing(profilecovarstoinclude))
+        order by group, order;
     quit;
 
     %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
