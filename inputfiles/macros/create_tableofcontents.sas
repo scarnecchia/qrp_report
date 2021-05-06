@@ -287,6 +287,10 @@
             data _temp_agg_order_profile;
                 set aggregate_profile(where=(periodid=&periodid and &where));
                 grouplabel='';
+                if cohort = 'mi' then group2=scan(group,1,'_');
+                else group2=group;
+                if cohort = 'switch' then switchlabel = ' ';
+                call symputx('runid',runid);
             run;
 
             %let profileswitches = 0;
@@ -304,11 +308,20 @@
 
             %if &reporttype = T6 %then %do;
             data _temp_agg_profile;
-                set _temp_agg_order_profile (where=(switchstep = &s)); %end;
+                set _temp_agg_order_profile (where=(switchstep = &s));
             run;
+
+            /* Join treatment file onto profile table to obtain product group */
+            proc sql noprint undo_policy=none;
+                create table _temp_agg_profile as
+                select a.*, b.group as productswitchgroup
+                from _temp_agg_profile a 
+                inner join infolder.&&&runid._treatmentpathways b
+                on a.group = b.analysisgrp and a.switchstep = b.switchevalstep;
+            quit;
             %end;
             %else %do;
-            proc datasets lib=work;
+            proc datasets lib=work nolist;
                 change _temp_agg_order_profile = _temp_agg_profile;
             run;
             %end;
@@ -319,17 +332,83 @@
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
                 select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
-                from _temp_agg_profile(drop=grouplabel) a 
+                %if %index(&where,%str(cohort="mi")) %then %do;
+                ,c.label as grouplabel2
+                %end;
+                %if %index(&where,%str(cohort="switch")) %then %do;
+                ,d.label as switchlabel
+                %end;
+                from _temp_agg_profile(drop=grouplabel %if &reporttype = T6 %then %do; switchlabel %end;) a 
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-                on a.group = b.group and a.runid = b.runid;
+                on a.group = b.group and a.runid = b.runid
+                %if %index(&where,%str(cohort="mi")) %then %do;
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) c
+                on a.group2 = c.group and a.runid = c.runid
+                %end;
+                %if %index(&where,%str(cohort="switch")) %then %do;
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) d
+                on a.productswitchgroup = d.group and a.runid = d.runid
+                %end;
+                ;
             quit;
             %end;
                 
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order);
                 if _n_ = 1;
-                if not missing(grouplabel) then call symputx('grouplabel'grouplabel);
+                if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
+
+                %if %index(&where,%str(cohort="nopreg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
+                else call symputx('grouplabel',catx(' ',group,'Non-Pregnancy'));
+                %end;
+
+                %else %if %index(&where,%str(cohort="preg")) %then %do;
+                if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
+                else call symputx('grouplabel',catx(' ',group,'Pregnancy'));
+                %end;
+
+                %else %if %index(&where,%str(cohort="mi")) %then %do;
+                if not missing(grouplabel) then do;
+                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
+                else call symputx('grouplabel',group2);
+                end;
+                else do;
+                call symputx('grouplabel',group2);
+                end;
+                %end;
+
+                %else %if &reporttype = T6 %then %do;
+
+                %if &s = 0 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                end;
+                %end;
+
+                %else %if &s = 1 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                end;
+                %end;
+
+                %else %if &s = 2 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                end;
+                %end;
+
+                %end;
             run;
 
              %tableletter();
@@ -338,12 +417,12 @@
              %addtotoc(tabnum=Table &tablenum.&tableletter.,
              caption=%quote(Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
 
-            proc datasets library=work nowarn noprint;
-            delete _temp_agg_profile _temp_agg_order_profile;
-            quit;
-
              %end; /* _temp_agg_order_profile */
         %end; /* switch loop */
+
+        proc datasets library=work nowarn noprint;
+        delete _temp_agg_profile _temp_agg_order_profile;
+        quit;
 
         %end; /* where loop */
 

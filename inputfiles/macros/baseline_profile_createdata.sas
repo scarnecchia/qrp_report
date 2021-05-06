@@ -97,7 +97,6 @@
                      , y.order
                      , y.cohort
                      , y.profilecovarstoinclude
-                     , y.covarsort
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;
@@ -167,7 +166,7 @@
         /* Rejoin profilecovarstoinclude to use in output macro */
         proc sql noprint undo_policy=none;
             create table agg_profile_&periodid as
-            select a.*, b.profilecovarstoinclude 
+            select a.*, b.profilecovarstoinclude, b.covarsort
             from agg_profile_&periodid a
             left join baselinefile b
             on a.group = b.group and a.runid = b.runid;
