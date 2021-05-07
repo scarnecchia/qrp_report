@@ -40,97 +40,163 @@
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     proc sql noprint ;
-        select distinct runid 
-        into :runidlist separated by ' '
-        from aggregate_profile
-        where periodid=&periodid;
-    quit;
-
-    %do runidloop = 1 %to %sysfunc(countw(&runidlist));
-        %let runid = %scan(&runidlist,&runidloop);
-
-    proc sql noprint;
-        select distinct group, order
-        into :profiletableorders separated by ' ', :dummyorders separated by ' '
-        from aggregate_profile
-        where periodid=&periodid and runid="&runid"
+        select 'order='||strip(put(order,8.))||' and runid='||quote(strip(runid))||' and group='||quote(strip(group))||' and cohort='||quote(strip(cohort))
+        into :whereexpr separated by '@'
+        from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
+              from baselinefile
+              where not missing(profilecovarstoinclude))
         order by order;
     quit;
 
+    %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
+        %let where = %scan(&whereexpr,&wherenum, @);
 
-    /* Loop to retain table orders */
-    %do d = 1 %to %sysfunc(countw(&profiletableorders,' '));
-        %let profiletableorder = %scan(&profiletableorders,&d, ' ');
-
-
-        data _temp_agg_order_profile;
-            set aggregate_profile(where=(group="&profiletableorder" and periodid=&periodid and runid="&runid"));
-        run;
-
-        /* Get cohort values */
-        proc sql noprint ;
-            select distinct cohort
-            into :cohortvalues separated by ' '
-            from _temp_agg_order_profile;
-        quit;
-
-    /* Loop on specific cohorts */
-    %do c = 1 %to %sysfunc(countw(&cohortvalues, ' '));
-        %let cohortval = %scan(&cohortvalues,&c,' ');
+            data _temp_agg_order_profile;
+                set aggregate_profile(where=(periodid=&periodid and &where));
+                grouplabel='';
+                if cohort = 'mi' then group2=scan(group,1,'_');
+                else group2=group;
+                if cohort = 'switch' then switchlabel=' ';
+                call symputx('runid',runid);
+            run;
 
             %let profileswitches = 0;
             %if &reporttype = T6 %then %do;
-            proc sql noprint;
-            select max(switchstep) into :profileswitches
-            from _temp_agg_order_profile;
-            quit;
+                proc sql noprint;
+                select max(switchstep) into :profileswitches
+                from _temp_agg_order_profile;
+                quit;
             %end;
+
+            /* Only loop when there are observations */
+            %isdata(dataset=_temp_agg_order_profile);
+            %if &nobs > 0 %then %do;
 
             /* Additional loop for profile switching */
             %do s = 0 %to &profileswitches;
 
+            %if &reporttype = T6 %then %do;
             data _temp_agg_profile;
-                set _temp_agg_order_profile(where=(cohort="&cohortval" %if &reporttype = T6 %then %do; and switchstep = &s %end;));
+                set _temp_agg_order_profile (where=(switchstep = &s));
             run;
 
-            /* Only loop when there are observations */
-            %isdata(dataset=_temp_agg_profile);
-            %let ordernobs = &nobs;
-            %if &ordernobs > 0 %then %do;
-
-            %isdata(dataset=labelfile);
-            %let labelnobs = &nobs;
-            %if &labelnobs > 0 %then %do;
+            /* Join treatment file onto profile table to obtain product group */
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
-                select a.*, b.label as grouplabel
+                select a.*, b.group as productswitchgroup
                 from _temp_agg_profile a 
-                left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-                on a.group = b.group and a.runid = b.runid;
+                inner join infolder.&&&runid._treatmentpathways b
+                on a.group = b.analysisgrp and a.switchstep = b.switchevalstep;
             quit;
             %end;
             %else %do;
-            data _temp_agg_profile;
-                set _temp_agg_profile;
-                call missing(grouplabel);
+            proc datasets lib=work nolist;
+                change _temp_agg_order_profile = _temp_agg_profile;
             run;
             %end;
 
-            %let appendlabel = ;
-            %if &cohortval = nopreg %then %let appendlabel = %str(Non-Pregnancy);
-            %if &cohortval = preg %then %let appendlabel = %str(Preganancy);
-            %if &reporttype = T6 %then %do;
-            %if &s = 0 %then %let appendlabel = %str(step 0);
-            %if &s = 1 %then %let appendlabel = %str(step 0 to step 1);
-            %if &s = 2 %then %let appendlabel = %str(step 1 to step 2);
+            %isdata(dataset=labelfile);
+            %if &nobs > 0 %then %do;
+            proc sql noprint undo_policy=none;
+                create table _temp_agg_profile as
+                select a.*, b.label as grouplabel 
+                            %if %index(&where,%str(cohort="mi")) %then %do; ,c.label as grouplabel2 %end;
+                            %if %index(&where,%str(cohort="switch")) %then %do; ,d.label as switchlabel %end;
+                from _temp_agg_profile(drop=grouplabel %if &reporttype = T6 %then %do; switchlabel %end;) a 
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
+                on a.group = b.group and a.runid = b.runid
+                %if %index(&where,%str(cohort="mi")) %then %do;
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) c
+                on a.group2 = c.group and a.runid = c.runid
+                %end;
+                %if %index(&where,%str(cohort="switch")) %then %do;
+                left join labelfile(where=(lowcase(labeltype)='grouplabel')) d
+                on a.productswitchgroup = d.group and a.runid = d.runid
+                %end;
+                ;
+            quit;
             %end;
 
-            data final_agg_profilegroup&d._&periodid.(drop=covarsort);
+            data final_agg_profile_&wherenum._&periodid.(drop=covarsort);
                 set _temp_agg_profile;
                 if upcase(covarsort) not in ('A','O','C') then covarsort = 'C'; /*set C as default*/
                 call symputx('covarsort', upcase(covarsort));
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
+
+                %if %index(&where,%str(cohort="nopreg")) %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
+                call symputx('productlabel',catx(' ',grouplabel,'Non-Pregnancy'));
+                end;
+                else do;
+                call symputx('grouplabel',catx(' ',group,'Non-Pregnancy'));
+                call symputx('productlabel',catx(' ',group,'Non-Pregnancy'));
+                end;
+                %end;
+
+                %else %if %index(&where,%str(cohort="preg")) %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
+                call symputx('productlabel',catx(' ',grouplabel,'Pregnancy'));
+                end;
+                else do;
+                call symputx('grouplabel',catx(' ',group,'Pregnancy'));
+                call symputx('productlabel',catx(' ',group,'Pregnancy'));
+                end;
+                %end;
+
+                %else %if %index(&where,%str(cohort="mi")) %then %do;
+                if not missing(grouplabel) then do;
+                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
+                else call symputx('grouplabel',group2);
+                call symputx('productlabel',grouplabel);
+                end;
+                else do;
+                call symputx('grouplabel',group2);
+                call symputx('productlabel',group);
+                end;
+                %end;
+
+                %else %if &reporttype = T6 %then %do;
+
+                %if &s = 0 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                if not missing(switchlabel) then call symputx('productlabel', switchlabel);
+                else call symputx('productlabel',productswitchgroup);
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                call symputx('productlabel', productswitchgroup);   
+                end;
+                %end;
+
+                %else %if &s = 1 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                if not missing(switchlabel) then call symputx('productlabel',catx(' ',"&productlabel", 'to', switchlabel));
+                else call symputx('productlabel',catx(' ',"&productlabel", 'to', productswitchgroup));
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                call symputx('productlabel',catx(' ',"&productlabel",'to',productswitchgroup));    
+                end;
+                %end;
+
+                %else %if &s = 2 %then %do;
+                if not missing(grouplabel) then do;
+                call symputx('grouplabel',grouplabel);
+                if not missing(switchlabel) then call symputx('productlabel',catx(' ',"&productlabel", 'to', switchlabel));
+                else call symputx('productlabel',catx(' ',"&productlabel", 'to', productswitchgroup));
+                end;
+                else do;
+                call symputx('grouplabel',group);
+                call symputx('productlabel',catx(' ',"&productlabel",'to',productswitchgroup));    
+                end;
+                %end;
+
+                %end;
                 if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
                 call symputx('profilecovarsnocomma', compress(compbl(tranwrd(profilecovarstoinclude,',',', ')),','));
             run;
@@ -141,13 +207,13 @@
             proc sql noprint;
                 select sum(sum_npts), sum(sum_nepisodes) 
                 into :totalpatients, :totalepisodes
-                from final_agg_profilegroup&d._&periodid.;
+                from final_agg_profile_&wherenum._&periodid.;
             quit;
             %put &totalpatients &totalepisodes;
 
             *Determine covariate label and order;
             data covarlabel;
-                set final_agg_profilegroup&d._&periodid.(keep=&profilecovarsnocomma. obs=0);
+                set final_agg_profile_&wherenum._&periodid.(keep=&profilecovarsnocomma. obs=0);
             run;
 
             proc transpose data=covarlabel out=covarlabel1;
@@ -193,7 +259,7 @@
 
             *create label for each row in table;
             data covarswithlabel;
-                set final_agg_profilegroup&d._&periodid. end=eof;
+                set final_agg_profile_&wherenum._&periodid. end=eof;
                 /* set missing covariate values to 0 */
                 %do f=1 %to %eval(&numcovars.);
                     %let covar = %scan(&covarlist., &f.);
@@ -308,7 +374,7 @@
             run;
             %end;
 
-            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel &appendlabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
+            %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
             ods escapechar="^";
             %if &destination = excel %then %do;
@@ -319,10 +385,14 @@
             proc report data = repdata.table&tablenum.&tableletter nofs nowd headline headskip split="*" contents=''
                 style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
                 style(report)=[rules=none frame=box];
-                        
-            columns (label sum_npts percent_npts sum_nepisodes percent_episodes);           
+            %if %index(&reporttype,T4) or %index(&reporttype,T6) %then %do;
+            columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
+            %end;
+            %else %do;
+            columns (label sum_npts percent_npts sum_nepisodes percent_episodes);
+            %end;
                 define label / order=data 'Characteristic Category'
-                                  style(column)=[rules=none width=4.5in just=L] ;
+                                  style(header)=[just=L] style(column)=[rules=none width=4.5in just=L];
                 define sum_npts / 'Number of Patients'
                                 style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
                 define percent_npts /'% of Total*Number of*Patients'
@@ -341,10 +411,13 @@
             run;
 
             %end; /* _temp_agg_profile > 0  */
-            %end; /* runid */
-            %end;/* switch  */
-        %end; /* cohort */
-        %end; /* DP */
+            %end; /* switch */
+
+            proc datasets library=work nowarn noprint;
+            delete _temp_agg_profile _temp_agg_order_profile;
+            quit;
+
+            %end; /* where */
 %end; /* periodid */
 
 %mend baseline_profile_output;
