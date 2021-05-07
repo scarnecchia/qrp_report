@@ -114,6 +114,22 @@
 
             /*Append to &outfile*/
             proc append data=_temp_&dps. base=&outfile. force; run;
+			
+			/*If varinfo then append for msocdata output*/			
+			%if %index(&infile.,varinfo) > 0 %then %do;
+				data _temp_varinfo_&dps.; 
+					set &dpidsiteid..&infile.(where=(lowcase(psestimategrp)="&psestimategrp"));
+					length dpidsiteid $4.;
+					dpidsiteid = "&maskedID.";
+					%if %length(&runidvar) > 0 %then %do;
+					  length runid $5.;
+					  runid="&runid.";
+					%end;
+				run;
+				
+				proc append data=_temp_varinfo_&dps. base=agg_varinfo force; run;
+	
+			%end;
         %end;
         %else %do;
     	   %put WARNING: (Sentinel) &infile does not exist for &dpidsiteid..;
@@ -127,27 +143,36 @@
 
         /*Delete temporary dataset*/
         proc datasets nowarn noprint nolist lib=work; 
-            delete _temp_&dps.; 
+            delete _temp_&dps. _temp_varinfo_&dps.; 
         quit;	
     		
     %end;*loop through DPs;
+	
 
 	%if &output_agg_data. = Y %then %do;
-		%if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 %then %do;
+		%if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 | &outfile = aggwd %then %do;
 			data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
+			%if %index(&infile.,varinfo) > 0 %then %do;
+				set agg_varinfo;
+			%end;
+			%else %do;
 				set &outfile.;
-			run;		
+			%end;
+			run;
 		%end;
 		%else %do;
 			data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
 				set msocdata.agg_%scan(&infile.,2,_)_&periodid.
-					&outfile.;
+			%if %index(&infile.,varinfo) > 0 %then %do;
+				    agg_varinfo;
+			%end;
+			%else %do;
+				    &outfile.;
+			%end;
 			run;
 		%end;
 	%end;
-
-	*output_datasets(dataset=&outfile., outlib=msocdata);
-
+	
 	%put NOTE: ******** END OF MACRO: aggregate_l2_datasets ********;
 
 %mend aggregate_l2_datasets; 

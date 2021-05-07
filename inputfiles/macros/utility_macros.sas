@@ -188,7 +188,6 @@
 	 	quit;
 		proc datasets library = &outlib.;
 			change &dataset. = agg_&name.;
-		run;
 		quit;
 
 	%end;
