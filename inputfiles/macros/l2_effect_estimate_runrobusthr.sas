@@ -44,7 +44,7 @@
             from forest;
         quit;
         
-        %if %eval(&sumec.>0) & %eval(&SumSquareUnEC.>0) & %eval(&redactevents.=0) %then %do;
+        %if %eval(&sumec.>0) & %eval(&SumSquareUnEC.>0) & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
 
             /* Need to sort by SumSquareE and SumSquareUnE for difference calculations later on */
             proc sort data = forest;
@@ -179,7 +179,7 @@
                 keep analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se;
             run;        
         %end;
-        %else %if %eval(&redactevents.>0) %then %do;
+        %else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
         data est;
             format analysisgrp $40. covarnum catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
             length subgroupcat $10. analysisgrp $40. analysis $13. covarnum 8;

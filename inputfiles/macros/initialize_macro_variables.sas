@@ -47,14 +47,13 @@
     %let maxqueryyear = ;
 
     /*variables related to createreport input file*/
-    %global ReportType small_cellcounts redactevents redactPT stratifybyDP seed groupsfile baselinefile tablefile
+    %global ReportType small_cellcounts redactcolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
             TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination;
 
     %let ReportType= ;
     %let small_cellcounts = ;
-    %let redactevents =0;
-    %let redactPT =0;
+    %let redactcolumns =;
     %let stratifybyDP = ;
     %let seed = ;
     %let groupsfile = ;

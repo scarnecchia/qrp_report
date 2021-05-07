@@ -53,7 +53,6 @@
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('redactevents', 'redactpt') and missing(value) then call symputx("value",0);
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");

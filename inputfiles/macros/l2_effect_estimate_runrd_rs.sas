@@ -274,7 +274,7 @@
             AvgFUTime_Dchar = 'NaN';
             AvgFUTime_Ychar = 'NaN';  
             end;
-            %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
+            %if %index(%lowcase(&redactcolumns.),events) > 0 | %str("&donotreport.") = %str("Y") %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
                 IR_1000PYchar = 'N/A';
@@ -282,7 +282,7 @@
                 RD_1000NUchar = 'N/A';
                 risk_1000NUchar = 'N/A';
             %end;
-            %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
+            %if (%index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
                 FUTime_Ychar = 'N/A';
                 AvgFUTime_Dchar = 'N/A';
                 AvgFUTime_Ychar = 'N/A';
@@ -391,7 +391,7 @@
                 AvgFUTime_Dchar = 'NaN';
                 AvgFUTime_Ychar = 'NaN';  
                 end;
-                %if %eval(&REDACTEVENTS.>0) | %str("&donotreport.") = %str("Y") %then %do;
+                %if %index(%lowcase(&redactcolumns.),events) > 0 | %str("&donotreport.") = %str("Y") %then %do;
                     EVchar = 'N/A';
                     rrchar = 'N/A';
                     IR_1000PYchar = 'N/A';
@@ -399,7 +399,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if (%eval(&REDACTPT.>0) | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
+                %if (%index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';
