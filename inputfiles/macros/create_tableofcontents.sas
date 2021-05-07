@@ -279,7 +279,7 @@
         from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
               from baselinefile
               where not missing(profilecovarstoinclude))
-        order by group, order;
+        order by order;
     quit;
 
     %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
@@ -334,10 +334,10 @@
                 create table _temp_agg_profile as
                 select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
                 %if %index(&where,%str(cohort="mi")) %then %do;
-                ,c.label as grouplabel2
+                ,c.label as grouplabel2, a.group2
                 %end;
                 %if %index(&where,%str(cohort="switch")) %then %do;
-                ,d.label as switchlabel
+                ,d.label as switchlabel, a.productswitchgroup
                 %end;
                 from _temp_agg_profile(drop=grouplabel %if &reporttype = T6 %then %do; switchlabel %end;) a 
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
@@ -355,7 +355,14 @@
             %end;
                 
             data _null_;
-                set _temp_agg_profile(keep=group grouplabel order);
+                set _temp_agg_profile(keep=group grouplabel order
+                                       %if %index(&where,%str(cohort="mi")) %then %do;
+                                       group2 grouplabel2
+                                       %end;
+                                       %if %index(&where,%str(cohort="switch")) %then %do;
+                                       productswitchgroup switchlabel
+                                       %end;
+                                        );
                 if _n_ = 1;
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);

@@ -45,7 +45,7 @@
         from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
               from baselinefile
               where not missing(profilecovarstoinclude))
-        order by group, order;
+        order by order;
     quit;
 
     %do wherenum = 1 %to %sysfunc(countw(&whereexpr, @));
@@ -386,7 +386,7 @@
                 style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
                 style(report)=[rules=none frame=box];
             %if %index(&reporttype,T4) or %index(&reporttype,T6) %then %do;
-            columns (label ("^S={background=white}&productlabel."sum_npts percent_npts sum_nepisodes percent_episodes));    
+            columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
             %end;
             %else %do;
             columns (label sum_npts percent_npts sum_nepisodes percent_episodes);
