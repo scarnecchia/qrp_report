@@ -274,7 +274,7 @@
             AvgFUTime_Dchar = 'NaN';
             AvgFUTime_Ychar = 'NaN';  
             end;
-            %if %index(%lowcase(&redactcolumns.),events) > 0 | %str("&donotreport.") = %str("Y") %then %do;
+            %if %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) > 0  | %str("&donotreport.") = %str("Y") %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
                 IR_1000PYchar = 'N/A';
@@ -391,7 +391,7 @@
                 AvgFUTime_Dchar = 'NaN';
                 AvgFUTime_Ychar = 'NaN';  
                 end;
-                %if %index(%lowcase(&redactcolumns.),events) > 0 | %str("&donotreport.") = %str("Y") %then %do;
+                %if %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) > 0  | %str("&donotreport.") = %str("Y") %then %do;
                     EVchar = 'N/A';
                     rrchar = 'N/A';
                     IR_1000PYchar = 'N/A';

@@ -55,7 +55,7 @@
     %let Expevlvl = 0;
     %let Unexpevlvl = 0;
 
-    %if "&individualreturn" = "N" & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+    %if "&individualreturn" = "N" & %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) = 0 %then %do;
         data _sub1;
             set cat_dp_rd(where=(&where.));
 		    /* retain observations with non-missing counts only */
@@ -89,7 +89,7 @@
         %end; /* end do statement for creating person-level dataset */
     %end; /* risk-level data */
 
-    %if "&individualreturn" = "Y" & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+    %if "&individualreturn" = "Y" & %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) = 0 %then %do;
         data _forest;
             set cat_dp_pl(keep=event dp dpidsiteid exposure covarnum analysisgrp subgroupcat &stratavar. &classvars. &noclassvars. where=(&where.));
         run;
