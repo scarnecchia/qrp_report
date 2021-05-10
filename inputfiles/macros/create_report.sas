@@ -40,6 +40,7 @@
     /*clear work and output*/
     proc datasets nowarn nolist lib=work kill; quit;
     proc datasets nowarn nolist lib=repdata kill; quit;
+    proc datasets nowarn nolist lib=msocdata kill; quit;    
 
     /*Initialize global macro variables*/
     %initialize_macro_variables();

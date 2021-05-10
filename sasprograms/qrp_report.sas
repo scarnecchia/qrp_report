@@ -138,10 +138,12 @@ options validvarname = v7;
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
 %let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
-/* Create reportdata folder */
-%let repdata = &output.reportdata.;
+/* Create reportdata and msocdata folders */
+%let repdata = &output.reportdata;
+%let msocdata = &output.msocdata;
 options DLCREATEDIR ;
 libname repdata "&repdata" ;
+libname msocdata "&msocdata" ;
 options NODLCREATEDIR;
 
 /* Assign ods template path */

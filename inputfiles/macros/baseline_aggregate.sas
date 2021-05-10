@@ -50,6 +50,7 @@
 ***************************************************************************************************;
 
 %macro baseline_aggregate(dpsiteid = ,
+                          maskedid = ,
                           dpnumber = ,
                           level = ,
                           grouptable = ,
@@ -147,12 +148,22 @@
             data &outdata.;
                 set _temp_baseline_transposed;
             run;
+            data _baseline_agg_&periodid.;
+                set _temp_baseline_stacked;
+				length dpidsiteid $6;
+                dpidsiteid = "&maskedid."; 
+            run;
         %end;
         %else %do;
             data &outdata.;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar &switch_s;
+            run;
+            data _baseline_agg_&periodid.;
+                set _baseline_agg_&periodid.
+				    _temp_baseline_stacked (in=b);
+                if b then dpidsiteid = "&maskedid.";  
             run;
         %end;
 
@@ -235,8 +246,22 @@
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
-            data &outdata.;
+            data &outdata. (drop=dpidsiteid) 
+			     _baseline_agg_&periodid. (rename=(exp_mean&dpnumber.=exp_mean
+												   exp_std&dpnumber.=exp_std
+												   comp_mean&dpnumber.=comp_mean
+												   comp_std&dpnumber.=comp_std
+												   exp_s2_&dpnumber.=exp_s2
+												   comp_s2_&dpnumber.=comp_s2
+												   ad&dpnumber.=ad
+												   sd&dpnumber.=sd
+												   exp_w1_&dpnumber.=exp_w
+												   exp_w2_&dpnumber.=exp_w2
+												   comp_w1_&dpnumber.=comp_w
+												   comp_w2_&dpnumber.=comp_w2));
                 set _temp_baseline_stacked;
+				length dpidsiteid $6;
+                dpidsiteid = "&maskedid."; 
             run;
         %end;
         %else %do;
@@ -245,10 +270,30 @@
                       _temp_baseline_stacked;
                 by analysisgrp runid order table group1 group2 weight vartype metvar; 
             run;
+            data _baseline_agg_&periodid.;
+                set _baseline_agg_&periodid.
+				    _temp_baseline_stacked (in=b rename=(exp_mean&dpnumber.=exp_mean
+													     exp_std&dpnumber.=exp_std
+						  							     comp_mean&dpnumber.=comp_mean
+													     comp_std&dpnumber.=comp_std
+													     exp_s2_&dpnumber.=exp_s2
+													     comp_s2_&dpnumber.=comp_s2
+													     ad&dpnumber.=ad
+													     sd&dpnumber.=sd
+													     exp_w1_&dpnumber.=exp_w
+													     exp_w2_&dpnumber.=exp_w2
+													     comp_w1_&dpnumber.=comp_w
+													     comp_w2_&dpnumber.=comp_w2));
+                if b then dpidsiteid = "&maskedid.";  
+            run;
         %end;
+		
+        proc sort data=_baseline_agg_&periodid.; 
+            by dpidsiteid analysisgrp runid order table group1 group2 weight vartype metvar;                 
+        run;
 			
     %end; /*level 2 baseline tables*/
-					
+						
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
         delete _temp_baseline_:;

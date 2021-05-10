@@ -201,7 +201,7 @@
     proc sql noprint;
         select max(order) into: numbaselinetablegrp
         from baselinefile;
-
+        
         /* Check to see if profilecovarstoinclude is populated */
         select count(profilecovarstoinclude) into: numprofilecovarstoinclude
         from baselinefile
@@ -218,7 +218,9 @@
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
+			%let maskedid = %scan(&masked_dplist, &dps);
             %baseline_aggregate(dpsiteid = &dpsiteid.,
+								maskedid = &maskedid.,
                                   dpnumber = &dps.,
                                   %if %index(&reporttype., L2)>0 %then %do;
                                   level = 2,
@@ -230,6 +232,11 @@
                                   outdata = alldptable1_&periodid.,
                                   periodid = &periodid.);
         %end;
+		
+		%output_datasets(dataset=_baseline_agg_&periodid., outlib=msocdata, 
+		%if %index(&reporttype., L2)>0 %then %do; name=adjusted_baseline_&periodid. %end;
+		%else %do; name=baseline_&periodid. %end;);
+		
 
         ***********************************************************************************************;
         * Reformat L1 tables to mimic L2 format                             
@@ -578,8 +585,8 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
-
-    ***********************************************************************************************;
+    
+     ***********************************************************************************************;
     * Aggregate covariate profile tables across DPs                               
     ***********************************************************************************************;
 
@@ -588,7 +595,7 @@
     %end;
 
     proc datasets nowarn noprint lib=work;
-        delete baselinefile_: _temp_: alldptable1_:;
+        delete baselinefile_: _temp_: alldptable1_: _baseline_agg_:;
     quit;
 
     %end; /*baselinefile input file exists*/

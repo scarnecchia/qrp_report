@@ -15,6 +15,7 @@
 *   - %tableletter() macro increments a letter suffix
 *   - %varexist() macro checks for the existence of a variable
 *   - %convert_categories() macro converts categories to mathematical expression
+*	- %output_datasets() macro output SAS datasets  
 *
 *  Program inputs:                                                                                   
 *   -
@@ -175,3 +176,20 @@
   %put &categories_boolean.;
 
 %mend convert_categories;
+
+%macro output_datasets (dataset=, inlib=work, outlib=, name=&infile.);
+
+	%if &output_agg_data. = Y %then %do;
+
+		proc datasets library = &inlib;
+	    copy out=&outlib. memtype=data;
+	       select &dataset.(memtype=data)
+	              ;
+	 	quit;
+		proc datasets library = &outlib.;
+			change &dataset. = agg_&name.;
+		quit;
+
+	%end;
+
+%mend output_datasets;

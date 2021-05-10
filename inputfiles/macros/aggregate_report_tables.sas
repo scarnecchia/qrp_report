@@ -41,9 +41,9 @@
 *			-[runid]_t6_switchepisdurstats
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
-
+*
 *			-[RUNID]_distindex.sas7bdat 
-*			-[RUNID]_distindexmap.sas7bdat 
+*			-[RUNID]_distindexmap.sas7bdat
 *
 *  Program inputs:                                                                                   
 *  	-
@@ -113,6 +113,8 @@
     			%end; *runID;
     		  %end;*loop through DPs;
 
+			  %output_datasets(dataset=&outfile., outlib=msocdata);
+
         %mend agg_report;
 
 	    %if %str("&reporttype") = %str("T1") %then %do;
@@ -176,7 +178,7 @@
 			  %agg_report(infile=t4_cida_preg_gestwk, outfile=agg_t4preggestwk, name=group); 
 			%end;
 			%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group); 
+			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group);
 			%end;
 			%if %index(&datasetlist.,t4nopreggestwk) > 0 %then %do;
 			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group); 
@@ -236,7 +238,6 @@
 			%agg_report(infile=distindex, outfile=agg_distindex, name=group);
 			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group);
 		%end;
-
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;

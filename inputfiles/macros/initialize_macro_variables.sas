@@ -104,6 +104,10 @@
     /*Output counter variables*/
     %global tableletter tablecount;
 
+    /*output_agg_data to msocdata*/
+    %global output_agg_data;
+    %let output_agg_data = Y;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
