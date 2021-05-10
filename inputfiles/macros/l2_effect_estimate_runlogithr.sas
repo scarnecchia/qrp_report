@@ -92,7 +92,7 @@
   			keep analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR LCL UCL HR_pvalue HR_coef HR_se;
   		run;
 	%end;
-	%else %if %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+	%else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
 		data est;
 		  		format analysisgrp $40. COVARNUM catnum best.;
 				length subgroupcat $10. analysisgrp $40. analysis $13.;
