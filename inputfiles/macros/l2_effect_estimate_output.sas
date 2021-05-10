@@ -336,10 +336,10 @@
             columns (
                 %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
 				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
-                %if %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) = 0  %then %do;
+                %if %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
                     EVchar
                 %end;
-                %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
+                %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
                     totalevents
                 %end;
                 %if &reporttype = T2L2 %then %do;
