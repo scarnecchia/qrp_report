@@ -370,11 +370,11 @@
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
-            %if %index(%sysfunc(transtrn(%lowcase(&redactcolumns.),sumevents,)),events) = 0%then %do;
+            %if %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
             define EVchar / display 'Number of Events'
                 style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
-            %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
+            %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
                 style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
