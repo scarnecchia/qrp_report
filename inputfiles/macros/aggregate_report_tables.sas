@@ -160,10 +160,6 @@
 			   
 			     /* If stratification by zip3 is requested, add state values */
                  %if %index(&stratavars.,zip3) %then %do;
-                   data _null_;
-                       set report_type&report_ty.;
-                       if _n_ = 1 then call symputx('zipfile', zipfile);
-                   run;
                    %addstatetozip3(data = &outfile.); 
 		         %end;
 	          %end;
@@ -174,7 +170,7 @@
 
 	    %if %str("&reporttype") = %str("T1") %then %do;
 			%if %index(&datasetlist.,t1cida) > 0 %then %do;
-			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group); 
+			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group, stratification = Y); 
 			%end;
 			%if %index(&datasetlist.,t1censor) > 0 %then %do;
 			  %agg_report(infile=censor_cida, outfile=agg_t1censor, name=group); 
@@ -183,7 +179,7 @@
 
 	    %if %str("&reporttype") = %str("T2L1") %then %do;
 			%if %index(&datasetlist.,t2cida) > 0 %then %do;
-			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group);
+			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group, stratification = Y);
 			%end;
 			%if %index(&datasetlist.,t2censor) > 0 %then %do;
 			  %agg_report(infile=censor_cida, outfile=agg_t2censor, name=group); 
@@ -192,7 +188,7 @@
 			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
-			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp); 
+			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y); 
 			%end;
 			%if %index(&datasetlist.,t2multevent) > 0 %then %do;
 			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp); 
