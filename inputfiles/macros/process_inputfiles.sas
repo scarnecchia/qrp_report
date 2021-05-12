@@ -290,8 +290,6 @@
 		  new_parameter = catx("_","&&id&n.",parameter);
 		  call symputx(new_parameter,&&run&n.,'G');
 		run;
-		
-		/* Determine
      %end;
 	 
 /***************************************************************************************************
