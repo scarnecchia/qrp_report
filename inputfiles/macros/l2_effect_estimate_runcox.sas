@@ -35,7 +35,7 @@
     run;
 
     %isdata(dataset=forest);
-    %if %eval(&NOBS.>=2) & %eval(&redactevents.=0) %then %do;
+    %if %eval(&NOBS.>=2) & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
 
         * Obtain stratified cox PH estimates with confidence intervals;
         proc phreg data = forest;
@@ -89,7 +89,7 @@
             KEEP analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
         RUN;
     %end;
-    %else %if %eval(&redactevents.>0) %then %do;
+    %else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
      data coxPHest;
             FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
             length subgroupcat $10. analysis $13. analysisgrp $40;

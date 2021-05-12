@@ -336,10 +336,10 @@
             columns (
                 %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
 				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
-                %if %eval(&redactevents.<=1) %then %do;
+                %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
                     EVchar
                 %end;
-                %if %eval(&redactevents.=2) %then %do;
+                %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
                     totalevents
                 %end;
                 %if &reporttype = T2L2 %then %do;
@@ -370,11 +370,11 @@
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
-            %if %eval(&redactevents.<=1) %then %do;
+            %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
             define EVchar / display 'Number of Events'
                 style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
-            %if %eval(&redactevents.=2) %then %do;
+            %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
                 style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %end;
