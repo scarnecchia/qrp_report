@@ -188,6 +188,31 @@
         "Y"   = 1
         "N"   = 2
         "U"   = 3;
+		
+		value $hhs_regfmt 
+        '01'='HHS Region (01)'
+        '02'='HHS Region (02)'
+        '03'='HHS Region (03)'
+        '04'='HHS Region (04)'
+        '05'='HHS Region (05)'
+        '06'='HHS Region (06)'
+        '07'='HHS Region (07)'
+        '08'='HHS Region (08)'
+        '09'='HHS Region (09)'
+        '10'='HHS Region (10)'
+        '11'='HHS Region (11)'
+        'Invalid'='HHS Region (Invalid)'
+        'Missing'='HHS Region (Missing)'
+        'Other'='HHS Region (Other)';
+
+        value $cb_regfmt
+        'MW' = 'Midwest'
+        'NE' = 'Northeast'
+        'S' = 'South'
+        'W' = 'West'
+        'Invalid' = 'CB Region (Invalid)'
+        'Missing' = 'CB Region (Missing)'
+        'Other' = 'CB Region (Other)';
 
         /* Delivery Status format */
         value $deliveryfmt

@@ -67,7 +67,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name=);
+        %macro agg_report(infile=, outfile=, name= , stratification = N);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -112,6 +112,61 @@
 
     			%end; *runID;
     		  %end;*loop through DPs;
+			  
+			  %if &stratification. = Y %then %do;
+			     /* Identify stratification variables */
+			     proc contents data = &outfile. out = _stratavars (keep = name);
+				 run;
+				 
+				 proc sql noprint;
+				   select name 
+				   into: stratavars separated by ' '
+				   from _stratavars where name in ('race' 'sex' 'hispanic' 'hhs_reg' 'cb_reg');
+				 quit;
+			  
+			     /* Put stratification variables through formats to acquire full names */
+                 data &outfile.;
+                   set &outfile.(rename = (%if %index(&stratavars.,sex) %then sex = _sex;
+                                           %if %index(&stratavars.,race) %then race = _race;
+                                           %if %index(&stratavars.,hispanic) %then hispanic = _hispanic;
+                                           %if %index(&stratavars.,hhs_reg) %then hhs_reg = _hhs_reg;
+                                           %if %index(&stratavars.,cb_reg) %then cb_reg = _cb_reg;)) ;
+				   %if %index(&stratavars.,sex) %then %do;				   
+                     length sex $15 ;
+                     sex = put(_sex, $sexfmt.);
+				     drop _sex;
+				   %end;
+                   %if %index(&stratavars.,race) %then %do;
+                     length race $45;
+                     race = put(_race, $racefmt.);
+                     drop _race;
+                   %end;
+                   %if %index(&stratavars.,hispanic) %then %do;
+                     length hispanic $20;
+                     hispanic = put(_hispanic, $hispanicfmt.);
+                     drop _hispanic;
+                   %end;
+                   %if %index(&stratavars.,hhs_reg) %then %do;
+                     length hhs_reg $25;
+                     hhs_reg = put(_hhs_reg, $hhs_regfmt.);
+                     drop _hhs_reg;
+                   %end;
+                   %if %index(&stratavars.,cb_reg) %then %do;
+                     length cb_reg $25;
+                     cb_reg = put(_cb_reg, $cb_regfmt.);
+                     drop _cb_reg;
+                   %end;
+                 run;
+			   
+			     /* If stratification by zip3 is requested, add state values */
+                 %if %index(&stratavars.,zip3) %then %do;
+                   data _null_;
+                       set report_type&report_ty.;
+                       if _n_ = 1 then call symputx('zipfile', zipfile);
+                   run;
+                   %addstatetozip3(data = &outfile.); 
+		         %end;
+	          %end;
 
 			  %output_datasets(dataset=&outfile., outlib=msocdata);
 
