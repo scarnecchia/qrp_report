@@ -629,6 +629,23 @@
                         from tablefile(where=(missing(dataset)=0))
                     quit;
                     %let datasetlist = &tdatasetlist.;
+					
+					/* Read in columns table */
+					%if "&tdatasetlist." ne "" %then %do;
+			          %if %str("&tablecolumnsfile.") = %str("") %then %do;
+			  	        %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+			  		    %abort;
+			  	      %end;
+			          %else %if %sysfunc(exist(input.&tablecolumnsfile.))=0 %then %do;
+                        %put ERROR: (Sentinel) tablecolumnsfile table is specified as input.&tablecolumnsfile. on &createreportfile., but the file does not exist.;
+			  		    %abort;
+                      %end;
+					  %else %do;
+					    data columns_table;
+						  set input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))));
+					    run;
+					  %end;
+			        %end; 
                 %end;
             %end;
         %end; /*TableFile has rows with IncludeinReport=Y*/

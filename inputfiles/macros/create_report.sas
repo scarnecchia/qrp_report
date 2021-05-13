@@ -87,9 +87,27 @@
 
     %if ^%index(&reporttype,TREE) %then %do;
 ***************************************************************************************************;
+*   Calculate summary tables                                             
+***************************************************************************************************;
+    %if %sysfunc(countw(&tdatasetlist)) > 0 %then %do;
+	   %do td = 1 %to %sysfunc(countw(&tdatasetlist)); 
+	      %let reporttable = %scan(&tdatasetlist, &td.);
+		  
+          /*standard t1t2 tables*/
+          %if %index(&reporttable.,cida) > 0 %then %do;
+            %t1t2conc_createdata(table = &reporttable., grpvar = group, analysistype = cida);
+          %end;
+		  
+          /*concomitant episodes tables*/
+          %if %index(&reporttable.,conc) > 0 %then %do;
+            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp, analysistype = conc);
+          %end;
+	   %end;
+    %end;
+
+***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
-
     /*loop l2 processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 			%l2_effect_estimate_driver();
@@ -100,7 +118,6 @@
             %l2_forestplot_createdata;
         %end;
     %end;
-	
 
 ***************************************************************************************************;
 *   Compute code distribution tables                                                     
