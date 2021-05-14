@@ -432,11 +432,11 @@
         delete _temp_agg_profile _temp_agg_order_profile;
         quit;
 
-        %end; /* where loop */
+    %end; /* where loop */
 
-        %end; /* periodid loop */
+    %end; /* periodid loop */
 
-        %end; /* &numprofilecovarstoinclude > 0 */
+    %end; /* &numprofilecovarstoinclude > 0 */
 
   /*************************/
   /* Effect estimate table */
@@ -602,6 +602,33 @@
 				
 	%end; *numgroupscodedist;
   %end;
+  
+
+    /*****************/
+    /* Attrition     */
+    /*****************/
+    %let tablenum = %eval(&tablenum + 1);
+	/* reset counter to reset table letter */
+	%let tablecount=1;
+	
+	%let tf = &&runid._type%sysfunc(substr(&reporttype.,2,1))file;
+	
+	proc sql noprint;
+	select distinct(t%sysfunc(substr(&reporttype.,2,1))cohortdef)
+	into: cohortdef separated by ' '
+	from infolder.&&&tf;
+	quit;
+
+	%if %sysfunc(prxmatch(m/T1|T2L1|T3|T4L1|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 %then %do;
+		%tableletter();
+		%addtotoc(tabnum=Table &tablenum.&tableletter.,
+                  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
+    %end; 
+	%if (%sysfunc(prxmatch(m/T1|T2L1|T3|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/01/i,&cohortdef.)) > 0) | %sysfunc(prxmatch(m/T5/i,&reporttype.)) > 0 %then %do;
+		%tableletter();	
+		%addtotoc(tabnum=Table &tablenum.&tableletter.,
+				  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
+    %end;
 
 
   /*********************************************************************************************/
