@@ -27,7 +27,7 @@
 
 %macro addstatetozip3(data=);
     
-  %put =====> MACRO CALLED: addstatetozip3 v1.0;
+  %put =====> MACRO CALLED: addstatetozip3;
  
       proc sql noprint;
         create table _tempzip as
@@ -96,7 +96,7 @@
          if zip3 not in ("Missing", "Invalid") and missing(zip3) = 0 then 
          zip3 = strip(zip3)||"/"||strip(statecode);;
       run;
-    %put =====> END MACRO: addstatetozip3 v1.0;
+    %put =====> END MACRO: addstatetozip3;
 
 %mend addstatetozip3;
 
