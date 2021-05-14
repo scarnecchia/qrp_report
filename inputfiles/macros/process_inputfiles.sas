@@ -405,8 +405,8 @@
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
 
-     /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
-     %do n = 1 %to &numrunid.;
+    /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
+    %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
@@ -630,7 +630,7 @@
                     quit;
                     %let datasetlist = &tdatasetlist.;
 					
-					/* Read in columns table */
+					/* Read in table columns file*/
 					%if "&tdatasetlist." ne "" %then %do;
 			          %if %str("&tablecolumnsfile.") = %str("") %then %do;
 			  	        %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
@@ -641,9 +641,21 @@
 			  		    %abort;
                       %end;
 					  %else %do;
-					    data columns_table;
-						  set input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))));
-					    run;
+					    data tablecolumns;
+						  set input.&tablecolumnsfile. (rename = (order = order_in column = column_in) 
+						                                where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))));
+						  length columnname $32 smallcellYN $1 footnote 3;
+	                      by table order_in;
+			              column = lowcase(compress(column_in));
+	                      order = _n_;
+			              smallcellYN = "N";
+			              call missing(footnote);
+			              columnname = compress("column"||order);
+			              if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+			              if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
+			              else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
+			              else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
+                        run;
 					  %end;
 			        %end; 
                 %end;

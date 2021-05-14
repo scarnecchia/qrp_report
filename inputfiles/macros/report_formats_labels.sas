@@ -380,5 +380,59 @@
 			"PX" = "Procedure";
 	run;
 	
+/***************************************************************************************************
+*   Assign stratafmt for conc and cida 
+***************************************************************************************************/
+	%macro levelformats (analysistype = );
+	    %isdata(dataset=tablefile);
+        %let stratafmt = ;
+            %do lv = 1 %to &nobs.;
+                data _null_;
+                    set tablefile (where = (dataset ="&analysistype."));
+                    if _n_ = &lv. then do;
+                        call symputx('levelid', strip(levelid1));
+                        call symputx('levelvars', strip(propcase(strat1)));
+                    end;
+                run;
+
+                %if %str(&levelvars) = %str() %then %let levelvars = %str( );
+                %let stratafmt = &&stratafmt. "&levelid." = "&levelvars.";
+            %end;
+
+            proc format library = work;
+                value $strata&analysistype.fmt
+                &&stratafmt.
+                /*This macro contains text replacement for SCDM values*/
+                 "M"   = "Male"
+                 "F"   = "Female"
+                 "O"   = "Other"
+	             
+                 "0"   = "Unknown"
+                 "1"   = "American Indian or Alaska Native"
+                 "2"   = "Asian"
+                 "3"   = "Black or African American"
+                 "4"   = "Native Hawaiian or Other Pacific Islander"
+                 "5"   = "White"
+	             
+                 "Y"   = "Hispanic Origin"
+                 "N"   = "Not Hispanic Origin"
+                 "U"   = "Unknown"
+	             
+                 "NE"  = "Northeast"
+                 "S"   = "South"
+                 "W"   = "West"
+                 "MW"  = "Midwest"
+                 ;  
+            run;
+   %mend levelformats;
+   %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0 %then %do;
+	 %do td = 1 %to %sysfunc(countw(&datasetlist)); 
+	   %let reporttable = %scan(&datasetlist, &td.);
+	    %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0%then %do;
+           %levelformats(analysistype =&reporttable.);
+        %end;
+	 %end;
+   %end;
+	
 %mend report_formats_labels;
 	

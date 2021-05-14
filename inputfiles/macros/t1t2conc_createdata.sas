@@ -3,7 +3,7 @@
 ****************************************************************************************************
 *
 * PROGRAM: t1t2conc_createdata.sas  
-* Created (mm/dd/yyyy): 07/19/2017
+* Created (mm/dd/yyyy): 05/14/2021
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: The macro produces tables for a standard Type 1 and Type 2 report
@@ -17,9 +17,9 @@
 *   - 
 * 
 *  PARAMETERS: 
-*  - for t1: table =t1_cida , grpvar = group, analysistype = cida 
-*  - for t2: table =t2_cida , grpvar = group, analysistype = cida 
-*  - for conc: table =t2_conc, grpvar = analysisgrp, analysistype = conc 
+*  - for t1: table =t1_cida, grpvar = group
+*  - for t2: table =t2_cida, grpvar = group
+*  - for conc: table =t2_conc, grpvar = analysisgrp
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -31,42 +31,39 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_createdata(table =, grpvar =, analysistype =);
+%macro t1t2conc_createdata(table =, grpvar =);
 
     %put =====> MACRO CALLED: t1t2conc_createdata ;
 	
-    %isdata(dataset=tablelookup);
+    %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
-	
-	    data &analysistype._tablelookup;
-           set tablelookup;
-           where dataset = "&table.";
-        run;
 
         proc sql noprint;
-            /* Determine &analysistype. levels and stratifications to store in macro variables*/
-            select distinct quote(strip(levelid1)) into: &analysistype._levelid separated by ' '
-            from tablelookup where table = "&table.";
+            /* Determine &table. levels and stratifications to store in macro variables*/
+            select distinct quote(strip(levelid1)) into: &table._levelid separated by ' '
+            from tablefile where dataset = "&table.";
 
-            select distinct tablesub into: &analysistype._stratification separated by ' ' 
-                 from tablelookup
-                 where tablesub ne 'overall' and table = "&table.";
+            select distinct tablesub into: &table._stratification separated by ' ' 
+                 from tablefile
+                 where tablesub ne 'overall' and dataset = "&table.";
         quit;
 
    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
-      proc summary data = agg_&table. nway missing;
-          class level &grpvar. %if %index(&&&analysistype._stratification,agegroup) %then %do; agegroupnum %end;
-                &&&analysistype._stratification;
+	  %let aggtable = %sysfunc(cats(%substr(&table.,1,2),_,%substr(&table.,3)));
+	  
+      proc summary data = msocdata.agg_&aggtable. nway missing;
+          class level &grpvar. %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
+                &&&table._stratification;
 	  	  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-          %if "&analysistype" ne "conc" %then %do;
+          %if %index(&table,conc) = 0 %then %do;
                dennumpts dennummemdays
 	  	  %end;
 	  	  %if %substr(&table,2,1) ne 1 %then %do;
 	  	     eps_wevents all_events followuptime
 	  	  %end;;
-          output out = agg_&table._summ (drop = _:) sum=;
+          output out = agg_&aggtable._summ (drop = _:) sum=;
       run;
 	
    /************************************************************************************************
@@ -75,7 +72,7 @@
 	proc sql noprint;
 	  select count(column) into: numcolumns trimmed
 	  from tablecolumns where table = "&table.";
-	  
+		
 	  select columnname 
 	        ,column 
 			,columnlabel
@@ -98,12 +95,23 @@
 			,:footnote1 - :footnote&numcolumns.
 	  from tablecolumns where table = "&table.";
     quit;
+	
+    /************************************************************************************************
+      Create covariatelist             
+     ************************************************************************************************/
+	 proc sql noprint;
+	   select count(distinct(covarnum)) into: numcovars trimmed
+	   from covarname;
+	   
+	   select studyname into: study1 - :study&numcovars.
+	   from covarname;
+	 quit;
 
     /************************************************************************************************
        Prepare final summary datasets           
      ************************************************************************************************/ 
     /*Macro to finalize tables*/
-    %macro prept1t2data(dsin=, dsout=, dpvar=, ind=);
+    %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
        data &dsout. (drop = lambda se ci_lower ci_upper p q);
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
@@ -162,62 +170,60 @@
 	    %end;
 		
         /*labels for stratification variables*/
-        %if %index(&&&analysistype._stratification,state) %then %do;
+        %if %index(&&&table._stratification,state) %then %do;
             if state in ("Invalid", "Missing") and episodes lt 1 then delete;
         %end;
 
         label
-              %if %index(&&&analysistype._stratification,sex) %then %do;
+              %if %index(&&&table._stratification,sex) %then %do;
               sex = "Sex"
               %end;
-              %if %index(&&&analysistype._stratification,agegroup) %then %do;
+              %if %index(&&&table._stratification,agegroup) %then %do;
               Agegroup = "Age Group"
               %end;
-              %if %index(&&&analysistype._stratification,year) %then %do;
+              %if %index(&&&table._stratification,year) %then %do;
               year = "Year"
               %end;
-              %if %index(&&&analysistype._stratification,month) %then %do;
+              %if %index(&&&table._stratification,month) %then %do;
               month = "Month"
               %end;
-              %if %index(&&&analysistype._stratification,race) %then %do;
+              %if %index(&&&table._stratification,race) %then %do;
               race = "Race"
               %end;
-              %if %index(&&&analysistype._stratification,state)  %then %do;
+              %if %index(&&&table._stratification,state)  %then %do;
               state = "State"
               %end;
-              %if %index(&&&analysistype._stratification,hhs_reg) %then %do;
+              %if %index(&&&table._stratification,hhs_reg) %then %do;
               hhs_reg = "HHS Region"
               %end;
-              %if %index(&&&analysistype._stratification,cb_reg) %then %do;
+              %if %index(&&&table._stratification,cb_reg) %then %do;
               cb_reg = "Census Region"
               %end;
-              %if %index(&&&analysistype._stratification,zip3) %then %do;
+              %if %index(&&&table._stratification,zip3) %then %do;
               zip3 = "3-Digit Zip/State"
               %end;
-              %if %index(&&&analysistype._stratification,zip_uncertain) %then %do;
+              %if %index(&&&table._stratification,zip_uncertain) %then %do;
               zip_uncertain = "Zip Uncertain"
               %end;
-              %if %index(&&&analysistype._stratification,hispanic) %then %do;
+              %if %index(&&&table._stratification,hispanic) %then %do;
               hispanic = "Hispanic"
               %end;
 
              /*covariate*/
-             %if %str(&covarlist) ne %str() %then %do;
-                %do c = 1 %to %sysfunc(countw(&covarlist.));
-                    %let w = %lowcase(%scan(&covarlist., &c.));
-                    %let covnum = %substr(&w., 6);
-                    %if %index(&&&analysistype._stratification,covar&covnum.) %then %do;
-                       covar&covnum. = "&&covar&covnum."
-                    %end;
-                %end;
+             %if &numcovars. > 0 %then %do;
+               %do c = 1 %to &numcovars.;
+                  %if %index(&&&table._stratification,covar&c.) %then %do;
+                     covar&c. = "&&study&c.."
+                  %end;
+               %end;
              %end;
             ;                
         run;
 		
         /*get all the continous variables in the dataset*/
-        %do l = 1 %to %sysfunc(countw(&&&analysistype._levelid));
-            %let level = %sysfunc(dequote(%scan(&&&analysistype._levelid., &l.)));
-            %let category = %sysfunc(putc(&level, $strata&analysistype.fmt));
+        %do l = 1 %to %sysfunc(countw(&&&table._levelid));
+            %let level = %sysfunc(dequote(%scan(&&&table._levelid., &l.)));
+            %let category = %sysfunc(putc(&level, $strata&table.fmt));
 
             %if %index(%lowcase(&category), agegroup) %then %do;
                 %let category = %sysfunc(tranwrd(%quote(&category.), Agegroup, AgegroupNum Agegroup));
@@ -234,28 +240,21 @@
             proc sql noprint;
                 create table _&dsout.&level. as
                 select a.*, b.header, b.grouplabel, b.order
-                from &dsout.&level. a, report_type&report_ty. b
+                from &dsout.&level. a, groupsfile b
                 where strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group));
             quit;
 			
             proc sort data=_&dsout.&level.;
                 by order %quote(&category.) ;
-            run;    
-
-            /*DP stratified - Assign masked DP*/
-            %if %str("&dpvar.") = "maskedID" %then %do;
-                %do d = 1 %to &num_dp.;
-
-                    %let DPSITEID = %scan(&random_dpid_list,&d);
-                    proc sql noprint;
-                        select maskedid into: MaskedDPID
-                        from output.maskeddpidkey
-                        where dp = "&DPSITEID.";
-                    quit;   
-
-                    data _&dsout.&level._&d.;
+            run; 
+			
+			/*DP stratified - Assign masked DP*/
+            %if %str("&dpvar.") = "dpidsiteid" %then %do;
+                %do dps = 1 %to %eval(&num_dp.); 
+                   %let maskedID = %scan(&masked_dplist,&dps); 
+                   data _&dsout.&level._&dps.;
                         set _&dsout.&level.;
-                        where maskedID = "&MaskedDPID.";
+                        where maskedID = "&maskedID.";
                     run;    
                 %end;
             %end;
@@ -263,19 +262,14 @@
     %mend;
 
     /*Overall*/
-    %prept1t2data(dsin=agg_dps_t&type.&analysistype._summ, dsout=agg_dps_&analysistype._summ, dpvar=, ind=agg);
+    %prept1t2data(dsin=agg_&aggtable._summ, dsout=agg_&aggtable._summ);
 
     /*By DP*/
-    %if ("&stratify_by_DP." = "Y") and ("&analysistype" ne "conc") %then %do;
-        %prept1t2data(dsin=agg_dps_t&type.&analysistype., dsout=agg_dps_&analysistype._by, dpvar=maskedID, ind=dp);
+    %if ("&stratifybydp." = "Y") and ("&table" ne "t2conc") %then %do;
+      %prept1t2data(dsin=msocdata.agg_&aggtable., dsout=agg_&aggtable._by, dpvar=dpidsiteid);
     %end;
 
-    /*Clean up work files*/
-    proc datasets lib=work nowarn nolist noprint;
-        delete /*agg_dp:*/ combine: group1: trans_:; 
-    quit;
-
-    %end; /* produce cida tables */
+    %end; /* produce cida or conc tables */
 
     %put =====> END MACRO: t1t2conc_createdata ;
 

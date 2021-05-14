@@ -89,18 +89,18 @@
 ***************************************************************************************************;
 *   Calculate summary tables                                             
 ***************************************************************************************************;
-    %if %sysfunc(countw(&tdatasetlist)) > 0 %then %do;
-	   %do td = 1 %to %sysfunc(countw(&tdatasetlist)); 
-	      %let reporttable = %scan(&tdatasetlist, &td.);
+    %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0 %then %do;
+	   %do td = 1 %to %sysfunc(countw(&datasetlist)); 
+	      %let reporttable = %scan(&datasetlist, &td.);
 		  
           /*standard t1t2 tables*/
           %if %index(&reporttable.,cida) > 0 %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = group, analysistype = cida);
+            %t1t2conc_createdata(table = &reporttable., grpvar = group);
           %end;
 		  
           /*concomitant episodes tables*/
           %if %index(&reporttable.,conc) > 0 %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp, analysistype = conc);
+            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
 	   %end;
     %end;
@@ -130,7 +130,7 @@
 *   Compile table of contents                                            
 ***************************************************************************************************;
 
-      %create_tableofcontents();
+    %create_tableofcontents();
 
 ***************************************************************************************************;
 *   Create appendices                                           
