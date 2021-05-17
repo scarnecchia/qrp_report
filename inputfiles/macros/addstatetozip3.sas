@@ -34,7 +34,7 @@
         select distinct 
           statecode,
           substr(zip,1,3) as zip3
-        from infolder.&zipfile.;
+        from infolder.&r01_zipfile.; /* only need to pull from r01 zip file since the same zipfile is used across runs */
       quit;
 
       /* recode the following 3 digit zips:
