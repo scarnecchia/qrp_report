@@ -640,12 +640,12 @@
 		where lowcase(group) in (select distinct(group) from attrition_groups);
 		quit;
 
-		%if %sysfunc(prxmatch(m/T1|T2L1|T3|T4L1|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 %then %do;
+		%if %sysfunc(prxmatch(m/T1|T2L1|T3|T4L1|T6/i,&reporttype.)) > 0 and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 %then %do;
 			%tableletter();
 			%addtotoc(tabnum=Table &tablenum.&tableletter.,
 					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
 		%end; 
-		%if (%sysfunc(prxmatch(m/T1|T2L1|T3|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/01/i,&cohortdef.)) > 0) | %sysfunc(prxmatch(m/T5/i,&reporttype.)) > 0 %then %do;
+		%if (%sysfunc(prxmatch(m/T1|T2L1|T3|T6/i,&reporttype.)) > 0 and %sysfunc(prxmatch(m/01/i,&cohortdef.)) > 0) | %sysfunc(prxmatch(m/T5/i,&reporttype.)) > 0 %then %do;
 			%tableletter();	
 			%addtotoc(tabnum=Table &tablenum.&tableletter.,
 					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
