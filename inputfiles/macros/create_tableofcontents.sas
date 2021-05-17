@@ -607,28 +607,51 @@
     /*****************/
     /* Attrition     */
     /*****************/
-    %let tablenum = %eval(&tablenum + 1);
-	/* reset counter to reset table letter */
-	%let tablecount=1;
-	
-	%let tf = &&runid._type%sysfunc(substr(&reporttype.,2,1))file;
-	
-	proc sql noprint;
-	select distinct(t%sysfunc(substr(&reporttype.,2,1))cohortdef)
-	into: cohortdef separated by ' '
-	from infolder.&&&tf;
-	quit;
 
-	%if %sysfunc(prxmatch(m/T1|T2L1|T3|T4L1|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 %then %do;
-		%tableletter();
-		%addtotoc(tabnum=Table &tablenum.&tableletter.,
-                  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
-    %end; 
-	%if (%sysfunc(prxmatch(m/T1|T2L1|T3|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/01/i,&cohortdef.)) > 0) | %sysfunc(prxmatch(m/T5/i,&reporttype.)) > 0 %then %do;
-		%tableletter();	
-		%addtotoc(tabnum=Table &tablenum.&tableletter.,
-				  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
-    %end;
+	data attrition_groups;
+	 set
+	 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+	    input.&groupsfile.
+	 %end;
+	 %if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
+	    input.&l2comparisonfile. (rename=AnalysisGrp=group)
+	 %end;
+	 %if %sysfunc(exist(input.&baselinefile.)) ne 0 %then %do;
+	    input.&baselinefile.
+	 %end;
+	 ;
+	 if runid = "&runid";
+	 group = lowcase(group);
+	run;
+
+    %isdata(dataset=attrition_groups);
+    %if %eval(&nobs.>0) %then %do;
+
+		%let tablenum = %eval(&tablenum + 1);
+		/* reset counter to reset table letter */
+		%let tablecount=1;
+
+		%let typenum = %substr(&reporttype.,2,1);
+
+		proc sql noprint;
+		select distinct(t&typenum.cohortdef)
+		into: cohortdef separated by ' '
+		from infolder.&&&runid._type&typenum.file
+		where lowcase(group) in (select distinct(group) from attrition_groups);
+		quit;
+
+		%if %sysfunc(prxmatch(m/T1|T2L1|T3|T4L1|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/02|03/i,&cohortdef.)) > 0 %then %do;
+			%tableletter();
+			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
+		%end; 
+		%if (%sysfunc(prxmatch(m/T1|T2L1|T3|T6/i,&reporttype.)) > 0  and %sysfunc(prxmatch(m/01/i,&cohortdef.)) > 0) | %sysfunc(prxmatch(m/T5/i,&reporttype.)) > 0 %then %do;
+			%tableletter();	
+			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
+		%end;
+
+    %end; /* attrition_groups file */
 
 
   /*********************************************************************************************/
