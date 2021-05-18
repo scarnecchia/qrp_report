@@ -85,6 +85,13 @@
 
 	%aggregate_report_tables;
 
+
+***************************************************************************************************;
+* Attrition tables                                                      
+***************************************************************************************************;
+
+    %attrition_createdata;
+
     %if ^%index(&reporttype,TREE) %then %do;
 ***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              

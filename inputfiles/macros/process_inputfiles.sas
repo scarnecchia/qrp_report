@@ -365,6 +365,61 @@
 	 run;
 
 /***************************************************************************************************
+*   Create a combined inclusion codes file for all runs                                        
+***************************************************************************************************/
+
+        data inclusioncodes_shell;
+            length runid $5 group $40 stockgroup caresettingprincipal condlevel subcondlevel $30 codecat $2 codetype $3 code $11 
+            rawlabdatetype rawlabresult excludesupply codepop indexdate $1 condfrom condto condinclusion subcondinclusion codedays minrxdays 8;
+            call missing(runid, group, stockgroup, codecat, codetype, code, caresettingprincipal, condinclusion, subcondinclusion, 
+                         condlevel, subcondlevel, condfrom, condto, rawlabdatetype,rawlabresult, codedays, excludesupply, codepop, indexdate, minrxdays);
+            stop;
+        run;
+
+        data master_inclusioncodes;
+            set 
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            infolder.&&&runid._inclusioncodes(in=n&n)
+            %end;
+            %else %do;
+            inclusioncodes_shell
+            %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+            %end;
+            %end;
+        run;
+
+/***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+     %let typenum = %substr(&reporttype,2,1);
+
+     data master_typefile;
+     set %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            infolder.&&&runid._type&typenum.file(in=n&n.)
+        %end;
+     ;
+     format runid $5.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+        %end;
+     run;
+
+/***************************************************************************************************
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
 	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
