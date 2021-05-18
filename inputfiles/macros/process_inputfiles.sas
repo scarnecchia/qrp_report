@@ -631,31 +631,39 @@
                     %let datasetlist = &tdatasetlist.;
 					
 					/* Read in table columns file*/
-					%if "&tdatasetlist." ne "" %then %do;
-			          %if %str("&tablecolumnsfile.") = %str("") %then %do;
-			  	        %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
-			  		    %abort;
-			  	      %end;
-			          %else %if %sysfunc(exist(input.&tablecolumnsfile.))=0 %then %do;
+					%if %str("&tablecolumnsfile.") ne %str("") %then %do;
+					  %if %sysfunc(exist(input.&tablecolumnsfile.))=0 %then %do;
                         %put ERROR: (Sentinel) tablecolumnsfile table is specified as input.&tablecolumnsfile. on &createreportfile., but the file does not exist.;
 			  		    %abort;
                       %end;
 					  %else %do;
-					    data tablecolumns;
-						  set input.&tablecolumnsfile. (rename = (order = order_in column = column_in) 
-						                                where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))));
-						  length columnname $32 smallcellYN $1 footnote 3;
-	                      by table order_in;
-			              column = lowcase(compress(column_in));
-	                      order = _n_;
-			              smallcellYN = "N";
-			              call missing(footnote);
-			              columnname = compress("column"||order);
-			              if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
-			              if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
-			              else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
-			              else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
-                        run;
+                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))))
+  						            out = tablecolumns;
+                           by table order;
+                         run;
+      
+	                     %isdata(dataset=tablecolumns);
+	                     %if %eval(&nobs.>0) %then %do;
+					        data tablecolumns;
+						      set tablecolumns (rename = (order = order_in column = column_in));
+						      length columnname $32 smallcellYN $1 footnote 3;
+	                          by table order_in;
+			                  column = lowcase(compress(column_in));
+	                          order = _n_;
+			                  smallcellYN = "N";
+			                  call missing(footnote);
+			                  columnname = compress("column"||order);
+			                  if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+			                  if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
+			                  else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
+			                  else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
+                            run;
+						 %end;
+						 %else %do;
+		                    %put ERROR: (Sentinel) All rows on input.&tablecolumnsfile. are set to N.; 
+		                    %put Columns must be selected for tables:&tdatasetlist.;
+		                    %abort;
+	  	                 %end;
 					  %end;
 			        %end; 
                 %end;

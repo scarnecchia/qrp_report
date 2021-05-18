@@ -30,7 +30,10 @@
 *   -matchsort
 *   -timefmt
 *   -timesort
-*
+*   -hhs_regfmt
+*   -cb_regfmt
+*   -stratcidafmt
+*   -strataconcfmt
 *
 *
 *  PARAMETERS:                                                                       
@@ -204,6 +207,22 @@
         'Invalid'='HHS Region (Invalid)'
         'Missing'='HHS Region (Missing)'
         'Other'='HHS Region (Other)';
+		
+		value $hhs_regsort 
+        '01'=1
+        '02'=2
+        '03'=3
+        '04'=4
+        '05'=5
+        '06'=6
+        '07'=7
+        '08'=8
+        '09'=9
+        '10'=10
+        '11'=11
+        'Invalid'=12
+        'Missing'=13
+        'Other'=14;
 
         value $cb_regfmt
         'MW' = 'Midwest'
@@ -213,7 +232,16 @@
         'Invalid' = 'CB Region (Invalid)'
         'Missing' = 'CB Region (Missing)'
         'Other' = 'CB Region (Other)';
-
+         
+		value $cb_regsort
+        'MW' = 1
+        'NE' = 2
+        'S' = 3
+        'W' = 4
+        'Invalid' = 5
+        'Missing' = 6
+        'Other' = 7;
+		
         /* Delivery Status format */
         value $deliveryfmt
         "PRE" = "Pre-Term (0-258 days)"
@@ -379,60 +407,6 @@
 			"DX" = "Diagnosis"
 			"PX" = "Procedure";
 	run;
-	
-/***************************************************************************************************
-*   Assign stratafmt for conc and cida 
-***************************************************************************************************/
-	%macro levelformats (analysistype = );
-	    %isdata(dataset=tablefile);
-        %let stratafmt = ;
-            %do lv = 1 %to &nobs.;
-                data _null_;
-                    set tablefile (where = (dataset ="&analysistype."));
-                    if _n_ = &lv. then do;
-                        call symputx('levelid', strip(levelid1));
-                        call symputx('levelvars', strip(propcase(strat1)));
-                    end;
-                run;
-
-                %if %str(&levelvars) = %str() %then %let levelvars = %str( );
-                %let stratafmt = &&stratafmt. "&levelid." = "&levelvars.";
-            %end;
-
-            proc format library = work;
-                value $strata&analysistype.fmt
-                &&stratafmt.
-                /*This macro contains text replacement for SCDM values*/
-                 "M"   = "Male"
-                 "F"   = "Female"
-                 "O"   = "Other"
-	             
-                 "0"   = "Unknown"
-                 "1"   = "American Indian or Alaska Native"
-                 "2"   = "Asian"
-                 "3"   = "Black or African American"
-                 "4"   = "Native Hawaiian or Other Pacific Islander"
-                 "5"   = "White"
-	             
-                 "Y"   = "Hispanic Origin"
-                 "N"   = "Not Hispanic Origin"
-                 "U"   = "Unknown"
-	             
-                 "NE"  = "Northeast"
-                 "S"   = "South"
-                 "W"   = "West"
-                 "MW"  = "Midwest"
-                 ;  
-            run;
-   %mend levelformats;
-   %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0 %then %do;
-	 %do td = 1 %to %sysfunc(countw(&datasetlist)); 
-	   %let reporttable = %scan(&datasetlist, &td.);
-	    %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0%then %do;
-           %levelformats(analysistype =&reporttable.);
-        %end;
-	 %end;
-   %end;
 	
 %mend report_formats_labels;
 	

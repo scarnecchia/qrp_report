@@ -13,8 +13,12 @@
 *   - For Type 2 requests: agg_t2cida.sas7bdat
 *   - For Type 2 concomitance requests: agg_t1conc.sas7bdat
 * 
-*  Program outputs:                                                                                                                                       
-*   - 
+*  Program outputs:                                                                                                                           
+*   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat            
+*   - For Type 1 requests aggregation by data partner: agg_t1cida_summ_by.sas7bdat                                    
+*   - For Type 2 requests aggregation across all data partners: agg_t2cida_summ.sas7bdat
+*   - For Type 2 requests aggregation by data partner: agg_t2cida_by.sas7bdat
+*   - For Type 2 concomitance requests: agg_t1conc_summ.sas7bdat 
 * 
 *  PARAMETERS: 
 *  - for t1: table =t1_cida, grpvar = group
@@ -35,36 +39,39 @@
 
     %put =====> MACRO CALLED: t1t2conc_createdata ;
 	
-    %isdata(dataset=tablefile);
-    %if %eval(&nobs.>0) %then %do;
-
-        proc sql noprint;
-            /* Determine &table. levels and stratifications to store in macro variables*/
-            select distinct quote(strip(levelid1)) into: &table._levelid separated by ' '
-            from tablefile where dataset = "&table.";
-
-            select distinct tablesub into: &table._stratification separated by ' ' 
-                 from tablefile
-                 where tablesub ne 'overall' and dataset = "&table.";
-        quit;
+	/* Confirm a table columns file has been specified */
+	%if %str("&tablecolumnsfile.") = %str("") %then %do;
+	  %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+	  %abort;
+	%end;
+	
+     proc sql noprint;
+       /* Determine &table. levels and stratifications to store in macro variables*/
+       select distinct quote(strip(levelid1)) into: &table._levelid separated by ' '
+       from tablefile where dataset = "&table.";
+	 
+       select distinct tablesub into: &table._stratification separated by ' ' 
+            from tablefile
+            where tablesub ne 'overall' and dataset = "&table.";
+     quit;
 
    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
-	  %let aggtable = %sysfunc(cats(%substr(&table.,1,2),_,%substr(&table.,3)));
-	  
-      proc summary data = msocdata.agg_&aggtable. nway missing;
-          class level &grpvar. %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
-                &&&table._stratification;
-	  	  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-          %if %index(&table,conc) = 0 %then %do;
-               dennumpts dennummemdays
-	  	  %end;
-	  	  %if %substr(&table,2,1) ne 1 %then %do;
-	  	     eps_wevents all_events followuptime
-	  	  %end;;
-          output out = agg_&aggtable._summ (drop = _:) sum=;
-      run;
+	%let aggtable = %sysfunc(cats(%substr(&table.,1,2),_,%substr(&table.,3)));
+	
+    proc summary data = agg_&aggtable. nway missing;
+        class level &grpvar. %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
+              &&&table._stratification;
+		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+        %if %index(&table,conc) = 0 %then %do;
+             dennumpts dennummemdays
+		  %end;
+		  %if %substr(&table,2,1) ne 1 %then %do;
+		     eps_wevents all_events followuptime
+		  %end;;
+        output out = agg_&aggtable._summ (drop = _:) sum=;
+    run;
 	
    /************************************************************************************************
       Determine total count of variables on table and put tablecolumns information into macro variables             
@@ -266,10 +273,8 @@
 
     /*By DP*/
     %if ("&stratifybydp." = "Y") and ("&table" ne "t2conc") %then %do;
-      %prept1t2data(dsin=msocdata.agg_&aggtable., dsout=agg_&aggtable._by, dpvar=dpidsiteid);
+      %prept1t2data(dsin=agg_&aggtable., dsout=agg_&aggtable._by, dpvar=dpidsiteid);
     %end;
-
-    %end; /* produce cida or conc tables */
 
     %put =====> END MACRO: t1t2conc_createdata ;
 
