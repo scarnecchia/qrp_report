@@ -217,8 +217,13 @@
                     %if %eval(&maxswitch.=2) %then %do;
                     ("^S={background=white borderleftcolor=white}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
-                    %if &computebalance. = Y %then %do; 
-                    ('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
+                    %if &computebalance. = Y %then %do; 					
+						%if %index(&reporttype,L2) %then %do;
+							('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
+						%end;
+						%else %do;
+							('^S={background=white}Characteristic Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
+						%end;
                     %end; );
 
             define metvar / noprint;
@@ -268,8 +273,8 @@
             compute label;
 			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
-			  else if label = "Mean gestational age at delivery" then label = "Mean gestational age&super_gestage. at delivery";
-			  else if label = "Mean gestational age of first exposure (weeks)" then label = "Mean gestational age&super_gestage. of first exposure (weeks)";
+			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
+			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
@@ -668,7 +673,7 @@
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
-              title =%quote(Table 1&tableletter.. &unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+              title =%quote(Table 1&tableletter.. &unadjusted.Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
               dpnum = &dpnum.,
               numcolumns =&numcolumns.,
@@ -684,7 +689,7 @@
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-                  title =%quote(Table 1&tableletter.. Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title =%quote(Table 1&tableletter.. Adjusted Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -698,7 +703,7 @@
                 %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-                  title=%quote(Table 1&tableletter.. Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title=%quote(Table 1&tableletter.. Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -715,7 +720,7 @@
                     %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-                      title=%quote(Table 1&tableletter.. Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      title=%quote(Table 1&tableletter.. Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                       characteristiclabel =&characteristiclabel.,
                       dpnum = &dpnum.,
                       numcolumns =&numcolumns.,

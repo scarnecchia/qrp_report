@@ -1222,24 +1222,24 @@
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
             if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
-            %assignbaselinevars(label="Number of unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
+            %assignbaselinevars(label="Unique patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=1);
             end;
             %if %str("&cohort") ^= %str("mi") %then %do;
             else if MetVar = 'N_EPISODES' and prxmatch('m/02|03/i',"&cohortdef.") > 0  then do; /*Only keep N_EPISODES if cohortdef = 02, 03*/
-            %assignbaselinevars(label="Number of episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
+            %assignbaselinevars(label="Episodes", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=2);
             end;
             %end;
             else if MetVar = 'TOTAL_WEIGHTED' then do;
-            %assignbaselinevars(label="Number of weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
+            %assignbaselinevars(label="Weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
             end;
 
             /*infant characteristics*/
             %if "&outputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
-                %assignbaselinevars(label="Mean enrollment time after birth (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=4);
+                %assignbaselinevars(label="Enrollment time after birth (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=4);
                 end;
                 else if MetVar = 'ENROLL_DIFF' then do;
-                %assignbaselinevars(label="Mean difference between date of birth and date of enrollment (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=5);
+                %assignbaselinevars(label="Difference between date of birth and date of enrollment (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=5);
                 end;
             %end;
 
@@ -1249,7 +1249,7 @@
                 /*age*/
                 else if index(upcase(MetVar),'AGE') > 0 then do;
                     if MetVar = 'AGE' then do;
-                    %assignbaselinevars(label="Mean age (years)", grouper="Demographic Characteristics", sortorder1 = 2, sortorder2=1);
+                    %assignbaselinevars(label="Age (years)", grouper="Demographic Characteristics", sortorder1 = 2, sortorder2=1);
                     end;
                     else do; 
                         /*Sortorder2 assigned after merging in agegroupnum values below*/
@@ -1333,12 +1333,12 @@
                     %assignbaselinevars(label=put('NONE', $deliveryfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NONE', deliverysort.),1.));
                     end;
                     if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Mean gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
                     end;
                 end; 
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
-                    %assignbaselinevars(label="Mean gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=1);
+                    %assignbaselinevars(label="Gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=1);
                     end;
                     if MetVar= 'ADJUSTEDDISP_PRE' then do;
                     %assignbaselinevars(label="Mean number of dispensings in pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=2);
