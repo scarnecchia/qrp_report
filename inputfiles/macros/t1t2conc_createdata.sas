@@ -14,10 +14,8 @@
 *   - For Type 2 concomitance requests: agg_t1conc.sas7bdat
 * 
 *  Program outputs:                                                                                                                           
-*   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat            
-*   - For Type 1 requests aggregation by data partner: agg_t1cida_summ_by.sas7bdat                                    
+*   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat                             
 *   - For Type 2 requests aggregation across all data partners: agg_t2cida_summ.sas7bdat
-*   - For Type 2 requests aggregation by data partner: agg_t2cida_by.sas7bdat
 *   - For Type 2 concomitance requests: agg_t1conc_summ.sas7bdat 
 * 
 *  PARAMETERS: 
@@ -89,7 +87,6 @@
 			,scan(compress(column,'()*0123456789.'),2,'/') as cidenominator
 			,scan(column,2,'*') as multiplier
 			,cirate
-			,footnote
 	   into: var1 -:var&numcolumns.
 		    ,:formula1 - :formula&numcolumns.
 			,:label1 - :label&numcolumns.
@@ -99,7 +96,6 @@
 			,:cidenom1 - :cidenom&numcolumns.
 			,:multi1 - :multi&numcolumns.
 			,:cirate1 - :cirate&numcolumns.
-			,:footnote1 - :footnote&numcolumns.
 	  from tablecolumns where table = "&table.";
     quit;
 	
@@ -125,12 +121,7 @@
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
 		/* Calculated vars and labels */
         %do vv = 1 %to &numcolumns;
-		  %if &&footnote&vv. > 0 %then %do;
-		    label &&var&vv. = "&&label&vv.^{super 1}";
-		  %end;
-		  %else %do;
-		    label &&var&vv. = "&&label&vv.";
-		  %end;
+		  label &&var&vv. = "&&label&vv.";
 		  
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
@@ -201,19 +192,19 @@
               state = "State"
               %end;
               %if %index(&&&table._stratification,hhs_reg) %then %do;
-              hhs_reg = "HHS Region"
+              hhs_reg = "Health and Human Services (HHS) Region"
               %end;
               %if %index(&&&table._stratification,cb_reg) %then %do;
-              cb_reg = "Census Region"
+              cb_reg = "Census Bureau Region"
               %end;
               %if %index(&&&table._stratification,zip3) %then %do;
-              zip3 = "3-Digit Zip/State"
+              zip3 = "3-Digit Zip Code/State"
               %end;
               %if %index(&&&table._stratification,zip_uncertain) %then %do;
               zip_uncertain = "Zip Uncertain"
               %end;
               %if %index(&&&table._stratification,hispanic) %then %do;
-              hispanic = "Hispanic"
+              hispanic = "Hispanic Origin"
               %end;
 
              /*covariate*/
@@ -254,27 +245,11 @@
             proc sort data=_&dsout.&level.;
                 by order %quote(&category.) ;
             run; 
-			
-			/*DP stratified - Assign masked DP*/
-            %if %str("&dpvar.") = "dpidsiteid" %then %do;
-                %do dps = 1 %to %eval(&num_dp.); 
-                   %let maskedID = %scan(&masked_dplist,&dps); 
-                   data _&dsout.&level._&dps.;
-                        set _&dsout.&level.;
-                        where maskedID = "&maskedID.";
-                    run;    
-                %end;
-            %end;
         %end;
     %mend;
 
     /*Overall*/
     %prept1t2data(dsin=agg_&aggtable._summ, dsout=agg_&aggtable._summ);
-
-    /*By DP*/
-    %if ("&stratifybydp." = "Y") and ("&table" ne "t2conc") %then %do;
-      %prept1t2data(dsin=agg_&aggtable., dsout=agg_&aggtable._by, dpvar=dpidsiteid);
-    %end;
 
     %put =====> END MACRO: t1t2conc_createdata ;
 
