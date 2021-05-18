@@ -629,6 +629,7 @@
                         from tablefile(where=(missing(dataset)=0))
                     quit;
                     %let datasetlist = &tdatasetlist.;
+					%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
 					
 					/* Read in table columns file*/
 					%if %str("&tablecolumnsfile.") ne %str("") %then %do;

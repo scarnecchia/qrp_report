@@ -89,17 +89,17 @@
 ***************************************************************************************************;
 *   Calculate summary tables                                             
 ***************************************************************************************************;
-    %if %index(&datasetlist.,cida) > 0 | %index(&datasetlist.,conc) > 0 %then %do;
-	   %do td = 1 %to %sysfunc(countw(&datasetlist)); 
-	      %let reporttable = %scan(&datasetlist, &td.);
+    %if %eval(&tdatasetlistnum. > 0) %then %do;
+	   %do td = 1 %to &tdatasetlistnum.; 
+	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  
-          /*standard t1t2 tables*/
-          %if %index(&reporttable.,cida) > 0 %then %do;
+          /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
+          %if &reporttable. = t1cida | &reporttable. = t2cida %then %do;
             %t1t2conc_createdata(table = &reporttable., grpvar = group);
           %end;
 		  
-          /*concomitant episodes tables*/
-          %if %index(&reporttable.,conc) > 0 %then %do;
+          /* Concomitant episodes tables */
+          %if &reporttable. = t2conc %then %do;
             %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
 	   %end;
