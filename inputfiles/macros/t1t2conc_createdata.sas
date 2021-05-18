@@ -16,7 +16,10 @@
 *  Program outputs:                                                                                                                           
 *   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat                             
 *   - For Type 2 requests aggregation across all data partners: agg_t2cida_summ.sas7bdat
-*   - For Type 2 concomitance requests: agg_t1conc_summ.sas7bdat 
+*   - For Type 2 concomitance requests: agg_t2conc_summ.sas7bdat 
+*   - For Type 1 requests aggregation across all data partners by level: agg_t1cida_summ&level..sas7bdat                             
+*   - For Type 2 requests aggregation across all data partners by level: agg_t2cida_summ&level.&level..sas7bdat
+*   - For Type 2 concomitance requests by level: agg_t2conc_summ&level..sas7bdat 
 * 
 *  PARAMETERS: 
 *  - for t1: table =t1_cida, grpvar = group
@@ -33,7 +36,7 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_createdata(table =, grpvar =);
+%macro t1t2conc_createdata(table =, grpvar = );
 
     %put =====> MACRO CALLED: t1t2conc_createdata ;
 	
@@ -43,22 +46,23 @@
 	  %abort;
 	%end;
 	
-     proc sql noprint;
+    proc sql noprint;
        /* Determine &table. levels and stratifications to store in macro variables*/
-       select distinct quote(strip(levelid1)) into: &table._levelid separated by ' '
+       select distinct quote(strip(levelid1)),
+              quote(strip(tablesubstrat))	  
+	   into :&table._levelid separated by ' '
+	       ,:&table._substrat separated by ' '
        from tablefile where dataset = "&table.";
 	 
        select distinct tablesub into: &table._stratification separated by ' ' 
             from tablefile
             where tablesub ne 'overall' and dataset = "&table.";
-     quit;
+    quit;
 
    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
-	%let aggtable = %sysfunc(cats(%substr(&table.,1,2),_,%substr(&table.,3)));
-	
-    proc summary data = agg_&aggtable. nway missing;
+    proc summary data = agg_&table. nway missing;
         class level &grpvar. %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
               &&&table._stratification;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
@@ -68,7 +72,7 @@
 		  %if %substr(&table,2,1) ne 1 %then %do;
 		     eps_wevents all_events followuptime
 		  %end;;
-        output out = agg_&aggtable._summ (drop = _:) sum=;
+        output out = agg_&table._summ (drop = _:) sum=;
     run;
 	
    /************************************************************************************************
@@ -99,20 +103,43 @@
 	  from tablecolumns where table = "&table.";
     quit;
 	
-    /************************************************************************************************
+   /************************************************************************************************
       Create covariatelist             
-     ************************************************************************************************/
-	 proc sql noprint;
-	   select count(distinct(covarnum)) into: numcovars trimmed
-	   from covarname;
+    ************************************************************************************************/
+	 data _covars (keep = covarnum);
+	   length covarnum 8;
+	   set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0 and dataset = "&table."));
+	   covarstart = index(tablesub,'covar');
+	   covarnum = input(compress(substr(tablesub,covarstart),'covar'),8.);
+     run;
+	 
+	 proc sort nodupkey data = _covars;
+	   by covarnum;
+	 run;
+	 
+	 %let numcovars = 0;
+	 %ISDATA(dataset=_covars); 
+     %if &nobs > 0 %then %do;
+	   proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
+	     by covarnum;
+	   run;
+       
+       proc sql noprint;
+	     select count(covarnum) into: numcovars trimmed
+	     from _covars;
 	   
-	   select studyname into: study1 - :study&numcovars.
-	   from covarname;
-	 quit;
-
-    /************************************************************************************************
+	     select cats('covar',a.covarnum),
+                b.studyname
+         into :covar1 - :covar&numcovars.,
+              :study1 - :study&numcovars.
+	     from _covars a
+         left join _covarnames b
+	     on a.covarnum = b.covarnum;
+       quit;
+     %end;
+   /************************************************************************************************
        Prepare final summary datasets           
-     ************************************************************************************************/ 
+    ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
        data &dsout. (drop = lambda se ci_lower ci_upper p q);
@@ -210,46 +237,59 @@
              /*covariate*/
              %if &numcovars. > 0 %then %do;
                %do c = 1 %to &numcovars.;
-                  %if %index(&&&table._stratification,covar&c.) %then %do;
-                     covar&c. = "&&study&c.."
+                  %if %index(&&&table._stratification,&&covar&c..) %then %do;
+                     &&covar&c.. = "&&study&c.."
                   %end;
                %end;
              %end;
             ;                
         run;
 		
+		%isdata(dataset=labelfile);
         /*get all the continous variables in the dataset*/
         %do l = 1 %to %sysfunc(countw(&&&table._levelid));
             %let level = %sysfunc(dequote(%scan(&&&table._levelid., &l.)));
-            %let category = %sysfunc(putc(&level, $strata&table.fmt));
+            %let category = %sysfunc(dequote(%scan(&&&table._substrat., &l.)));
 
             %if %index(%lowcase(&category), agegroup) %then %do;
                 %let category = %sysfunc(tranwrd(%quote(&category.), Agegroup, AgegroupNum Agegroup));
             %end; 
 			
-			data &dsout.&level. (keep = &dpvar. &grpvar. level %quote(&category.) %do vv = 1 %to &numcolumns; &&var&vv. %end;);
+			data _&dsout.&level. (keep = &dpvar. &grpvar. level %quote(&category.) %do vv = 1 %to &numcolumns; &&var&vv. %end;);
 			  set &dsout. (where = (level = "&level" %if %index(%lowcase(&category.), zip3 ) %then %do; and episodes gt 0 %end;));
 			run;
 			
-			proc sort data = &dsout.&level.;
-			  by &dpvar. &grpvar. level %quote(&category.);
-			run;
-			
             proc sql noprint;
-                create table _&dsout.&level. as
-                select a.*, b.header, b.grouplabel, b.order
-                from &dsout.&level. a, groupsfile b
-                where strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group));
+                create table &dsout.&level. as
+                select a.*, b.order
+				   %if %eval(&nobs.>0) %then %do;
+				     ,d.label as header 
+					 ,c.label as grouplabel 
+				   %end;
+                   %else %do;
+                     ,"" as header 
+					 ,"" as grouplabel 
+                   %end;				   
+                from _&dsout.&level. a 
+				left join groupsfile b
+				on strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group))
+				%if %eval(&nobs.>0) %then %do;
+				  left join labelfile (where = (labeltype = "grouplabel")) c
+				  on strip(lowcase(a.&grpvar.)) = strip(lowcase(c.group))
+				  left join labelfile (where = (labeltype = "headerlabel")) d
+				  on strip(lowcase(a.&grpvar.)) = strip(lowcase(d.group))
+				%end;
+				;
             quit;
 			
-            proc sort data=_&dsout.&level.;
+            proc sort data=&dsout.&level.;
                 by order %quote(&category.) ;
             run; 
         %end;
     %mend;
 
     /*Overall*/
-    %prept1t2data(dsin=agg_&aggtable._summ, dsout=agg_&aggtable._summ);
+    %prept1t2data(dsin=agg_&table._summ, dsout=agg_&table._summ);
 
     %put =====> END MACRO: t1t2conc_createdata ;
 

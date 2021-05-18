@@ -115,7 +115,13 @@
 			  
 			  %if &stratification. = Y %then %do;
 			     /* Identify stratification variables */
-			     proc contents data = &outfile. out = _stratavars (keep = name);
+				 proc sql noprint;
+                   select distinct tablesub into: stratification separated by ' ' 
+                   from tablefile
+                   where tablesub ne 'overall' and dataset = "%substr(&outfile.,5)";
+                 quit;
+				 
+			     proc contents data = &outfile. (keep = &stratification) out = _stratavars (keep = name);
 				 run;
 				 
 				 proc sql noprint;
