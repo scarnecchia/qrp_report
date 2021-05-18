@@ -142,7 +142,7 @@
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
-       data &dsout. (drop = lambda se ci_lower ci_upper p q);
+       data _&dsout. (drop = lambda se ci_lower ci_upper p q);
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
@@ -238,54 +238,42 @@
              %if &numcovars. > 0 %then %do;
                %do c = 1 %to &numcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
-                     &&covar&c.. = "&&study&c.."
+				    length _covar&covnum. $150;
+                    label _covar&covnum. = "&&&covar&covnum.";
+                    if covar&c. = 0 then _covar&c. = "No evidence of &&study&c..";
+                    if covar&c. = 1 then _covar&c. = "Evidence of &&study&c.."; 
+					drop covar&covnum.;
+                    rename _covar&covnum. = covar&covnum.;
                   %end;
                %end;
              %end;
             ;                
         run;
 		
+		/* Apply labels */
 		%isdata(dataset=labelfile);
-        /*get all the continous variables in the dataset*/
-        %do l = 1 %to %sysfunc(countw(&&&table._levelid));
-            %let level = %sysfunc(dequote(%scan(&&&table._levelid., &l.)));
-            %let category = %sysfunc(dequote(%scan(&&&table._substrat., &l.)));
-
-            %if %index(%lowcase(&category), agegroup) %then %do;
-                %let category = %sysfunc(tranwrd(%quote(&category.), Agegroup, AgegroupNum Agegroup));
-            %end; 
-			
-			data _&dsout.&level. (keep = &dpvar. &grpvar. level %quote(&category.) %do vv = 1 %to &numcolumns; &&var&vv. %end;);
-			  set &dsout. (where = (level = "&level" %if %index(%lowcase(&category.), zip3 ) %then %do; and episodes gt 0 %end;));
-			run;
-			
-            proc sql noprint;
-                create table &dsout.&level. as
-                select a.*, b.order
-				   %if %eval(&nobs.>0) %then %do;
-				     ,d.label as header 
-					 ,c.label as grouplabel 
-				   %end;
-                   %else %do;
-                     ,"" as header 
-					 ,"" as grouplabel 
-                   %end;				   
-                from _&dsout.&level. a 
-				left join groupsfile b
-				on strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group))
-				%if %eval(&nobs.>0) %then %do;
-				  left join labelfile (where = (labeltype = "grouplabel")) c
-				  on strip(lowcase(a.&grpvar.)) = strip(lowcase(c.group))
-				  left join labelfile (where = (labeltype = "headerlabel")) d
-				  on strip(lowcase(a.&grpvar.)) = strip(lowcase(d.group))
-				%end;
-				;
-            quit;
-			
-            proc sort data=&dsout.&level.;
-                by order %quote(&category.) ;
-            run; 
-        %end;
+		
+        proc sql noprint;
+          create table msocdata.&dsout. as
+          select a.*, b.order
+		  %if %eval(&nobs.>0) %then %do;
+		    ,d.label as header 
+			,c.label as grouplabel 
+		  %end;
+          %else %do;
+            ,"" as header 
+			,"" as grouplabel 
+           %end;				   
+          from _&dsout. a 
+		  left join groupsfile b
+		  on strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group))
+		  %if %eval(&nobs.>0) %then %do;
+		    left join labelfile (where = (labeltype = "grouplabel")) c
+		    on strip(lowcase(a.&grpvar.)) = strip(lowcase(c.group))
+		    left join labelfile (where = (labeltype = "headerlabel")) d
+		    on strip(lowcase(a.&grpvar.)) = strip(lowcase(d.group))
+		  %end;;
+         quit;
     %mend;
 
     /*Overall*/

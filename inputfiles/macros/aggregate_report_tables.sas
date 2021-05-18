@@ -127,7 +127,7 @@
 				 proc sql noprint;
 				   select name 
 				   into: stratavars separated by ' '
-				   from _stratavars where name in ('race' 'sex' 'hispanic' 'hhs_reg' 'cb_reg');
+				   from _stratavars;
 				 quit;
 			  
 			     /* Put stratification variables through formats to acquire full names */
@@ -136,7 +136,9 @@
                                            %if %index(&stratavars.,race) %then race = _race;
                                            %if %index(&stratavars.,hispanic) %then hispanic = _hispanic;
                                            %if %index(&stratavars.,hhs_reg) %then hhs_reg = _hhs_reg;
-                                           %if %index(&stratavars.,cb_reg) %then cb_reg = _cb_reg;)) ;
+                                           %if %index(&stratavars.,cb_reg) %then cb_reg = _cb_reg;
+										   %if %index(&stratavars.,month) %then month = _month;
+										   %if %index(&stratavars.,agegroup) %then agegroup = _agegroup;)) ;
 				   %if %index(&stratavars.,sex) %then %do;				   
                      length sex $15 ;
                      sex = put(_sex, $sexfmt.);
@@ -161,6 +163,16 @@
                      length cb_reg $25;
                      cb_reg = put(_cb_reg, $cb_regfmt.);
                      drop _cb_reg;
+                   %end;
+				   %if %index(&stratavars.,month) %then %do;
+                     length month $10;
+                     month = put(_month, mn_name.);
+                     drop _month;
+                   %end;
+				   %if %index(&stratavars., agegroup) %then %do;
+                     length agegroup $30;
+                     agegroup = put(_agegroup, $agefmt.);
+                     drop _agegroup;
                    %end;
                  run;
 			   

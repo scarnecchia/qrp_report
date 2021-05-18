@@ -109,6 +109,10 @@
     /*output_agg_data to msocdata*/
     %global output_agg_data;
     %let output_agg_data = Y;
+	
+	/*zipfile*/
+	%global zipfile;
+	%let zipfile = ;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
