@@ -44,18 +44,17 @@
 		%else %do;
 		  parent = styles.Pearl;
 		%end;
-        style data/
-          backgroundcolor = white
-     	  color = black
-     	  fontfamily = "&font."
-     	  fontsize = &fontsize.
+		style data/
+		  backgroundcolor = white
+		  color = black
+		  fontfamily = "&font."
+		  fontsize = &fontsize.
      	  bordercolor = ligr
-     	  borderstyle = solid
+		  borderstyle = hidden
      	  borderwidth = 1pt
-     	  cellpadding =1.75pt
-     	  frame = box
-  	      just = C
-     	  ;
+		  cellpadding =1.75pt
+		  just = C
+		  ;
         style body/
           backgroundcolor = white
      	  frame = void

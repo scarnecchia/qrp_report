@@ -60,13 +60,13 @@
         grouper='Demographic Characteristics';
         sortorder2=0;
         sortorder1=3;
-        label='Age categories';
+        label='Age';
         output;
         sortorder1=4;
         label='Sex';
         output;
         sortorder1=5;
-        label='Race categories';
+        label='Race';
         output;
         sortorder1=6;
         label='Hispanic origin';
