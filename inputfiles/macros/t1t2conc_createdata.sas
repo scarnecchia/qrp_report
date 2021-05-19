@@ -40,6 +40,9 @@
 
     %put =====> MACRO CALLED: t1t2conc_createdata ;
 	
+   /************************************************************************************************
+      Determine levels and stratifications               
+    ************************************************************************************************/	
 	/* Confirm a table columns file has been specified */
 	%if %str("&tablecolumnsfile.") = %str("") %then %do;
 	  %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
@@ -48,10 +51,8 @@
 	
     proc sql noprint;
        /* Determine &table. levels and stratifications to store in macro variables*/
-       select distinct quote(strip(levelid1)),
-              quote(strip(tablesubstrat))	  
+       select distinct quote(strip(levelid1))  
 	   into :&table._levelid separated by ' '
-	       ,:&table._substrat separated by ' '
        from tablefile where dataset = "&table.";
 	 
        select distinct tablesub into: &table._stratification separated by ' ' 
@@ -254,7 +255,7 @@
 		%isdata(dataset=labelfile);
 		
         proc sql noprint;
-          create table msocdata.&dsout. as
+          create table &dsout. as
           select a.*, b.order
 		  %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
@@ -273,7 +274,24 @@
 		    left join labelfile (where = (labeltype = "headerlabel")) d
 		    on strip(lowcase(a.&grpvar.)) = strip(lowcase(d.group))
 		  %end;;
-         quit;
+        quit;
+		
+		/* Assign sort order */
+		data &dsout.;
+		  set &dsout.;
+		  %do ls = 1 %to %sysfunc(countw(&&&table._stratification.));
+            %let strat = %scan(&&&table._stratification., &ls.);
+		    %if &strat. = sex | &strat. = race | &strat. = hispanic | &strat. = hhs_reg | &strat. = cb_reg %then %do;
+			  %if %index(&&&table._stratification.,&strat.) %then %do;
+			    sortorder = put(&strat,$&strat.sort.);
+			  %end;
+			%end;
+		  %end;
+	    run;
+		
+		proc sort data = &dsout.;
+		  by order sortorder;
+		run;
     %mend;
 
     /*Overall*/
