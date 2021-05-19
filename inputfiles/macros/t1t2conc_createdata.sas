@@ -15,7 +15,7 @@
 * 
 *  Program outputs:                                                                                                                           
 *   - For Type 1 requests aggregation across all data partners: final_t1cida.sas7bdat                             
-*   - For Type 2 requests aggregation across all data partners: final_t2cidasas7bdat
+*   - For Type 2 requests aggregation across all data partners: final_t2cida.sas7bdat
 *   - For Type 2 concomitance requests: final_t2conc.sas7bdat 
 * 
 *  PARAMETERS: 
