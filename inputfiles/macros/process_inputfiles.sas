@@ -176,16 +176,16 @@
      run;
 
     /* Combine input files to identify all runids requested */
-	 data _inputfiles;
+	 data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
-	       input.&groupsfile. (keep = runid)
+	       input.&groupsfile. (keep = runid group)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
 		   input.&l2comparisonfile. (keep = runid)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid)
+		   input.&baselinefile. (keep = runid group)
 		 %end;
 		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
 		   input.&itsregressionfile. (keep = runid)
@@ -198,19 +198,19 @@
      proc sql noprint;
         select count(distinct runid) 
 	    into: numrunid
-        from _inputfiles;
+        from inputfiles;
         
 		%let numrunid = &numrunid.;
 
 		select distinct lowcase(runid)
 	    into: runidlist separated by ' '
-        from _inputfiles;
+        from inputfiles;
 
 		select distinct b._name_
 		      ,a.runid
 	    into: run1 -:run&numrunid. 
 		     ,:id1 - :id&numrunid.
-        from _inputfiles as a
+        from inputfiles as a
         left join _qrp_parameters_trans as b
            on a.runid = b.col1;
      quit;
@@ -368,41 +368,40 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
-        data inclusioncodes_shell;
-            length runid $5 group $40 stockgroup caresettingprincipal condlevel subcondlevel $30 codecat $2 codetype $3 code $11 
-            rawlabdatetype rawlabresult excludesupply codepop indexdate $1 condfrom condto condinclusion subcondinclusion codedays minrxdays 8;
-            call missing(runid, group, stockgroup, codecat, codetype, code, caresettingprincipal, condinclusion, subcondinclusion, 
-                         condlevel, subcondlevel, condfrom, condto, rawlabdatetype,rawlabresult, codedays, excludesupply, codepop, indexdate, minrxdays);
-            stop;
-        run;
+    data inclusioncodes_shell;
+        length runid $5 group $40 condlevel $30;
+        call missing(runid, group, condlevel);
+        stop;
+    run;
 
-        data master_inclusioncodes;
-            set 
-            %do n = 1 %to &numrunid.;
-            %let runid =&&id&n..;
-            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-            infolder.&&&runid._inclusioncodes(in=n&n)
-            %end;
-            %else %do;
-            inclusioncodes_shell
-            %end;
-            %end;
-            ;
-            format runid $5.;
-            %do n = 1 %to &numrunid.;
-            %let runid =&&id&n..;
-            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-            if n&n. then do;
-            runid = "&&id&n.";
-            end;
-            %end;
-            %end;
-        run;
+    data master_inclusioncodes;
+        set 
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        infolder.&&&runid._inclusioncodes(in=n&n)
+        %end;
+        %else %do;
+        inclusioncodes_shell
+        %end;
+        %end;
+        ;
+        format runid $5.;
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        if n&n. then do;
+        runid = "&&id&n.";
+        end;
+        %end;
+        %end;
+    run;
 
 /***************************************************************************************************
 *   Create a combined type file for all runs                                        
 ***************************************************************************************************/
 
+    %if ^%index(&reporttype,TREE) %then %do;
      %let typenum = %substr(&reporttype,2,1);
 
      data master_typefile;
@@ -418,6 +417,77 @@
             end;
         %end;
      run;
+
+/***************************************************************************************************
+*   Create a stacked t2 add-on file for all runs                                        
+***************************************************************************************************/
+
+    data t2_addonshell;
+        length runid $5 group primary secondary $40;
+        call missing(runid, group, primary, secondary);
+        stop;
+    run;
+
+    data master_t2addon(keep=runid group primary secondary);
+    set %do n = 1 %to &numrunid.;
+        %let runid=&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._multeventfile)) %then %do;
+        infolder.&&&runid._multeventfile(in=n&n.)
+        %end;
+        %else %if %sysfunc(exist(infolder.&&&runid._overlapfile)) %then %do;
+        infolder.&&&runid._overlapfile(in=n&n.)
+        %end;
+        %else %if %sysfunc(exist(infolder.&&&runid._concfile)) %then %do;
+        infolder.&&&runid._concfile(in=n&n.)
+        %end;
+        %else %do;
+        t2_addonshell
+        %end;
+        %end;
+     ;
+     format runid $5.;
+        %do n = 1 %to &numrunid.;
+            %if %sysfunc(exist(infolder.&&&runid._multeventfile)) or 
+                %sysfunc(exist(infolder.&&&runid._overlapfile)) or
+                %sysfunc(exist(infolder.&&&runid._concfile)) %then %do; 
+            if n&n. then do;
+            group=lowcase(analysisgrp);
+            runid = "&&id&n.";
+            end;
+            %end;
+        %end;
+     run;
+
+    data mil_shell;
+        length runid $5 group groupname $40;
+        call missing(runid, group, groupname);
+        stop;
+    run;
+
+     data master_mil(keep=runid group groupname);
+        set %do n = 1 %to &numrunid.;
+        %let runid=&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+        infolder.&&&runid._micohorttfile(in=n&n.)
+        %end;
+        %else %do;
+        mil_shell
+        %end;
+        %end;
+        ;
+        format runid $5.;
+        %do n = 1 %to &numrunid.;
+            %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+            if n&n. then do;
+            group=lowcase(milgrp);
+            runid = "&&id&n.";
+            end;
+            %end;
+        %end;
+    run;
+    %end;
+
+
 
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               

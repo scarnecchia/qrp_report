@@ -45,6 +45,8 @@
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
 *
+*			-[RUNID]_attrition.sas7bdat
+*
 *  Program inputs:                                                                                   
 *  	-
 * 

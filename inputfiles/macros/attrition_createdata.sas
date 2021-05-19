@@ -28,24 +28,29 @@
 
 %macro attrition_createdata;
 
-/* Obtain required groups from inputfiles */
+/* Link all required groups from inputfiles */
 
-   %macro pat_epi_attrition(dataset=);
-   data attrition_groups;
-   	set 
-   	%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
-		input.&groupsfile.
+	%isdata(dataset=master_t2addon)
+	%let t2addonnobs = &nobs;
+	%isdata(dataset=master_mil);
+	%let milnobs=&nobs;
+
+	proc sql noprint;
+	create table attrition_groups as 
+	select distinct a.runid, a.group 
+	%if &t2addonnobs > 0 %then %do; , b.primary, b.secondary %end; 
+	%if &milnobs > 0 %then %do; ,b.groupname %end;
+	from inputfiles a
+	%if &t2addonnobs > 0 %then %do;
+	left join master_t2addon b
+	on a.group = b.group
 	%end;
-	%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
-        input.&l2comparisonfile. (rename=AnalysisGrp=group)
+	%if &milnobs > 0 %then %do;
+	left join master_mil b 
+	on a.group = b.group 
 	%end;
-    %if %sysfunc(exist(input.&baselinefile.)) ne 0 %then %do;
-        input.&baselinefile.
-    %end;
-		;
-		runid = lowcase(runid);
-		group = lowcase(group);
-	run;
+	;
+	quit;
 
 	%isdata(dataset=master_inclusioncodes);
 	%let inclnobs = &nobs;
@@ -58,12 +63,18 @@
 						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
    		%if &inclnobs > 0 %then %do; ,c.condlevel %end;
    		from agg_attrition a
-   		inner join 
+   		left join 
    		attrition_groups b
    		on a.group = b.group and a.runid = b.runid
-   		inner join 
+   		left join 
    		master_typefile d
    		on a.group = d.group and a.runid = d.runid
+   		%if &t2addonnobs > 0 %then %do;
+   		or a.group = b.primary or a.group = b.secondary
+   		%end;
+   		%if &milnobs > 0 %then %do;
+   		or a.group = b.groupname
+   		%end;
    		/* Join condlevel when inclusioncodes file exists */
    		%if &inclnobs > 0 %then %do;
    		left join 
@@ -73,101 +84,138 @@
    		;
    	quit;
 
-    proc sql noprint undo_policy=none;
-        /* Create patient and/or episode level table */
-        create table &dataset as
-   		select runid, dpidsiteid, group, level, claim_level, 
-   		   	   case when level = '1' then 'Enrolled at any point during the query period'
-   			   	    when level in ('2','3','4') then 'Had required coverage type (medical and/or drug coverage)'
-   			   	    when level = '5' then 'Enrolled during specified age range'
-   			   	    when level = '6' then 'Had requestable medical charts'
-   			   	    when level = '7' then 'Met demographic requirements (sex, race, and Hispanic origin)'
-   			   	    when level = '8' then 'Had any cohort-defining claim during the query period'
-   			   	    when level = '9' then 'Total number of claims with cohort-identifying codes during the query period'
-   			   	    when level = '10' then 'Claim recorded during specified age range'
-   			   	    %if &datadrivenperiod = DATADRIVEN %then %do;
-   			   	    when level = '11' then 'Claim recorded during current look period'
-   			   	    %end;
-   			   	    when level = '12' then 'Episode defining index claim recorded during the query period'
-   			   	    when level = '13' then 'Met exposure incidence criteria'
-   			   	    %if %index(&reporttype,T3) %then %do;
-   			   	    when level = '14' then 'Had single National Drug Code on index date'
-   			   	    %end;
-   			   	    when level in ('15','16') then 'Had sufficient pre-index continuous enrollment'
-   			   	    when level = '17' then 'Met exclusion and inclusion criteria'
-   			   	    when index(level,'.') then substr(descr,find(descr,'lacking')+8)
-   			   	    when level = '18' then 'Met event incidence criteria'
-   			   	    when level = '19' then 'Had sufficient post-index continuous enrollment'
-   			   	    %if %index(&reporttype,T2) or %index(&reporttype,T6) %then %do;
-   			   	    when level = '20' then "Had minimum days' supply on index date"
-   			   	    %end;
-   			   	    when level = '21' then 'Had index episode of at least required length'
-   			   	    %if %index(&reporttype,T2) %then %do;
-   			   	    when level = '22' then 'Had index episode longer than blackout period'
-   			   	    when level = '23' then 'Did not have an event during blackout period'
-   			   	    %end;
-   			   	    %if %index(&reporttype,T3) %then %do;
-   			   	    when level = '24' then 'Had an event during the risk or control window'
-   			   	    %end;
-   			   	    %if &dataset = agg_episode_attrition %then %do;
-   			   	    when level = '25' and t%substr(&reporttype,2,1)cohortdef = '03' then 'Episode occurred after first event'
-   			   	    %end;
-   			   	    when level = '30' then 'Number of episodes'
-   			   	    end as descrlabel,
-			   descr, remaining, excluded %if &inclnobs > 0 %then %do; ,condlevel %end;
-        from all_attrition_groups
-        %if &dataset = agg_patient_attrition %then %do;
-        where t%substr(&reporttype,2,1)cohortdef in ('01','04')
-        %end;
-        %else %do;
-        where t%substr(&reporttype,2,1)cohortdef in ('02','03')
-        %if %index(&reporttype,T4) %then %do;
-        and t%substr(&reporttype,2,1)cohortdef2 in ('01','02','99')
-        %end;
-        %end;
-		;
+   	/* Extract only necessary label pieces for condlevel merge */
+   	data all_attrition_groups;
+   		set all_attrition_groups;
+	   	if find(level,'.') then do;
+	   		if find(descr,'lacking') then descr=substr(descr,1,findw(descr,'lacking')+6);
+	   		else descr=substr(descr,1,findw(descr,'for')+2);
+	   	end;
+   	run;
 
-		create table &dataset as 
-		select distinct runid, group, level, remaining, excluded, descrlabel, 
-             sum(remaining) as agg_remaining format=comma12., sum(excluded) as agg_excluded format=comma12.,
-             case when level in ('2','3','4') then sum(case when level in ('2','3','4') then excluded else 0 end) else 0 end as collapse1 format=comma12.,
-             case when level in ('15','16') then sum(case when level in ('15','16') then excluded else 0 end) else 0 end as collapse2 format=comma12.
+    proc sql noprint undo_policy=none;
+        /* Join lookup table to groups table requested by user */
+        create table all_attrition_agg as
+   		select a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.t%substr(&reporttype,2,1)cohortdef, 
+   			   a.descr, a.remaining, a.excluded, b.report_descr %if &inclnobs > 0 %then %do; ,a.condlevel %end;
+        from all_attrition_groups a
+        left join 
+             lookup.lookup_attrition b 
+        on a.claim_level = b.claim_level and a.descr = b.descr;
+
+        /* Sum across all DPs */
+		create table all_attrition_agg as 
+		select distinct runid, group, report_descr, level, claim_level, remaining, excluded, t%substr(&reporttype,2,1)cohortdef,
+             sum(remaining) as agg_remaining, sum(excluded) as agg_excluded
              %if &inclnobs > 0 %then %do; ,condlevel %end;
-             from &dataset
-             group by runid, group, level;
+             from all_attrition_agg
+        group by runid, group, report_descr, level;
+
+        /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
+        create table all_attrition_agg as 
+        select runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
+        	   agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12.
+        	   %if &inclnobs > 0 %then %do; ,condlevel %end;
+        from all_attrition_agg
+        group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
-    /* Finalize summing and delete un-needed rows */
-	data &dataset(keep=runid group level agg_remaining agg_excluded descrlabel condlevel);
-		set &dataset;
-		if level = '2' then do;
-			if agg_excluded ^= collapse1 then agg_excluded = collapse1;
+
+    /* Set in condlevel value and delete un-needed rows */
+	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr t%substr(&reporttype,2,1)cohortdef);
+		set all_attrition_agg;
+		%if &inclnobs >0 %then %do;
+		if not missing(condlevel) then do;
+			if index(report_descr,'[CONDLEVEL N]') then report_descr=condlevel;
 		end;
-		if level = '15' then do;
-			if agg_excluded ^= collapse2 then agg_excluded = collapse2;
-		end;
-		if missing(descrlabel) then delete;
+		%end;
+		if missing(report_descr) then delete;
 	run;
 
     /* Merge in group labels and headers if they exist */
     %isdata(dataset=labelfile);
 	  %if %eval(&nobs>0) %then %do;
 	  proc sql noprint undo_policy=none;
-	        create table &dataset as
-	        select a.*, b.label, b.labeltype
-	        from &dataset a left join labelfile(where=(lowcase(labeltype) in ('grouplabel', 'header'))) b
-	        on a.group = b.group;
+	        create table all_attrition_agg as
+	        select a.*, case when not missing(b.label) then b.label else b.group end as grouplabel, c.label as headerlabel
+	        from all_attrition_agg a 
+	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
+	        on a.group = b.group
+	        left join labelfile(where=(lowcase(labeltype) = 'header' and not missing(label))) c
+	        on a.group = c.group;
 	  quit;
 	  %end;
 
-	  proc sort data = &dataset sortseq=linguistic(numeric_collation=on);
-	  	by runid group level;
+	/* Create character variables of remaining and excluded columns */
+	  data all_attrition_agg;
+	  	set all_attrition_agg;
+	  	agg_remaining_char=strip(put(agg_remaining,comma12.));
+	  	agg_excluded_char=strip(put(agg_excluded,comma12.));
+	  	if missing(agg_remaining) then agg_remaining_char = 'N/A';
+	  	if missing(agg_excluded) then agg_excluded_char = 'N/A';
+	  	if report_descr = 'Number of members' then do;
+	  		agg_remaining_char = 'N/A';
+	  		agg_excluded_char = 'N/A';
+	  	end;
+	  	/* Overwrite cell values for T4 analyses */
+	  	%if %index(&reporttype,T4) %then %do;
+	  	if report_descr = 'Total number of claims with cohort-identifying codes during the query period' then 
+	  	   report_descr = 'Total number of live birth deliveries during the query period';
+	  	%end;
 	  run;
 
-	%mend pat_epi_attrition;
+	  proc sort data = all_attrition_agg; 
+	  by group claim_level;
+	  run;
 
-	%if ^%index(&reporttype,T4L1) %then %pat_epi_attrition(dataset=agg_patient_attrition);
-	%pat_epi_attrition(dataset=agg_episode_attrition);
+	  /* Output final episode rows and place final episode count */
+	  data all_attrition_agg;
+	  	set all_attrition_agg;
+	  	length episodecount 8. episodecountchar $20;
+	  	retain episodecount episodecountchar;
+	  	by group claim_level;
+	  	if first.group then do;
+	  		episodecount=.;
+	  		episodecountchar = 'N/A';
+	  	end;
+	  	if last.claim_level and claim_level = 'Episode' then do;
+	  		episodecount=agg_remaining;
+	  		episodecountchar=agg_remaining_char;
+	  	end;
+	  	output;
+	  	if last.group then do;
+	  		%if %index(&reporttype,T4) %then %do;
+	  		report_descr = "Number of Pregnancy episodes";
+	  		%end;
+	  		%else %do;
+	  		report_descr = "Number of episodes";
+	  		%end;
+	  		%if %index(&reporttype,T4) %then %do;
+	  		level=26.5;
+	  		%end;
+	  		%else %do;
+	  		level=99;
+	  		%end;
+	  		claim_level='Episode';
+	  		agg_remaining = episodecount;
+	  		agg_remaining_char = episodecountchar;
+	  		agg_excluded = .;
+	  		agg_excluded_char = 'N/A';
+	  		output;
+	  	end;
+	  	drop episodecount episodecountchar;
+	  run;
+
+	  /* Output patient/episode level tables */
+	  %if ^%index(&reporttype,T4L1) %then %do;
+	  proc sort data = all_attrition_agg out=agg_patient_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
+	  	by group level;
+	  run;
+	  %end;
+
+	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
+	  	by group level;
+	  run;
 
 
 %mend attrition_createdata;
