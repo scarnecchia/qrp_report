@@ -183,6 +183,7 @@
 				   %if %index(&stratavars., agegroup) %then %do;
                      length agegroup $30;
                      agegroup = put(_agegroup, $agefmt.);
+					 sortorder = agegroupnum;
                      drop _agegroup;
                    %end;
                  run;

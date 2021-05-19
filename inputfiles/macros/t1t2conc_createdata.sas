@@ -14,9 +14,9 @@
 *   - For Type 2 concomitance requests: agg_t1conc.sas7bdat
 * 
 *  Program outputs:                                                                                                                           
-*   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat                             
-*   - For Type 2 requests aggregation across all data partners: agg_t2cida_summ.sas7bdat
-*   - For Type 2 concomitance requests: agg_t2conc_summ.sas7bdat 
+*   - For Type 1 requests aggregation across all data partners: final_t1cida.sas7bdat                             
+*   - For Type 2 requests aggregation across all data partners: final_t2cidasas7bdat
+*   - For Type 2 concomitance requests: final_t2conc.sas7bdat 
 * 
 *  PARAMETERS: 
 *  - for t1: table =t1_cida, grpvar = group
@@ -60,17 +60,17 @@
    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
-    proc summary data = agg_&table. nway missing;
+    proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
         class level &grpvar. sortorder %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
-              &&&table._stratification;
+              &&&table._stratification %if &stratifybydp. = Y %then %do; dpsiteid %end;;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-        %if %index(&table,conc) = 0 %then %do;
-             dennumpts dennummemdays
+          %if %index(&table,conc) = 0 %then %do;
+             dennumpts dennummemdays timetocensor
 		  %end;
 		  %if %substr(&table,2,1) ne 1 %then %do;
 		     eps_wevents all_events followuptime
 		  %end;;
-        output out = agg_&table._summ (drop = _:) sum=;
+        output out = agg_&table._sum (drop = _:) sum=;
     run;
 	
    /************************************************************************************************
@@ -140,7 +140,7 @@
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
-       data _&dsout. (drop = lambda se ci_lower ci_upper p q);
+       data _&dsout. (keep = level &grpvar. sortorder %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification);
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
@@ -260,7 +260,7 @@
 		  %end;
           %else %do;
             ,"" as header 
-			,"" as grouplabel 
+			,a.&grpvar. as grouplabel 
            %end;				   
           from _&dsout. a 
 		  left join groupsfile b
@@ -273,13 +273,13 @@
 		  %end;;
         quit;
 		
-		proc sort data = &dsout. out = msocdata.&dsout.;
+		proc sort data = &dsout.;
 		  by order sortorder;
 		run;
     %mend;
 
     /*Overall*/
-    %prept1t2data(dsin=agg_&table._summ, dsout=agg_&table._summ);
+    %prept1t2data(dsin=agg_&table._sum, dsout=final_&table.);
 
     %put =====> END MACRO: t1t2conc_createdata ;
 
