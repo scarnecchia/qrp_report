@@ -17,9 +17,6 @@
 *   - For Type 1 requests aggregation across all data partners: agg_t1cida_summ.sas7bdat                             
 *   - For Type 2 requests aggregation across all data partners: agg_t2cida_summ.sas7bdat
 *   - For Type 2 concomitance requests: agg_t2conc_summ.sas7bdat 
-*   - For Type 1 requests aggregation across all data partners by level: agg_t1cida_summ&level..sas7bdat                             
-*   - For Type 2 requests aggregation across all data partners by level: agg_t2cida_summ&level.&level..sas7bdat
-*   - For Type 2 concomitance requests by level: agg_t2conc_summ&level..sas7bdat 
 * 
 *  PARAMETERS: 
 *  - for t1: table =t1_cida, grpvar = group
@@ -64,7 +61,7 @@
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. nway missing;
-        class level &grpvar. %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
+        class level &grpvar. sortorder %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
               &&&table._stratification;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
         %if %index(&table,conc) = 0 %then %do;
@@ -276,20 +273,7 @@
 		  %end;;
         quit;
 		
-		/* Assign sort order */
-		data &dsout.;
-		  set &dsout.;
-		  %do ls = 1 %to %sysfunc(countw(&&&table._stratification.));
-            %let strat = %scan(&&&table._stratification., &ls.);
-		    %if &strat. = sex | &strat. = race | &strat. = hispanic | &strat. = hhs_reg | &strat. = cb_reg %then %do;
-			  %if %index(&&&table._stratification.,&strat.) %then %do;
-			    sortorder = put(&strat,$&strat.sort.);
-			  %end;
-			%end;
-		  %end;
-	    run;
-		
-		proc sort data = &dsout.;
+		proc sort data = &dsout. out = msocdata.&dsout.;
 		  by order sortorder;
 		run;
     %mend;
