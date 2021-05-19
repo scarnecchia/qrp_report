@@ -60,7 +60,7 @@
 	   order = 2;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
 	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
 	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
-	 run;  
+	 run; 
 
   %mend create_lookup;
   %create_lookup();
