@@ -105,7 +105,9 @@
 * Attrition tables                                                      
 ***************************************************************************************************;
 
+    %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
     %attrition_createdata;
+    %end;
 
 ***************************************************************************************************;
 *   Compute code distribution tables                                                     

@@ -613,9 +613,10 @@
     %let attrition_episode = &nobs;
     %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
 
-        %let tablenum = 1;
         /* reset counter to reset table letter */
         %let tablecount=1;
+
+        %if (&attrition_patient = 1 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode = 1) %then tableletter=;
 
 		%if &attrition_episode > 0 %then %do;
 			%tableletter();

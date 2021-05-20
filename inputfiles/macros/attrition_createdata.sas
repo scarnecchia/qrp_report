@@ -159,7 +159,6 @@
 	  	set all_attrition_agg;
 	  	agg_remaining_char=strip(put(agg_remaining,comma12.));
 	  	agg_excluded_char=strip(put(agg_excluded,comma12.));
-	  	if missing(agg_remaining) then agg_remaining_char = 'N/A';
 	  	if missing(agg_excluded) then agg_excluded_char = 'N/A';
 	  	if report_descr = 'Number of members' then do;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
@@ -173,7 +172,7 @@
 	  run;
 
 	  proc sort data = all_attrition_agg; 
-	  by group claim_level;
+	  by group claim_level level;
 	  run;
 
 	  /* Output final episode rows and place final episode count */
@@ -182,6 +181,7 @@
 	  	length episodecount 8. episodecountchar $20;
 	  	retain episodecount episodecountchar;
 	  	by group claim_level;
+	  	lag_rem=lag(agg_remaining);
 	  	if first.group then do;
 	  		episodecount=.;
 	  		episodecountchar = 'N/A';
@@ -209,9 +209,13 @@
 	  		agg_remaining_char = episodecountchar;
 	  		agg_excluded = .;
 	  		agg_excluded_char = 'N/A';
+	  		if t%substr(&reporttype,2,1)cohortdef in ('01','04') and level=99 then do;
+	  		agg_remaining = lag_rem;
+	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
+	  		end;
 	  		output;
 	  	end;
-	  	drop episodecount episodecountchar;
+	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
 	  /* Output patient/episode level tables */
