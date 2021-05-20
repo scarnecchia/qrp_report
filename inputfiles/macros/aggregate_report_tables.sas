@@ -116,12 +116,12 @@
 			  %if &stratification. = Y %then %do;
 			     /* Identify stratification variables */
 				 proc sql noprint;
-                   select distinct tablesub into: stratification separated by ' ' 
+                   select distinct tablesub into: allstrata separated by ' ' 
                    from tablefile
                    where tablesub ne 'overall' and dataset = "%substr(&outfile.,5)";
                  quit;
 				 
-			     proc contents data = &outfile. (keep = &stratification) out = _stratavars (keep = name);
+			     proc contents data = &outfile. (keep = &allstrata.) out = _stratavars (keep = name);
 				 run;
 				 
 				 proc sql noprint;
