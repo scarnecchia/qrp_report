@@ -118,9 +118,11 @@
 	%global maxlen_studyname;
     %let maxlen_studyname = 0;
 	
-	/* Total number of unique stratifications */
-	%global numstrata;
-    %let numstrata = 0;
+	/* Total number of unique stratifications by file type*/
+	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
+    %let numstrata_t1cida = 0;
+	%let numstrata_t2cida = 0;
+	%let numstrata_t2conc = 0;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

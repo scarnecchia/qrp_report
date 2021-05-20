@@ -115,10 +115,12 @@
 			  
 			  %if &stratification. = Y %then %do;
 			     /* Identify stratification variables */
+				 %let dataset =%substr(&outfile.,5);
+				 
 				 proc sql noprint;
                    select distinct(tablesub) into: allstrata separated by ' ' 
                    from tablefile
-                   where dataset = "%substr(&outfile.,5)" and index(tablesub,"#") = 0;
+                   where dataset = "&dataset." and index(tablesub,"#") = 0;
                  quit;
 				 
 				 %let totalstrata = %sysfunc(countw(&allstrata));
@@ -135,11 +137,11 @@
 				 run;
 				 
 				 proc sql noprint;
-				   select count(strata) into: numstrata trimmed
+				   select count(strata) into: numstrata_&dataset. trimmed
 				   from _stratavars;
-
+				   
 				   select strata
-				   into: strata1 -  :strata&numstrata.
+				   into: strata1 -  :strata&&numstrata_&dataset.
 				   from _stratavars;
 				 quit;
 			  
@@ -147,14 +149,14 @@
 			     /* Put stratification variables through formats to acquire full names */
                  data &outfile.;
                    set &outfile.(rename = (
-                     %do s = 1 %to &numstrata.;
+                     %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
                            &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
 					 
-				   %do s = 1 %to &numstrata.;
+				   %do s = 1 %to &&numstrata_&dataset.;
 				     length sortorder&s. 3;
 				     
                      %if &&strata&s. = sex      %then length sex $15;;
