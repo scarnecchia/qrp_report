@@ -1074,7 +1074,7 @@ libname tempfl "";
 	   Column = "eps_wevents/episodes"; ColumnLabel = "Proportion of Episodes with an Event (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "P"; order = 29; includeinreport = 'N'; output; Table = "t2conc"; order = 27; output;
 	   Column = "(eps_wevents/episodes)*X"; ColumnLabel = "Proportion of Episodes with an Event per X New Episodes (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "P"; order = 30; includeinreport = 'N'; output; Table = "t2conc"; order = 28; output;
 	   Column = "All_Events"; ColumnLabel = "All Events"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 31; output; Table = "t2conc"; order = 29; includeinreport = 'Y'; output;
-	   Column = "followuptime"; ColumnLabel = "Days At Risk"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 32; includeinreport = 'Y'; output; Table = "t2conc"; order = 30; output;
+	   Column = "followuptime"; ColumnLabel = "Days at Risk"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 32; includeinreport = 'Y'; output; Table = "t2conc"; order = 30; output;
 	   Column = "followuptime/365.25"; ColumnLabel = "Years at Risk"; ColumnFormat = "comma13.1"; Table = "t2cida"; CIrate = "N"; includeinreport = 'Y'; order = 33; output; Table = "t2conc"; order = 31; output;
 	 run; 
 
