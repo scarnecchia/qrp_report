@@ -12,6 +12,8 @@
 *   - agg_attrition
 * 
 *  Program outputs: 
+*	- agg_patient_attrition
+*   - agg_episode_attrition
 * 
 * 
 *  PARAMETERS:                                                                       
@@ -43,11 +45,11 @@
 	from inputfiles a
 	%if &t2addonnobs > 0 %then %do;
 	left join master_t2addon b
-	on a.group = b.group
+	on a.group = b.group and a.runid = b.runid
 	%end;
 	%if &milnobs > 0 %then %do;
 	left join master_mil b 
-	on a.group = b.group 
+	on a.group = b.group and a.runid = b.runid
 	%end;
 	;
 	quit;
@@ -63,17 +65,17 @@
 						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
    		%if &inclnobs > 0 %then %do; ,c.condlevel %end;
    		from agg_attrition a
-   		left join 
+   		inner join 
    		attrition_groups b
    		on a.group = b.group and a.runid = b.runid
    		left join 
    		master_typefile d
    		on a.group = d.group and a.runid = d.runid
    		%if &t2addonnobs > 0 %then %do;
-   		or a.group = b.primary or a.group = b.secondary
+   		or a.group = b.primary or a.group = b.secondary and a.runid = b.runid
    		%end;
    		%if &milnobs > 0 %then %do;
-   		or a.group = b.groupname
+   		or a.group = b.groupname and a.runid = b.runid
    		%end;
    		/* Join condlevel when inclusioncodes file exists */
    		%if &inclnobs > 0 %then %do;
@@ -145,6 +147,12 @@
 	        on a.group = c.group;
 	  quit;
 	  %end;
+	  %else %do;
+	  data all_attrition_agg;
+	  	set all_attrition_agg;
+	  	grouplabel=group;
+	  	headerlabel='';
+	  %end;
 
 	/* Create character variables of remaining and excluded columns */
 	  data all_attrition_agg;
@@ -154,7 +162,7 @@
 	  	if missing(agg_remaining) then agg_remaining_char = 'N/A';
 	  	if missing(agg_excluded) then agg_excluded_char = 'N/A';
 	  	if report_descr = 'Number of members' then do;
-	  		agg_remaining_char = 'N/A';
+	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		agg_excluded_char = 'N/A';
 	  	end;
 	  	/* Overwrite cell values for T4 analyses */

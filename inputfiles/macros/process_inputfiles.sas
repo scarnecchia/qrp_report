@@ -422,7 +422,8 @@
 *   Create a stacked t2 add-on file for all runs                                        
 ***************************************************************************************************/
 
-    data t2_addonshell;
+    %if %index(&reporttype., T2L1) %then %do;
+    data _t2_addonshell;
         length runid $5 group primary secondary $40;
         call missing(runid, group, primary, secondary);
         stop;
@@ -441,7 +442,7 @@
         infolder.&&&runid._concfile(in=n&n.)
         %end;
         %else %do;
-        t2_addonshell
+        _t2_addonshell
         %end;
         %end;
      ;
@@ -457,8 +458,10 @@
             %end;
         %end;
      run;
+    %end;
 
-    data mil_shell;
+    %if %index(&reporttype.,T4) %then %do;
+    data _mil_shell;
         length runid $5 group groupname $40;
         call missing(runid, group, groupname);
         stop;
@@ -471,7 +474,7 @@
         infolder.&&&runid._micohorttfile(in=n&n.)
         %end;
         %else %do;
-        mil_shell
+        _mil_shell
         %end;
         %end;
         ;
@@ -485,6 +488,7 @@
             %end;
         %end;
     run;
+    %end;
     %end;
 
 
