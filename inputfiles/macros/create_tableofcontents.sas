@@ -435,7 +435,8 @@
     %end; /* where loop */
 
     %end; /* periodid loop */
-
+	
+    %let tablenum = %eval(&tablenum + 1);
     %end; /* &numprofilecovarstoinclude > 0 */
 
   /*************************/
@@ -601,6 +602,7 @@
 		%end;
 				
 	%end; *numgroupscodedist;
+	%let tablenum = %eval(&tablenum + 1);
   %end;
   
 
@@ -611,12 +613,15 @@
     %let attrition_patient = &nobs;
     %isdata(dataset=agg_episode_attrition);
     %let attrition_episode = &nobs;
+	
+    /* reset counter to reset table letter */
+    %let tablecount=1;
+	
     %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
 
-        /* reset counter to reset table letter */
-        %let tablecount=1;
-
-        %if (&attrition_patient = 1 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode = 1) %then tableletter=;
+		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
+			%let tablecount = 0;
+		%end;
 
 		%if &attrition_episode > 0 %then %do;
 			%tableletter();
@@ -629,7 +634,8 @@
 			%addtotoc(tabnum=Table &tablenum.&tableletter.,
 					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
 		%end;
-
+	
+        %let tablenum = %eval(&tablenum + 1);
     %end; /* attrition_groups file */
 
 
