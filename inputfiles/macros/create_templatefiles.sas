@@ -1027,7 +1027,7 @@ libname tempfl "";
         - T2conc
     *************************************;
 	
-     data tempfl.tablecolumnsfile;
+     data tablecolumnsfile;
 	   attrib Table        		length = $10	format = $10.
               IncludeinReport  	length = $1		format = $1.
 			  Column       		length = $50	format = $50.
