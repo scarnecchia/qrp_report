@@ -113,6 +113,10 @@
 	/*zipfile*/
 	%global zipfile;
 	%let zipfile = ;
+	
+	/* covariate codes formats */
+	%global maxlen_studyname;
+    %let maxlen_studyname = 0;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

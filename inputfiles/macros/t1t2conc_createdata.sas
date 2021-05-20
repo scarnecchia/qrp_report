@@ -62,7 +62,7 @@
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
         class level &grpvar. sortorder %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
-              &&&table._stratification %if &stratifybydp. = Y %then %do; dpsiteid %end;;
+              &&&table._stratification %if &stratifybydp. = Y %then %do; dpidsiteid %end;;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
           %if %index(&table,conc) = 0 %then %do;
              dennumpts dennummemdays timetocensor
@@ -107,8 +107,17 @@
 	 data _covars (keep = covarnum);
 	   length covarnum 8;
 	   set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0 and dataset = "&table."));
-	   covarstart = index(tablesub,'covar');
-	   covarnum = input(compress(substr(tablesub,covarstart),'covar'),8.);
+	   call missing(covarnum);
+	   if index(tablesub,'covar') > 0 then do;
+	     numstrat = countw(tablesub,' ');
+		 do ns = 1 to numstrat;
+		   if index(scan(tablesub,ns,' '),'covar') > 0 then do;
+		     covarstrat = scan(tablesub,ns,' ');
+		     covarnum = input(substr(covarstrat,6),8.); output;
+		   end;
+		 end;
+	   end;
+	   if missing(covarnum) then delete;
      run;
 	 
 	 proc sort nodupkey data = _covars;
@@ -172,7 +181,7 @@
 			     ci_lower = p - 1.96 * se;
                  ci_upper = p + 1.96 * se;
 			     %if %eval(&&multi&vv. > 0) %then %do;
-			       &&var&vv. = strip(put(p*&&multi&vv., &&format&vv.)) || "(" || strip(put(ci_lower*&&multi&vv., &&format&vv.)) || ", " || strip(put(ci_upper*&&multi&vv., &&format&vv.)) || ")";
+			       &&var&vv. = strip(put(p*&&multi&vv., &&format&vv.)) || " (" || strip(put(ci_lower*&&multi&vv., &&format&vv.)) || ", " || strip(put(ci_upper*&&multi&vv., &&format&vv.)) || ")";
 			     %end;
 			     %else %do;
 			       &&var&vv. = strip(put(p, &&format&vv.)) || " (" || strip(put(ci_lower, &&format&vv.)) || ", " || strip(put(ci_upper, &&format&vv.)) || ")";
@@ -236,7 +245,7 @@
              %if &numcovars. > 0 %then %do;
                %do c = 1 %to &numcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
-				    length _covar&covnum. $150;
+				    length _covar&covnum. $%eval(&maxlen_studyname + 15);
                     label _covar&covnum. = "&&&covar&covnum.";
                     if covar&c. = 0 then _covar&c. = "No evidence of &&study&c..";
                     if covar&c. = 1 then _covar&c. = "Evidence of &&study&c.."; 
@@ -267,9 +276,9 @@
 		  on strip(lowcase(a.&grpvar.)) = strip(lowcase(b.group))
 		  %if %eval(&nobs.>0) %then %do;
 		    left join labelfile (where = (labeltype = "grouplabel")) c
-		    on strip(lowcase(a.&grpvar.)) = strip(lowcase(c.group))
-		    left join labelfile (where = (labeltype = "headerlabel")) d
-		    on strip(lowcase(a.&grpvar.)) = strip(lowcase(d.group))
+		    on strip(a.&grpvar.) = strip(c.group)
+		    left join labelfile (where = (labeltype = "header")) d
+		    on strip(a.&grpvar.) = strip(d.group)
 		  %end;;
         quit;
 		

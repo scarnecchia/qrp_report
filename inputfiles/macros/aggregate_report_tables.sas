@@ -140,7 +140,6 @@
                                            %if %index(&stratavars.,cb_reg) %then cb_reg = _cb_reg;
 										   %if %index(&stratavars.,month) %then month = _month;
 										   %if %index(&stratavars.,agegroup) %then agegroup = _agegroup;)) ;
-				   call missing(sortorder);					   
 				   %if %index(&stratavars.,sex) %then %do;				   
                      length sex $15 ;
                      sex = put(_sex, $sexfmt.);

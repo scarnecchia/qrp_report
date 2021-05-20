@@ -336,8 +336,6 @@
 /***************************************************************************************************
 *  Create stacked dataset containing covariate labels for all runs                                              
 ***************************************************************************************************/
-
-    %let MAXLEN_STUDYNAME = 0;
     /*loop through each runID, create datasets &runid._covarname*/
     %do r = 1 %to %eval(&numrunid.);
         %let runid = %scan(&runidlist., &r.);
