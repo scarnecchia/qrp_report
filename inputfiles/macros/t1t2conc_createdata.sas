@@ -61,7 +61,7 @@
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
-        class level &grpvar. sortorder %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
+        class level &grpvar. %do s = 1 %to &numstrata.; sortorder&s. %end; %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
               &&&table._stratification %if &stratifybydp. = Y %then %do; dpidsiteid %end;;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
           %if %index(&table,conc) = 0 %then %do;
@@ -149,7 +149,8 @@
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
-       data _&dsout. (keep = level &grpvar. sortorder %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification);
+       data _&dsout. (keep = level &grpvar. %do s = 1 %to &numstrata.; sortorder&s. %end; 
+	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification);
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
@@ -282,8 +283,8 @@
 		  %end;;
         quit;
 		
-		proc sort data = &dsout.;
-		  by order sortorder;
+		proc sort data = &dsout. (drop = sortorder:);
+		  by order %do s = 1 %to &numstrata.; sortorder&s. %end;;
 		run;
     %mend;
 

@@ -117,6 +117,10 @@
 	/* covariate codes formats */
 	%global maxlen_studyname;
     %let maxlen_studyname = 0;
+	
+	/* Total number of unique stratifications */
+	%global numstrata;
+    %let numstrata = 0;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

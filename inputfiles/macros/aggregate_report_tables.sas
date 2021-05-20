@@ -116,79 +116,82 @@
 			  %if &stratification. = Y %then %do;
 			     /* Identify stratification variables */
 				 proc sql noprint;
-                   select distinct tablesub into: allstrata separated by ' ' 
+                   select distinct(tablesub) into: allstrata separated by ' ' 
                    from tablefile
-                   where tablesub ne 'overall' and dataset = "%substr(&outfile.,5)";
+                   where dataset = "%substr(&outfile.,5)" and index(tablesub,"#") = 0;
                  quit;
 				 
-			     proc contents data = &outfile. (keep = &allstrata.) out = _stratavars (keep = name);
+				 %let totalstrata = %sysfunc(countw(&allstrata));
+
+				 data _stratavars;
+				   length strata $15;
+				   %do a = 1 %to &totalstrata.;
+				     strata = "%scan(&allstrata.,&a.)"; output;
+				   %end;
+				 run;
+
+				 proc sort nodupkey data = _stratavars;
+				   by strata;
 				 run;
 				 
 				 proc sql noprint;
-				   select name 
-				   into: stratavars separated by ' '
+				   select count(strata) into: numstrata trimmed
+				   from _stratavars;
+
+				   select strata
+				   into: strata1 -  :strata&numstrata.
 				   from _stratavars;
 				 quit;
 			  
+			  
 			     /* Put stratification variables through formats to acquire full names */
                  data &outfile.;
-				   length sortorder 3;
-                   set &outfile.(rename = (%if %index(&stratavars.,sex) %then sex = _sex;
-                                           %if %index(&stratavars.,race) %then race = _race;
-                                           %if %index(&stratavars.,hispanic) %then hispanic = _hispanic;
-                                           %if %index(&stratavars.,hhs_reg) %then hhs_reg = _hhs_reg;
-                                           %if %index(&stratavars.,cb_reg) %then cb_reg = _cb_reg;
-										   %if %index(&stratavars.,month) %then month = _month;
-										   %if %index(&stratavars.,agegroup) %then agegroup = _agegroup;)) ;
-				   %if %index(&stratavars.,sex) %then %do;				   
-                     length sex $15 ;
-                     sex = put(_sex, $sexfmt.);
-					 if missing(sortorder) then sortorder = put(_sex,$sexsort.);
-				     drop _sex;
+                   set &outfile.(rename = (
+                     %do s = 1 %to &numstrata.;
+                       %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup %then %do;
+                           &&strata&s. = _&&strata&s.
+                       %end;
+                     %end;));
+					 
+				   %do s = 1 %to &numstrata.;
+				     length sortorder&s. 3;
+				     
+                     %if &&strata&s. = sex      %then length sex $15;;
+                     %if &&strata&s. = race     %then length race $45;;
+					 %if &&strata&s. = hispanic %then length hispanic $20;;
+					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
+					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
+                  
+				     %if &&strata&s. = overall %then %do;
+					   sortorder&s. = 1;
+					 %end;
+                     %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg
+                         | &&strata&s. = cb_reg %then %do;
+                         &&strata&s. = put(_&&strata&s., $&&strata&s..fmt.);
+						 sortorder&s. = input(put(_&&strata&s.,$&&strata&s..sort.),3.);
+				         drop _&&strata&s.;
+                     %end;
+				     %if &&strata&s. = month %then %do;
+                       length month $10;
+                       month = put(_month, mn_name.);
+					   sortorder&s. = month;
+                       drop _month;
+                     %end;
+				     %if &&strata&s. = year %then %do;
+					   sortorder&s. = year;
+                     %end;
+				     %if &&strata&s. = agegroup %then %do;
+                       length agegroup $40;
+                       agegroup = put(_agegroup, $agefmt.);
+					   sortorder&s. = agegroupnum;
+                       drop _agegroup;
+                     %end;
 				   %end;
-                   %if %index(&stratavars.,race) %then %do;
-                     length race $45;
-                     race = put(_race, $racefmt.);
-					 if missing(sortorder) then sortorder = put(_race,$racesort.);
-                     drop _race;
-                   %end;
-                   %if %index(&stratavars.,hispanic) %then %do;
-                     length hispanic $20;
-                     hispanic = put(_hispanic, $hispanicfmt.);
-					 if missing(sortorder) then sortorder = put(_hispanic,$hispanicsort.);
-                     drop _hispanic;
-                   %end;
-                   %if %index(&stratavars.,hhs_reg) %then %do;
-                     length hhs_reg $25;
-                     hhs_reg = put(_hhs_reg, $hhs_regfmt.);
-					 if missing(sortorder) then sortorder = put(_hhs_reg,$hhs_regsort.);
-                     drop _hhs_reg;
-                   %end;
-                   %if %index(&stratavars.,cb_reg) %then %do;
-                     length cb_reg $25;
-                     cb_reg = put(_cb_reg, $cb_regfmt.);
-					 if missing(sortorder) then sortorder = put(_cb_reg,$cb_regsort.);
-                     drop _cb_reg;
-                   %end;
-				   %if %index(&stratavars.,month) %then %do;
-                     length month $10;
-                     month = put(_month, mn_name.);
-					 if missing(sortorder) then sortorder = month;
-                     drop _month;
-                   %end;
-				   %if %index(&stratavars.,year) %then %do;
-					 if missing(sortorder) then sortorder = year;
-                   %end;
-				   %if %index(&stratavars., agegroup) %then %do;
-                     length agegroup $40;
-                     agegroup = put(_agegroup, $agefmt.);
-					 if missing(sortorder) then sortorder = agegroupnum;
-                     drop _agegroup;
-                   %end;
                  run;
-			   
+				 
 			     /* If stratification by zip3 is requested, add state values */
-                 %if %index(&stratavars.,zip3) %then %do;
+                 %if %index(&allstrata.,zip3) %then %do;
                    %addstatetozip3(data = &outfile.); 
 		         %end;
 	          %end;
