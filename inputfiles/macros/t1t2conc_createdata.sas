@@ -281,7 +281,7 @@
 		    left join labelfile (where = (labeltype = "header")) d
 		    on strip(a.&grpvar.) = strip(d.group)
 		  %end;;
-        quit
+        quit;
 		
 		proc sort data = &dsout.;
 		  by order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end;;
