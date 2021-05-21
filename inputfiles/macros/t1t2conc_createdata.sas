@@ -66,9 +66,7 @@
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
-        class level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
-		      %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
-              &&&table._stratification;
+        class level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
           %if %index(&table,conc) = 0 %then %do;
              dennumpts dennummemdays timetocensor
