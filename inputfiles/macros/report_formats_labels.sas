@@ -263,6 +263,10 @@
         .='N/A'
         .z='.'
         other=[8.3];
+
+        value $attrition
+        ' ' = 'N/A'
+        other=[$50.];
     run;
 
 

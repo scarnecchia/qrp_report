@@ -180,6 +180,7 @@ ods path(prepend) work.templat(update);
 
 /*attrition macros*/
 %include "&reportroot.inputfiles/macros/attrition_createdata.sas";
+%include "&reportroot.inputfiles/macros/attrition_output.sas";
 
 /*Aggregation macros*/
 %include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
