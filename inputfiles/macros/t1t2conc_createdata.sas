@@ -17,6 +17,9 @@
 *   - For Type 1 requests aggregation across all data partners: final_t1cida.sas7bdat                             
 *   - For Type 2 requests aggregation across all data partners: final_t2cida.sas7bdat
 *   - For Type 2 concomitance requests: final_t2conc.sas7bdat 
+*   - For Type 1 requests by data partner: final_dps_t1cida.sas7bdat                             
+*   - For Type 2 requests by data partner: final_dps_t2cida.sas7bdat
+*   - For Type 2 concomitance requests by data partner: final_dps_t2conc.sas7bdat 
 * 
 *  PARAMETERS: 
 *  - for t1: table =t1_cida, grpvar = group
@@ -46,6 +49,8 @@
 	  %abort;
 	%end;
 	
+	%let &table._stratification =;
+	
     proc sql noprint;
        /* Determine &table. levels and stratifications to store in macro variables*/
        select distinct quote(strip(levelid1))  
@@ -61,8 +66,9 @@
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
-        class level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
-              &&&table._stratification %if &stratifybydp. = Y %then %do; dpidsiteid %end;;
+        class level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
+		      %if %index(&&&table._stratification,agegroup) %then %do; agegroupnum %end;
+              &&&table._stratification;
 		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
           %if %index(&table,conc) = 0 %then %do;
              dennumpts dennummemdays timetocensor
@@ -148,9 +154,9 @@
        Prepare final summary datasets           
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
-    %macro prept1t2data(dsin=, dsout=, dpvar=, ind=, runid=);
+    %macro prept1t2data(dsin=, dsout=, dpvar=);
        data _&dsout. (keep = level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
-	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification);
+	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification &dpvar.);
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
@@ -161,7 +167,7 @@
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
 			   format &&var&vv. $30.;
-			   if &&cidenom&vv.. > 0 and &&num&vv. > 0then do;
+			   if &&cidenom&vv.. > 0 and &&num&vv. > 0 then do;
                   lambda = &&formula&vv.;
 			      se = sqrt(1/&&num&vv.);
 			      ci_lower = exp(log(lambda) - 1.96 * se);
@@ -266,7 +272,8 @@
           select a.*, b.order
 		  %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
-			,c.label as grouplabel 
+			,case when c.label = "" then &grpvar.
+             else c.label end as grouplabel 
 		  %end;
           %else %do;
             ,"" as header 
@@ -290,6 +297,10 @@
 
     /*Overall*/
     %prept1t2data(dsin=agg_&table._sum, dsout=final_&table.);
+	
+	%if &stratifybydp. = Y %then %do;
+	  %prept1t2data(dsin=agg_&table., dsout=final_dps_&table., dpvar=dpidsiteid);
+	%end;
 
     %put =====> END MACRO: t1t2conc_createdata ;
 
