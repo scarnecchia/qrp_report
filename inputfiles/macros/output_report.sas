@@ -98,6 +98,7 @@
 
     %if &numprofilecovarstoinclude > 0 %then %do;
     %baseline_profile_output;
+	%let tablenum = %eval(&tablenum + 1);
     %end;
 
 ***************************************************************************************************;
@@ -116,6 +117,7 @@
 ***************************************************************************************************;
 	%if &output_code_distribution. eq Y %then %do;
 		%codedistribution_output;
+		%let tablenum = %eval(&tablenum + 1);
 	%end;
 
 ***************************************************************************************************;
@@ -127,6 +129,7 @@
         %attrition_output(tabletype=episode);
         %attrition_output(tabletype=patient);
         options orientation = portrait;
+		%let tablenum = %eval(&tablenum + 1);
     %end;
 
 ***************************************************************************************************;
