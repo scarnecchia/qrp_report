@@ -63,7 +63,7 @@
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[rules=none just=L] 
-                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
+                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey bordertopcolor=darkgrey];
 
                 define headerlabel / across ' ' style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
@@ -168,6 +168,8 @@
                   text=' ';
                   num=0;
                 end;
+                line text $Varying. num; 
+                endcomp;
                 %end;
         run;
 
