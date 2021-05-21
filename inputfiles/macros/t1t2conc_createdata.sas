@@ -270,7 +270,7 @@
           select a.*, b.order
 		  %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
-			,case when c.label = "" then &grpvar.
+			,case when c.label = "" then a.&grpvar.
              else c.label end as grouplabel 
 		  %end;
           %else %do;
