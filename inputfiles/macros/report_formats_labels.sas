@@ -329,7 +329,7 @@
           10='October'
           11='November'
           12='December'
-       other='Invalid';
+       other='';
     run;
 
 

@@ -289,7 +289,7 @@
         quit;
 		
 		proc sort data = &dsout.;
-		  by order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end;;
+		  by &dpvar. order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end;;
 		run;
     %mend;
 
