@@ -49,8 +49,9 @@
 		  color = black
 		  fontfamily = "&font."
 		  fontsize = &fontsize.
-     	  bordercolor = ligr
-		  borderstyle = hidden
+     	  bordertopcolor=black 
+          borderbottomcolor=black
+		  borderstyle = solid
      	  borderwidth = 1pt
 		  cellpadding =1.75pt
 		  just = C
@@ -64,7 +65,6 @@
      	  foreground=black
           bordertopcolor=black 
           borderbottomcolor=black
-     	  bordercolor = ligr
      	  borderstyle = solid
      	  borderwidth = 1pt
      	  fontfamily = "&font."
@@ -72,7 +72,7 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = box
+     	  frame = hsides
      	  just = L 
      	  ;
         style header /
@@ -80,7 +80,6 @@
      	  foreground=black
           bordertopcolor=black 
           borderbottomcolor=black
-     	  bordercolor = ligr
      	  borderstyle = solid
      	  borderwidth = 1pt
      	  fontfamily = "&font."
@@ -88,7 +87,7 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = box
+     	  frame = hsides
      	  just = C 
      	  ;
      	style footer /
@@ -108,13 +107,11 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = ligr
-     	  frame = void
      	  bordertopcolor=black 
           borderbottomcolor=black
-     	  bordercolor = ligr
      	  borderstyle = solid
      	  borderwidth = 1pt
-     	  frame = box
+     	  frame = hsides
      	  just = L
      	  ;
 		style systemtitle/
@@ -132,11 +129,12 @@
      	  color = black
      	  fontfamily = "&font."
      	  fontsize = &fontsize.
-     	  bordercolor = ligr
+     	  bordertopcolor=black 
+          borderbottomcolor=black
      	  borderstyle = solid
      	  borderwidth = 1pt
      	  cellpadding =1.75pt
-     	  frame = box
+     	  frame = hsides
   	      just = L
      	  ;
 		style paragraph/
