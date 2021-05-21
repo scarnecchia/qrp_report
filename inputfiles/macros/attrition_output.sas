@@ -30,21 +30,6 @@
 
 %macro attrition_output(tabletype=);
 
-    /* Check to see if either dataset exists */
-    %isdata(dataset=agg_patient_attrition);
-    %let attrition_patient = &nobs;
-    %isdata(dataset=agg_episode_attrition);
-    %let attrition_episode = &nobs;
-
-    %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
-
-    /* reset counter to reset table letter */
-    %let tablecount=1;
-
-    %if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
-        %let tablecount = 0;
-    %end;
-
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
     data repdata.table&tablenum.&tableletter.;
@@ -63,7 +48,7 @@
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[rules=none just=L] 
-                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey bordertopcolor=darkgrey];
+                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
                 define headerlabel / across ' ' style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
@@ -172,8 +157,6 @@
                 endcomp;
                 %end;
         run;
-
-    %end;
 
     %end;
 

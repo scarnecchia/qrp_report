@@ -125,11 +125,30 @@
 ***************************************************************************************************;
 
     %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+
+        /* Check to see if either dataset exists */
+        %isdata(dataset=agg_patient_attrition);
+        %let attrition_patient = &nobs;
+        %isdata(dataset=agg_episode_attrition);
+        %let attrition_episode = &nobs;
+
+    %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
+
+        /* reset counter to reset table letter */
+        %let tablecount=1;
+
+        %if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
+            %let tablecount = 0;
+        %end;
+
         options orientation = landscape;
         %attrition_output(tabletype=episode);
         %attrition_output(tabletype=patient);
         options orientation = portrait;
 		%let tablenum = %eval(&tablenum + 1);
+
+    %end;
+    
     %end;
 
 ***************************************************************************************************;
