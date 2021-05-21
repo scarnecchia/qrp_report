@@ -264,7 +264,7 @@
         .z='.'
         other=[8.3];
 
-        value $attrition
+        value $nafmt
         ' ' = 'N/A'
         other=[$50.];
     run;

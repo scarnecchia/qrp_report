@@ -123,7 +123,10 @@
 ***************************************************************************************************;
 
     %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
-        %attrition_output;
+        options orientation = landscape;
+        %attrition_output(tabletype=episode);
+        %attrition_output(tabletype=patient);
+        options orientation = portrait;
     %end;
 
 ***************************************************************************************************;

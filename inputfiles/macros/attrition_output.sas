@@ -28,8 +28,9 @@
 *
 ***************************************************************************************************;
 
-%macro attrition_output;
+%macro attrition_output(tabletype=);
 
+    /* Check to see if either dataset exists */
     %isdata(dataset=agg_patient_attrition);
     %let attrition_patient = &nobs;
     %isdata(dataset=agg_episode_attrition);
@@ -44,11 +45,14 @@
         %let tablecount = 0;
     %end;
 
-    %if &attrition_episode > 0 %then %do;
+    %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
     data repdata.table&tablenum.&tableletter.;
-    	set agg_episode_attrition;
+    	set agg_&tabletype._attrition;
     run;
+
+        %if &tabletype = episode %then %let titlelabel = %str(Episode);
+        %else %if &tabletype = patient %then %let titlelabel = %str(Patient);
 
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal");
@@ -66,10 +70,10 @@
                 define grouplabel / across ' '  style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
                 define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-                                                                style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$attrition.;
+                                                                style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
 
                 define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$attrition.;
+                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
 
                 define dummyvar / computed noprint;
 
@@ -80,13 +84,14 @@
                 /*Add title*/
                 compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                                tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-                line "Table &tablenum.&tableletter.. Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
+                line "Table &tablenum.&tableletter.. Summary of &titlelabel Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
                 endcomp;
 
                 compute before report_descr / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 
                 length text $100;
             
+                %if &tabletype = episode %then %do;
                 if report_descr = 'Enrolled at any point during the query period' then do; 
                     text='Members meeting enrollment and demographic requirements'; 
                     num=100;
@@ -132,53 +137,9 @@
                 end;
                 line text $Varying. num; 
                 endcomp;
-        run;
+                %end;
 
-    %end;
-
-    %if &attrition_patient > 0 %then %do;
-    %tableletter();
-    data repdata.table&tablenum.&tableletter.;
-    	set agg_patient_attrition;
-    run;
-
-        %if &destination = excel %then %do;
-        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal");
-        %end;
-        ods proclabel = "Table &tablenum.&tableletter.";
-        proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b background=darkgrey] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.5pt];
-                column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
-                define report_descr / group order=data ' ' style(column)=[rules=none just=L] 
-                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
-
-                define headerlabel / across ' ' style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
-
-                define grouplabel / across ' '  style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
-
-                define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-                                                                style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$attrition.;
-
-                define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$attrition.;
-
-                define dummyvar / computed noprint;
-
-                compute dummyvar;
-                 dummyvar=1;
-                endcomp;
-
-                /*Add title*/
-                compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                               tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-                line "Table &tablenum.&tableletter.. Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
-                endcomp;
-
-                compute before report_descr / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-
-                length text $100;
-            
+                %else %if &tabletype = patient %then %do;
                 if report_descr = 'Enrolled at any point during the query period' then do; 
                     text='Members meeting enrollment and demographic requirements'; 
                     num=100;
@@ -207,8 +168,7 @@
                   text=' ';
                   num=0;
                 end;
-                line text $Varying. num; 
-                endcomp;
+                %end;
         run;
 
     %end;
