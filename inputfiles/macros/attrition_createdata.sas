@@ -63,7 +63,6 @@
    						A.level, A.claim_level, A.descr, 
 						A.remaining, A.excluded, d.t%substr(&reporttype,2,1)cohortdef
 						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
-   		%if &inclnobs > 0 %then %do; ,case when not index(level,'.') and not missing(condlevel) then '' else condlevel end as condlevel %end;
    		from agg_attrition a
    		inner join 
    		attrition_groups b
@@ -76,12 +75,6 @@
    		%end;
    		%if &milnobs > 0 %then %do;
    		or a.group = b.groupname and a.runid = b.runid
-   		%end;
-   		/* Join condlevel when inclusioncodes file exists */
-   		%if &inclnobs > 0 %then %do;
-   		left join 
-   		master_inclusioncodes c
-   		on b.group = c.group and b.runid = c.runid
    		%end;
    		;
 
@@ -117,13 +110,6 @@
    		rename descr1=descr;
    		%end;
    	run;
-
-   	/* De-dup multiple cond level rows within the same group */
-   	%if &inclnobs > 0 %then %do;
-   	proc sort data = all_attrition_groups nodupkey;
-   		by runid dpidsiteid group level claim_level descr remaining excluded t%substr(&reporttype,2,1)cohortdef;
-   	run;
-   	%end;
 
     proc sql noprint undo_policy=none;
         /* Join lookup table to groups table requested by user */

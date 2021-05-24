@@ -37,9 +37,9 @@
         %let runid=%scan(&runidlist,&n);
 
         data repdata.table&tablenum.&tableletter.;
-        	set agg_&tabletype._attrition(where=(runid="&runid"));
+            set agg_&tabletype._attrition(where=(runid="&runid"));
         run;
-
+        
         %if &tabletype = episode %then %let titlelabel = %str(Episode);
         %else %if &tabletype = patient %then %let titlelabel = %str(Patient);
 
@@ -163,6 +163,8 @@
                 endcomp;
                 %end;
         run;
+
+        %let tablenum = %eval(&tablenum + 1);
 
     %end; /* runid */
 
