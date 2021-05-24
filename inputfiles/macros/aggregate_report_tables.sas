@@ -82,7 +82,7 @@
     		    %let runid = %scan(&runidlist, &n); 
 
     		    	/* unmask where clause */
-    		    	%let where = %unquote(&where);
+    		    	%let where&n = %unquote(&where);
 
     			   %if %sysfunc(exist(&dpidsiteid..&&runid._&infile))=0 %then %do;
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
@@ -94,7 +94,7 @@
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
-    					  where &where; 
+    					  where &&where&n; 
     					  &name.=lowcase(&name.);
     					  dpidsiteid = "&maskedID";
     					  runid= "&runid.";
