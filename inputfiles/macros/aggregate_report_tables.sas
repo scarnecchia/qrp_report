@@ -164,12 +164,13 @@
 					 %if &&strata&s. = hispanic %then length hispanic $20;;
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
+					 %if &&strata&s. = zip_uncertain %then length zip_uncertain $3;;
                   
 				     %if &&strata&s. = overall %then %do;
 					   sortorder&s. = 1;
 					 %end;
                      %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg
-                         | &&strata&s. = cb_reg %then %do;
+                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain %then %do;
                          &&strata&s. = put(_&&strata&s., $&&strata&s..fmt.);
 						 sortorder&s. = input(put(_&&strata&s.,$&&strata&s..sort.),3.);
 				         drop _&&strata&s.;
@@ -188,10 +189,6 @@
                        agegroup = put(_agegroup, $agefmt.);
 					   sortorder&s. = agegroupnum;
                        drop _agegroup;
-                     %end;
-					 %else %if &&strata&s. = zip_uncertain %then %do;
-					   if zip_uncertain = 'Y' then sortorder&s. = 1;
-					   else sortorder&s. = 2;
                      %end;
 					 %else %if %index(&&strata&s.,covar) > 0 %then %do;
 					   if &&strata&s. = 1 then sortorder&s. = 1;

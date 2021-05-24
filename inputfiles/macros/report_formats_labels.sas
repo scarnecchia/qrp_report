@@ -191,6 +191,16 @@
         "N"   = 2
         "U"   = 3;
 		
+		/*Zip Format*/
+        value $zip_uncertainfmt
+        "Y"   = "Yes"
+        "N"   = "No";
+
+        value $zip_uncertainsort
+        "Y"  = 1
+        "N"  = 2
+		""   = 3;
+		
 		value $hhs_regfmt 
         '01'='HHS Region (01)'
         '02'='HHS Region (02)'

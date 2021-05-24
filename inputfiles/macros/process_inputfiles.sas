@@ -289,8 +289,8 @@
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
 		  new_parameter = catx("_","&&id&n.",parameter);
 		  call symputx(new_parameter,&&run&n.,'G');
-		  if new_parameter = "zipfile" and not missing(&&run&n.) then do;
-		    call symputx(zipfile,&&run&n.);
+		  if parameter = "zipfile" and not missing(&&run&n.) then do;
+		    call symputx("zipfile",&&run&n.);
 		  end;
 		run;
      %end;

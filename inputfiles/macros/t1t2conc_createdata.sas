@@ -244,18 +244,18 @@
               %end;
               %if %index(&&&table._stratification,hispanic) %then %do;
               hispanic = "Hispanic Origin"
-              %end;
+              %end;;
 
              /*covariate*/
              %if &numcovars. > 0 %then %do;
                %do c = 1 %to &numcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
-				    length _covar&covnum. $%eval(&maxlen_studyname + 15);
-                    label _covar&covnum. = "&&&covar&covnum.";
-                    if covar&c. = 0 then _covar&c. = "No evidence of &&study&c..";
-                    if covar&c. = 1 then _covar&c. = "Evidence of &&study&c.."; 
-					drop covar&covnum.;
-                    rename _covar&covnum. = covar&covnum.;
+				    length _&&covar&c. $%eval(&maxlen_studyname + 15);
+                    label _&&covar&c. = "&&covar&c.";
+                    if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&study&c..";
+                    if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&study&c.."; 
+					drop &&covar&c.;
+                    rename _&&covar&c. = &&covar&c.;
                   %end;
                %end;
              %end;
@@ -289,7 +289,9 @@
         quit;
 		
 		proc sort data = &dsout.;
-		  by &dpvar. order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end;;
+		  by &dpvar. order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
+		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
+			 %if %index(&&&table._stratification,state) > 0 %then %do; state %end;;
 		run;
     %mend;
 
@@ -297,7 +299,7 @@
     %prept1t2data(dsin=agg_&table._sum, dsout=final_&table.);
 	
 	%if &stratifybydp. = Y %then %do;
-	  %prept1t2data(dsin=agg_&table., dsout=final_dps_&table., dpvar=dpidsiteid);
+	  %prept1t2data(dsin=%str(agg_&table. (where = (level in (&&&table._levelid)))), dsout=final_dps_&table., dpvar=dpidsiteid);
 	%end;
 
     %put =====> END MACRO: t1t2conc_createdata ;
