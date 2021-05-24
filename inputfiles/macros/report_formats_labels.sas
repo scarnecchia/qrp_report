@@ -191,7 +191,7 @@
         "N"   = 2
         "U"   = 3;
 		
-		/*Zip Format*/
+		/*Zip_uncertain Format*/
         value $zip_uncertainfmt
         "Y"   = "Yes"
         "N"   = "No";
