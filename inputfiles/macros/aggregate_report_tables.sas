@@ -151,7 +151,7 @@
                    set &outfile.(rename = (
                      %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
-                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup %then %do;
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
