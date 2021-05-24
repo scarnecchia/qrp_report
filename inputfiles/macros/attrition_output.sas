@@ -44,21 +44,23 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b background=darkgrey] split='*'
+                style(header)=[rules=none vjust=b borderbottomcolor=darkgrey bordertopcolor=darkgrey background=darkgrey] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[rules=none just=L asis=on] 
                                                            style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
-                define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black];
+                define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=darkgrey borderrightcolor=black 
+                                                                      borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
-                define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black];
+                define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=darkgrey borderrightcolor=black 
+                                                                      borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
                 define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-                                                                style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
+                                                                style(header)=[background = darkgrey borderleftcolor=black borderleftwidth=1 borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
 
                 define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
+                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=black borderbottomcolor=black borderrightwidth=1] format=$nafmt.;
 
                 define dummyvar / computed noprint;
 

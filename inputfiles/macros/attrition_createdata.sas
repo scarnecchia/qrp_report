@@ -119,9 +119,11 @@
    	run;
 
    	/* De-dup multiple cond level rows within the same group */
+   	%if &inclnobs > 0 %then %do;
    	proc sort data = all_attrition_groups nodupkey;
    		by runid dpidsiteid group level claim_level descr remaining excluded t%substr(&reporttype,2,1)cohortdef;
    	run;
+   	%end;
 
     proc sql noprint undo_policy=none;
         /* Join lookup table to groups table requested by user */
