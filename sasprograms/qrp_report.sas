@@ -158,6 +158,7 @@ ods path(prepend) work.templat(update);
 
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
+%include "&reportroot.inputfiles/macros/addstatetozip3.sas";
 
 /*report template*/
 %include "&reportroot.inputfiles/macros/report_template.sas";
