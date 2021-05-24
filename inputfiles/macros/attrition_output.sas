@@ -60,7 +60,7 @@
                                                                 style(header)=[background = darkgrey borderleftcolor=black borderleftwidth=1 borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
 
                 define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=black borderbottomcolor=black borderrightwidth=1] format=$nafmt.;
+                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=black borderrightwidth=1 borderbottomcolor=black] format=$nafmt.;
 
                 define dummyvar / computed noprint;
 
