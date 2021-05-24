@@ -32,9 +32,13 @@
 
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
-    data repdata.table&tablenum.&tableletter.;
-    	set agg_&tabletype._attrition;
-    run;
+
+    %do n = 1 %to &numrunid.;
+        %let runid=%scan(&runidlist,&n);
+
+        data repdata.table&tablenum.&tableletter.;
+        	set agg_&tabletype._attrition(where=(runid="&runid"));
+        run;
 
         %if &tabletype = episode %then %let titlelabel = %str(Episode);
         %else %if &tabletype = patient %then %let titlelabel = %str(Patient);
@@ -160,6 +164,8 @@
                 %end;
         run;
 
-    %end;
+    %end; /* runid */
+
+    %end; /* attrition table type */
 
 %mend attrition_output;

@@ -166,11 +166,12 @@
 	  %if %eval(&nobs>0) %then %do;
 	  proc sql noprint undo_policy=none;
 	        create table all_attrition_agg as
-	        select a.*, case when not missing(b.label) then b.label else b.group end as grouplabel, c.label as headerlabel
+	        select a.*, case when not missing(b.label) then b.label else a.group end as grouplabel, 
+	        			case when not missing(c.label) then c.label else '' end as headerlabel
 	        from all_attrition_agg a 
 	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group
-	        left join labelfile(where=(lowcase(labeltype) = 'header' and not missing(label))) c
+	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
 	        on a.group = c.group;
 	  quit;
 	  %end;
