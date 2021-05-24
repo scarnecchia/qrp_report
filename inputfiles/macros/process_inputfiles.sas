@@ -448,6 +448,7 @@
      ;
      format runid $5.;
         %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._multeventfile)) or 
                 %sysfunc(exist(infolder.&&&runid._overlapfile)) or
                 %sysfunc(exist(infolder.&&&runid._concfile)) %then %do; 
@@ -467,11 +468,11 @@
         stop;
     run;
 
-     data master_mil(keep=runid group groupname);
+   data master_mil(keep=runid group groupname);
         set %do n = 1 %to &numrunid.;
         %let runid=&&id&n..;
         %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
-        infolder.&&&runid._micohorttfile(in=n&n.)
+        infolder.&&&runid._micohortfile(in=n&n.)
         %end;
         %else %do;
         _mil_shell
@@ -480,6 +481,7 @@
         ;
         format runid $5.;
         %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
             if n&n. then do;
             group=lowcase(milgrp);

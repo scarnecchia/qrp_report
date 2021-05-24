@@ -353,6 +353,13 @@
                 ;
             quit;
             %end;
+            %else %do;
+            data  _temp_agg_profile;
+            set _temp_agg_profile;
+            grouplabel2='';
+            switchlabel='';
+            run;
+            %end;
                 
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order
