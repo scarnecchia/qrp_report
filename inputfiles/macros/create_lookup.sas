@@ -27,7 +27,7 @@
 ***************************************************************************************************;
 
  /* Define libname for location of templatefiles folder */
-  libname lookup "";
+  libname lookup "U:\dev\test\qrp_report\inputfiles\macros\lookuptables";
   options noquotelenmax;
   
   %macro create_lookup();
@@ -97,10 +97,10 @@
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met exclusion and inclusion criteria  [CONDLEVEL N]"; output;
-		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met exclusion and inclusion criteria  [CONDLEVEL N]"; output;
-		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met exclusion and inclusion criteria  [CONDLEVEL N]"; output;
-		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met exclusion and inclusion criteria  [CONDLEVEL N]"; output;
+		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met exclusion and inclusion criteria"; output;
+		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met exclusion and inclusion criteria"; output;
+		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
+		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;

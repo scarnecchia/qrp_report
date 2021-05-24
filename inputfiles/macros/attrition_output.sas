@@ -47,12 +47,12 @@
                 style(header)=[rules=none vjust=b background=darkgrey] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.5pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
-                define report_descr / group order=data ' ' style(column)=[rules=none just=L] 
+                define report_descr / group order=data ' ' style(column)=[rules=none just=L asis=on] 
                                                            style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
 
-                define headerlabel / across ' ' style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
+                define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black];
 
-                define grouplabel / across ' '  style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
+                define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black];
 
                 define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
                                                                 style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;

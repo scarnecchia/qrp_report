@@ -63,7 +63,7 @@
    						A.level, A.claim_level, A.descr, 
 						A.remaining, A.excluded, d.t%substr(&reporttype,2,1)cohortdef
 						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
-   		%if &inclnobs > 0 %then %do; ,c.condlevel %end;
+   		%if &inclnobs > 0 %then %do; ,case when not index(level,'.') and not missing(condlevel) then '' else condlevel end as condlevel %end;
    		from agg_attrition a
    		inner join 
    		attrition_groups b
@@ -84,25 +84,53 @@
    		on b.group = c.group and b.runid = c.runid
    		%end;
    		;
+
+   		%if &inclnobs > 0 %then %do;
+   		select count(distinct condlevel)
+   		into :ncond trimmed
+   		from master_inclusioncodes;
+
+   		select distinct condlevel 
+   		into :condlevel1-:condlevel&ncond 
+   		from master_inclusioncodes;
+   		%end;
    	quit;
 
-   	/* Extract only necessary label pieces for condlevel merge */
-   	data all_attrition_groups;
-   		set all_attrition_groups;
-	   	if find(level,'.') then do;
-	   		if find(descr,'lacking') then descr=substr(descr,1,findw(descr,'lacking')+6);
-	   		else descr=substr(descr,1,findw(descr,'for')+2);
-	   	end;
+   	/* Assign cond level rows */
+   	data lookup_attrition;
+   		set lookup.lookup_attrition;
+   		%if &inclnobs > 0 %then %do;
+   		length condlevel $30;
+   		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
+   			%do n = 1 %to &ncond;
+   			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
+   			condlevel="&&condlevel&n";
+   			output;
+   			%end;
+   		end;
+   		else do;
+   			descr1=descr;
+   			output;
+   		end;
+   		if not missing(descr1) then descr=descr1;
+   		drop descr;
+   		rename descr1=descr;
+   		%end;
+   	run;
+
+   	/* De-dup multiple cond level rows within the same group */
+   	proc sort data = all_attrition_groups nodupkey;
+   		by runid dpidsiteid group level claim_level descr remaining excluded t%substr(&reporttype,2,1)cohortdef;
    	run;
 
     proc sql noprint undo_policy=none;
         /* Join lookup table to groups table requested by user */
         create table all_attrition_agg as
-   		select a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.t%substr(&reporttype,2,1)cohortdef, 
-   			   a.descr, a.remaining, a.excluded, b.report_descr %if &inclnobs > 0 %then %do; ,a.condlevel %end;
+   		select distinct a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.t%substr(&reporttype,2,1)cohortdef, 
+   			   a.descr, a.remaining, a.excluded, b.report_descr %if &inclnobs > 0 %then %do; ,b.condlevel %end;
         from all_attrition_groups a
         left join 
-             lookup.lookup_attrition b 
+             lookup_attrition b 
         on a.claim_level = b.claim_level and a.descr = b.descr;
 
         /* Sum across all DPs */
@@ -111,7 +139,7 @@
              sum(remaining) as agg_remaining, sum(excluded) as agg_excluded
              %if &inclnobs > 0 %then %do; ,condlevel %end;
              from all_attrition_agg
-        group by runid, group, report_descr, level;
+        group by runid, group, report_descr, level %if &inclnobs > 0 %then %do; ,condlevel %end;;
 
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
@@ -122,14 +150,11 @@
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
-
     /* Set in condlevel value and delete un-needed rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
 		%if &inclnobs >0 %then %do;
-		if not missing(condlevel) then do;
-			if index(report_descr,'[CONDLEVEL N]') then report_descr=condlevel;
-		end;
+		if not missing(condlevel) then report_descr=cat('   ',condlevel);
 		%end;
 		if missing(report_descr) then delete;
 	run;
@@ -160,6 +185,9 @@
 	  	agg_remaining_char=strip(put(agg_remaining,comma12.));
 	  	agg_excluded_char=strip(put(agg_excluded,comma12.));
 	  	if missing(agg_excluded) then agg_excluded_char = 'N/A';
+	  	if index(level,'.') then do;
+	  		if missing(agg_remaining) then agg_remaining_char = 'N/A';
+	  	end;
 	  	if report_descr = 'Number of members' then do;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		agg_excluded_char = 'N/A';
@@ -221,12 +249,12 @@
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
 	  proc sort data = all_attrition_agg out=agg_patient_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
-	  	by group level;
+	  	by level group ;
 	  run;
 	  %end;
 
 	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
-	  	by group level;
+	  	by level group;
 	  run;
 
 
