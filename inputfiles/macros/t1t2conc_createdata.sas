@@ -153,8 +153,8 @@
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
-       data _&dsout. (keep = level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
-	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; &&&table._stratification &dpvar.);
+       data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
+	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; );
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
@@ -209,6 +209,9 @@
         /*labels for stratification variables*/
         %if %index(&&&table._stratification,state) %then %do;
             if state in ("Invalid", "Missing") and episodes lt 1 then delete;
+			if state = "Invalid" then sortorder_state = "ZY";
+			else if state = "Missing" then sortorder_state = "ZZ";
+			else sortorder_state = state;
         %end;
 
         label
@@ -288,10 +291,10 @@
 		  %end;;
         quit;
 		
-		proc sort data = &dsout.;
+		proc sort data = &dsout. out = output.&dsout.;
 		  by &dpvar. order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
 		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
-			 %if %index(&&&table._stratification,state) > 0 %then %do; state %end;;
+			 %if %index(&&&table._stratification,state) > 0 %then %do; sortorder_state %end;;
 		run;
     %mend;
 
