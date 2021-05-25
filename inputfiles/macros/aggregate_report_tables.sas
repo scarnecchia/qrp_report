@@ -192,7 +192,7 @@
                      %end;
 					 %else %if %index(&&strata&s.,covar) > 0 %then %do;
 					   if &&strata&s. = 1 then sortorder&s. = 1;
-					   else if &&strata&s. = 0 sortorder&s. = 2;
+					   else if &&strata&s. = 0 then sortorder&s. = 2;
                      %end;
 					 %else %do;
 					   sortorder&s. = 1;
