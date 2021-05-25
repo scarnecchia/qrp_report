@@ -205,8 +205,10 @@
 			  %output_datasets(dataset=&outfile., outlib=msocdata);
 			  
 			  /* If stratification by zip3 is requested, add state values */
-              %if &stratification. = Y and %index(&allstrata.,zip3) %then %do;
-                %addstatetozip3(data = &outfile.); 
+              %if &stratification. = Y %then %do;
+			    %if %index(&allstrata.,zip3) %then %do;
+                  %addstatetozip3(data = &outfile.); 
+				%end;
 		      %end;
 
         %mend agg_report;
