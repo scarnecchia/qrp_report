@@ -145,7 +145,8 @@
         %attrition_output(tabletype=episode);
         %attrition_output(tabletype=patient);
         options orientation = portrait;
-
+        %let tablenum = %eval(&tablenum + 1);
+        
     %end;
     
     %end;

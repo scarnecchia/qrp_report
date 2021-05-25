@@ -16,7 +16,9 @@
 * 
 *   -repdata.table&tablenum.&tableletter.
 * 
-*  PARAMETERS:                                                                       
+*  PARAMETERS:
+*   -tabletype - patient - Output patient level attrition table
+*              - episode - Output episode level attrition table                                                                     
 *            
 *  Programming Notes:         
 *                                                                           
@@ -33,13 +35,10 @@
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
-    %do n = 1 %to &numrunid.;
-        %let runid=%scan(&runidlist,&n);
-
         data repdata.table&tablenum.&tableletter.;
-            set agg_&tabletype._attrition(where=(runid="&runid"));
+            set agg_&tabletype._attrition;
         run;
-        
+
         %if &tabletype = episode %then %let titlelabel = %str(Episode);
         %else %if &tabletype = patient %then %let titlelabel = %str(Patient);
 
@@ -163,10 +162,6 @@
                 endcomp;
                 %end;
         run;
-
-        %let tablenum = %eval(&tablenum + 1);
-
-    %end; /* runid */
 
     %end; /* attrition table type */
 

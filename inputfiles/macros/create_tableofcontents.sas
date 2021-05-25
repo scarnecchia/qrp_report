@@ -626,9 +626,6 @@
 	
     %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
 
-        %do n = 1 %to &numrunid;
-            %let runid = %scan(&runidlist,&n);
-
 		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
 			%let tablecount = 0;
 		%end;
@@ -647,7 +644,6 @@
 	
         %let tablenum = %eval(&tablenum + 1);
 
-        %end; /* runid */
     %end; /* attrition_groups file */
 
 
