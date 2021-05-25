@@ -75,8 +75,10 @@
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist;
+    %global datasetlist figurelist tdatasetlist tdatasetlistnum;
     %let datasetlist = ;
+	%let tdatasetlist = ;
+	%let tdatasetlistnum = ;
     %let figurelist = ;
 
     /*baseline table variables*/
@@ -106,6 +108,20 @@
     /*output_agg_data to msocdata*/
     %global output_agg_data;
     %let output_agg_data = Y;
+	
+	/*zipfile*/
+	%global zipfile;
+	%let zipfile = ;
+	
+	/* covariate codes formats */
+	%global maxlen_studyname;
+    %let maxlen_studyname = 0;
+	
+	/* Total number of unique stratifications by file type*/
+	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
+    %let numstrata_t1cida = 0;
+	%let numstrata_t2cida = 0;
+	%let numstrata_t2conc = 0;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
