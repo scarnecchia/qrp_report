@@ -292,7 +292,7 @@
         quit;
 		
 		proc sort data = &dsout.;
-		  by &dpvar. order %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
+		  by &dpvar. order level %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
 		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
 			 %if %index(&&&table._stratification,state) > 0 %then %do; sortorder_state %end;;
 		run;
