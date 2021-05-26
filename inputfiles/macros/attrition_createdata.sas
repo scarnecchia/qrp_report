@@ -97,7 +97,8 @@
    		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
    			%do n = 1 %to &ncond;
    			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
-   			if index(descr,"lacking") then condlevel=catx(' ','No evidence of ',"&&condlevel&n");
+   			if index(descr,"Information: Members excluded for lacking") or index(descr,"Information: Episodes excluded for lacking") 
+   			then condlevel=catx(' ','No evidence of ',"&&condlevel&n");
 			else condlevel=catx(' ','Evidence of ',"&&condlevel&n");
    			output;
    			%end;
