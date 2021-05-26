@@ -46,8 +46,7 @@
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
                 style(header)=[rules=none vjust=b borderbottomcolor=darkgrey bordertopcolor=darkgrey background=darkgrey] split='*'
                 style(report)=[rules=none frame=box cellpadding=1.75pt];
-                column level report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
-                define level / group noprint;
+                column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[just=L] 
                                                            style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
                 define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=darkgrey borderrightcolor=black 
@@ -65,7 +64,7 @@
 				define dummyvar / computed noprint;
 
                 compute report_descr;
-                 if int(level) ^= level then call define (_col_,"style","style=[pretext='     ' asis=on]");
+                 if find(report_descr,'evidence of','i') then call define (_col_,"style","style=[pretext='     ' asis=on]");
                 endcomp;
 
                 compute dummyvar;

@@ -146,7 +146,7 @@
 	  	grouplabel=group;
 	  	headerlabel='';
 		%if &inclnobs >0 %then %do;
-		if not missing(condlevel) then report_descr=cat('   ',condlevel);
+		if not missing(condlevel) then report_descr=condlevel;
 		%end;
 		if missing(report_descr) then delete;
 	run;
