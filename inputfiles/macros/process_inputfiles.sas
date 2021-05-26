@@ -288,6 +288,9 @@
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
 		  new_parameter = catx("_","&&id&n.",parameter);
 		  call symputx(new_parameter,&&run&n.,'G');
+		  if parameter = "zipfile" and not missing(&&run&n.) then do;
+		    call symputx("zipfile",&&run&n.);
+		  end;
 		run;
      %end;
 	 
@@ -535,8 +538,8 @@
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
 
-     /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
-     %do n = 1 %to &numrunid.;
+    /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
+    %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
@@ -759,6 +762,44 @@
                         from tablefile(where=(missing(dataset)=0))
                     quit;
                     %let datasetlist = &tdatasetlist.;
+					%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
+					
+					/* Read in table columns file*/
+					%if %str("&tablecolumnsfile.") ne %str("") %then %do;
+					  %if %sysfunc(exist(input.&tablecolumnsfile.))=0 %then %do;
+                        %put ERROR: (Sentinel) tablecolumnsfile table is specified as input.&tablecolumnsfile. on &createreportfile., but the file does not exist.;
+			  		    %abort;
+                      %end;
+					  %else %do;
+                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))))
+  						            out = tablecolumns;
+                           by table order;
+                         run;
+      
+	                     %isdata(dataset=tablecolumns);
+	                     %if %eval(&nobs.>0) %then %do;
+					        data tablecolumns;
+						      set tablecolumns (rename = (order = order_in column = column_in));
+						      length columnname $32 smallcellYN $1 footnote 3;
+	                          by table order_in;
+			                  column = lowcase(compress(column_in));
+	                          order = _n_;
+			                  smallcellYN = "N";
+			                  call missing(footnote);
+			                  columnname = compress("column"||order);
+			                  if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+			                  if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
+			                  else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
+			                  else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
+                            run;
+						 %end;
+						 %else %do;
+		                    %put ERROR: (Sentinel) All rows on input.&tablecolumnsfile. are set to N.; 
+		                    %put Columns must be selected for tables:&tdatasetlist.;
+		                    %abort;
+	  	                 %end;
+					  %end;
+			        %end; 
                 %end;
             %end;
         %end; /*TableFile has rows with IncludeinReport=Y*/

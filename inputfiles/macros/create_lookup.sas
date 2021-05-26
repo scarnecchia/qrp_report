@@ -119,7 +119,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"; report_descr = "Episode occurred after first event"; output;
 		claim_level = "Member"; descr = "Information - Unique number of members in final cohort"; report_descr = "Number of members"; output;
 		claim_level = "Episode"; descr = "Information - Number of non-pregnant matched comparator episodes"; report_descr = "Number of non-pregnant matched comparator episodes"; output;
-	run;  
+	 run; 
 
   %mend create_lookup;
   %create_lookup();

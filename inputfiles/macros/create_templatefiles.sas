@@ -1016,6 +1016,90 @@ libname tempfl "";
     proc datasets nowarn noprint;
         delete lookup:;
     quit;
+	
+	
+  %macro create_tablecolumns();
+
+    *************************************
+     TableColumnsFile for T1 and T2L1:
+        - T1cida
+        - T2cida
+        - T2conc
+    *************************************;
+	
+     data tablecolumnsfile;
+	   attrib Table        		length = $10	format = $10.
+              IncludeinReport  	length = $1		format = $1.
+			  Column       		length = $50	format = $50.
+			  Order        		length = 3		format = 3.
+			  ColumnLabel       length = $100	format = $100.
+			  ColumnFormat      length = $10	format = $10.
+              CIrate		  	length = $1		format = $1.;
+	   Column = "Npts"; ColumnLabel = "New Users"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 1; IncludeinReport = "Y"; output; Table = "t2cida"; output; Table = "t2conc"; output;
+	   Column = "(Npts/DenNumPts)*X"; ColumnLabel = "New Users per X Eligible Members"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; IncludeinReport = "N"; order = 2; output; Table = "t2cida"; output;
+	   Column = "npts/dennumpts"; ColumnLabel = "Proportion of New Users per Eligible Member (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "P"; order = 3; includeinreport = 'N'; output;
+	   Column = "(npts/dennumpts)*X"; ColumnLabel = "Proportion of New Users per X Eligible Members (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "P"; order = 4; includeinreport = 'N'; output;
+	   Column = "Episodes"; ColumnLabel = "New Episodes"; ColumnFormat = "comma10.0"; CIrate = "N"; Table = "t1cida"; order = 5; includeinreport = 'Y'; output; Table = "t2cida"; order = 3; output; Table = "t2conc"; order = 2; output;
+	   Column = "npts/dennummemdays"; ColumnLabel = "New User Rate per Eligible Person-Day (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "R"; order = 6; includeinreport = 'N'; output;
+	   Column = "(npts/dennummemdays)*X"; ColumnLabel = "New User Rate per X Eligible Person-Days (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "R"; order = 7; includeinreport = 'N'; output;
+	   Column = "AdjustedCodeCount"; ColumnLabel = "Adjusted Dispensings"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 8; includeinreport = 'Y'; output; Table = "t2cida"; order = 4; output; Table = "t2conc"; order = 3; output;
+	   Column = "AdjustedCodeCount/Npts"; ColumnLabel = "Adjusted Dispensing per User"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 9; includeinreport = 'N'; output; Table = "t2cida"; order = 5; output; Table = "t2conc"; order = 4; output;
+	   Column = "RawCodeCount"; ColumnLabel = "Raw Dispensings"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 10; includeinreport = 'Y'; output; Table = "t2cida"; order = 6; output; Table = "t2conc"; order = 5; output;
+	   Column = "RawCodeCount/Npts"; ColumnLabel = "Raw Dispensings per User"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 11; includeinreport = 'N'; output; Table = "t2cida"; order = 7; output; Table = "t2conc"; order = 6; output;
+	   Column = "DaySupp"; ColumnLabel = "Days Supplied"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 12; includeinreport = 'Y'; output; Table = "t2cida"; order = 8; output; Table = "t2conc"; order = 7; output;
+	   Column = "DaySupp/Episodes"; ColumnLabel = "Days Supplied per Episode"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 13; includeinreport = 'N'; output; Table = "t2cida"; order = 9; output; Table = "t2conc"; order = 8; output;
+	   Column = "DaySupp/Npts"; ColumnLabel = "Days Supplied per User"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 14; includeinreport = 'N'; output; Table = "t2cida"; order = 10; output; Table = "t2conc"; order = 9; output;
+	   Column = "DaySupp/AdjustedCodeCount"; ColumnLabel = "Days Supplied per Adjusted Dispensings"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 15; includeinreport = 'N'; output; Table = "t2cida"; order = 11; output; Table = "t2conc"; order = 10; output;
+	   Column = "DaySupp/RawCodeCount"; ColumnLabel = "Days Supplied per Raw Dispensings"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 16; includeinreport = 'N'; output; Table = "t2cida"; order = 12; output; Table = "t2conc"; order = 11; output;
+	   Column = "AmtSupp"; ColumnLabel = "Amount Supplied"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 17; includeinreport = 'Y'; output; Table = "t2cida"; order = 13; output; Table = "t2conc"; order = 12; output;
+	   Column = "AmtSupp/Episodes"; ColumnLabel = "Amount Supplied per Episode"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 18; includeinreport = 'N'; output; Table = "t2cida"; order = 14; output; Table = "t2conc"; order = 13; output;
+	   Column = "AmtSupp/AdjustedCodeCount"; ColumnLabel = "Amount Supplied per Adjusted Dispensings"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 19; includeinreport = 'N'; output; Table = "t2cida"; order = 15; output; Table = "t2conc"; order = 14; output;
+	   Column = "AmtSupp/RawCodeCount"; ColumnLabel = "Amount Supplied per Raw Dispensings"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; order = 20; includeinreport = 'N'; output; Table = "t2cida"; order = 16; output; Table = "t2conc"; order = 15; output;
+	   Column = "timetocensor"; ColumnLabel = "Time to Data End (Days)"; ColumnFormat = "comma13.0"; Table = "t1cida"; CIrate = "N"; order = 21; includeinreport = 'Y'; output; Table = "t2cida"; order = 34; output;
+	   Column = "DenNumPts"; ColumnLabel = "Eligible Members"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 22; includeinreport = 'Y'; output; Table = "t2cida"; order = 35; output;
+	   Column = "DenNumMemDays"; ColumnLabel = "Eligible Member-Days"; ColumnFormat = "comma14.0"; Table = "t1cida"; CIrate = "N"; order = 23; includeinreport = 'Y'; output; Table = "t2cida"; order = 36; output;
+	   Column = "DenNumMemDays/365.25"; ColumnLabel = "Eligible Member-Years"; ColumnFormat = "comma13.1"; Table = "t1cida"; CIrate = "N"; order = 24; includeinreport = 'Y'; output; Table = "t2cida"; order = 37; output;
+	   Column = "Eps_wEvents"; ColumnLabel = "New Episodes with an Event"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 17; includeinreport = 'Y'; output; Table = "t2conc"; order = 16; output;
+	   Column = "Eps_wEvents/Npts"; ColumnLabel = "Episodes with an Event per User"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "N"; order = 18; includeinreport = 'N'; output; Table = "t2conc"; order = 17; output;
+	   Column = "Eps_wEvents/Episodes"; ColumnLabel = "Episodes with an Event per Episode"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "N"; order = 19; includeinreport = 'N'; output; Table = "t2conc"; order = 18; output;
+	   Column = "Eps_wEvents/(followuptime/365.25)"; ColumnLabel = "Episodes with an Event per Member-Year at Risk"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "N"; order = 20; includeinreport = 'N'; output; Table = "t2conc"; order = 19; output;
+	   Column = "(Eps_wEvents/(followuptime/365.25))*X"; ColumnLabel = "Episodes with an Event per X Member-Years at Risk"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "N"; order = 21; includeinreport = 'N'; output; order = 20; Table = "t2conc"; output;
+	   Column = "eps_wevents/followuptime"; ColumnLabel = "Event Rate per Person-Day (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 22; includeinreport = 'N'; output; Table = "t2conc"; order = 21; output;
+	   Column = "eps_wevents/(followuptime/30.35)"; ColumnLabel = "Event Rate per Person-Month (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 23; includeinreport = 'N'; output; Table = "t2conc"; order = 22; output;
+	   Column = "eps_wevents/(followuptime/365.25)"; ColumnLabel = "Event Rate per Person-Year (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 24; includeinreport = 'N'; output; Table = "t2conc"; order = 23; output;
+	   Column = "(eps_wevents/followuptime)*X"; ColumnLabel = "Event Rate per X Person-Days (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 25; includeinreport = 'N'; output; Table = "t2conc"; order = 24; output;
+	   Column = "(eps_wevents/(followuptime/30.35))*X"; ColumnLabel = "Event Rate per X Person-Months (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 26; includeinreport = 'N'; output; Table = "t2conc"; order = 25; output;
+	   Column = "(eps_wevents/(followuptime/365.25))*X"; ColumnLabel = "Event Rate per X Person-Years (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "R"; order = 27; includeinreport = 'N'; output; Table = "t2conc"; order = 26; output;
+	   Column = "(Eps_wEvents/DenNumPts)*X"; ColumnLabel = "Episodes with an Event per X Eligible Members"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "N"; order = 28; includeinreport = 'N'; output;
+	   Column = "eps_wevents/episodes"; ColumnLabel = "Proportion of Episodes with an Event (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "P"; order = 29; includeinreport = 'N'; output; Table = "t2conc"; order = 27; output;
+	   Column = "(eps_wevents/episodes)*X"; ColumnLabel = "Proportion of Episodes with an Event per X New Episodes (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "P"; order = 30; includeinreport = 'N'; output; Table = "t2conc"; order = 28; output;
+	   Column = "All_Events"; ColumnLabel = "All Events"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 31; output; Table = "t2conc"; order = 29; includeinreport = 'Y'; output;
+	   Column = "followuptime"; ColumnLabel = "Days at Risk"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 32; includeinreport = 'Y'; output; Table = "t2conc"; order = 30; output;
+	   Column = "followuptime/365.25"; ColumnLabel = "Years at Risk"; ColumnFormat = "comma13.1"; Table = "t2cida"; CIrate = "N"; includeinreport = 'Y'; order = 33; output; Table = "t2conc"; order = 31; output;
+	 run; 
+
+	 proc sort data = tablecolumnsfile;
+	 by table order;
+	 run;
+	 
+	  /* Re-assign order for default table */
+	 data tempfl.tablecolumnsfile_default (drop = order_in);
+	   set tablecolumnsfile (rename = (order=order_in) where = (includeinreport = "Y"));
+	   by table order_in;
+	   retain order;
+	   length order 3;
+	   if first.table then order = 1;
+	   else order = order +1;
+	 run;
+	 
+	 /* Assign includeinreport to N for all variables on the tablecolumnsfile_all dataset */
+	 data tempfl.tablecolumnsfile_all;
+	    set tablecolumnsfile;
+		includeinreport = "N";
+	 run;
+	 
+  %mend create_tablecolumns;
+  %create_tablecolumns();
 
 %mend;
 
