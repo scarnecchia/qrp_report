@@ -53,7 +53,7 @@
 	%end;
 	;
 	quit;
-
+	
 	%isdata(dataset=master_inclusioncodes);
 	%let inclnobs = &nobs;
 	/* Join only required groups to attrition table */
@@ -93,11 +93,12 @@
    	data lookup_attrition;
    		set lookup.lookup_attrition;
    		%if &inclnobs > 0 %then %do;
-   		length condlevel $30;
+   		length condlevel $50;
    		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
    			%do n = 1 %to &ncond;
    			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
-   			condlevel="&&condlevel&n";
+   			if index(descr,"lacking") then condlevel=catx(' ','No evidence of ',"&&condlevel&n");
+			else condlevel=catx(' ','Evidence of ',"&&condlevel&n");
    			output;
    			%end;
    		end;
