@@ -39,16 +39,13 @@
             set agg_&tabletype._attrition;
         run;
 
-        %if &tabletype = episode %then %let titlelabel = %str(Episode);
-        %else %if &tabletype = patient %then %let titlelabel = %str(Patient);
-
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal");
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
                 style(header)=[rules=none vjust=b borderbottomcolor=darkgrey bordertopcolor=darkgrey background=darkgrey] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.5pt];
+                style(report)=[rules=none frame=box cellpadding=1.75pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[rules=none just=L asis=on] 
                                                            style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
@@ -74,7 +71,7 @@
                 /*Add title*/
                 compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                                tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-                line "Table &tablenum.&tableletter.. Summary of &titlelabel Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
+                line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
                 endcomp;
 
                 compute before report_descr / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];

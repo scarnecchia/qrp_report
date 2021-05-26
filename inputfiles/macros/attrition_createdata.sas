@@ -123,7 +123,7 @@
 
         /* Sum across all DPs */
 		create table all_attrition_agg as 
-		select distinct runid, group, report_descr, level, claim_level, remaining, excluded, t%substr(&reporttype,2,1)cohortdef,
+		select distinct runid, group, report_descr, level, claim_level, t%substr(&reporttype,2,1)cohortdef,
              sum(remaining) as agg_remaining, sum(excluded) as agg_excluded
              %if &inclnobs > 0 %then %do; ,condlevel %end;
              from all_attrition_agg
@@ -139,8 +139,11 @@
     quit;
 
     /* Set in condlevel value and delete un-needed rows */
-	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr t%substr(&reporttype,2,1)cohortdef);
+	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
+		legnth grouplabel $40;
+	  	grouplabel=group;
+	  	headerlabel='';
 		%if &inclnobs >0 %then %do;
 		if not missing(condlevel) then report_descr=cat('   ',condlevel);
 		%end;
@@ -154,18 +157,12 @@
 	        create table all_attrition_agg as
 	        select a.*, case when not missing(b.label) then b.label else a.group end as grouplabel, 
 	        			case when not missing(c.label) then c.label else '' end as headerlabel
-	        from all_attrition_agg a 
+	        from all_attrition_agg (drop=grouplabel headerlabel) a 
 	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group
 	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
 	        on a.group = c.group;
 	  quit;
-	  %end;
-	  %else %do;
-	  data all_attrition_agg;
-	  	set all_attrition_agg;
-	  	grouplabel=group;
-	  	headerlabel='';
 	  %end;
 
 	/* Create character variables of remaining and excluded columns */
