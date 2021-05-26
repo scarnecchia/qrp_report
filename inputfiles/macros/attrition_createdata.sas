@@ -141,7 +141,7 @@
     /* Set in condlevel value and delete un-needed rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
-		legnth grouplabel $40;
+		length grouplabel $40;
 	  	grouplabel=group;
 	  	headerlabel='';
 		%if &inclnobs >0 %then %do;
