@@ -67,7 +67,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name=);
+        %macro agg_report(infile=, outfile=, name= , stratification = N);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -112,14 +112,110 @@
 
     			%end; *runID;
     		  %end;*loop through DPs;
+			  
+			  %if &stratification. = Y %then %do;
+			     /* Identify stratification variables */
+				 %let dataset =%substr(&outfile.,5);
+				 
+				 proc sql noprint;
+                   select distinct(tablesub) into: allstrata separated by ' ' 
+                   from tablefile
+                   where dataset = "&dataset." and index(tablesub,"#") = 0;
+                 quit;
+				 
+				 %let totalstrata = %sysfunc(countw(&allstrata));
+
+				 data _stratavars;
+				   length strata $15;
+				   %do a = 1 %to &totalstrata.;
+				     strata = "%scan(&allstrata.,&a.)"; output;
+				   %end;
+				 run;
+
+				 proc sort nodupkey data = _stratavars;
+				   by strata;
+				 run;
+				 
+				 proc sql noprint;
+				   select count(strata) into: numstrata_&dataset. trimmed
+				   from _stratavars;
+				   
+				   select strata
+				   into: strata1 -  :strata&&numstrata_&dataset.
+				   from _stratavars;
+				 quit;
+			  
+			  
+			     /* Put stratification variables through formats to acquire full names */
+                 data &outfile.;
+                   set &outfile.(rename = (
+                     %do s = 1 %to &&numstrata_&dataset.;
+                       %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
+                           &&strata&s. = _&&strata&s.
+                       %end;
+                     %end;));
+					 
+				   %do s = 1 %to &&numstrata_&dataset.;
+				     length sortorder&s. 3;
+				     
+                     %if &&strata&s. = sex      %then length sex $15;;
+                     %if &&strata&s. = race     %then length race $45;;
+					 %if &&strata&s. = hispanic %then length hispanic $20;;
+					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
+					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
+					 %if &&strata&s. = zip_uncertain %then length zip_uncertain $3;;
+                  
+				     %if &&strata&s. = overall %then %do;
+					   sortorder&s. = 1;
+					 %end;
+                     %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg
+                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain %then %do;
+                         &&strata&s. = put(_&&strata&s., $&&strata&s..fmt.);
+						 sortorder&s. = input(put(_&&strata&s.,$&&strata&s..sort.),3.);
+				         drop _&&strata&s.;
+                     %end;
+				     %else %if &&strata&s. = month %then %do;
+                       length month $10;
+                       month = put(_month, mn_name.);
+					   sortorder&s. = _month;
+                       drop _month;
+                     %end;
+				     %else %if &&strata&s. = year %then %do;
+					   sortorder&s. = year;
+                     %end;
+				     %else %if &&strata&s. = agegroup %then %do;
+                       length agegroup $40;
+                       agegroup = put(_agegroup, $agefmt.);
+					   sortorder&s. = agegroupnum;
+                       drop _agegroup;
+                     %end;
+					 %else %if %index(&&strata&s.,covar) > 0 %then %do;
+					   if &&strata&s. = 1 then sortorder&s. = 1;
+					   else if &&strata&s. = 0 then sortorder&s. = 2;
+                     %end;
+					 %else %do;
+					   sortorder&s. = 1;
+					 %end;
+				   %end;
+                 run;
+			    
+	          %end;
 
 			  %output_datasets(dataset=&outfile., outlib=msocdata);
+			  
+			  /* If stratification by zip3 is requested, add state values */
+              %if &stratification. = Y %then %do;
+			    %if %index(&allstrata.,zip3) %then %do;
+                  %addstatetozip3(data = &outfile.); 
+				%end;
+		      %end;
 
         %mend agg_report;
 
 	    %if %str("&reporttype") = %str("T1") %then %do;
 			%if %index(&datasetlist.,t1cida) > 0 %then %do;
-			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group); 
+			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group, stratification = Y); 
 			%end;
 			%if %index(&datasetlist.,t1censor) > 0 %then %do;
 			  %agg_report(infile=censor_cida, outfile=agg_t1censor, name=group); 
@@ -128,7 +224,7 @@
 
 	    %if %str("&reporttype") = %str("T2L1") %then %do;
 			%if %index(&datasetlist.,t2cida) > 0 %then %do;
-			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group);
+			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group, stratification = Y);
 			%end;
 			%if %index(&datasetlist.,t2censor) > 0 %then %do;
 			  %agg_report(infile=censor_cida, outfile=agg_t2censor, name=group); 
@@ -137,7 +233,7 @@
 			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
-			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp); 
+			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y); 
 			%end;
 			%if %index(&datasetlist.,t2multevent) > 0 %then %do;
 			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp); 

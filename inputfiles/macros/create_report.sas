@@ -87,9 +87,27 @@
 
     %if ^%index(&reporttype,TREE) %then %do;
 ***************************************************************************************************;
+*   Calculate summary tables                                             
+***************************************************************************************************;
+    %if %eval(&tdatasetlistnum. > 0) %then %do;
+	   %do td = 1 %to &tdatasetlistnum.; 
+	      %let reporttable = %scan(&tdatasetlist, &td.);
+		  
+          /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
+          %if &reporttable. = t1cida | &reporttable. = t2cida %then %do;
+            %t1t2conc_createdata(table = &reporttable., grpvar = group);
+          %end;
+		  
+          /* Concomitant episodes tables */
+          %if &reporttable. = t2conc %then %do;
+            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
+          %end;
+	   %end;
+    %end;
+
+***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
-
     /*loop l2 processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 			%l2_effect_estimate_driver();
@@ -100,7 +118,6 @@
             %l2_forestplot_createdata;
         %end;
     %end;
-	
 
 ***************************************************************************************************;
 *   Compute code distribution tables                                                     
@@ -113,7 +130,7 @@
 *   Compile table of contents                                            
 ***************************************************************************************************;
 
-      %create_tableofcontents();
+    %create_tableofcontents();
 
 ***************************************************************************************************;
 *   Create appendices                                           

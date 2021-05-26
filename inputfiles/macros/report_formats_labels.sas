@@ -30,7 +30,9 @@
 *   -matchsort
 *   -timefmt
 *   -timesort
-*
+*   -hhs_regfmt
+*   -cb_regfmt
+*   -mn_name
 *
 *
 *  PARAMETERS:                                                                       
@@ -188,7 +190,67 @@
         "Y"   = 1
         "N"   = 2
         "U"   = 3;
+		
+		/*Zip_uncertain Format*/
+        value $zip_uncertainfmt
+        "Y"   = "Yes"
+        "N"   = "No";
 
+        value $zip_uncertainsort
+        "Y"  = 1
+        "N"  = 2
+		""   = 3;
+		
+		value $hhs_regfmt 
+        '01'='HHS Region (01)'
+        '02'='HHS Region (02)'
+        '03'='HHS Region (03)'
+        '04'='HHS Region (04)'
+        '05'='HHS Region (05)'
+        '06'='HHS Region (06)'
+        '07'='HHS Region (07)'
+        '08'='HHS Region (08)'
+        '09'='HHS Region (09)'
+        '10'='HHS Region (10)'
+        '11'='HHS Region (11)'
+        'Invalid'='HHS Region (Invalid)'
+        'Missing'='HHS Region (Missing)'
+        'Other'='HHS Region (Other)';
+		
+		value $hhs_regsort 
+        '01'=1
+        '02'=2
+        '03'=3
+        '04'=4
+        '05'=5
+        '06'=6
+        '07'=7
+        '08'=8
+        '09'=9
+        '10'=10
+        '11'=11
+        'Invalid'=12
+        'Missing'=13
+        'Other'=14;
+
+        value $cb_regfmt
+        'MW' = 'Midwest'
+        'NE' = 'Northeast'
+        'S' = 'South'
+        'W' = 'West'
+        'Invalid' = 'CB Region (Invalid)'
+        'Missing' = 'CB Region (Missing)'
+        'Other' = 'CB Region (Other)';
+         
+		value $cb_regsort
+        'MW' = 1
+        'NE' = 2
+        'S' = 3
+        'W' = 4
+        'Invalid' = 5
+        'Missing' = 6
+        'Other' = 7;
+		
         /* Delivery Status format */
         value $deliveryfmt
         "PRE" = "Pre-Term (0-258 days)"
@@ -263,14 +325,27 @@
         .='N/A'
         .z='.'
         other=[8.3];
+		
+        value mn_name 
+           1='January'
+           2='February'
+           3='March'
+           4='April'
+           5='May'
+           6='June'
+           7='July'
+           8='August'
+           9='September'
+          10='October'
+          11='November'
+          12='December'
+       other='';
     run;
 
 
 /***************************************************************************************************
 *  Create stacked dataset containing covariate labels for all runs                                              
 ***************************************************************************************************/
-
-    %let MAXLEN_STUDYNAME = 0;
     /*loop through each runID, create datasets &runid._covarname*/
     %do r = 1 %to %eval(&numrunid.);
         %let runid = %scan(&runidlist., &r.);

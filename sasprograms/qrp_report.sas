@@ -158,6 +158,7 @@ ods path(prepend) work.templat(update);
 
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
+%include "&reportroot.inputfiles/macros/addstatetozip3.sas";
 
 /*report template*/
 %include "&reportroot.inputfiles/macros/report_template.sas";
@@ -193,6 +194,9 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_output.sas";
 
+/*Table creation macros*/
+%include "&reportroot.inputfiles/macros/t1t2conc_createdata.sas";
+
 /*Code distribution macros*/
 %include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
 %include "&reportroot.inputfiles/macros/codedistribution_output.sas"; 
@@ -202,6 +206,8 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_psdistribution_createdata.sas";
 %include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
+
+
 
 /*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
