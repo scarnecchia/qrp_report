@@ -70,14 +70,14 @@
    		%if &milnobs > 0 %then %do;
    		or a.group = b.groupname and a.runid = b.runid
    		%end;
-   		left join 
-   		master_typefile d
-   		on a.group = d.group and a.runid = d.runid
    		%if &t2addonnobs > 0 %then %do;
    		or (a.group = b.primary) or (a.group = b.secondary) and a.runid = b.runid
    		%end;
+   		left join 
+   		master_typefile d
+   		on a.group = d.group and a.runid = d.runid
    		%if &milnobs > 0 %then %do;
-   		or a.group = b.groupname and a.runid = b.runid
+   		or d.group = b.groupname and d.runid = b.runid
    		%end;
    		;
 
