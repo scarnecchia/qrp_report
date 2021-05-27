@@ -1163,7 +1163,7 @@
 
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;
-            proc sort data=covarname(where=(runid="&runid.")) sortseq=linguistic (numeric_collation=on);
+            proc sort data=covarname sortseq=linguistic (numeric_collation=on);
                 by studyname;
             run;
             %end;
