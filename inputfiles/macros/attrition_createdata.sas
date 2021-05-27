@@ -185,6 +185,7 @@
 	  	if report_descr = 'Total number of claims with cohort-identifying codes during the query period' then 
 	  	   report_descr = 'Total number of live birth deliveries during the query period';
 	  	%end;
+	  	if int(level) ^= level then level = int(level)+0.1;
 	  run;
 
 	  proc sort data = all_attrition_agg; 
@@ -237,12 +238,12 @@
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
 	  proc sort data = all_attrition_agg out=agg_patient_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
-	  	by level group ;
+	  	by level report_descr group;
 	  run;
 	  %end;
 
 	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
-	  	by level group;
+	  	by level report_descr group;
 	  run;
 
 

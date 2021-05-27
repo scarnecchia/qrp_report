@@ -64,7 +64,7 @@
 				define dummyvar / computed noprint;
 
                 compute report_descr;
-                 if find(report_descr,'evidence of','i') then call define (_col_,"style","style=[pretext='     ' asis=on]");
+                 if find(report_descr,'evidence of','i') then call define (_col_,"style","style=[pretext='     ' asis=on fontstyle=italic]");
                 endcomp;
 
                 compute dummyvar;
