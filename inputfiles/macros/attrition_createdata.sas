@@ -67,6 +67,9 @@
    		inner join 
    		attrition_groups b
    		on a.group = b.group and a.runid = b.runid
+   		%if &milnobs > 0 %then %do;
+   		or a.group = b.groupname and a.runid = b.runid
+   		%end;
    		left join 
    		master_typefile d
    		on a.group = d.group and a.runid = d.runid
@@ -210,7 +213,7 @@
 	  	output;
 	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
-	  		report_descr = "Number of Pregnancy episodes";
+	  		report_descr = "Number of pregnancy episodes";
 	  		%end;
 	  		%else %do;
 	  		report_descr = "Number of episodes";
