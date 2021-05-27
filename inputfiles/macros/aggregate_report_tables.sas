@@ -81,6 +81,8 @@
     	 		%do n = 1 %to &numrunid.;
     		    %let runid = %scan(&runidlist, &n); 
 
+    		    	%global grouplist_&n;
+
     		    	/* unmask where clause */
     		    	%let where&n = %unquote(&where);
 
@@ -88,9 +90,7 @@
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
-    			    /* Create dummy grouplist macro variable for attrition table to avoid warning */
-    			   	%if &infile = attrition %then %let grouplist_1 = attrition;
-				   	%if %length(&&grouplist_&n..) > 0 %then %do;    			   
+				   	%if %length(&&grouplist_&n..) > 0 | &infile = attrition %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
