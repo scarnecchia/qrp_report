@@ -46,25 +46,58 @@
 		%end;
 		style data/
 		  backgroundcolor = white
+		  cellpadding =1.75pt
 		  color = black
 		  fontfamily = "&font."
 		  fontsize = &fontsize.
-     	  bordertopcolor=black 
-          borderbottomcolor=black
-		  borderstyle = solid
-     	  borderwidth = 1pt
-		  cellpadding =1.75pt
+		  borderstyle = hidden
+		  frame = void
 		  just = C
 		  ;
+		style header /
+          color = black
+     	  foreground = black
+		  bordertopcolor = black
+          borderbottomcolor = black
+		  borderleftcolor = white
+		  borderrightcolor = white
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = white
+     	  just = C 
+		  frame = hsides
+     	  ;
+		style linecontent/
+          backgroundcolor = white
+     	  color = black
+     	  fontfamily = "&font."
+     	  fontsize = &fontsize.
+		  bordertopcolor = black
+          borderbottomcolor = black
+		  borderleftcolor = white
+		  borderrightcolor = white
+     	  borderstyle = solid
+		  borderwidth = 1pt
+     	  cellpadding =1.75pt
+  	      just = L
+		  frame = hsides
+     	  ;
         style body/
           backgroundcolor = white
-     	  frame = void
+		  borderstyle = hidden
+		  borderwidth = 1pt
+		  fontfamily = "&font."
+		  fontsize = &fontsize.
+		  frame = void
      	  ;
   	     style title /
           color = black
-     	  foreground=black
-          bordertopcolor=black 
-          borderbottomcolor=black
+     	  foreground = black
+          borderbottomcolor = black
      	  borderstyle = solid
      	  borderwidth = 1pt
      	  fontfamily = "&font."
@@ -72,23 +105,8 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = hsides
      	  just = L 
-     	  ;
-        style header /
-          color = black
-     	  foreground=black
-          bordertopcolor=black 
-          borderbottomcolor=black
-     	  borderstyle = solid
-     	  borderwidth = 1pt
-     	  fontfamily = "&font."
-     	  fontweight = bold
-     	  fontsize = &fontsize.
-     	  cellpadding =1.75pt
-          backgroundcolor = white
-     	  frame = hsides
-     	  just = C 
+		  frame = void
      	  ;
      	style footer /
           color = black
@@ -97,8 +115,10 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = void
+		  bordertopcolor = black
+		  borderwidth = 2pt
      	  just = L 
+		  frame = void
      	  ;
         style subheader/
           color = black
@@ -107,12 +127,11 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = ligr
-     	  bordertopcolor=black 
-          borderbottomcolor=black
+          borderbottomcolor = black
      	  borderstyle = solid
      	  borderwidth = 1pt
-     	  frame = hsides
      	  just = L
+		  frame = void
      	  ;
 		style systemtitle/
           backgroundcolor = white
@@ -121,21 +140,8 @@
      	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
-     	  ;
-		style linecontent/
-          backgroundcolor = white
-     	  color = black
-     	  fontfamily = "&font."
-     	  fontsize = &fontsize.
-     	  bordertopcolor=black 
-          borderbottomcolor=black
-     	  borderstyle = solid
-     	  borderwidth = 1pt
-     	  cellpadding =1.75pt
-     	  frame = hsides
-  	      just = L
+		  frame = void
      	  ;
 		style paragraph/
           backgroundcolor = white
@@ -143,8 +149,8 @@
      	  fontfamily = "&font."
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
+		  frame = void
      	  ;
 		style note/
           backgroundcolor = white
@@ -153,8 +159,8 @@
      	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
+		  frame = void
      	  ;
         end;
     run;
