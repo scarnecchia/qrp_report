@@ -92,12 +92,7 @@
                     num=100;
                 end;
                 else if report_descr = 'Total number of claims with cohort-identifying codes during the query period' then do; 
-														   
-																		  
-						 
-							  
                     text='Cohort episodes with a valid index date'; 
-						 
                     num=100;
                 end;
 				%if %index(&reporttype,T4L1) %then %do;
