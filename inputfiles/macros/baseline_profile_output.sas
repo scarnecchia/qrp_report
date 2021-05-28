@@ -116,6 +116,13 @@
                 ;
             quit;
             %end;
+            %else %do;
+            data _temp_agg_profile;
+                set _temp_agg_profile;
+                grouplabel2='';
+                switchlabel='';
+            run;
+            %end;
 
             data final_agg_profile_&wherenum._&periodid.(drop=covarsort);
                 set _temp_agg_profile;

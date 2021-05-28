@@ -176,16 +176,16 @@
      run;
 
     /* Combine input files to identify all runids requested */
-	 data _inputfiles;
+	 data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
-	       input.&groupsfile. (keep = runid)
+	       input.&groupsfile. (keep = runid group)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
 		   input.&l2comparisonfile. (keep = runid)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid)
+		   input.&baselinefile. (keep = runid group)
 		 %end;
 		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
 		   input.&itsregressionfile. (keep = runid)
@@ -198,19 +198,19 @@
      proc sql noprint;
         select count(distinct runid) 
 	    into: numrunid
-        from _inputfiles;
+        from inputfiles;
         
 		%let numrunid = &numrunid.;
 
 		select distinct lowcase(runid)
 	    into: runidlist separated by ' '
-        from _inputfiles;
+        from inputfiles;
 
 		select distinct b._name_
 		      ,a.runid
 	    into: run1 -:run&numrunid. 
 		     ,:id1 - :id&numrunid.
-        from _inputfiles as a
+        from inputfiles as a
         left join _qrp_parameters_trans as b
            on a.runid = b.col1;
      quit;
@@ -366,6 +366,137 @@
             end;
         %end;
 	 run;
+
+/***************************************************************************************************
+*   Create a combined inclusion codes file for all runs                                        
+***************************************************************************************************/
+
+    data inclusioncodes_shell;
+        length runid $5 group $40 condlevel $30;
+        call missing(runid, group, condlevel);
+        stop;
+    run;
+
+    data master_inclusioncodes;
+        set 
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        infolder.&&&runid._inclusioncodes(in=n&n)
+        %end;
+        %else %do;
+        inclusioncodes_shell
+        %end;
+        %end;
+        ;
+        format runid $5.;
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        if n&n. then do;
+        runid = "&&id&n.";
+        end;
+        %end;
+        %end;
+    run;
+
+/***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+    %if ^%index(&reporttype,TREE) %then %do;
+     %let typenum = %substr(&reporttype,2,1);
+
+     data master_typefile;
+     set %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            infolder.&&&runid._type&typenum.file(in=n&n.)
+        %end;
+     ;
+     format runid $5.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+        %end;
+     run;
+
+/***************************************************************************************************
+*   Create a stacked t2 add-on file for all runs                                        
+***************************************************************************************************/
+
+    %if %index(&reporttype., T2L1) %then %do;
+    data _t2_addonshell;
+        length runid $5 group primary secondary $40;
+        call missing(runid, group, primary, secondary);
+        stop;
+    run;
+
+    data master_t2addon(keep=runid group primary secondary);
+    set %do n = 1 %to &numrunid.;
+        %let runid=&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._multeventfile)) %then %do;
+        infolder.&&&runid._multeventfile(in=n&n.)
+        %end;
+        %else %if %sysfunc(exist(infolder.&&&runid._overlapfile)) %then %do;
+        infolder.&&&runid._overlapfile(in=n&n.)
+        %end;
+        %else %if %sysfunc(exist(infolder.&&&runid._concfile)) %then %do;
+        infolder.&&&runid._concfile(in=n&n.)
+        %end;
+        %else %do;
+        _t2_addonshell
+        %end;
+        %end;
+     ;
+     format runid $5.;
+        %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._multeventfile)) or 
+                %sysfunc(exist(infolder.&&&runid._overlapfile)) or
+                %sysfunc(exist(infolder.&&&runid._concfile)) %then %do; 
+            if n&n. then do;
+            group=lowcase(analysisgrp);
+            runid = "&&id&n.";
+            end;
+            %end;
+        %end;
+     run;
+    %end;
+
+    %if %index(&reporttype.,T4) %then %do;
+    data _mil_shell;
+        length runid $5 group groupname $40;
+        call missing(runid, group, groupname);
+        stop;
+    run;
+
+   data master_mil(keep=runid group groupname);
+        set %do n = 1 %to &numrunid.;
+        %let runid=&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+        infolder.&&&runid._micohortfile(in=n&n.)
+        %end;
+        %else %do;
+        _mil_shell
+        %end;
+        %end;
+        ;
+        format runid $5.;
+        %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+            if n&n. then do;
+            group=lowcase(milgrp);
+            runid = "&&id&n.";
+            end;
+            %end;
+        %end;
+    run;
+    %end;
+    %end;
+
+
 
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               
@@ -956,9 +1087,9 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles covarnum truncweight 8 unconditional $1.;
+                   caliper ceiling percentiles covarnum truncweight pstrim 8 unconditional $1.;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, truncweight, ceiling, caliper, ratio, strataweight,
-                   ipweight, percentiles, unconditional);
+                   ipweight, percentiles, unconditional, pstrim);
             stop;
         run;
         data psest_masterinputs;
@@ -1005,7 +1136,7 @@
                 psestimategrp = lowcase(psestimategrp);
                 if missing(covarnum) then covarnum = 0;
                 keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional;
+                     ipweight percentiles eoi ref unconditional pstrim;
             run;
 
 			data psest_masterinputs;

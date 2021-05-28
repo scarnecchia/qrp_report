@@ -76,7 +76,7 @@
 
     /* loop through looks */
     %do n = 1 %to &look_end;
-    %global enddate&n.formatted maxyear&n.;
+    %global enddate&n.formatted maxyear&n. datadrivenperiod;
 
     proc sql noprint;
         select min(startdate) into: minstartdate
@@ -85,6 +85,9 @@
         select max(fupenddate) into: maxfupenddate
         from _monitoring
         where missing(fupenddate)=0 and periodid=&n;
+
+        select upper(indendoptions) into :datadrivenperiod trimmed
+        from _monitoring;
     quit;
 
     /*Assign final formatted dates*/
