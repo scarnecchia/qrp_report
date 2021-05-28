@@ -33,6 +33,7 @@
 *   -hhs_regfmt
 *   -cb_regfmt
 *   -mn_name
+*   -nafmt
 *
 *
 *  PARAMETERS:                                                                       
@@ -325,7 +326,11 @@
         .='N/A'
         .z='.'
         other=[8.3];
-		
+
+        value $nafmt
+        ' ' = 'N/A'
+        other=[$50.];
+
         value mn_name 
            1='January'
            2='February'

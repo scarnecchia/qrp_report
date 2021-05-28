@@ -353,6 +353,13 @@
                 ;
             quit;
             %end;
+            %else %do;
+            data  _temp_agg_profile;
+            set _temp_agg_profile;
+            grouplabel2='';
+            switchlabel='';
+            run;
+            %end;
                 
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order
@@ -432,11 +439,12 @@
         delete _temp_agg_profile _temp_agg_order_profile;
         quit;
 
-        %end; /* where loop */
+    %end; /* where loop */
 
-        %end; /* periodid loop */
-
-        %end; /* &numprofilecovarstoinclude > 0 */
+    %end; /* periodid loop */
+	
+    %let tablenum = %eval(&tablenum + 1);
+    %end; /* &numprofilecovarstoinclude > 0 */
 
   /*************************/
   /* Effect estimate table */
@@ -601,7 +609,42 @@
 		%end;
 				
 	%end; *numgroupscodedist;
+	%let tablenum = %eval(&tablenum + 1);
   %end;
+  
+
+    /*****************/
+    /* Attrition     */
+    /*****************/
+    %isdata(dataset=agg_patient_attrition);
+    %let attrition_patient = &nobs;
+    %isdata(dataset=agg_episode_attrition);
+    %let attrition_episode = &nobs;
+	
+    /* reset counter to reset table letter */
+    %let tablecount=1;
+	
+    %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
+
+		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
+			%let tablecount = 0;
+		%end;
+
+		%if &attrition_episode > 0 %then %do;
+			%tableletter();
+			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
+		%end; 
+
+		%if &attrition_patient > 0 %then %do;
+			%tableletter();	
+			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
+		%end;
+	
+        %let tablenum = %eval(&tablenum + 1);
+
+    %end; /* attrition_groups file */
 
 
   /*********************************************************************************************/

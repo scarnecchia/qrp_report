@@ -45,6 +45,8 @@
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
 *
+*			-[RUNID]_attrition.sas7bdat
+*
 *  Program inputs:                                                                                   
 *  	-
 * 
@@ -67,7 +69,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name= , stratification = N);
+        %macro agg_report(infile=, outfile=, name= , stratification = N, where=);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -79,15 +81,20 @@
     	 		%do n = 1 %to &numrunid.;
     		    %let runid = %scan(&runidlist, &n); 
 
+    		    	%global grouplist_&n;
+
+    		    	/* unmask where clause */
+    		    	%let where&n = %unquote(&where);
+
     			   %if %sysfunc(exist(&dpidsiteid..&&runid._&infile))=0 %then %do;
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
-				   	%if %length(&&grouplist_&n..) > 0 %then %do;    			   
+				   	%if %length(&&grouplist_&n..) > 0 | &infile = attrition %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
-    					  where lowcase(&name.) in (&&grouplist_&n..); 
+    					  where &&where&n; 
     					  &name.=lowcase(&name.);
     					  dpidsiteid = "&maskedID";
     					  runid= "&runid.";
@@ -215,41 +222,41 @@
 
 	    %if %str("&reporttype") = %str("T1") %then %do;
 			%if %index(&datasetlist.,t1cida) > 0 %then %do;
-			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group, stratification = Y); 
+			  %agg_report(infile=t1_cida, outfile=agg_t1cida, name=group, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t1censor) > 0 %then %do;
-			  %agg_report(infile=censor_cida, outfile=agg_t1censor, name=group); 
+			  %agg_report(infile=censor_cida, outfile=agg_t1censor, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 		%end; *T1;
 
 	    %if %str("&reporttype") = %str("T2L1") %then %do;
 			%if %index(&datasetlist.,t2cida) > 0 %then %do;
-			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group, stratification = Y);
+			  %agg_report(infile=t2_cida, outfile=agg_t2cida, name=group, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t2censor) > 0 %then %do;
-			  %agg_report(infile=censor_cida, outfile=agg_t2censor, name=group); 
+			  %agg_report(infile=censor_cida, outfile=agg_t2censor, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2followuptime) > 0 %then %do;
-			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group); 
+			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
-			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y); 
+			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2multevent) > 0 %then %do;
-			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp); 
+			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2epigap) > 0 %then %do;
-			  %agg_report(infile=t2_epigap, outfile=agg_t2epigap, name=analysisgrp); 
+			  %agg_report(infile=t2_epigap, outfile=agg_t2epigap, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2overlap) > 0 %then %do;
-			  %agg_report(infile=t2_overlap, outfile=agg_t2overlap, name=analysisgrp); 
+			  %agg_report(infile=t2_overlap, outfile=agg_t2overlap, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
 			%end;
 		%end; *T2L1;
 
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 		%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
 			%if %index(&figurelist,F1) > 0 %then %do;
-			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp);
+			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
 		%if %sysfunc(exist(input.&treeaggfile.)) %then %do;
@@ -259,81 +266,85 @@
           %else %do;
              %let type = %substr(&reporttype.,2,1);
           %end;
-		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp);
+		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %if %str("&reporttype") = %str("TREE3") %then %do;
-		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp);
+		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end; /*TREE3*/
 		%end; /*TREEAGGFILE exists*/
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
 			%if %index(&datasetlist.,t4preg) > 0 %then %do;
-			  %agg_report(infile=t4_cida_preg, outfile=agg_t4preg, name=group); 
+			  %agg_report(infile=t4_cida_preg, outfile=agg_t4preg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t4preggestwk) > 0 %then %do;
-			  %agg_report(infile=t4_cida_preg_gestwk, outfile=agg_t4preggestwk, name=group); 
+			  %agg_report(infile=t4_cida_preg_gestwk, outfile=agg_t4preggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group);
+			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t4nopreggestwk) > 0 %then %do;
-			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group); 
+			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;			
 		%end; *T4L1;
 
 	    %if %str("&reporttype") = %str("T5") %then %do;
 			%if %index(&datasetlist.,t5episdur) > 0 %then %do;
-				%agg_report(infile=t5_cida_episdur, outfile=agg_t5episdur, name=group);
+				%agg_report(infile=t5_cida_episdur, outfile=agg_t5episdur, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t5censor) > 0 %then %do;
-			  %agg_report(infile=t5_cida_episdur_censor, outfile=agg_t5censor, name=group);
+			  %agg_report(infile=t5_cida_episdur_censor, outfile=agg_t5censor, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t5disp) > 0 %then %do;
-			  %agg_report(infile=t5_cida_disp_by_daysupp, outfile=agg_t5disp, name=group);
+			  %agg_report(infile=t5_cida_disp_by_daysupp, outfile=agg_t5disp, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t5gaps) > 0 %then %do;
-			  %agg_report(infile=t5_cida_gaps, outfile=agg_t5gaps, name=group);
+			  %agg_report(infile=t5_cida_gaps, outfile=agg_t5gaps, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t5first) > 0 %then %do;
-			  %agg_report(infile=t5_cida_firsteps, outfile=agg_t5first, name=group);
+			  %agg_report(infile=t5_cida_firsteps, outfile=agg_t5first, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 		%end; *T5;
 
 	    %if %str("&reporttype") = %str("T6") %then %do;
 			%if %index(&datasetlist.,t6counts) > 0 %then %do;
-			  %agg_report(infile=t6_utilcounts, outfile=agg_t6counts, name=group);
+			  %agg_report(infile=t6_utilcounts, outfile=agg_t6counts, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6trend) > 0 %then %do;
-			  %agg_report(infile=t6_trendcounts, outfile=agg_t6trend, name=group);
+			  %agg_report(infile=t6_trendcounts, outfile=agg_t6trend, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6disp) > 0 %then %do;
-			  %agg_report(infile=t6_utildispstats, outfile=agg_t6disp, name=group);
+			  %agg_report(infile=t6_utildispstats, outfile=agg_t6disp, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		    %end;
 			%if %index(&datasetlist.,t6episdur) > 0 %then %do;
-			  %agg_report(infile=t6_utilepisdurstats, outfile=agg_t6episdur, name=group);
+			  %agg_report(infile=t6_utilepisdurstats, outfile=agg_t6episdur, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6uptake) > 0 %then %do;
-			   %agg_report(infile=t6_utiluptakestats, outfile=agg_t6uptake, name=group);
+			   %agg_report(infile=t6_utiluptakestats, outfile=agg_t6uptake, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6censor) > 0 %then %do;
-			  %agg_report(infile=t6_utilepis_censor, outfile=agg_t6censor, name=group);
+			  %agg_report(infile=t6_utilepis_censor, outfile=agg_t6censor, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6switchepisdur) > 0 %then %do;
-			   %agg_report(infile=t6_switchepisdurstats, outfile=agg_t6switchepisdur, name=analysisgrp);
+			   %agg_report(infile=t6_switchepisdurstats, outfile=agg_t6switchepisdur, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6plota) > 0 %then %do;
-			  %agg_report(infile=t6_switchplota, outfile=agg_t6plota, name=analysisgrp);
+			  %agg_report(infile=t6_switchplota, outfile=agg_t6plota, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t6plotb) > 0 %then %do;
-			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp);
+			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T6;
 
 		/* Code distribution */
 		%if &output_code_distribution. eq Y %then %do;
-			%agg_report(infile=distindex, outfile=agg_distindex, name=group);
-			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group);
+			%agg_report(infile=distindex, outfile=agg_distindex, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
+			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end;
+
+		/* Attrition table */
+		%agg_report(infile=attrition, outfile=agg_attrition, name=group, where=1);
+
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;
