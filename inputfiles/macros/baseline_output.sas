@@ -155,7 +155,7 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-		
+		   
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
@@ -309,15 +309,15 @@
         	%end;
 
             /*Add title*/
-            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b
-                                           bordertopcolor = white borderbottomwidth = 2pt tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
+			                              %if &destination. = excel %then %do; borderbottomwidth = 6pt %end;
+										  %else %do; borderbottomwidth = 2pt %end; tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L nobreakspace=off borderbottomcolor = white bordertopcolor = black bordertopwidth = 2pt
-			                       fontsize = %eval(%sysfunc(compress(&fontsize.,pt))-1)pt
-			                       %if &gestationalage. = Y %then %do; height=1.75in %end;
-			                       %else %if %length(&super_max_cell_width.) > 0 %then %do; height=1.25in %end;];
+			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
+			                        height=1.75in %if &destination. = excel %then %do; bordertopwidth = 6pt %end;
+										          %else %do; bordertopwidth = 2pt %end;];
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
