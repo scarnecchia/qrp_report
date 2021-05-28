@@ -204,59 +204,59 @@
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
-            style(header)=[rules=none frame=void vjust=b] split='*'
+            style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
             column (metvar grouper label
-                    %if &computebalance. = Y %then %do; ("^S={background=white}&cohortheaderlabel." %end;
-                    ("^S={background=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    %if &computebalance. = Y %then %do; ("^S={background=BGR}&cohortheaderlabel." %end;
+                    ("^S={background=BGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=white}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=BGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=white}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=BGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 					
 						%if %index(&reporttype,L2) %then %do;
-							('^S={background=white}Covariate Balance' '^S={background=white}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=BGR}Covariate Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
 						%else %do;
-							('^S={background=white}Characteristic Balance' '^S={background=white}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=BGR}Characteristic Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
                     %end; );
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
-                           style(header)=[background = grey just=L cellheight=&headerheight.in]; 
+                           style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
-                            style(header)=[background = grey borderleftcolor = grey cellheight=&headerheight.in]; 
+                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
             define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background = grey borderleftcolor = grey cellheight=&headerheight.in]; 
+                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
             define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=grey borderleftcolor = grey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines*/
-            compute before grouper / style=[background=ligr color=black just=L font_weight=bold];
+            compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
                 text=grouper;
