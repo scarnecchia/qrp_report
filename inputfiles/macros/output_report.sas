@@ -31,7 +31,7 @@
 *
 ***************************************************************************************************;
 
-%macro output_report(destination = , font=, fontsize=, footfontsize=);
+%macro output_report(destination = , font=, fontsize=, footfontsize=, bordersize=);
 
     %put =====> MACRO CALLED: output_report;
 

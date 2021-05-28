@@ -310,14 +310,12 @@
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
-			                              %if &destination. = excel %then %do; borderbottomwidth = 6pt %end;
-										  %else %do; borderbottomwidth = 2pt %end; tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+			                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
-			                        height=1.75in %if &destination. = excel %then %do; bordertopwidth = 6pt %end;
-										          %else %do; bordertopwidth = 2pt %end;];
+			                        height=1.75in bordertopwidth = &bordersize];
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;

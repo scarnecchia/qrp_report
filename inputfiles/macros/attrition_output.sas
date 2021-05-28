@@ -41,9 +41,7 @@
 
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal");
-        %let bordersize=6pt;
         %end;
-        %if &destination = pdf %then %let bordersize=2pt;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
                 style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr] split='*'
