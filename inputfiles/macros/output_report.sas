@@ -20,6 +20,7 @@
 *   - font: font
 *   - fontsize = font size
 *   - footfontsize  = font size for footnotes, typically set as 1 pt smaller than fontsize
+*   - bordersize = line thickness for top/bottom report lines
 *            
 *  Programming Notes:                                                                                
 *                                                                           
