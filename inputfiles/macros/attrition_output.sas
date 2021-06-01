@@ -44,7 +44,7 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-                style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr] split='*'
+                style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=bgr] split='*'
                 style(report)=[rules=none frame=void cellpadding=1.75pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[just=L] 
