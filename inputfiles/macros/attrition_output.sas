@@ -44,22 +44,22 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b borderbottomcolor=darkgrey bordertopcolor=darkgrey background=darkgrey] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.75pt];
+                style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=bgr] split='*'
+                style(report)=[rules=none frame=void cellpadding=1.75pt];
                 column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
                 define report_descr / group order=data ' ' style(column)=[just=L] 
-                                                           style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=darkgrey];
-                define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=darkgrey borderrightcolor=black 
+                                                           style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
+                define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                       borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
-                define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=darkgrey borderrightcolor=black 
+                define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                       borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
                 define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-                                                                style(header)=[background = darkgrey borderleftcolor=black borderleftwidth=1 borderrightcolor=darkgrey borderbottomcolor=black] format=$nafmt.;
+                                                                style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
 
                 define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                              style(header)=[background = darkgrey borderleftcolor=darkgrey borderrightcolor=black borderrightwidth=1 borderbottomcolor=black] format=$nafmt.;
+                                                              style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 				
 				define dummyvar / computed noprint;
 
@@ -73,11 +73,16 @@
 
                 /*Add title*/
                 compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                               tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+                                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
                 line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
                 endcomp;
 
-                compute before report_descr / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                /*Add thick line to bottom of report*/
+                compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+                line ' ';
+                endcomp;
+
+                compute before report_descr / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black];
 
                 length text $100;
             

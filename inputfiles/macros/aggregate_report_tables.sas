@@ -81,6 +81,7 @@
     	 		%do n = 1 %to &numrunid.;
     		    %let runid = %scan(&runidlist, &n); 
 
+    		    	/* Globalize grouplist macro variables so they exist if attrition table is requested and groups only in baseline file*/
     		    	%global grouplist_&n;
 
     		    	/* unmask where clause */

@@ -20,6 +20,7 @@
 *   - font: font
 *   - fontsize = font size
 *   - footfontsize  = font size for footnotes, typically set as 1 pt smaller than fontsize
+*   - bordersize = line thickness for top/bottom report lines
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -31,7 +32,7 @@
 *
 ***************************************************************************************************;
 
-%macro output_report(destination = , font=, fontsize=, footfontsize=);
+%macro output_report(destination = , font=, fontsize=, footfontsize=, bordersize=);
 
     %put =====> MACRO CALLED: output_report;
 
@@ -51,7 +52,6 @@
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
-            frozen_headers = "yes"
             embedded_footnotes= "yes" 
             flow="tables");
     %end;
@@ -89,9 +89,9 @@
 ***************************************************************************************************;
 * Baseline tables                                                      
 ***************************************************************************************************;
-
+	
     %baseline_output();
-
+	
 ***************************************************************************************************;
 * Covariate profile tables                                                      
 ***************************************************************************************************;

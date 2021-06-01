@@ -154,18 +154,18 @@
     %if "&report_destination." = "BOTH" | "&report_destination." = "EXCEL"  %then %do;
         /*windows: report font = Calibri, font size = 10, footnote fontsize = 9*/
         %if %str("&sysscp.") = %str("WIN") %then %do;
-        %output_report(destination = excel,font=calibri, fontsize=10pt, footfontsize=9pt);
+        %output_report(destination = excel,font=calibri, fontsize=10pt, footfontsize=9pt, bordersize=6pt);
         %end;
         /*non-windows: report font = arial, font size = 9, footnote fontsize = 8*/
         %else %do;
-        %output_report(destination = excel,font=arial, fontsize=9pt, footfontsize=8pt);
+        %output_report(destination = excel,font=arial, fontsize=9pt, footfontsize=8pt, bordersize=6pt);
         %end;
     %end;
 
     /*PDF*/
     %if "&report_destination." = "BOTH" | "&report_destination." = "PDF"  %then %do;
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
-        %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt);
+        %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt, bordersize=2pt);
     %end;
 
     %end;

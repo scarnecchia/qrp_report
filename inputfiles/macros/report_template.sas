@@ -44,28 +44,61 @@
 		%else %do;
 		  parent = styles.Pearl;
 		%end;
-        style data/
+		style data/
+		  backgroundcolor = white
+		  cellpadding =1.75pt
+		  color = black
+		  fontfamily = "&font."
+		  fontsize = &fontsize.
+		  borderstyle = hidden
+		  borderwidth = 1pt
+		  frame = void
+		  just = C
+		  ;
+		style header /
+          color = black
+     	  foreground = black
+		  bordertopcolor = black
+          borderbottomcolor = black
+		  borderleftcolor = white
+		  borderrightcolor = white
+     	  borderstyle = solid
+     	  borderwidth = 1pt
+     	  fontfamily = "&font."
+     	  fontweight = bold
+     	  fontsize = &fontsize.
+     	  cellpadding =1.75pt
+          backgroundcolor = white
+     	  just = C 
+		  frame = hsides
+     	  ;
+		style linecontent/
           backgroundcolor = white
      	  color = black
      	  fontfamily = "&font."
      	  fontsize = &fontsize.
-     	  bordercolor = ligr
+		  bordertopcolor = black
+          borderbottomcolor = black
+		  borderleftcolor = white
+		  borderrightcolor = white
      	  borderstyle = solid
-     	  borderwidth = 1pt
+		  borderwidth = 1pt
      	  cellpadding =1.75pt
-     	  frame = box
-  	      just = C
+  	      just = L
+		  frame = hsides
      	  ;
         style body/
           backgroundcolor = white
-     	  frame = void
+		  borderstyle = hidden
+		  borderwidth = 1pt
+		  fontfamily = "&font."
+		  fontsize = &fontsize.
+		  frame = void
      	  ;
   	     style title /
           color = black
-     	  foreground=black
-          bordertopcolor=black 
-          borderbottomcolor=black
-     	  bordercolor = ligr
+     	  foreground = black
+          borderbottomcolor = black
      	  borderstyle = solid
      	  borderwidth = 1pt
      	  fontfamily = "&font."
@@ -73,24 +106,8 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = box
      	  just = L 
-     	  ;
-        style header /
-          color = black
-     	  foreground=black
-          bordertopcolor=black 
-          borderbottomcolor=black
-     	  bordercolor = ligr
-     	  borderstyle = solid
-     	  borderwidth = 1pt
-     	  fontfamily = "&font."
-     	  fontweight = bold
-     	  fontsize = &fontsize.
-     	  cellpadding =1.75pt
-          backgroundcolor = white
-     	  frame = box
-     	  just = C 
+		  frame = void
      	  ;
      	style footer /
           color = black
@@ -99,8 +116,10 @@
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
           backgroundcolor = white
-     	  frame = void
+		  bordertopcolor = black
+		  borderwidth = 2pt
      	  just = L 
+		  frame = void
      	  ;
         style subheader/
           color = black
@@ -108,15 +127,12 @@
      	  fontweight = bold
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
-          backgroundcolor = ligr
-     	  frame = void
-     	  bordertopcolor=black 
-          borderbottomcolor=black
-     	  bordercolor = ligr
+          backgroundcolor = libgr
+          borderbottomcolor = black
      	  borderstyle = solid
      	  borderwidth = 1pt
-     	  frame = box
      	  just = L
+		  frame = void
      	  ;
 		style systemtitle/
           backgroundcolor = white
@@ -125,20 +141,8 @@
      	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
-     	  ;
-		style linecontent/
-          backgroundcolor = white
-     	  color = black
-     	  fontfamily = "&font."
-     	  fontsize = &fontsize.
-     	  bordercolor = ligr
-     	  borderstyle = solid
-     	  borderwidth = 1pt
-     	  cellpadding =1.75pt
-     	  frame = box
-  	      just = L
+		  frame = void
      	  ;
 		style paragraph/
           backgroundcolor = white
@@ -146,8 +150,8 @@
      	  fontfamily = "&font."
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
+		  frame = void
      	  ;
 		style note/
           backgroundcolor = white
@@ -156,8 +160,8 @@
      	  fontsize = &fontsize.
 		  fontweight = bold
      	  cellpadding =1.75pt
-     	  frame = void
   	      just = L
+		  frame = void
      	  ;
         end;
     run;

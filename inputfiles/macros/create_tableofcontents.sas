@@ -216,7 +216,7 @@
                 %if %eval(&unique_psestimate.) = 1 %then %do;
                  %tableletter(); 
                  %addtotoc(tabnum=Table 1&tableletter., 
-                 caption=%quote(&unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                 caption=%quote(&unadjusted.Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                 %end;
 
                 /*For L2 tables - up to 2 additional adjusted tables*/
@@ -225,14 +225,14 @@
                     %if &psfile. = psmatchfile %then %do;
                     %tableletter(); 
                     %addtotoc(tabnum=Table 1&tableletter., 
-                    caption=%quote(Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                    caption=%quote(Adjusted Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Unweighted - IPTW and PS Stratum*/
                     %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                     %tableletter(); 
                     %addtotoc(tabnum=Table 1&tableletter., 
-                     caption=%quote(Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                     caption=%quote(Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Weighted - IPTW, PS Stratum, PS Stratification*/
@@ -242,7 +242,7 @@
                         %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                         %tableletter(); 
                         %addtotoc(tabnum=Table 1&tableletter., 
-                        caption=%quote(Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                        caption=%quote(Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
                 %end; /*Additional L2 tables*/
             %mend;

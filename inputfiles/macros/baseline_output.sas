@@ -155,7 +155,7 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-		
+		   
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
@@ -192,7 +192,7 @@
             %let linebreak = ^n;
             %let headerheight = .45;
         %end;
-
+		
         %if %length(&pregnancylabel.)>0 %then %let cohortheaderlabel = Cohort;
         %else %let cohortheaderlabel = Medical Product;
 
@@ -204,54 +204,59 @@
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
-            style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-		    style(report)=[rules=none frame=box cellpadding =1.5pt];
+            style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
             column (metvar grouper label
-                    %if &computebalance. = Y %then %do; ("^S={background=white}&cohortheaderlabel." %end;
-                    ("^S={background=white borderleftcolor=white}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    %if &computebalance. = Y %then %do; ("^S={background=BGR}&cohortheaderlabel." %end;
+                    ("^S={background=BGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=BGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=white borderleftcolor=white}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=BGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
-                    %if &computebalance. = Y %then %do; 
-                    ('^S={background=white}Covariate Balance' '^S={background=white borderleftcolor=ligr}' ad&dpnum._char sd&dpnum._char)
+                    %if &computebalance. = Y %then %do; 					
+						%if %index(&reporttype,L2) %then %do;
+							('^S={background=BGR}Covariate Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+						%end;
+						%else %do;
+							('^S={background=BGR}Characteristic Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+						%end;
                     %end; );
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
-                           style(header)=[background = lightgrey just=L borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
+                           style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
-                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
+                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
             define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background = lightgrey borderleftcolor=lightgrey borderrightcolor=lightgrey cellheight=&headerheight.in]; 
+                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
             define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string"]
-                            style(header)=[background=lightgrey cellheight=&headerheight.in];
+                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines*/
-            compute before grouper / style=[background=ligr color=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
                 text=grouper;
@@ -268,8 +273,8 @@
             compute label;
 			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
-			  else if label = "Mean gestational age at delivery" then label = "Mean gestational age&super_gestage. at delivery";
-			  else if label = "Mean gestational age of first exposure (weeks)" then label = "Mean gestational age&super_gestage. of first exposure (weeks)";
+			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
+			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
@@ -304,15 +309,13 @@
         	%end;
 
             /*Add title*/
-            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                           tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
+			                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
 			/* Add Footnotes */
-			compute after / style=[just=L nobreakspace=off 
-			                       %if &gestationalage. = Y %then %do; height=1.75in %end;
-			                       %else %if %length(&super_max_cell_width.) > 0 %then %do; height=1.25in %end;];
-             line '';
+			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
+			                        height=1.75in bordertopwidth = &bordersize];
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
@@ -668,7 +671,7 @@
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
-              title =%quote(Table 1&tableletter.. &unadjusted.Baseline Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+              title =%quote(Table 1&tableletter.. &unadjusted.Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
               dpnum = &dpnum.,
               numcolumns =&numcolumns.,
@@ -684,7 +687,7 @@
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-                  title =%quote(Table 1&tableletter.. Adjusted Baseline Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title =%quote(Table 1&tableletter.. Adjusted Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -698,7 +701,7 @@
                 %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-                  title=%quote(Table 1&tableletter.. Unweighted Baseline Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title=%quote(Table 1&tableletter.. Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -715,7 +718,7 @@
                     %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-                      title=%quote(Table 1&tableletter.. Weighted Baseline Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      title=%quote(Table 1&tableletter.. Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                       characteristiclabel =&characteristiclabel.,
                       dpnum = &dpnum.,
                       numcolumns =&numcolumns.,
