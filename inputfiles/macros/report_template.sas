@@ -51,6 +51,7 @@
 		  fontfamily = "&font."
 		  fontsize = &fontsize.
 		  borderstyle = hidden
+		  borderwidth = 1pt
 		  frame = void
 		  just = C
 		  ;
