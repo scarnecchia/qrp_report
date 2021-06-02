@@ -101,6 +101,8 @@
 		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met exclusion and inclusion criteria"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
 		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
+		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the minimum cumulative dose criterion"; report_descr = "Met minimum cumulative dose criterion"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the minimum cumulative dose criterion"; report_descr = "Met minimum cumulative dose criterion"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
