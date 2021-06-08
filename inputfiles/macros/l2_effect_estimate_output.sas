@@ -138,6 +138,7 @@
         %let percentile&corder. = ;
         %let weightscheme=;
         %let weightschemelong = ;
+        %let pstrim = ;
 
         %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
             data _null_; 
@@ -174,6 +175,7 @@
                 else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
                 end;
                 if missing(strataweight) then call symputx('conditional', 'Y');
+                if pstrim>. then call symputx('pstrim', ', Trimmed');
             run;
         %end;
         %if &pscsfile. = iptwfile %then %do;
@@ -183,6 +185,7 @@
                 if upcase(ipweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect");
                 else if upcase(ipweight)= 'ATES' then call symputx("weightschemelong","Average Treatment Effect, Stabilized");
                 else if upcase(ipweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
+                call symputx('pstrim', ', Trimmed');
             run;
         %end;
         %if &pscsfile. = covstratfile %then %do;
@@ -462,7 +465,7 @@
                 /*PS Stratified*/
                 %if &pscsfile. = stratificationfile and %length(&weightscheme) = 0 %then %do;
                 else if analysis = 'Conditional' then do; 
-                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&super_line."; 
+                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&pstrim.&super_line."; 
                     num=100; 
                 end;
                 %end;
@@ -471,19 +474,19 @@
                 %if %length(&weightscheme) > 0 %then %do;
                 else if analysis = 'Unweighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis; Unweighted"; 
+                    text="Inverse Probability of Treatment Weighted Analysis; Unweighted&pstrim."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Unweighted";
+                    text="Propensity Score Stratum Adjusted Analysis; Unweighted&pstrim.";
                     %end;
                     num=100; 
                 end;
                 else if analysis = 'Weighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.&super_line."; 
+                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.&pstrim.&super_line."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&super_line.";
+                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&pstrim.&super_line.";
                     %end;
                     num=100; 
                 end;
