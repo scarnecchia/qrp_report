@@ -1014,6 +1014,10 @@
                           if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
                                 ad&i._char = 'N/A';
                                 sd&i._char = 'N/A';
+                                if metvar = 'TOTAL_WEIGHTED' then do;
+                                    comp_std&i._char = 'N/A';
+                                    exp_std&i._char = 'N/A';
+                                end;
                           end;
                           else do;
 						  if exp_mean&i. = 0 or comp_mean&i = 0 or exp_mean&i. = . or comp_mean&i = . then do;
@@ -1048,6 +1052,8 @@
                     if MetVar = 'TOTAL_WEIGHTED' then do;
                         exp_std0 = .;
                         comp_std0 = .;
+                        comp_std0_char = 'N/A';
+                        exp_std0_char = 'N/A';
                         ad0 = .;
                         sd0 = .;
                         if exp_mean0 > 0 or comp_mean0 > 0 then do;
