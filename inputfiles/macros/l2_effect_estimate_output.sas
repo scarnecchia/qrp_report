@@ -175,7 +175,7 @@
                 else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
                 end;
                 if missing(strataweight) then call symputx('conditional', 'Y');
-                if pstrim>. then call symputx('pstrim', ', Trimmed');
+                if pstrim > . then call symputx('pstrim', ', Trimmed');
             run;
         %end;
         %if &pscsfile. = iptwfile %then %do;
