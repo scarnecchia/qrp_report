@@ -26,7 +26,6 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
-options mprint symbolgen;
 
 %macro l2_effect_estimate_output();
 
