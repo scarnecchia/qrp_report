@@ -487,7 +487,7 @@
                 end;
                 else if analysis = 'Weighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis &super_weight.; Weight = &weightscheme.&pstrim.&super_line."; 
+                    text="Inverse Probability of Treatment Weighted Analysis&super_weight.; Weight = &weightscheme.&pstrim.&super_line."; 
                     %end;
                     %else %do;
                     text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&pstrim.&super_line.";
