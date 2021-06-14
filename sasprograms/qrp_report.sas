@@ -3,11 +3,11 @@
 ***************************************************************************************************
 *
 * PROGRAM: qrp_report.sas
-* CREATED (mm/dd/yyyy):
-* LAST MODIFIED: 
-* VERSION: 1.0.0
+* CREATED (mm/dd/yyyy): 06/14/2021
+* LAST MODIFIED: 06/14/2021
+* VERSION: 0.1.0
 *
-* PURPOSE: Aggregate QRP outputs from data partners and produce an Excel report
+* PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
 * MAJOR STEPS:
 *
@@ -20,6 +20,17 @@
 * CONTACT INFO:
 *  Sentinel Coordinating Center
 *  info@sentinelsystem.org
+*
+*--------------------------------------------------------------------------------------------------
+*  CHANGE LOG:
+*
+*   Version   Date       Initials      Comment (reference external documentation when available)
+*   -------   --------   --------   ---------------------------------------------------------------
+*   0.1.0     06/14/21     SOC      Consolidated baseline table functionality across all query types
+*                                   Integrated Level 2 reporting features 
+*                                   Integrated mini-tools
+*                                   Added attrition table for Level 1 analyses
+*                                   Produce stacked MSOC output datasets
 *
 ***************************************************************************************************;
 
