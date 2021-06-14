@@ -166,6 +166,7 @@
 	                            , "&dpsiteid." as dp length=6
 								, "&runid." as runid length=3
 								, "&loopcount." as order length=3
+								, &periodid as monitoringperiod
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 

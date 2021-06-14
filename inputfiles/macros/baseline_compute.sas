@@ -1040,6 +1040,9 @@
                         %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                       %end;
                     %end; 
+                    %if &reporttype=T2L2 %then %do;
+                    monitoringperiod
+                    %end;
                     ;
 
                 /*Removing unweighted total row for IPTW and PS stratum weighted table 1. Will use TOTAL_WEIGHTED row*/
@@ -1438,6 +1441,9 @@
                     %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                   %end;
                 %end; 
+                %if &reporttype=T2L2 %then %do;
+                monitoringperiod
+                %end;
                 ;
         run;
 

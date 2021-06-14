@@ -102,6 +102,9 @@
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
                 %if &computebalance. = Y %then %do; ad&dpnum.: sd&dpnum.: %end;
+                %if &reporttype = T2L2 %then %do;
+                monitoringperiod
+                %end;
                 ;
             run;
         %end;
