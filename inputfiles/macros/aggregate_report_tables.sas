@@ -91,7 +91,7 @@
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
-				   	%if %length(&&grouplist_&n..) > 0 | &infile = attrition %then %do;    			   
+				   	%if %length(&&grouplist_&n..) > 0 | %index(&infile, attrition) %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
@@ -343,8 +343,12 @@
 			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end;
 
-		/* Attrition table */
+		/* Attrition tables */
 		%agg_report(infile=attrition, outfile=agg_attrition, name=group, where=1);
+        %isdata(dataset=master_mil);
+        %if %eval(&nobs.>0) %then %do;
+		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp, where=1);
+        %end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
