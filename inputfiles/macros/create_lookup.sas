@@ -102,7 +102,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
 		claim_level = "Episode"; descr = "Exclusion - Live birth delivery must be during the look period"; report_descr = "Live birth delivery recorded during current look period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the age range condition within the query period"; report_descr = "Live birth delivery recorded during specified age range"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements within the query period"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
 		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
