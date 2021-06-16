@@ -106,6 +106,12 @@
                     num=100;
                 end;				
 				%end;
+				%if %index(&reporttype,T4) %then %do;
+                else if report_descr = 'Pregnancy episodes met initial cohort eligibility requirements' then do; 
+                    text='Members meeting mother-infant linkage requirements'; 
+                    num=100;
+                end;				
+				%end;
                 else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
                     %if %index(&reporttype,T4L1) %then %do;
                     text='Pregnancy episodes with required pre-index history'; 
