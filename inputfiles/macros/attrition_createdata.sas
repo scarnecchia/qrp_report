@@ -187,7 +187,7 @@
 
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
-        select runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
+        select distinct runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
         	   agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12., flag
         	   %if &inclnobs > 0 %then %do; ,condlevel %end;
         from all_attrition_agg
@@ -298,10 +298,6 @@
 	  		output;
 	  	end;
 	  	drop episodecount episodecountchar lag_rem flag;
-	  run;
-
-	  data output.all_attrition_agg;
-	  	set all_attrition_agg;
 	  run;
 
 	  /* Output patient/episode level tables */
