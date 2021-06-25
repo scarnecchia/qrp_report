@@ -137,6 +137,7 @@
    			group=analysisgrp;
    			claim_level='Episode';
    			level=level+1000;
+   			t4cohortdef='02';
    			flag=1;
    		end;
    		drop analysisgrp;
@@ -196,7 +197,7 @@
     /* Set in condlevel value and delete un-needed rows */
 	data all_attrition_agg(keep=runid group level claim_level flag agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
-		length grouplabel $40;
+		length grouplabel headerlabel $40;
 	  	grouplabel=group;
 	  	headerlabel='';
 	  	%if &milnobs > 0 %then %do;
@@ -296,7 +297,7 @@
 	  		end;
 	  		output;
 	  	end;
-	  	drop episodecount episodecountchar lag_rem;
+	  	drop episodecount episodecountchar lag_rem flag;
 	  run;
 
 	  data output.all_attrition_agg;
