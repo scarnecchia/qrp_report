@@ -10,6 +10,7 @@
 *                                        
 *  Program inputs:                                                                                   
 *   - agg_attrition
+*	- agg_mil_attrition
 * 
 *  Program outputs: 
 *	- agg_patient_attrition
@@ -57,24 +58,33 @@
 	quit;
 
 	%if &milnobs > 0 %then %do;
-	/* Stack MIL attrition table to original attrition table */
-	data agg_attrition;
-		set agg_attrition(in=a) 
-		    agg_mil_attrition(in=b);
-		if b then do;
-			group=analysisgrp;
-			claim_level='Episode';
+	/* Create EOI/REF rows based off MIL group */
+	data attrition_groups;
+		set attrition_groups;
+		if missing(groupname) then output;
+		if not missing(groupname) then do;
+		group=catx('_',group,'ref');
+		output;
+		group=tranwrd(group,'ref','eoi');
+		output;
 		end;
-		drop analysisgrp;
 	run;
 
-	/* Store analysisgrp values */
+	/* Rejoin to attrition groups table to only keep relevant MIL groups */
 	%let milgrps=;
-	proc sql noprint;
-		select quote(strip(analysisgrp)) 
+	%let milcohorts=;
+	proc sql noprint undo_policy=none;
+		select quote(strip(group)) 
 		into :milgrps 
 		separated by " "
-		from agg_mil_attrition;
+		from attrition_groups
+		where group contains 'eoi' or group contains 'ref';
+
+		select quote(strip(groupname))
+		into :milcohorts 
+		separated by " "
+		from master_mil
+		where not missing(groupname);
 	quit;
 	%end;
 	
@@ -84,13 +94,14 @@
    		select distinct A.runid, A.dpidsiteid, A.group, 
    						A.level, A.claim_level, A.descr, 
 						A.remaining, A.excluded, d.t%substr(&reporttype,2,1)cohortdef
+						%if &milnobs > 0 %then %do; ,b.group as milgrp %end;
 						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
    		from agg_attrition a
    		inner join 
    		attrition_groups b
    		on a.group = b.group and a.runid = b.runid
    		%if &milnobs > 0 %then %do;
-   		or a.group = b.groupname or scan(a.group,1,'_') = b.group and a.runid = b.runid
+   		or a.group = b.groupname and a.runid = b.runid
    		%end;
    		%if &t2addonnobs > 0 %then %do;
    		or (a.group = b.primary) or (a.group = b.secondary) and a.runid = b.runid
@@ -114,11 +125,28 @@
    		%end;
    	quit;
 
+   	data all_attrition_groups;
+   		set all_attrition_groups(in=a) 
+   		    agg_mil_attrition(in=b where=(analysisgrp in (&milgrps)));
+   		if a then do;
+   			if group in (&milcohorts) and group=milgrp then delete;
+   			if group^=milgrp then group=milgrp;
+   			flag=0;
+   		end;
+   		if b then do;
+   			group=analysisgrp;
+   			claim_level='Episode';
+   			level=level+1000;
+   			flag=1;
+   		end;
+   		drop analysisgrp;
+   	run;
+
    	/* Assign cond level rows */
    	data lookup_attrition;
    		set lookup.lookup_attrition;
    		%if &inclnobs > 0 %then %do;
-   		length condlevel $50;
+   		length condlevel $50 descr1 $200;
    		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
    			%do n = 1 %to &ncond;
    			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
@@ -142,7 +170,7 @@
         /* Join lookup table to groups table requested by user */
         create table all_attrition_agg as
    		select distinct a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.t%substr(&reporttype,2,1)cohortdef, 
-   			   a.descr, a.remaining, a.excluded, b.report_descr %if &inclnobs > 0 %then %do; ,b.condlevel %end;
+   			   a.descr, a.remaining, a.excluded, a.flag, b.report_descr %if &inclnobs > 0 %then %do; ,b.condlevel %end;
         from all_attrition_groups a
         left join 
              lookup_attrition b 
@@ -150,7 +178,7 @@
 
         /* Sum across all DPs */
 		create table all_attrition_agg as 
-		select distinct runid, group, report_descr, level, claim_level, t%substr(&reporttype,2,1)cohortdef,
+		select distinct runid, group, report_descr, level, claim_level, flag, t%substr(&reporttype,2,1)cohortdef,
              sum(remaining) as agg_remaining, sum(excluded) as agg_excluded
              %if &inclnobs > 0 %then %do; ,condlevel %end;
              from all_attrition_agg
@@ -159,19 +187,22 @@
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
         select runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
-        	   agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12.
+        	   agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12., flag
         	   %if &inclnobs > 0 %then %do; ,condlevel %end;
         from all_attrition_agg
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
     /* Set in condlevel value and delete un-needed rows */
-	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
+	data all_attrition_agg(keep=runid group level claim_level flag agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
 		length grouplabel $40;
 	  	grouplabel=group;
 	  	headerlabel='';
-		%if &inclnobs >0 %then %do;
+	  	%if &milnobs > 0 %then %do;
+	  	if group in (&milgrps) then headerlabel=scan(group,1,'_');
+	  	%end;
+		%if &inclnobs > 0 %then %do;
 		if not missing(condlevel) then report_descr=condlevel;
 		%end;
 		if missing(report_descr) then delete;
@@ -180,6 +211,14 @@
     /* Merge in group labels and headers if they exist */
     %isdata(dataset=labelfile);
 	  %if %eval(&nobs>0) %then %do;
+
+	  %if &milnobs > 0 %then %do;
+	  data labelfile;
+	  	set labelfile;
+	  	if group = "%scan(%sysfunc(dequote(&milgrps)),1,%str(_))" then labeltype = 'header';
+	  run;
+	  %end;
+
 	  proc sql noprint undo_policy=none;
 	        create table all_attrition_agg as
 	        select a.*, case when not missing(b.label) then b.label else a.group end as grouplabel, 
@@ -214,7 +253,7 @@
 	  run;
 
 	  proc sort data = all_attrition_agg; 
-	  by group claim_level level;
+	  by group %if &milgrps > 0 %then %do; flag %end; claim_level level ;
 	  run;
 
 	  /* Output final episode rows and place final episode count */
@@ -233,7 +272,7 @@
 	  		episodecountchar=agg_remaining_char;
 	  	end;
 	  	output;
-	  	if last.group %if %length(&milgrps) > 0 %then %do; and group not in (&milgrps) %end; then do;
+	  	if last.group %if %length(&milgrps) > 0 %then %do; and flag ^= 1 %end; then do;
 	  		%if %index(&reporttype,T4) %then %do;
 	  		report_descr = "Number of pregnancy episodes";
 	  		%end;
