@@ -234,7 +234,8 @@
 	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group
 	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
-	        on a.group = c.group;
+	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or scan(a.group,1,"_") = c.group %end;
+	        ;
 	  quit;
 	  %end;
 
