@@ -96,16 +96,8 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
-		claim_level = "Episode"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Linked mother excluded due to prior initiation of other exposure group"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth delivery must be during the look period"; report_descr = "Live birth delivery recorded during current look period"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the age range condition within the query period"; report_descr = "Linked live birth delivery recorded during specified age range"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Linked mother had sufficient pre-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met inclusion and exclusion criteria"; output;
@@ -132,6 +124,17 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"; report_descr = "Episode occurred after first event"; output;
 		claim_level = "Member"; descr = "Information - Unique number of members in final cohort"; report_descr = "Number of members"; output;
 		claim_level = "Episode"; descr = "Information - Number of non-pregnant matched comparator episodes"; report_descr = "Number of non-pregnant matched comparator episodes"; output;
+		claim_level = "MIL"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Linked mother excluded due to prior initiation of other exposure group"; output;
+		claim_level = "MIL"; descr = "Exclusion - Live birth delivery must be during the look period"; report_descr = "Live birth delivery recorded during current look period"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the age range condition within the query period"; report_descr = "Linked live birth delivery recorded during specified age range"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Linked mother had sufficient pre-index continuous enrollment"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 	 run; 
 
   %mend create_lookup;

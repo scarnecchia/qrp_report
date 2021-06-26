@@ -136,7 +136,7 @@
    		/* Add to level so MIL rows are sorted towards the bottom */
    		if b then do;
    			group=analysisgrp;
-   			claim_level='Episode';
+   			claim_level='MIL';
    			level=level+1000;
    			t4cohortdef='02';
    		end;
