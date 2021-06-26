@@ -186,6 +186,10 @@
              from all_attrition_agg
         group by runid, group, report_descr, level %if &inclnobs > 0 %then %do; ,condlevel %end;;
 
+                create table output.all_attrition_agg as 
+        select * 
+        from all_attrition_agg;
+
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
         select  runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
@@ -194,10 +198,6 @@
         from all_attrition_agg
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
-
-    		      data output.all_attrition_agg;
-    	set all_attrition_agg;
-    run;
 
     /* Set in condlevel value and delete un-needed rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel t%substr(&reporttype,2,1)cohortdef);
