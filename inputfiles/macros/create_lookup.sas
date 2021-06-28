@@ -27,7 +27,7 @@
 ***************************************************************************************************;
 
  /* Define libname for location of templatefiles folder */
-  libname lookup "";
+  libname lookup "U:\dev\test\qrp_report\inputfiles\macros\lookuptables";
   options noquotelenmax;
   
   %macro create_lookup();
@@ -97,7 +97,6 @@
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
-		claim_level = "Episode"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met inclusion and exclusion criteria"; output;

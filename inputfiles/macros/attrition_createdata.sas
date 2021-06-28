@@ -219,7 +219,10 @@
 	  /* Change grouplabel to header so MILGrpLabel ends up in same location in report */
 	  data labelfile;
 	  	set labelfile;
-	  	if group = "%scan(%sysfunc(dequote(&milgrps)),1,%str(_))" then labeltype = 'header';
+	  	%do i = 1 %to %sysfunc(countw(&milgrps,%str( )));
+	  		%let milgrp = %scan(&milgrps,&i,%str( ));
+	  		if group = "%scan(%sysfunc(dequote(&milgrp)),1,%str(_))" then labeltype = 'header';
+	  	%end;
 	  run;
 	  %end;
 
