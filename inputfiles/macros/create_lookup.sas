@@ -27,7 +27,7 @@
 ***************************************************************************************************;
 
  /* Define libname for location of templatefiles folder */
-  libname lookup "U:\dev\test\qrp_report\inputfiles\macros\lookuptables";
+  libname lookup "";
   options noquotelenmax;
   
   %macro create_lookup();
