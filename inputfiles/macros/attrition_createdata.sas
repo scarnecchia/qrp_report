@@ -130,6 +130,7 @@
    		set all_attrition_groups(in=a) 
    		    agg_mil_attrition(in=b where=(analysisgrp in (&milgrps)));
    		if a then do;
+   			/* Delete groupname rows and replace them with EOI/REF equivalents */
    			if group in (&milcohorts) and group=milgrp then delete;
    			if group^=milgrp then group=milgrp;
    		end;
@@ -185,10 +186,6 @@
              %if &inclnobs > 0 %then %do; ,condlevel %end;
              from all_attrition_agg
         group by runid, group, report_descr, level %if &inclnobs > 0 %then %do; ,condlevel %end;;
-
-                create table output.all_attrition_agg as 
-        select * 
-        from all_attrition_agg;
 
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
