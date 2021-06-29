@@ -73,7 +73,7 @@
 
                 /*Add title*/
                 compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+                                               borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
                 line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
                 endcomp;
 
