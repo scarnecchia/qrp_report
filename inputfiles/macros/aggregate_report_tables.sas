@@ -69,7 +69,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name= , stratification = N, where=);
+        %macro agg_report(infile=, outfile=, name= , stratification = N, where=1);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -344,10 +344,10 @@
 		%end;
 
 		/* Attrition tables */
-		%agg_report(infile=attrition, outfile=agg_attrition, name=group, where=1);
+		%agg_report(infile=attrition, outfile=agg_attrition, name=group);
         %isdata(dataset=master_mil);
         %if %eval(&nobs.>0) %then %do;
-		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp, where=1);
+		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp);
         %end;
 
 	%put =====> END MACRO: aggregate_report_tables;
