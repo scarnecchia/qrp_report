@@ -290,7 +290,7 @@
 	  		episodecountchar=agg_remaining_char;
 	  	end;
 	  	output;
-	  	if last.group %if %length(&milgrps) > 0 %then %do; and level > 1000 %end; then do;
+	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
 	  		report_descr = "Number of pregnancy episodes";
 	  		%end;
@@ -298,7 +298,7 @@
 	  		report_descr = "Number of episodes";
 	  		%end;
 	  		%if %index(&reporttype,T4) %then %do;
-	  		level=26.5;
+	  		level=27.5;
 	  		%end;
 	  		%else %do;
 	  		level=99;
