@@ -349,6 +349,9 @@
         %if %eval(&nobs.>0) %then %do;
 		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp);
         %end;
+        %if %index(&reporttype,L2) %then %do;
+		  %agg_report(infile=adjusted_attrition, outfile=agg_adjusted_attrition, name=analysisgrp);
+        %end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
