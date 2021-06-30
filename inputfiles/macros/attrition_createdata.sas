@@ -78,13 +78,13 @@
 		into :milgrps 
 		separated by " "
 		from attrition_groups
-		where not missing(groupname) and (group contains 'eoi' or group contains 'ref');
+		where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
 
 		select distinct quote(substr(group,1,findc(group, '_',-length(group))-1))
 		into :milgrplabels
 		separated by " "
 		from attrition_groups 
-		where not missing(groupname) and (group contains 'eoi' or group contains 'ref');
+		where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
 	quit;
 	%end;
 	
