@@ -136,7 +136,7 @@
    		if b then do;
    			group=analysisgrp;
    			claim_level='MIL';
-   			level=put(input(strip(level),best.)+1000,7.3);
+   			level=strip(put(input(level,best.)+1000,bestd7.));
    			t4cohortdef='02';
    		end;
    		drop analysisgrp;
