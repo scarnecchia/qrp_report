@@ -67,7 +67,7 @@
 		if not missing(groupname) then do;
 		group=catx('_',group,'ref');
 		output;
-		group=tranwrd(group,'ref','eoi');
+		if substrn(group,max(1,length(group)-3),4) = '_ref' then group=tranwrd(group,'_ref','_eoi');
 		output;
 		end;
 	run;
@@ -136,7 +136,7 @@
    		if b then do;
    			group=analysisgrp;
    			claim_level='MIL';
-   			level=level+1000;
+   			level=put(input(strip(level),best.)+1000,7.1);
    			t4cohortdef='02';
    		end;
    		drop analysisgrp;
@@ -199,7 +199,7 @@
 					      %if %length(&milgrps) > 0 %then %do; millabel %end;
 						  t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
-		length grouplabel headerlabel $40;
+		length grouplabel headerlabel $&label_length;
 	  	grouplabel=group;
 	  	headerlabel='';
 	  	%if %length(&milgrps) > 0 %then %do;
