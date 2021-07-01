@@ -95,7 +95,6 @@
    						A.level, A.claim_level, A.descr, 
 						A.remaining, A.excluded, d.t%substr(&reporttype,2,1)cohortdef
 						%if &milnobs > 0 %then %do; ,b.group as milgrp %end;
-						%if %index(&reporttype,T4) %then %do; ,d.t%substr(&reporttype,2,1)cohortdef2 %end;
    		from agg_attrition a
    		inner join 
    		attrition_groups b
