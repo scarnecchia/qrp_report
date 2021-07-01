@@ -73,7 +73,7 @@
 
                 /*Add title*/
                 compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+                                               borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
                 line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
                 endcomp;
 
@@ -103,6 +103,12 @@
 				%if %index(&reporttype,T4L1) %then %do;
                 else if report_descr = 'Total number of live birth deliveries during the query period' then do; 
                     text='Live birth deliveries with a valid index date'; 
+                    num=100;
+                end;				
+				%end;
+				%if %index(&reporttype,T4) %then %do;
+                else if report_descr = 'Pregnancy episodes met initial cohort eligibility requirements' then do; 
+                    text='Members meeting mother-infant linkage requirements'; 
                     num=100;
                 end;				
 				%end;
