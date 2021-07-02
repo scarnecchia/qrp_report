@@ -98,7 +98,7 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
-                keep label grouper metvar analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
+                keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
                 %if &computebalance. = Y %then %do; ad&dpnum.: sd&dpnum.: %end;

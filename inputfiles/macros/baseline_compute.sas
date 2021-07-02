@@ -1431,7 +1431,7 @@
             
             if missing(label) then delete;
 
-            keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
