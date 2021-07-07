@@ -37,11 +37,15 @@
 
         /*assign footnotes*/
         %let num_fn = 0;
+        %let exclincl = N;
+        %let milexcl = N;
         %let claim_level_descr = &tabletype.;
         data repdata.table&tablenum.&tableletter.;
             set agg_&tabletype._attrition;
             if index(lowcase(report_descr), 'evidence of')>0 then do;
                 call symputx('num_fn', 1);
+                if claim_level = 'MIL' then call symputx('milexcl', 'Y'); /*to mark which row to apply superscript*/
+                if claim_level ne 'MIL' then call symputx('exclincl', 'Y');
                 %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
                 %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
                 %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
@@ -94,7 +98,12 @@
             compute report_descr;
                 if find(report_descr,'evidence of','i') then call define (_col_,"style","style=[pretext='     ' asis=on fontstyle=italic]");
                 %if %eval(&num_fn > 0) %then %do;
-                    if index(lowcase(report_descr), 'met inclusion and exclusion criteria')>0 then report_descr = catt(report_descr,"&super_exclincl.");
+                    %if &exclincl = Y %then %do;
+                        if report_descr = 'Met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
+                    %end;
+                    %if &milexcl = Y %then %do;
+                        if report_descr = 'Linked mother met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
+                    %end;
                 %end;
             endcomp;
 
