@@ -11,8 +11,10 @@
 *  Program inputs:                                                                                   
 * 
 *  Program outputs: The following lookuptables files are created:
-*   -lookup_footnotes (one record created per footnote)
-*        
+*   -lookup_footnotes_baseline  = Footnotes for baseline table
+*   -lookup_footnotes_effectest = Footnotes for L2 effect estimates table
+*   -lookup_footnotes_attrition = Footnotes for attrition tabel
+*   -lookup_attrition           = Mapping QRP attrition descriptions to report descriptions
 *
 *  PARAMETERS:                                                                       
 *            
@@ -60,6 +62,12 @@
 	   order = 2;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
 	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
 	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
+	 run;  
+
+     data lookup.lookup_footnotes_attrition;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1; description = "&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of &claim_level_descr. excluded overall may not equal the sum of all pregnancy episodes in each criterion."; output;
 	 run;  
 	 
      data lookup.lookup_attrition;
