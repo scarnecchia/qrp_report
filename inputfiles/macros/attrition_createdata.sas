@@ -72,7 +72,6 @@
 		end;
 	run;
 
-	/* Rejoin to attrition groups table to only keep relevant MIL groups */
 	proc sql noprint undo_policy=none;
 		select quote(strip(group)) 
 		into :milgrps 
@@ -87,6 +86,56 @@
 		where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
 	quit;
 	%end;
+
+	%let analysisgrps=;
+	%if %index(&reporttype,L2) %then %do;
+	proc sql noprint undo_policy=none;
+		select distinct quote(strip(analysisgrp))
+		into :analysisgrps 
+		separated by ' '
+		from pscs_masterinputs;
+
+		create table agg_adjusted_attrition_1 as 
+		select a.*, b.t%substr(&reporttype,2,1)cohortdef
+		from agg_adjusted_attrition_1 a 
+		left join master_typefile b 
+		on a.analysisgrp = b.group;
+ 	quit;
+
+	data _null_;
+		if _n_=1 then do; 
+		dcl hash H(multidata:'y') ;   
+		h.definekey("analysisgrp") ;   
+		h.definedata("runid","dpidsiteid", "group", "level", "claim_level", "descr","remaining","excluded") ;  
+		h.definedone() ;   
+		end;
+		set agg_adjusted_attrition_1(where=(analysisgrp in (&analysisgrps))) end=lr;
+		length group $81;
+		array t eoi ref;
+		array z eoi_remaining ref_remaining;
+		array y eoi_excluded ref_excluded;
+		do over t;
+		group=catx('@',analysisgrp,t);
+		remaining=z;
+		excluded=y;
+		claim_level='L2';
+		h.add();
+		end;
+		if lr then h.output(dataset:"agg_adj_attrition_1");
+	run;
+
+	proc sql noprint undo_policy=none;
+		create table agg_adj_attrition_1 as
+		select a.runid, a.dpidsiteid, a.group, put(a.level+2000,7.) as level, 
+			   a.claim_level, a.descr, a.remaining, a.excluded, b.t%substr(&reporttype,2,1)cohortdef
+		from agg_adj_attrition_1 a
+		left join 
+		master_typefile b
+		on scan(a.group,-1,'@') = b.group
+		order by a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.descr, a.remaining, a.excluded;
+	quit;
+	%end;
+
 	
 	/* Join only required groups to attrition table */
     proc sql noprint;
@@ -124,15 +173,25 @@
    		%end;
    	quit;
 
-   	%if %length(&milgrps) > 0 %then %do;
+   	%if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
    	data all_attrition_groups;
+   		length group $81;
    		set all_attrition_groups(in=a) 
-   		    agg_mil_attrition(in=b where=(analysisgrp in (&milgrps)));
+   			%if %length(&milgrps) > 0 %then %do; 
+   		    agg_mil_attrition(in=b where=(analysisgrp in (&milgrps)))
+   		    %end;
+   		    %if %length(&analysisgrps) > 0 %then %do;
+   		    agg_adj_attrition_1(in=c)
+   		    %end;
+   		    ;
    		if a then do;
    			/* Reassign group values with milgrp EOI/REF equivalents */
- 			if group^=milgrp then group=milgrp;
+   			%if %length(&milgrps) > 0 %then %do;
+ 			if group^=milgrp and not missing(milgrp) then group=milgrp;
+ 			%end;
    		end;
    		/* Add to level so MIL rows are sorted towards the bottom */
+   		%if %length(&milgrps) > 0 %then %do;
    		if b then do;
    			group=analysisgrp;
    			claim_level='MIL';
@@ -140,8 +199,13 @@
    			t4cohortdef='02';
    		end;
    		drop analysisgrp;
+   		%end;
    	run;
    	%end;
+
+   	data output.test;
+   		set all_attrition_groups;
+   	run;
 
    	/* Assign cond level rows */
    	data lookup_attrition;
@@ -209,6 +273,12 @@
 	  		millabel=substr(group,1,findc(group, '_',-length(group))-1);
 	  	end;
 	  	%end;
+	  	%if %length(&analysisgrps) > 0 %then %do;
+	  	if scan(group,1,'@') in (&analysisgrps) then do;
+	  		headerlabel=scan(group,1,'@');
+	  		grouplabel=scan(group,-1,'@');
+	  	end;
+	  	%end;
 		%if &inclnobs > 0 %then %do;
 		if not missing(condlevel) then report_descr=condlevel;
 		%end;
@@ -219,29 +289,48 @@
     %isdata(dataset=labelfile);
 	  %if %eval(&nobs>0) %then %do;
 
-	  %if %length(&milgrps) > 0 %then %do;
+	  %if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
 	  /* Change grouplabel to header so MILGrpLabel ends up in same location in report */
 	  data labelfile;
 	  	set labelfile;
+	  	%if %length(&milgrps) > 0 %then %do;
 	  	%do i = 1 %to %sysfunc(countw(&milgrplabels,%str( )));
 	  		%let milgrp = %scan(&milgrplabels,&i,%str( ));
 	  		if group = &milgrp then labeltype = 'header';
+	  	%end;
+	  	%end;
+	  	%if %length(&analysisgrps) > 0 %then %do;
+	  	%do j = 1 %to %sysfunc(countw(&analysisgrps,%str( )));
+	  		%let analysisgrp = %scan(&analysisgrps,&j,%str( ));
+	  		if group = &analysisgrp then labeltype = 'header';
+	  	%end;
 	  	%end;
 	  run;
 	  %end;
 
 	  proc sql noprint undo_policy=none;
 	        create table all_attrition_agg as
-	        select a.*, case when not missing(b.label) then b.label else a.group end as grouplabel, 
+	        select a.*, case when not missing(b.label) then b.label 
+	        			else 
+	        			%if %length(&analysisgrps) > 0 %then %do; 
+	        			scan(a.group,-1,'@') 
+	        			%end; 
+	        			%else %do; 
+	        			a.group 
+	        			%end; 
+	        			end as grouplabel, 
 	        			case when not missing(c.label) then c.label  
 	        				 %if %length(&milgrps) > 0 %then %do;
 	        				 when missing(c.label) then a.millabel
-	        				 %end; 
+	        				 %end;
+	        				 %if %length(&analysisgrps) > 0 %then %do;
+	        				 when missing(c.label) and index(a.group,'@') then scan(a.group,1,'@')
+	        				 %end;
 	        				 else ''
 	        			end as headerlabel
 	        from all_attrition_agg (drop=grouplabel headerlabel) a 
 	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
-	        on a.group = b.group
+	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = b.group or scan(a.group,-1,'@') = b.group) %end;
 	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
 	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group %end;
 	        ;
