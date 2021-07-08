@@ -90,14 +90,14 @@
 	%let analysisgrps=;
 	%if %index(&reporttype,L2) %then %do;
 	proc sql noprint undo_policy=none;
-		select distinct quote(strip(analysisgrp))
+		select distinct quote(strip(group))
 		into :analysisgrps 
 		separated by ' '
-		from pscs_masterinputs;
+		from attrition_groups;
 
-		create table agg_adjusted_attrition_1 as 
+		create table agg_adjusted_attrition_&periodid as 
 		select a.*, b.t%substr(&reporttype,2,1)cohortdef
-		from agg_adjusted_attrition_1 a 
+		from agg_adjusted_attrition_&periodid a 
 		left join master_typefile b 
 		on a.analysisgrp = b.group;
  	quit;
@@ -109,7 +109,7 @@
 		h.definedata("runid","dpidsiteid", "group", "level", "claim_level", "descr","remaining","excluded") ;  
 		h.definedone() ;   
 		end;
-		set agg_adjusted_attrition_1(where=(analysisgrp in (&analysisgrps))) end=lr;
+		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;
 		length group $81;
 		array t eoi ref;
 		array z eoi_remaining ref_remaining;
@@ -121,21 +121,20 @@
 		claim_level='L2';
 		h.add();
 		end;
-		if lr then h.output(dataset:"agg_adj_attrition_1");
+		if lr then h.output(dataset:"agg_adj_attrition_&periodid");
 	run;
 
 	proc sql noprint undo_policy=none;
-		create table agg_adj_attrition_1 as
+		create table agg_adj_attrition_&periodid as
 		select a.runid, a.dpidsiteid, a.group, put(a.level+2000,7.) as level, 
 			   a.claim_level, a.descr, a.remaining, a.excluded, b.t%substr(&reporttype,2,1)cohortdef
-		from agg_adj_attrition_1 a
+		from agg_adj_attrition_&periodid a
 		left join 
 		master_typefile b
 		on scan(a.group,-1,'@') = b.group
 		order by a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.descr, a.remaining, a.excluded;
 	quit;
 	%end;
-
 	
 	/* Join only required groups to attrition table */
     proc sql noprint;
@@ -173,6 +172,25 @@
    		%end;
    	quit;
 
+   	%if %index(&reporttype,L2) %then %do;
+   	proc sql noprint undo_policy=none;
+   		create table all_attrition_groups as 
+   		select distinct a.*, b.group as l2eoirefgroups
+   		from all_attrition_groups a 
+   		left join 
+   		agg_adj_attrition_&periodid b 
+   		on a.group = scan(b.group,-1,'@')
+   		order by a.runid, a.dpidsiteid, a.level, 
+   				 a.claim_level, a.descr, a.remaining, a.excluded;
+
+   		select distinct quote(scan(l2eoirefgroups,1,'@'))
+   		into :analysisgrps
+   		separated by ' '
+   		from all_attrition_groups
+   		where not missing(l2eoirefgroups);
+   	quit;
+   	%end;
+
    	%if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
    	data all_attrition_groups;
    		length group $81;
@@ -189,6 +207,11 @@
    			%if %length(&milgrps) > 0 %then %do;
  			if group^=milgrp and not missing(milgrp) then group=milgrp;
  			%end;
+ 			%if %length(&analysisgrps) > 0 %then %do;
+ 			if scan(l2eoirefgroups,-1,'@') = group then do; 
+ 				if group^=l2eoirefgroups and not missing(l2eoirefgroups) then group=l2eoirefgroups;
+ 			end;
+ 			%end;
    		end;
    		/* Add to level so MIL rows are sorted towards the bottom */
    		%if %length(&milgrps) > 0 %then %do;
@@ -202,10 +225,6 @@
    		%end;
    	run;
    	%end;
-
-   	data output.test;
-   		set all_attrition_groups;
-   	run;
 
    	/* Assign cond level rows */
    	data lookup_attrition;
@@ -330,9 +349,10 @@
 	        			end as headerlabel
 	        from all_attrition_agg (drop=grouplabel headerlabel) a 
 	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
-	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = b.group or scan(a.group,-1,'@') = b.group) %end;
+	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or scan(a.group,-1,'@') = b.group %end;
 	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
 	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group %end;
+	        					 %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = c.group or scan(a.group,-1,'@') = c.group) %end;
 	        ;
 	  quit;
 	  %end;
