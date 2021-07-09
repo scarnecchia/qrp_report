@@ -116,7 +116,7 @@
 	%end;
 
 	proc sql noprint undo_policy=none;
-		%if %index(&reporttype,T4l1) %then %do;
+		%if %index(&reporttype,T4L1) %then %do;
 		select distinct quote(strip(group)) 
 		%end;
 		%else %do;
