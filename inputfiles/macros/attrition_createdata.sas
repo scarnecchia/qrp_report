@@ -31,6 +31,8 @@
 
 %macro attrition_createdata;
 
+	options mprint mlogic symbolgen source2;
+	%let periodid=1;
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -62,6 +64,7 @@
 	%if &milnobs > 0 %then %do;
 	/* Create EOI/REF rows based off MIL group */
 	data attrition_groups;
+		length group $81;
 		set attrition_groups;
 		if missing(groupname) then output;
 		if not missing(groupname) then do;
@@ -72,8 +75,51 @@
 		end;
 	run;
 
+	%if %index(&reporttype,T4L2) %then %do;
+	proc sql noprint;
+		create table whatgroups as 
+		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
+							  case when missing(ref) then ref2 else ref end as ref, groupname 
+		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
+		      from pscs_masterinputs a 
+			  left join 
+			  psest_masterinputs b 
+			  on a.psestimategrp = b.psestimategrp
+			  left join 
+			  master_mil c 
+			  on substr(coalescec(a.eoi,b.eoi),1,findc(coalescec(a.eoi,b.eoi), '_',-length(coalescec(a.eoi,b.eoi)))-1) = c.group) 
+		;
+	quit;
+
+	data _null_;
+		if _n_=1 then do; 
+		dcl hash attr(multidata:'y') ;   
+		attr.definekey("analysisgrp") ;   
+		attr.definedata("runid","group", "groupname") ;  
+		attr.definedone() ;   
+		end;
+		length group $81;
+		set whatgroups end=lr;
+		array t eoi ref;
+		do over t;
+		group=catx('@',analysisgrp,t);
+		attr.add();
+		end;
+		if lr then attr.output(dataset:"_tempgrps");
+	run;
+
+	data attrition_groups;
+		set attrition_groups _tempgrps;
+	run;
+	%end;
+
 	proc sql noprint undo_policy=none;
-		select quote(strip(group)) 
+		%if %index(&reporttype,T4l1) %then %do;
+		select distinct quote(strip(group)) 
+		%end;
+		%else %do;
+		select distinct quote(strip(scan(group,-1,'@')))
+		%end; 
 		into :milgrps 
 		separated by " "
 		from attrition_groups
@@ -89,19 +135,15 @@
 
 	%let analysisgrps=;
 	%if %index(&reporttype,L2) %then %do;
+	/* Store analysisgrp values in macro variable */
 	proc sql noprint undo_policy=none;
 		select distinct quote(strip(group))
 		into :analysisgrps 
 		separated by ' '
 		from attrition_groups;
-
-		create table agg_adjusted_attrition_&periodid as 
-		select a.*, b.t%substr(&reporttype,2,1)cohortdef
-		from agg_adjusted_attrition_&periodid a 
-		left join master_typefile b 
-		on a.analysisgrp = b.group;
  	quit;
 
+ 	/* Transpose attrition rows to match L1 structure */
 	data _null_;
 		if _n_=1 then do; 
 		dcl hash H(multidata:'y') ;   
@@ -188,8 +230,18 @@
    		separated by ' '
    		from all_attrition_groups
    		where not missing(l2eoirefgroups);
+
+   		%if %index(&reporttype,T4L2) %then %do;
+   		create table agg_mil_attrition as 
+   		select a.*, b.group as l2eoirefgroups
+   		from agg_mil_attrition a 
+   		left join 
+   		agg_adj_attrition_&periodid b 
+   		on a.analysisgrp = scan(b.group,-1,'@');
+   		%end;
    	quit;
    	%end;
+
 
    	%if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
    	data all_attrition_groups;
@@ -199,7 +251,7 @@
    		    agg_mil_attrition(in=b where=(analysisgrp in (&milgrps)))
    		    %end;
    		    %if %length(&analysisgrps) > 0 %then %do;
-   		    agg_adj_attrition_1(in=c)
+   		    agg_adj_attrition_&periodid(in=c)
    		    %end;
    		    ;
    		if a then do;
@@ -217,11 +269,19 @@
    		%if %length(&milgrps) > 0 %then %do;
    		if b then do;
    			group=analysisgrp;
+   			%if %index(&reporttype,T4L2) %then %do;
+   			group=l2eoirefgroups;
+   			%end;
    			claim_level='MIL';
    			level=strip(put(input(level,best.)+1000,bestd7.));
    			t4cohortdef='02';
    		end;
    		drop analysisgrp;
+   		%end;
+   		%if %length(&analysisgrps) > 0 and %index(&reporttype,T4) %then %do;
+   		if c then do;
+   			t4cohortdef='02';
+   		end;
    		%end;
    	run;
    	%end;
