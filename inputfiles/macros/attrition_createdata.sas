@@ -31,8 +31,7 @@
 
 %macro attrition_createdata;
 
-	options mprint mlogic symbolgen source2;
-	%let periodid=1;
+/* NOTE: Remove when Monitoring period bug is fixed in QRP */ %let periodid=1;
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -76,6 +75,7 @@
 	run;
 
 	%if %index(&reporttype,T4L2) %then %do;
+	/* Link all analysisgrp, pregnancy cohorts and EOI/REF groups back to each other */
 	proc sql noprint;
 		create table whatgroups as 
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
@@ -91,6 +91,7 @@
 		;
 	quit;
 
+	/* Transpose data to have runid, group and groupname structure */
 	data _null_;
 		if _n_=1 then do; 
 		dcl hash attr(multidata:'y') ;   
@@ -108,6 +109,7 @@
 		if lr then attr.output(dataset:"_tempgrps");
 	run;
 
+	/* Append groups */
 	data attrition_groups;
 		set attrition_groups _tempgrps;
 	run;
@@ -356,6 +358,7 @@
 	  	if scan(group,1,'@') in (&analysisgrps) then do;
 	  		headerlabel=scan(group,1,'@');
 	  		grouplabel=scan(group,-1,'@');
+	  		millabel=scan(group,1,'@');
 	  	end;
 	  	%end;
 		%if &inclnobs > 0 %then %do;
