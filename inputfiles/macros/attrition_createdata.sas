@@ -11,6 +11,7 @@
 *  Program inputs:                                                                                   
 *   - agg_attrition
 *	- agg_mil_attrition
+*   - agg_adjusted_attrition
 * 
 *  Program outputs: 
 *	- agg_patient_attrition
@@ -31,7 +32,7 @@
 
 %macro attrition_createdata;
 
-/* NOTE: Remove when Monitoring period bug is fixed in QRP */ %let periodid=1;
+/* NOTE: Remove when Monitoring period bug is fixed in DEV-18262 */ %let periodid=1;
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -63,6 +64,8 @@
 	%if &milnobs > 0 %then %do;
 	/* Create EOI/REF rows based off MIL group */
 	data attrition_groups;
+		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+		/* Length needs to be increased to accomodate this */
 		length group $81;
 		set attrition_groups;
 		if missing(groupname) then output;
@@ -77,7 +80,7 @@
 	%if %index(&reporttype,T4L2) %then %do;
 	/* Link all analysisgrp, pregnancy cohorts and EOI/REF groups back to each other */
 	proc sql noprint;
-		create table whatgroups as 
+		create table _whatgroups as 
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
 							  case when missing(ref) then ref2 else ref end as ref, groupname 
 		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
@@ -99,8 +102,10 @@
 		attr.definedata("runid","group", "groupname") ;  
 		attr.definedone() ;   
 		end;
+		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+		/* Length needs to be increased to accomodate this */
 		length group $81;
-		set whatgroups end=lr;
+		set _whatgroups end=lr;
 		array t eoi ref;
 		do over t;
 		group=catx('@',analysisgrp,t);
@@ -154,6 +159,8 @@
 		h.definedone() ;   
 		end;
 		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;
+		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+		/* Length needs to be increased to accomodate this */
 		length group $81;
 		array t eoi ref;
 		array z eoi_remaining ref_remaining;
