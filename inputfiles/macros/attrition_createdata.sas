@@ -32,7 +32,6 @@
 
 %macro attrition_createdata;
 
-/* NOTE: Remove when Monitoring period bug is fixed in DEV-18262 */ %let periodid=1;
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -56,8 +55,52 @@
 	left join master_mil b 
 	on a.group = b.group and a.runid = b.runid
 	%end;
+	%if %index(&reporttype,L2) %then %do;
+	left join l2comparisonfile c
+	on a.group = c.analysisgrp and a.runid = c.runid 
+	%end;
 	;
 	quit;
+
+	/* Link EOI/REF groups back to analysisgrps */
+	%if %index(&reporttype,T2L2) %then %do;
+	proc sql noprint;
+		create table _whatgroups as 
+		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
+							  case when missing(ref) then ref2 else ref end as ref
+		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2
+		      from pscs_masterinputs a 
+			  left join 
+			  psest_masterinputs b 
+			  on a.psestimategrp = b.psestimategrp);
+	quit;
+
+	/* Transpose data to have runid, group and groupname structure */
+	data _null_;
+		if _n_=1 then do; 
+		dcl hash attr(multidata:'y') ;   
+		attr.definekey("analysisgrp") ;   
+		attr.definedata("runid","group") ;  
+		attr.definedone() ;   
+		end;
+		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+		/* Length needs to be increased to accomodate this */
+		length group $81;
+		set _whatgroups end=lr;
+		array t eoi ref;
+		do over t;
+		group=t;
+		attr.add();
+		end;
+		if lr then attr.output(dataset:"_tempgrps");
+	run;
+
+	/* Append groups */
+	data attrition_groups;
+		length runid $5 group $81; 
+		set attrition_groups _tempgrps;
+	run;
+	%end;
 
 	%let milgrps=;
 	%let milgrplabels=;
@@ -497,6 +540,10 @@
 	  		end;
 	  		output;
 	  	end;
+	  	%if %index(&reporttype,L2) %then %do;
+	  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
+	  	then agg_excluded_char = 'N/A';
+	  	%end;
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
