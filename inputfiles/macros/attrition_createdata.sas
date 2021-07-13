@@ -515,6 +515,10 @@
 	  		episodecount=agg_remaining;
 	  		episodecountchar=agg_remaining_char;
 	  	end;
+	  	%if %index(&reporttype,L2) %then %do;
+	  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
+	  	then agg_excluded_char = 'N/A';
+	  	%end;
 	  	output;
 	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
@@ -538,12 +542,12 @@
 	  		agg_remaining = lag_rem;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		end;
+	  		%if %index(&reporttype,L2) %then %do;
+		  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
+		  	then agg_excluded_char = 'N/A';
+		  	%end;
 	  		output;
 	  	end;
-	  	%if %index(&reporttype,L2) %then %do;
-	  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
-	  	then agg_excluded_char = 'N/A';
-	  	%end;
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
