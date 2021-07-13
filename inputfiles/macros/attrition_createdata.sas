@@ -489,6 +489,11 @@
 	  	   report_descr = 'Total number of live birth deliveries during the query period';
 	  	%end;
 	  	if int(level) ^= level then level = int(level)+0.1;
+	  	%if %index(&reporttype,L2) %then %do;
+	  	/* If the header labels are missing, this means duplicate rows are carried through for an additional analysis group */
+	  	/* Delete this so only requested analysis groups remain in final table */
+	  	if missing(headerlabel) then delete;
+	  	%end;
 	  run;
 
 	  proc sort data = all_attrition_agg; 
@@ -542,10 +547,6 @@
 	  		agg_remaining = lag_rem;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		end;
-	  		%if %index(&reporttype,L2) %then %do;
-		  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
-		  	then agg_excluded_char = 'N/A';
-		  	%end;
 	  		output;
 	  	end;
 	  	drop episodecount episodecountchar lag_rem;
