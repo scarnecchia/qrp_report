@@ -55,7 +55,7 @@
 	left join master_mil b 
 	on a.group = b.group and a.runid = b.runid
 	%end;
-	%if %index(&reporttype,L2) %then %do;
+	%if %sysfunc(exist(work.l2comparisonfile)) %then %do;
 	left join l2comparisonfile c
 	on a.group = c.analysisgrp and a.runid = c.runid 
 	%end;
@@ -490,7 +490,7 @@
 	  	%end;
 	  	if int(level) ^= level then level = int(level)+0.1;
 	  	%if %index(&reporttype,L2) %then %do;
-	  	/* If the header labels are missing, this means duplicate rows are carried through for an additional analysis group */
+	  	/* If the header labels are missing, this means duplicate rows are carried through for additional analysis groups */
 	  	/* Delete this so only requested analysis groups remain in final table */
 	  	if missing(headerlabel) then delete;
 	  	%end;
