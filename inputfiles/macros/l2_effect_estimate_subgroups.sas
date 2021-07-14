@@ -65,7 +65,7 @@
     %end;
     %else %if &covarnum. = 1000 %then %do; 
         %let subgroupvar = Sex;
-        %let sublabel = Gender;
+        %let sublabel = Sex;
         %let numsubcat = 2;
         %let subcategorization = F M; /*O is excluded due to low patient counts*/
     %end;
