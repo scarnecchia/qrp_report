@@ -13,7 +13,7 @@
 *  Program outputs: The following template files are created:
 *   -TableFile (one file is created per REPORTTTYPE)
 *   -FigureFile (one file is created per REPORTTYPE)
-*        
+*   -TableColumnsFile     
 *
 *  PARAMETERS:                                                                       
 *            
@@ -164,9 +164,9 @@ libname tempfl "";
     		%end;
         run;
     %mend templatecensortablefigures;
-	%templatecensortablefigures(1,t1censor,2);
-	%templatecensortablefigures(2,t2followuptime,3);
-	%templatecensortablefigures(2,t2censor,2);
+	%templatecensortablefigures(1,t1censor,1);
+	%templatecensortablefigures(2,t2followuptime,2);
+	%templatecensortablefigures(2,t2censor,1);
 
     /*Multiple Events Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
