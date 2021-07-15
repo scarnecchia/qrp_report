@@ -13,7 +13,7 @@
 *  Program outputs: The following lookuptables files are created:
 *   -lookup_footnotes_baseline  = Footnotes for baseline table
 *   -lookup_footnotes_effectest = Footnotes for L2 effect estimates table
-*   -lookup_footnotes_attrition = Footnotes for attrition tabel
+*   -lookup_footnotes_attrition = Footnotes for attrition table
 *   -lookup_attrition           = Mapping QRP attrition descriptions to report descriptions
 *
 *  PARAMETERS:                                                                       
