@@ -826,7 +826,7 @@
 
             *if censordisplay is missing, replace with default list of censoring reasons;
             length censordisplay1 $80;
-            censordisplay1 = censordisplay;
+            censordisplay1 = lowcase(censordisplay);
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
             if index(dataset, 'followuptime') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
             drop censordisplay;

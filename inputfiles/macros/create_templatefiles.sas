@@ -112,7 +112,7 @@ libname tempfl "";
 
 	/*t1censor & t2censor Tables*/
     %let stratacensor = agegroup| year| sex;
-    %macro templatecensortablefigures(type,dsn,num);
+    %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
             format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
@@ -149,7 +149,7 @@ libname tempfl "";
                     output;
                 %end;
     		%end;
-    		%do f=1 %to &num.;
+    		%do f=&numstart. %to &num.;
     			/*Figure F&f.*/
     			dataset = "&dsn.";
     			table = "F&f.";
@@ -164,9 +164,9 @@ libname tempfl "";
     		%end;
         run;
     %mend templatecensortablefigures;
-	%templatecensortablefigures(1,t1censor,1);
-	%templatecensortablefigures(2,t2followuptime,2);
-	%templatecensortablefigures(2,t2censor,1);
+	%templatecensortablefigures(1,t1censor,1,1);
+	%templatecensortablefigures(2,t2followuptime,2,3);
+	%templatecensortablefigures(2,t2censor,1,1);
 
     /*Multiple Events Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
