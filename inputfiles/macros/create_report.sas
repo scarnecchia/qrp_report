@@ -86,6 +86,7 @@
 	%aggregate_report_tables;
 
     %if ^%index(&reporttype,TREE) %then %do;
+
 ***************************************************************************************************;
 *   Calculate summary tables                                             
 ***************************************************************************************************;
@@ -104,6 +105,39 @@
           %end;
 	   %end;
     %end;
+
+***************************************************************************************************;
+*   Compute figures                                            
+***************************************************************************************************;
+
+    %if %str("&figurelist.") ne %str("") %then %do;
+        
+        /*T1: 1 figure: 
+                1) F1: t1censor = Reasons for End of Observable Data by Group (1-CDF)
+          T2L1: 3 figures:
+                1) F1: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
+                2) F2: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
+                3) F1: t2censor = Reasons for End of Observable Data by Group (1-CDF)
+          T5: 2 figures:
+                1) F1 (not yet implemented)
+                2) F2 (not yet implemented)
+                3) F3 (not yet implemented)
+                4) F4: t5censor = Reasons for End of First Treatment Episode by Group
+                5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
+        */
+
+        %if &reporttype. = T1 %then %do;
+
+        %end;
+        %else %if &reporttype. = T2L1 %then %do;
+
+
+        %end;
+        %else %if &reporttype. = T5 %then %do;
+
+
+        %end;
+     %end;
 
 ***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
