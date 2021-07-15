@@ -35,7 +35,7 @@
      T2L1: 3 figures:
         1) F1: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
         2) F2: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
-        3) F1: t2censor = Reasons for End of Observable Data by Group (1-CDF)
+        3) F3: t2censor = Reasons for End of Observable Data by Group (1-CDF)
      T5: 2 figures:
         1) F1 (not yet implemented)
         2) F2 (not yet implemented)
