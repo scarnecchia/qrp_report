@@ -55,54 +55,33 @@
             set figurefile(where=(figure="&figure"));
             call symputx('levelid1', levelid1);
             call symputx('censordisplay', censordisplay);
-            call symputx('includeatrisktable', includeatrisktable);
+
+            /*Assign dataset*/
+            if dataset = 't1censor' then call symputx('dataset', 'agg_t1censor');
+            if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
+            if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
+            if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
+
+            /*Assign figure to produce*/
+            if dataset='t2followuptime' and figure = 'F2' then call symputx('curve', 'KM');
+            else call symputx('curve', '1-CDF');
         run;
             
-        %if &reporttype. = T1 %then %do;
-        %figure_cdf_km_createdata(dataset=agg_t1censor, 
-                                  curve=1-CDF, 
+        %if &reporttype. = T1 | &reporttype. = T2L1 %then %do;
+        %figure_cdf_km_createdata(dataset=&dataset., 
+                                  curve=&curve., 
                                   whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
                                   dayvar=censdays_value,
                                   includegroups=&includegroupinfigure.,
                                   includevars=&censordisplay.,
                                   figure = &figure.);
-        %end; /*T1*/
-        %else %if &reporttype. = T2L1 %then %do;
-            %if &figure. = F1 %then %do;
-            %figure_cdf_km_createdata(dataset=agg_t2followuptime, 
-                                      curve=1-CDF, 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
-                                      dayvar=censdays_value,
-                                      includegroups=&includegroupinfigure.,
-                                      includevars=&censordisplay.,
-                                      figure = &figure.);
-            %end;
-            %else %if &figure. = F2 %then %do;
-            %figure_cdf_km_createdata(dataset=agg_t2followuptime, 
-                                      curve=KM, 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
-                                      dayvar=censdays_value,
-                                      includegroups=&includegroupinfigure.,
-                                      includevars=cens_event,
-                                      figure = &figure.);
-            %end;
-            %else %if &figure. = F3 %then %do;
-            %figure_cdf_km_createdata(dataset=agg_t2censor, 
-                                      curve=1-CDF, 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
-                                      dayvar=censdays_value,
-                                      includegroups=&includegroupinfigure.,
-                                      includevars=&censordisplay.,
-                                      figure = &figure.);
-            %end;
-        %end; /*T2L1*/
+        %end;
         %else %if &reporttype. = T5 %then %do;
-
             %if &figure. = F4 %then %do;
-            %figure_cdf_km_createdata(dataset=agg_t5censor, 
-                                      curve=1-CDF, 
+            %figure_cdf_km_createdata(dataset=&dataset., 
+                                      curve=&curve., 
                                       whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
-                                      dayvar=censdays_value,
+                                      dayvar=episodelength,
                                       includegroups=&includegroupinfigure.,
                                       includevars=&censordisplay.,
                                       figure = &figure.);

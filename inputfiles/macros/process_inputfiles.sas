@@ -823,12 +823,35 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+            includeatrisktable = upcase(includeatrisktable);
 
             *if censordisplay is missing, replace with default list of censoring reasons;
             length censordisplay1 $80;
             censordisplay1 = lowcase(censordisplay);
+            %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
-            if index(dataset, 'followuptime') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
+            if index(dataset, 'followuptime') and figure = 'F1' and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
+            else if index(dataset, 'followuptime') and figure = 'F2' and missing(censordisplay) then censordisplay1 = 'cens_event';
+            /*Figure F2 is a KM curve for event of interest*/
+            if index(dataset, 'followuptime') and figure = 'F2' and censordisplay1 ne 'cens_event' then do;
+                put 'ERROR: (Sentinel) Figure F2 is a Kaplan-Meier Estimate of Event of Interest Not Occurring - censordisplay must be cens_event';
+                abort;
+            end;
+            %end;
+            %else %if &reporttype. = T5 %then %do;
+            if index(dataset, 'censor') and missing(censordisplay) and figure = 'F4' then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec';
+            /*for F5 - check to ensure a censoring criterion is specified and only 1 is specified*/
+            else if index(dataset, 'censor') and figure = 'F5' then do;
+                if missing(censordisplay) then do;
+                    put 'ERROR: (Sentinel) Figure F5 requires the user to specify one censor reason to display in the plot';
+                    abort;
+                end;
+                if countw(censordisplay) >1 then do;
+                    put 'ERROR: (Sentinel) Only 1 censor reason can be displayed in Figure F5';
+                    abort;
+                end;
+            end;
+            %end;
             drop censordisplay;
 
         	*defensive: replace overall with missing;
