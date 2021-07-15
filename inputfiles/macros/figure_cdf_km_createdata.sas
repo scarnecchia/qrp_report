@@ -15,8 +15,13 @@
 * 
 * 
 *  PARAMETERS:  
-*   - dataset:
-*   - curve:
+*   - dataset: aggregate dataset from %aggregate_report_tables
+*   - curve: KM or 1-CDF
+*   - whereclause: where statement to restrict &dataset
+*   - dayvar: variable name for censor day variable
+*   - includegroups: Groups to include in report
+*   - includevars: censor reasons to include in final dataset
+*   - figure: standard figure # from FIGUREFILE
 *            
 *  Programming Notes:         
 *                                                                           
@@ -28,9 +33,74 @@
 *
 ***************************************************************************************************;
 
-%macro figure_cdf_km_createdata;
+%macro figure_cdf_km_createdata(dataset=, 
+                                curve=, 
+                                whereclause=, 
+                                dayvar=,
+                                includegroups=,
+                                includevars=,
+                                figure=);
 
 	%put =====> MACRO CALLED: figure_cdf_km_createdata;
+
+    /*--------------------------------------------------------------------------------------------*/
+    /* Select rows and columns and aggregate data                                                 */
+    /*--------------------------------------------------------------------------------------------*/
+
+    proc means data=&dataset.(where=(&whereclause.)) nway noprint;
+        var episodes &includevars.;
+        class runid group &dayvar. / missing;
+        output out=_kmcdfdata(drop=_: where=(missing(&dayvar.)=0)) sum=;
+    run;
+
+    /*--------------------------------------------------------------------------------------------*/
+    /* Square data to include 1 row per day                                                       */
+    /*--------------------------------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

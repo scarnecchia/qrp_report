@@ -933,7 +933,7 @@
                     %isdata(dataset=input.&groupsfile.);
                     %if %eval(&nobs.>0) %then %do;
                         proc sql noprint;
-                            select quote(strip(group, "")) into :includegroupinfigure separated by ', '
+                            select quote(strip(group), "'") into :includegroupinfigure separated by ' '
                             from groupsfile
                             where includeinfigure = 'Y'; 
                         run;
