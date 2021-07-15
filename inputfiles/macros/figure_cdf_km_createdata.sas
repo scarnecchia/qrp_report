@@ -46,20 +46,39 @@
     /*--------------------------------------------------------------------------------------------*/
     /* Select rows and columns and aggregate data                                                 */
     /*--------------------------------------------------------------------------------------------*/
-
     proc means data=&dataset.(where=(&whereclause.)) nway noprint;
         var episodes &includevars.;
         class runid group &dayvar. / missing;
-        output out=_kmcdfdata(drop=_: where=(missing(&dayvar.)=0)) sum=;
+        output out=_kmcdfdata(drop=_: where=(missing(day)=0) rename=&dayvar.=day) sum=;
     run;
 
     /*--------------------------------------------------------------------------------------------*/
     /* Square data to include 1 row per day                                                       */
     /*--------------------------------------------------------------------------------------------*/
+    data _squarekmcdf(rename=i=day);
+        set _kmcdfdata(keep=runid group day);
+        by runid group day;
+        if last.group then do;
+            do i = 1 to day;
+            output;
+            end; 
+        end;
+        drop day;
+    run;
 
+    data _kmcdfdata;
+        merge _kmcdfdata _squarekmcdf;
+        by runid group day;
+        *set missing to 0;
+        array change episodes &includevars.;
+        do over change;
+            if change=. then change=0;
+        end;
+    run;
 
-
-
+    /*--------------------------------------------------------------------------------------------*/
+    /* Square data to include 1 row per day                                                       */
+    /*--------------------------------------------------------------------------------------------*/
 
 
 

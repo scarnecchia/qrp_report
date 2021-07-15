@@ -66,15 +66,64 @@
                                   includegroups=&includegroupinfigure.,
                                   includevars=&censordisplay.,
                                   figure = &figure.);
-        %end;
+        %end; /*T1*/
         %else %if &reporttype. = T2L1 %then %do;
-
-
-        %end;
+            %if &figure. = F1 %then %do;
+            %figure_cdf_km_createdata(dataset=agg_t2followuptime, 
+                                      curve=1-CDF, 
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
+                                      dayvar=censdays_value,
+                                      includegroups=&includegroupinfigure.,
+                                      includevars=&censordisplay.,
+                                      figure = &figure.);
+            %end;
+            %else %if &figure. = F2 %then %do;
+            %figure_cdf_km_createdata(dataset=agg_t2followuptime, 
+                                      curve=KM, 
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
+                                      dayvar=censdays_value,
+                                      includegroups=&includegroupinfigure.,
+                                      includevars=cens_event,
+                                      figure = &figure.);
+            %end;
+            %else %if &figure. = F3 %then %do;
+            %figure_cdf_km_createdata(dataset=agg_t2censor, 
+                                      curve=1-CDF, 
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
+                                      dayvar=censdays_value,
+                                      includegroups=&includegroupinfigure.,
+                                      includevars=&censordisplay.,
+                                      figure = &figure.);
+            %end;
+        %end; /*T2L1*/
         %else %if &reporttype. = T5 %then %do;
 
+            %if &figure. = F4 %then %do;
+            %figure_cdf_km_createdata(dataset=agg_t5censor, 
+                                      curve=1-CDF, 
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
+                                      dayvar=censdays_value,
+                                      includegroups=&includegroupinfigure.,
+                                      includevars=&censordisplay.,
+                                      figure = &figure.);
+            %end;
+            %if &figure. = F5 %then %do;
+                /*if figuref4 exists, can subset that dataset, else need to execute %figure_cdf_km_createdata()*/
+                %isdata(dataset=figuref4);
+                data _null_;
+                    set figurefile(where=(figure="F4"));
+                    call symputx('censordisplayf4', censordisplay);
+                run;
 
-        %end;
+                %if %eval(&nobs.>0) %then %do;
+
+                %end;
+                %else %do;
+
+
+                %end;
+           %end;
+        %end; /*T5*/
 
     %end; /*loop through figures*/
 
