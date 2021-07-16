@@ -131,6 +131,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"; report_descr = "Episode occurred after first event"; output;
 		claim_level = "Member"; descr = "Information - Unique number of members in final cohort"; report_descr = "Number of members"; output;
 		claim_level = "Episode"; descr = "Information - Number of non-pregnant matched comparator episodes"; report_descr = "Number of non-pregnant matched comparator episodes"; output;
+		
 		claim_level = "MIL"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
 		claim_level = "MIL"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
@@ -142,6 +143,15 @@
 		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+
+		claim_level = "L2"; descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to same-day initition of both exposure groups"; output;
+		claim_level = "L2"; descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
+		claim_level = "L2"; descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
+		claim_level = "L2"; descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
+		claim_level = "L2"; descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
+		claim_level = "L2"; descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
+		claim_level = "L2"; descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
+
 	 run; 
 
   %mend create_lookup;
