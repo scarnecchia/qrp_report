@@ -11,8 +11,10 @@
 *  Program inputs:                                                                                   
 * 
 *  Program outputs: The following lookuptables files are created:
-*   -lookup_footnotes (one record created per footnote)
-*        
+*   -lookup_footnotes_baseline  = Footnotes for baseline table
+*   -lookup_footnotes_effectest = Footnotes for L2 effect estimates table
+*   -lookup_footnotes_attrition = Footnotes for attrition table
+*   -lookup_attrition           = Mapping QRP attrition descriptions to report descriptions
 *
 *  PARAMETERS:                                                                       
 *            
@@ -61,6 +63,12 @@
 	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
 	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 	 run;  
+
+     data lookup.lookup_footnotes_attrition;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1; description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
+	 run;  
 	 
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.
@@ -94,15 +102,15 @@
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the pre-delivery enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
-		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met exclusion and inclusion criteria"; output;
-		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the minimum cumulative dose criterion"; report_descr = "Met minimum cumulative dose criterion"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the minimum cumulative dose criterion"; report_descr = "Met minimum cumulative dose criterion"; output;
+		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Member"; descr = "Information: Members excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Episode"; descr = "Information: Episodes excluded for lacking"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Member"; descr = "Information: Members excluded for"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met inclusion and exclusion criteria"; output;
+		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the cumulative dose criteria"; report_descr = "Met cumulative dose criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the cumulative dose criteria"; report_descr = "Met cumulative dose criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
@@ -112,6 +120,8 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days supplied"; report_descr = "Met minimum days' supply criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode with at least minimum days duration"; report_descr = "Had index episode of at least required length"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days duration"; report_descr = "Met minimum episode duration criteria"; output;
+      claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the minimum and maximum average filled daily dose criteria"; report_descr = "Met average filled daily dose criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the minimum and maximum average filled daily dose criteria"; report_descr = "Met average filled daily dose criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode with longer than blackout days duration"; report_descr = "Had index episode longer than blackout period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must be longer than blackout days duration"; report_descr = "Episode duration was longer than blackout period"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI blackout criterion"; report_descr = "Did not have an event during blackout period"; output;
@@ -121,6 +131,27 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"; report_descr = "Episode occurred after first event"; output;
 		claim_level = "Member"; descr = "Information - Unique number of members in final cohort"; report_descr = "Number of members"; output;
 		claim_level = "Episode"; descr = "Information - Number of non-pregnant matched comparator episodes"; report_descr = "Number of non-pregnant matched comparator episodes"; output;
+		
+		claim_level = "MIL"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Linked mother excluded due to prior initiation of other exposure group"; output;
+		claim_level = "MIL"; descr = "Exclusion - Live birth delivery must be during the look period"; report_descr = "Live birth delivery recorded during current look period"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the age range condition within the query period"; report_descr = "Linked live birth delivery recorded during specified age range"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Linked mother had sufficient pre-index continuous enrollment"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
+
+		claim_level = "L2"; descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to same-day initition of both exposure groups"; output;
+		claim_level = "L2"; descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
+		claim_level = "L2"; descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
+		claim_level = "L2"; descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
+		claim_level = "L2"; descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
+		claim_level = "L2"; descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
+		claim_level = "L2"; descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
+
 	 run; 
 
   %mend create_lookup;

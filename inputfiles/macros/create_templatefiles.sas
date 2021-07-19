@@ -425,6 +425,17 @@ libname tempfl "";
             set lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
             rename tablesub=figuresub;
             rename table=figure;
+
+            xmin = .;
+            xmax = .;
+            xtick = .;
+            ymin = .;
+            ymax = .;
+            ytick = .;
+            includeatrisktable = 'N';
+            format censordisplay $50.;
+            censordisplay = '';
+            includekmweightedpop = 'N';
         run;
 
         /*t2l1tablefile*/
@@ -443,6 +454,17 @@ libname tempfl "";
             lookup_t2censor(drop=tablesubstrat where=(substr(table,1,1)='F'));
             rename tablesub=figuresub;
             rename table=figure;
+
+            xmin = .;
+            xmax = .;
+            xtick = .;
+            ymin = .;
+            ymax = .;
+            ytick = .;
+            includeatrisktable = 'N';
+            format censordisplay $50.;
+            censordisplay = '';
+            includekmweightedpop = 'N';
         run;
 
     *************************************
@@ -455,6 +477,17 @@ libname tempfl "";
         call missing(dataset, levelid1, levelid2, levelid3);
         levelnum = 0;
         includeinreport = 'N';
+
+        xmin = .;
+        xmax = .;
+        xtick = .;
+        ymin = .;
+        ymax = .;
+        ytick = .;
+        includeatrisktable = 'N';
+        format censordisplay $50.;
+        censordisplay = '';
+        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -492,6 +525,18 @@ libname tempfl "";
         call missing(dataset, levelid1, levelid2, levelid3);
         levelnum = 0;
         includeinreport = 'N';
+
+        /*note - not relevant for T4L2 figures*/
+        xmin = .;
+        xmax = .;
+        xtick = .;
+        ymin = .;
+        ymax = .;
+        ytick = .;
+        includeatrisktable = 'N';
+        format censordisplay $50.;
+        censordisplay = '';
+        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -697,6 +742,17 @@ libname tempfl "";
             drop tablesubstrat;
             rename tablesub=figuresub;
             rename table=figure;
+
+            xmin = .;
+            xmax = .;
+            xtick = .;
+            ymin = .;
+            ymax = .;
+            ytick = .;
+            includeatrisktable = 'N';
+            format censordisplay $50.;
+            censordisplay = '';
+            includekmweightedpop = 'N';
         run;
 
    
@@ -935,6 +991,17 @@ libname tempfl "";
             drop tablesubstrat;
             rename tablesub=figuresub;
             rename table=figure;
+
+            xmin = .;
+            xmax = .;
+            xtick = .;
+            ymin = .;
+            ymax = .;
+            ytick = .;
+            includeatrisktable = 'N';
+            format censordisplay $50.;
+            censordisplay = '';
+            includekmweightedpop = 'N';
         run;
    
     *************************************
@@ -1010,6 +1077,17 @@ libname tempfl "";
             drop tablesubstrat;
             rename tablesub=figuresub;
             rename table=figure;
+
+            xmin = .;
+            xmax = .;
+            xtick = .;
+            ymin = .;
+            ymax = .;
+            ytick = .;
+            includeatrisktable = 'N';
+            format censordisplay $50.;
+            censordisplay = '';
+            includekmweightedpop = 'N';
         run;
 
     /*Clean up*/

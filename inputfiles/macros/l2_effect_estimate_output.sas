@@ -27,7 +27,6 @@
 *
 ***************************************************************************************************;
 
-
 %macro l2_effect_estimate_output();
 
     %put =====> MACRO CALLED: l2_effect_estimate_output;
@@ -138,6 +137,7 @@
         %let percentile&corder. = ;
         %let weightscheme=;
         %let weightschemelong = ;
+        %let pstrim = ;
 
         %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
             data _null_; 
@@ -174,6 +174,7 @@
                 else if upcase(strataweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
                 end;
                 if missing(strataweight) then call symputx('conditional', 'Y');
+                if pstrim > . then call symputx('pstrim', ', Trimmed');
             run;
         %end;
         %if &pscsfile. = iptwfile %then %do;
@@ -183,6 +184,7 @@
                 if upcase(ipweight)= 'ATE' then call symputx("weightschemelong","Average Treatment Effect");
                 else if upcase(ipweight)= 'ATES' then call symputx("weightschemelong","Average Treatment Effect, Stabilized");
                 else if upcase(ipweight)= 'ATT' then call symputx("weightschemelong","Average Treatment Effect in the Treated");
+                call symputx('pstrim', ', Trimmed');
             run;
         %end;
         %if &pscsfile. = covstratfile %then %do;
@@ -237,17 +239,21 @@
            length footnote_order 3; 
            /* Always displayed across all types */
            set lookup.lookup_footnotes_effectest (where=(order in ( 0
+              
               %if "&conditional" = "Y" and %length(&weightscheme) = 0 %then %do;
-              3
-              %end;
-              %if %length(&weightscheme) > 0 %then %do;
               4
               %end;
+			  %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
+			  1
+			  %end;
+              %if %length(&weightscheme) > 0 %then %do;
+              5
+              %end;
               %if &covarnum = 1012 %then %do;
-              1
+              2
               %end;
               %if &covarnum = 1014 %then %do;
-              2
+              3
               %end;
             )));
            by order;
@@ -266,8 +272,9 @@
         quit;
 
         /* Assign macro variables for superscipts */
-        %assign_superscripts(type =title, order =1 2);
-        %assign_superscripts(type =line, order =3 4);
+		%assign_superscripts(type =title, order = 2 3);
+		%assign_superscripts(type =weight, order =1);
+		%assign_superscripts(type =line, order =4 5);
 
         /* Determine what text to append to title based on covarnum */
         %if &covarnum = 0 %then %do;
@@ -361,7 +368,7 @@
                 style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=white borderbottomcolor=black];
             &MPDefine. ;
             define n / display "&user_label"
-                style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
+               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
             %if &reporttype = T2L2 %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
                 style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
@@ -462,7 +469,7 @@
                 /*PS Stratified*/
                 %if &pscsfile. = stratificationfile and %length(&weightscheme) = 0 %then %do;
                 else if analysis = 'Conditional' then do; 
-                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&super_line."; 
+                    text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&pstrim.&super_line."; 
                     num=100; 
                 end;
                 %end;
@@ -471,19 +478,19 @@
                 %if %length(&weightscheme) > 0 %then %do;
                 else if analysis = 'Unweighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis; Unweighted"; 
+                    text="Inverse Probability of Treatment Weighted Analysis; Unweighted&pstrim."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Unweighted";
+                    text="Propensity Score Stratum Adjusted Analysis; Unweighted&pstrim.";
                     %end;
                     num=100; 
                 end;
                 else if analysis = 'Weighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
-                    text="Inverse Probability of Treatment Weighted Analysis; Weight = &weightscheme.&super_line."; 
+                    text="Inverse Probability of Treatment Weighted Analysis&super_weight.; Weight = &weightscheme.&pstrim.&super_line."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&super_line.";
+                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&pstrim.&super_line.";
                     %end;
                     num=100; 
                 end;

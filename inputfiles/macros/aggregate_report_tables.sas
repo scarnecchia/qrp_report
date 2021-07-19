@@ -46,6 +46,8 @@
 *			-[RUNID]_distindexmap.sas7bdat
 *
 *			-[RUNID]_attrition.sas7bdat
+*		  -[RUNID]_mil_attrition.sas7bdat
+*	    -[RUNID]_adjusted_attrition.sas7bdat
 *
 *  Program inputs:                                                                                   
 *  	-
@@ -69,7 +71,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name= , stratification = N, where=);
+        %macro agg_report(infile=, outfile=, name= , stratification = N, where=1);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -91,7 +93,7 @@
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
-				   	%if %length(&&grouplist_&n..) > 0 | &infile = attrition %then %do;    			   
+				   	%if %length(&&grouplist_&n..) > 0 | %index(&infile, attrition) %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
@@ -343,8 +345,18 @@
 			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end;
 
-		/* Attrition table */
-		%agg_report(infile=attrition, outfile=agg_attrition, name=group, where=1);
+		/* Attrition tables */
+		%agg_report(infile=attrition, outfile=agg_attrition, name=group);
+        %isdata(dataset=master_mil);
+        %if %eval(&nobs.>0) %then %do;
+		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp);
+        %end;
+
+        %if %index(&reporttype,L2) %then %do;
+          %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+		  %agg_report(infile=adjusted_attrition_&periodid., outfile=agg_adjusted_attrition_&periodid., name=analysisgrp);
+          %end;
+        %end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
