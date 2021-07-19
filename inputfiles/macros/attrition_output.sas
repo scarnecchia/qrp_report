@@ -50,6 +50,9 @@
                 %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
                 %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
             end;
+            %if %index(&reporttype,T2L2) %then %do;
+            monitoringperiod=&periodid;
+            %end;
         run;
 
         %if %eval(&num_fn.>0) %then %do;
