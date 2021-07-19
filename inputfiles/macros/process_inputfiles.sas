@@ -830,11 +830,11 @@
             censordisplay1 = lowcase(censordisplay);
             %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
-            if index(dataset, 'followuptime') and figure = 'F1' and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
-            else if index(dataset, 'followuptime') and figure = 'F2' and missing(censordisplay) then censordisplay1 = 'cens_event';
-            /*Figure F2 is a KM curve for event of interest*/
-            if index(dataset, 'followuptime') and figure = 'F2' and censordisplay1 ne 'cens_event' then do;
-                put 'ERROR: (Sentinel) Figure F2 is a Kaplan-Meier Estimate of Event of Interest Not Occurring - censordisplay must be cens_event';
+            if index(dataset, 'followuptime') and figure = 'F2' and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
+            else if index(dataset, 'followuptime') and figure = 'F1' and missing(censordisplay) then censordisplay1 = 'cens_event';
+            /*Figure F1 is a KM curve for event of interest*/
+            if index(dataset, 'followuptime') and figure = 'F1' and censordisplay1 ne 'cens_event' then do;
+                put 'ERROR: (Sentinel) Figure F1 is a Kaplan-Meier Estimate of Event of Interest Not Occurring - censordisplay must be cens_event';
                 abort;
             end;
             %end;

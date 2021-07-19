@@ -165,8 +165,8 @@ libname tempfl "";
         run;
     %mend templatecensortablefigures;
 	%templatecensortablefigures(1,t1censor,1,1);
-	%templatecensortablefigures(2,t2followuptime,2,3);
-	%templatecensortablefigures(2,t2censor,1,1);
+	%templatecensortablefigures(2,t2followuptime,1,2);
+	%templatecensortablefigures(2,t2censor,3,3);
 
     /*Multiple Events Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
