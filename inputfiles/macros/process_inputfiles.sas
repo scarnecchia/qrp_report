@@ -315,6 +315,7 @@
 			group = lowcase(group);
             if missing(includeinfigure) then includeinfigure = 'N';
             includeinfigure = upcase(includeinfigure);
+            includenegativetime = upcase(includenegativetime);
 		run;
 
 		 %do n = 1 %to &numrunid.;
@@ -851,6 +852,22 @@
                     abort;
                 end;
             end;
+            %end;
+            %else %if &reporttype. = T6 %then %do;
+                /*Figure F4 and F5 are KM curves - censordisplay should be missing or set to switchedcount - fill in with switchplot variable switchedCount*/
+                if figure in ('F4', 'F5') then do;
+                    if censordisplay1 ne '' | censordisplay1 ne 'switchedcount' then do;
+                        put 'ERROR: (Sentinel) Figures F4 and F5 are Kaplan-Meier Estimate of Switch not occuring - censordisplay cannot be specified';
+                        abort;
+                    end;
+                    else do;
+                        censordisplay1 = 'switchedcount';
+                    end;
+                end;
+                /*Figure F6 and F7 are CDF curves, however switchplot variables do not match other censor variables. If specified, replace with cens_ variables*/
+                if figure in ('F6', 'F7') then do;
+                 
+                end;
             %end;
             drop censordisplay;
 
