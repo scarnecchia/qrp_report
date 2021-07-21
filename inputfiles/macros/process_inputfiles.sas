@@ -332,8 +332,10 @@
 				%put &&grouplist_&n..;
 	     %end;
 
-		 /* Check if code distribution is required */
+         /*Extract additional information from GROUPSFILE*/
 		 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+
+            /* Check if code distribution is required */
 			%let codedistcount = 0;
 
 			proc sql noprint;
@@ -343,14 +345,27 @@
 
 			%if %eval(&codedistcount. > 0) %then %do;
 				%let output_code_distribution = Y;
-
 				proc sort data=groupsfile(keep=group runid order codedist topncodedist) out=GroupsDist;
 				by order;
 				where strip(codedist) ne "";
 				run;
 			%end;
-
 			%put &=output_code_distribution;
+
+            /*Type 6 - assign to macro variable which groups to include negative time*/
+            %if &reporttype. = T6 %then %do;
+                proc sql noprint;
+    	            select quote(strip(group), "'") into :discardnegativetimegroups separated by ","
+    	            from groupsfile
+    	            where includenegativetime = "N";
+				quit;
+            %end;
+
+            /*Set max(order) value into NUMGROUPS*/
+			proc sql noprint;
+    			select max(order) into :numgroups 
+    			from input.&groupsfile.;
+			quit;
 		 %end;
 	 %end;
  
@@ -427,12 +442,11 @@
      run;
 
 
-/***************************************************************************************************
-*   Create a combined treatmentpathways file for all runs                                      
-***************************************************************************************************/
+/*******************************************************************************************************
+*   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
+********************************************************************************************************/
 
     %if &reporttype. = T6 %then %do;
-
         data _treatmentpathways_shell;
             length runid $5 analysisgrp group $40;
             call missing(runid, analysisgrp, group);
@@ -461,6 +475,27 @@
                 %end;
             %end;
         run;
+
+        /*add variables to GROUPSFILE to indicate whether group is a COHORTGRP or ANALYSISGRP*/
+        %isdata(dataset=groupsfile);
+        %if %eval(&nobs.>0) %then %do;
+            proc sql noprint undo_policy=none;
+                create table groupsfile as
+                select distinct x.*,
+                                case when missing(y.cohortgrp) then 'Y'
+                                else 'N'
+                                end as switchanalysis,
+                                case when missing(z.analysisgrp) then 'Y'
+                                else 'N'
+                                end as utilizationanalysis
+                from groupsfile as x
+                left join master_cohortfile as y
+                on x.group = y.cohortgrp and x.runid = y.runid
+                left join master_treatmentpathways as z
+                on x.group = z.analysisgrp and x.runid = z.runid
+                order by x.order;
+            quit;
+        %end;
     %end;
 
 /***************************************************************************************************
@@ -970,10 +1005,8 @@
         %if &t6checktreatmentpathways. = Y %then %do;
             proc sql noprint;
                 create table _tempt6check as
-                select x.group
-                from groupsfile(where=(includeinfigure='Y')) as x
-                inner join master_treatmentpathways as y
-                on x.group = y.analysisgrp and x.runid = y.runid;
+                select group
+                from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
             quit;
             %isdata(dataset=_tempt6check);
             %if %eval(&nobs.<1) %then %do;
