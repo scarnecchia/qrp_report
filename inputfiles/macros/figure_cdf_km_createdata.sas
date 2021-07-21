@@ -250,22 +250,24 @@
          %end;
 
          /*if transposedata = N then create 1 dataset per plot*/
-         data %do g = 1 %to &numgroups.;
-              figure&figure._group&g.
-              %end; ;
-            set figure&figure.;
-            %do g = 1 %to &numgroups.;
-            if order = &g. then output figure&figure._group&g.;
-            %end;
-         run;
+         %if &transposedata. = N %then %do;
+             data %do g = 1 %to &numgroups.;
+                  figure&figure._group&g.
+                  %end; ;
+                set figure&figure.;
+                %do g = 1 %to &numgroups.;
+                if order = &g. then output figure&figure._group&g.;
+                %end;
+             run;
 
-        /*delete extraneous datasets*/
-        %do g = 1 %to &numgroups.;
-            %isdata(dataset=(figure&figure._group&g.));
-            %if %eval(&nobs.<1) %then %do;
-                proc datasets nowarn noprint lib=work;  
-                delete figure&figure._group&g.;
-                quit;
+            /*delete extraneous datasets*/
+            %do g = 1 %to &numgroups.;
+                %isdata(dataset=(figure&figure._group&g.));
+                %if %eval(&nobs.<1) %then %do;
+                    proc datasets nowarn noprint lib=work;  
+                    delete figure&figure._group&g.;
+                    quit;
+                %end;
             %end;
         %end;
 
@@ -305,7 +307,7 @@
      %end;
 
     %skipfigure:
- 
+
     proc datasets nowarn nolist noprint lib=work;
         delete _squarekmcdf _kmcdfdata _cumulative_totals _tempfigure:;
     quit;
