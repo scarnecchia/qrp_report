@@ -99,8 +99,7 @@
             else call symputx('curve', 'CDF');
 
             /*Determine whether to transpose dataset from stacked by group to a wide dataset*/
-            if (dataset='t2followuptime' and figure = 'F1') | (dataset='t5censor' and figure = 'F5') | (dataset='t6plota' and figure = 'F4') 
-               | (dataset='t6plotb' and figure = 'F5') then call symputx('transposedata', 'Y');
+            if (dataset='t2followuptime' and figure = 'F1') | (dataset='t5censor' and figure = 'F5') then call symputx('transposedata', 'Y');
             else call symputx('transposedata', 'N');
         run;
             
