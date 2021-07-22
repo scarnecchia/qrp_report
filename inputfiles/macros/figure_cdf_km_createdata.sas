@@ -23,6 +23,7 @@
 *   - includegroups: Groups to include in report
 *   - includevars: censor reasons to include in final dataset
 *   - transposedata: Y/N/T whether all groups are in 1 plot (Y=Yes, N=No, T=only execute transpose)
+*   - discardnegativetimegroups: list of groups to remove negative ttswitch (Relevant for T6 only)
 *   - figure: standard figure # from FIGUREFILE
 *            
 *  Programming Notes:         
@@ -46,6 +47,7 @@
                                 includegroups=,
                                 includevars=,
                                 transposedata=,
+                                discardnegativetimegroups=,
                                 figure=);
 
 	%put =====> MACRO CALLED: figure_cdf_km_createdata;
@@ -80,14 +82,37 @@
         %end;
 
         /*--------------------------------------------------------------------------------------------*/
+        /* Remove negative time for Type 6                                                            */
+        /*--------------------------------------------------------------------------------------------*/
+        %let minday = 0;
+        %if %str(&discardnegativetimegroups.) ne %str() %then %do;
+            data _kmcdfdata;
+                set _kmcdfdata;
+                if group in (&discardnegativetimegroups.) and day <0 then delete;
+            run;
+        %end;
+
+        /*--------------------------------------------------------------------------------------------*/
         /* Square data to include 1 row per day                                                       */
         /*--------------------------------------------------------------------------------------------*/
+        /*find minimum day (can be negative for Type 6)*/
+        %if &reporttype. = T6 %then %do;
+            proc sql noprint;
+                select min(day) into: minday
+                from _kmcdfdata;
+            quit;
+            %let minday = %sysfunc(min(0,&minday.));
+        %end;
+        %else %do;
+            %let minday = 0;
+        %end;
+
         data _squarekmcdf(rename=i=day);
             set _kmcdfdata(keep=runid group day);
             by runid group day;
             if last.group then do;
                 /*type 6 - length = 4*/ %if &reporttype.=T6 %then %do; length i 4; %end;
-                do i = 0 to day;
+                do i = &minday. to day;
                 output;
                 end; 
             end;

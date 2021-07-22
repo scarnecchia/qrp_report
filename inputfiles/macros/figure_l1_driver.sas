@@ -112,6 +112,7 @@
                                   includegroups=&includegroupinfigure.,
                                   includevars=&censordisplay.,
                                   transposedata=&transposedata.,
+                                  discardnegativetimegroups=,
                                   figure = &figure.);
         %end;
         %else %if &reporttype. = T5 %then %do;
@@ -145,6 +146,7 @@
                                           includegroups=&includegroupinfigure.,
                                           includevars=&censordisplay.,
                                           transposedata=&transposedata.,
+                                          discardnegativetimegroups=,
                                           figure = &figure.);
             %end;
         %end; /*T5*/
@@ -158,14 +160,12 @@
                                                           EndQueryCount=cens_qryend 
                                                           ProductDiscontinuationCount=cens_episend)),
                                       curve=&curve., 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure))
-                                                  %if %str(&discardnegativetimegroups.) ne %str() %then %do;
-                                                  %str(and (group in (&discardnegativetimegroups.) and ttswitch>0))
-                                                  %end; , 
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)),                                       
                                       dayvar=ttswitch,
                                       includegroups=&includegroupinfigure.,
                                       includevars=&censordisplay.,
                                       transposedata=&transposedata.,
+                                      discardnegativetimegroups = %quote(&discardnegativetimegroups.),
                                       figure = &figure.);
         %end; /*T6*/
     %end; /*loop through figures*/
