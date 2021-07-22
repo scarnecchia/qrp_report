@@ -75,9 +75,9 @@
 
             /*Assign dataset*/
             if dataset = 't1censor' then call symputx('dataset', 'agg_t1censor');
-            if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
-            if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
-            if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
+            else if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
+            else if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
+            else if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
 
             /*Assign figure to produce*/
             if dataset='t2followuptime' and figure = 'F1' then call symputx('curve', 'KM');
