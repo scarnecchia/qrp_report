@@ -222,7 +222,8 @@
                        else a.group end as grouplabel length=&label_length.
             from figure&figure. as a
             left join labelfile(where=(labeltype = 'grouplabel')) as b
-            on a.group = b.group and a.runid = b.runid;
+            on a.group = b.group and a.runid = b.runid
+            order by a.group, a.day;
         quit;
      %end;
 
