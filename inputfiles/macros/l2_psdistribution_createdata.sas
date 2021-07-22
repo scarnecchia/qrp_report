@@ -31,6 +31,7 @@
         /*Initialize macro variables for the analysisgrp loop*/
 		%let OutputPSDistribution = ;
 		%let ratio = ;
+		%let strataweight = ;
 
         /*set parameters from l2comparisonfile for this loop*/
         data _null_;
@@ -56,6 +57,9 @@
 		            call symputx("psestimategrp", lowcase(psestimategrp));
 		                 %if &psfile. = psmatchfile  %then %do;
 		                    call symputx('RATIO',upcase(ratio)) ;
+		                 %end;
+		                 %if &psfile. = stratificationfile %then %do;
+		                 	call symputx("strataweight",strataweight);
 		                 %end;
 		        run; 
 		        data _null_; 
@@ -89,7 +93,7 @@
 	                      weight = "Unweighted";
 	                      output;
 						  %do wt = 1 %to &numweights;
-		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | &psfile = stratificationfile %then %do;
+		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | (&psfile = stratificationfile and %length(&strataweight) > 0) %then %do;
 			                	type = 'Adjusted';
 			                    weight = "&&weight&wt.";
 			                    output;
