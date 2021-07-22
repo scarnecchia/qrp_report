@@ -120,8 +120,6 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days supplied"; report_descr = "Met minimum days' supply criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode with at least minimum days duration"; report_descr = "Had index episode of at least required length"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days duration"; report_descr = "Met minimum episode duration criteria"; output;
-      claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the minimum and maximum average filled daily dose criteria"; report_descr = "Met average filled daily dose criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the minimum and maximum average filled daily dose criteria"; report_descr = "Met average filled daily dose criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode with longer than blackout days duration"; report_descr = "Had index episode longer than blackout period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must be longer than blackout days duration"; report_descr = "Episode duration was longer than blackout period"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI blackout criterion"; report_descr = "Did not have an event during blackout period"; output;
