@@ -85,9 +85,9 @@
 
             /*Assign dataset*/
             if dataset = 't1censor' then call symputx('dataset', 'agg_t1censor');
-            if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
-            if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
-            if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
+            else if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
+            else if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
+            else if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
 
             if dataset = 't6plota' then call symputx('dataset', 'agg_t6plota');
             if dataset = 't6plotb' then call symputx('dataset', 'agg_t6plotb');

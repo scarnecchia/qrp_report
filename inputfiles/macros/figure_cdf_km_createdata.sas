@@ -245,12 +245,15 @@
                            else a.group end as grouplabel length=&label_length.
                 from figure&figure. as a
                 left join labelfile(where=(labeltype = 'grouplabel')) as b
-                on a.group = b.group and a.runid = b.runid;
+                on a.group = b.group and a.runid = b.runid
+                order by a.group, a.day;
             quit;
          %end;
 
-         /*if transposedata = N then create 1 dataset per plot*/
-         %if &transposedata. = N %then %do;
+        /*--------------------------------------------------------------------------------------------*/
+        /* if transposedata=N then create 1 dataset per group                                         */
+        /*--------------------------------------------------------------------------------------------*/
+        %if &transposedata. = N %then %do;
              data %do g = 1 %to &numgroups.;
                   figure&figure._group&g.
                   %end; ;
