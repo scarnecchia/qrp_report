@@ -147,15 +147,15 @@
         /* Build macro variables                                                                      */
         /*--------------------------------------------------------------------------------------------*/
         %let censorreasonnum = %sysfunc(countw(&includevars.)); /*number of censor reasons*/
-    %let kmcdf_cumlist = %sysfunc(prxchange(s/(\w+)/cum_$1/,-1,&includevars.));
-    %let kmcdf_sumlist = %sysfunc(prxchange(s/(\w+)/sum_$1/,-1,&includevars.));
-    %let kmcdf_cdflist = %sysfunc(prxchange(s/(\w+)/cdf_$1/,-1,&includevars.));
+        %let kmcdf_cumlist = %sysfunc(prxchange(s/(\w+)/cum_$1/,-1,&includevars.));
+        %let kmcdf_sumlist = %sysfunc(prxchange(s/(\w+)/sum_$1/,-1,&includevars.));
+        %let kmcdf_cdflist = %sysfunc(prxchange(s/(\w+)/cdf_$1/,-1,&includevars.));
 
         /*--------------------------------------------------------------------------------------------*/
         /* Compute total number of episodes for each censoring criteria                               */
         /*--------------------------------------------------------------------------------------------*/
-    data cumulative_totals(keep=group &kmcdf_cumlist. cum_episodes);
-        array cum{*} &kmcdf_cumlist. cum_episodes;
+        data cumulative_totals(keep=group &kmcdf_cumlist. cum_episodes);
+            array cum{*} &kmcdf_cumlist. cum_episodes;
             array censorcriteria{*} &includevars. episodes;
 
             do i = 1 to dim(cum);
@@ -183,7 +183,7 @@
 
             array sum{*} &kmcdf_sumlist. sum_episodes;
             array varlist{*} &includevars. episodes;
-        array cum{*} &kmcdf_cumlist.; 
+            array cum{*} &kmcdf_cumlist.; 
             %if "&curve" = "CDF" %then %do;
             array cdflist{*} &kmcdf_cdflist. ;
             %end;
