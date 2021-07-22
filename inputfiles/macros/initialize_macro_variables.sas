@@ -100,7 +100,7 @@
 
     /*label file variables */
     %global label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
-            cens_event_label cens_switch_label;
+            cens_event_label cens_switch1_label cens_switch2_label;
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
     %let cens_dth_label =Evidence of death;
@@ -109,7 +109,8 @@
     %let cens_episend_label =End of exposure episode;
     %let cens_spec_label =Occurence of request-defined censoring criteria;
     %let cens_event_label =Occurence of event;
-    %let cens_switch_label =Switch; 
+    %let cens_switch1_label =First switch; 
+    %let cens_switch2_label =Second switch; 
 
     /*Age stratification format */
     %global agefmt;

@@ -183,7 +183,7 @@
         /* Compute KM or 1-CDF estimate                                                               */
         /*--------------------------------------------------------------------------------------------*/
         %isdata(dataset=labelfile); /*if labelfile exists*/
-        
+
         data figure&figure.;
             set _kmcdfdata; 
             by group day;
@@ -253,7 +253,13 @@
 
             /*Assign censoring criteria labels*/
             %do lbl = 1 %to %eval(&censorreasonnum.);
-                label &&curve._%scan(&includevars., &lbl.) = "&&%scan(&includevars., &lbl.)_label";
+                %let s=;
+                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
+                    %if &dataset. = agg_t6plota %then %let s = 1;
+                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
+                %end;
+                %let var = %scan(&includevars., &lbl.);
+                label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
             %end;
 
             keep runid group: order day episodes_atrisk &curve._:;
