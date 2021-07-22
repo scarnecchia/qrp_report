@@ -339,6 +339,6 @@
         delete _squarekmcdf _kmcdfdata _cumulative_totals _tempfigure:;
     quit;
 
-	%put =====> END MACRO: baseline_aggregate;
+	%put =====> END MACRO: figure_cdf_km_createdata;
 
 %mend;
