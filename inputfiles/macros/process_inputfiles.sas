@@ -691,7 +691,7 @@
         %if %eval(&nobs.>0) %then %do;
             %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelid combinations.;
             %put The reporting code will abort;
-/*            %abort;*/
+            %abort;
         %end;
         proc sort data=userstrata nodupkey dupout=_userstratadups;
             by tableid levelvars;
@@ -700,7 +700,7 @@
         %if %eval(&nobs.>0) %then %do;
             %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelvars combinations.;
             %put The reporting code will abort;
-/*            %abort;*/
+            %abort;
         %end;
     %end;
 
