@@ -1122,6 +1122,7 @@
                     %let datasetlist = &datasetlist. &fdatasetlist.;
                 %end;
             %end;
+        %end; /*L1 figures*/
         %end; /*FigureFile has rows with IncludeinReport=Y and should be mapped to USERSTRATA file*/
         %else %if %eval(&nobs.<1) %then %do;
             %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
