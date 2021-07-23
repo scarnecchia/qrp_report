@@ -48,8 +48,8 @@
         3) F3 (not yet implemented)
         4) F4: t6plota = Kaplan-Meier Estimate of First Switch Not Occurring
         5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
-        5) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
-        5) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+        6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
+        7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
     /***********************************************************************************************/
 
     %isdata(dataset=figurefile);
