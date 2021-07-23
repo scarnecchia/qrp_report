@@ -178,6 +178,11 @@
             %let s10=;
             %let s00=;
 
+            /*KM curves*/
+            %let unadjustedkm = N;
+            %let conditionalkm = N;
+            %let unconditionalkm = N;
+
             /*Use risk set or individual level return*/
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
                 %let individualreturn = Y;
@@ -261,7 +266,18 @@
                     %end;
                 run;
             %end;
-            
+
+            /*If KM curves requested, determine which apply to the analysis*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                /*Fixed PS matched analysis: Unadjusted, Conditional, Unconditional*/
+                /*Variable PS matched analysis: Unadjusted, Conditional */
+                /*PS Stratification analysis: Unadjusted*/
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let unadjustedkm = Y;
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let conditionalkm = Y;
+                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let unconditionalkm = Y;
+                %end;
+            %end;
            
             /****************************************************************************************/
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
@@ -320,26 +336,44 @@
 	                    end;
 	                run;
 					
-                %if &marginalweights. = Y %then %do;
-                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-                                       outfile=aggmw,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-			   					   
-			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                       outfile=aggwd,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(n, min, max, mean, sd),
-                                       runidvar=&runid.);					   
-                %end; /* aggregate weighted and marginalweights data */	
-	                   
+                    %if &marginalweights. = Y %then %do;
+                    %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+                                           outfile=aggmw,
+                                           pscsfile=&pscsfile.,
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                           convrule=%quote(&convrule.),
+                                           convdata=&runid._estimates_&periodid.,
+                                           settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
+    			   					   
+    			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                           outfile=aggwd,
+                                           pscsfile=&pscsfile.,
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                           convrule=%quote(&convrule.),
+                                           convdata=&runid._estimates_&periodid.,
+                                           settomissvars=%str(n, min, max, mean, sd),
+                                           runidvar=&runid.);					   
+                    %end; /* aggregate weighted and marginalweights data */	
+
+                    /*if KM curves requested, aggregate survivaldata dataset - always overall*/
+                    %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                        %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+        			    %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
+                                               outfile=aggsurvival,
+                                               pscsfile=&pscsfile.,
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0)
+                                                           %if unadjustedkm = Y %then %do; %str(and analysis = 'Unadjusted') %end;
+                                                           %if conditionalkm = Y %then %do; %str(and analysis = 'Conditional') %end;
+                                                           %if unconditionalkm = Y %then %do; %str(and analysis = 'Unconditional') %end; , 
+                                               convrule=%quote(&convrule.),
+                                               convdata=&runid._estimates_&periodid.,
+                                               settomissvars=%str(evexp evunexp nexp nunexp),
+                                               runidvar=&runid.);					   
+                        %end;
+                    %end;
 	            %end; /*aggregate risk set data*/
+
+                /*aggregate hdps vars for unique psestimategrps*/
 				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
 	                                      outfile=agghdps,
@@ -350,8 +384,7 @@
 										  settomissvars=%str(codecat, codetype, frequency, ranking, code),
 										  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
 	                                      runidvar=&runid.);	
-				%end;/*aggregate hdps vars for unique psestimategrps*/
-
+				%end;
 
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
                 %if &individualreturn. = Y %then %do;
@@ -606,6 +639,14 @@
                     delete cat_dp:;
                 quit;
 
+
+            /**********************************************************************************/
+            /* Compute KM cuves                                                               */
+            /**********************************************************************************/
+
+
+
+
             %end; /*end overall metric computations*/
 
 
@@ -745,7 +786,7 @@
     %end; /*loop through each analysisgrp*/
 
 	proc datasets library=work nowarn nolist;
-        delete aggpl: aggrd: aggrs:;
+        delete aggpl: aggrd: aggrs: aggsurvival;
     quit;
 
     /*Merge together risk metrics and effect estimates*/
