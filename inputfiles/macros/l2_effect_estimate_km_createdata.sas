@@ -32,10 +32,42 @@
 
 	%put =====> MACRO CALLED: l2_effect_estimate_km_createdata;
 
-    /*--------------------------------------------------------------------------------------------*/
-    /* Patient level data                                                                         */
-    /*--------------------------------------------------------------------------------------------*/
-    %if &individualreturn. = Y %then %do;
+    /*loop through each plot*/
+    %do p = 1 %to %sysfunc(countw(&plotstocreate.));
+        %let plot = %scan(&plotstocreate., &p.);
+
+        /*--------------------------------------------------------------------------------------------*/
+        /* Patient level data                                                                         */
+        /*--------------------------------------------------------------------------------------------*/
+        %if &individualreturn. = Y %then %do;
+/*            data step0;*/
+/*                set aggpl;*/
+/*                pat = 1;*/
+/*                keep matchid event followuptime exposure pat;*/
+/*            run;*/
+
+            /*For conditional analysis, restrict to informative events*/
+            %if &plot. = Conditional %then %do;
+
+
+            %end;
+
+
+           
+
+
+
+
+
+
+        /*Clean up*/
+
+        %end; /*patient level data*/
+
+        /*--------------------------------------------------------------------------------------------*/
+        /* Risk set level data                                                                        */
+        /*--------------------------------------------------------------------------------------------*/
+        %else %if &individualreturn. = N %then %do;
 
 
 
@@ -43,25 +75,12 @@
 
 
 
-    /*Clean up*/
 
-    %end; /*patient level data*/
+        /*Clean up*/
 
-    /*--------------------------------------------------------------------------------------------*/
-    /* Risk set level data                                                                        */
-    /*--------------------------------------------------------------------------------------------*/
-    %else %if &individualreturn. = N %then %do;
+        %end; /*risk set data*/
 
-
-
-
-
-
-
-
-    /*Clean up*/
-
-    %end;
+    %end; /*loop through each plot*/
 
 	%put =====> END MACRO: l2_effect_estimate_km_createdata;
 
