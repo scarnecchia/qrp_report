@@ -10,6 +10,7 @@
 *                                        
 *  Program inputs:                                                                                   
 *   - Either a patient level or risk set level dataset
+*   - list of plots to create
 * 
 *  Program outputs: 
 * 
@@ -27,7 +28,7 @@
 *
 ***************************************************************************************************;
 
-%macro l2_effect_estimate_km_createdata(individualreturn=);
+%macro l2_effect_estimate_km_createdata(individualreturn=, plotstocreate=);
 
 	%put =====> MACRO CALLED: l2_effect_estimate_km_createdata;
 
@@ -35,6 +36,7 @@
     /* Patient level data                                                                         */
     /*--------------------------------------------------------------------------------------------*/
     %if &individualreturn. = Y %then %do;
+
 
 
 
