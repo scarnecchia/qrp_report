@@ -313,6 +313,8 @@
 			;
 			runid = lowcase(runid);
 			group = lowcase(group);
+            if missing(includeinfigure) then includeinfigure = 'N';
+            includeinfigure = upcase(includeinfigure);
 		run;
 
 		 %do n = 1 %to &numrunid.;
@@ -812,7 +814,7 @@
     %isdata(dataset=input.&figurefile.);
     %if %eval(&nobs.>0) %then %do;
         data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                        rename=figuresub_out=figuresub);
+                        rename=figuresub_out=figuresub rename=censordisplay1=censordisplay);
             set input.&figurefile.(where=(upcase(includeinreport)='Y'));
 
         	figure=upcase(figure);
@@ -821,6 +823,36 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+            includeatrisktable = upcase(includeatrisktable);
+
+            *if censordisplay is missing, replace with default list of censoring reasons;
+            length censordisplay1 $80;
+            censordisplay1 = lowcase(censordisplay);
+            %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
+            if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
+            if index(dataset, 'followuptime') and figure = 'F2' and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
+            else if index(dataset, 'followuptime') and figure = 'F1' and missing(censordisplay) then censordisplay1 = 'cens_event';
+            /*Figure F1 is a KM curve for event of interest*/
+            if index(dataset, 'followuptime') and figure = 'F1' and censordisplay1 ne 'cens_event' then do;
+                put 'ERROR: (Sentinel) Figure F1 is a Kaplan-Meier Estimate of Event of Interest Not Occurring - censordisplay must be cens_event';
+                abort;
+            end;
+            %end;
+            %else %if &reporttype. = T5 %then %do;
+            if index(dataset, 'censor') and missing(censordisplay) and figure = 'F4' then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec';
+            /*for F5 - check to ensure a censoring criterion is specified and only 1 is specified*/
+            else if index(dataset, 'censor') and figure = 'F5' then do;
+                if missing(censordisplay) then do;
+                    put 'ERROR: (Sentinel) Figure F5 requires the user to specify one censor reason to display in the plot';
+                    abort;
+                end;
+                if countw(censordisplay) >1 then do;
+                    put 'ERROR: (Sentinel) Only 1 censor reason can be displayed in Figure F5';
+                    abort;
+                end;
+            end;
+            %end;
+            drop censordisplay;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -865,7 +897,7 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
-      /*Put list of requested figures into macro variabl FIGURELIST*/
+      /*Put list of requested figures into macro variable FIGURELIST*/
         proc sql noprint;
             select distinct figure into: figurelist separated by ' '
             from figurefile;
@@ -892,6 +924,15 @@
                          , figure.levelid3 as strat3
                          , figure.levelnum
                          , figure.figuretitle
+                         , figure.xmin
+                         , figure.xmax
+                         , figure.xtick 
+                         , figure.ymin
+                         , figure.ymax 
+                         , figure.ytick
+                         , figure.includeatrisktable
+                         , figure.censordisplay
+                         , figure.includekmweightedpop
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -909,6 +950,27 @@
                     set figurefile;
                     where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
                 run;
+
+                /*For L1 figures, assign list of GROUPS to include in figures*/
+                %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
+                    %isdata(dataset=input.&groupsfile.);
+                    %if %eval(&nobs.>0) %then %do;
+                        proc sql noprint;
+                            select quote(strip(group), "'") into :includegroupinfigure separated by ' '
+                            from groupsfile
+                            where includeinfigure = 'Y'; 
+                        run;
+
+                        %if %str("&includegroupinfigure") = %str("") %then %do;
+                            %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however INCLUDEINFIGURE is set to N for all groups;
+                            %abort;
+                        %end;
+                    %end;
+                    %else %do;
+                        %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however GROUPSFILE is missing. Specify a GROUPSFILE in CREATEREPORTFILE;
+                        %abort;
+                    %end;
+                %end;
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
