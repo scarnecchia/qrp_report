@@ -647,6 +647,7 @@
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
                     %l2_effect_estimate_km_createdata(individualreturn=&individualreturn., 
                                                       plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.);
+                    %end;
                 %end; /*KM plots*/
 
             %end; /*end overall metric computations*/
