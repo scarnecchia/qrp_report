@@ -177,7 +177,7 @@
         /*--------------------------------------------------------------------------------------------*/
         %isdata(dataset=labelfile); /*if labelfile exists*/
 
-        data figure&figure.;
+        data figure&figure.(rename=lag_episodes_atrisk=episodes_atrisk);
             set _kmcdfdata; 
             by group day;
 
@@ -206,6 +206,8 @@
 
             /*Episodes_atrisk used in atrisk table in plot and for KM curve*/
             episodes_atrisk = cum_episodes - sum_episodes;
+            lag_episodes_atrisk = lag(episodes_atrisk);
+            if first.group then lag_episodes_atrisk = episodes_atrisk;
 
             %if "&curve" = "CDF" %then %do;
             /*------1-CDF plot-----*/
@@ -215,11 +217,8 @@
             drop a i;
             %end;
             /*-----KM Plot---------*/
-            %else %if "&curve" = "KM" %then %do;
-                lag_episodes_atrisk = lag(episodes_atrisk);
-                
+            %else %if "&curve" = "KM" %then %do;                
     			if first.group then do;
-    				lag_episodes_atrisk = .; 
     				%do cns = 1 %to %eval(&censorreasonnum.);
     					km_%scan(&includevars., &cns.) = 1;
     				%end;
@@ -255,7 +254,7 @@
                 label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
             %end;
 
-            keep runid group: order day episodes_atrisk &curve._:;
+            keep runid group: order day lag_episodes_atrisk &curve._:;
          run;
 
         /*--------------------------------------------------------------------------------------------*/
