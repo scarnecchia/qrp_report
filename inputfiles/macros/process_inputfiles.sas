@@ -1064,7 +1064,6 @@
                          , figure.ytick
                          , figure.includeatrisktable
                          , figure.censordisplay
-                         , figure.includekmweightedpop
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -1216,6 +1215,9 @@
                 if missing(OutputPSDistribution) then OutputPSDistribution = 'N';
                 else OutputPSDistribution=strip(upcase(OutputPSDistribution));
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+
+                if missing(kmrefpop) then kmrefpop = 'N';
+                else kmrefpop=strip(upcase(kmrefpop));
             run;
 
             %let numl2comparisons = &nobs.;
