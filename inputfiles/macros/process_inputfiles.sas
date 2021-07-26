@@ -1216,7 +1216,7 @@
                 else OutputPSDistribution=strip(upcase(OutputPSDistribution));
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
 
-                if missing(kmrefpop) then kmrefpop = 'N';
+                if missing(kmrefpop) then kmrefpop = 'unweighted';
                 else kmrefpop=strip(upcase(kmrefpop));
             run;
 
