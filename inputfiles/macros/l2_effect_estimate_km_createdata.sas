@@ -10,13 +10,14 @@
 *                                        
 *  Program inputs:                                                                                   
 *   - Either a patient level or risk set level dataset
-*   - list of plots to create
 * 
 *  Program outputs: 
 * 
 * 
 *  PARAMETERS:  
 *   - individualreturn: Y or N
+*   - plotstocreate: list of plots (F3 F4 F5)
+*   - kmrefpop: determines whether to produce weighted curves for VRM analysis
 *            
 *  Programming Notes:         
 *
@@ -28,7 +29,7 @@
 *
 ***************************************************************************************************;
 
-%macro l2_effect_estimate_km_createdata(individualreturn=, plotstocreate=);
+%macro l2_effect_estimate_km_createdata(individualreturn=, plotstocreate=, kmrefpop=);
 
 	%put =====> MACRO CALLED: l2_effect_estimate_km_createdata;
 
@@ -68,6 +69,7 @@
         /* Risk set level data                                                                        */
         /*--------------------------------------------------------------------------------------------*/
         %else %if &individualreturn. = N %then %do;
+
 
 
 

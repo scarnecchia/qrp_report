@@ -95,6 +95,7 @@
         %let covarnumlist =;
         %let numsubgroup = 0; /*number of subgroups*/
         %let convrule = ;
+        %let kmrefpop = unweighted;
 
         /*set parameters from l2comparisonfile for this loop*/
         data _null_;
@@ -106,6 +107,7 @@
             call symputx('classvars', classvars);
             call symputx('noclassvars', noclassvars);
 			call symputx('unique_psestimate', unique_psestimate);
+            call symputx('kmrefpop', kmrefpop);
             if not missing(convrule) then call symputx('convrule', convrule);
         run;
         %put now computing effect estimates for &analysisgrp.;
@@ -276,6 +278,18 @@
                 %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let unadjustedkm = Unadjusted;
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let conditionalkm = Conditional;
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let unconditionalkm = Unconditional;
+
+                /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
+                %if %sysfunc(prxmatch(m/F4|F5/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
+                    %if &individualreturn. = N %then %do;
+                        %put WARNING: (Sentinel) Patient level data required to produce weighted KM curves. KMREFPOP will be set to Unweighted for &analysisgrp.;
+                        %let kmrefpop = unweighted;
+                    %end;
+                    %if &pscsfile. ne psmatchfile | (&pscsfile. = psmatchfile & &ratio. = F) %then %do;
+                        %put WARNING: (Sentinel) Weighted KM curves only available for Variable Ratio Match Analysis. KMREFPOP will be set to Unweighted for &analysisgrp.;
+                        %let kmrefpop = unweighted;
+                    %end;
+                %end;
                 %end;
             %end;
            
@@ -646,7 +660,8 @@
                 %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
                     %l2_effect_estimate_km_createdata(individualreturn=&individualreturn., 
-                                                      plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.);
+                                                      plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.,
+                                                      kmrefpop=&kmrefpop.);
                     %end;
                 %end; /*KM plots*/
 

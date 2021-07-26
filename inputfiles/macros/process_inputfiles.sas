@@ -1217,7 +1217,7 @@
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
 
                 if missing(kmrefpop) then kmrefpop = 'unweighted';
-                else kmrefpop=strip(upcase(kmrefpop));
+                else kmrefpop=strip(lowcase(kmrefpop));
             run;
 
             %let numl2comparisons = &nobs.;
