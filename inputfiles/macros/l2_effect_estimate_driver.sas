@@ -275,9 +275,9 @@
                 /*Fixed PS matched analysis: Unadjusted, Conditional, Unconditional*/
                 /*Variable PS matched analysis: Unadjusted, Conditional */
                 /*PS Stratification analysis: Unadjusted*/
-                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let unadjustedkm = Unadjusted;
-                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let conditionalkm = Conditional;
-                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let unconditionalkm = Unconditional;
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let unadjustedkm = 'Unadjusted';
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let conditionalkm = 'Conditional';
+                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let unconditionalkm = 'Unconditional';
 
                 /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
                 %if %sysfunc(prxmatch(m/F4|F5/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
@@ -375,10 +375,8 @@
         			    %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
-                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0)
-                                                           %if unadjustedkm = Unadjusted %then %do; %str(and analysis = 'Unadjusted') %end;
-                                                           %if conditionalkm = Conditional %then %do; %str(and analysis = 'Conditional') %end;
-                                                           %if unconditionalkm = Unconditional %then %do; %str(and analysis = 'Unconditional') %end; , 
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0 
+                                                                and analysis in (&unadjustedkm. &conditionalkm. &unconditionalkm.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
                                                settomissvars=%str(evexp evunexp nexp nunexp),
