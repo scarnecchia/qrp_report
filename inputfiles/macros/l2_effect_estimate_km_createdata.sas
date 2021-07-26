@@ -74,7 +74,6 @@
     /* Risk set level data                                                                        */
     /*--------------------------------------------------------------------------------------------*/
     %else %if &individualreturn. = N %then %do;
-
         /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
         data _tempaggsurvival;
             set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid 
@@ -161,9 +160,85 @@
                 from _kmdata
                 group by analysis;
             quit;
-               
-            /*Compute KM curve*/
 
+            %isdata(labelfile);
+            %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
+
+            /*Compute KM curve*/
+            data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount.(&renamestatement.) %end;
+                 %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount.(&renamestatement.) %end;
+                 %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount.(&renamestatement.) %end; ;
+
+                set _kmdata; 
+                by analysis day;
+
+                array sum{*} sum_evexp sum_evunexp sum_censorexp sum_censorunexp;
+                array varlist{*} evexp evunexp censorexp censorunexp;
+               
+                if first.analysis then do;
+                    merge cumulative_totals;
+                    by analysis;
+            
+                    do i = 1 to dim(varlist);
+                        sum{i} = varlist{i};
+                    end;
+                end;
+                else do;
+                    do i = 1 to dim(varlist);
+                        sum{i} = varlist{i} + sum{i} ;
+                    end;
+                end;
+
+                retain sum_evexp sum_evunexp sum_censorexp sum_censorunexp;
+
+                /*Episodes_atrisk used in atrisk table in plot and for KM curve - 
+                  need to lag to get the # of episodes at risk on the day and not episodes still at risk*/
+                episodes_atriskexp = cum_nexp - sum_censorexp;
+                episodes_atriskunexp = cum_nunexp - sum_censorunexp;
+                lag_episodes_atriskexp = lag(episodes_atriskexp);
+                lag_episodes_atriskunexp = lag(episodes_atriskunexp);
+
+                /*reset day 0*/
+                if day = 0 then do;
+                    lag_episodes_atriskexp = episodes_atriskexp;
+                    lag_episodes_atriskunexp = episodes_atriskunexp;
+                end;
+
+                /*-----KM Plot---------*/                
+    			if day =0 then do;
+                    km_evexp = 1;
+                    km_evunexp = 1;
+    			end;
+    			else do;
+                    if evexp > 0 then do;
+    				    km_evexp = km_evexp*(1-(evexp/lag_episodes_atriskexp));
+                    end;
+    			    else do;
+                        km_evexp = km_evexp;
+                    end;
+                    if evunexp > 0 then do;
+    				    km_evunexp = km_evunexp*(1-(evunexp/lag_episodes_atriskunexp));
+                    end;
+    			    else do;
+                        km_evunexp = km_evunexp;
+                    end;
+    			end;
+    			retain km_evexp km_evunexp;
+
+                /*assign raw group label as grouplabel if no label file - next step assigns label from labelfile*/
+                %if %eval(&nobs.<1) %then %do;
+                length grouplabel $40;
+                grouplabel = "&analysisgrp.";
+                %end;
+
+                keep grouplabel day lag_episodes_atriskexp lag_episodes_atriskunexp km_:;
+
+                %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount.; %end;
+                %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount.; %end;
+                %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount.; %end;
+           run;
+
+           /*Merge in labels*/
 
 
 
