@@ -743,7 +743,24 @@
                 5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
             /**********************************************************************************************/
             %if &reporttype. = T5 %then %do;
+                /*F4: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
+                %end; /*figuref4*/
 
+                /*F4: 1 figure per report*/
+                %isdata(dataset=figuref5);
+                %if %eval(&nobs.>0) %then %do;
+                    /*Censor reason*/
+                      data _null_;
+                        set figurefile(where=(figure="F5"));
+                        call symputx('censordisplay', censordisplay);
+                    run;
+
+                	%addtotoc(tabnum=Figure &figurenum.,
+                			  caption=%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
+                    %let figurenum = %eval(&figurenum.+1); 
+                %end;
             %end; /*T5*/
 
             /**********************************************************************************************
