@@ -101,7 +101,7 @@
                 select min(day) into: minday
                 from _kmcdfdata;
             quit;
-            %let minday = %sysfunc(min(0,&minday.));
+            %let minday = %sysfunc(min(-1,&minday.-1));
         %end;
         %else %do;
             %let minday = 0;
@@ -140,7 +140,7 @@
             %if &reporttype. = T6 %then %do;
             where y.switchanalysis = 'Y'
             %end;
-            order by runid, group, day;
+            order by group, day;
         quit;
   
         /*--------------------------------------------------------------------------------------------*/
