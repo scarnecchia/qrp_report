@@ -140,7 +140,7 @@
             %if &reporttype. = T6 %then %do;
             where y.switchanalysis = 'Y'
             %end;
-            order by runid, group, day;
+            order by group, day;
         quit;
   
         /*--------------------------------------------------------------------------------------------*/
