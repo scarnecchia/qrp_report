@@ -435,7 +435,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
         run;
 
         /*t2l1tablefile*/
@@ -464,7 +463,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
         run;
 
     *************************************
@@ -487,7 +485,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -536,7 +533,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -752,7 +748,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
         run;
 
    
@@ -1001,7 +996,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
         run;
    
     *************************************
@@ -1087,7 +1081,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
         run;
 
     /*Clean up*/

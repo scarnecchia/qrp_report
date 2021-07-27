@@ -26,11 +26,7 @@
 *
 *   Version   Date       Initials      Comment (reference external documentation when available)
 *   -------   --------   --------   ---------------------------------------------------------------
-*   0.1.0     06/14/21     SOC      Consolidated baseline table functionality across all query types
-*                                   Integrated Level 2 reporting features 
-*                                   Integrated mini-tools
-*                                   Added attrition table for Level 1 analyses
-*                                   Produce stacked MSOC output datasets
+*   See QRP Report Documentation Modification History for release notes   
 *
 ***************************************************************************************************;
 
@@ -201,6 +197,7 @@ ods path(prepend) work.templat(update);
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_km_createdata.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
