@@ -42,6 +42,14 @@
         3) F3 (not yet implemented)
         4) F4: t5censor = Reasons for End of First Treatment Episode by Group
         5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
+     T6: 7 figures:
+        1) F1 (not yet implemented)
+        2) F2 (not yet implemented)
+        3) F3 (not yet implemented)
+        4) F4: t6plota = Kaplan-Meier Estimate of First Switch Not Occurring
+        5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
+        6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
+        7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
     /***********************************************************************************************/
 
     %isdata(dataset=figurefile);
@@ -59,8 +67,10 @@
     /*Square groups*/
     proc sql noprint;
         create table _squaregroup as
-        select group, runid, 0 as day
-        from groupsfile
+        select group, 
+               runid, 
+               0 as day /*type 6 - length = 4*/ %if &reporttype.=T6 %then %do; length=4 %end;
+        from groupsfile(where=(includeinfigure='Y'))
         order by runid, group;
     quit;
 
@@ -79,8 +89,13 @@
             else if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
             else if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
 
+            if dataset = 't6plota' then call symputx('dataset', 'agg_t6plota');
+            if dataset = 't6plotb' then call symputx('dataset', 'agg_t6plotb');
+
             /*Assign figure to produce*/
-            if dataset='t2followuptime' and figure = 'F1' then call symputx('curve', 'KM');
+            if (dataset='t2followuptime' and figure = 'F1') |
+               (dataset='t6plota' and figure = 'F4') | 
+               (dataset='t6plotb' and figure = 'F5') then call symputx('curve', 'KM');
             else call symputx('curve', 'CDF');
 
             /*Determine whether to transpose dataset from stacked by group to a wide dataset*/
@@ -90,12 +105,14 @@
             
         %if &reporttype. = T1 | &reporttype. = T2L1 %then %do;
         %figure_cdf_km_createdata(dataset=&dataset., 
+                                  rename=,
                                   curve=&curve., 
                                   whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
                                   dayvar=censdays_value,
                                   includegroups=&includegroupinfigure.,
                                   includevars=&censordisplay.,
                                   transposedata=&transposedata.,
+                                  discardnegativetimegroups=,
                                   figure = &figure.);
         %end;
         %else %if &reporttype. = T5 %then %do;
@@ -112,10 +129,7 @@
                 %if %index(&censordisplayf4., &censordisplay.)>0 %then %do;
                     data figure&figure.;
                         set figuref4;
-                        %do g = 1 %to %sysfunc(countw(&includegroupinfigure.));
-                            if group = %scan(&includegroupinfigure., &g.) then groupnum = &g.;
-                        %end;
-                        keep day group: episodes_atrisk: cdf_&censordisplay.;
+                        keep day group: order episodes_atrisk: cdf_&censordisplay.;
                     run;
                     %let transposedata = T;
                 %end;
@@ -125,16 +139,35 @@
             %else %do;
                 %createfigure:
                 %figure_cdf_km_createdata(dataset=&dataset., 
+                                          rename=,
+                                          curve=&curve., 
+                                          whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
+                                          dayvar=episodelength,
+                                          includegroups=&includegroupinfigure.,
+                                          includevars=&censordisplay.,
+                                          transposedata=&transposedata.,
+                                          discardnegativetimegroups=,
+                                          figure = &figure.);
+            %end;
+        %end; /*T5*/
+        %else %if &reporttype. = T6 %then %do;
+            %figure_cdf_km_createdata(dataset=&dataset., 
+                                      rename=%str(rename=(analysisgrp=group 
+                                                          SwitchedCount=cens_switch 
+                                                          EndEnrollmentCount=cens_elig 
+                                                          DeathCount=cens_dth 
+                                                          EndAvailDataCount=cens_dpend 
+                                                          EndQueryCount=cens_qryend 
+                                                          ProductDiscontinuationCount=cens_episend)),
                                       curve=&curve., 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
-                                      dayvar=episodelength,
+                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)),                                       
+                                      dayvar=ttswitch,
                                       includegroups=&includegroupinfigure.,
                                       includevars=&censordisplay.,
                                       transposedata=&transposedata.,
+                                      discardnegativetimegroups = %quote(&discardnegativetimegroups.),
                                       figure = &figure.);
-            %end;
-        %end; /*T5*/
-
+        %end; /*T6*/
     %end; /*loop through figures*/
 
     proc datasets nowarn noprint lib=work;
