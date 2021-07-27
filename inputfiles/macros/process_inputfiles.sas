@@ -1090,7 +1090,7 @@
                             select quote(strip(group), "'") into :includegroupinfigure separated by ' '
                             from groupsfile
                             where includeinfigure = 'Y'; 
-                        run;
+                        quit;
 
                         %if %str("&includegroupinfigure") = %str("") %then %do;
                             %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however INCLUDEINFIGURE is set to N for all groups;
