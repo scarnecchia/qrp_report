@@ -101,7 +101,7 @@
                 select min(day) into: minday
                 from _kmcdfdata;
             quit;
-            %let minday = %sysfunc(min(0,&minday.));
+            %let minday = %sysfunc(min(-1,&minday.-1));
         %end;
         %else %do;
             %let minday = 0;
