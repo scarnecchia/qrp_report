@@ -161,13 +161,12 @@
                 group by analysis;
             quit;
 
-            %isdata(labelfile);
             %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
 
             /*Compute KM curve*/
-            data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount.(&renamestatement.) %end;
-                 %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount.(&renamestatement.) %end;
-                 %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount.(&renamestatement.) %end; ;
+            data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount._&periodid.(&renamestatement.) %end;
+                 %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount._&periodid.(&renamestatement.) %end;
+                 %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount._&periodid.(&renamestatement.) %end; ;
 
                 set _kmdata; 
                 by analysis day;
@@ -225,17 +224,11 @@
     			end;
     			retain km_evexp km_evunexp;
 
-                /*assign raw group label as grouplabel if no label file - next step assigns label from labelfile*/
-                %if %eval(&nobs.<1) %then %do;
-                length grouplabel $40;
-                grouplabel = "&analysisgrp.";
-                %end;
+                keep day lag_episodes_atriskexp lag_episodes_atriskunexp km_:;
 
-                keep grouplabel day lag_episodes_atriskexp lag_episodes_atriskunexp km_:;
-
-                %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount.; %end;
-                %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount.; %end;
-                %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount.; %end;
+                %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
+                %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
+                %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount._&periodid.; %end;
            run;
 
            /*Merge in labels*/

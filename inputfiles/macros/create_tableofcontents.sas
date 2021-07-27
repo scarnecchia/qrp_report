@@ -874,8 +874,8 @@
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
-						%let tableletter=a;
-						%let tablecount = 1;
+				%let tableletter=a;
+				%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;
@@ -892,12 +892,91 @@
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
 	            %end; /* loop periods */
+
+                %let figurenum = %eval(&figurenum.+1); 
 	        %end; /*Forest plots */
 
-            /*F3-F5: KM Plots*/
+            /*F3-F5: KM Plots - Type 2 only*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
 
+                *reset tablecount; 
+				%let tablecount = 1;
 
+                /*loop through each analysisgrp - dataset only exists if curve computed*/
+				%do loopcount = 1 %to &numl2comparisons.;   
+                    data _null_;
+                        set l2comparisonfile(where=(order=&loopcount.));
+		                call symputx('runid', runid);
+		                call symputx('analysisgrp', analysisgrp);
+                    run;
 
+                    proc sql noprint;
+                        select distinct strip(file) into: pscsfile trimmed
+                        from pscs_masterinputs
+                        where analysisgrp = "&analysisgrp." and runid = "&runid";
+                    quit;
+
+                    %let outcomelabel = Event of Interest ;
+                    %isdata(dataset=labelfile);
+                    %if %eval(&nobs.>0) %then %do;
+                        data _null_;
+                            set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"));
+                            if _n_ = 1 then call symputx('outcomelabel', label);
+                        run;
+                    %end;
+
+                    /** TO DO: set EOI and REF Labels **/
+                    %let eoilabel = TO BE REPLACED;
+                    %let reflabel = TO BE REPLACED;
+
+                    /*loop through periodid*/
+                    %do j = %eval(&look_start) %to %eval(&look_end);
+
+                    /*F3*/
+                    %isdata(dataset=figureF3_analysis&loopcount._&j.);
+                    %if %eval(&nobs.>0) %then %do;
+                    %tableletter();	
+                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                    %end;
+                    /*F4*/
+                    %isdata(dataset=figureF4_analysis&loopcount._&j.);
+                    %if %eval(&nobs.>0) %then %do;
+                    %tableletter();	
+                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                    %end;
+                    /*F5*/
+                    %isdata(dataset=figureF5_analysis&loopcount._&j.);
+                    %if %eval(&nobs.>0) %then %do;
+                    %tableletter();	
+                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                    %end;
+
+                    %end; /*loop through periodid*/
+                %end;
+            
+                /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  the numerous permutations of situations that can lead to 1 figure */
+                proc sql noprint;
+                    select count(caption) into: countkm
+                    from tableofcontents
+                    where index(caption, 'Kaplan-Meier Estimate')>0;
+                quit;
+
+                %if %eval(&countkm.)=1 %then %do;
+                    data tableofcontents;
+                        set tableofcontents;
+                        if index(caption, 'Kaplan-Meier Estimate')>0 then do;
+                        tabnum = "Figure &figurenum.";
+                        end;
+                    run;
+                %end;
+                                           
+			 %let figurenum = %eval(&figurenum.+1); 
+
+            %end; /*KM plots*/
         %end; /*L2 figures*/
 
     %end; /* Figure file */
