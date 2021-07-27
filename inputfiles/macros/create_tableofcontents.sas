@@ -664,96 +664,107 @@
 
         %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) > 0 %then %do;
 
-            %do f = 1 %to %sysfunc(countw(&figurelist.));
-                %let figure = %scan(&figurelist., &f.);
+            /*utility macro to loop through groups*/
+            %macro l1kmtoc(figure=, title =);
+                %isdata(dataset=figure&figure.);
+                %if %eval(&nobs.>0) %then %do;
 
-                /**********************************************************************************************
-                 T1: 1 figure: 
-                    1) F1: t1censor = Reasons for End of Observable Data by Group (1-CDF) - 1 figure per group
-                /**********************************************************************************************/
+                /*number of distinct groups in figure to loop through determine whether to add letter to figure #*/
+                proc sql noprint;
+                    select distinct order
+                    into :fgrouporderlist separated by ' '
+                    from figure&figure.
+                    order by order;
+                quit;
+                   
+                %if %sysfunc(countw(&fgrouporderlist.)) = 1 %then %let tablecount = 0;
+                %else %let tablecount = 1;
 
-                %if &reporttype. = T1 %then %do;
+                %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
+                    %let order = %scan(&fgrouporderlist., &g.);
+                    %let grouplabel = ;
+                    
+                    data _null_;
+                        set figure&figure.(where=(order = &order.));
+                        if _n_ = 1 then do;
+                        call symputx('grouplabel', grouplabel);
+                        end;
+                    run;
 
-                    %isdata(dataset=figuref1);
-                    %if %eval(&nobs.>0) %then %do;
+                    %tableletter();	
+            		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+                %end; /*loop through each figure*/
+                %let figurenum = %eval(&figurenum.+1); 
+                %end; /*figure dataset exists*/
+            %mend;
 
-                    /*number of distinct groups in figuref1 to loop through determine whether to add letter to figure #*/
-                    proc sql noprint;
-                        select distinct order
-                        into :f1grouporderlist separated by ' '
-                        from figuref1
-                        order by order;
-                    quit;
-                    %put &f1grouporderlist;
+            /**********************************************************************************************
+             T1: 1 figure: 
+                1) F1: t1censor = Reasons for End of Observable Data by Group (1-CDF) - 1 figure per group
+            /**********************************************************************************************/
+            %if &reporttype. = T1 %then %do;
+                %l1kmtoc(figure=F1, title =Reasons for End of Observable Data);
+            %end; /*T1*/
 
-                    %if %sysfunc(countw(&f1grouporderlist.)) = 1 %then %let tablecount = 0;
+            /**********************************************************************************************
+             T2L1: 3 figures:
+                1) F1: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
+                2) F2: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
+                3) F3: t2censor = Reasons for End of Observable Data by Group (1-CDF)
+            /**********************************************************************************************/
+            %if &reporttype. = T2L1 %then %do;
 
-                    %do g = 1 %to %sysfunc(countw(&f1grouporderlist.));
-                        %let order = %scan(&f1grouporderlist., &g.);
-                        %let grouplabel = ;
-                        
-                        data _null_;
-                            set figuref1(where=(order = &order.));
-                            if _n_ = 1 then do;
-                            call symputx('grouplabel', grouplabel);
-                            end;
-                        run;
-
-                        %tableletter();	
-            			%addtotoc(tabnum=Figure &tablenum.&tableletter.,
-            					  caption=%quote(Reasons for End of Observable Data Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
-                    %end; /*loop through groups*/
-                    %end; /*figuref1 exists*/
-
+                /*F1: 1 figure per report*/
+                %isdata(dataset=figuref1);
+                %if %eval(&nobs.>0) %then %do;
+                	%addtotoc(tabnum=Figure &figurenum.,
+                			  caption=%quote(Kaplan-Meier Estimate of Event of Interest Not Occurring in the &database. from &startdateformatted. to &enddateformatted.));
                     %let figurenum = %eval(&figurenum.+1); 
-                %end; /*T1*/
+                %end;
 
+                /*F2: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F2, title =Reasons for End of Follow-Up);
+                %end; /*figuref2*/
 
-                /**********************************************************************************************
-                 T2L1: 3 figures:
-                    1) F1: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
-                    2) F2: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
-                    3) F3: t2censor = Reasons for End of Observable Data by Group (1-CDF)
-                /**********************************************************************************************/
+                /*F3: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F3, title =Reasons for End of Observable Data);
+                %end; /*figuref3*/
+            %end; /*T2L1*/
 
+            /**********************************************************************************************
+             T5: 2 figures:
+                1) F1 (not yet implemented)
+                2) F2 (not yet implemented)
+                3) F3 (not yet implemented)
+                4) F4: t5censor = Reasons for End of First Treatment Episode by Group
+                5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
+            /**********************************************************************************************/
+            %if &reporttype. = T5 %then %do;
 
-                /**********************************************************************************************
-                 T5: 2 figures:
-                    1) F1 (not yet implemented)
-                    2) F2 (not yet implemented)
-                    3) F3 (not yet implemented)
-                    4) F4: t5censor = Reasons for End of First Treatment Episode by Group
-                    5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
-                /**********************************************************************************************/
+            %end; /*T5*/
 
-                /**********************************************************************************************
-                 T6: 7 figures:
-                    1) F1 (not yet implemented)
-                    2) F2 (not yet implemented)
-                    3) F3 (not yet implemented)
-                    4) F4: t6plota = Kaplan-Meier Estimate of First Switch Not Occurring
-                    5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
-                    6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
-                    7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
-                /***********************************************************************************************/
-
-
-
-                /*T2L1*/
-
-
-
-
-                /*T5*/
+            /**********************************************************************************************
+             T6: 7 figures:
+                1) F1 (not yet implemented)
+                2) F2 (not yet implemented)
+                3) F3 (not yet implemented)
+                4) F4: t6plota = Kaplan-Meier Estimate of First Switch Not Occurring
+                5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
+                6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
+                7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+            /***********************************************************************************************/
+            %if &reporttype. = T6 %then %do;
 
 
 
 
 
 
-                /*T6*/
+            %end; /*T6*/
 
-            %end; /*loop through figures*/
         %end; /*L1 figures*/
 
         /***************************************************************************************/
