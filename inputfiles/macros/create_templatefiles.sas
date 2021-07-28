@@ -436,6 +436,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
         /*t2l1tablefile*/
@@ -465,6 +466,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
     *************************************
@@ -488,6 +490,7 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
+		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -537,6 +540,7 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
+		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -774,6 +778,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
    
@@ -992,9 +997,9 @@ libname tempfl "";
             %if %eval(&f.=5) | %eval(&f.=7) %then %do; dataset = "t6plotb"; %end;
             table = "F&f.";
 		    tablesub= "overall";
-		    levelnum =1;
-		    levelid1 = "ttswitch";
-		    levelid2 = "";
+		    levelnum =2;
+		    levelid1 = "";
+		    levelid2 = "ttswitch";
             levelid3 = "";
 			output;
 		%end;
@@ -1023,6 +1028,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
    
     *************************************
@@ -1109,6 +1115,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
     /*Clean up*/
