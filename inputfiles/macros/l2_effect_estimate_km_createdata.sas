@@ -35,7 +35,7 @@
     /*--------------------------------------------------------------------------------------------*/
     /* Patient level data                                                                         */
     /*--------------------------------------------------------------------------------------------*/
-    %if &kmrefpop = weighted or &kmrefpop = both %then %do;
+    %if &kmrefpop ^= unweighted %then %do;
 
         /* Do not need to execute for unadjusted/unconditional plots */
         %if %index(&plotstocreate,'Conditional') %then %do;
