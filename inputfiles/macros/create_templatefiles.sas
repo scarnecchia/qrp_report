@@ -66,7 +66,7 @@ libname tempfl "";
 	%macro createt1t2cidatemplates(name);
 	    data lookup_&name.;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
 	        includeinreport = 'N';
             call missing(levelid3);
@@ -115,7 +115,7 @@ libname tempfl "";
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
             includeinreport = 'N';
             call missing(levelid3);
@@ -172,7 +172,7 @@ libname tempfl "";
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
     data lookup_t2multevent;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(levelid3);
@@ -330,7 +330,7 @@ libname tempfl "";
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg;
     data lookup_t2overlap;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(levelid3);
@@ -436,6 +436,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
         /*t2l1tablefile*/
@@ -465,6 +466,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
     *************************************
@@ -488,6 +490,7 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
+		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -537,6 +540,7 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
+		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -558,7 +562,7 @@ libname tempfl "";
 
     data tempfl.t4l1tablefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(levelid2);
@@ -618,7 +622,7 @@ libname tempfl "";
 
 	data lookup_t5tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(levelid3);
@@ -697,9 +701,30 @@ libname tempfl "";
 		dataset = "t5censor";
 		table = "T14";
 		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "episodenum";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T15";
+		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "episodenum episodelength";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T16";
+		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T17";
+		tablesub= "overall";
 		levelnum =2;
 		levelid1 = "";
-		levelid2 = "episodenum";
+		levelid2 = "episodelength";
         output;
 
 		dataset = "t5first";
@@ -753,6 +778,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
    
@@ -769,7 +795,7 @@ libname tempfl "";
 
 	data lookup_t6tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(tablesubstrat);
@@ -1002,6 +1028,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
    
     *************************************
@@ -1015,7 +1042,7 @@ libname tempfl "";
 
 	data lookup_its_tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
         call missing(tablesubstrat);
@@ -1088,6 +1115,7 @@ libname tempfl "";
             format censordisplay $50.;
             censordisplay = '';
             includekmweightedpop = 'N';
+			drop categories;
         run;
 
     /*Clean up*/
