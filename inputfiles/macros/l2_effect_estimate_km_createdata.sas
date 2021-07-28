@@ -12,10 +12,9 @@
 *   - Either a patient level or risk set level dataset
 * 
 *  Program outputs: 
-* 
+*   - One dataset per plot
 * 
 *  PARAMETERS:  
-*   - individualreturn: Y or N
 *   - plotstocreate: list of plots (F3 F4 F5)
 *   - kmrefpop: determines whether to produce weighted curves for VRM analysis
 *            
