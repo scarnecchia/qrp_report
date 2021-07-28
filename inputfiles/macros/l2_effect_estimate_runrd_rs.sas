@@ -13,7 +13,6 @@
 *   - where = logic condition limiting the records to only those required to calculate RD
 *	- Analysis  = Unadjusted, Conditional, Unconditional
 *	- subgroupcat = subgroup category
-*   - donotreport = blanks out columns that are not reported correctly
 *
 *  Program outputs:                                                                                                                                       
 *   - est: the dataset containing the risk differences and confidence intervals
@@ -25,7 +24,7 @@
 *
 ***************************************************************************************************;
 
-%macro l2_effect_estimate_runrd_rs(where=, analysis=, subgroupcat=, donotreport=);
+%macro l2_effect_estimate_runrd_rs(where=, analysis=, subgroupcat=);
 
     %put =====> MACRO CALLED: l2_effect_estimate_runrd_rs;
 	
@@ -274,14 +273,12 @@
             AvgFUTime_Dchar = 'NaN';
             AvgFUTime_Ychar = 'NaN';  
             end;
-            %if %index(%lowcase(&redactcolumns.),events) > 0 | %str("&donotreport.") = %str("Y") %then %do;							   
-                rrchar = 'N/A';									  
+            %if %index(%lowcase(&redactcolumns.),events) > 0  %then %do;
+                EVchar = 'N/A';
+                rrchar = 'N/A';
+                IR_1000PYchar = 'N/A';
                 IRDiff_1000PYchar = 'N/A';
                 RD_1000NUchar = 'N/A';
-            %end;
-            %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
-                EVchar = 'N/A';
-                IR_1000PYchar = 'N/A';
                 risk_1000NUchar = 'N/A';
             %end;
             %if %index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
@@ -393,7 +390,7 @@
                 AvgFUTime_Dchar = 'NaN';
                 AvgFUTime_Ychar = 'NaN';  
                 end;
-                %if %index(%lowcase(&redactcolumns.),events) > 0  | %str("&donotreport.") = %str("Y") %then %do;
+                %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
                     EVchar = 'N/A';
                     rrchar = 'N/A';
                     IR_1000PYchar = 'N/A';
@@ -401,7 +398,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if (%index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&donotreport.") = %str("Y")) | %str("&reporttype.") = %str("T4L2") %then %do;
+                %if %index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';
