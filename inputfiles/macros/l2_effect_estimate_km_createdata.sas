@@ -131,8 +131,8 @@
         %let grp0label = &grp0;
         %if %eval(&nobs.>0) %then %do;
             data _null_;    
-                set labelfile(where=(group="&grp1." and runid = "&runid." and labelvar = "grouplabel") in=a)
-                    labelfile(where=(group="&grp0." and runid = "&runid." and labelvar = "grouplabel") in=b);
+                set labelfile(where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel") in=a)
+                    labelfile(where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel") in=b);
                 if a then call symputx('grp1label', label);
                 if b then call symputx('grp0label', label);
             run;
