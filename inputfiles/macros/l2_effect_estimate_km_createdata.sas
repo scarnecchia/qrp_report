@@ -34,10 +34,6 @@
 
 	%put =====> MACRO CALLED: l2_effect_estimate_km_createdata;
 
-    /*--------------------------------------------------------------------------------------------*/
-    /* Compute Exposure Cohort KM curve and Reference Cohort KM curve                             */
-    /*--------------------------------------------------------------------------------------------*/
-
     /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
     data _tempaggsurvival;
         set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid 
@@ -82,7 +78,7 @@
         run;
 
         /*repeat same computation for nexp, nunexp*/
-        %macro aggsurvivaldatastep(var);
+        %macro aggsurvivaldatastep(var, ifclause);
             retain _n&var.;
             if not missing(n&var.) then _n&var.=n&var.;
             else n&var.=_n&var.;
@@ -90,15 +86,15 @@
              
             lagn&var. = lag(n&var.);
 
-            if first.dpidsiteid then censor&var. = n&var.;
+            if &ifclause. then censor&var. = n&var.;
             else censor&var. = n&var. - lagn&var.;
         %mend;
 
         data _aggsurvivalsquare1;
             set _aggsurvivalsquare;
             by analysis dpidsiteid descending followupday;
-            %aggsurvivaldatastep(exp);
-            %aggsurvivaldatastep(unexp);
+            %aggsurvivaldatastep(exp, %str(first.dpidsiteid));
+            %aggsurvivaldatastep(unexp, %str(first.dpidsiteid));
         run;
 
         /*At this point:
@@ -113,14 +109,188 @@
             output out=_kmdata(drop=_: rename=followupday=day) sum=; /*rename followupday to match L1 figures*/
         run;
 
+        /*--------------------------------------------------------------------------------------------*/
+        /* If weighted reference cohort (VRM only for Conditional Plots), then compute weighted       */
+        /* metrics to use in KM computation                                                           */
+        /*--------------------------------------------------------------------------------------------*/
+        %let weightedpop = N;
+        %if &kmrefpop ^= unweighted & %index(&plotstocreate,'Conditional') %then %do;
+
+            /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
+            data _tempaggpl;
+                length matchid $12;
+                set cat_dp_pl(keep=matchid event followuptime exposure dpidsiteid covarnum
+                          rename=matchid=tempmatchid rename=followuptime=day);
+                where missing(tempmatchid) = 0;
+                matchid=catt(tempmatchid,dpidsiteid);
+            run;
+
+            %isdata(dataset=_tempaggpl);
+            %if %eval(&nobs.>0) %then %do;
+                %let weightedpop = Y;
+
+                /* Restrict to informative events and person time */
+                proc means data = _tempaggpl nway max noprint;
+                    class matchID exposure;
+                    var day;
+                    output out = _maxdata(drop = _:) max = maxFUtime;
+                run;
+
+                proc transpose data = _maxdata out = _maxdata2 prefix = maxFUtime;
+                    id exposure;
+                    by matchID;
+                    var maxFUtime;
+                run;
+
+                proc sql noprint;
+                    create table _tempaggpl_informative as
+                    select x.matchid,
+                           x.exposure,
+                           1 as pat length = 3,
+                           case when x.day > FU.stopFU then FU.stopFU else x.day end as day,
+                           case when x.day > FU.stopFU then 0 else x.event end as event
+                    from _tempaggpl(where=(exposure=0)) as x
+                    /* Selects the smallest of the maximum follow-up time across exposed/reference group */
+                    left join (select matchid, 
+                                      min(maxFUTime1,maxFUTime0) as stopFU 
+                                      from _maxdata2) as FU
+                    on x.matchID = fu.matchID;
+                quit;
+
+                proc sql noprint undo_policy=none;
+                    /* Select all time points and collapse into one observation per matchid/time */
+                    create table step0 as 
+                    select b.matchID
+                    , a.event
+                    , b.day
+                    , a.exposure
+                    , (1/c.count) as wght
+                    , a.pat
+                    , c.count
+                    /* Set follow-up time and event based on whether follow-up time exceeds the max follow-up time */
+                    from _tempaggpl_informative as a
+                    /* Joins and creates all combination of matchid/day values */
+                    right join (select distinct x.matchid, y.day  
+                                from _tempaggpl_informative as x,
+                                (select distinct day from _tempaggpl_informative where exposure=0) as y) as b 
+                    on a.matchID = b.matchID and a.day = b.day 
+                    /* Sum patients grouped within each matchid */
+                    inner join (select z.matchid, sum(z.pat) as count
+                                from _tempaggpl_informative z
+                                where z.exposure=0 
+                                group by z.matchid) as c 
+                    on c.matchID = b.matchID
+                    where a.exposure ^=1
+                    order by b.matchID, b.day;
+
+                    /* Aggregate all non-missing exposure values, stack back missing exposure rows */
+                    create table step1 as 
+                    select b.matchid, b.day, max(b.exposure) as exposure, max(b.wght) as wght, max(b.count) as count,
+                    sum(b.pat) as pat, sum(b.event) as event
+                    from step0 b
+                    where not missing(b.exposure)
+                    group by b.matchid, b.day
+                    union all  
+                    select a.matchid, a.day, a.exposure, a.wght, a.count, a.pat, a.event
+                    from step0 a
+                    where missing(a.exposure)
+                    order by matchid, day;
+                quit;
+
+                 data step2;
+                    set step1;
+                    by matchid day;
+                    if missing(pat) then pat=0;
+
+                    lagpat= lag(pat);
+                    lagexp = lag(exposure);
+
+                    /*Compute at risk*/
+                    if first.matchID then do;
+                        atrisk  = count;
+                    end;
+                    else if missing(lagexp) = 0 then do;
+                        atrisk = atrisk - lagpat;
+                    end;
+                    else do;
+                        atrisk = atrisk;
+                    end;
+                    retain atrisk;
+
+                    if event = . then event = 0;
+
+                    evunexp_wght = event*wght; /*weighted event*/
+                    nunexp_wght = atrisk*wght; /*weighted at risk*/
+                run;
+
+                /*Aggregate to 1 row per day*/
+                proc means data=step2 noprint nway;
+                    var nunexp_wght evunexp_wght;
+                    class day;
+                    output out=step3(drop=_:) sum()= ;
+                run;
+
+                /*Square table to include all potential followup days*/
+                data _squareweightedkm(rename=i=day);
+                    set step3(keep=day) end=eof;
+                    by day;
+                    if eof then do;  
+                        do i = 0 to day;
+                        output;
+                        end;
+                    end;
+                    drop day;
+                run;
+
+                /*Merge square dataset into step and set event counts to 0 when day is missing*/
+                data step4;
+                    merge step3 _squareweightedkm;
+                    by day;
+                    if evunexp_wght = . then evunexp_wght = 0;
+                    if day = 0 then nunexp_wght = 0;
+                run;
+
+                /*fill in missing nexp and unexp counts with the previous value and
+                  create lag variables to compute total # of episodes censored/with event at each time point*/
+                proc sort data=step4;
+                    by descending day;
+                run;
+
+                data step5;
+                    set step4;
+                    by descending day;
+                    length analysis $13;
+                    analysis = 'Conditional';
+                    %aggsurvivaldatastep(unexp_wght, %str(day=0));
+                run;
+
+                /*merge in _kmdata*/
+                proc sql noprint undo_policy=none;
+                    create table _kmdata as
+                    select x.*,
+                           y.evunexp_wght,
+                           y.nunexp_wght,
+                           y.censorunexp_wght
+                    from _kmdata as x
+                    left join step5 as y
+                    on x.day = y.day and x.analysis = y.analysis
+                    order by analysis, day;
+                quit;
+            %end; /*data exists*/
+        %end; /*compute weighted metrics*/
+
         /*Total counts*/
         proc sql noprint;
             create table cumulative_totals as
-            select analysis,
-                   max(nexp) as cum_nexp,
-                   max(nunexp) as cum_nunexp,
-                   sum(evexp) as cum_evexp,
-                   sum(evunexp) as cum_evunexp
+            select analysis
+                   , max(nexp) as cum_nexp
+                   , max(nunexp) as cum_nunexp
+                   , sum(evexp) as cum_evexp
+                   , sum(evunexp) as cum_evunex
+                   %if &weightedpop. = Y %then %do;
+                   , max(nunexp_wght) as cum_nunexp_wght
+                   , sum(evunexp_wght) as cum_evexp_wght
+                   %end;
             from _kmdata
             group by analysis;
         quit;
@@ -148,8 +318,8 @@
             set _kmdata; 
             by analysis day;
 
-            array sum{*} sum_evexp sum_evunexp sum_censorexp sum_censorunexp;
-            array varlist{*} evexp evunexp censorexp censorunexp;
+            array sum{*} sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
+            array varlist{*} evexp evunexp censorexp censorunexp %if &weightedpop. = Y %then %do; evunexp_wght censorunexp_wght %end; ;
            
             if first.analysis then do;
                 merge cumulative_totals;
@@ -165,7 +335,7 @@
                 end;
             end;
 
-            retain sum_evexp sum_evunexp sum_censorexp sum_censorunexp;
+            retain sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
 
             /*Episodes_atrisk used in atrisk table in plot and for KM curve - 
               need to lag to get the # of episodes at risk on the day and not episodes still at risk*/
@@ -173,17 +343,27 @@
             episodes_atriskunexp = cum_nunexp - sum_censorunexp;
             lag_episodes_atriskexp = lag(episodes_atriskexp);
             lag_episodes_atriskunexp = lag(episodes_atriskunexp);
+            %if &weightedpop. = Y %then %do; 
+            episodes_atriskunexp_wght = cum_nunexp_wght - sum_censorunexp_wght;
+            lag_episodes_atriskunexp_wght = lag(episodes_atriskunexp_wght);
+            %end;
 
             /*reset day 0*/
             if day = 0 then do;
                 lag_episodes_atriskexp = episodes_atriskexp;
                 lag_episodes_atriskunexp = episodes_atriskunexp;
+                %if &weightedpop. = Y %then %do; 
+                lag_episodes_atriskunexp_wght = episodes_atriskunexp_wght;
+                %end;
             end;
 
             /*-----KM Plot---------*/                
     		if day =0 then do;
                 km_evexp = 1;
                 km_evunexp = 1;
+                %if &weightedpop. = Y %then %do; 
+                km_evunexp_wght = 1;
+                %end;
     		end;
     		else do;
                 if evexp > 0 then do;
@@ -198,15 +378,39 @@
     		    else do;
                     km_evunexp = km_evunexp;
                 end;
+                %if &weightedpop. = Y %then %do; 
+                if evunexp_wght > 0 then do;
+    			    km_evunexp_wght = km_evunexp_wght*(1-(evunexp_wght/lag_episodes_atriskunexp_wght));
+                end;
+    		    else do;
+                    km_evunexp_wght = km_evunexp_wght;
+                end;
+                %end;
     		end;
-    		retain km_evexp km_evunexp;
+    		retain km_evexp km_evunexp %if &weightedpop. = Y %then %do; km_evunexp_wght %end;;
 
             label km_evexp = "&grp1label."
                   lag_episodes_atriskexp = "&grp1label."
                   km_evunexp = "&grp0label."
-                  lag_episodes_atriskunexp = "&grp0label.";
+                  lag_episodes_atriskunexp = "&grp0label."
+                  %if &weightedpop. = Y %then %do; 
+                  km_evunexp_wght = "&grp0label. (Weighted)"
+                  lag_episodes_atriskunexp_wght = "&grp0label. (Weighted)"
+                  %end;
+                ;
             
-            keep day lag_episodes_atriskexp lag_episodes_atriskunexp km_:;
+            %if &weightedpop. = Y %then %do; 
+                /*set non-Conditional analyses to missing*/
+                if analysis ne 'Conditional' then do;
+                    call missing(km_evunexp_wght, lag_episodes_atriskunexp_wght);
+                end;
+                else do;
+                    /*round weighted at risk*/
+                    lag_episodes_atriskunexp_wght = round(lag_episodes_atriskunexp_wght);
+                end;
+            %end;
+
+            keep day lag_episodes_atrisk: km_:;
 
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount.; %end;
@@ -217,203 +421,8 @@
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _tempaggsurvival _aggsurvivalsquare: nexp cumulative_totals;
+        delete _tempaggsurvival _aggsurvivalsquare: nexp cumulative_totals _tempaggpl: step: _maxdata: _squareweightedkm;
     quit;
-
-    /*--------------------------------------------------------------------------------------------*/
-    /* Weighted Reference Cohort (VRM only for Conditional Plots)                                 */
-    /*--------------------------------------------------------------------------------------------*/
-    %if &kmrefpop ^= unweighted & %index(&plotstocreate,'Conditional') %then %do;
-
-        /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
-        data _tempaggpl;
-            length matchid $12;
-            set cat_dp_pl(keep=matchid event followuptime exposure dpidsiteid covarnum
-                      rename=matchid=tempmatchid rename=followuptime=day);
-            where missing(tempmatchid) = 0;
-            matchid=catt(tempmatchid,dpidsiteid);
-        run;
-
-        %isdata(dataset=_tempaggpl);
-        %if %eval(&nobs.>0) %then %do;
-
-        /* Restrict to informative events and person time */
-        proc means data = _tempaggpl nway max noprint;
-            class matchID exposure;
-            var day;
-            output out = _maxdata(drop = _:) max = maxFUtime;
-        run;
-
-        proc transpose data = _maxdata out = _maxdata2 prefix = maxFUtime;
-            id exposure;
-            by matchID;
-            var maxFUtime;
-        run;
-
-        proc sql noprint;
-            create table _tempaggpl_informative as
-            select x.matchid,
-                   x.exposure,
-                   1 as pat length = 3,
-                   case when x.day > FU.stopFU then FU.stopFU else x.day end as day,
-                   case when x.day > FU.stopFU then 0 else x.event end as event
-            from _tempaggpl(where=(exposure=0)) as x
-            /* Selects the smallest of the maximum follow-up time across exposed/reference group */
-            left join (select matchid, 
-                              min(maxFUTime1,maxFUTime0) as stopFU 
-                              from _maxdata2) as FU
-            on x.matchID = fu.matchID;
-        quit;
-
-        proc sql noprint undo_policy=none;
-            /* Select all time points and collapse into one observation per matchid/time */
-            create table step0 as 
-            select b.matchID
-            , a.event
-            , b.day
-            , a.exposure
-            , (1/c.count) as wght
-            , a.pat
-            , c.count
-            /* Set follow-up time and event based on whether follow-up time exceeds the max follow-up time */
-            from _tempaggpl_informative as a
-            /* Joins and creates all combination of matchid/day values */
-            right join (select distinct x.matchid, y.day  
-                        from _tempaggpl_informative as x,
-                        (select distinct day from _tempaggpl_informative where exposure=0) as y) as b 
-            on a.matchID = b.matchID and a.day = b.day 
-            /* Sum patients grouped within each matchid */
-            inner join (select z.matchid, sum(z.pat) as count
-                        from _tempaggpl_informative z
-                        where z.exposure=0 
-                        group by z.matchid) as c 
-            on c.matchID = b.matchID
-            where a.exposure ^=1
-            order by b.matchID, b.day;
-
-            /* Aggregate all non-missing exposure values, stack back missing exposure rows */
-            create table step1 as 
-            select b.matchid, b.day, max(b.exposure) as exposure, max(b.wght) as wght, max(b.count) as count,
-            sum(b.pat) as pat, sum(b.event) as event
-            from step0 b
-            where not missing(b.exposure)
-            group by b.matchid, b.day
-            union all  
-            select a.matchid, a.day, a.exposure, a.wght, a.count, a.pat, a.event
-            from step0 a
-            where missing(a.exposure)
-            order by matchid, day;
-        quit;
-
-
-/*             data step2;*/
-/*                set step1;*/
-/*                by matchid day;*/
-/*                if missing(pat) then pat=0;*/
-/**/
-/*                lagpat= lag(pat);*/
-/*                lagexp = lag(exposure);*/
-/**/
-/*                if first.matchID then do;*/
-/*                    atrisk  = count;*/
-/*                end;*/
-/**/
-/*                else if missing(lagexp) = 0 then do;*/
-/*                    atrisk = atrisk - lagpat;*/
-/*                end;*/
-/*                else do;*/
-/*                atrisk = atrisk;*/
-/*                end;*/
-/*                retain atrisk;*/
-/**/
-/*                if event = . then event = 0;*/
-/**/
-/*                wdpart = event*wght;*/
-/*                wrpart = atrisk*wght;*/
-/**/
-/*                atriskv = wrpart;*/
-/*                eventv = wdpart;*/
-/*            run;*/
-/**/
-/*            proc means data=step2 noprint nway;*/
-/*                var wdpart wrpart atrisk event atriskv eventv;*/
-/*                class day;*/
-/*                output out=step3(drop=_:) sum()= ;*/
-/*            run;*/
-/**/
-/*            proc sort data = step3;*/
-/*            by day;*/
-/*            run; */
-/**/
-/*            data step4;*/
-/*                set step3;*/
-/*                by day;*/
-/*                lagevent = lag(event);*/
-/*                lageventv = lag(eventv);*/
-/**/
-/*                retain atrisk2 atrisk2v;*/
-/**/
-/*                if _n_ = 1 and day = 0 then do;*/
-/*                    atrisk = &totalN;*/
-/*                    atrisk2 = atrisk;*/
-/**/
-/*                    prodcomp = 1;*/
-/**/
-/*                    atriskv = &totalNv;*/
-/*                    atrisk2v = atriskv;*/
-/*                end; */
-/*                else if not missing(atrisk) then do;*/
-/*                    atrisk2 = atrisk;*/
-/**/
-/*                    prodcomp = 1-(wdpart/wrpart);*/
-/**/
-/*                    atrisk2v = atriskv;*/
-/*                end;*/
-/*                else do;*/
-/*                    atrisk = atrisk2;*/
-/*                    atriskv = atrisk2v;*/
-/*                    prodcomp = 1;*/
-/*                end;*/
-/*                keep time atrisk atriskv prodcomp group;*/
-/*            run; */
-/**/
-/*            Step 10. Calculate KM*/
-/*             proc sort data=step9; */
-/*                by group time;*/
-/*            run;*/
-/**/
-/*            data step10_&expval;*/
-/*                set step9;*/
-/*                by group time;*/
-/*                if first.group then do;*/
-/*                    km_estimate = prodcomp;*/
-/*                end;*/
-/*                else do;*/
-/*                    km_estimate = km_estimate*prodcomp;*/
-/*                end;*/
-/*                    */
-/*                retain km_estimate;*/
-/**/
-/*                atrisk = round(atriskv);*/
-/**/
-/*                graphed = km_estimate;*/
-/*                if atrisk eq 0 then graphed = .;        */
-/**/
-/*                keep time atrisk km_estimate group graphed;*/
-/*            run; */
-
-        %end; /*dataset exists*/
-
-        /*Clean up*/
-        proc datasets nowarn noprint lib=work;
-            delete _tempaggpl: step: _maxdata:;
-        quit;
-
-
-    %end; /*kmrefpop=both or weighted*/
-
-
-
 
 	%put =====> END MACRO: l2_effect_estimate_km_createdata;
 
