@@ -237,8 +237,7 @@
         run;
 
         proc sql noprint undo_policy=none;
-            /* Calculate Steps 1 through Steps 5 from original PS tool -
-               Select all time points and collapse into one observation per matchid/time */
+            /* Select all time points and collapse into one observation per matchid/time */
             create table step0 as 
             select b.matchID
             , a.event
@@ -247,20 +246,24 @@
             , (1/c.count) as wght
             , a.pat
             , c.count
+            /* Set follow-up time and event based on whether follow-up time exceeds the max follow-up time */
             from (select x.matchid,
-                   x.exposure,
-                   x.pat,
-                   case when x.followupday > FU.stopFU then FU.stopFU else x.followupday end as followupday,
-                   case when x.followupday > FU.stopFU then 0 else x.event end as event
+                    x.exposure,
+                    x.pat,
+                    case when x.followupday > FU.stopFU then FU.stopFU else x.followupday end as followupday,
+                    case when x.followupday > FU.stopFU then 0 else x.event end as event
             from _tempaggpl as x
+            /* Selects the smallest of the maximum follow-up time across exposed/reference group */
             left join (select matchid, 
-                              min(maxFUTime1,maxFUTime0) as stopFU 
-                       from _maxdata2) as FU
+                        min(maxFUTime1,maxFUTime0) as stopFU 
+                        from _maxdata2) as FU
             on x.matchID = fu.matchID) as a
+            /* Joins and creates all combination of matchid/followupday values */
             right join (select distinct x.matchid, y.followupday  
                         from _tempaggpl as x,
                         (select distinct followupday from _tempaggpl where exposure=0) as y) as b 
             on a.matchID = b.matchID and a.followupday = b.followupday 
+            /* Sum patients grouped within each matchid */
             inner join (select z.matchid, sum(z.pat) as count
                         from _tempaggpl z
                         where z.exposure=0 
@@ -269,7 +272,7 @@
             where a.exposure ^= 1
             order by b.matchID, b.followupday;
 
-            /* Stack and aggregate - Step 6 from PS tool */
+            /* Aggregate all non-missing exposure values, stack back missing exposure rows */
             create table step1 as 
             select b.matchid, b.followupday, max(b.exposure) as exposure, max(b.wght) as wght, max(b.count) as count,
             sum(b.pat) as pat, sum(b.event) as event
