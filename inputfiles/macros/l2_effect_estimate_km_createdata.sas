@@ -217,9 +217,10 @@
         /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
         data _tempaggpl;
             length pat 3 matchid $12;
-            set aggpl(keep=matchid event followuptime exposure dpidsiteid
+            set cat_dp_pl(keep=matchid event followuptime exposure dpidsiteid covarnum
                       rename=matchid=tempmatchid rename=followuptime=followupday);
             pat = 1;
+            where missing(tempmatchid) = 0;
             matchid=catt(tempmatchid,dpidsiteid);
         run;
 

@@ -647,11 +647,6 @@
                     %end; *dp;  
                 %end; /*stratifybyDP = Y*/
 
-                proc datasets library=work nowarn nolist;
-                    delete cat_dp:;
-                quit;
-
-
                 /**********************************************************************************/
                 /* Compute KM cuves                                                               */
                 /**********************************************************************************/
@@ -661,6 +656,11 @@
                                                       kmrefpop=&kmrefpop.);
                     %end;
                 %end; /*KM plots*/
+
+                /*Clean up*/
+                proc datasets library=work nowarn nolist;
+                    delete cat_dp:;
+                quit;
 
             %end; /*end overall metric computations*/
 
