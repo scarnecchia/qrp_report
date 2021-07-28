@@ -212,7 +212,7 @@
     /*--------------------------------------------------------------------------------------------*/
     /* Weighted Reference Cohort (VRM only for Conditional Plots)                                 */
     /*--------------------------------------------------------------------------------------------*/
-    %if (&kmrefpop = weighted or &kmrefpop = both) & %index(&plotstocreate,'Conditional') %then %do;
+    %if &kmrefpop ^= unweighted & %index(&plotstocreate,'Conditional') %then %do;
 
         /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
         data _tempaggpl;
