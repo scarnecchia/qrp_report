@@ -113,7 +113,7 @@
         /* metrics to use in KM computation                                                           */
         /*--------------------------------------------------------------------------------------------*/
         %let weightedpop = N;
-        %if &kmrefpop ^= unweighted & %index(&plotstocreate,'Conditional') %then %do;
+        %if &kmrefpop = both | &kmrefpop = weighted & %index(&plotstocreate,'Conditional') %then %do;
 
             /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
             data _tempaggpl;
