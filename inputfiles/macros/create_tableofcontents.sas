@@ -776,10 +776,10 @@
             %if &reporttype. = T6 %then %do;
                 /*F4 - F7: 1 figure per group*/
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F4, title =Kaplan-Meier Estimate of First Switch Not Occurring Among);
+                    %l1kmtoc(figure=F4, title =Kaplan-Meier Estimate of First Switch Not Occurring);
                 %end; /*figuref4*/
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F5, title =Kaplan-Meier Estimate of Second Switch Not Occurring Among);
+                    %l1kmtoc(figure=F5, title =Kaplan-Meier Estimate of Second Switch Not Occurring);
                 %end; /*figuref5*/
                 %if %sysfunc(prxmatch(m/F6/i,&figurelist.)) > 0 %then %do;
                     %l1kmtoc(figure=F6, title =Reasons for Censoring at First Switch Evaluation);
