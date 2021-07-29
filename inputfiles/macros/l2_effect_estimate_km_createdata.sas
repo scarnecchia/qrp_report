@@ -413,7 +413,45 @@
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount._&periodid.; %end;
-       run;
+        run;
+
+        /*if xmax specified and xmax > max followup time add a final row with 0 patients at risk*/
+        %macro addmaxvalue(plotdata, figure);
+            %isdata(dataset=&plotdata.);
+            %if %eval(&nobs.>0) %then %do;
+            data _null_;
+                set figurefile(where=(figure="&figure."));
+                call symputx('xmax', xmax);
+            run;
+            %if %eval(&xmax. > .) %then %do;
+                proc sql noprint;
+                    select max(day) into :maxday
+                    from &plotdata.;
+                quit;
+                %if %eval(&xmax. > &maxday.) %then %do;
+                    data &plotdata.;
+                        set &plotdata. end=eof;
+                        output;
+                        if eof then do;
+                            day = &xmax.;
+                            episodes_atriskexp = 0;
+                            episodes_atriskunexp = 0;
+                            km_evexp = .;
+                            km_evunexp = .;
+                            %if &weightedpop. = Y %then %do; 
+                            episodes_atriskunexp_wght = 0;
+                            km_evunexp_wght = .;
+                            %end;
+                            output;
+                        end;
+                    run;
+                %end;
+            %end;
+            %end;
+        %mend;
+        %addmaxvalue(figureF3_analysis&loopcount._&periodid., F3);
+        %addmaxvalue(figureF4_analysis&loopcount._&periodid., F4);
+        %addmaxvalue(figureF5_analysis&loopcount._&periodid., F5);
 
     %end; /*data exists*/
 
