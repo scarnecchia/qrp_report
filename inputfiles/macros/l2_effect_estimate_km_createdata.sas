@@ -37,8 +37,7 @@
     /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
     data _tempaggsurvival;
         set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid 
-                        where=(analysis in (&plotstocreate.)));
-        if missing(evexp) | missing(evunexp) | missing(nexp) | missing(nunexp) then delete;
+                        where=(analysis in (&plotstocreate.) and missing(evexp)=0 and missing(evunexp)=0 and missing(nexp)=0 and missing(nunexp)=0));
     run;
 
     %isdata(dataset=_tempaggsurvival);
@@ -119,9 +118,8 @@
             /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
             data _tempaggpl;
                 length matchid $12;
-                set cat_dp_pl(keep=matchid event followuptime exposure dpidsiteid covarnum
+                set cat_dp_pl(where=(missing(tempmatchid)=0) keep=matchid event followuptime exposure dpidsiteid covarnum
                           rename=matchid=tempmatchid rename=followuptime=day);
-                where missing(tempmatchid) = 0;
                 matchid=catt(tempmatchid,dpidsiteid);
             run;
 
@@ -311,9 +309,9 @@
         %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
 
         /*Compute KM curve*/
-        data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount.(&renamestatement.) %end;
-             %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount.(&renamestatement.) %end;
-             %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount.(&renamestatement.) %end; ;
+        data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount._&periodid.(&renamestatement.) %end;
+             %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount._&periodid.(&renamestatement.) %end;
+             %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount._&periodid.(&renamestatement.) %end; ;
 
             set _kmdata; 
             by analysis day;
@@ -412,9 +410,9 @@
 
             keep day lag_episodes_atrisk: km_:;
 
-            %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount.; %end;
-            %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount.; %end;
-            %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount.; %end;
+            %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
+            %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
+            %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount._&periodid.; %end;
        run;
 
     %end; /*data exists*/
