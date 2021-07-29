@@ -418,29 +418,65 @@
 	run;
 
     /* Merge in group labels and headers if they exist */
-    %isdata(dataset=labelfile);
-	  %if %eval(&nobs>0) %then %do;
+   %isdata(dataset=labelfile);
+	%if %eval(&nobs>0) %then %do;
 
-	  %if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
-	  /* Change grouplabel to header so MILGrpLabel ends up in same location in report */
-	  data labelfile;
-	  	set labelfile;
-	  	%if %length(&milgrps) > 0 %then %do;
-	  	%do i = 1 %to %sysfunc(countw(&milgrplabels,%str( )));
-	  		%let milgrp = %scan(&milgrplabels,&i,%str( ));
-	  		if group = &milgrp then labeltype = 'header';
-	  	%end;
-	  	%end;
-	  	%if %length(&analysisgrps) > 0 %then %do;
-	  	%do j = 1 %to %sysfunc(countw(&analysisgrps,%str( )));
-	  		%let analysisgrp = %scan(&analysisgrps,&j,%str( ));
-	  		if group = &analysisgrp then labeltype = 'header';
-	  	%end;
-	  	%end;
-	  run;
-	  %end;
+        %let labelfileattrition = labelfile;
 
-	  proc sql noprint undo_policy=none;
+        /* Add grouplabel to header so MILGrpLabel ends up in same location in report */
+	    %if %length(&milgrps) > 0 or %length(&analysisgrps) > 0 %then %do;
+	       data _templabelfileattrition;
+	  	        set labelfile;
+	  	        %if %length(&milgrps) > 0 %then %do;
+	  	        %do i = 1 %to %sysfunc(countw(&milgrplabels,%str( )));
+	  		       %let milgrp = %scan(&milgrplabels,&i,%str( ));
+	  		       if group = &milgrp and labeltype = 'grouplabel' then do;
+                        labeltype = 'header';
+                        output;
+                   end;
+	  	        %end;
+	  	        %end;
+
+	  	        %if %length(&analysisgrps) > 0 %then %do;
+	  	        %do j = 1 %to %sysfunc(countw(&analysisgrps,%str( )));
+	  		       %let analysisgrp = %scan(&analysisgrps,&j,%str( ));
+	  		           if group = &analysisgrp and labeltype = 'grouplabel' then do;
+                        labeltype = 'header';
+                        output;
+                       end;
+	  	        %end;
+	  	        %end;
+	       run;
+
+           *append new header row with rest of table, remove new header row if header already exists*/
+           %let labelfileattrition=labelfileattrition;
+           %isdata(dataset=_templabelfileattrition);
+           %if %eval(&nobs.>0) %then %do;
+            data _templabelfileattrition;
+                set labelfile(in=a)
+                    _templabelfileattrition(in=b);
+                    if a then _newrow = 'N';
+                    if b then _newrow = 'Y';
+            run;
+
+            proc sort data=_templabelfileattrition;
+                by runid group labeltype _newrow;
+            run;
+
+            data labelfileattrition;
+                set _templabelfileattrition;
+                by runid group labeltype _newrow;
+
+                if first.labeltype ne last.labeltype then do;
+                    if _newrow = 'Y' then delete;
+                end;
+            run;
+
+            %let labelfileattrition = labelfileattrition;
+           %end;
+        %end;
+
+	    proc sql noprint undo_policy=none;
 	        create table all_attrition_agg as
 	        select a.*, case when not missing(b.label) then b.label 
 	        			else 
@@ -461,9 +497,9 @@
 	        				 else ''
 	        			end as headerlabel
 	        from all_attrition_agg (drop=grouplabel headerlabel) a 
-	        left join labelfile(where=(lowcase(labeltype) = 'grouplabel')) b
+	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or scan(a.group,-1,'@') = b.group %end;
-	        left join labelfile(where=(lowcase(labeltype) = 'header')) c
+	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'header')) c
 	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group %end;
 	        					 %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = c.group or scan(a.group,-1,'@') = c.group) %end;
 	        ;
@@ -562,6 +598,10 @@
 	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
 	  	by level report_descr group;
 	  run;
+
+      proc datasets nowarn noprint lib=work;
+        delete labelfileattrition _templabelfileattrition;
+      quit;
 
 
 %mend attrition_createdata;
