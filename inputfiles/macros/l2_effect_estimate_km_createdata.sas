@@ -37,8 +37,7 @@
     /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
     data _tempaggsurvival;
         set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid 
-                        where=(analysis in (&plotstocreate.)));
-        if missing(evexp) | missing(evunexp) | missing(nexp) | missing(nunexp) then delete;
+                        where=(analysis in (&plotstocreate.) and missing(evexp)=0 and missing(evunexp)=0 and missing(nexp)=0 and missing(nunexp)=0));
     run;
 
     %isdata(dataset=_tempaggsurvival);
@@ -119,9 +118,8 @@
             /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
             data _tempaggpl;
                 length matchid $12;
-                set cat_dp_pl(keep=matchid event followuptime exposure dpidsiteid covarnum
+                set cat_dp_pl(where=(missing(tempmatchid)=0) keep=matchid event followuptime exposure dpidsiteid covarnum
                           rename=matchid=tempmatchid rename=followuptime=day);
-                where missing(tempmatchid) = 0;
                 matchid=catt(tempmatchid,dpidsiteid);
             run;
 
