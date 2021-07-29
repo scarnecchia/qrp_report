@@ -278,7 +278,7 @@
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let kmplotlist = &kmplotlist. 'Unconditional';
 
                 /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
-                %if %sysfunc(prxmatch(m/F4|F5/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     %if &individualreturn. = N %then %do;
                         %put WARNING: (Sentinel) Patient level data required to produce weighted KM curves. KMREFPOP will be set to Unweighted for &analysisgrp.;
                         %let kmrefpop = unweighted;
