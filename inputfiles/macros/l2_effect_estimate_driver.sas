@@ -368,11 +368,12 @@
                                            settomissvars=%str(n, min, max, mean, sd),
                                            runidvar=&runid.);					   
                     %end; /* aggregate weighted and marginalweights data */	
+	            %end; /*aggregate risk set data*/
 
-                    /*if KM curves requested, aggregate survivaldata dataset - always overall*/
-                    %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                /*if KM curves requested, aggregate survivaldata dataset - always overall*/
+                %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and %str(&reporttype) = T2L2 %then %do;
                         %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
-        			    %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
+                        %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
                                                whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0 
@@ -380,10 +381,9 @@
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
                                                settomissvars=%str(evexp evunexp nexp nunexp),
-                                               runidvar=&runid.);					   
+                                               runidvar=&runid.);                      
                         %end;
-                    %end;
-	            %end; /*aggregate risk set data*/
+                %end;
 
                 /*aggregate hdps vars for unique psestimategrps*/
 				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
@@ -647,21 +647,20 @@
                     %end; *dp;  
                 %end; /*stratifybyDP = Y*/
 
-                proc datasets library=work nowarn nolist;
-                    delete cat_dp:;
-                quit;
-
-
                 /**********************************************************************************/
                 /* Compute KM cuves                                                               */
                 /**********************************************************************************/
                 %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
-                    %l2_effect_estimate_km_createdata(individualreturn=&individualreturn., 
-                                                      plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.,
+                    %l2_effect_estimate_km_createdata(plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.,
                                                       kmrefpop=&kmrefpop.);
                     %end;
                 %end; /*KM plots*/
+
+                /*Clean up*/
+                proc datasets library=work nowarn nolist;
+                    delete cat_dp:;
+                quit;
 
             %end; /*end overall metric computations*/
 
