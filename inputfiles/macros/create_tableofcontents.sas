@@ -916,45 +916,63 @@
                         where analysisgrp = "&analysisgrp." and runid = "&runid";
                     quit;
 
-                    %let outcomelabel = Event of Interest ;
-                    %isdata(dataset=labelfile);
-                    %if %eval(&nobs.>0) %then %do;
-                        data _null_;
-                            set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"));
-                            if _n_ = 1 then call symputx('outcomelabel', label);
+                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
+
+                        /*assign labels*/
+                        data _null_; 
+                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
+                            call symputx("psestimategrp", lowcase(psestimategrp));
                         run;
-                    %end;
+                        data _null_; 
+                            set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                            call symputx('GRP1', eoi);
+                            call symputx('GRP0', ref); 
+                        run;
 
-                    /** TO DO: set EOI and REF Labels **/
-                    %let eoilabel = TO BE REPLACED;
-                    %let reflabel = TO BE REPLACED;
+                        %let outcomelabel = Event of Interest;
+                        %let eoilabel = &grp1.;
+                        %let reflabel = &grp0.;
 
-                    /*loop through periodid*/
-                    %do j = %eval(&look_start) %to %eval(&look_end);
+                        %isdata(dataset=labelfile);
+                        %if %eval(&nobs.>0) %then %do;
+                            data _null_;
+                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
+                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
+                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
 
-                    /*F3*/
-                    %isdata(dataset=figureF3_analysis&loopcount._&j.);
-                    %if %eval(&nobs.>0) %then %do;
-                    %tableletter();	
-                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                    %end;
-                    /*F4*/
-                    %isdata(dataset=figureF4_analysis&loopcount._&j.);
-                    %if %eval(&nobs.>0) %then %do;
-                    %tableletter();	
-                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                    %end;
-                    /*F5*/
-                    %isdata(dataset=figureF5_analysis&loopcount._&j.);
-                    %if %eval(&nobs.>0) %then %do;
-                    %tableletter();	
-                	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                    %end;
+                                if a then call symputx('outcomelabel', label);
+                                if b then call symputx('eoilabel', label);
+                                if c then call symputx('reflabel', label);
+                            run;
+                        %end;
 
-                    %end; /*loop through periodid*/
+                        /*loop through periodid*/
+                        %do j = %eval(&look_start) %to %eval(&look_end);
+
+                        /*F3*/
+                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+                        /*F4*/
+                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+                        /*F5*/
+                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+
+                        %end; /*loop through periodid*/
+                    %end; /*only PSmatch or stratification*/
                 %end;
             
                 /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
