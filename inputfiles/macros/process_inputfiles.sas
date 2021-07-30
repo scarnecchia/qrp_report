@@ -539,66 +539,30 @@
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
+    /*create userstrata from the tablefile. obs number is the order for those selected includeinreport = 'Y'*/
+	/*Read in TableFile, alphabetize variables, and assign title*/
+    %isdata(dataset=input.&tablefile.);
+	data tablefile;
+      set input.&tablefile. (where= (includeinreport = 'Y'));
+      length levelvars curr $250.;
+      levelid = put(_n_, z3.);
+      strat_dup = catx(' ',levelid1, levelid2, levelid3);
+      do t = 1 to countw(strat_dup);
+        curr = scan(strat_dup, t);
+        if indexw(levelvars, curr) then continue;
+        levelvars=catx(' ',levelvars, curr);
+      end;
+      put (strat_dup levelvars) (=/);
+      drop t curr strat_dup;
+    run;
 
-    /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
-    %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        /*confirm userstrata file exists*/
-        %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
-            data _tempuserstrata(rename=levelvars_out=levelvars);
-                format levelvars $100.;
-                set infolder.&&&runid._userstrata;
-                levelvars = lowcase(levelvars);
-                tableid = lowcase(tableID);
-                levelvars = tranwrd(levelvars, "*", " ");
-
-                /*****************************************/
-                /* Defensive coding for automatic strata */
-                /*****************************************/
-                /*All report types*/
-                if index(levelvars, 'month') > 0 & index(levelvars, 'year') = 0 then do;
-                    levelvars = tranwrd(levelvars, "month", "year month");
-                end;
-                if index(levelvars, 'quarter') > 0 & index(levelvars, 'year') = 0 then do;
-                   levelvars = tranwrd(levelvars, "quarter", "year quarter");
-                end;
-
-                /*ReportType = T2L1*/
-                %if %str("&reporttype") = %str("T2L1") %then %do;
-                if tableID in ('t2epigap', 't2epigapprev') and index(levelvars, 'epi_gap') = 0 then do;
-				    levelvars = catx(' ',levelvars, "epi_gap");
-                end;
-                %end;
-
-                /*ReportType = T6*/
-                %if %str("&reporttype") = %str("T6") %then %do;
-                if tableID= "t6disp" and index(levelvars, 'daysupp') = 0 then do;
-                    levelvars = catx(' ',levelvars, "daysupp");
-                end;
-                if tableID = "t6episdur" and index(levelvars, 'cumepisodelength') = 0 then do;
-                    levelvars = catx(' ',levelvars, "cumepisodelength");
-                end;
-                if tableID = "t6censor" and index(levelvars, 'episodelength') = 0 then do;
-                    levelvars = catx(' ',levelvars, "episodelength");
-                end;
-                if tableID = "t6uptake" and index(levelvars, 'uptakedays') = 0 then do;
-                    levelvars = catx(' ',levelvars, "uptakedays");
-                end;
-                if tableID = "t6trend" and index(levelvars, 'year') = 0 then do;
-                    levelvars = catx(' ',levelvars, "year");
-                end;
-                if tableID = "t6switchepisdur" and index(levelvars, 'episodelength') = 0 then do;
-                    levelvars = catx(' ',levelvars, "episodelength");
-                end;
-                %end;
-
-        		*alphabetize levelid vars;
-                %alphabetizevarutil(array=d, in=levelvars, out=levelvars_out);
-            run;
-
-            proc append base=userstrata data=_tempuserstrata force; run;
-        %end;
-    %end;
+    proc sql noprint;
+      create table userstrata as 
+        select dataset as tableid, 
+               levelid,
+	           levelvars
+        from tablefile;
+    quit;
 
     /*userstrata is optional if no rows in tablefile and figurefile are specified with DATASET populated*/
     %let userstrataspecified = N;
@@ -619,15 +583,7 @@
             %put The reporting code will abort;
             %abort;
         %end;
-        proc sort data=userstrata nodupkey dupout=_userstratadups;
-            by tableid levelvars;
-        run;
-        %isdata(dataset=_userstratadups);
-        %if %eval(&nobs.>0) %then %do;
-            %put ERROR: (SENTINEL) Multiple Userstrata files requested with different tableid-levelvars combinations.;
-            %put The reporting code will abort;
-            %abort;
-        %end;
+        
     %end;
 
     /*Read in TableFile, alphabetize variables, and assign title*/
@@ -741,7 +697,7 @@
                     left join userstrata as strata2
                 	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
                 quit;
-        		
+ 	
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                 	set tablefile;
