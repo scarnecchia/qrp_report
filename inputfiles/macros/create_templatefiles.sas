@@ -42,7 +42,7 @@ libname tempfl "";
 
     /*t1cida, t2cida, and t2concomitantuse tables*/
 
-	%let stratOneLevel = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| zip_uncertain;
+	%let stratOneLevel = sex| agegroup| year| year month| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
 	%let stratCovar = &stratOneLevel.| covar#;
     %let stratTwoLevel = 
 					 sex agegroup| sex agegroup year| sex agegroup year month| agegroup year| agegroup year month| sex year| sex year month| 
@@ -169,7 +169,7 @@ libname tempfl "";
 	%templatecensortablefigures(2,t2censor,3,3);
 
     /*Multiple Events Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
+    %let stratalist = sex| agegroup| year| year month| race| hispanic| zip3| state| cb_reg| hhs_reg| adherence;
     data lookup_t2multevent;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
@@ -327,7 +327,7 @@ libname tempfl "";
     run;
 
 	/*Overlap Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg;
+    %let stratalist = sex| agegroup| year|  year month| race| hispanic| zip3| state| cb_reg| hhs_reg;
     data lookup_t2overlap;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
@@ -419,6 +419,7 @@ libname tempfl "";
         data tempfl.t1tablefile;
             set lookup_t1cida
                 lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='T'));
+			stratificationorder = _n_;
         run;
         /*t1figurefile*/
         data tempfl.t1figurefile;
@@ -446,6 +447,7 @@ libname tempfl "";
                 lookup_t2conc
                 lookup_t2multevent
                 lookup_t2overlap;
+			stratificationorder = _n_;
         run;
 
         /*t2l1figurefile*/
@@ -556,7 +558,7 @@ libname tempfl "";
     %let stratLevel = overall;
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
 
-    data tempfl.t4l1tablefile;
+    data t4l1tablefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
 
@@ -604,6 +606,11 @@ libname tempfl "";
 	     %end;
          %end;
     run;
+
+	data tempfl.t4l1tablefile;
+	  set t4l1tablefile;
+	  stratificationorder = _n_;
+	run;
 
     *************************************
      REPORTTYPE = T5 files:
@@ -735,6 +742,7 @@ libname tempfl "";
         /*t5tablefile*/
         data tempfl.t5tablefile;
             set lookup_t5tablefigurefile(where=(substr(table,1,1)='T'));
+		  stratificationorder = _n_;
         run;
         /*t5figurefile*/
         data tempfl.t5figurefile;
@@ -984,6 +992,7 @@ libname tempfl "";
         /*t6tablefile*/
         data tempfl.t6tablefile;
             set lookup_t6tablefigurefile(where=(substr(table,1,1)='T'));
+		  stratificationorder = _n_;
         run;
         /*t6figurefile*/
         data tempfl.t6figurefile;
@@ -1069,6 +1078,7 @@ libname tempfl "";
         /*ITStablefile*/
         data tempfl.ITStablefile;
             set lookup_its_tablefigurefile(where=(substr(table,1,1)='T'));
+			stratificationorder = _n_;
         run;
         /*ITSfigurefile*/
         data tempfl.ITSfigurefile;
