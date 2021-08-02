@@ -640,7 +640,7 @@
                 /**********************************************************************************/
                 /* Compute KM cuves                                                               */
                 /**********************************************************************************/
-                %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
                     %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
                                                       kmrefpop=&kmrefpop.);
