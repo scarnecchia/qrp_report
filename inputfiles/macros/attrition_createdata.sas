@@ -463,7 +463,7 @@
                 by runid group labeltype _newrow;
             run;
 
-            data labelfileattrition;
+            data labelfileattrition(drop=_newrow);
                 set _templabelfileattrition;
                 by runid group labeltype _newrow;
 
