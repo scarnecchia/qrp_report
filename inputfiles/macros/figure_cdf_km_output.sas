@@ -50,44 +50,102 @@
 		%let ymax = ;
 		%let ytick = ;
 		%let atrisktable = ;
-		proc sql noprint;
-		   select case when xmin > 0 then xmin
-		          else 0 end
-		         ,case when xmax > 0 then xmax 
-		          else (select max(day) from &dataset(where=(&where.))) end
-		         ,case when xtick > 0 then xtick
-		          else (select round(max(day)/6,30) from &dataset(where=(&where.))) end
-		         ,case when ymin > 0 then ymin*100
-		         else 0 end 
-		         ,case when ymax > 0 then ymax*100
-		         else 100 end 
-		         ,case when ytick > 0 then ytick 
-		         else 20 end
-		         ,case when includeatrisktable is not missing then upper(includeatrisktable)
-		         else 'N' end
-		   into: xmin trimmed
-		       ,:xmax trimmed
-		       ,:xtick trimmed
-		       ,:ymin trimmed 
-		       ,:ymax trimmed 
-		       ,:ytick trimmed 
-		       ,:atrisktable trimmed 
-		   from figurefile
-		   where figure = "&figure.";
-		quit;
 
-		/* Create list of tick marks */
-		%let xtickmarks = ;
-		%let ytickmarks = ;
+        %let datamin= ;
+        %let datamax = ;
 
-		%do i = &xmin %to &xmax %by &xtick;
-			%let xtickmarks = &xtickmarks%str( )&i;
-		%end;
-		%do j = &ymin %to &ymax %by &ytick;
-			%let ytickmarks = &ytickmarks%str( )%sysevalf(&j/100);
-		%end;
+        /*select min and max day from input dataset*/
+        proc sql noprint;
+            select min(day), max(day) into :datamin, :datamax
+            from &dataset(where=(&where.));
+        quit;
 
-		%tableletter();	
+        data _null_;
+            set figurefile(where=(figure="&figure."));
+
+            /*set min/max defaults if missing*/
+            if missing(xmin) then xmin = &datamin.;
+            if missing(xmax) then xmax = &datamax.;
+
+            if missing(ymin) then ymin = 0;
+            if missing(ymax) then ymax = 1;
+
+            /*set default tick if missing:
+                - 6 total tick marks (min, max, and 4 interim)
+                - for x axis - round to the nearest divisor of 1, 5, or 30
+                               depending on length of axis                */
+            if missing(xtick) then do;
+                xmaxminusmin = xmax-xmin;
+                if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
+                else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
+                else xtick = round(xmaxminusmin/5, 30);
+                xloopcount = 6;
+            end;
+            else do;
+                xloopcount=ceil(divide(xmax-xmin,xtick));
+            end;
+            if missing(ytick) then do;
+                ymaxminusmin = ymax-ymin;
+                if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
+                else ytick = round(ymaxminusmin/5, .001);
+                call symputx(xloopcount, 6);
+                yloopcount = 6;
+            end;
+            else do;
+                yloopcount=ceil(divide(ymax-ymin,ytick));
+            end;
+
+            call symputx('xmin', xmin);
+            call symputx('xmax', xmax);
+            call symputx('xtick', xtick);
+            call symputx('ymin', ymin);
+            call symputx('ymax', ymax);
+            call symputx('ytick', ytick);
+            call symputx('xloopcount', xloopcount);
+            call symputx('yloopcount', yloopcount);
+            call symputx('atrisktable', includeatrisktable);
+        run;
+
+        %let xtickmarks = ;
+        %let ytickmarks = ;
+
+        %let xloop = &xmin.;
+        %let yloop = &ymin.;
+
+        /*xaxis*/
+        %let loopcount = 1;
+        %do %while(%sysevalf(&loopcount. <=&xloopcount.));
+        %if %eval(&loopcount. ne &xloopcount.) %then %do;
+        %let xtickmarks = &xtickmarks%str( )&xloop.;
+        %end;
+        %else %do;
+        %let xtickmarks = &xtickmarks%str( )%sysfunc(max(&xmax.,&xloop.));
+        %end;
+        %let xloop=%sysevalf(&xloop + &xtick);
+        %let loopcount = %eval(&loopcount+1);
+        %end;
+        
+        /*yaxis*/
+        %let loopcount = 1;
+        %do %while(%sysevalf(&loopcount. <=&yloopcount.));
+        %if %eval(&loopcount. ne &yloopcount.) %then %do;
+        %let ytickmarks = &ytickmarks%str( )&yloop.;
+        %end;
+        %else %do;
+        %let ytickmarks = &ytickmarks%str( )%sysfunc(may(&ymay.,&yloop.));
+        %end;
+        %let yloop=%sysevalf(&yloop + &ytick);
+        %let loopcount = %eval(&loopcount+1);
+        %end;
+
+        %put &xmin;
+        %put &xmax;
+        %put &xtick;
+        %put &ymin;
+        %put &ymax;
+        %put &ytick;
+
+        %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure&figurenum.&tableletter.;
@@ -154,7 +212,7 @@
 										labelattrs=(size=7)
 										x=dayatrisk location=outside nomissingclass nomissingchar pad=(top=10px);
 			%end;
-			keylegend / valueattrs=(size=7 color=black) across=1 noborder linelength=.25in;
+			keylegend / valueattrs=(size=7 color=black) position=bottom  noborder linelength=.25in;
 		run;
 
 		%if &figfn = Y %then %do;
