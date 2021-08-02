@@ -365,7 +365,7 @@
 	            %end; /*aggregate risk set data*/
 
                 /*if KM curves requested, aggregate survivaldata dataset - always overall*/
-                %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and %str(&reporttype) = T2L2 %then %do;
+                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
                         %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
