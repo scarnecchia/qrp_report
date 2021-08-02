@@ -556,7 +556,7 @@ libname tempfl "";
     %let stratLevel = overall;
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
 
-    data t4l1tablefile;
+    data tempfl.t4l1tablefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
 
@@ -605,9 +605,6 @@ libname tempfl "";
          %end;
     run;
 
-	data tempfl.t4l1tablefile;
-	  set t4l1tablefile;
-	run;
 
     *************************************
      REPORTTYPE = T5 files:
