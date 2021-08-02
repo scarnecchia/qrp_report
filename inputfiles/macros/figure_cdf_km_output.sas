@@ -132,7 +132,7 @@
         %let ytickmarks = &ytickmarks%str( )&yloop.;
         %end;
         %else %do;
-        %let ytickmarks = &ytickmarks%str( )%sysfunc(may(&ymay.,&yloop.));
+        %let ytickmarks = &ytickmarks%str( )%sysfunc(max(&ymax.,&yloop.));
         %end;
         %let yloop=%sysevalf(&yloop + &ytick);
         %let loopcount = %eval(&loopcount+1);
