@@ -180,9 +180,7 @@
             %let s00=;
 
             /*KM curves*/
-            %let unadjustedkm = ;
-            %let conditionalkm = ;
-            %let unconditionalkm = ;
+            %let kmplotlist = ;
 
             /*Use risk set or individual level return*/
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
@@ -271,12 +269,12 @@
                 /*Fixed PS matched analysis: Unadjusted, Conditional, Unconditional*/
                 /*Variable PS matched analysis: Unadjusted, Conditional */
                 /*PS Stratification analysis: Unadjusted*/
-                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let unadjustedkm = 'Unadjusted';
-                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let conditionalkm = 'Conditional';
-                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let unconditionalkm = 'Unconditional';
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let kmplotlist = &kmplotlist. 'Unadjusted';
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let kmplotlist = &kmplotlist. 'Conditional';
+                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let kmplotlist = &kmplotlist. 'Unconditional';
 
                 /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
-                %if %sysfunc(prxmatch(m/F4|F5/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     %if &individualreturn. = N %then %do;
                         %put WARNING: (Sentinel) Patient level data required to produce weighted KM curves. KMREFPOP will be set to Unweighted for &analysisgrp.;
                         %let kmrefpop = unweighted;
@@ -373,7 +371,7 @@
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
                                                whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0 
-                                                                and analysis in (&unadjustedkm. &conditionalkm. &unconditionalkm.)), 
+                                                                and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
                                                settomissvars=%str(evexp evunexp nexp nunexp),
@@ -644,7 +642,7 @@
                 /**********************************************************************************/
                 %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
-                    %l2_effect_estimate_km_createdata(plotstocreate=&unadjustedkm. &conditionalkm. &unconditionalkm.,
+                    %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
                                                       kmrefpop=&kmrefpop.);
                     %end;
                 %end; /*KM plots*/
