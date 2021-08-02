@@ -419,7 +419,6 @@ libname tempfl "";
         data tempfl.t1tablefile;
             set lookup_t1cida
                 lookup_t1censor(drop=tablesubstrat where=(substr(table,1,1)='T'));
-			stratificationorder = _n_;
         run;
         /*t1figurefile*/
         data tempfl.t1figurefile;
@@ -447,7 +446,6 @@ libname tempfl "";
                 lookup_t2conc
                 lookup_t2multevent
                 lookup_t2overlap;
-			stratificationorder = _n_;
         run;
 
         /*t2l1figurefile*/
@@ -609,7 +607,6 @@ libname tempfl "";
 
 	data tempfl.t4l1tablefile;
 	  set t4l1tablefile;
-	  stratificationorder = _n_;
 	run;
 
     *************************************
@@ -742,7 +739,6 @@ libname tempfl "";
         /*t5tablefile*/
         data tempfl.t5tablefile;
             set lookup_t5tablefigurefile(where=(substr(table,1,1)='T'));
-		  stratificationorder = _n_;
         run;
         /*t5figurefile*/
         data tempfl.t5figurefile;
@@ -992,7 +988,6 @@ libname tempfl "";
         /*t6tablefile*/
         data tempfl.t6tablefile;
             set lookup_t6tablefigurefile(where=(substr(table,1,1)='T'));
-		  stratificationorder = _n_;
         run;
         /*t6figurefile*/
         data tempfl.t6figurefile;
@@ -1078,7 +1073,6 @@ libname tempfl "";
         /*ITStablefile*/
         data tempfl.ITStablefile;
             set lookup_its_tablefigurefile(where=(substr(table,1,1)='T'));
-			stratificationorder = _n_;
         run;
         /*ITSfigurefile*/
         data tempfl.ITSfigurefile;
