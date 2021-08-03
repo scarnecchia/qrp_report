@@ -82,7 +82,7 @@
                 xloopcount = 6;
             end;
             else do;
-                xloopcount=ceil(divide(xmax-xmin,xtick));
+                xloopcount=ceil(divide(xmax-xmin,xtick))+1;
             end;
             if missing(ytick) then do;
                 ymaxminusmin = ymax-ymin;
@@ -118,7 +118,7 @@
         %let xtickmarks = &xtickmarks%str( )&xloop.;
         %end;
         %else %do;
-        %let xtickmarks = &xtickmarks%str( )%sysfunc(max(&xmax.,&xloop.));
+        %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
         %end;
         %let xloop=%sysevalf(&xloop + &xtick);
         %let loopcount = %eval(&loopcount+1);
@@ -136,13 +136,6 @@
         %let yloop=%sysevalf(&yloop + &ytick);
         %let loopcount = %eval(&loopcount+1);
         %end;
-
-        %put &xmin;
-        %put &xmax;
-        %put &xtick;
-        %put &ymin;
-        %put &ymax;
-        %put &ytick;
 
         %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
