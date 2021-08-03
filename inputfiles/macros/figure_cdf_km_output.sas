@@ -52,47 +52,94 @@
 		%let ytick = ;
 		%let atrisktable = ;
 		%let num_fn = 0;
+        %let xtickmarks = ;
+        %let ytickmarks = ;
+        %let datamin= ;
+        %let datamax = ;
 
-		proc sql noprint;
-		   select case when xmin is not missing then xmin
-		          else 0 end
-		         ,case when xmax is not missing then xmax 
-		          else (select max(day) from &dataset(where=(&where.))) end
-		         ,case when xtick is not missing then xtick
-		          else (select round(max(day)/6,30) from &dataset(where=(&where.))) end
-		         ,case when ymin is not missing then ymin*100
-		         else 0 end 
-		         ,case when ymax is not missing then ymax*100
-		         else 100 end 
-		         ,case when ytick is not missing then ytick 
-		         else 20 end
-		         ,case when includeatrisktable is not missing then includeatrisktable
-		         else 'N' end
-		   into: xmin trimmed
-		       ,:xmax trimmed
-		       ,:xtick trimmed
-		       ,:ymin trimmed 
-		       ,:ymax trimmed 
-		       ,:ytick trimmed 
-		       ,:atrisktable trimmed 
-		   from figurefile
-		   where figure = "&figure.";
-		quit;
+        /*select min and max day from input dataset*/
+        proc sql noprint;
+            select min(day), max(day) into :datamin, :datamax
+            from &dataset(where=(&where.));
+        quit;
 
-		/* Create list of tick marks */
-		%let xtickmarks = ;
-		%let ytickmarks = ;
+        data _null_;
+            set figurefile(where=(figure="&figure."));
 
-		%do i = &xmin %to &xmax %by &xtick;
-			%let xtickmarks = &xtickmarks%str( )&i;
-		%end;
-		%do j = &ymin %to &ymax %by &ytick;
-			%let ytickmarks = &ytickmarks%str( )%sysevalf(&j/100);
-		%end;
+            /*set min/max defaults if missing*/
+            if missing(xmin) then xmin = &datamin.;
+            if missing(xmax) then xmax = &datamax.;
 
-		%tableletter();	
+            if missing(ymin) then ymin = 0;
+            if missing(ymax) then ymax = 1;
 
-		/*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+            /*set default tick if missing:
+                - 6 total tick marks (min, max, and 4 interim)
+                - for x axis - round to the nearest divisor of 1, 5, or 30
+                               depending on length of axis                */
+            if missing(xtick) then do;
+                xmaxminusmin = xmax-xmin;
+                if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
+                else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
+                else xtick = round(xmaxminusmin/5, 30);
+                xloopcount = 6;
+            end;
+            else do;
+                xloopcount=ceil(divide(xmax-xmin,xtick))+1;
+            end;
+            if missing(ytick) then do;
+                ymaxminusmin = ymax-ymin;
+                if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
+                else ytick = round(ymaxminusmin/5, .001);
+                yloopcount = 6;
+            end;
+            else do;
+                yloopcount=ceil(divide(ymax-ymin,ytick));
+            end;
+
+            call symputx('xmin', xmin);
+            call symputx('xmax', xmax);
+            call symputx('xtick', xtick);
+            call symputx('ymin', ymin);
+            call symputx('ymax', ymax);
+            call symputx('ytick', ytick);
+            call symputx('xloopcount', xloopcount);
+            call symputx('yloopcount', yloopcount);
+            call symputx('atrisktable', includeatrisktable);
+        run;
+
+        %put &xmin &xmax &xtick &ymin &ymax &ytick;
+
+        %let xloop = &xmin.;
+        %let yloop = &ymin.;
+
+        /*xaxis*/
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
+        %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
+        %let xtickmarks = &xtickmarks%str( )&xloop.;
+        %end;
+        %else %do;
+        %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
+        %end;
+        %let xloop=%sysevalf(&xloop + &xtick);
+        %let axisloopcount = %eval(&axisloopcount+1);
+        %end;
+        
+        /*yaxis*/
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
+        %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
+        %let ytickmarks = &ytickmarks%str( )&yloop.;
+        %end;
+        %else %do;
+        %let ytickmarks = &ytickmarks%str( )%sysfunc(max(&ymax.,&yloop.));
+        %end;
+        %let yloop=%sysevalf(&yloop + &ytick);
+        %let axisloopcount = %eval(&axisloopcount+1);
+        %end;
+
+        /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
           the numerous permutations of situations that can lead to 1 figure */
         %if %index(&reporttype, L2) %then %do;
           proc sql noprint;
@@ -104,6 +151,7 @@
           %if %eval(&countkm.)=1 %then %let tableletter = ;
         %end;
 
+        %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure&figurenum.&tableletter.;
