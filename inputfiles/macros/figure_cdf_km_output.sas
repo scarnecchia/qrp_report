@@ -93,7 +93,7 @@
                 yloopcount = 6;
             end;
             else do;
-                yloopcount=ceil(divide(ymax-ymin,ytick));
+                yloopcount=ceil(divide(ymax-ymin,ytick))+1;
             end;
 
             call symputx('xmin', xmin);
@@ -132,7 +132,7 @@
         %let ytickmarks = &ytickmarks%str( )&yloop.;
         %end;
         %else %do;
-        %let ytickmarks = &ytickmarks%str( )%sysfunc(max(&ymax.,&yloop.));
+        %let ytickmarks = &ytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
         %end;
         %let yloop=%sysevalf(&yloop + &ytick);
         %let axisloopcount = %eval(&axisloopcount+1);
