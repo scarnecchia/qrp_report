@@ -113,29 +113,29 @@
         %let yloop = &ymin.;
 
         /*xaxis*/
-        %let loopcount = 1;
-        %do %while(%sysevalf(&loopcount. <=&xloopcount.));
-        %if %eval(&loopcount. ne &xloopcount.) %then %do;
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
+        %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
         %let xtickmarks = &xtickmarks%str( )&xloop.;
         %end;
         %else %do;
         %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
         %end;
         %let xloop=%sysevalf(&xloop + &xtick);
-        %let loopcount = %eval(&loopcount+1);
+        %let axisloopcount = %eval(&axisloopcount+1);
         %end;
         
         /*yaxis*/
-        %let loopcount = 1;
-        %do %while(%sysevalf(&loopcount. <=&yloopcount.));
-        %if %eval(&loopcount. ne &yloopcount.) %then %do;
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
+        %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
         %let ytickmarks = &ytickmarks%str( )&yloop.;
         %end;
         %else %do;
         %let ytickmarks = &ytickmarks%str( )%sysfunc(max(&ymax.,&yloop.));
         %end;
         %let yloop=%sysevalf(&yloop + &ytick);
-        %let loopcount = %eval(&loopcount+1);
+        %let axisloopcount = %eval(&axisloopcount+1);
         %end;
 
         %tableletter();	
