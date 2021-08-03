@@ -50,6 +50,8 @@
 		%let ymax = ;
 		%let ytick = ;
 		%let atrisktable = ;
+        %let xtickmarks = ;
+        %let ytickmarks = ;
 
         %let datamin= ;
         %let datamax = ;
@@ -105,8 +107,7 @@
             call symputx('atrisktable', includeatrisktable);
         run;
 
-        %let xtickmarks = ;
-        %let ytickmarks = ;
+        %put &xmin &xmax &xtick &ymin &ymax &ytick;
 
         %let xloop = &xmin.;
         %let yloop = &ymin.;
