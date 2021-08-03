@@ -88,7 +88,6 @@
                 ymaxminusmin = ymax-ymin;
                 if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
                 else ytick = round(ymaxminusmin/5, .001);
-                call symputx(xloopcount, 6);
                 yloopcount = 6;
             end;
             else do;
