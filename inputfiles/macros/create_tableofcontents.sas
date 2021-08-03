@@ -748,7 +748,7 @@
                     %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
                 %end; /*figuref4*/
 
-                /*F4: 1 figure per report*/
+                /*F5: 1 figure per report*/
                 %isdata(dataset=figuref5);
                 %if %eval(&nobs.>0) %then %do;
                     /*Censor reason*/

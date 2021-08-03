@@ -40,7 +40,8 @@
 						 figfn=,
 						 xaxislabel=,
 						 yaxislabel=,
-						 figure=);
+						 figure=,
+						 kmrefpop=);
 
 		/* Obtain x and y axis values */
 		%let xmin = ;
@@ -50,20 +51,22 @@
 		%let ymax = ;
 		%let ytick = ;
 		%let atrisktable = ;
+		%let num_fn = 0;
+
 		proc sql noprint;
-		   select case when xmin > 0 then xmin
+		   select case when xmin is not missing then xmin
 		          else 0 end
-		         ,case when xmax > 0 then xmax 
+		         ,case when xmax is not missing then xmax 
 		          else (select max(day) from &dataset(where=(&where.))) end
-		         ,case when xtick > 0 then xtick
+		         ,case when xtick is not missing then xtick
 		          else (select round(max(day)/6,30) from &dataset(where=(&where.))) end
-		         ,case when ymin > 0 then ymin*100
+		         ,case when ymin is not missing then ymin*100
 		         else 0 end 
-		         ,case when ymax > 0 then ymax*100
+		         ,case when ymax is not missing then ymax*100
 		         else 100 end 
-		         ,case when ytick > 0 then ytick 
+		         ,case when ytick is not missing then ytick 
 		         else 20 end
-		         ,case when includeatrisktable is not missing then upper(includeatrisktable)
+		         ,case when includeatrisktable is not missing then includeatrisktable
 		         else 'N' end
 		   into: xmin trimmed
 		       ,:xmax trimmed
@@ -88,13 +91,26 @@
 		%end;
 
 		%tableletter();	
+
+		/*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+          the numerous permutations of situations that can lead to 1 figure */
+        %if %index(&reporttype, L2) %then %do;
+          proc sql noprint;
+             select count(caption) into: countkm
+             from tableofcontents
+             where index(caption, 'Kaplan-Meier Estimate')>0;
+          quit;
+
+          %if %eval(&countkm.)=1 %then %let tableletter = ;
+        %end;
+
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure&figurenum.&tableletter.;
 		set &dataset(where=(&where));
 		/* Only selects days for corresponding tickmarks */
 		%if &atrisktable = Y %then %do;
-		if day in (&xtickmarks) then dayatrisk=day;
+		if day in (&xtickmarks) then xaxisatrisk=day;
 		%end;
 		run;
 		%end;
@@ -110,15 +126,40 @@
 			select lower(name) 
 			into :kmcols separated by ' '
 			from _kmcolnames
-			where scan(lower(name),1,'_') in ('km' 'cdf');
-
+			where
+			%if &kmrefpop = unweighted %then %do;
+			lower(name) in ('km_evexp' 'km_evunexp') and lower(name) ^= 'km_evunexp_wght'
+			%end;
+			%else %do;
+			scan(lower(name),1,'_') in ('km' 'cdf')
+			%end;
+			;
 			%if &atrisktable = Y %then %do;
 			select lower(name)
 			into :atriskcols separated by ' '
 			from _kmcolnames 
-			where scan(lower(name),1,'_') = 'episodes';
+			where
+			%if &kmrefpop = unweighted %then %do;
+			lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp') and lower(name) ^= 'episodes_atriskunexp_wght'
+			%end;
+			%else %do;
+			scan(lower(name),1,'_') = 'episodes'
+			%end;
+			;
 			%end;
 		quit;
+
+		/* Check for when no episodes occur in data */
+		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
+		%if %eval(&nobs=1) %then %do;
+		data repdata.Figure&figurenum.&tableletter.;
+		set repdata.Figure&figurenum.&tableletter.;
+		if &xmin ne 0 then xaxisatrisk=0;
+		run;
+		%end;
+
+		ods startpage = now;
+  		ods startpage = no;
 
 		/* Trick Excel into making a new sheet */
 		%if &destination. = excel %then %do;
@@ -132,38 +173,67 @@
 		%end;
 
         %if &destination. = excel %then %do;
-            ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="blue" flow='none');
+            ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DarkBlue" flow='none');
         %end;
 
-		proc odstext pagebreak=yes;
-			p "Figure &figurenum.&tableletter.. &figtitle" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+        %if &destination. = pdf %then %do;
+		ODS PDF BOOKMARKGEN = ON; 
+		ods proclabel = "Figure &figurenum.&tableletter.";
+		%end;
+
+		proc odstext;
+			p "Figure &figurenum.&tableletter.. &figtitle" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
 		run;
 
+		%if &destination. = pdf %then %do;
+		ODS PDF BOOKMARKGEN = OFF; 
+		%end;
 		/* Create KM/CDF plots */
-		proc sgplot data=repdata.Figure&figurenum.&tableletter;  
+		proc sgplot data=repdata.Figure&figurenum.&tableletter noborder;
+			styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
+										  Yellow Skyblue Chartreuse Pink Maroon Grey Fuchsia Tomato Olive Aqua 
+										  LightRed GreenYellow DarkSlateGray DarkCyan DarkViolet Goldenrod MediumAquamarine);
 			%do km = 1 %to %sysfunc(countw(&kmcols));
 				%let kmcol = %scan(&kmcols,&km);
-			step x=day y=&kmcol / lineattrs=(thickness=1.5 pattern=solid);
+			step x=day y=&kmcol / lineattrs=(thickness=2 pattern=solid);
 			%end;
-			xaxis label = "&xaxislabel" values=(&xtickmarks) valueattrs=(size=7 color=black) labelattrs=(size=7); 
-			yaxis label = "&yaxislabel" values=(&ytickmarks) valueattrs=(size=7 color=black) labelattrs=(size=7);
+			xaxis label = "&xaxislabel" values=(&xtickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font); 
+			yaxis label = "&yaxislabel" values=(&ytickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font);
 			%if &atrisktable = Y %then %do;
-				xaxistable &atriskcols / %if ^%index(&reporttype,L2) and ((&reporttype=T2L1 and &figure ^= F1) or (&reporttype=T5 and &figure ^= F5)) %then %do; 
-										class=grouplabel 
+				xaxistable &atriskcols / %if %sysfunc(prxmatch(m/T1|T6/i,&reporttype.)) or (&reporttype=T2L1 and &figure ^= F1) or (&reporttype=T5 and &figure = F4) %then %do; 
+										class=grouplabel /* Only one group per plot, but class statement applies label to xaxis table columns */
 										%end; 
-										labelattrs=(size=7)
-										x=dayatrisk location=outside nomissingclass nomissingchar pad=(top=10px);
+										labelattrs=(size=&fontsize family=&font)
+										valueattrs=(size=&fontsize family=&font)
+										x=xaxisatrisk location=outside nomissingclass nomissingchar pad=(top=10px);
+										format &atriskcols comma12.;
 			%end;
-			keylegend / valueattrs=(size=7 color=black) across=1 noborder linelength=.25in;
+			keylegend / valueattrs=(size=&fontsize family=&font) position=bottom noborder linelength=.25in;
 		run;
 
 		%if &figfn = Y %then %do;
-		proc odstext pagebreak=yes;
-			p "A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day." /
-				style=[just=L font_size=8pt bordertopcolor=black borderbottomcolor=black];
-		run;
-		%end;
+		data _footnotes;
+            length footnote_order 3; 
+            set lookup.lookup_footnotes_kmcdf;
+            by order;
+            footnote_order = _n_;
+            call symputx('num_fn', 1);
+        run;
 
+        proc sql noprint;
+            select description into: fn1 - :fn&num_fn.
+            from _footnotes
+            order by order;
+        quit;
+
+        %assign_superscripts(type=kmcdf, order = 1);
+		/* Only one footnote for now - May change in the future */
+		proc odstext;
+			%do fnote = 1 %to &num_fn.;
+				p "^{super &fnote.}&&fn&fnote." / style=[just=L font_size=&footfontsize];
+			%end;
+		run; 
+		%end;
 	%mend output_cdf_km;
 
 		*reset tablecount; 
@@ -214,25 +284,26 @@
 								 figtitle=%quote(Reasons for End of Observable Data Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.),
 								 figfn=Y,
 								 xaxislabel=%str(Time (days)),
-						 		 yaxislabel=%str(Cumulative probability that censoring reason has not occurred),
-								 figure=&figure);
+						 		 yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred),
+								 figure=&figure,
+								 kmrefpop=);
 				%end;
 
 				%else %if &reporttype = T2L1 %then %do;
 					%if &figure = F1 %then %do;
 						%let title = Kaplan-Meier Estimate of Event of Interest Not Occurring;
 						%let xaxislabel=%str(Follow-up time (days));
-						%let yaxislabel=%str(Cumulative probability that event of interest has not occurred);
+						%let yaxislabel=%str(Cumulative probability that event of interest(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F2 %then %do;
 						%let title = Reasons for End of Follow-Up Among &grouplabel;
 						%let xaxislabel=%str(Follow-up time (days));
-						%let yaxislabel=%str(Cumulative probability that censoring reason has not occurred);
+						%let yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F3 %then %do;
 						%let title = Reasons for End of Observable Data Among &grouplabel;
 						%let xaxislabel=%str(Time (days));
-						%let yaxislabel=%str(Cumulative probability that censoring reason has not occurred);
+						%let yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order = &order.),
@@ -240,12 +311,11 @@
 									 figfn=Y,
 									 xaxislabel=&xaxislabel,
 						 		 	 yaxislabel=&yaxislabel,
-									 figure=&figure);
+									 figure=&figure,
+									 kmrefpop=);
 				%end;
 
 				%else %if &reporttype = T5 %then %do;
-					%if &figure = F4 %then %let title = Reasons for End of First Treatment Episode Among &grouplabel;
-
 					%isdata(dataset=figuref5);
 	                %if %eval(&nobs.>0) %then %do;
 	                    /*Censor reason*/
@@ -255,32 +325,34 @@
 	                      run; 
 	                %end;
 
+	                %if &figure = F4 %then %let title = Reasons for End of First Treatment Episode Among &grouplabel;
 	                %if &figure = F5 %then %let title = End of First Treatment Episode due to &&&censordisplay._label;
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order=&order.),
 									 figtitle=%quote(&title in the &database. from &startdateformatted. to &enddateformatted.),
 									 figfn=,
 									 xaxislabel=%str(Episode length (days)),
-						 		 	 yaxislabel=%str(Cumulative probability that censoring reason has not occurred),
-									 figure=&figure);
+						 		 	 yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred),
+									 figure=&figure,
+									 kmrefpop=);
 				%end;
 
 				%else %if &reporttype = T6 %then %do;
 					%if &figure = F4 %then %do;
-						%let title = Kaplan-Meier Estimate of First Switch Not Occurring;
-						%let yaxislabel = %str(Cumulative probability that first switch has not occurred);
+						%let title = Kaplan-Meier Estimate of First Switch Not Occurring Among &grouplabel.;
+						%let yaxislabel = %str(Cumulative probability that first switch(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F5 %then %do;
-						%let title = Kaplan-Meier Estimate of Second Switch Not Occurring;
-						%let yaxislabel = %str(Cumulative probability that second switch has not occurred);
+						%let title = Kaplan-Meier Estimate of Second Switch Not Occurring Among &grouplabel.;
+						%let yaxislabel = %str(Cumulative probability that second switch(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F6 %then %do;
-						%let title = Reasons for Censoring at First Switch Evaluation;
-						%let yaxislabel = %str(Cumulative probability that censoring reason has not occurred);
+						%let title = Reasons for Censoring at First Switch Evaluation Among &grouplabel.;
+						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F7 %then %do;
-						%let title = Reasons for Censoring at First Second Evaluation;
-						%let yaxislabel = %str(Cumulative probability that censoring reason has not occurred);
+						%let title = Reasons for Censoring at First Second Evaluation Among &grouplabel.;
+						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order=&order.),
@@ -288,7 +360,8 @@
 									 figfn=,
 									 xaxislabel=%str(Follow-up time (days)),
 						 		 	 yaxislabel=&yaxislabel,
-									 figure=&figure);
+									 figure=&figure,
+									 kmrefpop=);
 				%end;
 
 				%end; /* order loop */
@@ -309,6 +382,8 @@
 
 		%else %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
 
+			 %let figurenum = %eval(&figurenum.+1); 
+
 			/* Increment figure number if other figures are specified */
 			%if %sysfunc(prxmatch(m/F1|F2/i,&figurelist.)) > 0 %then %let figurenum = %eval(&figurenum.+1); 
 
@@ -319,15 +394,26 @@
                         set l2comparisonfile(where=(order=&loopcount.));
 		                call symputx('runid', runid);
 		                call symputx('analysisgrp', analysisgrp);
+		                call symputx('kmrefpop',kmrefpop);
                     run;
 
                     proc sql noprint;
                         select distinct strip(file) into: pscsfile trimmed
                         from pscs_masterinputs
                         where analysisgrp = "&analysisgrp." and runid = "&runid";
+
+                        /* KM plots only available for unweighted groups */
+                        %let strataweight = ;
+                        %if &pscsfile = stratificationfile %then %do;
+                        select strataweight 
+                        into :strataweight trimmed
+                        from infolder.&&&runid._stratificationfile 
+                        where missing(strataweight);
+                        %end;
                     quit;
 
-                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
+
+                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
 
                         /*assign labels*/
                         data _null_; 
@@ -357,11 +443,11 @@
                             run;
                         %end;
 
+                    %do j = %eval(&look_start) %to %eval(&look_end);
+
                     /*Loop through each figure */
 					%do f = 1 %to %sysfunc(countw(&figurelist));
 						%let figure = %scan(&figurelist,&f);
-
-                        %do j = %eval(&look_start) %to %eval(&look_end);
 
                         /*F3*/
                         %isdata(dataset=figureF3_analysis&loopcount._&j.);
@@ -372,8 +458,9 @@
 									 figtitle=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
 									 figfn=,
 									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel. has not occurred),
-									 figure=&figure);
+									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+									 figure=&figure,
+									 kmrefpop=&kmrefpop);
                         %end;
                         /*F4*/
                         %isdata(dataset=figureF4_analysis&loopcount._&j.);
@@ -383,8 +470,9 @@
 									 figtitle=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
 									 figfn=,
 									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel. has not occurred),
-									 figure=&figure);
+									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+									 figure=&figure,
+									 kmrefpop=&kmrefpop);
                         %end;
                         /*F5*/
                         %isdata(dataset=figureF5_analysis&loopcount._&j.);
@@ -394,17 +482,22 @@
 									 figtitle=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
 									 figfn=,
 									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel. has not occurred),
-									 figure=&figure);
+									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+									 figure=&figure,
+									 kmrefpop=&kmrefpop);
                         %end;
 
-	                    %end; /* Monitoring Period */
-	                %end; /* figurelist */
+	                    %end; /* figurelist */ 
+	                %end; /* Monitoring Period */
 	            %end; /* psfile */
 	                                          
 			%end; /* loopcount */
 
 		%end; /* reporttype */
+
+    proc datasets nowarn nolist noprint lib=work;
+        delete _kmcols;
+    quit;
 
 	%put =====> END MACRO: figure_cdf_km_output;
 
