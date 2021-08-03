@@ -454,7 +454,7 @@
                         where missing(strataweight);
                         %end;
                     quit;
-*
+
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
 
                         /*assign labels*/
