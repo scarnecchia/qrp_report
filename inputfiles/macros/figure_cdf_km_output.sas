@@ -83,14 +83,14 @@
                 else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
                 else xtick = round(xmaxminusmin/5, 30);
             end;
-            xloopcount=ceil(divide(xmax-xmin,xtick))+1;
+            xloopcount=round(divide(xmax-xmin,xtick))+1;
 
             if missing(ytick) then do;
                 ymaxminusmin = ymax-ymin;
                 if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
                 else ytick = round(ymaxminusmin/5, .001);
             end;
-            yloopcount=ceil(divide(ymax-ymin,ytick))+1;
+            yloopcount=round(divide(ymax-ymin,ytick))+1;
 
             call symputx('xmin', xmin);
             call symputx('xmax', xmax);
