@@ -178,6 +178,9 @@
 			%if &kmrefpop = unweighted %then %do;
 			lower(name) in ('km_evexp' 'km_evunexp') and lower(name) ^= 'km_evunexp_wght'
 			%end;
+			%else %if &kmrefpop = weighted %then %do;
+			lower(name) in ('km_evexp' 'km_evunexp_wght')
+			%end;
 			%else %do;
 			scan(lower(name),1,'_') in ('km' 'cdf')
 			%end;
@@ -189,6 +192,9 @@
 			where
 			%if &kmrefpop = unweighted %then %do;
 			lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp') and lower(name) ^= 'episodes_atriskunexp_wght'
+			%end;
+			%else %if &kmrefpop = weighted %then %do;
+			lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp_wght')
 			%end;
 			%else %do;
 			scan(lower(name),1,'_') = 'episodes'
@@ -208,6 +214,7 @@
 
 		ods startpage = now;
   		ods startpage = no;
+  		ods graphics / width=768px;
 
 		/* Trick Excel into making a new sheet */
 		%if &destination. = excel %then %do;
@@ -230,7 +237,7 @@
 		%end;
 
 		proc odstext;
-			p "Figure &figurenum.&tableletter.. &figtitle" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
+			p "Figure &figurenum.&tableletter.. &figtitle" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
 		run;
 
 		%if &destination. = pdf %then %do;
@@ -430,11 +437,6 @@
 
 		%else %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
 
-			 %let figurenum = %eval(&figurenum.+1); 
-
-			/* Increment figure number if other figures are specified */
-			%if %sysfunc(prxmatch(m/F1|F2/i,&figurelist.)) > 0 %then %let figurenum = %eval(&figurenum.+1); 
-
         	/*loop through each analysisgrp - dataset only exists if curve computed*/
 			%do loopcount = 1 %to &numl2comparisons.;   
 
@@ -446,18 +448,16 @@
                     run;
 
                     proc sql noprint;
+                    	%let strataweight = ;
                         select distinct strip(file) into: pscsfile trimmed
                         from pscs_masterinputs
                         where analysisgrp = "&analysisgrp." and runid = "&runid";
 
                         /* KM plots only available for unweighted groups */
-                        %let strataweight = ;
-                        %if &pscsfile = stratificationfile %then %do;
                         select strataweight 
                         into :strataweight trimmed
-                        from infolder.&&&runid._stratificationfile 
-                        where missing(strataweight);
-                        %end;
+                        from pscs_masterinputs
+                        where missing(strataweight) and analysisgrp = "&analysisgrp." and runid = "&runid";
                     quit;
 
 
