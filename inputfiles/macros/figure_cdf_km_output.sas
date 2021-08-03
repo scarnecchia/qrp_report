@@ -82,20 +82,15 @@
                 if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
                 else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
                 else xtick = round(xmaxminusmin/5, 30);
-                xloopcount = 6;
             end;
-            else do;
-                xloopcount=ceil(divide(xmax-xmin,xtick))+1;
-            end;
+            xloopcount=round(divide(xmax-xmin,xtick))+1;
+
             if missing(ytick) then do;
                 ymaxminusmin = ymax-ymin;
                 if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
                 else ytick = round(ymaxminusmin/5, .001);
-                yloopcount = 6;
             end;
-            else do;
-                yloopcount=ceil(divide(ymax-ymin,ytick))+1;
-            end;
+            yloopcount=round(divide(ymax-ymin,ytick))+1;
 
             call symputx('xmin', xmin);
             call symputx('xmax', xmax);
@@ -459,7 +454,6 @@
                         from pscs_masterinputs
                         where missing(strataweight) and analysisgrp = "&analysisgrp." and runid = "&runid";
                     quit;
-
 
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
 
