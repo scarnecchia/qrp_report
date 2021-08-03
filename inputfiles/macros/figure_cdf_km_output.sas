@@ -82,7 +82,7 @@
                 if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
                 else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
                 else xtick = round(xmaxminusmin/5, 30);
-                xloopcount = 6;
+                xloopcount = 7;
             end;
             else do;
                 xloopcount=ceil(divide(xmax-xmin,xtick))+1;
@@ -91,7 +91,7 @@
                 ymaxminusmin = ymax-ymin;
                 if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
                 else ytick = round(ymaxminusmin/5, .001);
-                yloopcount = 6;
+                yloopcount = 7;
             end;
             else do;
                 yloopcount=ceil(divide(ymax-ymin,ytick))+1;
@@ -115,7 +115,7 @@
 
         /*xaxis*/
         %let axisloopcount = 1;
-        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
+        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.)) & %sysevalf(&xloop.<=&xmax.));
         %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
         %let xtickmarks = &xtickmarks%str( )&xloop.;
         %end;
@@ -128,7 +128,7 @@
         
         /*yaxis*/
         %let axisloopcount = 1;
-        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
+        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.)) & %sysevalf(&yloop.<=yxmax.));
         %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
         %let ytickmarks = &ytickmarks%str( )&yloop.;
         %end;
@@ -459,7 +459,6 @@
                         where missing(strataweight);
                         %end;
                     quit;
-
 
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
 
