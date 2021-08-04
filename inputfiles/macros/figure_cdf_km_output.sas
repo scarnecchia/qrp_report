@@ -152,18 +152,6 @@
         %let axisloopcount = %eval(&axisloopcount+1);
         %end;
 
-        /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
-          the numerous permutations of situations that can lead to 1 figure */
-        %if %index(&reporttype, L2) %then %do;
-          proc sql noprint;
-             select count(caption) into: countkm
-             from tableofcontents
-             where index(caption, 'Kaplan-Meier Estimate')>0;
-          quit;
-
-          %if %eval(&countkm.)=1 %then %let tableletter = ;
-        %end;
-
         %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
@@ -449,6 +437,16 @@
         /***************************************************************************************/
 
 		%else %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+		   /* If there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+              the numerous permutations of situations that can lead to 1 figure */ 
+		   %let countkm = 0;
+		   %let tableletter = ;
+		   
+           proc sql noprint;
+             select count(caption) into: countkm
+             from tableofcontents
+             where index(caption, 'Kaplan-Meier Estimate')>0;
+           quit;
 
         	/*loop through each analysisgrp - dataset only exists if curve computed*/
 			%do loopcount = 1 %to &numl2comparisons.;   
@@ -459,18 +457,16 @@
 		                call symputx('analysisgrp', analysisgrp);
 		                call symputx('kmrefpop',kmrefpop);
                     run;
-
+                    
+					/* KM plots not available for PS Stratum Weighted analysis */
                     proc sql noprint;
                     	%let strataweight = ;
-                        select distinct strip(file) into: pscsfile trimmed
+                        select distinct strip(file)
+           					  ,strataweight
+						into: pscsfile trimmed
+						    ,:strataweight trimmed
                         from pscs_masterinputs
                         where analysisgrp = "&analysisgrp." and runid = "&runid";
-
-                        /* KM plots only available for unweighted groups */
-                        select strataweight 
-                        into :strataweight trimmed
-                        from pscs_masterinputs
-                        where missing(strataweight) and analysisgrp = "&analysisgrp." and runid = "&runid";
                     quit;
 
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
