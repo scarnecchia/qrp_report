@@ -28,8 +28,7 @@
 ***************************************************************************************************;
 
 /*Define libname for location of templatefiles folder*/
-libname tempfl "";
-
+libname tempfl "U:\dev\qrp_report\DEV-15764\qrp_report\templatefiles";
 %macro create_templatefiles();
 
     *************************************
@@ -65,12 +64,13 @@ libname tempfl "";
 
 	%macro createt1t2cidatemplates(name);
 	    data lookup_&name.;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
 	        includeinreport = 'N';
+			categories = '';
             call missing(levelid3);
-
+             
 	        /*Table T1*/
 	        dataset = "&name.";
 	        table = 'T1';
@@ -114,10 +114,11 @@ libname tempfl "";
     %let stratacensor = agegroup| year| sex;
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
-            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
             format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
             includeinreport = 'N';
+			categories = '';
             call missing(levelid3);
 
     		%do t=1 %to 3;
@@ -171,10 +172,11 @@ libname tempfl "";
     /*Multiple Events Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
     data lookup_t2multevent;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid3);
 
         /*Table T1*/
@@ -329,10 +331,11 @@ libname tempfl "";
 	/*Overlap Tables*/
     %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg;
     data lookup_t2overlap;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid3);
 
         /*Table T1*/
@@ -490,7 +493,6 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
-		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -540,7 +542,6 @@ libname tempfl "";
         format censordisplay $50.;
         censordisplay = '';
         includekmweightedpop = 'N';
-		drop categories;
 
         /*PS Histograms*/
         figure = 'F1';
@@ -561,10 +562,11 @@ libname tempfl "";
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
 
     data tempfl.t4l1tablefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid2);
         call missing(levelid3);
 
@@ -621,15 +623,16 @@ libname tempfl "";
     %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
 
 	data lookup_t5tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid3);
         call missing(tablesubstrat);
 
         dataset = "t5episdur";
-		%do t = 1 %to 2;
+		%do t = 3 %to 4; 
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -645,7 +648,24 @@ libname tempfl "";
                 output;
 		     %end;
 		%end;
-		%do t = 3 %to 8;
+		%do t = 7 %to 10; 
+             %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "episodenum";
+			      levelid2 = "episodenum episodelength";
+			    %end;
+			    %else %do;
+                  levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    %end;
+                output;
+		     %end;
+		  %end;
+		  
+		%do t = 5 %to 6; 
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -663,7 +683,7 @@ libname tempfl "";
 		  %end;
 
 		dataset = "t5disp";
-		%do t = 9 %to 10;
+		%do t = 1 %to 2;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -681,7 +701,7 @@ libname tempfl "";
 		%end;
 
 		dataset = "t5gaps";
-		%do t = 11 %to 13;
+		%do t = 12 %to 13;
              %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -696,7 +716,22 @@ libname tempfl "";
 			    %end;
                 output;
 		     %end;
-		%end;
+	    %end;
+		%do s = 1 %to &stratlevels.;
+                table = "T11";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =1;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "gaplength gapnum";
+			      levelid2 = "";
+			    %end;
+			    %else %do;
+                  levelid1 = "gaplength gapnum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "";
+			    %end;
+                output;
+		 %end;
+		
 
 		dataset = "t5censor";
 		table = "T14";
@@ -794,10 +829,11 @@ libname tempfl "";
     %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
 
 	data lookup_t6tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(tablesubstrat);
 
         dataset = "t6counts";
@@ -1041,10 +1077,11 @@ libname tempfl "";
     %let intervallist = year|month year|quarter year;
 
 	data lookup_its_tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(tablesubstrat);
 
         dataset = "t2its";
