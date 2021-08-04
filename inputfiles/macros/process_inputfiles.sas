@@ -813,9 +813,10 @@
                     left join userstrata as strata1
                 	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
                     left join userstrata as strata2
-                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
+                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
+                    order by table.table, strata.levelid1, strata1.levelid, strata2.levelid;
                 quit;
-                
+     
 				/* add stratificationorder variable to use for looping */
 				proc sql noprint undo_policy=none;
 				create table tablefile (drop = so) as
@@ -827,7 +828,7 @@
 				group by a.dataset, a.table, a.tablesub
 				order by a.table, stratificationorder;
 				quit;
-
+ 
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                 	set tablefile;

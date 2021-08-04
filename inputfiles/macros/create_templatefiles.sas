@@ -111,7 +111,7 @@ libname tempfl "";
 	%createt1t2cidatemplates(t2conc);
 
 	/*t1censor & t2censor Tables*/
-    %let stratacensor = agegroup| year| sex;
+    %let stratacensor = | sex| agegroup| year;
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
