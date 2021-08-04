@@ -708,9 +708,6 @@
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
             %alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
-
-			/*create variable stratificationorder to use in looping */
-			stratificationorder = _n_;
         run;
 
         %isdata(dataset=tablefile);
@@ -736,7 +733,6 @@
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
-						 , table.stratificationorder
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
@@ -745,7 +741,18 @@
                     left join userstrata as strata2
                 	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
                 quit;
-
+                
+				/* add stratificationorder variable to use for looping */
+				proc sql noprint undo_policy=none;
+				create table tablefile (drop = so) as
+				select distinct a.*, count(b.so) as stratificationorder
+				from (select *, monotonic() as so from tablefile) a
+				left join
+				(select *, monotonic() as so from tablefile) b
+				on a.table=b.table and b.so <= a.so
+				group by a.table, a.tablesub
+				order by a.table, stratificationorder;
+				quit;
 
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
