@@ -749,8 +749,8 @@
 				from (select *, monotonic() as so from tablefile) a
 				left join
 				(select *, monotonic() as so from tablefile) b
-				on a.table=b.table and b.so <= a.so
-				group by a.table, a.tablesub
+				on a.table=b.table and a.dataset=b.dataset and b.so <= a.so
+				group by a.dataset, a.table, a.tablesub
 				order by a.table, stratificationorder;
 				quit;
 
