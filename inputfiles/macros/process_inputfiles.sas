@@ -814,7 +814,7 @@
                 	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
                     left join userstrata as strata2
                 	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
-                    order by table.table, strata.levelid1, strata1.levelid, strata2.levelid;
+                    order by table.table, strata.levelid, strata1.levelid, strata2.levelid;
                 quit;
      
 				/* add stratificationorder variable to use for looping */
