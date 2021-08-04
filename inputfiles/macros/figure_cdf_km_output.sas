@@ -297,6 +297,11 @@
 			%end;
 		run; 
 		%end;
+
+	%if &destination. = pdf %then %do;
+	 ODS PDF BOOKMARKGEN = ON;
+	%end; 
+
 	%mend output_cdf_km;
 
 		*reset tablecount; 
@@ -523,7 +528,7 @@
                         /*F3, F4 and/or F5*/
                         %isdata(dataset=figure&figure._analysis&loopcount._&j.);
                         %if %eval(&nobs.>0) %then %do;
-                        %if &figure ^= F4 %then %let kmrefpop=unweighted;
+                        %if &figure = F3 or &figure = F5 %then %let kmrefpop=unweighted;
 
                         %if &figure = F3 %then %let titlestart=Unadjusted;
                         %else %if &figure = F4 %then %let titlestart=Conditional;
