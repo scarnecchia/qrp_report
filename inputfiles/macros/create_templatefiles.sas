@@ -28,7 +28,7 @@
 ***************************************************************************************************;
 
 /*Define libname for location of templatefiles folder*/
-libname tempfl "U:\dev\qrp_report\DEV-15764\qrp_report\templatefiles";
+libname tempfl "";
 %macro create_templatefiles();
 
     *************************************
