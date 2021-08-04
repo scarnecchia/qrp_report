@@ -82,6 +82,7 @@
                 if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
                 else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
                 else xtick = round(xmaxminusmin/5, 30);
+                if xtick = 0 then xtick = 1;
             end;
             xloopcount=round(divide(xmax-xmin,xtick))+1;
 
@@ -89,6 +90,7 @@
                 ymaxminusmin = ymax-ymin;
                 if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
                 else ytick = round(ymaxminusmin/5, .001);
+                if ytick = 0 then ytick = .001;
             end;
             yloopcount=round(divide(ymax-ymin,ytick))+1;
 
@@ -116,6 +118,14 @@
         %end;
         %else %do;
         %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
+            /*Add max value if gap between last tick mark and max value is >tick/2*/
+            %if %scan(&xtickmarks., -1) ne &ymax. %then %do;
+                %let diff = %eval(&xmax.-%scan(&xtickmarks., -1));
+                %let div2 = %sysfunc(divide(&xtick.,2));
+                %if %eval(&diff.>&div2.) %then %do;
+                    %let xtickmarks = &xtickmarks%str( )&xmax.;
+                %end;
+            %end;
         %end;
         %let xloop=%sysevalf(&xloop + &xtick);
         %let axisloopcount = %eval(&axisloopcount+1);
@@ -129,8 +139,16 @@
         %end;
         %else %do;
         %let ytickmarks = &ytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
+            /*Add max value if gap between last tick mark and max value is >tick/2*/
+            %if %scan(&ytickmarks., -1) ne &ymax. %then %do;
+                %let diff = %eval(&ymax.-%scan(&ytickmarks., -1));
+                %let div2 = %sysfunc(divide(&ytick.,2));
+                %if %eval(&diff.>&div2.) %then %do;
+                    %let ytickmarks = &ytickmarks%str( )&ymax.;
+                %end;
+            %end;
         %end;
-        %let yloop=%sysevalf(&yloop + &ytick);
+        %let yloop=%sysfunc(round(%sysevalf(&yloop + &ytick),.001));
         %let axisloopcount = %eval(&axisloopcount+1);
         %end;
 
