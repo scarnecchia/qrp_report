@@ -294,9 +294,9 @@
 		run;
      %end;
 	 
-/***************************************************************************************************
+/***********************************************************************************************************
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
-***************************************************************************************************/
+************************************************************************************************************/
 
 	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
 		data groupsfile;
@@ -315,11 +315,14 @@
 			group = lowcase(group);
             if missing(includeinfigure) then includeinfigure = 'N';
             includeinfigure = upcase(includeinfigure);
+            %if &reporttype.=T6 %then %do;
+            includenegativetime = upcase(includenegativetime);
+            %end;
 		run;
 
 		 %do n = 1 %to &numrunid.;
 			%global grouplist_&n.;
-	         %let runid = %scan(&runidlist., &n.);
+	        %let runid = %scan(&runidlist., &n.);
 	     		proc sql noprint;
 	            /*RUNID specific list of groups*/
 	            select quote(strip(group), "'") into :grouplist_&n separated by ","
@@ -329,8 +332,10 @@
 				%put &&grouplist_&n..;
 	     %end;
 
-		 /* Check if code distribution is required */
+         /*Extract additional information from GROUPSFILE*/
 		 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+
+            /* Check if code distribution is required */
 			%let codedistcount = 0;
 
 			proc sql noprint;
@@ -340,14 +345,27 @@
 
 			%if %eval(&codedistcount. > 0) %then %do;
 				%let output_code_distribution = Y;
-
 				proc sort data=groupsfile(keep=group runid order codedist topncodedist) out=GroupsDist;
 				by order;
 				where strip(codedist) ne "";
 				run;
 			%end;
-
 			%put &=output_code_distribution;
+
+            /*Type 6 - assign to macro variable which groups to include negative time*/
+            %if &reporttype. = T6 %then %do;
+                proc sql noprint;
+    	            select quote(strip(group), "'") into :discardnegativetimegroups separated by ","
+    	            from groupsfile
+    	            where includenegativetime = "N";
+				quit;
+            %end;
+
+            /*Set max(order) value into NUMGROUPS*/
+			proc sql noprint;
+    			select max(order) into :numgroups 
+    			from input.&groupsfile.;
+			quit;
 		 %end;
 	 %end;
  
@@ -423,6 +441,63 @@
         %end;
      run;
 
+
+/*******************************************************************************************************
+*   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
+********************************************************************************************************/
+
+    %if &reporttype. = T6 %then %do;
+        data _treatmentpathways_shell;
+            length runid $5 analysisgrp group $40;
+            call missing(runid, analysisgrp, group);
+            stop;
+        run;
+
+        data master_treatmentpathways;
+            set 
+            %do n = 1 %to &numrunid.;
+                %let runid =&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._treatmentpathways)) %then %do;
+                infolder.&&&runid._treatmentpathways(in=n&n)
+                %end;
+                %else %do;
+                    _treatmentpathways_shell
+                %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+                %let runid =&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._treatmentpathways)) %then %do;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+                %end;
+            %end;
+        run;
+
+        /*add variables to GROUPSFILE to indicate whether group is a COHORTGRP or ANALYSISGRP*/
+        %isdata(dataset=groupsfile);
+        %if %eval(&nobs.>0) %then %do;
+            proc sql noprint undo_policy=none;
+                create table groupsfile as
+                select distinct x.*,
+                                case when missing(y.cohortgrp) then 'Y'
+                                else 'N'
+                                end as switchanalysis,
+                                case when missing(z.analysisgrp) then 'Y'
+                                else 'N'
+                                end as utilizationanalysis
+                from groupsfile as x
+                left join master_cohortfile as y
+                on x.group = y.cohortgrp and x.runid = y.runid
+                left join master_treatmentpathways as z
+                on x.group = z.analysisgrp and x.runid = z.runid
+                order by x.order;
+            quit;
+        %end;
+    %end;
+
 /***************************************************************************************************
 *   Create a stacked t2 add-on file for all runs                                        
 ***************************************************************************************************/
@@ -497,7 +572,6 @@
     run;
     %end;
     %end;
-
 
 
 /***************************************************************************************************
@@ -825,6 +899,11 @@
     /*Read in FigureFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&figurefile.);
     %if %eval(&nobs.>0) %then %do;
+
+        /*macro variable to cross checkout Type 6 treatmentpathways file to ensure an analysisgrp has been requested*/
+        %let t6checktreatmentpathways = N;
+
+        /*read in figurefile*/
         data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                         rename=figuresub_out=figuresub rename=censordisplay1=censordisplay);
             set input.&figurefile.(where=(upcase(includeinreport)='Y'));
@@ -863,6 +942,32 @@
                     abort;
                 end;
             end;
+            %end;
+            %else %if &reporttype. = T6 %then %do;
+                /*Type 6 variable names in datasets t6plota/t6plotb do not match other censor variables. If specified, replace with cens_ variables*/
+                /*Figure F4 and F5 are KM curves - censordisplay should be missing or set to cens_switch*/
+                if figure in ('F4', 'F5') then do;
+                    if missing(censordisplay)=0 and censordisplay not in ('switchedcount', 'cens_switch') then do;
+                        put 'ERROR: (Sentinel) Figures F4 and F5 are Kaplan-Meier Estimate of Switch not occuring - censordisplay cannot be specified';
+                        abort;
+                    end;
+                    else do;
+                        censordisplay1 = 'cens_switch';
+                    end;
+                end;
+                if figure in ('F6', 'F7') then do;
+                    if missing(censordisplay) then do; censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_switch'; end;
+                    else do;
+                        censordisplay1=tranwrd(censordisplay1, "endenrollmentcount", "cens_elig");
+                        censordisplay1=tranwrd(censordisplay1, "deathcount", "cens_dth");
+                        censordisplay1=tranwrd(censordisplay1, "endavaildatacount", "cens_dpend");
+                        censordisplay1=tranwrd(censordisplay1, "endquerycount", "cens_qryend");
+                        censordisplay1=tranwrd(censordisplay1, "productdiscontinuationcount", "cens_episend");
+                        censordisplay1=tranwrd(censordisplay1, "switchedcount", "cens_switch");
+                    end;
+                end;
+                /*if figure using t6plota/t6plotb dataset, need to request figures in at last 1 analysisgrp in the TREATMENTPATHWAYS file*/
+                if index(dataset, 't6plot') then call symputx('t6checktreatmentpathways', 'Y');
             %end;
             drop censordisplay;
 
@@ -908,6 +1013,19 @@
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
+
+        %if &t6checktreatmentpathways. = Y %then %do;
+            proc sql noprint;
+                create table _tempt6check as
+                select group
+                from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
+            quit;
+            %isdata(dataset=_tempt6check);
+            %if %eval(&nobs.<1) %then %do;
+                %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
+                %abort;
+            %end;
+        %end;
 
       /*Put list of requested figures into macro variable FIGURELIST*/
         proc sql noprint;
@@ -1233,7 +1351,6 @@
         run;
 	%end;	
 	
-		
  /***************************************************************************
    Read in and Output TXT file for treelookup file per runid when it exists
   ***************************************************************************/
@@ -1289,12 +1406,13 @@
           %end; /* treelookup exists */
 		%end; /* runid loop */
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
+
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
 
 	 proc datasets noprint nowarn lib = work;
-	  delete _:;
+	  delete _: inclusioncodes_shell;
 	 quit;
 	
     %put =====> END MACRO: process_inputfiles;
