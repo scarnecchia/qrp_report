@@ -41,6 +41,7 @@
 						 xaxislabel=,
 						 yaxislabel=,
 						 figure=,
+						 font=,
 						 kmrefpop=);
 
 		/* Obtain x and y axis values */
@@ -237,8 +238,29 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		proc odstext;
-			p "Figure &figurenum.&tableletter.. &figtitle" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
+		%if &figfn = Y %then %do;
+		data _footnotes;
+            length footnote_order 3; 
+            set lookup.lookup_footnotes_kmcdf;
+            by order;
+            footnote_order = _n_;
+            call symputx('num_fn', 1);
+        run;
+
+        proc sql noprint;
+            select description into: fn1 - :fn&num_fn.
+            from _footnotes
+            order by order;
+        quit;
+
+        %assign_superscripts(type=kmcdf, order = 1);
+        %end;
+        %else %do;
+        	%let super_kmcdf=;
+        %end;
+
+        proc odstext;
+			p "Figure &figurenum.&tableletter.. &figtitle.&super_kmcdf." / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
 		run;
 
 		%if &destination. = pdf %then %do;
@@ -261,28 +283,13 @@
 										%end; 
 										labelattrs=(size=&fontsize family=&font)
 										valueattrs=(size=&fontsize family=&font)
-										x=xaxisatrisk location=outside nomissingclass nomissingchar pad=(top=10px);
+										x=xaxisatrisk location=outside nomissingclass nomissingchar;
 										format &atriskcols comma12.;
 			%end;
 			keylegend / valueattrs=(size=&fontsize family=&font) position=bottom noborder linelength=.25in;
 		run;
 
 		%if &figfn = Y %then %do;
-		data _footnotes;
-            length footnote_order 3; 
-            set lookup.lookup_footnotes_kmcdf;
-            by order;
-            footnote_order = _n_;
-            call symputx('num_fn', 1);
-        run;
-
-        proc sql noprint;
-            select description into: fn1 - :fn&num_fn.
-            from _footnotes
-            order by order;
-        quit;
-
-        %assign_superscripts(type=kmcdf, order = 1);
 		/* Only one footnote for now - May change in the future */
 		proc odstext;
 			%do fnote = 1 %to &num_fn.;
@@ -295,6 +302,10 @@
 		*reset tablecount; 
 		%let tablecount = 1;
 		%let tableletter =a;
+
+		/* Determine font for KM/CDF plot */
+        %if &sysscp = WIN %then %let fontfamily=Calibri;
+        %else %let fontfamily=Albany AMT;
 
 		/***************************************************************************************/
         /* L1 Figures                                                                          */
@@ -342,6 +353,7 @@
 								 xaxislabel=%str(Time (days)),
 						 		 yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred),
 								 figure=&figure,
+								 font=&fontfamily,
 								 kmrefpop=);
 				%end;
 
@@ -368,6 +380,7 @@
 									 xaxislabel=&xaxislabel,
 						 		 	 yaxislabel=&yaxislabel,
 									 figure=&figure,
+									 font=&fontfamily,
 									 kmrefpop=);
 				%end;
 
@@ -390,6 +403,7 @@
 									 xaxislabel=%str(Episode length (days)),
 						 		 	 yaxislabel=%str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred),
 									 figure=&figure,
+									 font=&fontfamily,
 									 kmrefpop=);
 				%end;
 
@@ -407,7 +421,7 @@
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F7 %then %do;
-						%let title = Reasons for Censoring at First Second Evaluation Among &grouplabel.;
+						%let title = Reasons for Censoring at Second Switch Evaluation Among &grouplabel.;
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 						%output_cdf_km(dataset=figure&figure,
@@ -417,6 +431,7 @@
 									 xaxislabel=%str(Follow-up time (days)),
 						 		 	 yaxislabel=&yaxislabel,
 									 figure=&figure,
+									 font=&fontfamily,
 									 kmrefpop=);
 				%end;
 
@@ -439,14 +454,14 @@
 		%else %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
 		   /* If there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
               the numerous permutations of situations that can lead to 1 figure */ 
-		   %let countkm = 0;
-		   %let tableletter = ;
 		   
            proc sql noprint;
              select count(caption) into: countkm
              from tableofcontents
              where index(caption, 'Kaplan-Meier Estimate')>0;
            quit;
+
+           %if &countkm = 1 %then %let tablecount = 0;
 
         	/*loop through each analysisgrp - dataset only exists if curve computed*/
 			%do loopcount = 1 %to &numl2comparisons.;   
@@ -505,45 +520,27 @@
 					%do f = 1 %to %sysfunc(countw(&figurelist));
 						%let figure = %scan(&figurelist,&f);
 
-                        /*F3*/
-                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) and &figure = F3 %then %do;
+                        /*F3, F4 and/or F5*/
+                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %if &figure ^= F4 %then %let kmrefpop=unweighted;
 
-                        %output_cdf_km(dataset=figureF3_analysis&loopcount._&j.,
+                        %if &figure = F3 %then %let titlestart=Unadjusted;
+                        %else %if &figure = F4 %then %let titlestart=Conditional;
+                        %else %let titlestart=Unconditional;
+
+                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
 									 where=1,
-									 figtitle=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
+									 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
 									 figfn=,
 									 xaxislabel=%str(Follow-up time (days)),
 									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
 									 figure=&figure,
-									 kmrefpop=&kmrefpop);
-                        %end;
-                        /*F4*/
-                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) and &figure = F4 %then %do;
-                        %output_cdf_km(dataset=figureF4_analysis&loopcount._&j.,
-									 where=1,
-									 figtitle=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
-									 figfn=,
-									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
-									 figure=&figure,
-									 kmrefpop=&kmrefpop);
-                        %end;
-                        /*F5*/
-                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) and &figure = F5 %then %do;
-                        %output_cdf_km(dataset=figureF5_analysis&loopcount._&j.,
-									 where=1,
-									 figtitle=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
-									 figfn=,
-									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
-									 figure=&figure,
+									 font=&fontfamily,
 									 kmrefpop=&kmrefpop);
                         %end;
 
-	                    %end; /* figurelist */ 
+	                %end; /* figurelist */ 
 	                %end; /* Monitoring Period */
 	            %end; /* psfile */
 	                                          
