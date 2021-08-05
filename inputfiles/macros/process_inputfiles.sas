@@ -488,15 +488,26 @@
                                 end as switchanalysis,
                                 case when missing(z.analysisgrp) then 'Y'
                                 else 'N'
-                                end as utilizationanalysis
+                                end as utilizationanalysis,
+                                case when a.switchevalstep = 2 then 'Y'
+                                else 'N'
+                                end as switch2indicator
                 from groupsfile as x
                 left join master_cohortfile as y
                 on x.group = y.cohortgrp and x.runid = y.runid
                 left join master_treatmentpathways as z
                 on x.group = z.analysisgrp and x.runid = z.runid
+                left join (select runid, analysisgrp, switchevalstep 
+                           from master_treatmentpathways 
+                           where switchevalstep=2) as a
+                on x.group = a.analysisgrp and x.runid = a.runid
                 order by x.order;
             quit;
         %end;
+
+        data output.groupsfile;
+            set groupsfile;
+        run;
     %end;
 
 /***************************************************************************************************

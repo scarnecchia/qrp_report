@@ -341,12 +341,15 @@
                 %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
                     %let order = %scan(&fgrouporderlist., &g.);
                     %let grouplabel = ;
-                    
+                    %let switch2indicator = ;
                     data _null_;
                         set figure&figure.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
                         end;
+                        %if &reporttype = T6 %then %do;
+                        call symputx('switch2indicator', switch2indicator);
+                        %end;
                     run;
 
 				/* Call SGPLOT macro */
@@ -429,6 +432,9 @@
 						%let title = Reasons for Censoring at Second Switch Evaluation Among &grouplabel.;
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
+
+					%if (&figure = F5 or &figure = F7) and &switch2indicator = N %then %goto skipplotb;
+
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order=&order.),
 									 figtitle=%quote(&title in the &database. from &startdateformatted. to &enddateformatted.),
@@ -440,6 +446,7 @@
 									 kmrefpop=);
 				%end;
 
+				%skipplotb:
 				%end; /* order loop */
 				%let figurenum=%eval(&figurenum+1);
 

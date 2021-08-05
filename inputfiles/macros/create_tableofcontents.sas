@@ -683,17 +683,24 @@
                 %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
                     %let order = %scan(&fgrouporderlist., &g.);
                     %let grouplabel = ;
+                    %let switch2indicator = ;
                     
                     data _null_;
                         set figure&figure.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
                         end;
+                        %if &reporttype = T6 %then %do;
+                        call symputx('switch2indicator', switch2indicator);
+                        %end;
                     run;
 
+                    %if (&figure = F5 or &figure = F7) and &switch2indicator = N %then %goto skipplotb;
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
             				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+
+                    %skipplotb:
                 %end; /*loop through each figure*/
                 %let figurenum = %eval(&figurenum.+1); 
                 %end; /*figure dataset exists*/
