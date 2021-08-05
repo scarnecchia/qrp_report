@@ -504,10 +504,6 @@
                 order by x.order;
             quit;
         %end;
-
-        data output.groupsfile;
-            set groupsfile;
-        run;
     %end;
 
 /***************************************************************************************************
