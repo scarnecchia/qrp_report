@@ -822,16 +822,40 @@
    
 			
 				/* add stratificationorder variable to use for looping */
-				proc sql noprint undo_policy=none;
-				create table tablefile (drop = so n) as
-				select distinct a.*, count(b.so) as stratificationorder
-				from (select *, monotonic() as so from tablefile) a
-				left join
-				(select *, monotonic() as so from tablefile) b
-				on a.table=b.table and a.dataset=b.dataset and b.so <= a.so
-				group by a.dataset, a.table, a.tablesub
-				order by a.table, stratificationorder;
-				quit;
+				/* need to process the obs with tablesubstrat apart from those that are missing*/
+				data tablefile tablefile_tablesubstrat;
+                  set tablefile;
+                  if tablesubstrat ne '' then output tablefile_tablesubstrat;
+                  else output tablefile;
+                run;
+
+                proc sql undo_policy=none;
+                  create table tablefile_post (drop = so n) as
+                  select distinct a.*, count(b.so) as stratificationorder
+                  from (select *, monotonic() as so from tablefile) a
+                  left join
+                  (select *, monotonic() as so from tablefile) b
+                  on a.table=b.table and a.dataset=b.dataset and b.so <= a.so
+                  group by a.dataset, a.table, a.tablesub
+                  order by a.dataset, a.table, stratificationorder;
+
+                  create table tablefile_tablesubstrat_post (drop = so n) as
+                  select distinct a.*, count(b.so) as stratificationorder
+                  from (select *, monotonic() as so from tablefile_tablesubstrat) a
+                  left join
+                  (select *, monotonic() as so from tablefile_tablesubstrat) b
+                  on a.table=b.table and a.dataset=b.dataset and b.so <= a.so
+                  group by a.dataset, a.table, a.tablesub, a.tablesubstrat
+                  order by a.dataset, a.table, stratificationorder;
+                quit;
+
+                data tablefile;
+                  set tablefile_post tablefile_tablesubstrat_post;
+                run;
+
+				proc datasets noprint nowarn lib = work;
+	              delete tablefile_post tablefile_tablesubstrat_post tablefile_tablesubstrat;
+	            quit;
  
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
