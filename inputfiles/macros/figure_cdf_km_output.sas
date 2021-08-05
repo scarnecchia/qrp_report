@@ -123,7 +123,7 @@
             %if %scan(&xtickmarks., -1) ne &xmax. %then %do;
                 %let diff = %sysevalf(&xmax.-%scan(&xtickmarks., -1));
                 %let div2 = %sysfunc(divide(&xtick.,2));
-                %if %eval(&diff.>&div2.) %then %do;
+                %if %sysevalf(&diff.>&div2.) %then %do;
                     %let xtickmarks = &xtickmarks%str( )&xmax.;
                 %end;
             %end;
@@ -144,7 +144,7 @@
             %if %scan(&ytickmarks., -1) ne &ymax. %then %do;
                 %let diff = %sysevalf(&ymax.-%scan(&ytickmarks., -1));
                 %let div2 = %sysfunc(divide(&ytick.,2));
-                %if %eval(&diff.>&div2.) %then %do;
+                %if %sysevalf(&diff.>&div2.) %then %do;
                     %let ytickmarks = &ytickmarks%str( )&ymax.;
                 %end;
             %end;
