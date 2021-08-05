@@ -120,8 +120,8 @@
         %else %do;
         %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
             /*Add max value if gap between last tick mark and max value is >tick/2*/
-            %if %scan(&xtickmarks., -1) ne &ymax. %then %do;
-                %let diff = %eval(&xmax.-%scan(&xtickmarks., -1));
+            %if %scan(&xtickmarks., -1) ne &xmax. %then %do;
+                %let diff = %sysevalf(&xmax.-%scan(&xtickmarks., -1));
                 %let div2 = %sysfunc(divide(&xtick.,2));
                 %if %eval(&diff.>&div2.) %then %do;
                     %let xtickmarks = &xtickmarks%str( )&xmax.;
@@ -142,7 +142,7 @@
         %let ytickmarks = &ytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
             /*Add max value if gap between last tick mark and max value is >tick/2*/
             %if %scan(&ytickmarks., -1) ne &ymax. %then %do;
-                %let diff = %eval(&ymax.-%scan(&ytickmarks., -1));
+                %let diff = %sysevalf(&ymax.-%scan(&ytickmarks., -1));
                 %let div2 = %sysfunc(divide(&ytick.,2));
                 %if %eval(&diff.>&div2.) %then %do;
                     %let ytickmarks = &ytickmarks%str( )&ymax.;
