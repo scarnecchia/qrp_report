@@ -718,6 +718,7 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+			n = _n_;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -792,6 +793,7 @@
                 %abort;
             %end;
             %else %do;
+			
                 *Merge in levelids - need to do three times, 1 for each levelid;
                 proc sql noprint undo_policy=none;
                 	create table tablefile as
@@ -807,6 +809,7 @@
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+						 ,table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
@@ -814,12 +817,13 @@
                 	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
                     left join userstrata as strata2
                 	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
-                    order by table.table, strata.levelid, strata1.levelid, strata2.levelid;
+                    order by table.n;
                 quit;
-     
+   
+			
 				/* add stratificationorder variable to use for looping */
 				proc sql noprint undo_policy=none;
-				create table tablefile (drop = so) as
+				create table tablefile (drop = so n) as
 				select distinct a.*, count(b.so) as stratificationorder
 				from (select *, monotonic() as so from tablefile) a
 				left join
