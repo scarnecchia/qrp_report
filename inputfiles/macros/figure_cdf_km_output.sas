@@ -346,10 +346,10 @@
                         set figure&figure.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
-                        end;
                         %if &reporttype = T6 %then %do;
                         call symputx('switch2indicator', switch2indicator);
                         %end;
+                        end;
                     run;
 
 				/* Call SGPLOT macro */
