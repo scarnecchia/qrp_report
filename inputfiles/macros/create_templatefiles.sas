@@ -435,7 +435,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -465,7 +464,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -489,7 +487,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 		drop categories;
 
         /*PS Histograms*/
@@ -539,7 +536,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 		drop categories;
 
         /*PS Histograms*/
@@ -777,7 +773,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -1027,7 +1022,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
    
@@ -1114,7 +1108,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 

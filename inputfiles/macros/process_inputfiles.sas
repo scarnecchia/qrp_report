@@ -54,6 +54,7 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*add parenthesis for datedistributed*/
@@ -1002,27 +1003,40 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
-        %if &t6checktreatmentpathways. = Y %then %do;
-            proc sql noprint;
-                create table _tempt6check as
-                select group
-                from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
-            quit;
-            %isdata(dataset=_tempt6check);
-            %if %eval(&nobs.<1) %then %do;
-                %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
-                %abort;
-            %end;
-        %end;
-
-      /*Put list of requested figures into macro variable FIGURELIST*/
-        proc sql noprint;
-            select distinct figure into: figurelist separated by ' '
-            from figurefile;
-        quit;
-
         %isdata(dataset=figurefile);
-        %if %eval(&nobs.>0) & %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
+        %if %eval(&nobs.>0) %then %do; 
+
+            /*Type 6 figures - cross check that relevant groups requested in GROUPSFILE*/
+            %if &t6checktreatmentpathways. = Y %then %do;
+                proc sql noprint;
+                    create table _tempt6check as
+                    select group
+                    from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
+                quit;
+                %isdata(dataset=_tempt6check);
+                %if %eval(&nobs.<1) %then %do;
+                    %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
+                    %abort;
+                %end;
+            %end;
+
+            /*Put list of requested figures into macro variable FIGURELIST*/
+            proc sql noprint;
+                select distinct figure into: figurelist separated by ' '
+                from figurefile;
+            quit;
+
+            /*T2L2: if KM curves requested, ensure events are not being redacted*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if %index(&redactcolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
+                    run;
+                %end;
+            %end;
+
+        %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
             /*USERSTRATA is optional for reporttype = T2L2, T4L2*/
             %if &userstrataspecified. = N %then %do;
@@ -1050,7 +1064,6 @@
                          , figure.ytick
                          , figure.includeatrisktable
                          , figure.censordisplay
-                         , figure.includekmweightedpop
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -1108,6 +1121,7 @@
                     %let datasetlist = &datasetlist. &fdatasetlist.;
                 %end;
             %end;
+        %end; /*L1 figures*/
         %end; /*FigureFile has rows with IncludeinReport=Y and should be mapped to USERSTRATA file*/
         %else %if %eval(&nobs.<1) %then %do;
             %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
@@ -1201,6 +1215,9 @@
                 if missing(OutputPSDistribution) then OutputPSDistribution = 'N';
                 else OutputPSDistribution=strip(upcase(OutputPSDistribution));
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+
+                if missing(kmrefpop) then kmrefpop = 'unweighted';
+                else kmrefpop=strip(lowcase(kmrefpop));
             run;
 
             %let numl2comparisons = &nobs.;
