@@ -216,7 +216,7 @@
 
 		ods startpage = now;
   		ods startpage = no;
-  		ods graphics / width=768px;
+  		ods graphics / height=7.5in;
 
 		/* Trick Excel into making a new sheet */
 		%if &destination. = excel %then %do;
@@ -269,8 +269,8 @@
 		/* Create KM/CDF plots */
 		proc sgplot data=repdata.Figure&figurenum.&tableletter noborder;
 			styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
-										  Yellow Skyblue Chartreuse Pink Maroon Grey Fuchsia Tomato Olive Aqua 
-										  LightRed GreenYellow DarkSlateGray DarkCyan DarkViolet Goldenrod MediumAquamarine);
+										  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
+										  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
 			%do km = 1 %to %sysfunc(countw(&kmcols));
 				%let kmcol = %scan(&kmcols,&km);
 			step x=day y=&kmcol / lineattrs=(thickness=2 pattern=solid);
@@ -286,7 +286,7 @@
 										x=xaxisatrisk location=outside nomissingclass nomissingchar;
 										format &atriskcols comma12.;
 			%end;
-			keylegend / valueattrs=(size=&fontsize family=&font) position=bottom noborder linelength=.25in;
+			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in;
 		run;
 
 		%if &figfn = Y %then %do;
