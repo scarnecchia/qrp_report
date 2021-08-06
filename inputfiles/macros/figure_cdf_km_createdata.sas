@@ -133,12 +133,14 @@
 
         proc sql noprint undo_policy=none;
             create table _kmcdfdata as
-            select x.*, y.order %if &reporttype.=T6 %then %do; ,switch2indicator %end;
+            select x.*, y.order
             from _kmcdfdata x
             inner join groupsfile(where=(includeinfigure='Y')) y
             on x.runid = y.runid and x.group = y.group
             %if &reporttype. = T6 %then %do;
-            where y.switchanalysis = 'Y'
+            where y.switchanalysis = 'Y' %if &figure = F5 or &figure = F7 %then %do;
+                                         and y.switch2indicator = 'Y'
+                                         %end;
             %end;
             order by group, day;
         quit;
@@ -154,7 +156,7 @@
         /*--------------------------------------------------------------------------------------------*/
         /* Compute total number of episodes for each censoring criteria                               */
         /*--------------------------------------------------------------------------------------------*/
-        data cumulative_totals(keep=group &kmcdf_cumlist. cum_episodes %if &reporttype.=T6 %then %do; switch2indicator %end;);
+        data cumulative_totals(keep=group &kmcdf_cumlist. cum_episodes);
             array cum{*} &kmcdf_cumlist. cum_episodes;
             array censorcriteria{*} &includevars. episodes;
 
@@ -254,8 +256,7 @@
                 label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
             %end;
 
-            keep runid group: order day lag_episodes_atrisk &curve._: %if &reporttype.=T6 %then %do; switch2indicator %end;
-            ;
+            keep runid group: order day lag_episodes_atrisk &curve._:;
          run;
 
         /*--------------------------------------------------------------------------------------------*/
