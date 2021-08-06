@@ -625,6 +625,7 @@
                 levelvars = lowcase(levelvars);
                 tableid = lowcase(tableID);
                 levelvars = tranwrd(levelvars, "*", " ");
+                levelid = strip(levelid);
 
                 /*****************************************/
                 /* Defensive coding for automatic strata */
