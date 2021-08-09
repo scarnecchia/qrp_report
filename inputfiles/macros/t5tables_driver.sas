@@ -26,14 +26,11 @@
 %macro t5tables_driver;
 
     %put =====> MACRO CALLED: t5tables_driver ;
-	/**************************************************************************************************
-	* Distribution and Censor Counts tables												
- 	***************************************************************************************************/
 
 	*** Distribution of total episode duration ***;
 	%if %sysfunc(prxmatch(m/T4|T7/i,&tablelist.)) > 0 %then %do;
 	%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=,
+                           whereclause= 1,
                            catvar=cumepisodelength,
                            countvar=npts,
                            cattableid=T4,
@@ -44,7 +41,7 @@
 	*** Distribution of episode duration ***;
     %if %sysfunc(prxmatch(m/T6|T1/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=,
+                           whereclause= 1,
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T6,
@@ -74,7 +71,7 @@
     *** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
 	%if %sysfunc(prxmatch(m/T2|T12/i,&tablelist.)) > 0 %then %do;
 	    %t5tables_createdata(dataset=agg_t5disp,
-                           whereclause=,
+                           whereclause= 1,
                            catvar=daysupp,
                            countvar=adjustedcodecount,
                            cattableid=T2,
