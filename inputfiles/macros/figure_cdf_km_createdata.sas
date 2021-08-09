@@ -138,11 +138,13 @@
             inner join groupsfile(where=(includeinfigure='Y')) y
             on x.runid = y.runid and x.group = y.group
             %if &reporttype. = T6 %then %do;
-            where y.switchanalysis = 'Y'
+            where y.switchanalysis = 'Y' %if &figure = F5 or &figure = F7 %then %do;
+                                         and y.switch2indicator = 'Y'
+                                         %end;
             %end;
             order by group, day;
         quit;
-  
+        
         /*--------------------------------------------------------------------------------------------*/
         /* Build macro variables                                                                      */
         /*--------------------------------------------------------------------------------------------*/
@@ -307,7 +309,7 @@
             by day order;
         run;
 
-        proc transpose data=figure&figure. out=_tempfigure1&figure.(drop=_name_ _label_) prefix=group;
+        proc transpose data=figure&figure. out=_tempfigure1&figure.(drop=_name_ _label_) prefix=&curve._group;
             by day;
             id order;
             idlabel grouplabel;
@@ -328,6 +330,7 @@
             do i = 1 to dim(epiatrisk);
                 if missing(epiatrisk{i}) then epiatrisk{i} = 0;
             end;
+            order=1;
             drop i;
         run;
      %end;
