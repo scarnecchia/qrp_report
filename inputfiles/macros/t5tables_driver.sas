@@ -31,7 +31,7 @@
  	***************************************************************************************************/
 
 	*** Distribution of total episode duration ***;
-	%if %sysfunc(prxmatch(m/T1|T2/i,&datasetlist.)) > 0 %then %do;
+	%if %sysfunc(prxmatch(m/T1|T2/i,&tablelist.)) > 0 %then %do;
 	%t5tables_createdata(dataset=agg_t5episdur,
                            whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))),
                            catvar=cumepisodelength,
@@ -67,17 +67,9 @@
 		quit;
 		%put &classvarlist;
 		
-		%if %sysfunc(prxmatch(m/T3|T4/i,&datasetlist.)) > 0 %then %do;
-
-			proc means data=agg_episdur_first noprint nway;
-				var episodes;
-				class &classvarlist. episodelength / missing;
-				output out=agg_episdur_first(drop=_:) sum=;
-			run;
-            
+		%if %sysfunc(prxmatch(m/T3|T4/i,&tablelist.)) > 0 %then %do;
 			%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..)))
-                                       and (level in (&levelist1n., &levelist2n.) and episodenum <=1),
+                           whereclause=(level in (&levelist1n., &levelist2n.) and episodenum <=1),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T3,
@@ -85,39 +77,35 @@
 
 		%end;
 
-		%if %sysfunc(prxmatch(m/T5|T6/i,&datasetlist.)) > 0 %then %do;
-
-		    proc means data=agg_episdur_secondpl noprint nway;
-				var episodes;
-				class &classvarlist. episodelength  / missing;
-				output out=agg_episdur_secondpl(drop=_:) sum=;
-			run;
+		%if %sysfunc(prxmatch(m/T5|T6/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))) and
-                                       (level in (&levelist1n., &levelist2n.) and episodenum >=2),
+                           whereclause=(level in (&levelist1n., &levelist2n.) and episodenum >=2),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T5,
                            disttableid=/*T6*/);
 		%end;
 				     
-		%if %sysfunc(prxmatch(m/T7|T8/i,&datasetlist.)) > 0 %then %do;
-
-			proc means data=agg_episdur_all noprint nway;
-				var episodes;
-				class &classvarlist. episodelength  / missing;
-				output out=agg_episdur_all(drop=_:) sum=;
-			run;
+		%if %sysfunc(prxmatch(m/T7|T8/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))) and
-                                       (level in (&levelist1n., &levelist2n.)),
+                           whereclause=(level in (&levelist1n., &levelist2n.)),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T7,
                            disttableid=/*T8*/);
 
 		%end;
-	%end;  
+	%end; 
+
+    *** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
+	%if %sysfunc(prxmatch(m/T9|T10/i,&tablelist.)) > 0 %then %do;
+	    %t5tables_createdata(dataset=agg_t5disp,
+                           whereclause=,
+                           catvar=daysupp,
+                           countvar=adjustedcodecount,
+                           cattableid=T9,
+                           disttableid=/*T10*/);
+	%end;
 
 	%put =====> END MACRO: t5tables_driver ;
 

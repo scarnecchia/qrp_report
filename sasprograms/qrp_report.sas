@@ -197,6 +197,7 @@ ods path(prepend) work.templat(update);
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_km_createdata.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
