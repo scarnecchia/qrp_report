@@ -42,33 +42,7 @@
 	%end;
 
 	*** Distribution of episode duration ***;
-	data _chk_table;
-		set tablefile (where=(table in ('T1', 'T5','T6', 'T7', 'T8', 'T9', 'T10')));
-	run;
-	%isdata(dataset=_chk_table);
-
-	%if &nobs>0 %then %do;
-		
-		%if %sysfunc(prxmatch(m/T8|T9/i,&tablelist.)) > 0 %then %do;
-			%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(episodenum <=1),
-                           catvar=episodelength,
-                           countvar=episodes,
-                           cattableid=T8,
-                           disttableid=/*T9*/);
-
-		%end;
-
-		%if %sysfunc(prxmatch(m/T10|T5/i,&tablelist.)) > 0 %then %do;
-            %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(episodenum >=2),
-                           catvar=episodelength,
-                           countvar=episodes,
-                           cattableid=T10,
-                           disttableid=/*T5*/);
-		%end;
-				     
-		%if %sysfunc(prxmatch(m/T6|T1/i,&tablelist.)) > 0 %then %do;
+    %if %sysfunc(prxmatch(m/T6|T1/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
                            whereclause=,
                            catvar=episodelength,
@@ -76,8 +50,26 @@
                            cattableid=T6,
                            disttableid=/*T1*/);
 
-		%end;
 	%end; 
+	%if %sysfunc(prxmatch(m/T8|T9/i,&tablelist.)) > 0 %then %do;
+		%t5tables_createdata(dataset=agg_t5episdur,
+                           whereclause=(episodenum <=1),
+                           catvar=episodelength,
+                           countvar=episodes,
+                           cattableid=T8,
+                           disttableid=/*T9*/);
+
+	%end;
+
+	%if %sysfunc(prxmatch(m/T10|T5/i,&tablelist.)) > 0 %then %do;
+           %t5tables_createdata(dataset=agg_t5episdur,
+                           whereclause=(episodenum >=2),
+                           catvar=episodelength,
+                           countvar=episodes,
+                           cattableid=T10,
+                           disttableid=/*T5*/);
+	%end;
+				     
 
     *** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
 	%if %sysfunc(prxmatch(m/T2|T12/i,&tablelist.)) > 0 %then %do;
