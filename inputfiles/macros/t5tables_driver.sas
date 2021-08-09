@@ -31,80 +31,62 @@
  	***************************************************************************************************/
 
 	*** Distribution of total episode duration ***;
-	%if %sysfunc(prxmatch(m/T1|T2/i,&tablelist.)) > 0 %then %do;
+	%if %sysfunc(prxmatch(m/T4|T7/i,&tablelist.)) > 0 %then %do;
 	%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))),
+                           whereclause=,
                            catvar=cumepisodelength,
                            countvar=npts,
-                           cattableid=T1,
-                           disttableid=/*T2*/);
+                           cattableid=T4,
+                           disttableid=/*T7*/);
 
 	%end;
 
 	*** Distribution of episode duration ***;
 	data _chk_table;
-		set tablefile (where=(table in ('T3', 'T4', 'T5','T6', 'T7', 'T8')));
+		set tablefile (where=(table in ('T1', 'T5','T6', 'T7', 'T8', 'T9', 'T10')));
 	run;
 	%isdata(dataset=_chk_table);
 
 	%if &nobs>0 %then %do;
-		proc sql noprint;
-			select distinct levelid1, levelid2 into: levelist1 separated by " ", :levelist2 separated by " "
-			from _chk_table;
-		quit;
-
-		%create_comma_charlist(inlist=&levelist1, outlist=levelist1n);
-		%create_comma_charlist(inlist=&levelist2, outlist=levelist2n);
-
-		%put &=levelist1n &=levelist2n;
-
-		proc contents data=agg_t5episdur out=agg_episdur_outnames(keep=name) noprint;
-		run;
-		proc sql noprint;
-			select distinct name into: classvarlist separated by ' '
-			from agg_episdur_outnames
-			where lowcase(name) ne 'npts' & index(lowcase(name), 'episode') = 0;
-		quit;
-		%put &classvarlist;
 		
-		%if %sysfunc(prxmatch(m/T3|T4/i,&tablelist.)) > 0 %then %do;
+		%if %sysfunc(prxmatch(m/T8|T9/i,&tablelist.)) > 0 %then %do;
 			%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(level in (&levelist1n., &levelist2n.) and episodenum <=1),
+                           whereclause=(episodenum <=1),
                            catvar=episodelength,
                            countvar=episodes,
-                           cattableid=T3,
-                           disttableid=/*T4*/);
+                           cattableid=T8,
+                           disttableid=/*T9*/);
 
 		%end;
 
-		%if %sysfunc(prxmatch(m/T5|T6/i,&tablelist.)) > 0 %then %do;
+		%if %sysfunc(prxmatch(m/T10|T5/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(level in (&levelist1n., &levelist2n.) and episodenum >=2),
+                           whereclause=(episodenum >=2),
                            catvar=episodelength,
                            countvar=episodes,
-                           cattableid=T5,
-                           disttableid=/*T6*/);
+                           cattableid=T10,
+                           disttableid=/*T5*/);
 		%end;
 				     
-		%if %sysfunc(prxmatch(m/T7|T8/i,&tablelist.)) > 0 %then %do;
+		%if %sysfunc(prxmatch(m/T6|T1/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(level in (&levelist1n., &levelist2n.)),
+                           whereclause=,
                            catvar=episodelength,
                            countvar=episodes,
-                           cattableid=T7,
-                           disttableid=/*T8*/);
+                           cattableid=T6,
+                           disttableid=/*T1*/);
 
 		%end;
 	%end; 
 
     *** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
-	%if %sysfunc(prxmatch(m/T9|T10/i,&tablelist.)) > 0 %then %do;
+	%if %sysfunc(prxmatch(m/T2|T12/i,&tablelist.)) > 0 %then %do;
 	    %t5tables_createdata(dataset=agg_t5disp,
                            whereclause=,
                            catvar=daysupp,
                            countvar=adjustedcodecount,
-                           cattableid=T9,
-                           disttableid=/*T10*/);
+                           cattableid=T2,
+                           disttableid=/*T12*/);
 	%end;
 
 	%put =====> END MACRO: t5tables_driver ;
