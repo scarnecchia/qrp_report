@@ -805,6 +805,7 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+                         , table.categories
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
