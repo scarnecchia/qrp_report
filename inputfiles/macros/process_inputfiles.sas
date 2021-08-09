@@ -835,6 +835,27 @@
                    %abort;
                 %end;
                 %else %do;
+                    /*Put list of requested figures into macro variable TABLELIST*/
+                    proc sql noprint;
+                        select distinct table into: tablelist separated by ' '
+                        from tablefile;
+                    quit;
+
+                    /*Type 5 - Tables T1-T10 require overall category*/
+                    %if &reporttype. = T5 %then %do;
+                        %do t =1 %to %sysfunc(countw(&tablelist.));
+                            %let overallrequested = N;
+                            data _null_;    
+                                set tablefile(where=(table="%scan(&tablelist, &t, ' ')"));
+                                if tablesub = 'overall' then call symputx('overallrequested', 'Y');
+                            run;
+                            %if &overallrequested. = N %then %do;
+                               %put ERROR: (Sentinel) Overall table required for table %scan(&tablelist, &t, ' ');
+                               %abort;
+                            %end;
+                        %end;
+                    %end;
+
                     /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
                     proc sql noprint;
                         select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
