@@ -58,13 +58,6 @@
 
 		%put &=levelist1n &=levelist2n;
 
-		data agg_episdur_first agg_episdur_secondpl agg_episdur_all;
-		    set agg_t5episdur;
-			if  level in (&levelist1n., &levelist2n.) and episodenum <=1 then output agg_episdur_first;
-	        if  level in (&levelist1n., &levelist2n.) and episodenum >=2 then output agg_episdur_secondpl;
-	        if  level in (&levelist1n., &levelist2n.) then output agg_episdur_all;
-	    run;
-
 		proc contents data=agg_t5episdur out=agg_episdur_outnames(keep=name) noprint;
 		run;
 		proc sql noprint;
@@ -82,8 +75,9 @@
 				output out=agg_episdur_first(drop=_:) sum=;
 			run;
             
-			%t5tables_createdata(dataset=agg_episdur_first,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))),
+			%t5tables_createdata(dataset=agg_t5episdur,
+                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..)))
+                                       and (level in (&levelist1n., &levelist2n.) and episodenum <=1),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T3,
@@ -98,8 +92,9 @@
 				class &classvarlist. episodelength  / missing;
 				output out=agg_episdur_secondpl(drop=_:) sum=;
 			run;
-            %t5tables_createdata(dataset=agg_episdur_secondpl,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))),
+            %t5tables_createdata(dataset=agg_t5episdur,
+                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))) and
+                                       (level in (&levelist1n., &levelist2n.) and episodenum >=2),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T5,
@@ -113,8 +108,9 @@
 				class &classvarlist. episodelength  / missing;
 				output out=agg_episdur_all(drop=_:) sum=;
 			run;
-            %t5tables_createdata(dataset=agg_episdur_all,
-                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))),
+            %t5tables_createdata(dataset=agg_t5episdur,
+                           whereclause=%nrstr(lowcase(group) in (&&grouplist_&n..))) and
+                                       (level in (&levelist1n., &levelist2n.)),
                            catvar=episodelength,
                            countvar=episodes,
                            cattableid=T7,
