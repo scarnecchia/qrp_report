@@ -42,7 +42,7 @@ libname tempfl "";
 
     /*t1cida, t2cida, and t2concomitantuse tables*/
 
-	%let stratOneLevel = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| zip_uncertain;
+	%let stratOneLevel = sex| agegroup| year| year month| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
 	%let stratCovar = &stratOneLevel.| covar#;
     %let stratTwoLevel = 
 					 sex agegroup| sex agegroup year| sex agegroup year month| agegroup year| agegroup year month| sex year| sex year month| 
@@ -111,7 +111,7 @@ libname tempfl "";
 	%createt1t2cidatemplates(t2conc);
 
 	/*t1censor & t2censor Tables*/
-    %let stratacensor = agegroup| year| sex;
+    %let stratacensor = | sex| agegroup| year;
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
@@ -169,7 +169,7 @@ libname tempfl "";
 	%templatecensortablefigures(2,t2censor,3,3);
 
     /*Multiple Events Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
+    %let stratalist = sex| agegroup| year| year month| race| hispanic| zip3| state| cb_reg| hhs_reg| adherence;
     data lookup_t2multevent;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
@@ -327,7 +327,7 @@ libname tempfl "";
     run;
 
 	/*Overlap Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg;
+    %let stratalist = sex| agegroup| year|  year month| race| hispanic| zip3| state| cb_reg| hhs_reg;
     data lookup_t2overlap;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
@@ -435,7 +435,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -465,7 +464,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -489,7 +487,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 		drop categories;
 
         /*PS Histograms*/
@@ -539,7 +536,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 		drop categories;
 
         /*PS Histograms*/
@@ -608,6 +604,7 @@ libname tempfl "";
 	     %end;
          %end;
     run;
+
 
     *************************************
      REPORTTYPE = T5 files:
@@ -777,7 +774,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 
@@ -1027,7 +1023,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
    
@@ -1114,7 +1109,6 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
 			drop categories;
         run;
 

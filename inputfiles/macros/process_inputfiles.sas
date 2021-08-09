@@ -54,6 +54,7 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*add parenthesis for datedistributed*/
@@ -613,8 +614,7 @@
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
-
-    /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
+/*Userstrata file - loop through each runID, stack userstrata files and dedup*/
     %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         /*confirm userstrata file exists*/
@@ -693,7 +693,8 @@
             %put The reporting code will abort;
             %abort;
         %end;
-        proc sort data=userstrata nodupkey dupout=_userstratadups;
+
+		 proc sort data=userstrata nodupkey dupout=_userstratadups;
             by tableid levelvars;
         run;
         %isdata(dataset=_userstratadups);
@@ -702,6 +703,7 @@
             %put The reporting code will abort;
             %abort;
         %end;
+        
     %end;
 
     /*Read in TableFile, alphabetize variables, and assign title*/
@@ -710,7 +712,6 @@
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                        rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
-
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
             tablesubstrat=lowcase(tablesubstrat);
@@ -718,6 +719,7 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+			n = _n_;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -792,6 +794,7 @@
                 %abort;
             %end;
             %else %do;
+			
                 *Merge in levelids - need to do three times, 1 for each levelid;
                 proc sql noprint undo_policy=none;
                 	create table tablefile as
@@ -807,15 +810,78 @@
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+						 ,table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
                     left join userstrata as strata1
                 	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
                     left join userstrata as strata2
-                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
+                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
+                    order by table.n;
                 quit;
-        		
+   
+				/*Assign stratificationorder to maintain default stratification order of tables*/
+                /*Create a list of all the datasets*/
+                proc sql noprint;
+                  select distinct dataset 
+                  into: datalist separated by ' ' 
+                  from tablefile;
+                quit;
+                %put datalist = &datalist; 
+
+                /*Loop through for all datasets*/
+                %do ds = 1 %to %sysfunc(countw(&datalist));
+
+                  data tablefile_&ds.;
+                    set tablefile (where=(dataset= "%scan(&datalist, &ds, ' ')"));
+					length n 3;
+                    n =_n_;
+                  run;
+
+                  /*Keep only the first one, order matters and is kept with n*/
+                  proc sql noprint;
+                    create table tablefile_sub_&ds. (drop = n) as 
+                    select distinct table,  tablesub, n 
+                    from tablefile_&ds.
+                    group by table, tablesub
+                    having min(n) = n
+                    order by n;
+                  quit;
+
+                  proc sql noprint undo_policy=none;
+                    create table tablefile_post_&ds. (drop = so) as
+                    select distinct a.*, count(b.so) as stratificationorder length=3
+                    from (select  *, monotonic() as so from tablefile_sub_&ds.) a
+                    left join
+                    (select  *, monotonic() as so from tablefile_sub_&ds.) b
+                    on a.table=b.table  and b.so <= a.so
+                    group by  a.table, a.tablesub
+                    order by  a.table, stratificationorder;
+                  quit;
+
+                  proc sql noprint;
+                    create table tablefile_u_&ds. (drop = n) as 
+                    select a.*, b.stratificationorder from tablefile_&ds. as a 
+                    left join
+                    tablefile_post_&ds. as b
+                    on a.table = b.table  and a.tablesub = b.tablesub;
+                  quit;
+                %end;
+
+                /*Stack all datasets back up*/
+                data tablefile;
+                  set tablefile_u_:;
+                run;
+
+                proc sort data=tablefile sortseq=linguistic(numeric_collation=on);
+                  by table dataset stratificationorder;
+                quit;
+
+                proc datasets noprint nowarn lib = work;
+	              delete tablefile_:;
+	            quit;
+			
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                 	set tablefile;
@@ -1002,27 +1068,40 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
-        %if &t6checktreatmentpathways. = Y %then %do;
-            proc sql noprint;
-                create table _tempt6check as
-                select group
-                from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
-            quit;
-            %isdata(dataset=_tempt6check);
-            %if %eval(&nobs.<1) %then %do;
-                %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
-                %abort;
-            %end;
-        %end;
-
-      /*Put list of requested figures into macro variable FIGURELIST*/
-        proc sql noprint;
-            select distinct figure into: figurelist separated by ' '
-            from figurefile;
-        quit;
-
         %isdata(dataset=figurefile);
-        %if %eval(&nobs.>0) & %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
+        %if %eval(&nobs.>0) %then %do; 
+
+            /*Type 6 figures - cross check that relevant groups requested in GROUPSFILE*/
+            %if &t6checktreatmentpathways. = Y %then %do;
+                proc sql noprint;
+                    create table _tempt6check as
+                    select group
+                    from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
+                quit;
+                %isdata(dataset=_tempt6check);
+                %if %eval(&nobs.<1) %then %do;
+                    %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
+                    %abort;
+                %end;
+            %end;
+
+            /*Put list of requested figures into macro variable FIGURELIST*/
+            proc sql noprint;
+                select distinct figure into: figurelist separated by ' '
+                from figurefile;
+            quit;
+
+            /*T2L2: if KM curves requested, ensure events are not being redacted*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if %index(&redactcolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
+                    run;
+                %end;
+            %end;
+
+        %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
             /*USERSTRATA is optional for reporttype = T2L2, T4L2*/
             %if &userstrataspecified. = N %then %do;
@@ -1050,7 +1129,6 @@
                          , figure.ytick
                          , figure.includeatrisktable
                          , figure.censordisplay
-                         , figure.includekmweightedpop
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -1108,6 +1186,7 @@
                     %let datasetlist = &datasetlist. &fdatasetlist.;
                 %end;
             %end;
+        %end; /*L1 figures*/
         %end; /*FigureFile has rows with IncludeinReport=Y and should be mapped to USERSTRATA file*/
         %else %if %eval(&nobs.<1) %then %do;
             %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
@@ -1201,6 +1280,9 @@
                 if missing(OutputPSDistribution) then OutputPSDistribution = 'N';
                 else OutputPSDistribution=strip(upcase(OutputPSDistribution));
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+
+                if missing(kmrefpop) then kmrefpop = 'unweighted';
+                else kmrefpop=strip(lowcase(kmrefpop));
             run;
 
             %let numl2comparisons = &nobs.;
