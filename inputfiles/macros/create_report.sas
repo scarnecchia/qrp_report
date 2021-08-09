@@ -85,6 +85,10 @@
 
 	%aggregate_report_tables;
 
+	%if %str("&reporttype") = %str("T5") %then %do;
+	  %t5tables_driver();
+	%end;
+
     %if ^%index(&reporttype,TREE) %then %do;
 
 ***************************************************************************************************;
