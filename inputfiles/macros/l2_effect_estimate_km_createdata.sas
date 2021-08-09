@@ -307,6 +307,11 @@
         %end;
 
         %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
+        
+        %if &weightedpop = Y %then %do;
+        %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp 
+                                            lag_episodes_atriskunexp_wght=episodes_atriskunexp_wght));
+        %end;
 
         /*Compute KM curve*/
         data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount._&periodid.(&renamestatement.) %end;

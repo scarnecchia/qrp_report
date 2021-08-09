@@ -69,6 +69,12 @@
 	          description  length = $575 format = $575.;
 	   order = 1; description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
 	 run;  
+
+	  data lookup.lookup_footnotes_kmcdf;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1; description = 'A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day.'; output;
+	 run;  
 	 
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.

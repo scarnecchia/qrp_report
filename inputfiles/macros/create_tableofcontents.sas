@@ -61,17 +61,18 @@
     /* Build table of contents                                                                   */
     /*********************************************************************************************/
 
-    /*****************/
+    /*********************************************************************************************/
     /* Glossary rows */
-    /*****************/
+    /*********************************************************************************************/
     %addtotoc(tabnum=Glossary (CIDA), caption=List of Terms to Define Cohort Identification and Descriptive Analysis (CIDA) Found in this Report);
 	%if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
 
-    /******************/
-    /* Baseline Table */
-    /******************/
+    /*********************************************************************************************/
+    /* Baseline Table                                                                            */
+    /*********************************************************************************************/
+
     %if %eval(&numbaselinetablegrp.>0) %then %do;
 
         /*counter for determining table letter*/
@@ -263,9 +264,9 @@
         %end; /*loop through each row in baselinefile*/
     %end; /*include baseline tables in toc*/
 
-  /***************************/
-  /* Covariate Profile Table */
-  /***************************/
+    /*********************************************************************************************/
+    /* Covariate Profile Table                                                                   */
+    /*********************************************************************************************/
     %if &numprofilecovarstoinclude > 0 %then %do;
 
     /* reset counter to reset table letter */
@@ -446,11 +447,11 @@
     %let tablenum = %eval(&tablenum + 1);
     %end; /* &numprofilecovarstoinclude > 0 */
 
-  /*************************/
-  /* Effect estimate table */
-  /*************************/
+    /*********************************************************************************************/
+    /* Effect estimate table                                                                     */
+    /*********************************************************************************************/
 
-  %if &numl2comparisons > 0 %then %do; 
+    %if &numl2comparisons > 0 %then %do; 
 
         /*loop through each baseline table*/
         %do c = 1 %to &numl2comparisons;
@@ -526,11 +527,10 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
-
-  /*********************************************************************************************/
-  /*   Code Distribution Tables                                                                */
-  /*********************************************************************************************/ 
-  %if &output_code_distribution. eq Y %then %do;
+    /*********************************************************************************************/
+    /*   Code Distribution Tables                                                                */
+    /*********************************************************************************************/ 
+    %if &output_code_distribution. eq Y %then %do;
 
     /* This macros output a specific distribution type (EXP or HOI) entries in the table of content */
 	%macro codedistribution_type_toc(distindextype=);
@@ -610,12 +610,11 @@
 				
 	%end; *numgroupscodedist;
 	%let tablenum = %eval(&tablenum + 1);
-  %end;
-  
+    %end;
 
-    /*****************/
-    /* Attrition     */
-    /*****************/
+    /*********************************************************************************************/
+    /* Attrition table                                                                           */
+    /*********************************************************************************************/
     %isdata(dataset=agg_patient_attrition);
     %let attrition_patient = &nobs;
     %isdata(dataset=agg_episode_attrition);
@@ -647,9 +646,11 @@
     %end; /* attrition_groups file */
 
 
-  /*********************************************************************************************/
-  /*   Figures                                                                                 */
-  /*********************************************************************************************/  
+    /*** END TABLES **/
+
+    /*********************************************************************************************/
+    /*   Figures                                                                                 */
+    /*********************************************************************************************/  
 
     %isdata(dataset=figurefile);
     %if %eval(&nobs.>0) %then %do;
@@ -658,7 +659,141 @@
         %let tablecount = 1;
 
         /***************************************************************************************/
-        /* ReportType = T2L2, T4L2                                            */
+        /* L1 Figures                                                                          */
+        /***************************************************************************************/
+
+        %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) > 0 %then %do;
+
+            /*utility macro to loop through groups*/
+            %macro l1kmtoc(figure=, title =);
+                %isdata(dataset=figure&figure.);
+                %if %eval(&nobs.>0) %then %do;
+
+                /*number of distinct groups in figure to loop through determine whether to add letter to figure #*/
+                proc sql noprint;
+                    select distinct order
+                    into :fgrouporderlist separated by ' '
+                    from figure&figure.
+                    order by order;
+                quit;
+                   
+                %if %sysfunc(countw(&fgrouporderlist.)) = 1 %then %let tablecount = 0;
+                %else %let tablecount = 1;
+
+                %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
+                    %let order = %scan(&fgrouporderlist., &g.);
+                    %let grouplabel = ;
+                    %let switch2indicator = ;
+                    
+                    data _null_;
+                        set figure&figure.(where=(order = &order.));
+                        if _n_ = 1 then do;
+                        call symputx('grouplabel', grouplabel);
+                        end;
+                    run;
+
+                    %tableletter();	
+            		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+                %end; /*loop through each figure*/
+                %let figurenum = %eval(&figurenum.+1); 
+                %end; /*figure dataset exists*/
+            %mend;
+
+            /**********************************************************************************************
+             T1: 1 figure: 
+                1) F1: t1censor = Reasons for End of Observable Data by Group (1-CDF) - 1 figure per group
+            /**********************************************************************************************/
+            %if &reporttype. = T1 %then %do;
+                %l1kmtoc(figure=F1, title =Reasons for End of Observable Data);
+            %end; /*T1*/
+
+            /**********************************************************************************************
+             T2L1: 3 figures:
+                1) F1: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
+                2) F2: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
+                3) F3: t2censor = Reasons for End of Observable Data by Group (1-CDF)
+            /**********************************************************************************************/
+            %if &reporttype. = T2L1 %then %do;
+
+                /*F1: 1 figure per report*/
+                %isdata(dataset=figuref1);
+                %if %eval(&nobs.>0) %then %do;
+                	%addtotoc(tabnum=Figure &figurenum.,
+                			  caption=%quote(Kaplan-Meier Estimate of Event of Interest Not Occurring in the &database. from &startdateformatted. to &enddateformatted.));
+                    %let figurenum = %eval(&figurenum.+1); 
+                %end;
+
+                /*F2: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F2, title =Reasons for End of Follow-Up);
+                %end; /*figuref2*/
+
+                /*F3: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F3, title =Reasons for End of Observable Data);
+                %end; /*figuref3*/
+            %end; /*T2L1*/
+
+            /**********************************************************************************************
+             T5: 2 figures:
+                1) F1 (not yet implemented)
+                2) F2 (not yet implemented)
+                3) F3 (not yet implemented)
+                4) F4: t5censor = Reasons for End of First Treatment Episode by Group
+                5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
+            /**********************************************************************************************/
+            %if &reporttype. = T5 %then %do;
+                /*F4: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
+                %end; /*figuref4*/
+
+                /*F5: 1 figure per report*/
+                %isdata(dataset=figuref5);
+                %if %eval(&nobs.>0) %then %do;
+                    /*Censor reason*/
+                      data _null_;
+                        set figurefile(where=(figure="F5"));
+                        call symputx('censordisplay', censordisplay);
+                    run;
+
+                	%addtotoc(tabnum=Figure &figurenum.,
+                			  caption=%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
+                    %let figurenum = %eval(&figurenum.+1); 
+                %end;
+            %end; /*T5*/
+
+            /**********************************************************************************************
+             T6: 7 figures:
+                1) F1 (not yet implemented)
+                2) F2 (not yet implemented)
+                3) F3 (not yet implemented)
+                4) F4: t6plota = Kaplan-Meier Estimate of First Switch Not Occurring
+                5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
+                6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
+                7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+            /***********************************************************************************************/
+            %if &reporttype. = T6 %then %do;
+                /*F4 - F7: 1 figure per group*/
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F4, title =Kaplan-Meier Estimate of First Switch Not Occurring);
+                %end; /*figuref4*/
+                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F5, title =Kaplan-Meier Estimate of Second Switch Not Occurring);
+                %end; /*figuref5*/
+                %if %sysfunc(prxmatch(m/F6/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F6, title =Reasons for Censoring at First Switch Evaluation);
+                %end; /*figuref6*/
+                %if %sysfunc(prxmatch(m/F7/i,&figurelist.)) > 0 %then %do;
+                    %l1kmtoc(figure=F7, title =Reasons for Censoring at Second Switch Evaluation);
+                %end; /*figuref7*/
+            %end; /*T6*/
+
+        %end; /*L1 figures*/
+
+        /***************************************************************************************/
+        /* L2 Figures                                                                          */
         /***************************************************************************************/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 
@@ -700,7 +835,8 @@
 		            from pscs_masterinputs
 		            where analysisgrp = "&analysisgrp.";
 			        quit;
-             %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+
+                    %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				      data _null_; 
 	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
 	                    call symputx("psestimategrp", lowcase(psestimategrp));
@@ -739,8 +875,8 @@
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
-						%let tableletter=a;
-						%let tablecount = 1;
+				%let tableletter=a;
+				%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;
@@ -757,7 +893,109 @@
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
 	            %end; /* loop periods */
+
+                %let figurenum = %eval(&figurenum.+1); 
 	        %end; /*Forest plots */
+
+            /*F3-F5: KM Plots - Type 2 only*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+
+                *reset tablecount; 
+				%let tablecount = 1;
+
+                /*loop through each analysisgrp - dataset only exists if curve computed*/
+				%do loopcount = 1 %to &numl2comparisons.;   
+                    data _null_;
+                        set l2comparisonfile(where=(order=&loopcount.));
+		                call symputx('runid', runid);
+		                call symputx('analysisgrp', analysisgrp);
+                    run;
+
+                    proc sql noprint;
+                        select distinct strip(file) into: pscsfile trimmed
+                        from pscs_masterinputs
+                        where analysisgrp = "&analysisgrp." and runid = "&runid";
+                    quit;
+
+                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
+
+                        /*assign labels*/
+                        data _null_; 
+                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
+                            call symputx("psestimategrp", lowcase(psestimategrp));
+                        run;
+                        data _null_; 
+                            set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                            call symputx('GRP1', eoi);
+                            call symputx('GRP0', ref); 
+                        run;
+
+                        %let outcomelabel = Event of Interest;
+                        %let eoilabel = &grp1.;
+                        %let reflabel = &grp0.;
+
+                        %isdata(dataset=labelfile);
+                        %if %eval(&nobs.>0) %then %do;
+                            data _null_;
+                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
+                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
+                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
+
+                                if a then call symputx('outcomelabel', label);
+                                if b then call symputx('eoilabel', label);
+                                if c then call symputx('reflabel', label);
+                            run;
+                        %end;
+
+                        /*loop through periodid*/
+                        %do j = %eval(&look_start) %to %eval(&look_end);
+
+                        /*F3*/
+                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+                        /*F4*/
+                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+                        /*F5*/
+                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
+                        %if %eval(&nobs.>0) %then %do;
+                        %tableletter();	
+                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+                        %end;
+
+                        %end; /*loop through periodid*/
+                    %end; /*only PSmatch or stratification*/
+                %end;
+            
+                /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  the numerous permutations of situations that can lead to 1 figure */
+                proc sql noprint;
+                    select count(caption) into: countkm
+                    from tableofcontents
+                    where index(caption, 'Kaplan-Meier Estimate')>0;
+                quit;
+
+                %if %eval(&countkm.)=1 %then %do;
+                    data tableofcontents;
+                        set tableofcontents;
+                        if index(caption, 'Kaplan-Meier Estimate')>0 then do;
+                        tabnum = "Figure &figurenum.";
+                        end;
+                    run;
+                %end;
+                                           
+			 %let figurenum = %eval(&figurenum.+1); 
+
+            %end; /*KM plots*/
         %end; /*L2 figures*/
 
     %end; /* Figure file */

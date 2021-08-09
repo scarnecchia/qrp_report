@@ -264,4 +264,6 @@
         %end; /*loop through plots*/
       %end; /*loop through looks*/
 
+    %let figurenum = %eval(&figurenum.+1); 
+
 %mend l2_forestplot_driver;
