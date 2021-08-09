@@ -90,6 +90,10 @@
 ***************************************************************************************************;
 *   Calculate summary tables                                             
 ***************************************************************************************************;
+	%if %str("&reporttype") = %str("T5") %then %do;
+	  %t5tables_driver();
+	%end;
+
     %if %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
