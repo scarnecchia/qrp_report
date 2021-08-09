@@ -67,11 +67,12 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
               and tablesub ne 'overall';
         /*stratifications to compute*/
-        select distinct tablesub
-        into :tablesublist separated by '|'
+        select distinct tablesub, stratificationorder
+        into :tablesublist separated by '|', :stratorderlist
         from tablefile
         where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
-                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;);
+                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
+        order by stratificationorder;
     quit;
 
     /*dedup stratvars list*/
@@ -219,13 +220,56 @@
                 delete _totalbydp _catdata_trans _catdata _total_bystrat _distribution_cat:;
 		    quit;
 
+            /*compute stratification percents and merge in total row*/
+            %if %eval(&s.>1) %then %do;
+                *Merge in higher order stratifications;
+                data table&cattableid._&cattablestratorder.;
+                    set table&cattableid._&cattablestratorder.
+				    table&cattableid._1(keep=runid group dpidsiteid total_percent total_count %do c = 1 %to &num_categories.; _&c. %end;);
+                run;
+
+                *Compute percentages;
+                proc sql noprint undo_policy=none;
+				    create table table&cattableid._&cattablestratorder. as
+				    select x.*
+					       , y.total_count as overall_total
+    					   %do c = 1 %to &num_categories.;
+    					   , y._&c. as _total_&c.
+    					   %end;
+    				from table&cattableid._&cattablestratorder. as x,
+    					 table&cattableid._1 as y
+    				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid;
+    			quit;
+
+    			data output.table&cattableid._&cattablestratorder.(drop=overall_total _total:);
+    				set table&cattableid._&cattablestratorder. ;
+
+    				if overall_total >0 then do;
+    					total_percent = (total_count/overall_total)*100;
+    				end;
+    				else do;
+    					total_percent = 0;
+    				end;
+    				format total_percent 12.1;
+
+    				*Compute percent;
+    				%do c =1 %to &num_categories.;
+    					if _total_&c. >0 then do;
+    						_&c._percent = (_&c./_total_&c.)*100;
+    					end;
+    					else do;
+    						_&c._percent =0;
+    					end;
+    					format _&c._percent 12.1 _&c. comma12.0;
+    				%end;
+    			run;
+
+    			proc sort data=table&cattableid._&cattablestratorder.;
+    				by dpidsiteid runid group &tablesub.;
+    			run;
+            %end; /*compute stratification percents*/
         %end; /*category tables*/		
 	%end; /*loop through each tablesub*/
-
-    /*----------------------------------------------------------------------------------------------*/
-    /* Compute stratification percents                                                              */
-    /*----------------------------------------------------------------------------------------------*/
-
 
 
     /*----------------------------------------------------------------------------------------------*/
