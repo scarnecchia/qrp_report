@@ -562,6 +562,8 @@
         delete _kmcols;
     quit;
 
+	ods graphics / reset=height;
+
 	%put =====> END MACRO: figure_cdf_km_output;
 
 %mend;
