@@ -75,11 +75,12 @@
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist tdatasetlist tdatasetlistnum includegroupinfigure;
+    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
 	%let tdatasetlist = ;
 	%let tdatasetlistnum = ;
     %let figurelist = ;
+    %let tablelist = ;
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
