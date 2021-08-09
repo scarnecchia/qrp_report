@@ -90,6 +90,7 @@
     /*--------------------------------------------------------------------------------------------*/
     /* Aggregate data                                                                             */
     /*--------------------------------------------------------------------------------------------*/
+
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
 		class runid group level &stratvars. &catvar. / missing;
@@ -133,14 +134,23 @@
             end;
         run;
 
-        /*reset tablesub if overall*/
-        %if &tablesub = overall %then %let tablesub = ;
-        %if %index(&tablesub., agegroup)>0 %then %let tablesub = &tablesub. agegroupnum;
+        /*if overall: reset tablesub*/
+        /*if agegroup stratification: add agegroupnum to list of vars*/
+        /*if stratified table, restrict to aggregate data*/
+        %if &tablesub = overall %then %do;
+            %let tablesub = ;
+            %let dpwhere = ;
+        %end;
+        %else %do;
+            %if %index(&tablesub., agegroup)>0 %then %let tablesub = &tablesub. agegroupnum;
+            %let dpwhere = and dpidsiteid = 'all';
+        %end;   
+
 
     	/*Extract column 1: Total*/
     	proc sort data=_t5data_summed out=_total_bydp(rename=&countvar.=total_count keep=dpidsiteid runid group &tablesub. &countvar.);
     		by dpidsiteid runid group &tablesub. &countvar.;
-            where level = "&levelid1.";
+            where level = "&levelid1." &dpwhere.;
     	run;
 
         /*Group continous var into categories*/
@@ -149,7 +159,7 @@
             %convert_categories(var=&catvar., categories=&categories.);
 
     		data _catdata;
-    			set _t5data_summed(where=(level in ("&levelid2.")));
+    			set _t5data_summed(where=(level in ("&levelid2.") &dpwhere.));
 
     			*assign categories;
     			length category $50.;
@@ -225,7 +235,7 @@
                 *Merge in higher order stratifications;
                 data table&cattableid._&cattablestratorder.;
                     set table&cattableid._&cattablestratorder.
-				    table&cattableid._1(keep=runid group dpidsiteid total_percent total_count %do c = 1 %to &num_categories.; _&c. %end;);
+				    table&cattableid._1(where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_percent total_count %do c = 1 %to &num_categories.; _&c. %end;);
                 run;
 
                 *Compute percentages;
@@ -241,7 +251,7 @@
     				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid;
     			quit;
 
-    			data output.table&cattableid._&cattablestratorder.(drop=overall_total _total:);
+    			data table&cattableid._&cattablestratorder.(drop=overall_total _total:);
     				set table&cattableid._&cattablestratorder. ;
 
     				if overall_total >0 then do;
@@ -271,12 +281,99 @@
         %end; /*category tables*/		
 	%end; /*loop through each tablesub*/
 
-
     /*----------------------------------------------------------------------------------------------*/
-    /* Apply labels                                                                                 */
+    /* Macro to assign labels - will be called for both                                             */
     /*----------------------------------------------------------------------------------------------*/
 
+    /*Increase length of label if < longest stratification label*/
+    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(40, &label_length.));
+    %else %let t5tablelabellength = 40;
 
+    /*utility macro*/
+/*    %macro assignlabelvars(tablesub=, format=, sortorder1 = , sortorder2=);*/
+/*        groupn = */
+/*        %if %length(&label)>0 %then %do; groupn= &label; %end;*/
+/*        %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;*/
+/*        %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;*/
+/*    %mend;*/
+
+    %macro addlabelstodisttables(data=, tablesub=);
+
+        /*Assign group label, order and initialize sortorder1/sortorder2*/
+        proc sql noprint undo_policy=none;
+			create table &data. as
+			select x.*,
+                   %if &labelfileexists = Y %then %do;
+                   case when not missing(lbla.label) then lbla.label  
+                    else y.group 
+                    end as grouplabel length=&t5tablelabellength.,
+                   case when not missing(lblb.label) then lblb.label  
+                    else ' ' 
+                    end as header length=&t5tablelabellength.,
+                   %end;
+                   %else %do;
+   				   y.group as grouplabel length=&t5tablelabellength.,
+   				   ' ' as header,
+                   %end;
+				   y.order,
+				   0 as sortorder1,
+				   0 as sortorder2
+			from &data. as x
+			inner join groupsfile as y
+			on x.group = y.group and x.runid = y.runid
+            %if &labelfileexists = Y %then %do;
+            left join labelfile(where=(labeltype='grouplabel')) as lbla
+            on x.group = lbla.group and x.runid = lbla.runid
+            left join labelfile(where=(labeltype='headerlabel')) as lblb
+            on x.group = lblb.group and x.runid = lblb.runid
+            %end; ;
+		quit;
+
+        /*Number of stratifications*/
+        %let stratnum = %sysfunc(countw(&tablesub.));
+        
+        /*Assign formatted label - for each row will assign label to the variable grouplabel*/
+
+        /*Overall and stratifybydp = Y*/
+        %if &tablesub = overall and &stratifybydp = Y %then %do;
+    		data &data.;
+    			set &data.;
+    	        if dpidsiteid ne 'all' then do;
+    				groupn = dpidsiteid;
+    				stratsort = 1;
+    			end;
+    		run;
+        %end;
+        %else %do;
+
+        %end;
+	
+	%mend;
+
+    /*Loop through each table*/
+    %do s = 1 %to %sysfunc(countw(&tablesublist., '|'));
+        %let tablesub = %scan(&tablesublist., &s., '|');
+
+        %let cattablestratorder =0 ;
+        %let disttablestratorder =0 ;
+
+        data _null_;
+            set tablefile(where=(table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
+                        %if %str("&disttableid.") ne %str("") %then %do; "&disttableid" %end;) and tablesub = "&tablesub."));
+            if table = "&cattableid" then do;
+                call symputx('cattablestratorder', stratificationorder);
+            end;
+            if table = "&disttableid" then do;
+                call symputx('disttablestratorder', stratificationorder);
+            end;
+        run;
+
+    	%if %eval(&cattablestratorder.>0) %then %do;
+    		%addlabelstodisttables(data=table&cattableid._&cattablestratorder., tablesub=&tablesub.);
+    	%end;
+    	%if %eval(&disttablestratorder.>0) %then %do;
+    	%end;
+    %end;
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;

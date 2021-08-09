@@ -595,6 +595,8 @@
             set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
         run;
+
+        %let labelfileexists = Y;
     %end;
 
 /***************************************************************************************************

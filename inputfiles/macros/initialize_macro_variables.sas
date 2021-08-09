@@ -100,8 +100,9 @@
     %let numl2comparisons = 0;
 
     /*label file variables */
-    %global label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
+    %global labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
             cens_event_label cens_switch1_label cens_switch2_label;
+    %let labelfileexists = N;
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
     %let cens_dth_label =Evidence of death;
