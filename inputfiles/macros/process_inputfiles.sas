@@ -824,19 +824,19 @@
                 quit;
    
 				/*Assign stratificationorder to maintain default stratification order of tables*/
-                /*Create a list of all the datasets*/
+                /*Assign macro variable DATASETLIST for list of datasets*/
                 proc sql noprint;
-                  select distinct dataset 
-                  into: datalist separated by ' ' 
-                  from tablefile;
+                    select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
+                    from tablefile(where=(missing(dataset)=0))
                 quit;
-                %put datalist = &datalist; 
+                %let datasetlist = &tdatasetlist.;
+				%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
 
                 /*Loop through for all datasets*/
-                %do ds = 1 %to %sysfunc(countw(&datalist));
+                %do ds = 1 %to %eval(&tdatasetlistnum.);
 
                   data tablefile_&ds.;
-                    set tablefile (where=(dataset= "%scan(&datalist, &ds, ' ')"));
+                    set tablefile (where=(dataset= "%scan(&tdatasetlist, &ds, ' ')"));
 					length n 3;
                     n =_n_;
                   run;
@@ -926,14 +926,6 @@
                             %end;
                         %end;
                     %end;
-
-                    /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
-                    proc sql noprint;
-                        select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
-                        from tablefile(where=(missing(dataset)=0))
-                    quit;
-                    %let datasetlist = &tdatasetlist.;
-					%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
 					
 					/* Read in table columns file*/
 					%if %str("&tablecolumnsfile.") ne %str("") %then %do;
