@@ -820,6 +820,7 @@
                     order by table.n;
                 quit;
    
+				/*Assign stratificationorder to maintain default stratification order of tables*/
                 /*Create a list of all the datasets*/
                 proc sql noprint;
                   select distinct dataset 
@@ -833,6 +834,7 @@
 
                   data tablefile_&ds.;
                     set tablefile (where=(dataset= "%scan(&datalist, &ds, ' ')"));
+					length n 3;
                     n =_n_;
                   run;
 
@@ -848,7 +850,7 @@
 
                   proc sql noprint undo_policy=none;
                     create table tablefile_post_&ds. (drop = so) as
-                    select distinct a.*, count(b.so) as stratificationorder
+                    select distinct a.*, count(b.so) as stratificationorder length=3
                     from (select  *, monotonic() as so from tablefile_sub_&ds.) a
                     left join
                     (select  *, monotonic() as so from tablefile_sub_&ds.) b
@@ -862,8 +864,7 @@
                     select a.*, b.stratificationorder from tablefile_&ds. as a 
                     left join
                     tablefile_post_&ds. as b
-                    on a.table = b.table  and a.tablesub = b.tablesub 
-                       and a.tablesub = b.tablesub;
+                    on a.table = b.table  and a.tablesub = b.tablesub;
                   quit;
                 %end;
 
@@ -872,7 +873,7 @@
                   set tablefile_u_:;
                 run;
 
-                proc sort data=tablefile;
+                proc sort data=tablefile sortseq=linguistic(numeric_collation=on);
                   by table dataset stratificationorder;
                 quit;
 
