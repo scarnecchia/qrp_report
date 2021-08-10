@@ -488,12 +488,19 @@
                                 end as switchanalysis,
                                 case when missing(z.analysisgrp) then 'Y'
                                 else 'N'
-                                end as utilizationanalysis
+                                end as utilizationanalysis,
+                                case when a.switchevalstep = 2 then 'Y'
+                                else 'N'
+                                end as switch2indicator
                 from groupsfile as x
                 left join master_cohortfile as y
                 on x.group = y.cohortgrp and x.runid = y.runid
                 left join master_treatmentpathways as z
                 on x.group = z.analysisgrp and x.runid = z.runid
+                left join (select runid, analysisgrp, switchevalstep 
+                           from master_treatmentpathways 
+                           where switchevalstep=2) as a
+                on x.group = a.analysisgrp and x.runid = a.runid
                 order by x.order;
             quit;
         %end;
@@ -1187,7 +1194,7 @@
                             select quote(strip(group), "'") into :includegroupinfigure separated by ' '
                             from groupsfile
                             where includeinfigure = 'Y'; 
-                        run;
+                        quit;
 
                         %if %str("&includegroupinfigure") = %str("") %then %do;
                             %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however INCLUDEINFIGURE is set to N for all groups;
