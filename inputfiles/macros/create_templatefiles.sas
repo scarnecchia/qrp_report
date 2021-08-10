@@ -114,7 +114,7 @@ libname tempfl "";
     %let stratacensor = | sex| agegroup| year;
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
-            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories censorreason;
             format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.  censorreason $85.; 
 
             includeinreport = 'N';
@@ -490,8 +490,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
-
 
         /*PS Histograms*/
         figure = 'F1';
@@ -540,8 +538,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
-
 
         /*PS Histograms*/
         figure = 'F1';
