@@ -115,11 +115,11 @@ libname tempfl "";
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
             retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
-            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
+            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.  censorreason $85.; 
 
             includeinreport = 'N';
 			categories = '';
-            call missing(levelid3);
+            call missing(levelid3, censorreason);
 
     		%do t=1 %to 3;
     			/*Table T&t.*/
@@ -438,7 +438,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-			drop categories;
+			drop categories censorreason;
         run;
 
         /*t2l1tablefile*/
@@ -467,7 +467,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-			drop categories;
+			drop categories censorreason;
         run;
 
     *************************************
@@ -625,12 +625,11 @@ libname tempfl "";
 
 	data lookup_t5tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
 		categories = '';
-        call missing(levelid3);
-        call missing(tablesubstrat);
+        call missing(levelid3, tablesubstrat, censorreason);
 
 		dataset = "t5disp";
 		%do t = 1 %to 2;
@@ -811,7 +810,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-			drop categories;
+			drop categories censorreason;
         run;
 
    
@@ -828,11 +827,11 @@ libname tempfl "";
 
 	data lookup_t6tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
 		categories = '';
-        call missing(tablesubstrat);
+        call missing(tablesubstrat, censorreason);
 
         dataset = "t6counts";
 		%do t = 1 %to 2;
@@ -1061,7 +1060,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-			drop categories;
+			drop categories censorreason;
         run;
    
     *************************************
