@@ -193,7 +193,7 @@
     			id categorysort;
     		run;
 
-    		data table&cattableid._&cattablestratorder.;
+    		data &cattableid._&cattablestratorder.;
     			merge _total_bydp _catdata_trans;
     			by dpidsiteid runid group &tablesub.;
     			
@@ -240,26 +240,26 @@
             /*compute stratification percents and merge in total row*/
             %if %eval(&s.>1) %then %do;
                 *Merge in higher order stratifications;
-                data table&cattableid._&cattablestratorder.;
-                    set table&cattableid._&cattablestratorder.
-				    table&cattableid._1(where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_percent total_count %do c = 1 %to &num_categories.; _&c. %end;);
+                data &cattableid._&cattablestratorder.;
+                    set &cattableid._&cattablestratorder.
+				    &cattableid._1(where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_percent total_count %do c = 1 %to &num_categories.; _&c. %end;);
                 run;
 
                 *Compute percentages;
                 proc sql noprint undo_policy=none;
-				    create table table&cattableid._&cattablestratorder. as
+				    create table &cattableid._&cattablestratorder. as
 				    select x.*
 					       , y.total_count as overall_total
     					   %do c = 1 %to &num_categories.;
     					   , y._&c. as _total_&c.
     					   %end;
-    				from table&cattableid._&cattablestratorder. as x,
-    					 table&cattableid._1 as y
+    				from &cattableid._&cattablestratorder. as x,
+    					 &cattableid._1 as y
     				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid;
     			quit;
 
-    			data table&cattableid._&cattablestratorder.(drop=overall_total _total:);
-    				set table&cattableid._&cattablestratorder. ;
+    			data &cattableid._&cattablestratorder.(drop=overall_total _total:);
+    				set &cattableid._&cattablestratorder. ;
 
     				if overall_total >0 then do;
     					total_percent = (total_count/overall_total)*100;
@@ -281,7 +281,7 @@
     				%end;
     			run;
 
-    			proc sort data=table&cattableid._&cattablestratorder.;
+    			proc sort data=&cattableid._&cattablestratorder.;
     				by dpidsiteid runid group &tablesub.;
     			run;
             %end; /*compute stratification percents*/
@@ -434,7 +434,7 @@
         run;
 
     	%if %eval(&cattablestratorder.>0) %then %do;
-    		%addlabelstodisttables(data=table&cattableid._&cattablestratorder., tablesub=&tablesub.);
+    		%addlabelstodisttables(data=&cattableid._&cattablestratorder., tablesub=&tablesub.);
     	%end;
     	%if %eval(&disttablestratorder.>0) %then %do;
     	%end;

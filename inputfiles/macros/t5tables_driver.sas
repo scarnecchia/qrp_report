@@ -23,6 +23,7 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
+
 %macro t5tables_driver();
 
     %put =====> MACRO CALLED: t5tables_driver ;
@@ -76,7 +77,6 @@
                            cattableid=T9,
                            disttableid=/*T10*/);
 	%end;
-				     
 
 	%put =====> END MACRO: t5tables_driver ;
 
