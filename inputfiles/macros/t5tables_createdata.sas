@@ -201,7 +201,9 @@
     			if _n_ = 1 then do;
     				dsid = open("_catdata_trans");
     				%do c =1 %to &num_categories.;
-    					if varnum(dsid,"_&c.") = 0 then _&c. =.;
+    					if varnum(dsid,"_&c.") = 0 then _&c. =0;
+                        /*initialize percent*/
+    					if varnum(dsid,"_&c._percent") = 0 then _&c._percent =.;
     				%end;
     				rc= close(dsid);
     			end;
@@ -209,28 +211,42 @@
 
     			*if overall - compute percent;
                 %if %str("&tablesub.") = %str("") %then %do;
-        			format total_percent 12.1;
-        			total_percent = 100.0;
-        			%do c =1 %to &num_categories.;
-        				if total_count >0 then do;
+                    format total_count_char $15. total_percent_char $8.;
+                    if total_count >0 then do;
+                        total_count_char = strip(put(total_count, comma12.0));
+                        total_percent = 100.0;
+                        total_percent_char = '100.0%';
+	                    %do c =1 %to &num_categories.;
+                            if _&c. = . then _&c. = 0;
         					_&c._percent = (_&c./total_count)*100;
-        				end;
-        			%end;
+                            _&c._percent_char = strip(put(_&c./total_count,percent8.1));
+                            _&c._char = strip(put(_&c., comma12.0));
+                        %end;
+                    end;
+                    else do;
+                        total_count_char = '0';
+                        total_percent_char = '.';
+                        total_percent = .;
+	                    %do c =1 %to &num_categories.;
+                            _&c._percent_char ='.';
+                            _&c._char = '.';
+                        %end;
+                    end;
                 %end;
-
-    			*Fill in missing with 0s, Add labels and formats;
-    			%do c =1 %to &num_categories.;
+                %else %do;
+                    /*fill in missing categories with 0*/
+                    %do c =1 %to &num_categories.;
     				if _&c. = . then _&c. = 0;
+                    %end; 
+    			%end;        
+
+    			*Add labels;
+    			%do c =1 %to &num_categories.;
     				label _&c. = "%scan(&categories., &c., ' ')";
-                    format _&c. comma12.0; 
                     %if %str("&tablesub.") = %str("") %then %do;
-    				if _&c._percent = . then _&c._percent = 0;
     				label _&c._percent = "%scan(&categories., &c., ' ') %";
-    				format _&c._percent 12.1;
                     %end;
     			%end;
-
-    			format total_count comma12.0;
     		run;
 
             proc datasets nowarn noprint lib=work;
@@ -250,6 +266,7 @@
 				    create table &cattableid._&cattablestratorder. as
 				    select x.*
 					       , y.total_count as overall_total
+                           , y.total_count_char as overall_count_char
     					   %do c = 1 %to &num_categories.;
     					   , y._&c. as _total_&c.
     					   %end;
@@ -260,25 +277,40 @@
 
     			data &cattableid._&cattablestratorder.(drop=overall_total _total:);
     				set &cattableid._&cattablestratorder. ;
+                    format total_count_char $15. total_percent_char $8.;
 
     				if overall_total >0 then do;
     					total_percent = (total_count/overall_total)*100;
-    				end;
-    				else do;
-    					total_percent = 0;
-    				end;
-    				format total_percent 12.1;
+                        total_percent_char = strip(put((total_count/overall_total), percent8.1));
+                        total_count_char = strip(put(total_count, comma12.0));
 
-    				*Compute percent;
-    				%do c =1 %to &num_categories.;
+                        *Compute percent and apply NaN indicator if a category has a denominator of 0;
+        				%do c =1 %to &num_categories.;
+                        format _&c._percent_char $8. _&c._char $15.;
     					if _total_&c. >0 then do;
     						_&c._percent = (_&c./_total_&c.)*100;
+                            _&c._percent_char =  strip(put((_&c./_total_&c.), percent8.1));
+                            _&c._char = strip(put(_&c., comma12.0)); 
     					end;
     					else do;
-    						_&c._percent =0;
+                            _&c. = 0;
+                            _&c._char = '0';
+    						_&c._percent =.;
+                            _&c._percent_char = 'NaN';
     					end;
-    					format _&c._percent 12.1 _&c. comma12.0;
-    				%end;
+    				    %end;
+    				end;
+    				else do;
+    					total_percent = .;
+                        total_percent_char = '.';
+                        *set categories to missing;
+	                    %do c =1 %to &num_categories.;
+                            _&c. = .;
+                            _&c._char = '.';
+    						_&c._percent = .;
+    						_&c._percent_char = '.';
+    				    %end;
+    				end;
     			run;
 
     			proc sort data=&cattableid._&cattablestratorder.;
@@ -406,7 +438,7 @@
             %end;
         run;
         
-		proc sort data=&data. sortseq=linguistic(numeric_collation=on);;
+		proc sort data=&data. out=output.&data. sortseq=linguistic(numeric_collation=on);;
 			by order dpidsiteid sortorder1 sortorder2;
 		run;	
 
