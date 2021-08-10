@@ -438,7 +438,7 @@
             %end;
         run;
         
-		proc sort data=&data. out=output.&data. sortseq=linguistic(numeric_collation=on);;
+		proc sort data=&data. sortseq=linguistic(numeric_collation=on);;
 			by order dpidsiteid sortorder1 sortorder2;
 		run;	
 
