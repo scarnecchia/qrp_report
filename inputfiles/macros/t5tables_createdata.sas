@@ -289,7 +289,7 @@
 	%end; /*loop through each tablesub*/
 
     /*----------------------------------------------------------------------------------------------*/
-    /* Macro to assign labels - will be called for both                                             */
+    /* Assign GROUPLABEL and sort order variables                                                   */
     /*----------------------------------------------------------------------------------------------*/
 
     /*Increase length of label if < longest stratification label*/
