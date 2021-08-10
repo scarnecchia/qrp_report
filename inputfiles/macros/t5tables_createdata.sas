@@ -74,7 +74,7 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
         order by stratificationorder;
     quit;
-
+   
     /*dedup stratvars list*/
     %if %str("&tablesub") ne %str("") %then %do;
         %nonrep(invar=tablesub, outvar=stratvars);
@@ -97,11 +97,18 @@
 		output out=_t5data_summed(drop=_:) sum=;
 	run;
 
+    %if &stratifybydp. = Y %then %do;
+    proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
+		var &countvar.;
+		class runid group dpidsiteid level &stratvars. &catvar. / missing;
+		output out=_t5data_summed_dp(drop=_:) sum=;
+	run;
+    %end;
+
     data _t5data_summed;
         set _t5data_summed(in=a)
             %if &stratifybydp. = Y %then %do;
-            &dataset.(keep=dpidsiteid runid group level &stratvars. &catvar. &countvar.
-                      where=(&whereclause. and level in (&levellist1. &levellist2.)))
+            _t5data_summed_dp
             %end; ;
         length dpidsiteid $6.;
         if a then dpidsiteid = 'all';
@@ -290,12 +297,11 @@
     %else %let t5tablelabellength = 40;
 
     /*utility macro*/
-/*    %macro assignlabelvars(tablesub=, format=, sortorder1 = , sortorder2=);*/
-/*        groupn = */
-/*        %if %length(&label)>0 %then %do; groupn= &label; %end;*/
-/*        %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;*/
-/*        %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;*/
-/*    %mend;*/
+    %macro assignlabelvars(format=, sortorder1 = , sortorder2=);
+        %if %length(&format)>0 %then %do; grouplabel= &format; %end;
+        %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
+        %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
+    %mend;
 
     %macro addlabelstodisttables(data=, tablesub=);
 
@@ -324,30 +330,89 @@
             %if &labelfileexists = Y %then %do;
             left join labelfile(where=(labeltype='grouplabel')) as lbla
             on x.group = lbla.group and x.runid = lbla.runid
-            left join labelfile(where=(labeltype='headerlabel')) as lblb
+            left join labelfile(where=(labeltype='header')) as lblb
             on x.group = lblb.group and x.runid = lblb.runid
             %end; ;
 		quit;
 
         /*Number of stratifications*/
         %let stratnum = %sysfunc(countw(&tablesub.));
-        
+
+        /*if two stratifiers - create header row*/
+        %if %eval(&stratnum.=2) %then %do;
+			%let firststrat = %scan(&tablesub., 1);
+			%let secondstrat = %scan(&tablesub., 2);
+			proc sql noprint;
+				create table _headerrow_&data. as
+				select distinct runid, 
+								dpidsiteid,
+								group,
+								order, 
+								sortorder1, 
+								sortorder2,
+								&firststrat.
+                                %if &firststrat. = agegroup %then %do;
+								, agegroupnum
+                                %end;
+				from &data.
+				where missing(&firststrat.)=0;
+			quit;
+        %end;
+
         /*Assign formatted label - for each row will assign label to the variable grouplabel*/
-
-        /*Overall and stratifybydp = Y*/
-        %if &tablesub = overall and &stratifybydp = Y %then %do;
-    		data &data.;
-    			set &data.;
+        data &data.;
+    		set &data. %if %eval(&stratnum.=2) %then %do; _headerrow_&data. %end; ;
+            
+            /*Overall and stratifybydp = Y*/
+            %if &tablesub = overall and &stratifybydp = Y %then %do;
     	        if dpidsiteid ne 'all' then do;
-    				groupn = dpidsiteid;
-    				stratsort = 1;
+    				grouplabel = dpidsiteid;
+    				sortorder1 = 1;
     			end;
-    		run;
-        %end;
-        %else %do;
+            %end;
+            %else %if &tablesub ne overall %then %do;
 
-        %end;
-	
+                /*one stratifier*/
+                %if %eval(&stratnum.=1) %then %do;
+                    if missing(&tablesub.)=0 then do;
+                        %if &tablesub = agegroup %then %do;
+                        %assignlabelvars(format=put(&tablesub., $agefmt.), sortorder1 = agegroupnum, sortorder2=);
+                        %end;
+                        %else %do;
+                        %assignlabelvars(format=put(&tablesub., $&tablesub.fmt.), sortorder1 = input(put(&tablesub., &tablesub.sort.),1.), sortorder2=);
+                        %end;
+                    end;
+                %end;
+
+                /*two stratifiers*/
+                %else %if %eval(&stratnum.=2) %then %do;
+                    if missing(&firststrat.)=0 then do;
+                        %if &firststrat. = agegroup %then %do;
+                        %assignlabelvars(format=put(&firststrat., $agefmt.), sortorder1 = agegroupnum, sortorder2=);
+                        %end;
+                        %else %do;
+                        %assignlabelvars(format=put(&firststrat., $&firststrat.fmt.), sortorder1 = input(put(&firststrat., &firststrat.sort.),1.), sortorder2=);
+                        %end;
+                    end;
+					if missing(&firststrat.) = 0 and missing(&secondstrat.) =0 then do;
+                        %if &secondstrat. = agegroup %then %do;
+                        %assignlabelvars(format=put(&secondstrat., $agefmt.), sortorder1 = , sortorder2=agegroupnum);
+                        %end;
+                        %else %do;
+                        %assignlabelvars(format=put(&secondstrat., $&secondstrat.fmt.), sortorder1 = , sortorder2=input(put(&secondstrat., &secondstrat.sort.),1.));
+                        %end;
+                    end;
+                %end;
+            %end;
+        run;
+        
+		proc sort data=&data. sortseq=linguistic(numeric_collation=on);;
+			by order dpidsiteid sortorder1 sortorder2;
+		run;	
+
+        proc datasets nowarn noprint lib=work;
+            delete _headerrow_:;
+        quit;
 	%mend;
 
     /*Loop through each table*/
@@ -377,7 +442,7 @@
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _t5data_summed ;
+        delete _t5data_summed:;
     quit;
 
     %put =====> END MACRO: t5tables_createdata ;

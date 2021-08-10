@@ -713,7 +713,7 @@
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                       rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
+                       /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
@@ -785,7 +785,7 @@
             %alphabetizevarutil(array=a, in=levelid1, out=levelid1_out);
             %alphabetizevarutil(array=b, in=levelid2, out=levelid2_out);
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
-            %alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
+            *%alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
         run;
 
