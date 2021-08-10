@@ -114,11 +114,11 @@ libname tempfl "";
     %let stratacensor = | sex| agegroup| year;
     %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
-            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
+            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport censorreason;
+            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.; 
 
             includeinreport = 'N';
-            call missing(levelid3);
+            call missing(levelid3, censorreason);
 
     		%do t=1 %to 3;
     			/*Table T&t.*/
@@ -619,11 +619,10 @@ libname tempfl "";
 
 	data lookup_t5tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
-        call missing(levelid3);
-        call missing(tablesubstrat);
+        call missing(levelid3, tablesubstrat, censorreason);
 
         dataset = "t5episdur";
 		%do t = 1 %to 2;
@@ -791,10 +790,10 @@ libname tempfl "";
 
 	data lookup_t6tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
-        call missing(tablesubstrat);
+        call missing(tablesubstrat, censorreason);
 
         dataset = "t6counts";
 		%do t = 1 %to 2;
