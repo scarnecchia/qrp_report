@@ -78,6 +78,53 @@
                            disttableid=/*T10*/);
 	%end;
 
+    *********************;
+    *** Dose analysis ***;
+    *********************;
+        /*current filled daily dose*/
+    	%if %sysfunc(prxmatch(m/T18\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5disp,
+                               whereclause=1,
+                               catvar=cfdd_output_cat,
+                               countvar=adjustedcodecount,
+                               cattableid=T18,
+                               disttableid=);
+    	%end;
+        /*average filled daily dose*/
+    	%if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                               whereclause=1,
+                               catvar=afdd_output_cat,
+                               countvar=episodes,
+                               cattableid=T19,
+                               disttableid=);
+    	%end;
+    	%if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                               whereclause=(episodenum=1),
+                               catvar=afdd_output_cat,
+                               countvar=npts,
+                               cattableid=T20,
+                               disttableid=);
+    	%end;
+        /*cumulative dose*/
+    	%if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                               whereclause=1,
+                               catvar=cumdose_output_cat,
+                               countvar=npts,
+                               cattableid=T21,
+                               disttableid=);
+    	%end;
+    	%if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                               whereclause=(episodenum=1),
+                               catvar=cumdose_output_cat,
+                               countvar=npts,
+                               cattableid=T22,
+                               disttableid=);
+    	%end;
+
 	%put =====> END MACRO: t5tables_driver ;
 
 %mend t5tables_driver;
