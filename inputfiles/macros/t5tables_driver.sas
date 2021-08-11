@@ -29,7 +29,7 @@
     %put =====> MACRO CALLED: t5tables_driver ;
 
 	*** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
-	%if %sysfunc(prxmatch(m/T1|T2/i,&tablelist.)) > 0 %then %do;
+	%if %sysfunc(prxmatch(m/T1\b|T2\b/i,&tablelist.)) > 0 %then %do;
 	    %t5tables_createdata(dataset=agg_t5disp,
                            whereclause= 1,
                            catvar=daysupp,
@@ -39,8 +39,8 @@
 	%end;
 
 	*** Distribution of total episode duration ***;
-	%if %sysfunc(prxmatch(m/T3|T4/i,&tablelist.)) > 0 %then %do;
-	%t5tables_createdata(dataset=agg_t5episdur,
+	%if %sysfunc(prxmatch(m/T3\b|T4\b/i,&tablelist.)) > 0 %then %do;
+	   %t5tables_createdata(dataset=agg_t5episdur,
                            whereclause= 1,
                            catvar=cumepisodelength,
                            countvar=npts,
@@ -50,8 +50,8 @@
 	%end;
 
 	*** Distribution of episode duration ***;
-    %if %sysfunc(prxmatch(m/T5|T6/i,&tablelist.)) > 0 %then %do;
-            %t5tables_createdata(dataset=agg_t5episdur,
+    %if %sysfunc(prxmatch(m/T5\b|T6\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5episdur,
                            whereclause= 1,
                            catvar=episodelength,
                            countvar=episodes,
@@ -59,7 +59,7 @@
                            disttableid=/*T6*/);
 
 	%end; 
-	%if %sysfunc(prxmatch(m/T7|T8/i,&tablelist.)) > 0 %then %do;
+	%if %sysfunc(prxmatch(m/T7\b|T8\b/i,&tablelist.)) > 0 %then %do;
 		%t5tables_createdata(dataset=agg_t5episdur,
                            whereclause=(episodenum <=1),
                            catvar=episodelength,
@@ -69,8 +69,8 @@
 
 	%end;
 
-	%if %sysfunc(prxmatch(m/T9|T10/i,&tablelist.)) > 0 %then %do;
-           %t5tables_createdata(dataset=agg_t5episdur,
+	%if %sysfunc(prxmatch(m/T9\b|T10\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5episdur,
                            whereclause=(episodenum >=2),
                            catvar=episodelength,
                            countvar=episodes,
