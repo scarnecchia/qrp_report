@@ -12,10 +12,10 @@
 *   - agg_t5episdur.sas7bdat                                               
 *   - agg_t5disp.sas7bdat
 *   - agg_t5first.sas7bdat
-* 
+*   - agg_t5dose.sas7bdat
 *
 *  Program outputs:                                                                                                                           
-*   - TBD
+*   - 1 dataset per table in the format [TableID]_[StratificationOrder]
 * 
 *  PARAMETERS: 
 *   - dataset: aggregate dataset from %aggregate_report_tables
@@ -24,6 +24,7 @@
 *   - countvar: metric counting counts
 *   - cattableid: category table ID from TABLEFILE
 *   - disttableid: distribution table ID from TABLEFILE
+*   - qrpcategories: Y/N - continuous variable already categorized in QRP
 *
 * 
 *  Programming Notes:                                                                                
@@ -42,7 +43,8 @@
                            catvar=,
                            countvar=,
                            cattableid=,
-                           disttableid=);
+                           disttableid=,
+                           qrpcategories=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -152,7 +154,6 @@
             %if %index(&tablesub., agegroup)>0 %then %let tablesub = &tablesub. agegroupnum;
             %let dpwhere = and dpidsiteid = 'all';
         %end;   
-
 
     	/*Extract column 1: Total*/
     	proc sort data=_t5data_summed out=_total_bydp(rename=&countvar.=total_count keep=dpidsiteid runid group &tablesub. &countvar.);
