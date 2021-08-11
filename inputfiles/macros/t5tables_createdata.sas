@@ -15,7 +15,7 @@
 * 
 *
 *  Program outputs:                                                                                                                           
-*   - TBD
+*   - 1 dataset per table in the format [TableID]_[StratificationOrder]
 * 
 *  PARAMETERS: 
 *   - dataset: aggregate dataset from %aggregate_report_tables
