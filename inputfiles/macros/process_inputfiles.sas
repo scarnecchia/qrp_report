@@ -721,6 +721,10 @@
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                        rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			%if &typenum. = 4 | &typenum. = 3 %then %do;
+			  length censorreason $85;
+			  call missing(censorreason);
+			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
             tablesubstrat=lowcase(tablesubstrat);
@@ -816,6 +820,7 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+						 , table.censorreason
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3

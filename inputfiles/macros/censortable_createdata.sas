@@ -28,13 +28,15 @@
   %put =====> MACRO CALLED: censortable_createdata
   /*Create censor lookup table*/;
     data censor_tablelookup;
-        set &levellookup.;
-        where dataset in ("&censor_dataset.");
+        set tablefile;
+        where dataset in ("&censordataset.");
     run;
 
     %isdata(dataset=censor_tablelookup);
     %if %eval(&nobs.>0) %then %do;
-
+        %let censortables =;
+		%let censorfigures =;
+		
 		/*Determine which tables and figures to produce*/
 		proc sql noprint;
 			select distinct table into: censortables separated by ' '
@@ -81,7 +83,7 @@
 			from censor_tablelookup;
 		quit;
 		
-        %if %index(&censor_strat, censdays_value_cat) %then %let censor_strat = &censor_strat censorcat_sort;
+        %if %index(&censor_strat, censdays_value_cat) %then %do; %let censor_strat = &censor_strat censorcat_sort; %end;
 		
 		%put &censor_levelid &censor_strat. &censor_overall.;
 		
@@ -92,11 +94,11 @@
 	      %if &type. = 1 %then %do;
              %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend);
           %end;
-		  %else &type. = 2 %then %do;
+		  %else %if &type. = 2 %then %do;
              %let censorreason = %str(cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend);
 		  %end;
 		  %else %do;
-		      %let censorreason = %str(cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend);
+		     %let censorreason = %str(cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend);
 		  %end;
        %end;
 	   
@@ -113,14 +115,14 @@
 		   
 		   /* Identify table and figure files */
 		   %if (%sysfunc(prxmatch(m/&tablefigures./i,&censortables.)) > 0) | (%sysfunc(prxmatch(m/&tablefigures./i,&censorfigures.)) > 0) %then %do;
-		   	  %if %sysfunc(exist(&dpsiteid..&runid._censor_cida))=0 %then %do;
-		   		%put WARNING: (Sentinel) &RUNID._censor_cida does not exist for &DPSITEID.. Please confirm correct DP and path location specified. Program will abort;
+		   	  %if %sysfunc(exist(&dpidsiteid..&runid._censor_cida))=0 %then %do;
+		   		%put WARNING: (Sentinel) &RUNID._censor_cida does not exist for &dpidsiteid.. Please confirm correct DP and path location specified. Program will abort;
 		   		%abort; 
 		   	  %end;
 		   	  %else %do; 
 		   		data _censor_dp&dps.;
 		   		  length runid $5. dpidsiteid $6.;
-		   		  set &dpsiteid..&runid._censor_cida;
+		   		  set &dpidsiteid..&runid._censor_cida;
 		   		  where lowcase(group) in (&&grouplist_&n..) and level in (&censor_levelid.);
 		   		  dpidsiteid = "&maskedID";  
 				  runid = "&runid.";
@@ -160,7 +162,7 @@
 	     
 	     /* Aggregate by DP */
 	     proc summary data = censor_cida_agg nway missing;
-	     	class runid maskedID level group &censor_strat.;
+	     	class runid dpidsiteid level group &censor_strat.;
 	     	var episodes &censorreason.;
 	     	output out = censor_dps (drop = _:) sum=;
 	     run;
@@ -169,7 +171,7 @@
 	     data censor_data;
 	       set censor_all (in = a)
 	     	   censor_dps (in = b);
-	       if a then maskedID = "ALL";
+	       if a then dpidsiteid = "ALL";
 	     run;
 		 
 		 /* Clean up work files */
@@ -178,7 +180,7 @@
          quit;
 	     	
 	     %let dsid = %sysfunc(open(censor_data));
-	     %if %sysfunc(varnum(&dsid,censdays_value))>0 %then %do; %let censor_distribution = Y;  %end;
+	     %if %sysfunc(varnum(&dsid,censdays_value))>0 %then %do; %let censor_distribution = Y; %end;
 	     %if %sysfunc(varnum(&dsid,censdays_value_cat))>0 %then %do; %let censor_category = Y; %end;
 	     %let rc = %sysfunc(close(&dsid));
 	   
@@ -187,29 +189,29 @@
       --------------------------------------------------------------------------------------------*/
 	  /* Calculate summary statistics for each censoring reason.
 		 Skip over censoring reasons without counts */
-		 %let cens_num = %sysfunc(countw(&censorreason));
+		 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
 
-		 %do sl = 1 %to %sysfunc(countw(episodes &censorreason.));
+		 %do sl = 1 %to %sysfunc(countw(episodes &censorreason., %str( )));
 			%let cen_stat = %scan(episodes &censorreason.,&sl.);
 			
             %do n = 1 %to &numrunid.;
     	       %let runid = %scan(&runidlist, &n);
 			   proc sql noprint;
-			     select sum(&cen_stat) into: checksum
+			     select sum(&cen_stat.) into: checksum
 			     from censor_data (where = (runid = "&runid."));
 			   quit;
 			   
 			   %if &checksum = 0 %then %do;
-			   	 %put WARNING: (Sentinel) Variable &cen_stat has no episodes for runid &runid.. This variable will not be used to generate summary statistics;
+			   	 %put WARNING: (Sentinel) Variable &cen_stat. has no episodes for runid &runid.. This variable will not be used to generate summary statistics;
 			   %end;
 			   %else %do;	   
                   %if "&censor_distribution" = "Y" %then %do;
 			   	    proc means data= censor_data (where = (runid = "&runid.")) nway missing noprint classdata=censor_data;
 			   	    	var censdays_value;
-			   	    	class maskedID group level ;
-			   	    	freq &cen_stat;
+			   	    	class dpidsiteid group level ;
+			   	    	freq &cen_stat.;
 			   	    	where not missing(censdays_value);
-			   	    	output out=_stats_&cen_stat_&n. (drop=_type_ _freq_)     
+			   	    	output out=_stats_&cen_stat.&n. (drop=_type_ _freq_)     
 			   	    								mean = Mean 
 			   	    								std = std
 			   	    								min = min
@@ -220,14 +222,14 @@
 			   	    run;
 			   
 			      	/* Create indicator variable to show which statistics are associated with which censor reason */ 
-			      	data _stats_&cen_stat_&n.;
+			      	data _stats_&cen_stat.&n.;
 			      	  length table_name $32;
-			      	  set _stats_&cen_stat_&n.;
-			      	  %if &cen_stat = episodes %then %do;
+			      	  set _stats_&cen_stat.&n.;
+			      	  %if &cen_stat. = episodes %then %do;
 			      	    table_name = "Overall";
 			      	  %end;
 			      	  %else %do;
-			      	    table_name = "&cen_stat";
+			      	    table_name = "&cen_stat.";
 			      	  %end;
 			      	run;
 			      %end;
@@ -235,7 +237,7 @@
 			      	  /* Create a blank table if distribution isn't specified */
 			      	  proc sql noprint;
 			      	  	 create table unique_groups as
-			      	  	 select distinct level, maskedid, group
+			      	  	 select distinct level, dpidsiteid, group
 			      	  	 from censor_data (where = (runid = "&runid."));
 			      	  quit;
 			   	  
@@ -268,7 +270,7 @@
 		   create table _stats as
 		   select * 
 		   from _statsdups
-		   group by runid, maskedid, group, table_name
+		   group by runid, dpidsiteid, group, table_name
 		   having recnum=max(recnum);
 		 quit;
 		
@@ -297,7 +299,7 @@
 	 	   		%end;
 	 	   	    from censor_data %if "&censor_distribution" = "Y" %then %do; (drop=censdays_value) %end; a
 	 	   	    /* counts need to be grouped by user specified stratas */
-	 	   	    group by a.runid, a.maskedid, a.group, a.level) as a;
+	 	   	    group by a.runid, a.dpidsiteid, a.group, a.level) as a;
 		 
 	 	   create table censor_data_stats as
 	 	   select distinct a.*, 
@@ -310,12 +312,11 @@
 	 	 		 b.mean,
 	 	 		 b.std
 	 	   from censor_data_den a left join _stats b
-	 	   on a.runid = b.runid and a.maskedid = b.maskedid and a.group = b.group ;
+	 	   on a.runid = b.runid and a.dpidsiteid = b.dpidsiteid and a.group = b.group ;
 	 	   
-	 	   %isdata(dataset=labelfile);
 	 	   create table censor_data_final(drop=group) as
 	 	   select distinct a.*, 
-	 	         %if &nobs > 0 %then %do;
+	 	         %if &labelfileexists. = Y %then %do;
 	 	   		   b.order, 
 	 	   		   b.label as grouplabel
 	 	 		 %end;
@@ -323,12 +324,12 @@
 	 	 		   a.group as grouplabel
 	 	 		 %end;
 	 	   from censor_data_stats a 
-	 	   %if &nobs > 0 %then %do;
+	 	   %if &labelfileexists. = Y %then %do;
 	 	     inner join labelfile(where=(labeltype='grouplabel')) b
 	 	     on a.runid = b. runid and a.group = b.group
 	 	   %end;
 	 	   %if "&censor_category" = "Y" %then %do; where not missing(censdays_value_cat) %end;
-	 	   order by runid, maskedid, grouplabel %if "&censor_category" = "Y" %then %do; ,censorcat_sort, censdays_value_cat %end; , table_name;
+	 	   order by runid, dpidsiteid, grouplabel %if "&censor_category" = "Y" %then %do; ,censorcat_sort, censdays_value_cat %end; , table_name;
 	 	 quit;
 
       /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
@@ -385,8 +386,12 @@
 	  	 run;
 	  
 	  	 proc sort data=censor_data_final;
-	  	    by order runid maskedID %if %str("&censor_category") = %str("Y") %then %do; censorcat_sort %end; ;
+	  	    by order runid dpidsiteid %if %str("&censor_category") = %str("Y") %then %do; censorcat_sort %end; ;
 	  	 run;
+		 
+		  data output.censor_data_final;
+	  set censor_data_final;
+	  run;
 	  
 	  %end; /* censortables > 0 */	
    %end; /* censor_tablelookup nobs > 0 */
