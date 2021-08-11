@@ -111,7 +111,7 @@
                 from tablefile(where=(dataset="&reporttable."));
             quit;
 
-            *%censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
+            %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
           %end;
 
         %end;
