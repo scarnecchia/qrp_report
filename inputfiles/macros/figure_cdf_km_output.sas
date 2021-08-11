@@ -534,6 +534,18 @@
                         %else %if &figure = F4 %then %let titlestart=Conditional;
                         %else %let titlestart=Unconditional;
 
+                        /* Necessary columns for transformation program */
+                        data figure&figure._analysis&loopcount._&j;
+                        	set figure&figure._analysis&loopcount._&j;
+                        	analysis="&titlestart";
+                        	analysisgrp="&analysisgrp";
+                        	monitoringperiod=&j;
+                        	eoi="&GRP1";
+                        	ref="&GRP0";
+                        	eoilabel="&eoilabel";
+                        	reflabel="&reflabel";
+                        run;
+
                         %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
 									 where=1,
 									 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
