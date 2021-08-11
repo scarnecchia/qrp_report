@@ -208,6 +208,7 @@ ods path(prepend) work.templat(update);
 
 /*Table creation macros*/
 %include "&reportroot.inputfiles/macros/t1t2conc_createdata.sas";
+%include "&reportroot.inputfiles/macros/censortable_createdata.sas";
 
 /*Code distribution macros*/
 %include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
