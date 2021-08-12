@@ -236,7 +236,7 @@
   	   from censor_data_den a left join _stats b
   	   on a.runid = b.runid and a.dpidsiteid = b.dpidsiteid and a.group = b.group ;
   	   
-  	   create table censor_data_final as
+  	   create table &censordataset. as
   	   select distinct a.*, 
   	         %if &labelfileexists. = Y %then %do;
   	   		   case when not missing(b.label) then b.label 
@@ -255,8 +255,8 @@
   	 quit;
  
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
-   	 data censor_data_final;
-   	   set censor_data_final;
+   	 data &censordataset.;
+   	   set &censordataset.;
    	   %do cn = 1 %to &cens_num;
    	     %let var = %scan(&censorreason, &cn);
    	     if table_name = "&var" then do;
@@ -273,14 +273,14 @@
    	 run;
    
    	 %if "&censor_distribution" = "Y" and %str("&censor_sort") = %str("") %then %do;
-   	    proc sort data = censor_data_final nodupkey;
+   	    proc sort data = &censordataset. nodupkey;
    		  by _all_;
    	    run;
    	 %end;
    
    /* Final formatting */
-   	 data censor_data_final;
-   	   set censor_data_final;
+   	 data &censordataset.;
+   	   set &censordataset.;
    	   length strat $8;
    	   if level in (&censor_overall.) then strat = 'overall';
    	   %if %str("&censor_sort") ne %str("") %then %do;
@@ -307,8 +307,8 @@
    	   %end;
    	 run;
    
-   	 proc sort data=censor_data_final;
-   	    by runid dpidsiteid &censor_sort.;
+   	 proc sort data=&censordataset.;
+   	    by dpidsiteid &censor_sort.;
    	 run;
  
    /* Clean up work files */
