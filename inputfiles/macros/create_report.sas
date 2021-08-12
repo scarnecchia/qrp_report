@@ -107,14 +107,13 @@
           /*Censor tables - Types 1, 2, and 5*/
           %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime|t5censor/i,&reporttable.)) > 0 %then %do;
             proc sql noprint;
-                select distinct table into: censortablelist separated by ' '
+                select distinct quote(strip(table)) into: censortablelist separated by ' '
                 from tablefile(where=(dataset="&reporttable."));
             quit;
-
             %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
           %end;
 
-        %end;
+       %end;
     %end;
 
 ***************************************************************************************************;
