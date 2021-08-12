@@ -40,15 +40,15 @@
    %let censor_distribution =;
    
    data _censor_strat;
-     set tablefile (where = (dataset = "&censordataset." and tables in (&tables.)));
-     num_strat = countw(left(levelid1),' ');
-     num_strat2 = countw(left(levelid2),' ');
+     set tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
+     num_strat = countw(left(strat1),' ');
+     num_strat2 = countw(left(strat2),' ');
      do s = 1 to num_strat;
-       stratvar = scan(levelid1, s); output;
+       stratvar = scan(strat1, s); output;
      if lowcase(tablesub) = "overall" then stratvar_overall = stratvar; output;
      end;
      do ss = 1 to num_strat2;
-       stratvar = scan(levelid2, ss); output;
+       stratvar = scan(strat2, ss); output;
      if lowcase(tablesub) = "overall" then stratvar_overall = stratvar; output;
      end;
      if stratvar = "censdays_value_cat" then call symputx('censor_sort','censorcat_sort');
@@ -69,6 +69,7 @@
    quit;
    
    %let censor_strat = &censor_strat. &censor_sort.;
+   %Put censor strat vars are &censor_strat.;
    
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
@@ -99,13 +100,13 @@
    /* Stack together*/
    data censor_data;
      set censor_all (in = a)
-   	     &censor_dps.;
+   	     &censor_dp.;
      if a then dpidsiteid = "ALL";
    run;
  
  /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
-     delete censor_all &censor_dps.; 
+     delete censor_all &censor_dp.; 
    quit;
     
  /*--------------------------------------------------------------------------------------------
@@ -133,7 +134,7 @@
  			    	class runid dpidsiteid group level ;
  			    	freq &cen_stat.;
  			    	where not missing(censdays_value);
- 			    	output out=_stats_&cen_stat.&n. (drop=_type_ _freq_)     
+ 			    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
  			    								mean = Mean 
  			    								std = std
  			    								min = min
@@ -144,9 +145,9 @@
  			    run;
  		
  		   	/* Create indicator variable to show which statistics are associated with which censor reason */ 
- 		   	data _stats_&cen_stat.&n.;
+ 		   	data _stats_&cen_stat.;
  		   	  length table_name $32;
- 		   	  set _stats_&cen_stat.&n.;
+ 		   	  set _stats_&cen_stat.;
  		   	  %if &cen_stat. = episodes %then %do;
  		   	    table_name = "Overall";
  		   	  %end;
@@ -163,7 +164,7 @@
  		   	  	 from censor_data;
  		   	  quit;
  			  
- 		   	  data _stats_&n.;
+ 		   	  data _stats_;
  		   	  	set unique_groups;
  		   	  	length table_name $32 min q1 median q3 max mean std 8;
  		   	  	call missing(min, q1, median, q3, max, mean, std);
@@ -214,7 +215,7 @@
   	   from (select distinct a.*, 
   	   		sum(episodes) as epi_tot,
   	   		%do cn = 1 %to &cens_num;
-  	   		  %let var = %scan(&censor_reason, &cn);
+  	   		  %let var = %scan(&censorreason, &cn);
   	   		  sum(&var) as &var._tot
   	   		  %if &cn ^= &cens_num %then %do; , %end;
   	   		%end;
@@ -239,7 +240,7 @@
   	   select distinct a.*, 
   	         %if &labelfileexists. = Y %then %do;
   	   		   case when not missing(b.label) then b.label 
-               else a.group as grouplabel
+               else a.group end as grouplabel
   	 		 %end;
   	 		 %else %do;
   	 		   a.group as grouplabel
