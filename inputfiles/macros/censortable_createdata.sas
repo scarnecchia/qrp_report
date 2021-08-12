@@ -64,12 +64,12 @@
 	 from _censor_strat (where = (not missing(stratvar_overall)));
 	 
 	 %if &numstratoverall. > 0 %then %do;
-	   select distinct(stratvar_overall) into: strat_overal1 - :stratoverall&numstratoverall.
+	   select distinct(stratvar_overall) into: stratoverall1 - :stratoverall&numstratoverall.
        from _censor_strat (where = (not missing(stratvar_overall)));
 	 %end;
      
 	 /* Only acquire censor reason when table T3 is requested */
-	 %if %index(&table.,t3) > 0 %then %do;
+	 %if %index(&tables.,t3) > 0 %then %do;
        select distinct(censorreason) into: censorreason
        from _censor_strat;
 	 %end;
@@ -101,14 +101,22 @@
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
      run;
-	 %let censor_dp = censor_dps (where = ( %do ns = 1 %to &numstratoverall.; %if &ns > 1 %then %do; or %end; not missing(&&stratoverall&ns..) %end;));
+	 %let censor_dp = censor_dps;
    %end;
  
    /* Stack together*/
    data censor_data;
      set censor_all (in = a)
-   	     &censor_dp.;
-     if a then dpidsiteid = "ALL";
+   	   %if %str(&censor_dp.) ne %str() %then %do;
+		 &censor_dp. (where = ( %do ns = 1 %to &numstratoverall.; %if &ns > 1 %then %do; or %end; not missing(&&stratoverall&ns..) %end;))
+	   %end;;
+	   %do dps = 1 %to %eval(&num_dp.); 
+         if dpidsiteid = %quote(%scan(&random_dplist,&dps)) then dpidsort = &dps.;
+       %end;		 
+       if a then do;
+	     dpidsiteid = "ALL";
+		 dpidsort = &num_dp. +1;
+	   end;
    run;
  
  /* Clean up work files */
@@ -119,75 +127,66 @@
  /*--------------------------------------------------------------------------------------------
  	Calculate summary statistics to merge back onto aggregate data                                                   
    --------------------------------------------------------------------------------------------*/
+    /* Create a blank table if distribution isn't specified */
+	%if "&censor_distribution" ne "Y" %then %do;
+ 	   proc sql noprint;
+ 	   	 create table unique_groups as
+ 	   	 select distinct level, dpidsiteid, dpidsort, group, runid
+ 	   	 from censor_data;
+ 	   quit;
+ 	   
+ 	   data _stats_;
+ 	   	 set unique_groups;
+ 	   	 length table_name $32 min q1 median q3 max mean std 8;
+ 	   	 call missing(min, q1, median, q3, max, mean, std);
+ 	   	 table_name = "Overall";
+ 	   	 output;
+		 
+	     %if &cens_num. > 0 %then %do;
+ 	   	   %do cn= 1 %to &cens_num;
+ 	   	      %let var = %scan(&censorreason, &cn);
+ 	   	      table_name = "&var.";
+ 	   	      output;
+ 	   	   %end;
+	     %end;
+ 	   run; 
+	 %end;
+			  
    /* Calculate summary statistics for each censoring reason.
  	 Skip over censoring reasons without counts */
  	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
  
  	 %do sl = 1 %to %sysfunc(countw(episodes &censorreason., %str( )));
  		%let cen_stat = %scan(episodes &censorreason.,&sl.);
- 		
- 		proc sql noprint;
- 		  select sum(&cen_stat.) into: checksum
- 		  from censor_data;
- 		quit;
- 		
- 		%if &checksum = 0 %then %do;
- 			 %put WARNING: (Sentinel) Variable &cen_stat. has no episodes on table agg_&censordataset.. This variable will not be used to generate summary statistics;
- 		%end;
- 		%else %do;	   
-            %if "&censor_distribution" = "Y" %then %do;
- 			    proc means data= censor_data nway missing noprint classdata=censor_data;
- 			    	var censdays_value;
- 			    	class runid dpidsiteid group level ;
- 			    	freq &cen_stat.;
- 			    	where not missing(censdays_value);
- 			    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
- 			    								mean = Mean 
- 			    								std = std
- 			    								min = min
- 			    								q1 = q1
- 			    								median = median 
- 			    								q3 = q3
- 			    								max = max;
- 			    run;
- 		
- 		   	/* Create indicator variable to show which statistics are associated with which censor reason */ 
- 		   	data _stats_&cen_stat.;
- 		   	  length table_name $32;
- 		   	  set _stats_&cen_stat.;
- 		   	  %if &cen_stat. = episodes %then %do;
- 		   	    table_name = "Overall";
- 		   	  %end;
- 		   	  %else %do;
- 		   	    table_name = "&cen_stat.";
- 		   	  %end;
- 		   	run;
- 		   %end;
- 		   %else %do;
- 		   	  /* Create a blank table if distribution isn't specified */
- 		   	  proc sql noprint;
- 		   	  	 create table unique_groups as
- 		   	  	 select distinct level, dpidsiteid, group, runid
- 		   	  	 from censor_data;
- 		   	  quit;
- 			  
- 		   	  data _stats_;
- 		   	  	set unique_groups;
- 		   	  	length table_name $32 min q1 median q3 max mean std 8;
- 		   	  	call missing(min, q1, median, q3, max, mean, std);
- 		   	  	table_name = "Overall";
- 		   	  	output;
- 			  
-			    %if &cens_num. > 0 %then %do;
- 		   	  	  %do cn= 1 %to &cens_num;
- 		   	  	     %let var = %scan(&censorreason, &cn);
- 		   	  	     table_name = "&var.";
- 		   	  	     output;
- 		   	  	  %end;
-				%end;
- 		   	  run; 
- 		   %end; /* censor distribution */
- 		%end; /* cen_stat episodes */
+		 
+         %if "&censor_distribution" = "Y" %then %do;
+ 		    proc means data= censor_data nway missing noprint classdata=censor_data;
+ 		    	var censdays_value;
+ 		    	class runid dpidsiteid dpidsort group level ;
+ 		    	freq &cen_stat.;
+ 		    	where not missing(censdays_value);
+ 		    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
+ 		    								mean = Mean 
+ 		    								std = std
+ 		    								min = min
+ 		    								q1 = q1
+ 		    								median = median 
+ 		    								q3 = q3
+ 		    								max = max;
+ 		    run;
+ 		    
+ 		    /* Create indicator variable to show which statistics are associated with which censor reason */ 
+ 		    data _stats_&cen_stat.;
+ 		      length table_name $32;
+ 		      set _stats_&cen_stat.;
+ 		      %if &cen_stat. = episodes %then %do;
+ 		        table_name = "Overall";
+ 		      %end;
+ 		      %else %do;
+ 		        table_name = "&cen_stat.";
+ 		      %end;
+ 		    run;
+ 		%end; /* censor_distribution*/
  	 %end; /* censor reasons */
  	 
    /* Stack all datasets together. There are many repeat observations, recnum will be used to create one set per group */
@@ -201,7 +200,7 @@
  	   create table _stats as
  	   select * 
  	   from _statsdups
- 	   group by runid, dpidsiteid, group, table_name
+ 	   group by runid, dpidsiteid, dpidsort, group, table_name
  	   having recnum=max(recnum);
  	 quit;
  	
@@ -232,9 +231,9 @@
   	   		    %if &cn ^= &cens_num %then %do; , %end;
   	   		  %end;
 			%end;
-  	   	    from censor_data %if "&censor_distribution" = "Y" %then %do; (drop=censdays_value) %end; a
+  	   	    from censor_data a
   	   	    /* counts need to be grouped by user specified stratas */
-  	   	    group by a.runid, a.dpidsiteid, a.group, a.level) as a;
+  	   	    group by a.runid, a.dpidsiteid, a.dpidsort, a.group, a.level) as a;
  	 
   	   create table &censordataset. as
   	   select distinct a.*, 
@@ -309,7 +308,7 @@
    	 %end;
    
    	 proc sort data=&censordataset.;
-   	    by dpidsiteid &censor_sort.;
+   	    by dpidsort &censor_sort. sortorder;
    	 run;
  
    /* Clean up work files */
