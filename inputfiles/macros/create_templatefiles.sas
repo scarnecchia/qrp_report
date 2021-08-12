@@ -689,7 +689,7 @@ libname tempfl "";
 			    %end;
 			    %else %do;
                   levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			      levelid2 = "episodelength episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "episodenum episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
 			    %end;
                 output;
 		     %end;
