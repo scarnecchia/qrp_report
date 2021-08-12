@@ -9,12 +9,19 @@
 * PURPOSE: The macro aggregates censoring table data
 *                                        
 *  Program inputs:   
-*   - [runid]_censor_cida.sas7bdat                                                                                
-* 
+*   - agg_t1censor.sas7bdat                                                                                
+*   - agg_t2censor.sas7bdat
+*   - agg_t2followuptime.sas7bdat  
+*   - agg_t5censor.sas7bdat  
+*   
 *  Program outputs:                                                                                                                                       
+*   - censor_data_final.sas7bdat
 *
-*  PARAMETERS:                                                                       
-*            
+*  PARAMETERS:
+*   - tables: list of censor tables in quotes from table file                                                                   
+*   - censordataset: censor dataset name on table file
+*   - inputdataset: dataset to be aggregated across censor reasons
+*        
 *  Programming Notes:                                                                                
 *                                                                           
 *
@@ -24,30 +31,8 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
-%macro censortable_createdata (tables = , censordataset = );
-  %put =====> MACRO CALLED: censortable_createdata
-  /*Create censor lookup table*/;
-    data censor_tablelookup;
-        set tablefile;
-        where dataset in ("&censordataset.");
-    run;
-
-    %isdata(dataset=censor_tablelookup);
-    %if %eval(&nobs.>0) %then %do;
-        %let censortables =;
-		%let censorfigures =;
-		
-		/*Determine which tables and figures to produce*/
-		proc sql noprint;
-			select distinct table into: censortables separated by ' '
-			from censor_tablelookup
-			where substr(table,1,1)='T';
-
-			select distinct table into: censorfigures separated by ' '
-			from censor_tablelookup
-			where substr(table,1,1)='F';
-		quit;
-		%put &censortables. &censorfigures.;
+%macro censortable_createdata (tables = , censordataset = , inputdataset = );
+  %put =====> MACRO CALLED: censortable_createdata;
 
     /*--------------------------------------------------------------------------------------------
 		Put levelIDs in macro variables                                                            
@@ -103,80 +88,35 @@
        %end;
 	   
 	/*--------------------------------------------------------------------------------------------
-		Aggregate censor tables across runs                                                    
-      --------------------------------------------------------------------------------------------*/
-	   %do dps = 1 %to %eval(&num_dp.); 
-         %let dpidsiteid = %scan(&random_dplist,&dps); 
-    	 %let maskedID = %scan(&masked_dplist,&dps); 
-		 
-		 %do n = 1 %to &numrunid.;
-    	   %let runid = %scan(&runidlist, &n); 
-		   %let tablefigures = %sysfunc(tranwrd(&tables.,%str( ),%str(|)));
-		   
-		   /* Identify table and figure files */
-		   %if (%sysfunc(prxmatch(m/&tablefigures./i,&censortables.)) > 0) | (%sysfunc(prxmatch(m/&tablefigures./i,&censorfigures.)) > 0) %then %do;
-		   	  %if %sysfunc(exist(&dpidsiteid..&runid._censor_cida))=0 %then %do;
-		   		%put WARNING: (Sentinel) &RUNID._censor_cida does not exist for &dpidsiteid.. Please confirm correct DP and path location specified. Program will abort;
-		   		%abort; 
-		   	  %end;
-		   	  %else %do; 
-		   		data _censor_dp&dps.;
-		   		  length runid $5. dpidsiteid $6.;
-		   		  set &dpidsiteid..&runid._censor_cida;
-		   		  where lowcase(group) in (&&grouplist_&n..) and level in (&censor_levelid.);
-		   		  dpidsiteid = "&maskedID";  
-				  runid = "&runid.";
-		   		run;   
-		      %end; /* censor cida data exists */
-		   %end; /* censor table and figures exist */
-		 %end; /* runid */
-	   %end; /* data partners */
-	   
-	   data censor_cida_agg;
-	     set _censor_dp:
-		 %if %sysfunc(prxmatch(m/sex/i,&censor_strat.)) > 0 %then %do;
-		   (rename = (sex = _sex))
-		 %end;;
-		 %if %sysfunc(prxmatch(m/sex/i,&censor_strat.)) > 0 %then %do;
-			length sex $45;
-			sex = put(_sex, $sexfmt.);
-			drop _sex;
-		 %end;    
-	   run;
-	   
-	  /* Clean up work files */
-      proc datasets lib=work nowarn nolist noprint;
-        delete _censor_dp:; 
-      quit;
-	   
-	/*--------------------------------------------------------------------------------------------
-		Aggregate up by censor reason and stratifications and stack aggregated with DP tables                                                   
-      --------------------------------------------------------------------------------------------*/
-	  %if (%sysfunc(prxmatch(m/&tablefigures./i,&censortables.)) > 0) %then %do;
+		Aggregate by censor reason and stratifications.
+		Stack aggregated with DP tables when stratification by DP is requested.                                                   
+      --------------------------------------------------------------------------------------------*/  
 	     /* Aggregate data across all DPs */
-	     proc summary data = censor_cida_agg nway missing;
-	     	class runid level group &censor_strat. ;
+	     proc summary data = &inputdataset. nway missing;
+	     	class level group &censor_strat. ;
 	     	var episodes &censorreason.;
 	     	output out = censor_all (drop = _:) sum=;
 	     run;
 	     
-	     /* Aggregate by DP */
-	     proc summary data = censor_cida_agg nway missing;
-	     	class runid dpidsiteid level group &censor_strat.;
-	     	var episodes &censorreason.;
-	     	output out = censor_dps (drop = _:) sum=;
-	     run;
-	     
+		 %if &stratifybydp. = Y %then %do;
+	       /* Aggregate by DP */
+	       proc summary data = &inputdataset. nway missing;
+	       	 class dpidsiteid level group &censor_strat.;
+	       	 var episodes &censorreason.;
+	       	 output out = censor_dps (drop = _:) sum=;
+	       run;
+	     %end;
+		 
 	     /* Stack together*/
 	     data censor_data;
 	       set censor_all (in = a)
-	     	   censor_dps (in = b);
+	     	   %if &stratifybydp. = Y %then %do; censor_dps (in = b) %end;;
 	       if a then dpidsiteid = "ALL";
 	     run;
 		 
 		 /* Clean up work files */
          proc datasets lib=work nowarn nolist noprint;
-           delete censor_all censor_dps censor_cida_agg; 
+           delete censor_all %if &stratifybydp. = Y %then %do; censor_dps %end;; 
          quit;
 	     	
 	     %let dsid = %sysfunc(open(censor_data));
@@ -194,69 +134,66 @@
 		 %do sl = 1 %to %sysfunc(countw(episodes &censorreason., %str( )));
 			%let cen_stat = %scan(episodes &censorreason.,&sl.);
 			
-            %do n = 1 %to &numrunid.;
-    	       %let runid = %scan(&runidlist, &n);
-			   proc sql noprint;
-			     select sum(&cen_stat.) into: checksum
-			     from censor_data (where = (runid = "&runid."));
-			   quit;
-			   
-			   %if &checksum = 0 %then %do;
-			   	 %put WARNING: (Sentinel) Variable &cen_stat. has no episodes for runid &runid.. This variable will not be used to generate summary statistics;
+			proc sql noprint;
+			  select sum(&cen_stat.) into: checksum
+			  from censor_data;
+			quit;
+			
+			%if &checksum = 0 %then %do;
+				 %put WARNING: (Sentinel) Variable &cen_stat. has no episodes. This variable will not be used to generate summary statistics;
+			%end;
+			%else %do;	   
+               %if "&censor_distribution" = "Y" %then %do;
+				    proc means data= censor_data nway missing noprint classdata=censor_data;
+				    	var censdays_value;
+				    	class dpidsiteid group level ;
+				    	freq &cen_stat.;
+				    	where not missing(censdays_value);
+				    	output out=_stats_&cen_stat.&n. (drop=_type_ _freq_)     
+				    								mean = Mean 
+				    								std = std
+				    								min = min
+				    								q1 = q1
+				    								median = median 
+				    								q3 = q3
+				    								max = max;
+				    run;
+			
+			   	/* Create indicator variable to show which statistics are associated with which censor reason */ 
+			   	data _stats_&cen_stat.&n.;
+			   	  length table_name $32;
+			   	  set _stats_&cen_stat.&n.;
+			   	  %if &cen_stat. = episodes %then %do;
+			   	    table_name = "Overall";
+			   	  %end;
+			   	  %else %do;
+			   	    table_name = "&cen_stat.";
+			   	  %end;
+			   	run;
 			   %end;
-			   %else %do;	   
-                  %if "&censor_distribution" = "Y" %then %do;
-			   	    proc means data= censor_data (where = (runid = "&runid.")) nway missing noprint classdata=censor_data;
-			   	    	var censdays_value;
-			   	    	class dpidsiteid group level ;
-			   	    	freq &cen_stat.;
-			   	    	where not missing(censdays_value);
-			   	    	output out=_stats_&cen_stat.&n. (drop=_type_ _freq_)     
-			   	    								mean = Mean 
-			   	    								std = std
-			   	    								min = min
-			   	    								q1 = q1
-			   	    								median = median 
-			   	    								q3 = q3
-			   	    								max = max;
-			   	    run;
-			   
-			      	/* Create indicator variable to show which statistics are associated with which censor reason */ 
-			      	data _stats_&cen_stat.&n.;
-			      	  length table_name $32;
-			      	  set _stats_&cen_stat.&n.;
-			      	  %if &cen_stat. = episodes %then %do;
-			      	    table_name = "Overall";
-			      	  %end;
-			      	  %else %do;
-			      	    table_name = "&cen_stat.";
-			      	  %end;
-			      	run;
-			      %end;
-			      %else %do;
-			      	  /* Create a blank table if distribution isn't specified */
-			      	  proc sql noprint;
-			      	  	 create table unique_groups as
-			      	  	 select distinct level, dpidsiteid, group
-			      	  	 from censor_data (where = (runid = "&runid."));
-			      	  quit;
-			   	  
-			      	  data _stats_&n.;
-			      	  	set unique_groups;
-			      	  	length table_name $32 min q1 median q3 max mean std 8;
-			      	  	call missing(min, q1, median, q3, max, mean, std);
-			      	  	table_name = "Overall";
-			      	  	output;
-			   	  
-			      	  	%do cn= 1 %to &cens_num;
-			      	  	   %let var = %scan(&censorreason, &cn);
-			      	  	   table_name = "&var.";
-			      	  	   output;
-			      	  	%end;
-			      	  run; 
-			      %end; /* censor distribution */
-			   %end; /* cen_stat episodes */
-			%end; /* runid */
+			   %else %do;
+			   	  /* Create a blank table if distribution isn't specified */
+			   	  proc sql noprint;
+			   	  	 create table unique_groups as
+			   	  	 select distinct level, dpidsiteid, group
+			   	  	 from censor_data;
+			   	  quit;
+				  
+			   	  data _stats_&n.;
+			   	  	set unique_groups;
+			   	  	length table_name $32 min q1 median q3 max mean std 8;
+			   	  	call missing(min, q1, median, q3, max, mean, std);
+			   	  	table_name = "Overall";
+			   	  	output;
+				  
+			   	  	%do cn= 1 %to &cens_num;
+			   	  	   %let var = %scan(&censorreason, &cn);
+			   	  	   table_name = "&var.";
+			   	  	   output;
+			   	  	%end;
+			   	  run; 
+			   %end; /* censor distribution */
+			%end; /* cen_stat episodes */
 		 %end; /* censor reasons */
 		 
 	  /* Stack all datasets together. There are many repeat observations, recnum will be used to create one set per group */
@@ -270,7 +207,7 @@
 		   create table _stats as
 		   select * 
 		   from _statsdups
-		   group by runid, dpidsiteid, group, table_name
+		   group by dpidsiteid, group, table_name
 		   having recnum=max(recnum);
 		 quit;
 		
@@ -278,6 +215,10 @@
          proc datasets lib=work nowarn nolist noprint;
            delete _stats_: _statsdups unique_groups; 
          quit;	
+		 
+		 data output.censor_data;
+		 set censor_data;
+		 run;
 	 	
 	  /* Calculate denominators and percentage totals, joining summary stats back to aggregate data */
 	 	 proc sql noprint;
@@ -299,7 +240,7 @@
 	 	   		%end;
 	 	   	    from censor_data %if "&censor_distribution" = "Y" %then %do; (drop=censdays_value) %end; a
 	 	   	    /* counts need to be grouped by user specified stratas */
-	 	   	    group by a.runid, a.dpidsiteid, a.group, a.level) as a;
+	 	   	    group by a.dpidsiteid, a.group, a.level) as a;
 		 
 	 	   create table censor_data_stats as
 	 	   select distinct a.*, 
@@ -312,7 +253,7 @@
 	 	 		 b.mean,
 	 	 		 b.std
 	 	   from censor_data_den a left join _stats b
-	 	   on a.runid = b.runid and a.dpidsiteid = b.dpidsiteid and a.group = b.group ;
+	 	   on a.dpidsiteid = b.dpidsiteid and a.group = b.group ;
 	 	   
 	 	   create table censor_data_final(drop=group) as
 	 	   select distinct a.*, 
@@ -326,10 +267,10 @@
 	 	   from censor_data_stats a 
 	 	   %if &labelfileexists. = Y %then %do;
 	 	     inner join labelfile(where=(labeltype='grouplabel')) b
-	 	     on a.runid = b. runid and a.group = b.group
+	 	     on a.group = b.group
 	 	   %end;
 	 	   %if "&censor_category" = "Y" %then %do; where not missing(censdays_value_cat) %end;
-	 	   order by runid, dpidsiteid, grouplabel %if "&censor_category" = "Y" %then %do; ,censorcat_sort, censdays_value_cat %end; , table_name;
+	 	   order by dpidsiteid, grouplabel %if "&censor_category" = "Y" %then %do; ,censorcat_sort, censdays_value_cat %end; , table_name;
 	 	 quit;
 
       /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
@@ -386,15 +327,8 @@
 	  	 run;
 	  
 	  	 proc sort data=censor_data_final;
-	  	    by order runid dpidsiteid %if %str("&censor_category") = %str("Y") %then %do; censorcat_sort %end; ;
+	  	    by order dpidsiteid %if %str("&censor_category") = %str("Y") %then %do; censorcat_sort %end; ;
 	  	 run;
-		 
-		  data output.censor_data_final;
-	  set censor_data_final;
-	  run;
-	  
-	  %end; /* censortables > 0 */	
-   %end; /* censor_tablelookup nobs > 0 */
 
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;

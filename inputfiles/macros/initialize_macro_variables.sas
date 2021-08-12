@@ -75,13 +75,12 @@
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist tdatasetlist tdatasetlistnum includegroupinfigure censorreason;
+    %global datasetlist figurelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
 	%let tdatasetlist = ;
 	%let tdatasetlistnum = ;
     %let figurelist = ;
     %let includegroupinfigure = ;
-	%let censorreason =;
 
     /*baseline table variables*/
     %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;

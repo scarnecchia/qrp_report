@@ -721,9 +721,17 @@
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                        rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			length censorreason $85;
 			%if &typenum. = 4 | &typenum. = 3 %then %do;
-			  length censorreason $85;
 			  call missing(censorreason);
+			%end;
+			%else %do;
+			  if missing(censorreason) then do;
+			    if dataset = "t1censor" then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
+				else if dataset = "t2censor" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+			  end;
 			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
