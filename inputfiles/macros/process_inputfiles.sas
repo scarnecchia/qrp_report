@@ -727,8 +727,7 @@
 			%end;
 			%else %do;
 			  if missing(censorreason) then do;
-			    if dataset = "t1censor" then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
-				else if dataset = "t2censor" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 			  end;
