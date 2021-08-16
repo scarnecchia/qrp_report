@@ -56,8 +56,7 @@
     %if %eval(&nobs>0) %then %do;
 
     /*Assign user censoring criteria labels*/
-    %isdata(dataset=labelfile);
-    %if %eval(&nobs.>0) %then %do;
+    %if &labelfileexists. = Y %then %do;
         data _null_;
             set labelfile(where=(labeltype='censorlabel'));
             call symputx(cats(labelvar,'_label'), label);
