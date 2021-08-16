@@ -88,9 +88,11 @@
     %if ^%index(&reporttype,TREE) %then %do;
 
 ***************************************************************************************************;
-*   Calculate summary tables                                             
+*   Calculate L1 summary tables                                             
 ***************************************************************************************************;
-    %if %eval(&tdatasetlistnum. > 0) %then %do;
+
+    /*ReportType T1 and T2L1*/
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  
@@ -105,6 +107,11 @@
           %end;
 	   %end;
     %end;
+
+    /*ReportType T5*/
+	%if %str("&reporttype") = %str("T5") %then %do;
+	   %t5tables_driver();
+	%end;
 
 ***************************************************************************************************;
 *   Compute L1 figures                                            

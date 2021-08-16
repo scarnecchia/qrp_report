@@ -16,6 +16,7 @@
 *   - %varexist() macro checks for the existence of a variable
 *   - %convert_categories() macro converts categories to mathematical expression
 *	- %output_datasets() macro output SAS datasets  
+*   - %nonrep() macro removes repeated words in macro variable
 *
 *  Program inputs:                                                                                   
 *   -
@@ -178,7 +179,6 @@
 %mend convert_categories;
 
 %macro output_datasets (dataset=, inlib=work, outlib=, name=&infile.);
-
 	%if &output_agg_data. = Y %then %do;
 
 		proc datasets library = &inlib;
@@ -191,5 +191,18 @@
 		quit;
 
 	%end;
-
 %mend output_datasets;
+
+*Removes repeated words in a macro variable;
+%macro nonrep(invar= , outvar= );
+    %global &outvar;
+    %let long = ;
+    %if %str(&&&invar) ne %str() %then %do;
+    %do w=1 %to %sysfunc(countw(&&&invar));
+        %if %sysfunc(indexw(&long, %scan(&&&invar,&w))) = 0 %then %do;
+            %let long = &long %scan(&&&invar,&w);
+        %end;
+    %end;
+    %end;
+    %let &outvar = &long.;
+%mend;
