@@ -56,6 +56,10 @@
    run;
    
    proc sql noprint;
+     select distinct(levelid1)
+     into: censdays_value_level separated by ','
+     from _censor_strat (where = (strat2 = "censdays_value"));
+	 
      select distinct(stratvar)
      into: censor_strat separated by ' '
      from _censor_strat (where = (not missing(stratvar)));
@@ -69,7 +73,8 @@
 	 %end;
      
 	 /* Only acquire censor reason when table T3 is requested */
-	 %if %index(&tables.,t3) > 0 %then %do;
+	 /* For T2 the censor reason will be applied in proc report */
+	 %if %index(&tables.,T3) > 0 %then %do;
        select distinct(censorreason) into: censorreason
        from _censor_strat;
 	 %end;
@@ -101,6 +106,7 @@
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
      run;
+
 	 %let censor_dp = censor_dps;
    %end;
  
@@ -109,13 +115,9 @@
      set censor_all (in = a)
    	   %if %str(&censor_dp.) ne %str() %then %do;
 		 &censor_dp. (where = ( %do ns = 1 %to &numstratoverall.; %if &ns > 1 %then %do; or %end; not missing(&&stratoverall&ns..) %end;))
-	   %end;;
-	   %do dps = 1 %to %eval(&num_dp.); 
-         if dpidsiteid = %quote(%scan(&random_dplist,&dps)) then dpidsort = &dps.;
-       %end;		 
+	   %end;;		 
        if a then do;
 	     dpidsiteid = "ALL";
-		 dpidsort = &num_dp. +1;
 	   end;
    run;
  
@@ -127,11 +129,13 @@
  /*--------------------------------------------------------------------------------------------
  	Calculate summary statistics to merge back onto aggregate data                                                   
    --------------------------------------------------------------------------------------------*/
+ 	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
+	 
     /* Create a blank table if distribution isn't specified */
 	%if "&censor_distribution" ne "Y" %then %do;
  	   proc sql noprint;
  	   	 create table unique_groups as
- 	   	 select distinct level, dpidsiteid, dpidsort, group, runid
+ 	   	 select distinct level, dpidsiteid, group, runid
  	   	 from censor_data;
  	   quit;
  	   
@@ -150,19 +154,25 @@
  	   	   %end;
 	     %end;
  	   run; 
+
 	 %end;
 			  
    /* Calculate summary statistics for each censoring reason.
- 	 Skip over censoring reasons without counts */
- 	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
- 
+ 	 Skip over censoring reasons without counts */ 
  	 %do sl = 1 %to %sysfunc(countw(episodes &censorreason., %str( )));
  		%let cen_stat = %scan(episodes &censorreason.,&sl.);
+ 		
+ 		proc sql noprint;
+ 		  select sum(&cen_stat.) into: checksum
+ 		  from censor_data;
+ 		quit;
+ 		
+ 		%if &checksum ^= 0 %then %do;
 		 
          %if "&censor_distribution" = "Y" %then %do;
  		    proc means data= censor_data nway missing noprint classdata=censor_data;
  		    	var censdays_value;
- 		    	class runid dpidsiteid dpidsort group level ;
+ 		    	class runid dpidsiteid group level ;
  		    	freq &cen_stat.;
  		    	where not missing(censdays_value);
  		    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
@@ -186,7 +196,9 @@
  		        table_name = "&cen_stat.";
  		      %end;
  		    run;
- 		%end; /* censor_distribution*/
+
+ 		 %end; /* censor_distribution */
+ 		%end; /* checksum */
  	 %end; /* censor reasons */
  	 
    /* Stack all datasets together. There are many repeat observations, recnum will be used to create one set per group */
@@ -200,7 +212,7 @@
  	   create table _stats as
  	   select * 
  	   from _statsdups
- 	   group by runid, dpidsiteid, dpidsort, group, table_name
+ 	   group by runid, dpidsiteid, group, table_name
  	   having recnum=max(recnum);
  	 quit;
  	
@@ -230,10 +242,10 @@
   	   		    sum(&var) as &var._tot
   	   		    %if &cn ^= &cens_num %then %do; , %end;
   	   		  %end;
-			%end;
-  	   	    from censor_data a
+			%end; 
+  	   	    from censor_data %if "&censor_distribution" = "Y" %then %do; (drop=censdays_value) %end; a
   	   	    /* counts need to be grouped by user specified stratas */
-  	   	    group by a.runid, a.dpidsiteid, a.dpidsort, a.group, a.level) as a;
+  	   	    group by a.runid, a.dpidsiteid, a.group, a.level) as a;
  	 
   	   create table &censordataset. as
   	   select distinct a.*, 
@@ -244,7 +256,8 @@
   	 		 b.q3,
   	 		 b.max,
   	 		 b.mean,
-  	 		 b.std
+  	 		 b.std,
+			 d.order
 			 %if &labelfileexists. = Y %then %do;
   	   		   ,case when not missing(c.label) then c.label 
                else a.group end as grouplabel
@@ -258,23 +271,22 @@
 	      and a.dpidsiteid = b.dpidsiteid 
 	      and a.group = b.group 
 	   %if &labelfileexists. = Y %then %do;
-  	     inner join labelfile(where=(labeltype='grouplabel')) c
+  	     left join labelfile(where=(labeltype='grouplabel')) c
   	     on a.group = c.group
   	   %end;
-	   %if %str("&censor_sort") ne %str("") %then %do; where not missing(censdays_value_cat) %end;;
+	   left join groupsfile d
+	   on a.group = d.group
+	   %if %str("&censor_sort") ne %str("") %then %do; where not missing(censdays_value_cat) %end;
+	   order by dpidsiteid, group %if "&censor_distribution" = "Y" %then %do; ,censorcat_sort, censdays_value_cat %end; , Table_Name;
   	 quit;
  
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
    	 data &censordataset.;
    	   set &censordataset.;
 	   length strat $8;
-	   %if &numstratoverall. > 0 %then %do;
-	     %do ns = 1 %to &numstratoverall.;
-		   if not missing(&&stratoverall&ns..) then strat = "overall";
-		 %end;
-	   %end;
+		 if level in (&censdays_value_level.) then strat = "overall";
 	   %if %str("&censor_sort") ne %str("") %then %do;
-   	     if missing(censdays_value_cat) then do;
+   	     if not missing(censdays_value_cat) then do;
    	       format censdays_value_cat_format $20.;
    	       censdays_value_cat_format = catx(' ',censdays_value_cat,' days');
    	     end;
@@ -287,7 +299,6 @@
    	     %do cn = 1 %to &cens_num;
    	       %let var = %scan(&censorreason, &cn);
    	       if table_name = "&var" then do;
-		      sortorder = put(&var.,&var.sort.);
    	       	  episodes = &var;
    	      	  epi_tot  = &var._tot;
    	      	  epi_tot_pct = &var._reason_pct;
@@ -305,10 +316,11 @@
    	    proc sort data = &censordataset. nodupkey;
    		  by _all_;
    	    run;
+
    	 %end;
    
    	 proc sort data=&censordataset.;
-   	    by dpidsort &censor_sort. sortorder;
+   	    by order dpidsiteid &censor_sort.;
    	 run;
  
    /* Clean up work files */
