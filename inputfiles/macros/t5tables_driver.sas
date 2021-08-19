@@ -31,52 +31,109 @@
 	*** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
 	%if %sysfunc(prxmatch(m/T1\b|T2\b/i,&tablelist.)) > 0 %then %do;
 	    %t5tables_createdata(dataset=agg_t5disp,
-                           whereclause= 1,
-                           catvar=daysupp,
-                           countvar=adjustedcodecount,
-                           cattableid=T1,
-                           disttableid=/*T2*/);
+                             whereclause= 1,
+                             catvar=daysupp,
+                             countvar=adjustedcodecount,
+                             cattableid=T1,
+                             disttableid=/*T2*/,
+                             catvarsort=);
 	%end;
 
 	*** Distribution of total episode duration ***;
 	%if %sysfunc(prxmatch(m/T3\b|T4\b/i,&tablelist.)) > 0 %then %do;
 	   %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause= 1,
-                           catvar=cumepisodelength,
-                           countvar=npts,
-                           cattableid=T3,
-                           disttableid=/*T4*/);
-
+                            whereclause= 1,
+                            catvar=cumepisodelength,
+                            countvar=npts,
+                            cattableid=T3,
+                            disttableid=/*T4*/,
+                            catvarsort=);
 	%end;
 
 	*** Distribution of episode duration ***;
     %if %sysfunc(prxmatch(m/T5\b|T6\b/i,&tablelist.)) > 0 %then %do;
         %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause= 1,
-                           catvar=episodelength,
-                           countvar=episodes,
-                           cattableid=T5,
-                           disttableid=/*T6*/);
+                             whereclause= 1,
+                             catvar=episodelength,
+                             countvar=episodes,
+                             cattableid=T5,
+                             disttableid=/*T6*/,
+                             catvarsort=);
 
 	%end; 
 	%if %sysfunc(prxmatch(m/T7\b|T8\b/i,&tablelist.)) > 0 %then %do;
 		%t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(episodenum <=1),
-                           catvar=episodelength,
-                           countvar=episodes,
-                           cattableid=T7,
-                           disttableid=/*T8*/);
+                             whereclause=(episodenum <=1),
+                             catvar=episodelength,
+                             countvar=episodes,
+                             cattableid=T7,
+                             disttableid=/*T8*/,
+                             catvarsort=);
 
 	%end;
 
 	%if %sysfunc(prxmatch(m/T9\b|T10\b/i,&tablelist.)) > 0 %then %do;
         %t5tables_createdata(dataset=agg_t5episdur,
-                           whereclause=(episodenum >=2),
-                           catvar=episodelength,
-                           countvar=episodes,
-                           cattableid=T9,
-                           disttableid=/*T10*/);
+                             whereclause=(episodenum >=2),
+                             catvar=episodelength,
+                             countvar=episodes,
+                             cattableid=T9,
+                             disttableid=/*T10*/,
+                             catvarsort=);
 	%end;
+
+    *********************;
+    *** Dose analysis ***;
+    *********************;
+        /*current filled daily dose*/
+    	%if %sysfunc(prxmatch(m/T18\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5disp,
+                                 whereclause=1,
+                                 catvar=cfdd_output_cat,
+                                 countvar=adjustedcodecount,
+                                 cattableid=T18,
+                                 disttableid=,
+                                 catvarsort=cfdd_output_cat_sort);
+
+    	%end;
+        /*average filled daily dose*/
+    	%if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                                 whereclause=1,
+                                 catvar=afdd_output_cat,
+                                 countvar=episodes,
+                                 cattableid=T19,
+                                 disttableid=,
+                                 catvarsort=afdd_output_cat_sort);
+    	%end;
+    	%if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                                 whereclause=(episodenum=1),
+                                 catvar=afdd_output_cat,
+                                 countvar=npts,
+                                 cattableid=T20,
+                                 disttableid=,
+                                 catvarsort=afdd_output_cat_sort);
+    	%end;
+        /*cumulative dose*/
+    	%if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                                 whereclause=1,
+                                 catvar=cumdose_output_cat,
+                                 countvar=npts,
+                                 cattableid=T21,
+                                 disttableid=,
+                                 catvarsort=cumdose_output_cat_sort);
+    	%end;
+    	%if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
+            %t5tables_createdata(dataset=agg_t5dose,
+                                 whereclause=(episodenum=1),
+                                 catvar=cumdose_output_cat,
+                                 countvar=npts,
+                                 cattableid=T22,
+                                 disttableid=,
+                                 catvarsort=cumdose_output_cat_sort);
+    	%end;
 
 	%put =====> END MACRO: t5tables_driver ;
 

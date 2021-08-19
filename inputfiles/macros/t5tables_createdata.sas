@@ -11,8 +11,7 @@
 *  Program inputs:                                                                                   
 *   - agg_t5episdur.sas7bdat                                               
 *   - agg_t5disp.sas7bdat
-*   - agg_t5first.sas7bdat
-* 
+*   - agg_t5dose.sas7bdat
 *
 *  Program outputs:                                                                                                                           
 *   - 1 dataset per table in the format [TableID]_[StratificationOrder]
@@ -24,11 +23,14 @@
 *   - countvar: metric counting counts
 *   - cattableid: category table ID from TABLEFILE
 *   - disttableid: distribution table ID from TABLEFILE
+*   - catvarsort: variable on the input dataset containing category indicators
 *
 * 
 *  Programming Notes:                                                                                
 *  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
 *  - 'overall' stratification is required for any additional stratification 
+*  - if CATVARSORT is specified, categories have already been computed in QRP, otherwise categories
+*    must be specified in the TABLEFILE for category tables
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -42,7 +44,8 @@
                            catvar=,
                            countvar=,
                            cattableid=,
-                           disttableid=);
+                           disttableid=,
+                           catvarsort=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -93,14 +96,14 @@
 
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
-		class runid group level &stratvars. &catvar. / missing;
+		class runid group level &stratvars. &catvar. &catvarsort. / missing;
 		output out=_t5data_summed(drop=_:) sum=;
 	run;
 
     %if &stratifybydp. = Y %then %do;
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
-		class runid group dpidsiteid level &stratvars. &catvar. / missing;
+		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
 		output out=_t5data_summed_dp(drop=_:) sum=;
 	run;
     %end;
@@ -153,7 +156,6 @@
             %let dpwhere = and dpidsiteid = 'all';
         %end;   
 
-
     	/*Extract column 1: Total*/
     	proc sort data=_t5data_summed out=_total_bydp(rename=&countvar.=total_count keep=dpidsiteid runid group &tablesub. &countvar.);
     		by dpidsiteid runid group &tablesub. &countvar.;
@@ -163,6 +165,8 @@
         /*Group continous var into categories*/
         %if "&cattableid." ne "" %then %do;
 
+            /*Group continuous variable into categories*/
+            %if %str("&catvarsort.") = %str("") %then %do;
             %convert_categories(var=&catvar., categories=&categories.);
 
     		data _catdata;
@@ -182,9 +186,48 @@
     		*collapse across categories;
     		proc means noprint nway data=_catdata;
     			var &countvar.;
-    			class dpidsiteid runid group &tablesub.  category categorysort / missing;
+    			class dpidsiteid runid group &tablesub. category categorysort / missing;
     			output out=_distribution_cat_&disttablestratorder.(drop=_:) sum=;
     		run;
+
+            *assign labels;
+            %do c =1 %to &num_categories.;
+                %let lbl&c. = %scan(&categories., &c., ' ') days;
+    		%end;
+
+            %end;
+            %else %do;
+                /*Cateogries already defined in QRP*/
+                proc means noprint nway data=_t5data_summed(rename=&catvarsort.=categorysort where=(level in ("&levelid2.") and missing(&catvar.)=0 &dpwhere.));
+        			var &countvar.;
+        			class dpidsiteid runid group &tablesub. categorysort / missing;
+        			output out=_distribution_cat_&disttablestratorder.(drop=_:) sum=;
+        		run;
+
+                %let num_categories = 0;
+                proc sql noprint;
+                    select max(categorysort) into: num_categories
+                    from _distribution_cat_&disttablestratorder.;
+                quit;
+
+                *assign labels;
+                %do c =1 %to &num_categories.;
+                    %let lbl&c. = Dose Group &c.;
+            	%end;
+                *if labelfile exists and custom labels specified - assign those;
+                %if &labelfileexists = Y %then %do;
+                    %let labeltype = ;
+                    %if &catvar = cfdd_output_cat %then %let labeltype = cfddcatlabel;
+                    %if &catvar = afdd_output_cat %then %let labeltype = afddcatlabel;
+                    %if &catvar = cumdose_output_cat %then %let labeltype = cumdosecatlabel;
+                    data _null_;
+                        set labelfile(where=(labeltype="&labeltype."));
+                        %do c = 1 %to &num_categories.;
+                            if labelvar = "dosecat&c" then call symputx("lbl&c.", label);
+                        %end;
+                    run;
+                %end;
+            %end;
 
     		*Transpose and square;	
     		proc transpose data=_distribution_cat_&disttablestratorder. out=_catdata_trans(drop=_name_) prefix=_;
@@ -240,12 +283,9 @@
                     %end; 
     			%end;        
 
-    			*Add labels;
+    			*Add labels - label for _&c. variables will be used for proc report;
     			%do c =1 %to &num_categories.;
-    				label _&c. = "%scan(&categories., &c., ' ')";
-                    %if %str("&tablesub.") = %str("") %then %do;
-    				label _&c._percent = "%scan(&categories., &c., ' ') %";
-                    %end;
+    				label _&c. = "&&&lbl&c.";
     			%end;
     		run;
 
