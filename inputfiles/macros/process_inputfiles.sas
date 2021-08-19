@@ -592,6 +592,7 @@
     		runid = lowcase(runid);
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
+            labelvar = lowcase(labelvar);
         run;
 
         /* Determine length of label based off input file */
