@@ -733,6 +733,7 @@
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 			  end;
+			  else censorreason = lowcase(censorreason);
 			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
