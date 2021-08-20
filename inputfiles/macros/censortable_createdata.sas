@@ -153,7 +153,7 @@
 		 
 	     %if &cens_num. > 0 %then %do;
  	   	   %do cn= 1 %to &cens_num;
- 	   	      %let var = %scan(&censorreason, &cn);
+ 	   	      %let var = %scan(&censorreason_t3, &cn);
  	   	      table_name = "&var.";
  	   	      output;
  	   	   %end;
@@ -233,7 +233,7 @@
   	   	 (episodes/epi_tot)   as epi_tot_pct       format=percent10.1
 		 %if &cens_num. > 0 %then %do; ,
   	   	   %do cn= 1 %to &cens_num;
-  	   	     %let var = %scan(&censorreason, &cn);
+  	   	     %let var = %scan(&censorreason_t3, &cn);
   	   	     (&var/epi_tot)     as &var._pct         format=percent10.1,
   	   	     (&var/&var._tot)   as &var._reason_pct  format=percent10.1
   	   	     %if &cn ^= &cens_num %then %do; , %end;
@@ -243,7 +243,7 @@
   	   		sum(episodes) as epi_tot
 			%if &cens_num. > 0 %then %do; ,
   	   		  %do cn = 1 %to &cens_num;
-  	   		    %let var = %scan(&censorreason, &cn);
+  	   		    %let var = %scan(&censorreason_t3, &cn);
   	   		    sum(&var) as &var._tot
   	   		    %if &cn ^= &cens_num %then %do; , %end;
   	   		  %end;
@@ -329,7 +329,7 @@
    	   %end;
 	   %if &cens_num. > 0 %then %do;
    	     %do cn = 1 %to &cens_num;
-   	       %let var = %scan(&censorreason, &cn);
+   	       %let var = %scan(&censorreason_t3, &cn);
    	       if table_name = "&var" then do;
    	       	  episodes = &var;
    	      	  epi_tot  = &var._tot;
