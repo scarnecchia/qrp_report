@@ -77,7 +77,27 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
         order by stratificationorder;
     quit;
-   
+
+	/*Set &cattableid and &disttableid to missing if not requested*/
+	%let table = "&cattableid.","&disttableid.";
+
+	data _tablecheck&cattableid.
+		 _tablecheck&disttableid.;
+		 set tablefile(where=(table in (&table.)));
+		 
+		 if table = "&cattableid" then output _tablecheck&cattableid.;
+		 if table = "&disttableid" then output _tablecheck&disttableid.;
+	run;
+
+	%isdata(dataset=_tablecheck&cattableid.);
+	%if %eval(&nobs.<1) %then %do;
+		%let cattableid = ;
+	%end;
+	%isdata(dataset=_tablecheck&disttableid.);
+	%if %eval(&nobs.<1) %then %do;
+		%let disttableid = ;
+	%end;
+ 
     /*dedup stratvars list*/
     %if %str("&tablesub") ne %str("") %then %do;
         %nonrep(invar=tablesub, outvar=stratvars);
@@ -357,7 +377,129 @@
     				by dpidsiteid runid group &tablesub.;
     			run;
             %end; /*compute stratification percents*/
-        %end; /*category tables*/		
+        %end; /*category tables*/
+
+        /*Continous var metrics*/
+        %if "&disttableid." ne "" %then %do;
+
+			proc means data=_t5data_summed (where=(level in ("&levelid2."))) noprint nway;
+			var &catvar.;
+			freq &countvar.;
+			class dpidsiteid runid group &tablesub.;
+			output out=table_&disttableid.a(drop=_type_ _freq_) p25=_p25 p75=_p75 
+													max=_max 
+													min=_min 
+													median=_median 
+													mean=_mean 
+													std =_std;		
+			run;
+
+			proc sort data=_t5data_summed (where=(level = "&levelid2")) nodupkey out=table_&disttableid.a2(keep=runid group dpidsiteid &tablesub.);
+			by dpidsiteid runid group &tablesub.;
+			run;
+
+			data table_&disttableid.a;
+				merge table_&disttableid.a(in=a) 	
+					  table_&disttableid.a2(in=b);
+				by dpidsiteid runid group &tablesub.;
+
+				if b and not a then do;
+					total_count=0;
+				end;
+			run;
+
+			%if %eval(&s.>1) %then %do;
+
+			    data table_&disttableid.a;
+                    set table_&disttableid.a
+				    &disttableid._1 (where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_count mean std min p25 median p75 max);
+                run;
+
+			    *Retrieve N Overall;
+                proc sql noprint undo_policy=none;
+				    create table table_&disttableid.a as
+				    select x.*
+					       , y.total_count as overall_total
+                           , y.total_count_char as overall_count_char
+						   , y.mean as total_mean
+						   , y.std as total_std
+						   , y.min as total_min
+						   , y.p25 as total_p25
+						   , y.median as total_median
+						   , y.p75 as total_p75
+						   , y.max as total_max
+    				from table_&disttableid.a as x,
+    					 &disttableid._1 as y
+    				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid
+					order by dpidsiteid, runid, group, &tablesub.;
+    			quit;
+
+			%end;
+
+			/*Merge in totals*/
+			data &disttableid._&disttablestratorder.;	
+				merge table_&disttableid.a %if %eval(&s.>1) %then %do; (where=(dpidsiteid = 'all')) %end; _total_bydp;
+				by dpidsiteid runid group &tablesub.;
+
+				 total_count_char = strip(put(total_count, comma12.0));
+
+				 if missing(mean)=1 then mean = strip(put(_mean, comma12.1));
+				 if missing(std)=1 then std = strip(put(_p25, comma12.1));
+
+				 if missing(min)=1 then min = strip(put(_min, comma12.0));
+				 if missing(p25)=1 then p25 = strip(put(_p25, comma12.0));
+				 if missing(median)=1 then median = strip(put(_median, comma12.0));
+				 if missing(p75)=1 then p75 = strip(put(_p75, comma12.0));
+				 if missing(max)=1 then max = strip(put(_max, comma12.0));
+
+                format total_count_char $15.;
+
+				%if %eval(&s.=1) %then %do;
+		    		if total_count = 0 then do;
+						mean = '.';
+						std = '.';
+
+						min = '.';
+						p25 = '.';
+						median = '.';
+						p75 = '.';
+						max = '.';
+		    		end;
+				%end;
+
+				%if %eval(&s.>1) %then %do;
+	    			if overall_total >0 then do;
+		    			if total_count = 0 then do;
+							mean = 'NaN';
+						 	std = 'NaN';
+
+							min = 'NaN';
+							p25 = 'NaN';
+							median = 'NaN';
+							p75 = 'NaN';
+							max = 'NaN';
+		    			end;
+					end;
+					else do;
+		    			if total_count = 0 then do;
+							mean = '.';
+						 	std = '.';
+
+							min = '.';
+							p25 = '.';
+							median = '.';
+							p75 = '.';
+							max = '.';
+		    			end;
+					end;
+				%end;
+
+				drop _: ;
+			run;
+
+		%end; /*continuous tables*/
+
+	
 	%end; /*loop through each tablesub*/
 
     /*----------------------------------------------------------------------------------------------*/
