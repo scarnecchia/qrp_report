@@ -92,7 +92,7 @@
 ***************************************************************************************************;
 
     /*ReportType T1 and T2L1*/
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+    %if %sysfunc(prxmatch(m/T1|T2L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  

@@ -85,33 +85,14 @@
 		%end;
 	quit;
       
-	%let censor_strat = &censor_strat. censorcat_sort;
+	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  
+		%let censor_strat = &censor_strat. censorcat_sort;
+	%end;
 	%if %index(&censor_strat.,agegroup) > 0 %then %do; %let censor_strat = &censor_strat. agegroupnum; %end;
 	
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
+	%else %if &censordataset. = t5censor %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec);
 	%else %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend);
-      
-***** dowe *****;
-%put &censor_distribution.;
-%put &censdays_value_level.;
-%put &censor_strat.;
-%put &censor_overall_level.;
-%put &censorreason.;
-
-%if %index(&tables.,T3) > 0 %then %do;
-	%put &censorreason_t3.;
-%end;
-
-%let ext=c;
-%if &censordataset. = t2followuptime %then %do; %let ext=f; %end; 
-
-data output.a1_tablefile_&ext.;
- set tablefile;
-run;
-data output.a2_tablefile_&ext.;
- set tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
-run;
-***** dowe *****;  
 
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
@@ -128,15 +109,6 @@ run;
    	 output out = censor_all (drop = _:) sum=;
    run;
    
-***** dowe *****;
-data output.c_agg_&censordataset._&ext.;
- set agg_&censordataset.;
-run; 
-data output.d_censor_all_&ext.;
- set censor_all;
-run;
-***** dowe *****;
-   
    %if &stratifybydp. = Y %then %do;
      /* Aggregate by DP */
      proc summary data = agg_&censordataset. (where=(level in (&censdays_value_level.))) nway missing;
@@ -144,12 +116,6 @@ run;
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
      run;
-   
-***** dowe *****;
-data output.e_censor_dps_&ext.;
- set censor_dps;
-run;
-***** dowe *****;
    %end;
  
    /* Stack together*/
@@ -162,12 +128,6 @@ run;
 	     dpidsiteid = "ALL";
 	   end;
    run;
-   
-***** dowe *****;
-data output.f_censor_data_&ext.;
- set censor_data;
-run;
-***** dowe *****;
  
  /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
@@ -187,12 +147,6 @@ run;
  	   	 select distinct level, dpidsiteid, group, runid
  	   	 from censor_data;
  	   quit;
-   
-***** dowe *****;
-data output.g_unique_groups_&ext.;
- set unique_groups;
-run;
-***** dowe *****;
  	   	   
  	   data _stats_;
  	   	 set unique_groups;
@@ -209,12 +163,6 @@ run;
  	   	   %end;
 	     %end;
  	   run; 
-   
-***** dowe *****;
-data output.h_stats__&ext.;
- set _stats_;
-run;
-***** dowe *****;
 
 	 %end;
 			  
@@ -245,12 +193,6 @@ run;
  		    								q3 = q3
  		    								max = max;
  		    run;
-   
-***** dowe *****;
-data output.i_stats_&cen_stat._&ext.;
- set _stats_&cen_stat.;
-run;
-***** dowe *****;
  		    
  		    /* Create indicator variable to show which statistics are associated with which censor reason */ 
  		    data _stats_&cen_stat.;
@@ -263,12 +205,6 @@ run;
  		        table_name = "&cen_stat.";
  		      %end;
  		    run;
-   
-***** dowe *****;
-data output.j_stats_&cen_stat._&ext.;
- set _stats_&cen_stat.;
-run;
-***** dowe *****;
 
  		 %end; /* censor_distribution */
  		%end; /* checksum */
@@ -279,12 +215,6 @@ run;
  	   set _stats_:;
  	   recnum=_n_;
       run; 
-   
-***** dowe *****;
-data output.k_statsdups_&ext.;
- set _statsdups;
-run;
-***** dowe *****;
  
    /* This step produces unique rows per DP, group and table. This avoids dropping any required missing rows */
      proc sql noprint;
@@ -294,12 +224,6 @@ run;
  	   group by runid, dpidsiteid, group, table_name
  	   having recnum=max(recnum);
  	 quit;
- **** ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ****; 
-***** dowe *****;
-data output.l_stats_&ext.;
- set _stats;
-run;
-***** dowe *****;
  	
    /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
@@ -368,23 +292,6 @@ run;
 	   on a.group = e.group
 	   where not missing(censdays_value_cat);
   	 quit;
-   
-***** dowe *****;
-%if &labelfileexists. = Y %then %do;
-	data output.m1_labelfile_&ext.;
-	 set labelfile;
-	run;
-%end;
-data output.m2_groupsfile_&ext.;
- set groupsfile;
-run;
-data output.n_censor_data_den_&ext.;
- set censor_data_den;
-run;
-data output.o_&censordataset._&ext.;
- set &censordataset.;
-run;
-***** dowe *****;
  
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
    	 data &censordataset. (drop=censdays_value_cat);
@@ -451,34 +358,16 @@ run;
    	   format epi_tot_pct percent10.1;
    	 run;
    
-***** dowe *****;
-data output.p_&censordataset._&ext.;
- set &censordataset.;
-run;
-***** dowe *****;
-   
    	 %if "&censor_distribution" = "Y" %then %do;
    	    proc sort data = &censordataset. nodupkey;
    		  by _all_;
    	    run;
-   
-***** dowe *****;
-data output.q1_&censordataset._&ext.;
- set &censordataset.;
-run;
-***** dowe *****;
 
    	 %end;
    
    	 proc sort data=&censordataset.;
    	    by order dpidsiteid censorcat_sort table_name;
    	 run;
-   
-***** dowe *****;
-data output.q2_&censordataset._&ext.;
- set &censordataset.;
-run;
-***** dowe *****;
  
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
