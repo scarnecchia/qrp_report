@@ -527,6 +527,128 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
+
+    /*********************************************************************************************/
+    /* Type 1 and 2 summary tables                                                               */
+    /*********************************************************************************************/
+
+
+        /*****************************************************************************************/
+        /* Type 1 and 2 censor tables                                                            */
+        /*****************************************************************************************/
+        %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&tdatasetlist.)) > 0 %then %do;
+
+            %macro t1t2censortoc(tablename=, title=);
+                %let tableidlist=;
+                proc sql noprint;
+                    select distinct table into: tableidlist separated by ' '
+                    from tablefile(where=(dataset in ("&tablename.")));
+                quit;
+
+                %if %str("&tableidlist") ne %str("") %then %do;
+                %do t = 1 %to %sysfunc(countw(&tableidlist.));
+                    %let tableid = %scan(&tableidlist., &t.);
+                    %let stratificationorder = 0;
+                    proc sql noprint;
+                        select max(stratificationorder) into: stratificationorder
+                        from tablefile(where=(dataset in ("&tablename.") and table = "&tableid"));
+                    quit;
+
+                   /*counter for determining table letter*/
+                   %if %eval(&stratificationorder. = 1) %then %let tablecount = 0;
+                   %else %let tablecount = 1;
+
+                    %do st = 1 %to &stratificationorder.;
+                        data _null_;
+                            set tablefile(where=(dataset in ("&tablename.") and table = "&tableid" and stratificationorder = &st.));
+                            call symputx('tabletitle', tabletitle);
+                        run;
+                     
+                        %tableletter();
+                        %if &tableid. = T1 %then %do;
+                        %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                        caption=%quote(Summary of Time to End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                        %end;
+                        %else %if &tableid. = T2 %then %do;
+                        %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                        caption=%quote(Summary of Reasons for End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                        %end;
+                        %else %if &tableid. = T3 & %eval(&st.=1) %then %do;
+
+                            /*loop through each reason for censoring and within that - loop through stratificationorder*/
+                            %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                                %let reason = %scan(&defaultcensororder., &c.);
+                                /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                                data chktable;
+                                    set &tablename.(where=(table_name="&reason."));
+                                run;
+                                %isdata(dataset=chktable);
+                                %if %eval(&nobs.>0) %then %do;
+
+                                /*set table letter counter - need to check # of stratifications requested for censor reason*/
+                                proc sql noprint;
+                                    select count(distinct stratificationorder) into: reasonstratificationorder
+                                    from tablefile
+                                    where dataset in ("&tablename.") and table = "&tableid" and findw(censorreason, "&reason.")>0;
+                                quit;
+
+                                %if %eval(&reasonstratificationorder. = 1) %then %let tablecount = 0;
+                                %else %let tablecount = 1;
+
+                                /*loop through each stratification*/
+                                %do t3st = 1 %to &stratificationorder.;
+                                    %let censorreasontable = N;
+                                    data _null_;
+                                        set tablefile(where=(dataset in ("&tablename.") and table = "T3" and stratificationorder = &t3st.));
+                                        call symputx('tabletitle', tabletitle);
+                                        /*check if censoring reason requested*/ 
+                                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                                    run;
+
+                                    %if &censorreasontable. = Y %then %do;
+                                    %tableletter();
+                                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                                    caption=%quote(Summary of Time to End of &title. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                    %end; /*censor reason requested*/
+                                %end; /*loop through stratification*/
+
+                                proc datasets nowarn noprint lib=work;
+                                    delete chktable;
+                                quit;
+
+                                /*after each censor reason upnumber table*/
+                                %let tablenum = %eval(&tablenum + 1);
+                                %end; /*dataset exists*/
+                             %end; /*censor reason loop*/
+                        %end; /*T3*/
+                    %end; /*loop through stratifications*/
+
+                    /*if table = T1 or T2 - upnumber table*/
+                    %if %sysfunc(prxmatch(m/T1|T2/i,&tableid.)) > 0 %then %do;
+                    %let tablenum = %eval(&tablenum + 1);
+                    %end;
+                %end; /*loop through each table*/
+                %end; /*table requested*/
+            %mend;
+     
+            %t1t2censortoc(tablename=t2followuptime, title=At-Risk Period);
+            %t1t2censortoc(tablename=t&typenum.censor, title=Observable Data);
+        %end; /*t1censor and t2censor tables*/
+
+
+    /*********************************************************************************************/
+    /* Type 5 summary tables                                                                     */
+    /*********************************************************************************************/
+
+
+        /*****************************************************************************************/
+        /* Type 5 censor tables                                                                  */
+        /*****************************************************************************************/
+
+
+
+
+
     /*********************************************************************************************/
     /*   Code Distribution Tables                                                                */
     /*********************************************************************************************/ 

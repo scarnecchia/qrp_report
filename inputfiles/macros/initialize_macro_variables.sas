@@ -103,7 +103,7 @@
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
             cens_event_label cens_switch1_label cens_switch2_label;
-    %let reporttitle = Exposure of Interest;
+    %let reporttitle = Exposures of Interest;
 	%let labelfileexists = N;		
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
@@ -115,6 +115,10 @@
     %let cens_event_label =Occurence of event;
     %let cens_switch1_label =First switch; 
     %let cens_switch2_label =Second switch; 
+
+    /*censor reasons*/
+    %global defaultcensororder;
+    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend;
 
     /*Age stratification format */
     %global agefmt;
