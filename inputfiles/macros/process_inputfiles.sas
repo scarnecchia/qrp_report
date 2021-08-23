@@ -593,6 +593,8 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
+            /*set reporttile if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
         run;
 
         /* Determine length of label based off input file */
@@ -604,8 +606,7 @@
             call symputx('label_length',length);
         run;
 		
-		%let labelfileexists = Y;
-		
+		%let labelfileexists = Y;		
     %end;
 
 /***************************************************************************************************
