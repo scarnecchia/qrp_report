@@ -51,7 +51,7 @@
      if not missing(levelid2) then do;
        call symputx('censor_distribution','Y');
      end;
-    run;		
+    run;	
    
 	proc sql noprint;
 		select "'"||strip(levelid12)||"'" into: censdays_value_level separated by ','
@@ -84,6 +84,20 @@
 			from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
 		%end;
 	quit;
+	
+	/* Identify inque variable list for stratification */
+	%let numstrat = %sysfunc(countw(&censor_strat.,%str( )));
+
+	data _unique_strat;
+	%do n = 1 %to &numstrat.;
+	  strat = "%scan(&censor_strat,&n.,%str( ))"; output;
+	%end;
+	run;
+
+	proc sql;
+	  select distinct(strat) into: censor_strat separated ' '
+      from _unique_strat;
+	quit;
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  
 		%let censor_strat = &censor_strat. censorcat_sort;
@@ -96,15 +110,16 @@
 
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
-     delete _censor_strat; 
+     delete _unique_strat; 
    quit; 
+   
  /*--------------------------------------------------------------------------------------------
  	Aggregate by censor reason and stratifications.
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
    --------------------------------------------------------------------------------------------*/  
    /* Aggregate data across all DPs */
    proc summary data = agg_&censordataset. (where=(level in (&censdays_value_level.))) nway missing;
-   	 class runid level group &censor_strat. ;
+   	 class runid group &censor_strat. ;
    	 var episodes &censorreason.;
    	 output out = censor_all (drop = _:) sum=;
    run;
@@ -112,7 +127,7 @@
    %if &stratifybydp. = Y %then %do;
      /* Aggregate by DP */
      proc summary data = agg_&censordataset. (where=(level in (&censdays_value_level.))) nway missing;
-      class runid dpidsiteid level group &censor_strat.;
+      class runid dpidsiteid group &censor_strat.;
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
      run;
@@ -133,7 +148,7 @@
    proc datasets lib=work nowarn nolist noprint;
      delete censor_all censor_dps; 
    quit;
-    
+   
  /*--------------------------------------------------------------------------------------------
  	Calculate summary statistics to merge back onto aggregate data                                                   
    --------------------------------------------------------------------------------------------*/
@@ -144,7 +159,7 @@
 	%if "&censor_distribution" ne "Y" %then %do;
  	   proc sql noprint;
  	   	 create table unique_groups as
- 	   	 select distinct level, dpidsiteid, group, runid
+ 	   	 select distinct dpidsiteid, group, runid
  	   	 from censor_data;
  	   quit;
  	   	   
@@ -181,7 +196,7 @@
          %if "&censor_distribution" = "Y" %then %do;
  		    proc means data= censor_data nway missing noprint classdata=censor_data;
  		    	var censdays_value;
- 		    	class runid dpidsiteid group level ;
+ 		    	class runid dpidsiteid group;
  		    	freq &cen_stat.;
  		    	where not missing(censdays_value);
  		    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
@@ -229,6 +244,12 @@
       proc datasets lib=work nowarn nolist noprint;
         delete _stats_: _statsdups unique_groups; 
       quit;	
+	  
+   /* Remove censdays_value from censor_strat list when censor_distribution is Y */
+     %if "&censor_distribution" = "Y" %then %do; 
+       %let censor_strat = %sysfunc(tranwrd(&censor_strat., %str(censdays_value ), %str()));
+	   %Put censor strat = &censor_strat.;
+     %end;
   	
    /* Calculate denominators and percentage totals, joining summary stats back to aggregate data */
   	 proc sql noprint;
@@ -254,7 +275,7 @@
 			%end; 
   	   	    from censor_data %if "&censor_distribution" = "Y" %then %do; (drop=censdays_value) %end; a
   	   	    /* counts need to be grouped by user specified stratas */
-  	   	    group by a.runid, a.dpidsiteid, a.group, a.level) as a;
+  	   	    group by a.runid, a.dpidsiteid, a.group %if %str("&censor_strat") ne %str("") %then %do; ,a.%sysfunc(tranwrd(&censor_strat.,%str( ),%str( ,a.))) %end;) as a;
  	 
   	   create table &censordataset. as
   	   select distinct a.*, 
@@ -362,7 +383,6 @@
    	    proc sort data = &censordataset. nodupkey;
    		  by _all_;
    	    run;
-
    	 %end;
    
    	 proc sort data=&censordataset.;
