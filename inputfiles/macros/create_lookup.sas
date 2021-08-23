@@ -133,6 +133,10 @@
 		claim_level = "Episode"; descr = "Information: Episodes excluded for"; report_descr = "Met inclusion and exclusion criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the cumulative dose criteria"; report_descr = "Met cumulative dose criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the cumulative dose criteria"; report_descr = "Met cumulative dose criteria"; output;
+		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the minimum current filled daily dose criteria"; report_descr = "Met minimum current filled daily dose criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the minimum current filled daily dose criteria"; report_descr = "Met minimum current filled daily dose criteria"; output;
+		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the maximum current filled daily dose criteria"; report_descr = "Met maximum current filled daily dose criteria"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the maximum current filled daily dose criteria"; report_descr = "Met maximum current filled daily dose criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode that meets HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Member"; descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
