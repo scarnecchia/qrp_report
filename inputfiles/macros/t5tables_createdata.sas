@@ -412,7 +412,7 @@
 
 			    data table_&disttableid.a;
                     set table_&disttableid.a
-				    &disttableid._1 (where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_count mean std min p25 median p75 max);
+				    &disttableid._1 (where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_count mean_char std_char min_char p25_char median_char p75_char max_char);
                 run;
 
 			    *Retrieve N Overall;
@@ -421,18 +421,22 @@
 				    select x.*
 					       , y.total_count as overall_total
                            , y.total_count_char as overall_count_char
-						   , y.mean as total_mean
-						   , y.std as total_std
-						   , y.min as total_min
-						   , y.p25 as total_p25
-						   , y.median as total_median
-						   , y.p75 as total_p75
-						   , y.max as total_max
+						   , y.mean_char as total_mean
+						   , y.std_char as total_std
+						   , y.min_char as total_min
+						   , y.p25_char as total_p25
+						   , y.median_char as total_median
+						   , y.p75_char as total_p75
+						   , y.max_char as total_max
     				from table_&disttableid.a as x,
     					 &disttableid._1 as y
     				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid
-					order by dpidsiteid, runid, group, &tablesub.;
+					order by dpidsiteid, runid, group/*, &tablesub.*/;
     			quit;
+
+				proc sort data = table_&disttableid.a;
+				by dpidsiteid runid group &tablesub.;
+				run;
 
 			%end;
 
@@ -443,53 +447,66 @@
 
 				 total_count_char = strip(put(total_count, comma12.0));
 
-				 if missing(mean)=1 then mean = strip(put(_mean, comma12.1));
-				 if missing(std)=1 then std = strip(put(_p25, comma12.1));
+				 %if %eval(&s.=1) %then %do;
+					 mean_char = strip(put(_mean, comma12.1));
+					 std_char = strip(put(_p25, comma12.1));
 
-				 if missing(min)=1 then min = strip(put(_min, comma12.0));
-				 if missing(p25)=1 then p25 = strip(put(_p25, comma12.0));
-				 if missing(median)=1 then median = strip(put(_median, comma12.0));
-				 if missing(p75)=1 then p75 = strip(put(_p75, comma12.0));
-				 if missing(max)=1 then max = strip(put(_max, comma12.0));
+					 min_char = strip(put(_min, comma12.0));
+					 p25_char = strip(put(_p25, comma12.0));
+					 median_char = strip(put(_median, comma12.0));
+					 p75_char = strip(put(_p75, comma12.0));
+					 max_char = strip(put(_max, comma12.0));
+				 %end;
 
-                format total_count_char $15.;
+				 %if %eval(&s.>1) %then %do;
+					 if missing(mean_char)=1 then mean_char = strip(put(_mean, comma12.1));
+					 if missing(std_char)=1 then std_char = strip(put(_p25, comma12.1));
+
+					 if missing(min_char)=1 then min_char = strip(put(_min, comma12.0));
+					 if missing(p25_char)=1 then p25_char = strip(put(_p25, comma12.0));
+					 if missing(median_char)=1 then median_char = strip(put(_median, comma12.0));
+					 if missing(p75_char)=1 then p75_char = strip(put(_p75, comma12.0));
+					 if missing(max_char)=1 then max_char = strip(put(_max, comma12.0));
+				 %end;
+
+                format total_count_char $15. mean_char std_char p25_char median_char p75_char max_char $12.;
 
 				%if %eval(&s.=1) %then %do;
 		    		if total_count = 0 then do;
-						mean = '.';
-						std = '.';
+						mean_char = '.';
+						std_char = '.';
 
-						min = '.';
-						p25 = '.';
-						median = '.';
-						p75 = '.';
-						max = '.';
+						min_char = '.';
+						p25_char = '.';
+						median_char = '.';
+						p75_char = '.';
+						max_char = '.';
 		    		end;
 				%end;
 
 				%if %eval(&s.>1) %then %do;
 	    			if overall_total >0 then do;
 		    			if total_count = 0 then do;
-							mean = 'NaN';
-						 	std = 'NaN';
+							mean_char = 'NaN';
+						 	std_char = 'NaN';
 
-							min = 'NaN';
-							p25 = 'NaN';
-							median = 'NaN';
-							p75 = 'NaN';
-							max = 'NaN';
+							min_char = 'NaN';
+							p25_char = 'NaN';
+							median_char = 'NaN';
+							p75_char = 'NaN';
+							max_char = 'NaN';
 		    			end;
 					end;
-					else do;
+					if overall_total = 0 then do;
 		    			if total_count = 0 then do;
-							mean = '.';
-						 	std = '.';
+							mean_char = '.';
+						 	std_char = '.';
 
-							min = '.';
-							p25 = '.';
-							median = '.';
-							p75 = '.';
-							max = '.';
+							min_char = '.';
+							p25_char = '.';
+							median_char = '.';
+							p75_char = '.';
+							max_char = '.';
 		    			end;
 					end;
 				%end;
@@ -651,6 +668,7 @@
     		%addlabelstodisttables(data=&cattableid._&cattablestratorder., tablesub=&tablesub.);
     	%end;
     	%if %eval(&disttablestratorder.>0) %then %do;
+    		%addlabelstodisttables(data=&disttableid._&disttablestratorder., tablesub=&tablesub.);
     	%end;
     %end;
 
