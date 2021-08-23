@@ -592,6 +592,7 @@
     		runid = lowcase(runid);
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
+            labelvar = lowcase(labelvar);
         run;
 
         /* Determine length of label based off input file */
@@ -602,8 +603,9 @@
             set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
         run;
-
-        %let labelfileexists = Y;
+		
+		%let labelfileexists = Y;
+		
     %end;
 
 /***************************************************************************************************
@@ -722,6 +724,18 @@
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                        /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			length censorreason $85;
+			%if &typenum. = 4 | &typenum. = 3 %then %do;
+			  call missing(censorreason);
+			%end;
+			%else %do;
+			  if missing(censorreason) then do;
+			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
+				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+			  end;
+			  else censorreason = lowcase(censorreason);
+			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
             tablesubstrat=lowcase(tablesubstrat);
@@ -817,6 +831,7 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+						 , table.censorreason
                          , table.categories
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2

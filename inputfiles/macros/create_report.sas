@@ -92,7 +92,7 @@
 ***************************************************************************************************;
 
     /*ReportType T1 and T2L1*/
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+    %if %sysfunc(prxmatch(m/T1|T2L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  
@@ -105,7 +105,17 @@
           %if &reporttable. = t2conc %then %do;
             %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
-	   %end;
+
+          /*Censor tables - Types 1, 2, and 5*/
+          %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime|t5censor/i,&reporttable.)) > 0 %then %do;
+            proc sql noprint;
+                select distinct quote(strip(table)) into: censortablelist separated by ' '
+                from tablefile(where=(dataset="&reporttable."));
+            quit;
+            %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
+          %end;
+
+       %end;
     %end;
 
     /*ReportType T5*/

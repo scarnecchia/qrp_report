@@ -6,11 +6,13 @@
 * Created (mm/dd/yyyy): 01/20/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro imports and aggregates the following tables relevant to report:
-
-*			-[RUNID]_t1_cida.sas7bdat 
+* PURPOSE: The macro imports and aggregates tables produced by QRP
+*
+*
+*  Program inputs:                                                                                   
+* 			-[RUNID]_t1_cida.sas7bdat 
 *			-[RUNID]_censor_cida.sas7bdat 
-
+*
 *			-[RUNID]_t2_cida.sas7bdat 
 *			-[RUNID]_t2_followuptime_cida.sas7bdat 
 *			-[RUNID]_censor_cida.sas7bdat 
@@ -18,20 +20,21 @@
 *			-[RUNID]_t2_multevent.sas7bdat 
 *			-[RUNID]_t2_epigap.sas7bdat 
 *			-[RUNID]_t2_overlap.sas7bdat 
-
+*
 *			-[RUNID]_psdistribution_[LOOK].sas7bdat 
-
+*
 *			-[RUNID]_t4_cida_preg.sas7bdat 
 *			-[RUNID]_t4_cida_preg_gestwk.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
-
+*
 *			-[runid]_t5_cida_disp_by_daysupp
+*           -[runid]_t5_cida_dose
 *			-[runid]_t5_cida_episdur
 *			-[runid]_t5_cida_episdur_censor
 *			-[runid]_t5_cida_gaps
 *			-[runid]_t5_cida_firsteps
-
+*
 *			-[runid]_t6_utilcounts
 *     		-[runid]_t6_trendcounts
 *			-[runid]_t6_utildispstats
@@ -46,19 +49,19 @@
 *			-[RUNID]_distindexmap.sas7bdat
 *
 *			-[RUNID]_attrition.sas7bdat
-*		  -[RUNID]_mil_attrition.sas7bdat
-*	    -[RUNID]_adjusted_attrition.sas7bdat
-*
-*  Program inputs:                                                                                   
-*  	-
+*		    -[RUNID]_mil_attrition.sas7bdat
+*	        -[RUNID]_adjusted_attrition.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 *  	-
 * 
 *  PARAMETERS:        
-
+*
+*
 *  Programming Notes:                                                                                
-*                                                                           
+*    - Contains macro %agg_report which loops through each DP, reads in specified file, output
+*      dataset to MSOCDATA, and applies stratification formats if requested 
+* 
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -300,6 +303,9 @@
 			%end;
 			%if %index(&datasetlist.,t5disp) > 0 %then %do;
 			  %agg_report(infile=t5_cida_disp_by_daysupp, outfile=agg_t5disp, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
+			%end;
+			%if %index(&datasetlist.,t5dose) > 0 %then %do;
+			  %agg_report(infile=t5_cida_dose, outfile=agg_t5dose, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
 			%if %index(&datasetlist.,t5gaps) > 0 %then %do;
 			  %agg_report(infile=t5_cida_gaps, outfile=agg_t5gaps, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
