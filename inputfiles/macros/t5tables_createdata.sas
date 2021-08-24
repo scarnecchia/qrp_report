@@ -145,9 +145,9 @@
         if a then dpidsiteid = 'all';
     run;
 
-    /*----------------------------------------------------------------------------------------------*/
-    /* Compute overall (required - already checked in process_inputifles  and stratifiation metrics */
-    /*----------------------------------------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Compute overall (required - already checked in process_inputfiles  and stratification metrics */
+    /*-----------------------------------------------------------------------------------------------*/
 
     /*Loop through each tablesub*/
     %do s = 1 %to %sysfunc(countw(&tablesublist., '|'));
