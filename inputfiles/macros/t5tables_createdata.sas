@@ -391,10 +391,6 @@
         /*Continous var metrics*/
         %if "&disttableid." ne "" %then %do;
 
-		data output._t5data_summed_&disttableid.;
-		set _t5data_summed;
-		run;
-
 			proc means data=_t5data_summed (where=(level in ("&levelid2."))) noprint nway;
 			var &catvar.;
 			freq &countvar.;
