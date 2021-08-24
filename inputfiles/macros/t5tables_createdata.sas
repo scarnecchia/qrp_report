@@ -118,14 +118,6 @@
     /* Aggregate data                                                                             */
     /*--------------------------------------------------------------------------------------------*/
 
-	**Defensive coding for gap analyses;
-	%if &disttableid. = T11 or &disttableid. = T12 or &disttableid. = T13 %then %do;
-		data &dataset.;
-		set &dataset.;
-		if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
-		run;
-	%end;
-
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
 		class runid group level &stratvars. &catvar. &catvarsort. / missing;
@@ -443,8 +435,7 @@
 						   , y.max_char as total_max
     				from table_&disttableid.a as x,
     					 &disttableid._1 as y
-    				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid
-					order by dpidsiteid, runid, group/*, &tablesub.*/;
+    				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid;
     			quit;
 
 				proc sort data = table_&disttableid.a;
@@ -522,9 +513,12 @@
 							max_char = '.';
 		    			end;
 					end;
+
+					drop total_mean total_std total_min total_max total_p25 total_p75 total_median;
 				%end;
 
-				drop _: ;
+				if total_count = 1 then std_char = 'NaN';
+
 			run;
 
 		    proc datasets nowarn noprint lib=work;
