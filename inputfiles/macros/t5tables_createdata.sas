@@ -114,6 +114,14 @@
     /* Aggregate data                                                                             */
     /*--------------------------------------------------------------------------------------------*/
 
+	**Defensive coding for gap analyses;
+	%if &disttableid. = T11 or &disttableid. = T12 or &disttableid. = T13 %then %do;
+		data &dataset.;
+		set &dataset.;
+		if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
+		run;
+	%end;
+
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
 		class runid group level &stratvars. &catvar. &catvarsort. / missing;
@@ -174,7 +182,8 @@
         %else %do;
             %if %index(&tablesub., agegroup)>0 %then %let tablesub = &tablesub. agegroupnum;
             %let dpwhere = and dpidsiteid = 'all';
-        %end;   
+        %end;  
+ 
 
     	/*Extract column 1: Total*/
     	proc sort data=_t5data_summed out=_total_bydp(rename=&countvar.=total_count keep=dpidsiteid runid group &tablesub. &countvar.);
@@ -381,6 +390,10 @@
 
         /*Continous var metrics*/
         %if "&disttableid." ne "" %then %do;
+
+		data output._t5data_summed_&disttableid.;
+		set _t5data_summed;
+		run;
 
 			proc means data=_t5data_summed (where=(level in ("&levelid2."))) noprint nway;
 			var &catvar.;
