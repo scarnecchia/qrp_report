@@ -80,6 +80,40 @@
                              disttableid=T10,
                              catvarsort=);
 	%end;
+	
+	*********************;
+    *** Gap analysis ****;
+    *********************;
+
+	%if %sysfunc(prxmatch(m/T11\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=1,
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T11,
+                             catvarsort=);
+	%end;
+
+	%if %sysfunc(prxmatch(m/T12\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=(gapnum <=1),
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T12,
+                             catvarsort=);
+	%end;
+
+	%if %sysfunc(prxmatch(m/T13\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=(gapnum >=2),
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T13,
+                             catvarsort=);
+	%end;
 
     *********************;
     *** Dose analysis ***;
