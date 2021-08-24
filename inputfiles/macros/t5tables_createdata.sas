@@ -97,6 +97,10 @@
 	%if %eval(&nobs.<1) %then %do;
 		%let disttableid = ;
 	%end;
+
+	proc datasets nowarn noprint lib=work;
+    delete _tablecheck:;
+	quit;
  
     /*dedup stratvars list*/
     %if %str("&tablesub") ne %str("") %then %do;
@@ -145,9 +149,9 @@
         if a then dpidsiteid = 'all';
     run;
 
-    /*-----------------------------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------------------------*/
     /* Compute overall (required - already checked in process_inputfiles  and stratification metrics */
-    /*-----------------------------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------------------------*/
 
     /*Loop through each tablesub*/
     %do s = 1 %to %sysfunc(countw(&tablesublist., '|'));
@@ -458,7 +462,7 @@
 
 				 %if %eval(&s.=1) %then %do;
 					 mean_char = strip(put(_mean, comma12.1));
-					 std_char = strip(put(_p25, comma12.1));
+					 std_char = strip(put(_std, comma12.1));
 
 					 min_char = strip(put(_min, comma12.0));
 					 p25_char = strip(put(_p25, comma12.0));
@@ -469,7 +473,7 @@
 
 				 %if %eval(&s.>1) %then %do;
 					 if missing(mean_char)=1 then mean_char = strip(put(_mean, comma12.1));
-					 if missing(std_char)=1 then std_char = strip(put(_p25, comma12.1));
+					 if missing(std_char)=1 then std_char = strip(put(_std, comma12.1));
 
 					 if missing(min_char)=1 then min_char = strip(put(_min, comma12.0));
 					 if missing(p25_char)=1 then p25_char = strip(put(_p25, comma12.0));
@@ -522,6 +526,10 @@
 
 				drop _: ;
 			run;
+
+		    proc datasets nowarn noprint lib=work;
+            delete table_&disttableid.a table_&disttableid.a2;
+		    quit;
 
 		%end; /*continuous tables*/
 
