@@ -55,29 +55,6 @@
     %let tablesub = ;
     %let tablesublist = ;
 
-    proc sql noprint;
-        select distinct quote(levelid1), quote(levelid2) 
-        into :levellist1 separated by ',',
-             :levellist2 separated by ','
-        from tablefile
-        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
-                        %if %str("&disttableid.") ne %str("") %then %do; "&disttableid" %end;);
-        /*stratification variable list*/
-        select distinct tablesub
-        into :tablesub separated by ' '
-        from tablefile
-        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
-                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
-              and tablesub ne 'overall';
-        /*stratifications to compute*/
-        select distinct tablesub, stratificationorder
-        into :tablesublist separated by '|', :stratorderlist
-        from tablefile
-        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
-                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
-        order by stratificationorder;
-    quit;
-
 	/*Set &cattableid and &disttableid to missing if not requested*/
 	%let table = "&cattableid.","&disttableid.";
 
@@ -101,6 +78,29 @@
 	proc datasets nowarn noprint lib=work;
     delete _tablecheck:;
 	quit;
+
+    proc sql noprint;
+        select distinct quote(levelid1), quote(levelid2) 
+        into :levellist1 separated by ',',
+             :levellist2 separated by ','
+        from tablefile
+        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
+                        %if %str("&disttableid.") ne %str("") %then %do; "&disttableid" %end;);
+        /*stratification variable list*/
+        select distinct tablesub
+        into :tablesub separated by ' '
+        from tablefile
+        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
+                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
+              and tablesub ne 'overall';
+        /*stratifications to compute*/
+        select distinct tablesub, stratificationorder
+        into :tablesublist separated by '|', :stratorderlist
+        from tablefile
+        where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
+                        %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
+        order by stratificationorder;
+    quit;
  
     /*dedup stratvars list*/
     %if %str("&tablesub") ne %str("") %then %do;
