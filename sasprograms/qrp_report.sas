@@ -211,6 +211,9 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/t5tables_createdata.sas";
 %include "&reportroot.inputfiles/macros/t5tables_driver.sas";
 
+/*L1 table output macros*/
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
+
 /*Code distribution macros*/
 %include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
 %include "&reportroot.inputfiles/macros/codedistribution_output.sas"; 
