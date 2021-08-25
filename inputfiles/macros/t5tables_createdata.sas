@@ -99,7 +99,7 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
               and tablesub ne 'overall';
         /*stratifications to compute*/
-        select distinct tablesub
+        select distinct tablesub, order_overall
         into :tablesublist separated by '|', :stratorderlist
         from tablefile
         where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
