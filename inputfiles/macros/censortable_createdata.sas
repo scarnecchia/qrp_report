@@ -359,12 +359,6 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   %if "&censor_distribution" = "Y" %then %do;
-   	      proc sort data = &censordataset. nodupkey;
-   	  	  by _all_;
-   	      run;
-   	   %end;
-	   
    	   proc sort data=&censordataset.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
