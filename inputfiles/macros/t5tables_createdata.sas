@@ -79,6 +79,11 @@
     delete _tablecheck:;
 	quit;
 
+    data tablefile;
+	set tablefile;
+	if tablesub = 'overall' then order_overall=0; else order_overall=1;
+	run;
+
     proc sql noprint;
         select distinct quote(levelid1), quote(levelid2) 
         into :levellist1 separated by ',',
@@ -94,12 +99,12 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
               and tablesub ne 'overall';
         /*stratifications to compute*/
-        select distinct tablesub, stratificationorder
+        select distinct tablesub
         into :tablesublist separated by '|', :stratorderlist
         from tablefile
         where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
-        order by stratificationorder;
+        order by order_overall;
     quit;
  
     /*dedup stratvars list*/
