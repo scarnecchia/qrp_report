@@ -188,7 +188,7 @@
     	run;
 
         /*Group continous var into categories*/
-        %if "&cattableid." ne "" %then %do;
+		%if %eval(&cattablestratorder>0) %then %do;
 
             /*Group continuous variable into categories*/
             %if %str("&catvarsort.") = %str("") %then %do;
@@ -385,7 +385,7 @@
         %end; /*category tables*/
 
         /*Continous var metrics*/
-        %if "&disttableid." ne "" %then %do;
+        %if %eval(&disttablestratorder>0) %then %do;
 
 			proc means data=_t5data_summed (where=(level in ("&levelid2."))) noprint nway;
 			var &catvar.;
