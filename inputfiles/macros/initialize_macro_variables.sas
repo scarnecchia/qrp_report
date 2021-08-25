@@ -100,8 +100,9 @@
     %let numl2comparisons = 0;
 
     /*label file variables */
-    %global labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
+    %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
             cens_event_label cens_switch1_label cens_switch2_label;
+    %let reporttitle = Exposure of Interest;
     %let labelfileexists = N;
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;

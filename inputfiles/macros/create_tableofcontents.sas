@@ -527,6 +527,225 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
+ 
+    /*********************************************************************************************/
+    /* Type 5 summary tables                                                                     */
+    /*********************************************************************************************/
+	%if %str("&reporttype") = %str("T5") %then %do;
+
+        /*****************************************************************************************/
+        /* Type 5 Tables T1-T13                                                                  */
+        /*****************************************************************************************/
+
+        /*Example order of tables:
+          2a: Categorical - overall
+          2b: Continuous - all
+          2c: Categorical - by age group
+          2d: Continuous - by age group */
+ 
+        %macro t5toc(cattableid=, disttableid=, cattitle=, disttitle=);
+
+            /*if both categorical and continuous tables specified, then need to ascertain master order between both tables*/
+            %if %str("&cattableid.") ne %str("") & %str("&disttableid.") ne %str("") %then %do;
+                /*Because a user can select different stratifications for each table need to ascertain a master order from tablefile regardless of whether includeinreport = Y*/
+                /*if user excludes includeinreport = N from file, order may not match SOC standard order of operations */
+                proc sort data=input.&tablefile.(keep=table tablesub where=(table in ("&cattableid","&disttableid"))) out=_temptablefile;
+                    by table;
+                run;
+                data _temptablefile;
+                    set _temptablefile;
+                    by table;
+                    length order 3;
+                    if first.table then order = 1;
+                    else order = order+1;
+                    retain order;
+                run;
+
+                proc sort data=_temptablefile nodupkey;
+                    by tablesub;
+                run;
+                proc sort data=tablefile(keep=table tablesub stratificationorder tabletitle) out=_temptablefile1;
+                    by tablesub; 
+                run;
+
+                *create dataset that maps categorical and continuous tables;
+                data _tempmap;
+                    merge _temptablefile
+                          _temptablefile1(rename=table=cattable rename=stratificationorder=catstratificationorder where=(cattable="&cattableid"))
+                          _temptablefile1(rename=table=disttable rename=stratificationorder=diststratificationorder where=(disttable="&disttableid"));
+                    by tablesub;
+                    if missing(catstratificationorder) &  missing(diststratificationorder) then delete;
+                run;
+
+                proc sort data=_tempmap;
+                    by order ;
+                run;
+            %end;
+            %else %do;
+                data _tempmap;
+                    set tablefile(keep=table tablesub stratificationorder tabletitle 
+                                  where=(table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
+                                                   %if %str("&disttableid.") ne %str("") %then %do; "&disttableid" %end;)));
+                run;
+            %end;
+
+            /*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
+            %isdata(dataset=_tempmap);
+            %let t5tableobs = &nobs.;
+            %let tablecount=1;
+            %do i = 1 %to %eval(&t5tableobs.);
+
+                %let cattablestratorder = 0;
+                %let disttablestratorder = 0;
+
+                data _null_;
+                    set _tempmap;
+                    if _n_ = &i. then do;
+                        if tablesub = 'overall' and "&stratifybydp." = "Y" then call symputx('tabletitle', ', by Data Partner');
+                        else call symputx('tabletitle', tabletitle);
+                        /*Both requested - determine whether to print both tables*/
+                        %if %str("&cattableid.") ne %str("") & %str("&disttableid.") ne %str("") %then %do;
+                            if missing(cattable) | missing(disttable) then call symputx('numtables', 1);
+                            else call symputx('numtables', 2);
+
+                            if missing(cattable)=0 then call symputx('cattablestratorder', catstratificationorder);
+                            if missing(disttable)=0 then call symputx('disttablestratorder', diststratificationorder);
+                        %end;
+                        %else %do;
+                            call symputx('numtables', 1);
+                            /*determine which table*/
+                            if table = "&cattableid" then call symputx('cattablestratorder', stratificationorder);
+                            if table = "&disttableid" then call symputx('disttablestratorder', stratificationorder);
+                        %end;
+                    end;
+                run;
+
+                /*reset table letter counter if only 1 table*/
+                %if %eval(&t5tableobs.=1) & %eval(&numtables.=1) %then %let tablecount=0;
+
+                %if %eval(&cattablestratorder.>0) %then %do;
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                caption=%bquote(&cattitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                %end;
+                %if %eval(&disttablestratorder.>0) %then %do;
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                caption=%bquote(&disttitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                %end;
+            %end;
+          
+            proc datasets nowarn noprint lib=work;
+                delete _temp:;
+            quit;
+
+            %let tablenum = %eval(&tablenum+1);
+        %mend;
+
+        /*T1/T2 - Days Supplied per Dispensing*/
+	    %if %sysfunc(prxmatch(m/T1\b|T2\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=%if %sysfunc(prxmatch(m/T1\b/i,&tablelist.)) > 0 %then %do; T1 %end;,
+               disttableid=%if %sysfunc(prxmatch(m/T2\b/i,&tablelist.)) > 0 %then %do; T2 %end;,
+               cattitle=Categorical Summary of Days Supplied per Dispensing,
+               disttitle=Continuous Summary of Days Supplied per Dispensing); 
+        %end;
+
+        /*T3/T4 - Cumulative episode duration*/
+    	%if %sysfunc(prxmatch(m/T3\b|T4\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=%if %sysfunc(prxmatch(m/T3\b/i,&tablelist.)) > 0 %then %do; T3 %end;,
+               disttableid=%if %sysfunc(prxmatch(m/T4\b/i,&tablelist.)) > 0 %then %do; T4 %end;,
+               cattitle=Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations,
+               disttitle=Continuous Summary of Patients%str(%') Cumulative Treatment Episode Durations); 
+    	%end;
+
+    	/*T5/T6 - Episode duration - all episodes*/
+        %if %sysfunc(prxmatch(m/T5\b|T6\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=%if %sysfunc(prxmatch(m/T5\b/i,&tablelist.)) > 0 %then %do; T5 %end;,
+               disttableid=%if %sysfunc(prxmatch(m/T6\b/i,&tablelist.)) > 0 %then %do; T6 %end;,
+               cattitle=Categorical Summary of All Treatment Episodes,
+               disttitle=Continuous Summary of All Treatment Episodes); 
+    	%end; 
+
+    	/*T7/T8 - Episode duration - first episode*/
+    	%if %sysfunc(prxmatch(m/T7\b|T8\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=%if %sysfunc(prxmatch(m/T7\b/i,&tablelist.)) > 0 %then %do; T7 %end;,
+               disttableid=%if %sysfunc(prxmatch(m/T8\b/i,&tablelist.)) > 0 %then %do; T8 %end;,
+               cattitle=Categorical Summary of First Treatment Episodes,
+               disttitle=Continuous Summary of First Treatment Episodes); 
+    	%end;
+
+    	/*T9/T10 - Episode duration - second and subsequent episodes*/
+    	%if %sysfunc(prxmatch(m/T9\b|T10\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=%if %sysfunc(prxmatch(m/T9\b/i,&tablelist.)) > 0 %then %do; T9 %end;,
+               disttableid=%if %sysfunc(prxmatch(m/T10\b/i,&tablelist.)) > 0 %then %do; T10 %end;,
+               cattitle=Categorical Summary of Second and Subsequent Treatment Episodes,
+               disttitle=Continuous Summary of Second and Subsequent Treatment Episodes); 
+    	%end;
+
+    	/*T11 - All episode gaps*/
+        %if %sysfunc(prxmatch(m/T11\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=,
+               disttableid=T11,
+               cattitle=,
+               disttitle=Continuous Summary of All Treatment Episode Gaps); 
+    	%end;
+    	/*T12 - First episode gap*/
+        %if %sysfunc(prxmatch(m/T12\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=,
+               disttableid=T12,
+               cattitle=,
+               disttitle=Continuous Summary of First Treatment Episode Gaps); 
+    	%end;
+    	/*T13 - Second and subequent episode gaps*/
+        %if %sysfunc(prxmatch(m/T13\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=,
+               disttableid=T13,
+               cattitle=,
+               disttitle=Continuous Summary of Second and Subsequent Treatment Episode Gaps); 
+    	%end;
+
+        /*****************************************************************************************/
+        /* Type 5 censor tables (T14-T17)                                                        */
+        /*****************************************************************************************/
+        
+
+
+        /*****************************************************************************************/
+        /* Type 5 Dose Tables T18-T22                                                            */
+        /*****************************************************************************************/
+        %if %sysfunc(prxmatch(m/T18\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T18,
+               disttableid=,
+               cattitle=Summary of Filled Daily Dose in Each Dispensing,
+               disttitle=); 
+    	%end;
+        %if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T19,
+               disttableid=,
+               cattitle=Summary of Average Filled Daily Dose in Each Treatment Episode,
+               disttitle=); 
+    	%end;
+        %if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T20,
+               disttableid=,
+               cattitle=Summary of Average Filled Daily Dose in Each Patient%str(%')s First Valid Episode,
+               disttitle=); 
+    	%end;
+        %if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T21,
+               disttableid=,
+               cattitle=Summary of Cumulative Filled Dose in All Treatment Episodes,
+               disttitle=); 
+    	%end;
+        %if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T22,
+               disttableid=,
+               cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
+               disttitle=); 
+    	%end;
+
+    %end; /*type 5 tables*/
+     
     /*********************************************************************************************/
     /*   Code Distribution Tables                                                                */
     /*********************************************************************************************/ 
