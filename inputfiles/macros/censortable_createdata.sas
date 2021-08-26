@@ -389,7 +389,7 @@
      %let var_pe = ;
      %if &is_p> 0 %then %let var_pe = Patients;
      %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
-     %let stat_char = min q1 median q3 max mean std;
+     %let stat_char = min q1 median q3 max mean std &pct;
 
      data &censordataset.;
        set &censordataset.;
