@@ -149,7 +149,7 @@
                         if tablesub = 'overall' then call symputx('strat', 'overall');
                         else call symputx('strat', tablesub);
 
-                        /*table T2 - default censor reasons*/
+                        /*table T2 - censor reasons*/
                         %if &tableid. = T2 %then %do;
                         call symputx('t2censorreasons', censorreason);
                         %end;
@@ -248,11 +248,85 @@
         %t1t2censoroutput(tablename=t&typenum.censor, tablenametitle=Observable Data);
     %end;
 
-
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
 /*********************************************************************************************/
 
+    /*****************************************************************************************/
+    /* Type 5 censor tables                                                                  */
+    /*****************************************************************************************/
+
+    %macro t5censoroutput(tableid = , tablename=, first=);
+            %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
+                data _null_;
+                    set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
+                    /*censor reasons*/
+                    call symputx('t2censorreasons', censorreason);
+                run;
+
+                /*counter for determining table letter*/
+                %if &stratifybydp. = Y %then %let tablecount = 1;
+                %else %let tablecount = 0;
+                %tableletter();
+/*                %censortable_output_table2(tablename=&tablename.,*/
+/*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
+/*                                           where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall"),*/
+/*                                           reasonlist= &t2censorreasons.);*/
+                %if &stratifybydp. = Y %then %do;
+                %tableletter();
+/*                %censortable_output_table2(tablename=&tablename.,*/
+/*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),*/
+/*                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall"),*/
+/*                                           reasonlist= &t2censorreasons.);*/
+                %end;
+                %let tablenum = %eval(&tablenum + 1);
+            %end;
+
+            %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
+                /*loop through each reason for censoring*/
+                %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                    %let reason = %scan(&defaultcensororder., &c.);
+                    %let censorreasontable = N;
+
+                    data _null_;
+                        set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
+                        /*check if censoring reason requested*/ 
+                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                    run;
+
+                    %if &censorreasontable. = Y %then %do;
+                    /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                    data chktable;
+                        set &tablename.(where=(table_name="&reason."));
+                    run;
+                    %isdata(dataset=chktable);
+                    %if %eval(&nobs.>0) %then %do;
+                        /*note - table is not stratified by DP*/
+/*                        %censortable_output_table13(tablename=&tablename.,*/
+/*                        title=%quote(Table &tablenum.&tableletter.. Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
+/*                        where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"));*/
+                        %let tablenum = %eval(&tablenum + 1);
+                    %end;
+                    proc datasets nowarn noprint lib=work;
+                        delete chktable;
+                    quit;
+                    %end;
+                %end;
+            %end;
+        %mend;
+
+        %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ));
+        %end;
+        %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ));
+        %end;
+        %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T16, tablename = t5censor, first=);
+        %end;
+        %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T17, tablename = t5censor, first=);
+        %end;
 
 
 ***************************************************************************************************;
