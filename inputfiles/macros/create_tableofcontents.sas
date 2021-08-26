@@ -655,7 +655,7 @@
         /*****************************************************************************************/
         /* Type 5 censor tables                                                                  */
         /*****************************************************************************************/
-        %macro t5censortoc(tableid=, first=);
+        %macro t5censortoc(tableid=, first=, dataset=);
             %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
                 /*counter for determining table letter*/
                 %if &stratifybydp. = Y %then %let tablecount = 1;
@@ -686,7 +686,7 @@
                     %if &censorreasontable. = Y %then %do;
                     /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
                     data chktable;
-                        set t5censor(where=(table_name="&reason." /*** TO DO - add restriction for 1st episode*****/));
+                        set &dataset.(where=(table_name="&reason."));
                     run;
                     %isdata(dataset=chktable);
                     %if %eval(&nobs.>0) %then %do;
@@ -704,16 +704,16 @@
         %mend;
 
         %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
-            %t5censortoc(tableid=T14, first=%str(First ));
+            %t5censortoc(tableid=T14, first=%str(First ), dataset=);
         %end;
         %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
-            %t5censortoc(tableid=T15, first=%str(First ));
+            %t5censortoc(tableid=T15, first=%str(First ), dataset=t5censor_first);
         %end;
         %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
-            %t5censortoc(tableid=T16, first=);
+            %t5censortoc(tableid=T16, first=, dataset=);
         %end;
         %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
-            %t5censortoc(tableid=T17, first=);
+            %t5censortoc(tableid=T17, first=, dataset=t5censor);
         %end;
 
     /*********************************************************************************************/
