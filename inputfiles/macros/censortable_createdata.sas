@@ -368,7 +368,52 @@
    	 proc sort data=&censordataset.;
    	    by order dpidsiteid censorcat_sort table_name;
    	 run;
- 
+
+	 /*missing values T1, T2, T5*/
+	 data _null_;
+       dset=open('&censordataset.');
+       call symput('is_e', varnum(dset,'episodes'));
+       call symput('is_p', varnum(dset,'patients'));
+     run;
+
+     %let var_pe = ;
+     %if &is_p> 0 %then %let var_pe = Patients;
+     %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
+
+     data &censordataset.;
+       set &censordataset.;
+       %do  cr = 1 %to %sysfunc(countw(&censorreason));
+       /*Do not need to check if the variable exists on the dataset because only
+         those created are listed*/
+         %scan(&censorreason, &cr, ' ')_char = put(%scan(&censorreason, &cr, ' '), 8.); 
+
+       if
+         %do pe = 1 %to %sysfunc(countw(&var_pe));
+           %if &pe = 1 %then %do;
+             %scan(&var_pe, &pe, ' ') = . 
+	       %end;
+	       %else %do;
+	         and %scan(&var_pe, &pe, ' ') = . 
+	       %end;
+         %end;
+         then do;
+           %scan(&censorreason, &cr, ' ')_char = "."; 
+       end;
+       else if 
+         %do pe = 1 %to %sysfunc(countw(&var_pe));
+           %if &pe = 1 %then %do;
+             %scan(&var_pe, &pe, ' ') = 0
+	       %end;
+	       %else %do;
+	         or %scan(&var_pe, &pe, ' ') = 0 
+	       %end; 
+         %end;
+         then do;
+           %scan(&censorreason, &cr, ' ')_char = "NaN"; 
+       end;
+     %end;
+  run;
+
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
       delete _stats censor_data:; 
