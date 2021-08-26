@@ -607,6 +607,12 @@
         run;
 		
 		%let labelfileexists = Y;		
+
+        /*Assign user censoring criteria labels*/
+        data _null_;
+            set labelfile(where=(labeltype='censorlabel'));
+            call symputx(cats(labelvar,'_label'), label);
+        run;
     %end;
 
 /***************************************************************************************************
