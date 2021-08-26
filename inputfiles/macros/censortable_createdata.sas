@@ -370,20 +370,26 @@
    	 run;
 
 	 /*missing values T1, T2, T5*/
-	 %let is_e =0;
+     %let is_e =0;
 	 %let is_p =0;
+	 %let pct = ;
 
      proc contents data=&censordataset. out=&censordataset._vars noprint;
 	 quit;
 
 	 proc sql noprint;
-	   select count() into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
-	   select count() into :is_p from &censordataset._vars where lowcase(name) = 'patients';
+	   select count(*) into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
+	   select count(*) into :is_p from &censordataset._vars where lowcase(name) = 'patients';
+	   select distinct name into :pct 
+         separated by ' '
+         from &censordataset._vars 
+         where lowcase(substr(name, length(name) - 3,4)) = "_pct";
 	 quit;
 
      %let var_pe = ;
      %if &is_p> 0 %then %let var_pe = Patients;
      %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
+     %let stat_char = min q1 median q3 max mean std;
 
      data &censordataset.;
        set &censordataset.;
@@ -391,33 +397,42 @@
        /*Do not need to check if the variable exists on the dataset because only
          those created are listed*/
          %scan(&censorreason, &cr, ' ')_char = put(%scan(&censorreason, &cr, ' '), 8.); 
+		 %do st_c = 1 %to %sysfunc(countw(&stat_char));
+           %scan(&stat_char, &st_c, ' ')_char = put(%scan(&stat_char, &st_c, ' '), 8.); 
+		 %end;
 
        if
          %do pe = 1 %to %sysfunc(countw(&var_pe));
            %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = 0 
+             %scan(&var_pe, &pe, ' ') = . 
 	       %end;
 	       %else %do;
-	         and %scan(&var_pe, &pe, ' ') = 0 
+	         and %scan(&var_pe, &pe, ' ') = . 
 	       %end;
          %end;
          then do;
-           %scan(&censorreason, &cr, ' ')_char = "."; 
+           %scan(&censorreason, &cr, ' ')_char = "NaN"; 
+		   %do st_c = 1 %to %sysfunc(countw(&stat_char));
+		     %scan(&stat_char, &st_c, ' ')_char = "NaN";
+		   %end;
        end;
        else if 
          %do pe = 1 %to %sysfunc(countw(&var_pe));
            %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = .
+             %scan(&var_pe, &pe, ' ') = 0
 	       %end;
 	       %else %do;
-	         or %scan(&var_pe, &pe, ' ') = . 
+	         or %scan(&var_pe, &pe, ' ') = 0 
 	       %end; 
          %end;
          then do;
-           %scan(&censorreason, &cr, ' ')_char = "NaN"; 
+           %scan(&censorreason, &cr, ' ')_char = ".";
+           %do st_c = 1 %to %sysfunc(countw(&stat_char));
+		     %scan(&stat_char, &st_c, ' ')_char = ".";
+		   %end; 
        end;
      %end;
-  run;
+   run;
 
    /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
