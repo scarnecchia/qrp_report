@@ -39,6 +39,9 @@
  /*--------------------------------------------------------------------------------------------
  	Identify censor stratification variables                                                      
    --------------------------------------------------------------------------------------------*/
+   /* Table specific user specified censor reasons*/
+   %let censorreason_t3 = ;
+   
    proc sql;
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
      select tablesub
@@ -105,8 +108,13 @@
    %end;
  
    /* Stack together*/
-   data censor_data (drop = censdays_value)
-        censor_data_overall (drop = level);
+   data %if %str(&levels_overall) ne %str() %then %do;
+          censor_data (drop = censdays_value)
+          censor_data_overall (drop = level)
+		%end;
+		%else %do;
+		  censor_data
+		%end;;
      set censor_all (in = a)   
 	 %if &stratifybydp. = Y %then %do;
    	     censor_dps
@@ -114,8 +122,10 @@
        if a then do;
 	     dpidsiteid = "ALL";
 	   end;
-	   if level in (&levels_overall.) then output censor_data_overall; /* Data used for censor reason summary statistics */
-	   else output censor_data; /* Data used for stratification statistics */
+	   %if %str(&levels_overall) ne %str() %then %do;
+	     if level in (&levels_overall.) and not missing(censdays_value) then output censor_data_overall; /* Data used for censor reason summary statistics */
+	     else output censor_data; /* Data used for stratification statistics */
+	   %end;
    run;
  
  /* Clean up work files */
@@ -130,7 +140,7 @@
  	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
 	 
     /* Create a blank table if overall table not requested */
-	%if %index(&tablesubs.,overall) = 0 %then %do;
+	%if %str(&levels_overall) = %str() %then %do;
  	   proc sql noprint;
  	   	 create table unique_groups as
  	   	 select distinct dpidsiteid, group, runid
@@ -158,16 +168,17 @@
  	  Skip over censoring reasons without counts */ 
  	 %do sl = 1 %to %sysfunc(countw(episodes &censorreason_t3., %str( )));
  		%let cen_stat = %scan(episodes &censorreason_t3.,&sl.);
- 		
- 		proc sql noprint;
- 		  select sum(&cen_stat.) into: checksum
- 		  from censor_data_overall;
- 		quit;
- 		
- 		%if &checksum ^= 0 %then %do;
+ 		%if %str(&levels_overall) ne %str() %then %do;
+		
+ 		   proc sql noprint;
+ 		     select sum(&cen_stat.) into: checksum
+ 		     from censor_data_overall;
+ 		   quit;
+ 		   
+ 		   %if &checksum ^= 0 %then %do;
 		 
-        %if %index(&tablesubs.,overall) > 0 %then %do;
- 		    proc means data= censor_data_overall nway missing noprint classdata=censor_data_overall;
+        
+ 		   proc means data= censor_data_overall nway missing noprint classdata=censor_data_overall;
  		    	var censdays_value;
  		    	class runid dpidsiteid group;
  		    	freq &cen_stat.;
@@ -179,10 +190,10 @@
  		    								median = median 
  		    								q3 = q3
  		    								max = max;
- 		    run;
+ 		   run;
  		    
- 		    /* Create indicator variable to show which statistics are associated with which censor reason */ 
- 		    data _stats_&cen_stat.;
+ 		   /* Create indicator variable to show which statistics are associated with which censor reason */ 
+ 		   data _stats_&cen_stat.;
  		      length table_name $12;
  		      set _stats_&cen_stat.;
  		      %if &cen_stat. = episodes %then %do;
@@ -191,31 +202,34 @@
  		      %else %do;
  		        table_name = "&cen_stat.";
  		      %end;
- 		    run;
+ 		   run;
 
- 		 %end; /* overall tablesub */
- 		%end; /* checksum */
+ 		 %end; /* checksum */
+ 		%end; /* overall levels*/
  	 %end; /* censor reasons */
- 	 
-   /* Stack all datasets together with one unique row per censor reason */
- 	  data _stats;
- 	   set _stats_:;
-      run; 
- 	
+	 
+	 /* Stack all datasets together with one unique row per censor reason */
+ 	  %if %str(&levels_overall) ne %str() %then %do;
+ 	    data _stats;
+ 	     set _stats_:;
+        run; 
+ 	  %end;
+	 
    /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
-        delete _stats_: unique_groups; 
+        delete %if %str(&levels_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	  
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data */
       %do cl = 1 %to %sysfunc(countw(&tablesubs.,%str( )));
   	    proc sql noprint;
-  	      create table den&cl. as
+  	      create table den&cl. (drop = level) as
   	      select distinct b.* 
 	                     ,a.epi_tot
   	      	             ,(b.episodes/a.epi_tot)   as epi_tot_pct         format=percent10.1
 	   	                 %do cn= 1 %to &cens_num;
   	      	                %let var = %scan(&censorreason, &cn);
+							,a.&var._tot
   	      	                ,(b.&var/a.epi_tot)     as &var._pct          format=percent10.1
   	      	                ,(b.&var/a.&var._tot)   as &var._reason_pct   format=percent10.1
   	      	             %end;
@@ -225,7 +239,7 @@
 	          (select distinct runid
 	   	           ,dpidsiteid
 	   			   ,group
-	   			   %if "&&tablesub&cl." ne "overall" %then %do; ,censdays_value_cat %end; 
+	   			   %if "&&tablesub&cl." ne "overall" %then %do; ,&&tablesub&cl. %end; 
   	      		       ,sum(episodes) as epi_tot 
   	      		       %do cn = 1 %to &cens_num;
   	      		         %let var = %scan(&censorreason, &cn);
@@ -236,11 +250,11 @@
   	      	           group by runid 
 	   			           ,dpidsiteid 
 	   			           ,group  
-	   					   %if "&&tablesub&cl." ne "overall" %then %do; ,censdays_value_cat %end;) as a
+	   					   %if "&&tablesub&cl." ne "overall" %then %do; ,&&tablesub&cl. %end;) as a
 	   	           on a.runid = b.runid 
 	   	           and a.dpidsiteid = b.dpidsiteid 
 	   	           and a.group = b.group 
-	   	           %if "&&tablesub&cl." ne "overall" %then %do; and a.censdays_value_cat = b.censdays_value_cat %end;;
+	   	           %if "&&tablesub&cl." ne "overall" %then %do; and a.&&tablesub&cl. = b.&&tablesub&cl. %end;;
 	      quit;
 	  %end;
     
@@ -359,7 +373,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset.;
+   	   proc sort data=&censordataset. out = output.&censordataset.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
