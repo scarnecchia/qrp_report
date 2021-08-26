@@ -370,11 +370,16 @@
    	 run;
 
 	 /*missing values T1, T2, T5*/
-	 data _null_;
-       dset=open('&censordataset.');
-       call symput('is_e', varnum(dset,'episodes'));
-       call symput('is_p', varnum(dset,'patients'));
-     run;
+	 %let is_e =0;
+	 %let is_p =0;
+
+     proc contents data=&censordataset. out=&censordataset._vars noprint;
+	 quit;
+
+	 proc sql noprint;
+	   select count() into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
+	   select count() into :is_p from &censordataset._vars where lowcase(name) = 'patients';
+	 quit;
 
      %let var_pe = ;
      %if &is_p> 0 %then %let var_pe = Patients;
@@ -390,10 +395,10 @@
        if
          %do pe = 1 %to %sysfunc(countw(&var_pe));
            %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = . 
+             %scan(&var_pe, &pe, ' ') = 0 
 	       %end;
 	       %else %do;
-	         and %scan(&var_pe, &pe, ' ') = . 
+	         and %scan(&var_pe, &pe, ' ') = 0 
 	       %end;
          %end;
          then do;
@@ -402,10 +407,10 @@
        else if 
          %do pe = 1 %to %sysfunc(countw(&var_pe));
            %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = 0
+             %scan(&var_pe, &pe, ' ') = .
 	       %end;
 	       %else %do;
-	         or %scan(&var_pe, &pe, ' ') = 0 
+	         or %scan(&var_pe, &pe, ' ') = . 
 	       %end; 
          %end;
          then do;
