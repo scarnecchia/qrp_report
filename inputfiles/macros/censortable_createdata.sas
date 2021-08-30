@@ -401,7 +401,7 @@
    	   run;
 	   
    	   proc sort data=&censordataset. out = output.&censordataset.;
-   	      by order dpidsiteid censorcat_sort table_name 
+   	      by order censorcat_sort table_name dpidsiteid
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
 	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
