@@ -431,11 +431,18 @@
        %do  cr = 1 %to %sysfunc(countw(&censorreason));
        /*Do not need to check if the variable exists on the dataset because only
          those created are listed*/
-         %scan(&censorreason, &cr, ' ')_char = put(%scan(&censorreason, &cr, ' '), 8.);
-         %scan(&censorreason, &cr, ' ')_pct_char = put(%scan(&censorreason, &cr, ' ')_pct, percent10.1);
+         %scan(&censorreason, &cr, ' ')_char = strip(put(%scan(&censorreason, &cr, ' '), 8.));
+         %scan(&censorreason, &cr, ' ')_pct_char = strip(put(%scan(&censorreason, &cr, ' ')_pct, percent10.1));
+		 %scan(&censorreason, &cr, ' ')_tot_char = strip(put(%scan(&censorreason, &cr, ' ')_tot, 8.));
+         %scan(&censorreason, &cr, ' ')_tot_pct_char = strip(put(%scan(&censorreason, &cr, ' ')tot_pct, percent10.1));
  
 		 %do st_c = 1 %to %sysfunc(countw(&stat_char));
-           %scan(&stat_char, &st_c, ' ')_char = put(%scan(&stat_char, &st_c, ' '), 8.); 
+		  %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &st_c, ' '))) %then %do;
+             %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 10.8));
+           %end;
+           %else %do;
+               %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 8.));
+           %end; 
 		 %end;
 
        if
@@ -450,6 +457,8 @@
          then do;
            %scan(&censorreason, &cr, ' ')_char = "NaN"; 
 		   %scan(&censorreason, &cr, ' ')_pct_char = "NaN";
+		   %scan(&censorreason, &cr, ' ')_tot_char = "NaN"; 
+		   %scan(&censorreason, &cr, ' ')_tot_pct_char = "NaN";
 		   %do st_c = 1 %to %sysfunc(countw(&stat_char));
 		     %scan(&stat_char, &st_c, ' ')_char = "NaN";
 		   %end;
@@ -467,6 +476,8 @@
          then do;
            %scan(&censorreason, &cr, ' ')_char = ".";
 		   %scan(&censorreason, &cr, ' ')_pct_char = ".";
+		   %scan(&censorreason, &cr, ' ')_tot_char = "."; 
+		   %scan(&censorreason, &cr, ' ')_tot_pct_char = ".";
            %do st_c = 1 %to %sysfunc(countw(&stat_char));
 		     %scan(&stat_char, &st_c, ' ')_char = ".";
 		   %end; 
@@ -474,13 +485,6 @@
      %end;
    run;
 
-   	   proc sort data=&censordataset. out = output.&censordataset.;
-   	      by order dpidsiteid censorcat_sort table_name 
-	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
-	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
-	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
-   	   run;
- 
    /* Clean up work files */
     proc datasets lib=work nowarn nolist noprint;
        delete _stats censor_data:; 
