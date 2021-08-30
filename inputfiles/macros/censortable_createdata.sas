@@ -62,8 +62,8 @@
 	 
 	 /* If T5Censor then acquire categories from the tablefile */  
      %if &censordataset. = t5censor %then %do;
-        select distinct(categories) into: catvar
-		from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
+      select distinct(categories) into: catvar
+		  from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
      %end;
    quit;
 	
@@ -260,7 +260,7 @@
   	      	                ,(b.&var/a.epi_tot)     as &var._pct          format=percent10.1
   	      	                ,(b.&var/a.&var._tot)   as &var._reason_pct   format=percent10.1
   	      	             %end;
-						 ,"&&tablesub&cl." as strat                       format = $8.
+						 ,"&&tablesub&cl." as strat                       length=8 format = $8.
   	      from censor_data (where =(level = &&levels&cl.)) as b
 	      left join 
 	          (select distinct runid
@@ -288,23 +288,15 @@
       data censor_data_den;
         set den:;
       run;
-	
+      
     /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
        delete den:; 
       quit;	
- 	    
-		data output.censor_data_den;
-		set censor_data_den;
-		run;
-		
-		data output.groupsfile;
-		set groupsfile;
-		run;
 		
 	  proc sql noprint;
   	     create table &censordataset. as
-  	     select distinct a.*, 
+  	     select distinct a.*,
   	   		 b.table_name,
   	   		 b.min, 
   	   		 b.q1, 
@@ -313,17 +305,17 @@
   	   		 b.max,
   	   		 b.mean,
   	   		 b.std,
-	  		 e.order
+	  		   e.order
 	  		 %if &labelfileexists. = Y %then %do;
-  	     		   ,case when not missing(c.label) then c.label 
-                 else a.group end as grouplabel
-  	     		   ,case when not missing(d.label) then d.label 
-                 else '' end as headerlabel
-  	   		 %end;
-  	   		 %else %do;
-  	   		   ,a.group as grouplabel
+  	     	 ,case when not missing(c.label) then c.label 
+            else a.group end as grouplabel
+  	     	 ,case when not missing(d.label) then d.label 
+            else '' end as headerlabel
+  	   	 %end;
+  	   	 %else %do;
+  	   	   ,a.group as grouplabel
 	  		   ,'' as headerlabel
-  	   		 %end;
+  	   	 %end;
   	     from censor_data_den a 
 	     left join _stats b
   	     on a.runid = b.runid 
@@ -334,12 +326,12 @@
   	       on a.group = c.group
   	       left join labelfile(where=(labeltype='header')) d
   	       on a.group = d.group
-  	     %end;
+  	   %end;
 	     left join groupsfile e
 	     on a.group = e.group
-	     where not missing(censdays_value_cat);
+	     where not missing(a.censdays_value_cat);
   	   quit;
-	  
+
     /* Clean up work files */
        proc datasets lib=work nowarn nolist noprint;
         delete den:; 
@@ -402,7 +394,7 @@
    	         end;
    	         if missing(&var._pct) then &var._pct = 0;
    	         if missing(epi_tot_pct) then epi_tot_pct = 0;
-   	         drop &var._reason: &var._tot: ;
+   	         drop &var._reason: ;
    	       %end;
 	     %end;
    	     format epi_tot_pct percent10.1;
