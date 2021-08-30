@@ -113,6 +113,54 @@
     %end;
 
 ***************************************************************************************************;
+* Type 5 summary tables                                                      
+***************************************************************************************************;
+	%if %str("&reporttype") = %str("T5") %then %do;	
+		/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
+		%isdata(dataset=t5_tempmap);
+		%let t5tableobs = &nobs.;
+		%do i = 1 %to %eval(&t5tableobs.);
+
+			%let cattabledataset = ;
+			%let distabledataset = ;
+			%let tableorder=0;
+
+			data _null_;
+			 set t5_tempmap;
+				if _n_ = &i. then do;
+					call symputx('numtables', numtables);
+					call symputx('tableorder', tableorder);
+					if missing(cattable)=0 then do;
+						call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
+					end;
+					if missing(disttable)=0 then do;
+						call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
+					end;
+				end;
+			run;
+
+			/*Increment the table number and reset the table letter counter*/
+			%if %eval(&tableorder.=1) %then %do;
+				%if %eval(&i. ^=1) %then %let tablenum = %eval(&tablenum + 1);
+				%let tablecount=1;
+			%end;
+			
+			/*reset table letter counter if only 1 table*/
+			%if %eval(&numtables.=1) %then %let tablecount=0;
+
+			%if %str("&cattabledataset.") ne %str("") %then %do;
+				%tableletter();
+				%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
+			%end;
+			%if %str("&distabledataset.") ne %str("") %then %do;
+				%tableletter();
+				%t5tables_output(dataset=&distabledataset.,reporttype=dist);
+			%end;			
+        %end;		
+		%let tablenum = %eval(&tablenum + 1);
+    %end; 
+
+***************************************************************************************************;
 * Code distribution tables                                                     
 ***************************************************************************************************;
 	%if &output_code_distribution. eq Y %then %do;

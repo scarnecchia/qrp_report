@@ -552,6 +552,7 @@
                 proc sort data=input.&tablefile.(keep=table tablesub where=(table in ("&cattableid","&disttableid"))) out=_temptablefile;
                     by table;
                 run;
+				
                 data _temptablefile;
                     set _temptablefile;
                     by table;
@@ -564,6 +565,7 @@
                 proc sort data=_temptablefile nodupkey;
                     by tablesub;
                 run;
+				
                 proc sort data=tablefile(keep=table tablesub stratificationorder tabletitle) out=_temptablefile1;
                     by tablesub; 
                 run;
@@ -634,7 +636,44 @@
                 caption=%bquote(&disttitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
                 %end;
             %end;
-          
+
+			%isdata(dataset=t5_tempmap);
+			%if %eval(&nobs.>0) %then %do;
+				data t5_tempmap;
+				 set t5_tempmap _tempmap (in=a);
+				  %if %varexist(_tempmap,stratificationorder) = 1 %then %do;
+					  if a and stratificationorder ne . then do;
+						 %if %str("&cattableid.") ne %str("") %then %do;
+							 cattable="&cattableid";
+							 catstratificationorder = stratificationorder;
+						 %end;
+						 %else %if %str("&disttableid.") ne %str("") %then %do;
+							 disttable="&disttableid";
+							 diststratificationorder = stratificationorder;
+						 %end;
+					  end;
+				  %end;
+				run; 
+			%end;
+			%else %do;
+				/*dummy t5_tempmap file*/
+				data t5_tempmap;
+				 set _tempmap;
+				  %if %varexist(_tempmap,stratificationorder) = 1 %then %do;
+					  if stratificationorder ne . then do;
+						 %if %str("&cattableid.") ne %str("") %then %do;
+							 cattable="&cattableid";
+							 catstratificationorder = stratificationorder;
+						 %end;
+						 %else %if %str("&disttableid.") ne %str("") %then %do;
+							 disttable="&disttableid";
+							 diststratificationorder = stratificationorder;
+						 %end;
+					  end;
+				  %end;
+				run; 
+			%end;
+			
             proc datasets nowarn noprint lib=work;
                 delete _temp:;
             quit;
@@ -743,7 +782,31 @@
                cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
                disttitle=); 
     	%end;
-
+			
+		data t5_tempmap;
+		 set t5_tempmap;
+		 length t5order 3;
+		 t5order=_n_;
+		run; 
+			
+		proc sort data = t5_tempmap;
+		by table t5order;
+		run;
+		
+		data t5_tempmap;
+		 set t5_tempmap;
+		 by table;
+		 length numtables tableorder 3;
+		 if first.table and last.table and (cattable = '' or disttable = '') then numtables=1;
+		 else numtables=2;
+		 retain tableorder;
+		 if first.table then tableorder=0;
+		 tableorder+1;
+		run; 
+			
+		proc sort data = t5_tempmap;
+		by t5order table;
+		run;
     %end; /*type 5 tables*/
      
     /*********************************************************************************************/
