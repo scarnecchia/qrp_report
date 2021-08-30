@@ -71,16 +71,20 @@
         style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
-    	columns grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot
+    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot
                  ("^S={background=BGR}Number of Episodes by &cattableheader." censdays_value_cat_format, (episodes epi_tot_pct) ) 
                  %if &continuousmetrics. = Y %then %do; (dummy, (min q1 median q3 max mean std) ) %end;);
 
+        %if &includeheaderrow = Y %then %do; 
+        define headerlabel / group noprint order=data ' ';
+        %end;
+
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data style(column)=[just=L width =1.5in] style(header)=[background = LIBGR borderleftcolor = LIBGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in] style(header)=[background = BGR borderleftcolor = BGR]; 
         %end;
         %else %do;
-        define &tablesub. / group  "" order=data style(column)=[just=L width=.75in indent=10];
+        define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
         define grouplabel /group noprint;
         %end;
 
@@ -112,18 +116,35 @@
         line "Table &tablenum.. &title.";
         endcomp;
 
-        /*Add group label spanning header if stratified table*/
+        /*Add header if requested*/
+        %if &includeheaderrow = Y %then %do; 
+            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
+            length text $100;
+                text = headerlabel;
+                num = 100;
+                line text $varying. num;
+            endcomp;
+        %end;
+
+        /*Add group label spanning header if stratified table and indent labels*/
         %if &tablesub. ne overall %then %do; 
-            compute before grouplabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
+            compute before grouplabel /
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
+                    %end;
                 text= grouplabel; 
                 num= 150;
             	line text $varying. num; 
             endcomp;
+
+            /*indent*/
+            compute &tablesub.;
+                call define(_col_,'style','style={indent=25}');
+            endcomp;
         %end;
-
-        /*Add header if requested*/
-
-
 
         /*Footnotes*/
 
