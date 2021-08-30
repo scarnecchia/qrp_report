@@ -19,6 +19,7 @@
 * 
 *  PARAMETERS:       
 *   - tablename: input dataset name
+*   - tablenum: table number
 *   - title: table title in report
 *   - where: where clause to restrict input dataset
 *            
@@ -33,9 +34,10 @@
 *
 ***************************************************************************************************;
 
-%macro censortable_output_table13(tablename=, title=, where=);
+%macro censortable_output_table13(tablename=, tablenum=, title=, where=);
 
     %put =====> MACRO CALLED: censortable_output_table13;
+
 
 
 
