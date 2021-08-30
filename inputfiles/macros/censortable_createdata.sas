@@ -46,7 +46,7 @@
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
      select tablesub
             ,strat1
-	        ,"'"||strip(levelid1)||"'"
+	        ,case when not missing(strat1) then "'"||strip(levelid1)||"'" end
 			,"'"||strip(levelid2)||"'"
 	  into :tablesub1 - :tablesub&numstrat.
 	       ,:strat1 - :strat&numstrat.
@@ -101,7 +101,7 @@
 	%else %let distribution_var = ;
 	
  /*--------------------------------------------------------------------------------------------
-    If T5Censor apply to the agg_t5censor data 
+    If T5Censor apply censdays_value_cat to the agg_t5censor data
    --------------------------------------------------------------------------------------------*/  
    %if &censordataset. = t5censor %then %do;
       %convert_categories(var=episodelength, categories=&catvar.);
@@ -118,6 +118,7 @@
           %end;            
       run;
    %end;
+   
  /*--------------------------------------------------------------------------------------------
  	Aggregate by censor reason and stratifications.
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
@@ -257,8 +258,7 @@
 	   	                 %do cn= 1 %to &cens_num;
   	      	                %let var = %scan(&censorreason, &cn);
 							,a.&var._tot
-  	      	                ,(b.&var/a.epi_tot)     as &var._pct          format=percent10.1
-  	      	                ,(b.&var/a.&var._tot)   as &var._reason_pct   format=percent10.1
+  	      	                ,(b.&var/a.&var._tot)   as &var._pct   format=percent10.1
   	      	             %end;
 						 ,"&&tablesub&cl." as strat                       format = $8.
   	      from censor_data (where =(level = &&levels&cl.)) as b
@@ -293,14 +293,6 @@
       proc datasets lib=work nowarn nolist noprint;
        delete den:; 
       quit;	
- 	    
-		data output.censor_data_den;
-		set censor_data_den;
-		run;
-		
-		data output.groupsfile;
-		set groupsfile;
-		run;
 		
 	  proc sql noprint;
   	     create table &censordataset. as
@@ -397,18 +389,18 @@
    	         %let var = %scan(&censorreason_t3., &cn);
    	         if table_name = "&var" then do;
    	         	  episodes = &var;
-   	        	  epi_tot_pct = &var._reason_pct;
+   	        	  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
    	         end;
    	         if missing(&var._pct) then &var._pct = 0;
    	         if missing(epi_tot_pct) then epi_tot_pct = 0;
-   	         drop &var._reason: &var._tot: ;
+   	         drop &var._tot: ;
    	       %end;
 	     %end;
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset. out = output.&censordataset.;
+   	   proc sort data=&censordataset.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
