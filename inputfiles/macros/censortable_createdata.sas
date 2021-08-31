@@ -41,6 +41,9 @@
    --------------------------------------------------------------------------------------------*/
    /* Table specific user specified censor reasons*/
    %let censorreason_t3_all = ;
+   data output.tablefile;
+   set tablefile;
+   run;
    
    proc sql noprint;
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
@@ -95,13 +98,14 @@
 	%else %if &censordataset. = t5censor %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec);
 	%else %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend);
 	
-	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required */
+	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
+	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */
 	%if &censordataset. ne t5censor and %str(&levels_overall) ne %str() %then %let distribution_var = censdays_value;
 	%else %if &censordataset. = t5censor and %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
 	
  /*--------------------------------------------------------------------------------------------
-    If T5Censor apply to the agg_t5censor data 
+    If T5Censor apply censdays_value_cat to the agg_t5censor data
    --------------------------------------------------------------------------------------------*/  
    %if &censordataset. = t5censor %then %do;
       %convert_categories(var=episodelength, categories=&catvar.);
@@ -118,6 +122,7 @@
           %end;            
       run;
    %end;
+   
  /*--------------------------------------------------------------------------------------------
  	Aggregate by censor reason and stratifications.
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
@@ -155,7 +160,9 @@
 	   end;
 	   %if %str(&distribution_var.) ne %str() %then %do;
 	     if not missing(&distribution_var.) then output censor_data_overall; /* Data used for censor reason summary statistics */
-	     else output censor_data; /* Data used for stratification statistics */
+		 /* Data used for stratification statistics */
+	     %if %str(&distribution_var.) = %str(censdays_value) %then %do; else output censor_data; %end; 
+		 %else %do; if not missing(&distribution_var.) then output censor_data; %end; /* Data used for T5Censor stratifications when episodelength requested */
 	   %end;
    run;
  
@@ -247,6 +254,27 @@
         delete %if %str(&levels_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	  
+   /* If table 3 requested for t5censor then summarize censor_data by censdays_value_cat */
+      %if %str(&distribution_var.) = %str(episodelength) %then %do;
+	    proc sql noprint;
+		  create table censor_data as 
+		     select runid
+			       ,group
+				   ,dpidsiteid
+				   ,level
+				   %if %index(&censor_strat.,episodenum) > 0  %then %do; ,episodenum %end;
+				   ,max(censdays_value_cat) as censdays_value_cat
+				   ,max(censorcat_sort) as censorcat_sort
+				   ,sum(episodes) as episodes
+				   %do cn= 1 %to &cens_num;
+  	      	          %let var = %scan(&censorreason, &cn);
+					  ,sum(&var.) as &var.
+  	      	       %end;
+		     from censor_data
+			 group by runid, group, dpidsiteid, level, censdays_value_cat 
+			 %if %index(&censor_strat.,episodenum) > 0 %then %do; ,episodenum %end;;
+		quit;
+	  %end;
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data */
       %do cl = 1 %to %sysfunc(countw(&tablesubs.,%str( )));
   	    proc sql noprint;
@@ -257,8 +285,7 @@
 	   	                 %do cn= 1 %to &cens_num;
   	      	                %let var = %scan(&censorreason, &cn);
 							,a.&var._tot
-  	      	                ,(b.&var/a.epi_tot)     as &var._pct          format=percent10.1
-  	      	                ,(b.&var/a.&var._tot)   as &var._reason_pct   format=percent10.1
+  	      	                ,(b.&var/a.&var._tot)   as &var._pct          format=percent10.1
   	      	             %end;
 						 ,"&&tablesub&cl." as strat                       length=8 format = $8.
   	      from censor_data (where =(level = &&levels&cl.)) as b
@@ -310,7 +337,8 @@
   	     	 ,case when not missing(c.label) then c.label 
             else a.group end as grouplabel
   	     	 ,case when not missing(d.label) then d.label 
-            else '' end as headerlabel
+                 when not missing(c.label) then c.label 
+				 else a.group end as headerlabel
   	   	 %end;
   	   	 %else %do;
   	   	   ,a.group as grouplabel
@@ -329,7 +357,8 @@
   	   %end;
 	     left join groupsfile e
 	     on a.group = e.group
-	     where not missing(a.censdays_value_cat);
+		 %if %str(&distribution_var.) = %str(censdays_value) %then %do;
+	     where not missing(censdays_value_cat) %end;;
   	   quit;
 
     /* Clean up work files */
@@ -340,6 +369,10 @@
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
    	   data &censordataset. (drop=censdays_value_cat);
    	     set &censordataset.;
+		 %if %str(&distribution_var.) = %str() and &censordataset. = t5censor %then %do;
+		   censdays_value_cat = "";
+		   censorcat_sort = 1;
+		 %end;
 	  	 %if %index(&tablesubs.,sex) > 0 %then %do;
 	  	 	length _sex $6;
 	  	 	_sex = put(sex, $sexfmt.);
@@ -379,22 +412,17 @@
 	  		end;
 	  		drop dash pre;
    	      end;
-   	     %if %index(&tablesubs.,overall) > 0 %then %do;
-   	       /*Dummy variable to use as 'across' variable to correctly place header*/
-		   length dummy 3.;
-   	       dummy = .;
-   	     %end;
 	     %if &cens_num_t3. > 0 %then %do;  
    	       %do cn = 1 %to &cens_num_t3.;
    	         %let var = %scan(&censorreason_t3., &cn);
    	         if table_name = "&var" then do;
    	         	  episodes = &var;
-   	        	  epi_tot_pct = &var._reason_pct;
+   	        	  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
    	         end;
    	         if missing(&var._pct) then &var._pct = 0;
    	         if missing(epi_tot_pct) then epi_tot_pct = 0;
-   	         drop &var._reason: ;
+   	         drop &var._tot: ;
    	       %end;
 	     %end;
    	     format epi_tot_pct percent10.1;
