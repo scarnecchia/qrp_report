@@ -357,7 +357,7 @@
   	   %end;
 	     left join groupsfile e
 	     on a.group = e.group
-		 %if %str(&distribution_var.) ne %str(episodelength) %then %do;
+		 %if %str(&distribution_var.) = %str(censdays_value) %then %do;
 	     where not missing(censdays_value_cat) %end;;
   	   quit;
 
@@ -369,6 +369,10 @@
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
    	   data &censordataset. (drop=censdays_value_cat);
    	     set &censordataset.;
+		 %if %str(&distribution_var.) = %str() and &censordataset. = t5censor %then %do;
+		   censdays_value_cat = "";
+		   censorcat_sort = 1;
+		 %end;
 	  	 %if %index(&tablesubs.,sex) > 0 %then %do;
 	  	 	length _sex $6;
 	  	 	_sex = put(sex, $sexfmt.);
@@ -424,7 +428,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset. ;
+   	   proc sort data=&censordataset. output = output.&censordataset.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
