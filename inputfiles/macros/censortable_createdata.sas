@@ -65,8 +65,8 @@
 	 
 	 /* If T5Censor then acquire categories from the tablefile */  
      %if &censordataset. = t5censor %then %do;
-        select distinct(categories) into: catvar
-		from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
+      select distinct(categories) into: catvar
+		  from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
      %end;
    quit;
 	
@@ -287,8 +287,8 @@
 							,a.&var._tot
   	      	                ,(b.&var/a.&var._tot)   as &var._pct          format=percent10.1
   	      	             %end;
-						 ,"&&tablesub&cl." as strat                       format = $8.
-  	      from  censor_data (where =(level = &&levels&cl.)) as b
+						 ,"&&tablesub&cl." as strat                       length=8 format = $8.
+  	      from censor_data (where =(level = &&levels&cl.)) as b
 	      left join 
 	          (select distinct runid
 	   	           ,dpidsiteid
@@ -315,7 +315,7 @@
       data censor_data_den;
         set den:;
       run;
-	
+      
     /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
        delete den:; 
@@ -323,7 +323,7 @@
 		
 	  proc sql noprint;
   	     create table &censordataset. as
-  	     select distinct a.*, 
+  	     select distinct a.*,
   	   		 b.table_name,
   	   		 b.min, 
   	   		 b.q1, 
@@ -332,7 +332,7 @@
   	   		 b.max,
   	   		 b.mean,
   	   		 b.std,
-	  		 e.order
+	  		   e.order
 	  		 %if &labelfileexists. = Y %then %do;
   	     		 ,case when not missing(c.label) then c.label 
                  else a.group end as grouplabel
@@ -343,7 +343,7 @@
   	   		 %else %do;
   	   		   ,a.group as grouplabel
 	  		   ,'' as headerlabel
-  	   		 %end;
+  	   	     %end;
   	     from censor_data_den a 
 	     left join _stats b
   	     on a.runid = b.runid 
@@ -354,13 +354,13 @@
   	       on a.group = c.group
   	       left join labelfile(where=(labeltype='header')) d
   	       on a.group = d.group
-  	     %end;
+  	   %end;
 	     left join groupsfile e
 	     on a.group = e.group
 		 %if %str(&distribution_var.) ne %str(episodelength) %then %do;
 	     where not missing(censdays_value_cat) %end;;
   	   quit;
-	  
+
     /* Clean up work files */
        proc datasets lib=work nowarn nolist noprint;
         delete den:; 
