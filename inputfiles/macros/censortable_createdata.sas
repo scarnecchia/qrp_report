@@ -41,12 +41,15 @@
    --------------------------------------------------------------------------------------------*/
    /* Table specific user specified censor reasons*/
    %let censorreason_t3_all = ;
+   data output.tablefile;
+   set tablefile;
+   run;
    
    proc sql noprint;
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
      select tablesub
             ,strat1
-	        ,case when not missing(strat1) then "'"||strip(levelid1)||"'" end
+	        ,"'"||strip(levelid1)||"'"
 			,"'"||strip(levelid2)||"'"
 	  into :tablesub1 - :tablesub&numstrat.
 	       ,:strat1 - :strat&numstrat.
@@ -95,7 +98,8 @@
 	%else %if &censordataset. = t5censor %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec);
 	%else %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend);
 	
-	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required */
+	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
+	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */
 	%if &censordataset. ne t5censor and %str(&levels_overall) ne %str() %then %let distribution_var = censdays_value;
 	%else %if &censordataset. = t5censor and %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
@@ -141,7 +145,7 @@
  
    /* Stack together*/
    data %if %str(&distribution_var.) ne %str() %then %do;
-          censor_data (drop = &distribution_var.)
+          censor_data (drop = &distribution_var.) 
           censor_data_overall (drop = level)
 		%end;
 		%else %do;
@@ -156,7 +160,9 @@
 	   end;
 	   %if %str(&distribution_var.) ne %str() %then %do;
 	     if not missing(&distribution_var.) then output censor_data_overall; /* Data used for censor reason summary statistics */
-	     else output censor_data; /* Data used for stratification statistics */
+		 /* Data used for stratification statistics */
+	     %if %str(&distribution_var.) = %str(censdays_value) %then %do; else output censor_data; %end; 
+		 %else %do; if not missing(&distribution_var.) then output censor_data; %end; /* Data used for T5Censor stratifications when episodelength requested */
 	   %end;
    run;
  
@@ -247,7 +253,28 @@
       proc datasets lib=work nowarn nolist noprint;
         delete %if %str(&levels_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
-	  
+   
+   /* If table 3 requested for t5censor then summarize censor_data by censdays_value_cat */
+      %if %str(&distribution_var.) = %str(episodelength) %then %do;
+	    proc sql noprint;
+		  create table censor_data as 
+		     select runid
+			       ,group
+				   ,dpidsiteid
+				   ,level
+				   %if %index(&censor_strat.,episodenum) > 0  %then %do; ,episodenum %end;
+				   ,max(censdays_value_cat) as censdays_value_cat
+				   ,max(censorcat_sort) as censorcat_sort
+				   ,sum(episodes) as episodes
+				   %do cn= 1 %to &cens_num;
+  	      	          %let var = %scan(&censorreason, &cn);
+					  ,sum(&var.) as &var.
+  	      	       %end;
+		     from censor_data
+			 group by runid, group, dpidsiteid, level, censdays_value_cat 
+			 %if %index(&censor_strat.,episodenum) > 0 %then %do; ,episodenum %end;;
+		quit;
+	  %end;
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data */
       %do cl = 1 %to %sysfunc(countw(&tablesubs.,%str( )));
   	    proc sql noprint;
@@ -258,10 +285,10 @@
 	   	                 %do cn= 1 %to &cens_num;
   	      	                %let var = %scan(&censorreason, &cn);
 							,a.&var._tot
-  	      	                ,(b.&var/a.&var._tot)   as &var._pct   format=percent10.1
+  	      	                ,(b.&var/a.&var._tot)   as &var._pct          format=percent10.1
   	      	             %end;
 						 ,"&&tablesub&cl." as strat                       format = $8.
-  	      from censor_data (where =(level = &&levels&cl.)) as b
+  	      from  censor_data (where =(level = &&levels&cl.)) as b
 	      left join 
 	          (select distinct runid
 	   	           ,dpidsiteid
@@ -307,10 +334,11 @@
   	   		 b.std,
 	  		 e.order
 	  		 %if &labelfileexists. = Y %then %do;
-  	     		   ,case when not missing(c.label) then c.label 
+  	     		 ,case when not missing(c.label) then c.label 
                  else a.group end as grouplabel
-  	     		   ,case when not missing(d.label) then d.label 
-                 else '' end as headerlabel
+  	     		 ,case when not missing(d.label) then d.label 
+                 when not missing(c.label) then c.label 
+				 else a.group end as headerlabel
   	   		 %end;
   	   		 %else %do;
   	   		   ,a.group as grouplabel
@@ -329,7 +357,8 @@
   	     %end;
 	     left join groupsfile e
 	     on a.group = e.group
-	     where not missing(censdays_value_cat);
+		 %if %str(&distribution_var.) ne %str(episodelength) %then %do;
+	     where not missing(censdays_value_cat) %end;;
   	   quit;
 	  
     /* Clean up work files */
@@ -379,11 +408,6 @@
 	  		end;
 	  		drop dash pre;
    	      end;
-   	     %if %index(&tablesubs.,overall) > 0 %then %do;
-   	       /*Dummy variable to use as 'across' variable to correctly place header*/
-		   length dummy 3.;
-   	       dummy = .;
-   	     %end;
 	     %if &cens_num_t3. > 0 %then %do;  
    	       %do cn = 1 %to &cens_num_t3.;
    	         %let var = %scan(&censorreason_t3., &cn);
@@ -400,7 +424,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset.;
+   	   proc sort data=&censordataset. ;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
