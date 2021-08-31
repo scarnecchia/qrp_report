@@ -81,7 +81,7 @@
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data style(column)=[just=L width =1.5in] style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
         %end;
         %else %do;
         define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
@@ -130,7 +130,7 @@
         %if &tablesub. ne overall %then %do; 
             compute before grouplabel /
                     %if &includeheaderrow = Y %then %do; 
-                    style=[background=white just=L bordertopcolor=white borderbottomcolor=white];
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
