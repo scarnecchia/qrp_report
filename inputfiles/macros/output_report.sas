@@ -167,7 +167,7 @@
                                                 where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat."),
                                                   tablesub=&strat.,
                                                   continuousmetrics=&continuousmetrics.,
-                                                  cattableheader=&cattableheader.,
+                                                  cattableheader=by &cattableheader.,
                                                   conttableheader=&conttableheader.,
                                                   episodesorpatients=Episodes);
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
@@ -178,7 +178,7 @@
                                                 where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = 'overall'),
                                                   tablesub=dpidsiteid,
                                                   continuousmetrics=N,
-                                                  cattableheader=&cattableheader.,
+                                                  cattableheader=by &cattableheader.,
                                                   conttableheader=&conttableheader.,
                                                   episodesorpatients=Episodes);
                     %end;
@@ -239,15 +239,15 @@
 
                                 %if &censorreasontable. = Y %then %do;
                                 %tableletter();
-/*                                %censortable_output_table13(tablename=&tablename.,*/
-/*                                tablenum=&tablenum.&tableletter.,*/
-/*                                title=%quote(Summary of Time to End of &tablenametitle. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),*/
-/*                                where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
-                                  tablesub=&strat.,
-                                  continuousmetrics=&continuousmetrics.,
-                                  cattableheader=&cattableheader.,
-                                  conttableheader=&conttableheader.,
-                                  episodesorpatients=Episodes);*/
+                                %censortable_output_table13(tablename=&tablename.,
+                                tablenum=&tablenum.&tableletter.,
+                                title=%quote(Summary of Time to End of &tablenametitle. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
+                                tablesub=&strat.,
+                                continuousmetrics=&continuousmetrics.,
+                                cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by &cattableheader.),
+                                conttableheader=&conttableheader.,
+                                episodesorpatients=Episodes);
                                 %end; /*censor reason requested*/
                             %end; /*loop through stratification*/
 

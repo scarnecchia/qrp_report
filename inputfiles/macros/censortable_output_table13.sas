@@ -72,7 +72,7 @@
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot
-                 ("^S={background=BGR}Number of Episodes by &cattableheader." censdays_value_cat_format, (episodes epi_tot_pct) ) 
+                 ("^S={background=BGR}Number of Episodes &cattableheader." censdays_value_cat_format, (episodes epi_tot_pct) ) 
                  %if &continuousmetrics. = Y %then %do; (dummy, (min q1 median q3 max mean std) ) %end;);
 
         %if &includeheaderrow = Y %then %do; 
@@ -100,7 +100,7 @@
            style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if &continuousmetrics. = Y %then %do;
-        define dummy / across "Distribution of Length of &conttableheader. in Days, by Episode" style(header)=[background = BGR borderleftcolor = BGR];
+        define dummy / across "Distribution of &conttableheader. in Days, by Episode" style(header)=[background = BGR borderleftcolor = BGR];
         define min /group 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define q1 /group 'Q1' style(column)=[just=C width=27 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define median /group 'Median' style(column)=[just=C width=30pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
