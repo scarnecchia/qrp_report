@@ -55,7 +55,7 @@
     %isdata(dataset=repdata.table&tablenum.);
     %if %eval(&nobs.<1) %then %do;
         data repdata.table&tablenum.;
-            set &tablename(drop=dummy where=(&where.));
+            set &tablename(where=(&where.));
             %if &continuousmetrics. = Y %then %do;
             dummy = '';
             %end;
