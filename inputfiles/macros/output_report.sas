@@ -165,22 +165,24 @@
                                                 tablenum=&tablenum.&tableletter.,
                                                 title=%quote(Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                                 where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat."),
-                                                  tablesub=&strat.,
-                                                  continuousmetrics=&continuousmetrics.,
-                                                  cattableheader=by &cattableheader.,
-                                                  conttableheader=&conttableheader.,
-                                                  episodesorpatients=Episodes);
+                                                tablesub=&strat.,
+                                                continuousmetrics=&continuousmetrics.,
+                                                cattableheader=by &cattableheader.,
+                                                conttableheader=&conttableheader.,
+                                                episodesorpatients=Episodes,
+                                                censorreason=);
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
                     %censortable_output_table13(tablename=&tablename.,
                                                 tablenum=&tablenum.&tableletter.,
                                                 title=%quote(Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                                 where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = 'overall'),
-                                                  tablesub=dpidsiteid,
-                                                  continuousmetrics=N,
-                                                  cattableheader=by &cattableheader.,
-                                                  conttableheader=&conttableheader.,
-                                                  episodesorpatients=Episodes);
+                                                tablesub=dpidsiteid,
+                                                continuousmetrics=N,
+                                                cattableheader=by &cattableheader.,
+                                                conttableheader=&conttableheader.,
+                                                episodesorpatients=Episodes,
+                                                censorreason=);
                     %end;
                     %end;
 
@@ -247,7 +249,8 @@
                                 continuousmetrics=&continuousmetrics.,
                                 cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by &cattableheader.),
                                 conttableheader=&conttableheader.,
-                                episodesorpatients=Episodes);
+                                episodesorpatients=Episodes,
+                                censorreason=&reason.);
                                 %end; /*censor reason requested*/
                             %end; /*loop through stratification*/
 
@@ -345,7 +348,8 @@
                       continuousmetrics=&continuousmetrics.,
                       cattableheader=Episode Length,
                       conttableheader=Treatment Episode Length,
-                      episodesorpatients=&episodesorpatients.);*/
+                      episodesorpatients=&episodesorpatients.,
+                      censorreason=&reason.);*/
                     %let tablenum = %eval(&tablenum + 1);
                 %end;
                 proc datasets nowarn noprint lib=work;

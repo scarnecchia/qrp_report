@@ -17,7 +17,7 @@
 *  Program outputs: 
 * 
 * 
-*  PARAMETERS:       
+*  PARAMETERS:   
 *   - tablename: input dataset name
 *   - tablenum: table number
 *   - title: table title in report
@@ -27,7 +27,8 @@
 *   - cattableheader: language to include across category header "Number of Episodes ...."
 *   - conttableheader: language to include across continuous metrics
 *   - episodesorpatients: Episodes or Patients label
-*            
+*   - censorreason: Table T3 censor reason - only populated for table T3    
+* 
 *  Programming Notes:         
 *   
 *                                                                           
@@ -47,7 +48,8 @@
                                   continuousmetrics=, 
                                   cattableheader=,
                                   conttableheader=,
-                                  episodesorpatients=);
+                                  episodesorpatients=,
+                                  censorreason=);
 
     %put =====> MACRO CALLED: censortable_output_table13;
 
@@ -71,9 +73,10 @@
         style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
-    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot
-                 ("^S={background=BGR}Number of Episodes &cattableheader." censdays_value_cat_format, (episodes epi_tot_pct) ) 
-                 %if &continuousmetrics. = Y %then %do; (dummy, (min q1 median q3 max mean std) ) %end;);
+    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot 
+                %if %str("&censorreason") ne %str("") %then %do; &censorreason. %end;
+                ("^S={background=BGR}Number of Episodes &cattableheader." censdays_value_cat_format, (episodes epi_tot_pct) ) 
+                %if &continuousmetrics. = Y %then %do; (dummy, (min q1 median q3 max mean std) ) %end;);
 
         %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
@@ -91,6 +94,12 @@
         define epi_tot / group "Total Number of &episodesorpatients"
             style(column)=[width =.8in tagattr="type:string" background= backgroundfmt.] 
             style(header)=[just=C background = BGR borderleftcolor = BGR];
+
+        %if %str("&censorreason") ne %str("") %then %do; 
+        define &censorreason. / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))"
+            style(column)=[width=1in tagattr="type:string" background= backgroundfmt.] 
+            style(header)=[just=C background = BGR borderleftcolor = BGR];
+        %end;
 
         define censdays_value_cat_format / across '' order=data
             style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
