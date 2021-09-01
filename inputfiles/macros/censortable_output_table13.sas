@@ -64,6 +64,43 @@
         run;
     %end;
 
+    /*Footnotes*/
+    data _footnotes;
+	   length footnote_order 3; 
+       set lookup.lookup_footnotes_censortables(where = (order in (999 /*dummy to prevent e r r o r*/
+        %if %str("&conttableheader.") = %str("Observable Time") %then %do; 2 %end;
+        %if &censorreason. = cens_episend %then %do; 3 %end;
+        %if &censorreason. = cens_event %then %do; 4 %end;
+        %if &censorreason. = cens_spec %then %do; 5 %end;
+        %if &censorreason. = cens_dth %then %do; 6 %end;
+        %if &censorreason. = cens_elig %then %do; 7 %end;
+        %if &censorreason. = cens_dpend %then %do; 8 %end;
+        %if &censorreason. = cens_qryend %then %do; 9 %end; )));
+	  by order;
+	  footnote_order = _n_;
+    run;
+
+    proc sql noprint;
+	  select count(order) into: num_fn trimmed
+	  from _footnotes;
+    quit;
+
+    %if %eval(&num_fn.>0) %then %do;
+    proc sql noprint;
+	  select description into: fn1 - :fn&num_fn.
+	  from _footnotes
+	  order by order;
+	quit;
+    %end;
+    
+	/* Assign macro variables for superscipts */
+	%assign_superscripts(type =title, order =2);
+	%assign_superscripts(type =reason, order =3 4 5 6 7 8 9);
+
+    proc datasets nowarn noprint lib=work;
+        delete _footnotes;
+    quit;
+
     %if &destination. = excel %then %do;
     ods excel options(sheet_name="Table &tablenum." tab_color = "green");
     %end;
@@ -96,7 +133,7 @@
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if %str("&censorreason") ne %str("") %then %do; 
-        define &censorreason. / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))"
+        define &censorreason. / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))&super_reason."
             style(column)=[width=1in tagattr="type:string" background= backgroundfmt.] 
             style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
@@ -122,7 +159,7 @@
         /*Add title*/
         compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
     	                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-        line "Table &tablenum.. &title.";
+        line "Table &tablenum.. &title.&super_title";
         endcomp;
 
         /*Add header if requested*/
@@ -156,7 +193,14 @@
         %end;
 
         /*Footnotes*/
-
+        %if %eval(&num_fn.>0) %then %do;
+    		compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize.
+    		                        height=.75in bordertopwidth = &bordersize tagattr="wrap:yes"];
+    		  %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+    		  %end;
+            endcomp;
+        %end;
     run;
 
 %mend censortable_output_table13;
