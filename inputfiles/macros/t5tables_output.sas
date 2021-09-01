@@ -78,13 +78,14 @@
             style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];	
 	
-			column header grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
+			column header sortorder1 grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
 					  %do s = 1 %to %eval(&num_categories);
 						 %let t5cat = %scan(&categories., &s, %str( ));
 						 ("^S={ borderleftcolor=bgr  bordertopcolor=black}&t5cat. Days" _&s._char _&s._percent_char)
                       %end;
 					);
 				define header / group noprint;
+				define sortorder1 / display noprint;
 				define grouplabel / display ''
 					style(column)=[just=L] 
 					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
@@ -99,6 +100,13 @@
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
 				%end;
+
+            /*format grouplabel*/
+            compute grouplabel;
+                if sortorder1=0 then call define (_col_,"style","style=[asis=on fontstyle=italic]");
+                else call define (_col_,"style","style=[pretext='     ']");
+            endcomp;
+
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -150,8 +158,9 @@
             style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];
 
-			column header grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
+			column header sortorder1 grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
 				define header / group noprint;
+				define sortorder1 / display noprint;
 				define grouplabel / display ''
 					style(column)=[just=L] 
 					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
@@ -179,6 +188,12 @@
 				define std_char / display 'Standard*Deviation' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
+
+            /*format grouplabel*/
+            compute grouplabel;
+                if sortorder1=0 then call define (_col_,"style","style=[asis=on fontstyle=italic]");
+                else call define (_col_,"style","style=[pretext='     ']");
+            endcomp;
 
 			/* Add title */
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
