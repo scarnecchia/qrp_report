@@ -94,8 +94,8 @@
     %end;
     
 	/* Assign macro variables for superscipts */
-	%assign_superscripts(type =title, order =2);
-	%assign_superscripts(type =reason, order =3 4 5 6 7 8 9);
+	%assign_superscripts(type =title, order =3);
+	%assign_superscripts(type =reason, order =4 5 6 7 8 9 10);
 
     proc datasets nowarn noprint lib=work;
         delete _footnotes;

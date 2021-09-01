@@ -13,11 +13,12 @@
 *  Program outputs:                                                                                                                                       
 *
 *  PARAMETERS: •	
-*   Tablename – dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
-*	Title – table title
-*	Where – where clause to filter the &tablename dataset
-*   Reasonlist – list of reasons to include in table  
-*   Tablenum - number for table 
+*   - Tablename – dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
+*	- Title – table title
+*	- Where – where clause to filter the &tablename dataset
+*   - Reasonlist – list of reasons to include in table  
+*   - Tablenum - number for table 
+*   - episodesorpatients: Episodes or Patients label
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -37,6 +38,46 @@
             set &tablename(where=(&where.));
         run;
     %end;
+
+  /*Footnotes*/
+    data _footnotes;
+	   length footnote_order 3; 
+       set lookup.lookup_footnotes_censortables(where = (order in (
+       %if %str("&episodesorpatients.") = %str("Episodes") %then %do; 1; %end;
+       %if %str("&episodesorpatients.") = %str("Patients") %then %do; 2; %end;
+       %if &tablename. = t1censor | &tablename. = t2censor %then %do; 3 %end;
+       %if %index(&reasonlist.,cens_episend)>0 %then %do; 4 %end;
+       %if %index(&reasonlist.,cens_event)>0 %then %do; 5 %end;
+       %if %index(&reasonlist.,cens_spec)>0 %then %do; 6 %end;
+       %if %index(&reasonlist.,cens_dth)>0 %then %do; 7 %end;
+       %if %index(&reasonlist.,cens_elig)>0 %then %do; 8 %end;
+       %if %index(&reasonlist.,cens_dpend)>0 %then %do; 9 %end;
+       %if %index(&reasonlist.,cens_qryend)>0 %then %do; 10 %end; )));
+	  by order;
+	  footnote_order = _n_;
+    run;
+
+    proc sql noprint;
+	  select count(order) into: num_fn trimmed
+	  from _footnotes;
+    quit;
+
+    %if %eval(&num_fn.>0) %then %do;
+    proc sql noprint;
+	  select description into: fn1 - :fn&num_fn.
+	  from _footnotes
+	  order by order;
+	quit;
+    %end;
+    
+	/* Assign macro variables for superscipts */
+	%assign_superscripts(type =title, order =1 2 3);
+	%assign_superscripts(type =reason, order =4 5 6 7 8 9 10);
+
+    proc datasets nowarn noprint lib=work;
+        delete _footnotes;
+    quit;
+
  
 ods excel options(sheet_name="Table &tablenum.");
     ods proclabel = "Table &tablenum.";
@@ -119,6 +160,15 @@ ods excel options(sheet_name="Table &tablenum.");
 
         %end;
 
+        /*Footnotes*/
+        %if %eval(&num_fn.>0) %then %do;
+    		compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize.
+    		                        height=.75in bordertopwidth = &bordersize tagattr="wrap:yes"];
+    		  %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+    		  %end;
+            endcomp;
+        %end;
 
         where &where.;
     run;
