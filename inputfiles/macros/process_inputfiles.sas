@@ -935,7 +935,6 @@
                        - Tables T1, T3, T5, T7 all require categories
                        - Must specify the same category for all stratifications within a table*/
                     %if &reporttype. = T5 %then %do;
-					    /* If censor tables are requested add a check to confirm categories are the same across all tables */ 
                         %do t =1 %to %sysfunc(countw(&tablelist.));
                             %let overallrequested = N;
                             data _null_;    
@@ -959,6 +958,21 @@
                                %abort;
                             %end;
                         %end;
+						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
+						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						   data _null_;    
+                                set tablefile(where=(table in ('T15' 'T17')));
+								retain categoryfortable;
+                                if _n_ = 1 then do;
+                                   categoryfortable = categories;
+                                end;
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for tables T15 and T17.";
+									put "Categories for table" table "are "categories", expected categories are" categoryfortable".";
+                                    abort;
+                                end;
+                            run;
+						%end;
                     %end;
 					
 					/* Read in table columns file*/
