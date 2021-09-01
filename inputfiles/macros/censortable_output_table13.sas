@@ -98,7 +98,7 @@
         %if %str("&censorreason") ne %str("") %then %do; 
         define &censorreason. / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))"
             style(column)=[width=1in tagattr="type:string" background= backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+            style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
 
         define censdays_value_cat_format / across '' order=data
