@@ -60,47 +60,57 @@
 	%if &reporttype. = cat %then %do;
 	
 		%if %index(&dataset,T1_) %then %do; %let t5title = Categorical Summary of Days Supplied per Dispensing; %end;
-		%else %if %index(&dataset,T3_) %then %do; %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations; %end;
-		%else %if %index(&dataset,T5_) %then %do; %let t5title = Categorical Summary of All Treatment Episodes; %end;
-		%else %if %index(&dataset,T7_) %then %do; %let t5title = Categorical Summary of First Treatment Episodes; %end;
-		%else %if %index(&dataset,T9_) %then %do; %let t5title = Categorical Summary of Second and Subsequent Treatment Episodes; %end;
-
+		%else %if %index(&dataset,T3_) %then %do; %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations,; %end;
+		%else %if %index(&dataset,T5_) %then %do; %let t5title = Categorical Summary of All Treatment Episodes,; %end;
+		%else %if %index(&dataset,T7_) %then %do; %let t5title = Categorical Summary of First Treatment Episodes,; %end;
+		%else %if %index(&dataset,T9_) %then %do; %let t5title = Categorical Summary of Second and Subsequent Treatment Episodes,; %end;
+		%else %if %index(&dataset,T18_) %then %do; %let t5title = Summary of Filled Daily Dose in Each Dispensing,; %end;
+		%else %if %index(&dataset,T19_) %then %do; %let t5title = Summary of Average Filled Daily Dose in Each Treatment Episode,; %end;
+		%else %if %index(&dataset,T20_) %then %do; %let t5title = Summary of Average Filled Daily Dose in Each Patient%str(%')s First Valid Episode,; %end;
+		%else %if %index(&dataset,T21_) %then %do; %let t5title = Summary of Cumulative Filled Dose in All Treatment Episodes,; %end;
+		%else %if %index(&dataset,T22_) %then %do; %let t5title = Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,; %end;
+        
 		%if &destination = excel %then %do;
 			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
 		%end;
 		ods proclabel = "Table &tablenum.&tableletter.";		
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-            style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=bgr] split='*'
+            style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];	
 	
 			column header grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
 					  %do s = 1 %to %eval(&num_categories);
 						 %let t5cat = %scan(&categories., &s, %str( ));
-						 ("^S={ borderleftcolor=ligr}&t5cat. Days" _&s._char _&s._percent_char)
+						 ("^S={ borderleftcolor=bgr  bordertopcolor=black}&t5cat. Days" _&s._char _&s._percent_char)
                       %end;
 					);
-			   	define header /display ' ' 
+				define header / group noprint;
+				define grouplabel / display ''
 					style(column)=[just=L] 
-                    style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
-			   	define grouplabel /display ' ' 
-					style(column)=[just=L] 
-                    style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
+					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
 				define total_count_char / display 'Total Number*of Dispensings'  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
 				%do s=1 %to %eval(&num_categories);
 					define _&s._char / display 'Number of*Dispensings'  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
+					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black] format=$nafmt.;
 					define _&s._percent_char / display 'Percent of All*Dispensings'  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
 				%end;
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-            line "Table &tablenum.&tableletter.. &t5title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.";
+				line "Table &tablenum.&tableletter.. &t5title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.";
+            endcomp;
+          
+            /*Add header rows*/
+            compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
+			text = header;
+			num = 100;
+            line text $Varying. num; 
             endcomp;
 
             /* Add Footnotes */
@@ -137,46 +147,51 @@
 		%end;
 		ods proclabel = "Table &tablenum.&tableletter.";		
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-            style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=bgr] split='*'
+            style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];
 
 			column header grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
-			   	define header /display ' ' 
+				define header / group noprint;
+				define grouplabel / display ''
 					style(column)=[just=L] 
-                    style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
-			   	define grouplabel /display ' ' 
-					style(column)=[just=L] 
-                    style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
+					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
 				define total_count_char / display 'Total Number*of Dispensings'  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
+					style(header)=[background = bgr borderleftcolor=bgr borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
 				define min_char / display 'Minimum' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black] format=$nafmt.;	
 				define p25_char / display 'Q1' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
 				define median_char / display 'Median' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;		
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;		
 				define p75_char / display 'Q3' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;			
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;			
 				define max_char / display 'Maximum' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;		
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;		
 				define mean_char / display 'Mean' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;			
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;			
 				define std_char / display 'Standard*Deviation' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
 
 			/* Add title */
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
             line "Table &tablenum.&tableletter.. &t5title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.";
 			endcomp;
+          
+            /*Add header rows*/
+            compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
+			text = header;
+			num = 100;
+            line text $Varying. num; 
+            endcomp;
 
             /* Add Footnotes */
             %if %eval(&num_fn > 0) %then %do;
