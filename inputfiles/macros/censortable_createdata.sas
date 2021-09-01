@@ -64,7 +64,7 @@
 	 /* If T5Censor then acquire categories from the tablefile */  
      %if &censordataset. = t5censor %then %do;
       select distinct(categories) into: catvar
-		  from tablefile (where = (dataset = "&censordataset." and table in (&tables.)));
+		  from tablefile (where = (dataset = "&censordataset." and table in ("T3", "T15", "T17")));
      %end;
    quit;
 	
@@ -106,7 +106,7 @@
  /*--------------------------------------------------------------------------------------------
     If T5Censor apply censdays_value_cat to the agg_t5censor data
    --------------------------------------------------------------------------------------------*/  
-   %if &censordataset. = t5censor %then %do;
+   %if &censordataset. = t5censor and (%index(&tables.,T15) > 0 | %index(&tables.,T17) > 0) %then %do;
       %convert_categories(var=episodelength, categories=&catvar.);
 	  
       data agg_&censordataset.;
@@ -272,7 +272,7 @@
 	   
    /* If table 3 requested for t5censor then summarize censor_data by censdays_value */
       %if %index(&censor_strat.,episode) > 0 %then %do; 
-	    proc sql noprint;
+	    proc sql noprint undo_policy=none;
 		  create table censor_data&dset_suffix. as 
 		     select runid
 			       ,group
@@ -438,7 +438,7 @@
    	       %do cn = 1 %to &cens_num_t3.;
    	         %let var = %scan(&censorreason_t3., &cn);
    	         if table_name = "&var" then do;
-   	         	  &sumvar. = &var;
+   	         	  episodes = &var;
    	        	  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
    	         end;
@@ -450,7 +450,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset.&dset_suffix.;
+   	   proc sort data=&censordataset.&dset_suffix. out = output.&censordataset.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
@@ -459,12 +459,14 @@
 	
    %mend censor_summary;
    /* If episodenum is a stratification variable then create first episode tables */
-   %if %index(&censor_strat.,episodenum) > 0 %then %do;
-     %censor_summary (dset_suffix = _first, sumvar = npts, whereclause = %str((where = (episodenum = 1))));
-   %end;
+    %if %index(&censor_strat.,episodenum) > 0 %then %do;
+      %censor_summary (dset_suffix = _first, sumvar = npts, whereclause = %str((where = (episodenum = 1))));
+    %end;
    
-   /* T2censor or T5censor across all episodes */
-   %censor_summary;
+   /* Create all episodes tables */
+    %if %index(&censor_strat.,censdays_value_cat) > 0 %then %do;
+      %censor_summary;
+    %end;
    
     /* Clean up work files */
     proc datasets lib=work nowarn nolist noprint;

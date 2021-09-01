@@ -935,6 +935,7 @@
                        - Tables T1, T3, T5, T7 all require categories
                        - Must specify the same category for all stratifications within a table*/
                     %if &reporttype. = T5 %then %do;
+					    /* If censor tables are requested add a check to confirm categories are the same across all tables */ 
                         %do t =1 %to %sysfunc(countw(&tablelist.));
                             %let overallrequested = N;
                             data _null_;    
@@ -944,7 +945,7 @@
                                 end;
                                 retain categoryfortable;
                                 if tablesub = 'overall' then call symputx('overallrequested', 'Y');
-                                if table in ('T1', 'T3', 'T5','T7') and missing(categories) then do;
+                                if table in ('T1', 'T3', 'T5', 'T7', 'T15', 'T17') and missing(categories) then do;
                                     put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
                                     abort;
                                 end; 
