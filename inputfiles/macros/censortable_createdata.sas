@@ -41,14 +41,12 @@
    --------------------------------------------------------------------------------------------*/
    /* Table specific user specified censor reasons*/
    %let censorreason_t3_all = ;
-   data output.tablefile;
-   set tablefile;
-   run;
    
    proc sql noprint;
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
      select tablesub
-            ,strat1
+            ,%if &censordataset. = t5censor %then %do; catx(' ',strat1, strat2) %end;
+			 %else %do; strat1 %end;
 	        ,"'"||strip(levelid1)||"'"
 			,"'"||strip(levelid2)||"'"
 	  into :tablesub1 - :tablesub&numstrat.
@@ -91,7 +89,8 @@
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  %let censor_strat = &censor_strat. censorcat_sort; %end;
 	%if %index(&censor_strat.,agegroup) > 0 %then %do; %let censor_strat = &censor_strat. agegroupnum; %end;
-	%if %index(&censor_strat.,episodelength) > 0 %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
+	%if %index(&censor_strat.,episode) > 0 %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
+	%if %index(&censor_strat.,episodenum) > 0 %then %do; %let censor_strat = &censor_strat. npts; %end;
 	
 	/* All possible censor reasons based on dataset type */
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
@@ -101,7 +100,7 @@
 	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
 	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */
 	%if &censordataset. ne t5censor and %str(&levels_overall) ne %str() %then %let distribution_var = censdays_value;
-	%else %if &censordataset. = t5censor and %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
+	%else %if %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
 	
  /*--------------------------------------------------------------------------------------------
@@ -114,6 +113,9 @@
           set agg_&censordataset. (where=(level in (&levels. &levels_overall.)));
           *assign categories;
           length censdays_value_cat $50.;
+		  *initialize values;
+		  call missing(censdays_value_cat);
+		  censorcat_sort = 1;
           %do c =1 %to &num_categories.;
               if %scan(&categories_boolean., &c., ' ') then do;
                   censdays_value_cat = "%scan(&catvar., &c., ' ')";
@@ -166,13 +168,23 @@
 	   %end;
    run;
  
+  /* Identify levels on the censor_data dataset */
+   proc sql noprint;
+     select count(distinct(level)) into: numcensorlevel trimmed
+	 from censor_data;
+	 
+	 select "'"||level||"'" into:censlevel1 -:censlevel&numcensorlevel.
+	 from censor_data;
+   quit;
+   
  /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
      delete censor_all censor_dps; 
    quit;
    
  /*--------------------------------------------------------------------------------------------
- 	Calculate summary statistics to merge back onto aggregate data                                                   
+ 	Set default values for summary statistics when censdays_value or episodelength stratification
+    not requested	
    --------------------------------------------------------------------------------------------*/
  	 %let cens_num_t3 = %sysfunc(countw(&censorreason_t3., %str( )));
  	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
@@ -202,19 +214,23 @@
  	   run; 
 	 %end;
 		
+ /*--------------------------------------------------------------------------------------------
+ 	Calculate summary statistics	
+   --------------------------------------------------------------------------------------------*/
+   %macro censor_summary (dset_suffix = , sumvar = episodes, whereclause = );
    /* Calculate summary statistics for each censoring reason.
  	  Skip over censoring reasons without counts */ 
 	 %if %str(&distribution_var.) ne %str() %then %do;
- 	    %do sl = 1 %to %sysfunc(countw(episodes &censorreason_t3., %str( )));
- 	    	%let cen_stat = %scan(episodes &censorreason_t3.,&sl.);
+ 	    %do sl = 1 %to %sysfunc(countw(&sumvar. &censorreason_t3., %str( )));
+ 	    	%let cen_stat = %scan(&sumvar. &censorreason_t3.,&sl.);
  	    	   proc sql noprint;
  	    	     select sum(&cen_stat.) into: checksum
- 	    	     from censor_data_overall;
+ 	    	     from censor_data_overall &whereclause.;
  	    	   quit;
  	    	   
  	    	 %if &checksum ^= 0 %then %do;
            
- 	    	   proc means data= censor_data_overall nway missing noprint classdata=censor_data_overall;
+ 	    	   proc means data= censor_data_overall &whereclause. nway missing noprint classdata=censor_data_overall &whereclause.;
  	    	    	var &distribution_var.;
  	    	    	class runid dpidsiteid group;
  	    	    	freq &cen_stat.;
@@ -232,7 +248,7 @@
  	    	   data _stats_&cen_stat.;
  	    	      length table_name $12;
  	    	      set _stats_&cen_stat.;
- 	    	      %if &cen_stat. = episodes %then %do;
+ 	    	      %if &cen_stat. = &sumvar. %then %do;
  	    	        table_name = "overall";
  	    	      %end;
  	    	      %else %do;
@@ -254,29 +270,35 @@
         delete %if %str(&levels_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	  
-   /* If table 3 requested for t5censor then summarize censor_data by censdays_value_cat */
-      %if %str(&distribution_var.) = %str(episodelength) %then %do;
+   /* If table 3 requested for t5censor then summarize censor_data by censdays_value */
+      %if %index(&censor_strat.,episode) > 0 %then %do; 
 	    proc sql noprint;
-		  create table censor_data as 
+		  create table censor_data&dset_suffix. as 
 		     select runid
 			       ,group
 				   ,dpidsiteid
 				   ,level
-				   %if %index(&censor_strat.,episodenum) > 0  %then %do; ,episodenum %end;
 				   ,max(censdays_value_cat) as censdays_value_cat
 				   ,max(censorcat_sort) as censorcat_sort
-				   ,sum(episodes) as episodes
+				   ,sum(&sumvar.) as episodes
 				   %do cn= 1 %to &cens_num;
   	      	          %let var = %scan(&censorreason, &cn);
 					  ,sum(&var.) as &var.
   	      	       %end;
-		     from censor_data
-			 group by runid, group, dpidsiteid, level, censdays_value_cat 
-			 %if %index(&censor_strat.,episodenum) > 0 %then %do; ,episodenum %end;;
+		     from censor_data &whereclause.
+			 group by runid, group, dpidsiteid, level, censorcat_sort;
 		quit;
 	  %end;
+   /* If table 3 not requested, but table 2 first episode requested restrict data to first episode */
+	  %else %if &dset_suffix = _first %then %do;
+	     data censor_data&dset_suffix (keep = runid group dpidsiteid level episodes cens:);
+		   set censor_data &whereclause.;
+		   episodes = npts;
+		 run;
+	  %end;
+	  
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data */
-      %do cl = 1 %to %sysfunc(countw(&tablesubs.,%str( )));
+      %do cl = 1 %to &numcensorlevel.;
   	    proc sql noprint;
   	      create table den&cl. (drop = level) as
   	      select distinct b.* 
@@ -288,7 +310,7 @@
   	      	                ,(b.&var/a.&var._tot)   as &var._pct          format=percent10.1
   	      	             %end;
 						 ,"&&tablesub&cl." as strat                       length=8 format = $8.
-  	      from censor_data (where =(level = &&levels&cl.)) as b
+  	      from censor_data&dset_suffix. (where =(level = &&censlevel&cl.)) as b
 	      left join 
 	          (select distinct runid
 	   	           ,dpidsiteid
@@ -299,7 +321,7 @@
   	      		         %let var = %scan(&censorreason, &cn);
   	      		         ,sum(&var) as &var._tot
   	      		       %end;
-  	      	           from censor_data (where =(level = &&levels&cl.)) a
+  	      	           from censor_data&dset_suffix. (where =(level = &&censlevel&cl.)) a
   	      	           /* counts need to be grouped by user specified stratas */
   	      	           group by runid 
 	   			           ,dpidsiteid 
@@ -312,7 +334,7 @@
 	      quit;
 	  %end;
     
-      data censor_data_den;
+      data censor_data_den&dset_suffix;
         set den:;
       run;
       
@@ -322,7 +344,7 @@
       quit;	
 		
 	  proc sql noprint;
-  	     create table &censordataset. as
+  	     create table &censordataset.&dset_suffix. as
   	     select distinct a.*,
   	   		 b.table_name,
   	   		 b.min, 
@@ -344,7 +366,7 @@
   	   	   ,a.group as grouplabel
 	  		   ,'' as headerlabel
   	   	 %end;
-  	     from censor_data_den a 
+  	     from censor_data_den&dset_suffix a 
 	     left join _stats b
   	     on a.runid = b.runid 
 	        and a.dpidsiteid = b.dpidsiteid 
@@ -367,8 +389,8 @@
        quit;
  
    /* For proc report, need to acquire censoring reason episodes in the "Episode" column as well as calculate denominators within each bin */
-   	   data &censordataset. (drop=censdays_value_cat);
-   	     set &censordataset.;
+   	   data &censordataset.&dset_suffix. (drop=censdays_value_cat);
+   	     set &censordataset.&dset_suffix.;
 		 %if %str(&distribution_var.) = %str() and &censordataset. = t5censor %then %do;
 		   censdays_value_cat = "";
 		   censorcat_sort = 1;
@@ -416,7 +438,7 @@
    	       %do cn = 1 %to &cens_num_t3.;
    	         %let var = %scan(&censorreason_t3., &cn);
    	         if table_name = "&var" then do;
-   	         	  episodes = &var;
+   	         	  &sumvar. = &var;
    	        	  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
    	         end;
@@ -428,13 +450,22 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset. out = output.&censordataset.;
+   	   proc sort data=&censordataset.&dset_suffix.;
    	      by order censorcat_sort table_name dpidsiteid
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
 	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
    	   run;
  
+   %mend censor_summary;
+   /* If episodenum is a stratification variable then create first episode tables */
+   %if %index(&censor_strat.,episodenum) > 0 %then %do;
+     %censor_summary (dset_suffix = _first, sumvar = npts, whereclause = %str((where = (episodenum = 1))));
+   %end;
+   
+   /* T2censor or T5censor across all episodes */
+   %censor_summary;
+   
    /* Clean up work files */
     proc datasets lib=work nowarn nolist noprint;
        delete _stats censor_data:; 
