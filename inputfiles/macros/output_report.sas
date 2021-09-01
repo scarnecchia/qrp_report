@@ -121,8 +121,8 @@
     /* Type 1 and 2 censor tables                                                            */
     /*****************************************************************************************/
     %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&tdatasetlist.)) > 0 %then %do;
-
-        %macro t1t2censoroutput(tablename=, tablenametitle=);
+    options orientation = landscape;
+        %macro t1t2censoroutput(tablename=, tablenametitle=, cattableheader=, conttableheader=);
             %let tableidlist=;
             proc sql noprint;
                 select distinct table into: tableidlist separated by ' '
@@ -149,6 +149,10 @@
                         if tablesub = 'overall' then call symputx('strat', 'overall');
                         else call symputx('strat', tablesub);
 
+                        /*table T1/T3 - determine if continuous metrics should be printed*/
+                        if missing(levelid2) = 0 and tablesub = 'overall' then call symputx('continuousmetrics', 'Y');
+                        else call symputx('continuousmetrics', 'N');
+
                         /*table T2 - censor reasons*/
                         %if &tableid. = T2 %then %do;
                         call symputx('t2censorreasons', censorreason);
@@ -157,14 +161,28 @@
                  
                     %tableletter();
                     %if &tableid. = T1 %then %do;
-/*                    %censortable_output_table13(tablename=&tablename.,*/
-/*                                                title=%quote(Table &tablenum.&tableletter.. Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),*/
-/*                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat."));*/
+                    %censortable_output_table13(tablename=&tablename.,
+                                                tablenum=&tablenum.&tableletter.,
+                                                title=%quote(Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat."),
+                                                tablesub=&strat.,
+                                                continuousmetrics=&continuousmetrics.,
+                                                cattableheader=by &cattableheader.,
+                                                conttableheader=&conttableheader.,
+                                                episodesorpatients=Episodes,
+                                                censorreason=);
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
-/*                    %censortable_output_table13(tablename=&tablename.,*/
-/*                                                title=%quote(Table &tablenum.&tableletter.. Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),*/
-/*                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = 'overall'));*/
+                    %censortable_output_table13(tablename=&tablename.,
+                                                tablenum=&tablenum.&tableletter.,
+                                                title=%quote(Summary of Time to End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = 'overall'),
+                                                tablesub=dpidsiteid,
+                                                continuousmetrics=N,
+                                                cattableheader=by &cattableheader.,
+                                                conttableheader=&conttableheader.,
+                                                episodesorpatients=Episodes,
+                                                censorreason=);
                     %end;
                     %end;
 
@@ -212,6 +230,10 @@
                                     call symputx('tabletitle', tabletitle);
                                     if tablesub = 'overall' then call symputx('strat', 'overall');
                                     else call symputx('strat', tablesub);
+                                                
+                                    /*table T1/T3 - determine if continuous metrics should be printed*/
+                                    if missing(levelid2) = 0 and tablesub = 'overall' then call symputx('continuousmetrics', 'Y');
+                                    else call symputx('continuousmetrics', 'N');
 
                                     /*check if censoring reason requested*/ 
                                     if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
@@ -219,9 +241,16 @@
 
                                 %if &censorreasontable. = Y %then %do;
                                 %tableletter();
-/*                                %censortable_output_table13(tablename=&tablename.,*/
-/*                                title=%quote(Table &tablenum.&tableletter.. Summary of Time to End of &tablenametitle. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),*/
-/*                                where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."));*/
+                                %censortable_output_table13(tablename=&tablename.,
+                                tablenum=&tablenum.&tableletter.,
+                                title=%quote(Summary of Time to End of &tablenametitle. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
+                                tablesub=&strat.,
+                                continuousmetrics=&continuousmetrics.,
+                                cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by &cattableheader.),
+                                conttableheader=&conttableheader.,
+                                episodesorpatients=Episodes,
+                                censorreason=&reason.);
                                 %end; /*censor reason requested*/
                             %end; /*loop through stratification*/
 
@@ -244,8 +273,15 @@
             %end; /*table requested*/
         %mend;
  
-        %t1t2censoroutput(tablename=t2followuptime, tablenametitle=At-Risk Period);
-        %t1t2censoroutput(tablename=t&typenum.censor, tablenametitle=Observable Data);
+        %t1t2censoroutput(tablename=t2followuptime, 
+                          tablenametitle=At-Risk Period, 
+                          cattableheader=Episode Length,
+                          conttableheader=At-Risk Time);
+        %t1t2censoroutput(tablename=t&typenum.censor, 
+                          tablenametitle=Observable Data,
+                          cattableheader=Observable Time,
+                          conttableheader=Observable Time);
+    options orientation = portrait;
     %end;
 
 /*********************************************************************************************/
@@ -256,77 +292,88 @@
     /* Type 5 censor tables                                                                  */
     /*****************************************************************************************/
 
-    %macro t5censoroutput(tableid = , tablename=, first=);
-            %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
-                data _null_;
-                    set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
-                    /*censor reasons*/
-                    call symputx('t2censorreasons', censorreason);
-                run;
+    %macro t5censoroutput(tableid = , tablename=, first=, episodesorpatients=);
+        options orientation = landscape;
 
-                /*counter for determining table letter*/
-                %if &stratifybydp. = Y %then %let tablecount = 1;
-                %else %let tablecount = 0;
-                %tableletter();
+        %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
+            data _null_;
+                set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
+                /*censor reasons*/
+                call symputx('t2censorreasons', censorreason);
+            run;
+
+            /*counter for determining table letter*/
+            %if &stratifybydp. = Y %then %let tablecount = 1;
+            %else %let tablecount = 0;
+            %tableletter();
 /*                %censortable_output_table2(tablename=&tablename.,*/
 /*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
 /*                                           where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall"),*/
 /*                                           reasonlist= &t2censorreasons.);*/
-                %if &stratifybydp. = Y %then %do;
-                %tableletter();
+            %if &stratifybydp. = Y %then %do;
+            %tableletter();
 /*                %censortable_output_table2(tablename=&tablename.,*/
 /*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),*/
 /*                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall"),*/
 /*                                           reasonlist= &t2censorreasons.);*/
-                %end;
-                %let tablenum = %eval(&tablenum + 1);
             %end;
+            %let tablenum = %eval(&tablenum + 1);
+        %end;
 
-            %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
-                /*loop through each reason for censoring*/
-                %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
-                    %let reason = %scan(&defaultcensororder., &c.);
-                    %let censorreasontable = N;
+        %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
+            /*loop through each reason for censoring*/
+            %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                %let reason = %scan(&defaultcensororder., &c.);
+                %let censorreasontable = N;
 
-                    data _null_;
-                        set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
-                        /*check if censoring reason requested*/ 
-                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
-                    run;
+                data _null_;
+                    set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
+                    /*check if censoring reason requested*/ 
+                    if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                run;
 
-                    %if &censorreasontable. = Y %then %do;
-                    /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
-                    data chktable;
-                        set &tablename.(where=(table_name="&reason."));
-                    run;
-                    %isdata(dataset=chktable);
-                    %if %eval(&nobs.>0) %then %do;
-                        /*note - table is not stratified by DP*/
+                %if &censorreasontable. = Y %then %do;
+                /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                data chktable;
+                    set &tablename.(where=(table_name="&reason."));
+                run;
+                %isdata(dataset=chktable);
+                %if %eval(&nobs.>0) %then %do;
+                    /*note - table is not stratified by DP*/
 /*                        %censortable_output_table13(tablename=&tablename.,*/
-/*                        title=%quote(Table &tablenum.&tableletter.. Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
-/*                        where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"));*/
-                        %let tablenum = %eval(&tablenum + 1);
-                    %end;
-                    proc datasets nowarn noprint lib=work;
-                        delete chktable;
-                    quit;
-                    %end;
+/*                        tablenum=&tablenum.&tableletter.,*/
+/*                        title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
+/*                        where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall")
+                      tablesub=overall,
+                      continuousmetrics=&continuousmetrics.,
+                      cattableheader=Episode Length,
+                      conttableheader=Treatment Episode Length,
+                      episodesorpatients=&episodesorpatients.,
+                      censorreason=&reason.);*/
+                    %let tablenum = %eval(&tablenum + 1);
+                %end;
+                proc datasets nowarn noprint lib=work;
+                    delete chktable;
+                quit;
                 %end;
             %end;
-        %mend;
+        %end;
 
-        %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
-            %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ));
-        %end;
-        %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
-            %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ));
-        %end;
-        %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
-            %t5censoroutput(tableid=T16, tablename = t5censor, first=);
-        %end;
-        %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
-            %t5censoroutput(tableid=T17, tablename = t5censor, first=);
-        %end;
+        options orientation = portrait;
+    %mend;
+
+    %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
+        %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ));
+    %end;
+    %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
+        %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ), episodesorpatients=Patients);
+    %end;
+    %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
+        %t5censoroutput(tableid=T16, tablename = t5censor, first=);
+    %end;
+    %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
+        %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
+    %end;
 
 
 ***************************************************************************************************;

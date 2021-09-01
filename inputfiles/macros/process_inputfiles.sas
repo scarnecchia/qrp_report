@@ -595,6 +595,7 @@
             labelvar = lowcase(labelvar);
             /*set reporttile if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
+            if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
