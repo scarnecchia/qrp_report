@@ -29,11 +29,19 @@
 *
 ***************************************************************************************************;
 %macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=, tablenum=, stratification = );
-                            
+      
+    /*Save to reportdata folder*/
+    %isdata(dataset=repdata.table&tablenum.);
+    %if %eval(&nobs.<1) %then %do;
+        data repdata.table&tablenum.;
+            set &tablename(where=(&where.));
+        run;
+    %end;
+ 
 ods excel options(sheet_name="Table &tablenum.");
     ods proclabel = "Table &tablenum.";
 
-    proc report data = repdata.&Tablename.&tablenum. nofs nowd spanrows missing headskip split="*"
+    proc report data = &Tablename.&tablenum. nofs nowd spanrows missing headskip split="*"
     	style(header)=[rules=none background=white font_weight=bold font_size=8pt color=black just = c fontfamily=arial vjust=b] split='*'
     	style(report)=[rules=none frame=box background=white foreground=black cellpadding =&line_spacing.pt color=black];
     		
