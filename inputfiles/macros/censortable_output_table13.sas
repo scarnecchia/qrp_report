@@ -68,14 +68,14 @@
     data _footnotes;
 	   length footnote_order 3; 
        set lookup.lookup_footnotes_censortables(where = (order in (999 /*dummy to prevent e r r o r*/
-        %if %str("&conttableheader.") = %str("Observable Time") %then %do; 2 %end;
-        %if &censorreason. = cens_episend %then %do; 3 %end;
-        %if &censorreason. = cens_event %then %do; 4 %end;
-        %if &censorreason. = cens_spec %then %do; 5 %end;
-        %if &censorreason. = cens_dth %then %do; 6 %end;
-        %if &censorreason. = cens_elig %then %do; 7 %end;
-        %if &censorreason. = cens_dpend %then %do; 8 %end;
-        %if &censorreason. = cens_qryend %then %do; 9 %end; )));
+        %if %str("&conttableheader.") = %str("Observable Time") %then %do; 3 %end;
+        %if &censorreason. = cens_episend %then %do; 4 %end;
+        %if &censorreason. = cens_event %then %do; 5 %end;
+        %if &censorreason. = cens_spec %then %do; 6 %end;
+        %if &censorreason. = cens_dth %then %do; 7 %end;
+        %if &censorreason. = cens_elig %then %do; 8 %end;
+        %if &censorreason. = cens_dpend %then %do; 9 %end;
+        %if &censorreason. = cens_qryend %then %do; 10 %end; )));
 	  by order;
 	  footnote_order = _n_;
     run;
