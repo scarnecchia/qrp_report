@@ -19,7 +19,6 @@
 *   - t2censor.sas7bdat
 *   - t2followuptime.sas7bdat  
 *   - t5censor.sas7bdat 
-*   - t5censor_first.sas7bdat
 *
 *  PARAMETERS:
 *   - tables: list of censor tables in quotes from table file                                                                   
@@ -59,7 +58,7 @@
 		   ,:levels_o_all separated by " "
      from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
 	 
-	 /* User specified censor reasons for Type 1 and Type 2 table 3 and Type 5 table 15 and 17 */
+	 /* User specified censor reasons for Type 2 table 3 and Type 5 table 15 and 17 */
 	 %if %index(&tables.,T3) > 0 | %index(&tables.,T15) > 0 | %index(&tables.,T17) > 0 %then %do;
 			select distinct(censorreason) into: censorreason_t3_all separated by ' '
 			from tablefile (where = (dataset = "&censordataset." and table in ("T3", "T15", "T17")));
@@ -68,7 +67,7 @@
 	 /* If T5Censor then acquire categories from the tablefile */  
      %if &censordataset. = t5censor %then %do;
       select distinct(categories) into: catvar
-		  from tablefile (where = (dataset = "&censordataset." and table in ("T15", "T17")));
+		  from tablefile (where = (dataset = "&censordataset." and table in ("T3", "T15", "T17")));
      %end;
    quit;
 	
