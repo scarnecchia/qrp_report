@@ -409,7 +409,7 @@
    	   run;
 	   
 	   
-	   /*missing values T1, T2, T5*/
+	   /*Assign missing values indicators*/
        %let is_e =0;
 	   %let is_p =0;
 	   %let pct = '';
@@ -519,4 +519,5 @@
     quit;
 
    %put =====> END MACRO: censortable_createdata;
+
 %mend censortable_createdata;
