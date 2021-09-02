@@ -409,80 +409,108 @@
    	   run;
 	   
 	   
-	 /*missing values T1, T2, T5*/
-     %let is_e =0;
-	 %let is_p =0;
+	   /*missing values T1, T2, T5*/
+       %let is_e =0;
+	   %let is_p =0;
+	   %let pct = '';
+	   %let tot = '';
 
-     proc contents data=&censordataset. out=&censordataset._vars noprint;
-	 quit;
+       proc contents data=&censordataset. out=&censordataset._vars noprint;
+	   quit;
 
-	 proc sql noprint;
-	   select count(*) into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
-	   select count(*) into :is_p from &censordataset._vars where lowcase(name) = 'patients';
-	 quit;
+	   proc sql noprint;
+	     select count(*) into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
+	     select count(*) into :is_p from &censordataset._vars where lowcase(name) = 'patients';
+	     select distinct name into :pct 
+           separated by ' '
+           from &censordataset._vars 
+           where lowcase(substr(name, length(name) - 3,4)) = "_pct";
+		   select distinct name into :cen_tot 
+           separated by ' '
+           from &censordataset._vars 
+           where lowcase(substr(name, length(name) - 3,4)) = "_tot";
+	   quit;
 
-     %let var_pe = ;
-     %if &is_p> 0 %then %let var_pe = Patients;
-     %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
-     %let stat_char = min q1 median q3 max mean std ;
+       %let var_pe = ;
+       %if &is_p> 0 %then %let var_pe = Patients;
+       %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
+       %let stat_char = min q1 median q3 max mean std ;
 
-     data &censordataset.;
-       set &censordataset.;
-       %do  cr = 1 %to %sysfunc(countw(&censorreason));
-       /*Do not need to check if the variable exists on the dataset because only
-         those created are listed*/
-         %scan(&censorreason, &cr, ' ')_char = strip(put(%scan(&censorreason, &cr, ' '), 8.));
-         %scan(&censorreason, &cr, ' ')_pct_char = strip(put(%scan(&censorreason, &cr, ' ')_pct, percent10.1));
-		 %scan(&censorreason, &cr, ' ')_tot_char = strip(put(%scan(&censorreason, &cr, ' ')_tot, 8.));
-         %scan(&censorreason, &cr, ' ')_tot_pct_char = strip(put(%scan(&censorreason, &cr, ' ')tot_pct, percent10.1));
- 
-		 %do st_c = 1 %to %sysfunc(countw(&stat_char));
-		  %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &st_c, ' '))) %then %do;
-             %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 10.8));
-           %end;
-           %else %do;
-               %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 8.));
-           %end; 
-		 %end;
+       data &censordataset. (drop= overall_tot:);
+         set &censordataset.;
 
-       if
-         %do pe = 1 %to %sysfunc(countw(&var_pe));
-           %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = . 
-	       %end;
-	       %else %do;
-	         and %scan(&var_pe, &pe, ' ') = . 
-	       %end;
+	     /*_tot variable char and missing creation */
+         %do  cr = 1 %to %sysfunc(countw(&cen_tot));
+           %scan(&cen_tot, &cr, ' ')_char = strip(put(%scan(&cen_tot, &cr, ' '), comma8.0));
+
+         if (%do pe = 1 %to %sysfunc(countw(&var_pe));
+              %if &pe = 1 %then %do;
+               (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0)
+	          %end;
+	          %else %do;
+	           and (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0) 
+	          %end;
+             %end;)
+		   and overall_tot > 0
+           then do;
+             %scan(&cen_tot, &cr, ' ')_char = "NaN";   
+         end;
+         else if overall_tot = 0
+           then do;
+             %scan(&cen_tot, &cr, ' ')_char = ".";
+         end;
+	   %end;
+
+	   /*stat variables*/
+	   %do  st_c = 1 %to %sysfunc(countw(&stat_char));
+         %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &st_c, ' '))) %then %do;
+           %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 10.8));
          %end;
+         %else %do;
+           %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), comma8.0));
+         %end; 
+
+         if
+           (%do pe = 1 %to %sysfunc(countw(&var_pe));
+             %if &pe = 1 %then %do;
+               (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0)
+	         %end;
+	         %else %do;
+	           and (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0) 
+	         %end;
+           %end;)
+		   and overall_tot > 0
          then do;
-           %scan(&censorreason, &cr, ' ')_char = "NaN"; 
-		   %scan(&censorreason, &cr, ' ')_pct_char = "NaN";
-		   %scan(&censorreason, &cr, ' ')_tot_char = "NaN"; 
-		   %scan(&censorreason, &cr, ' ')_tot_pct_char = "NaN";
-		   %do st_c = 1 %to %sysfunc(countw(&stat_char));
-		     %scan(&stat_char, &st_c, ' ')_char = "NaN";
-		   %end;
-		   
-       end;
-       else if 
-         %do pe = 1 %to %sysfunc(countw(&var_pe));
-           %if &pe = 1 %then %do;
-             %scan(&var_pe, &pe, ' ') = 0
-	       %end;
-	       %else %do;
-	         or %scan(&var_pe, &pe, ' ') = 0 
-	       %end; 
-         %end;
-         then do;
-           %scan(&censorreason, &cr, ' ')_char = ".";
-		   %scan(&censorreason, &cr, ' ')_pct_char = ".";
-		   %scan(&censorreason, &cr, ' ')_tot_char = "."; 
-		   %scan(&censorreason, &cr, ' ')_tot_pct_char = ".";
-           %do st_c = 1 %to %sysfunc(countw(&stat_char));
+		   %scan(&stat_char, &st_c, ' ')_char = "NaN";
+         end;
+         else if overall_tot = 0
+           then do;
 		     %scan(&stat_char, &st_c, ' ')_char = ".";
-		   %end; 
+         end;
+	   %end;
+
+	   /*_pct variables*/
+	   %do  p = 1 %to %sysfunc(countw(&pct));    
+         %scan(&pct, &p, ' ')_char = strip(put(%scan(&pct, &p, ' '), percent10.1));
+
+         if
+           (%do pe = 1 %to %sysfunc(countw(&var_pe));
+             %if &pe = 1 %then %do;
+               (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0)
+	         %end;
+	         %else %do;
+	           and (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0) 
+	         %end;
+           %end;)
+		 and overall_tot > 0
+         then do;
+           %scan(&pct, &p, ' ')_char = "NaN";  
        end;
-     %end;
+       else if overall_tot = 0
+         then do;
+           %scan(&pct, &p, ' ')_char = ".";		  
+       end;
+	   %end;
    run;
 
    /* Clean up work files */
