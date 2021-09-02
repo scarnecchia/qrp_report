@@ -367,13 +367,13 @@
     %mend;
 
     %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ));
+        %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ),  episodesorpatients=Patients);
     %end;
     %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
         %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ), episodesorpatients=Patients);
     %end;
     %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T16, tablename = t5censor, first=);
+        %t5censoroutput(tableid=T16, tablename = t5censor, first=, episodesorpatients=Episodes);
     %end;
     %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
         %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
