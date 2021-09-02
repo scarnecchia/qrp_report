@@ -47,7 +47,6 @@
    %let level_o =;        /* Level associated with overall continuous return */
    
    proc sql noprint;
-     select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
      select tablesub
             ,%if &censordataset. = t5censor %then %do; catx(' ',strat1, strat2) %end;
 			 %else %do; strat1 %end;
