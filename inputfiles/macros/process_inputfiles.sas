@@ -944,7 +944,7 @@
                                 end;
                                 retain categoryfortable;
                                 if tablesub = 'overall' then call symputx('overallrequested', 'Y');
-                                if table in ('T1', 'T3', 'T5','T7') and missing(categories) then do;
+                                if table in ('T1', 'T3', 'T5', 'T7', 'T15', 'T17') and missing(categories) then do;
                                     put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
                                     abort;
                                 end; 
@@ -958,6 +958,21 @@
                                %abort;
                             %end;
                         %end;
+						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
+						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						   data _null_;    
+                                set tablefile(where=(table in ('T15' 'T17')));
+								retain categoryfortable;
+                                if _n_ = 1 then do;
+                                   categoryfortable = categories;
+                                end;
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for tables T15 and T17.";
+									put "Categories for table" table "are "categories", expected categories are" categoryfortable".";
+                                    abort;
+                                end;
+                            run;
+						%end;
                     %end;
 					
 					/* Read in table columns file*/
