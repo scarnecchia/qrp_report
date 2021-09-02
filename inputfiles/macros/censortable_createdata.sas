@@ -295,12 +295,12 @@
   	      create table den&cl. (drop = level) as
   	      select distinct b.* 
 	                     ,a.epi_tot
-  	      	             ,(b.episodes/a.epi_tot)   as epi_tot_pct         format=percent10.1
+  	      	             ,(b.episodes/a.epi_tot)   as epi_tot_pct         
 	   	                 %do cn= 1 %to &cens_num;
   	      	                %let var = %scan(&censorreason, &cn);
 							,a.&var._tot
-  	      	                ,(b.&var/a.&var._tot)   as &var._pct          format=percent10.1
-							,a.&var._tot/a.epi_tot  as &var._tot_pct      format=percent10.1
+  	      	                ,(b.&var/a.&var._tot)   as &var._pct          
+							,a.&var._tot/a.epi_tot  as &var._tot_pct      
   	      	             %end;
 						 ,"&&tablesub&cl." as strat                       length=8 format = $8.
 						 %if "&&tablesub&cl." = "overall" %then %do;
@@ -466,7 +466,6 @@
    	         if missing(epi_tot_pct) then epi_tot_pct = 0;
    	       %end;
 	     %end;
-   	     format epi_tot_pct percent10.1;
    	   run;
 	   
 	   /*Assign missing values indicators*/
@@ -559,11 +558,7 @@
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
 	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
-   	   run;
-
-       data output.&censordataset.&dset_suffix.;
-        set &censordataset.&dset_suffix.; run;
-	   
+   	   run;	   
 
    %mend censor_summary;
 
