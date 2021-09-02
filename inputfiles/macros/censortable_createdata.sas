@@ -290,7 +290,7 @@
 	  
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data 
       Looping occurs based on levels on the censor_data dataset. For Types 1 and 2 these are levels that do not have
-	  censdays_value populated. For type 5 the loop runs for all levels requested */
+	  censdays_value populated. There is one loop for each tablesub requested. For type 5 the loop runs for all levels requested */
       %do cl = 1 %to &numcensorlevel.;
   	    proc sql noprint;
   	      create table den&cl. (drop = level) as
