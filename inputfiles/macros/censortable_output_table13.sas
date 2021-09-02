@@ -140,9 +140,9 @@
 
         define censdays_value_cat_format / across '' order=data
             style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define episodes_char / "Number of &episodesorpatients"
+        define episodes_char / "Number of &episodesorpatients" group
            style(column)=[just=C width=55pt background= backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define Epi_Tot_Pct_char / "Percent of &episodesorpatients"
+        define Epi_Tot_Pct_char / "Percent of &episodesorpatients" group
            style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if &continuousmetrics. = Y %then %do;
