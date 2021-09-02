@@ -313,7 +313,7 @@
                     %end; 
     			%end;        
 
-    			*Add labels - label for _&c. variables will be used for proc report;
+    			*Add labels - label for _&c.;
     			%do c =1 %to &num_categories.;
     				label _&c. = "&&&lbl&c.";
     			%end;
