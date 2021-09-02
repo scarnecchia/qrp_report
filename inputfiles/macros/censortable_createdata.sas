@@ -468,7 +468,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset.&dset_suffix. out = output.&censordataset.&dset_suffix.;
+   	   proc sort data=&censordataset.&dset_suffix. ;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
