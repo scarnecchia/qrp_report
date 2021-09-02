@@ -40,11 +40,11 @@
  /*--------------------------------------------------------------------------------------------
  	Identify censor stratification variables                                                      
    --------------------------------------------------------------------------------------------*/
-   %let censorreason_t3_all = ;/* Table 4specific user specified censor reasons*/
+   %let censorreason_t3_all = ;/* Table 3 user specified censor reasons*/
    %let censor_strat_all = ;   /* All censor stratifiers */
    %let levels_all = ;         /* All levels that do not not contain censdays_value as a stratifier*/
    %let tablesub_all =;        /* All tablesubs */
-   %let levels_o_all =;        /* All levels associated with overall tablesubs */
+   %let level_o =;        /* Level associated with overall continuous return */
    
    proc sql noprint;
      select count(tablesub) into: numstrat trimmed from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
@@ -56,7 +56,7 @@
 	  into :tablesub_all separated by " "
 	       ,:censor_strat_all separated by " "
 		   ,:levels_all separated by " "
-		   ,:levels_o_all separated by " "
+		   ,:level_o separated by " "
      from tablefile (where = (dataset = "&censordataset." and table in (&tables.))) ;
 	 
 	 /* User specified censor reasons for Type 1 and Type 2 table 3 and Type 5 table 15 and 17 */
@@ -76,7 +76,7 @@
 	%nonrep(invar= censor_strat_all, outvar = censor_strat);
 	%nonrep(invar= levels_all, outvar = levels);
 	%nonrep(invar= tablesub_all, outvar = tablesubs);
-	%nonrep(invar= levels_o_all, outvar = levels_overall);
+	%nonrep(invar= level_o, outvar = level_overall);
 	%nonrep(invar= censorreason_t3_all, outvar = censorreason_t3);
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  %let censor_strat = &censor_strat. censorcat_sort; %end;
@@ -90,7 +90,7 @@
 	
 	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
 	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */
-	%if &censordataset. ne t5censor and %str(&levels_overall) ne %str() %then %let distribution_var = censdays_value;
+	%if &censordataset. ne t5censor and %str(&level_overall) ne %str() %then %let distribution_var = censdays_value;
 	%else %if %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
 	
@@ -101,9 +101,9 @@
       %convert_categories(var=episodelength, categories=&catvar.);
 	  
       data agg_&censordataset.;
-          set agg_&censordataset. (where=(level in (&levels. &levels_overall.)));
+          set agg_&censordataset. (where=(level in (&levels. &level_overall.)));
           *assign categories;
-          length censdays_value_cat $50.;
+          length censdays_value_cat $50. censorcat_sort 3;
 		  *initialize values;
 		  call missing(censdays_value_cat);
 		  censorcat_sort = 1;
@@ -121,7 +121,7 @@
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
    --------------------------------------------------------------------------------------------*/  
    /* Aggregate data across all DPs */
-   proc summary data = agg_&censordataset. (where=(level in (&levels. &levels_overall.))) nway missing;
+   proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
    	 class runid group &censor_strat. level &distribution_var.;
    	 var episodes &censorreason.;
    	 output out = censor_all (drop = _:) sum=;
@@ -129,7 +129,7 @@
    
    %if &stratifybydp. = Y %then %do;
      /* Aggregate by DP */
-     proc summary data = agg_&censordataset. (where=(level in (&levels. &levels_overall.))) nway missing;
+     proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
       class runid dpidsiteid group &censor_strat. level &distribution_var.;
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
@@ -264,7 +264,7 @@
 	 
    /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
-        delete %if %str(&levels_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
+        delete %if %str(&level_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	   
    /* If episodenum or episodelength is requested for stratification need to summarize data by 
@@ -277,21 +277,15 @@
 				   ,dpidsiteid
 				   ,level
 				   ,censdays_value_cat 
-				   ,max(censorcat_sort) as censorcat_sort
-				   ,sum(episodes)
+				   ,censorcat_sort
+				   ,sum(episodes) as episodes
 				   %do cn= 1 %to &cens_num;
   	      	          %let var = %scan(&censorreason, &cn);
 					  ,sum(&var.) as &var.
   	      	       %end;
 		     from censor_data &whereclause.
-			 group by runid, group, dpidsiteid, level, censorcat_sort;
+			 group by runid, group, dpidsiteid, level, censdays_value_cat, censorcat_sort;
 		quit;
-	  %end;
-   /* If table 3 not requested, but table 2 first episode requested restrict data to first episode */
-	  %else %if &dset_suffix = _first %then %do;
-	     data censor_data&dset_suffix (keep = runid group dpidsiteid level episodes cens:);
-		   set censor_data &whereclause.;
-		 run;
 	  %end;
 	  
    /* Calculate denominators and percentage totals by stratifiers, joining summary stats back to aggregate data */
@@ -415,6 +409,7 @@
    	   data &censordataset.&dset_suffix. (drop=censdays_value_cat);
    	     set &censordataset.&dset_suffix.;
 		 %if %str(&distribution_var.) = %str() and &censordataset. = t5censor %then %do;
+		   length censdays_value_cat $50. censorcat_sort 3;
 		   censdays_value_cat = "";
 		   censorcat_sort = 1;
 		 %end;
@@ -464,6 +459,7 @@
    	         	  episodes = &var;
    	        	  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
+				  drop &var._pct;
    	         end;
    	         if missing(&var._pct) then &var._pct = 0;
    	         if missing(epi_tot_pct) then epi_tot_pct = 0;
@@ -472,7 +468,7 @@
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
-   	   proc sort data=&censordataset.&dset_suffix.;
+   	   proc sort data=&censordataset.&dset_suffix. out = output.&censordataset.&dset_suffix.;
    	      by order dpidsiteid censorcat_sort table_name 
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
@@ -486,7 +482,7 @@
     %end;
    
    /* Create all episodes tables */
-    %if %index(&censor_strat.,censdays_value_cat) > 0 %then %do;
+    %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&censordataset.)) > 0 | (&censordataset=t5censor and %sysfunc(prxmatch(m/T16|T17/i,&tables.)) > 0) %then %do;
       %censor_summary;
     %end;
    
