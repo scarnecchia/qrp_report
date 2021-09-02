@@ -129,19 +129,19 @@
         %end;
 
         define epi_tot_char / group "Total Number of &episodesorpatients"
-            style(column)=[width =.8in tagattr="type:string" background= backgroundfmt.] 
+            style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if %str("&censorreason") ne %str("") %then %do; 
         define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))&super_reason."
-            style(column)=[width=1in tagattr="type:string" background= backgroundfmt.] 
+            style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.] 
             style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
 
         define censdays_value_cat_format / across '' order=data
             style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define episodes_char / "Number of &episodesorpatients" group
-           style(column)=[just=C width=55pt background= backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define Epi_Tot_Pct_char / "Percent of &episodesorpatients" group
            style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
 
