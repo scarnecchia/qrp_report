@@ -31,7 +31,6 @@
 ***************************************************************************************************;
 
 %macro attrition_createdata;
-
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -588,14 +587,16 @@
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
+	  %if %index(&reporttype,L2) %then %let attrperiodid=_&periodid;
+
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
-	  proc sort data = all_attrition_agg out=agg_patient_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
+	  proc sort data = all_attrition_agg out=agg_patient_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
 	  	by level report_descr group;
 	  run;
 	  %end;
 
-	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
+	  proc sort data = all_attrition_agg out=agg_episode_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
 	  	by level report_descr group;
 	  run;
 
