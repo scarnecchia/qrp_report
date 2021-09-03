@@ -163,15 +163,16 @@
      select count(distinct(level)) into: numcensorlevel trimmed
 	 from censor_data;
 	 
+	 /* There are instances where there are multiple levesl for t5censor, but tablesub is always overall, so force tablesub macros to "overall" */
 	 select distinct(a.level) 
-            ,tablesub
+            ,%if &censordataset. = t5censor %then %do; "overall" %end;
+			 %else %do; tablesub %end;
       into:censlevel1 -:censlevel&numcensorlevel.
 		 ,:tablesub1 -:tablesub&numcensorlevel.
 	 from censor_data as a
      left join tablefile (where = (dataset = "&censordataset." and table in (&tables.))) as b
        on strip(a.level) = strip(b.levelid1);
    quit;
-   
    
  /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;

@@ -976,7 +976,7 @@
                                 end;
                                 if categoryfortable ne categories then do;
                                     put "ERROR: (Sentinel) CATEGORIES parameter must be the same for tables T15 and T17.";
-									put "Categories for table" table "are "categories", expected categories are" categoryfortable".";
+									put "Categories for table " table " are " categories ", expected categories are " categoryfortable ".";
                                     abort;
                                 end;
                             run;
