@@ -120,7 +120,10 @@
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
    --------------------------------------------------------------------------------------------*/  
    /* Aggregate data across all DPs */
-   proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
+   proc summary data = agg_&censordataset. 
+   		 								 %if %length(&levels) > 0 or %length(&levels_overall) > 0 %then %do;
+   										 (where=(level in (&levels. &level_overall.))) 
+   										 %end; nway missing;
    	 class runid group &censor_strat. level &distribution_var.;
    	 var episodes &censorreason.;
    	 output out = censor_all (drop = _:) sum=;
@@ -128,7 +131,10 @@
    
    %if &stratifybydp. = Y %then %do;
      /* Aggregate by DP */
-     proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
+     proc summary data = agg_&censordataset. 
+     										 %if %length(&levels) > 0 or %length(&levels_overall) > 0 %then %do;
+     										 (where=(level in (&levels. &level_overall.))) 
+     										 %end; nway missing;
       class runid dpidsiteid group &censor_strat. level &distribution_var.;
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
