@@ -35,9 +35,20 @@
 
 	%put =====> MACRO CALLED: t5tables_output;
 	
+	%let hdr=N;
 	data repdata.table&tablenum.&tableletter.;
 		set &dataset.;
+		if missing(header)=0 then call symputx('hdr','Y');
 	run;
+	%put hdr = &hdr.;
+	
+	proc sql noprint;
+	select max(sortorder1), max(sortorder2)
+	  into :maxorder1, :maxorder2
+	 from &dataset.;
+	quit;
+	%put maxorder1 = &maxorder1.;
+	%put maxorder2 = &maxorder2.;
 	
     %let num_fn = 0;	
 	
@@ -135,44 +146,59 @@
             style(report)=[rules=none frame=void cellpadding=1.75pt];	
 
 		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
-			column header sortorder1 grouplabel total_count_char ("&t5head." 
+			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("&t5head." 
 					  %do s = 1 %to %eval(&num_categories);
 						 %let t5cat = %scan(&categories., &s, %str( ));
-						 ("^S={ borderleftcolor=bgr  bordertopcolor=black}&&lbl&s.." _&s._char _&s._percent_char)
+						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&&lbl&s.." _&s._char _&s._percent_char)
                       %end;
 					);
 		%end;
 		%else %do;
-			column header sortorder1 grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
+			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
 					  %do s = 1 %to %eval(&num_categories);
 						 %let t5cat = %scan(&categories., &s, %str( ));
-						 ("^S={ borderleftcolor=bgr  bordertopcolor=black}&t5cat. Days" _&s._char _&s._percent_char)
+						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&t5cat. Days" _&s._char _&s._percent_char)
                       %end;
 					);
 		%end;
-				define header / group noprint;
-				define sortorder1 / display noprint;
+				%if &hdr. = Y %then %do; 
+				define header / group noprint order=data;
+				%end;
+			   	define order / order noprint order=data;
+			   	define sortorder1 / order noprint order=data;
+			   	define sortorder2 / order noprint order=data;
 				define grouplabel / display ''
 					style(column)=[just=L] 
-					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
+					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr borderbottomcolor=black];
 				define total_count_char / display "Total Number*of &t5type."  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 borderbottomcolor=black];	
 				%do s=1 %to %eval(&num_categories);
 					define _&s._char / display "Number of*&t5type."  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black] format=$nafmt.;
-					define _&s._percent_char / display "Percent of All*&t5type."  
+					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black borderbottomcolor=black];
+					define _&s._percent_char / display "Percent of Total*&t5type."  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
 				%end;
 
             /*format grouplabel*/
             compute grouplabel;
-                if sortorder1=0 then call define (_col_,"style","style=[asis=on fontstyle=italic]");
-                else call define (_col_,"style","style=[pretext='     ']");
+                if sortorder1=0 then do;
+					%if &hdr. = Y %then %do;
+						call define (_col_,"style","style=[fontstyle=italic]");
+					%end;
+					%else %do;
+						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");
+						else call define (_row_,"style","style=[background=libgr font_weight=bold bordertopcolor=black borderbottomcolor=black]");
+					%end;
+				end;
+				else if &maxorder1=1 then call define(_col_,'style','style={indent=.15in}');
+				else do;
+					if sortorder2 = 0 then call define(_col_,'style','style={indent=.15in}');
+					else if sortorder2 ne 0 then call define(_col_,'style','style={indent=.25in}');
+				end;
             endcomp;
-
 
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -181,11 +207,13 @@
             endcomp;
           
             /*Add header rows*/
+			%if &hdr. = Y %then %do;
             compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
-			text = header;
-			num = 100;
-            line text $Varying. num; 
-            endcomp;
+				text = header;
+				num = 100;
+				line text $Varying. num;
+            endcomp; 
+			%end;
 
             /* Add Footnotes */
             %if %eval(&num_fn > 0) %then %do;
@@ -224,41 +252,57 @@
             style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];
 
-			column header sortorder1 grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
-				define header / group noprint;
-				define sortorder1 / display noprint;
+			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
+				%if &hdr. = Y %then %do; 
+				define header / group noprint order=data;
+				%end;
+			   	define order / order noprint order=data;
+			   	define sortorder1 / order noprint order=data;
+			   	define sortorder2 / order noprint order=data;
 				define grouplabel / display ''
 					style(column)=[just=L] 
-					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
+					style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr borderbottomcolor=black];
 				define total_count_char / display 'Total Number*of Dispensings'  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=bgr borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
+					style(header)=[background = bgr borderleftcolor=bgr borderleftwidth=1 borderrightcolor=bgr borderbottomcolor=black];
 				define min_char / display 'Minimum' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black borderbottomcolor=black];	
 				define p25_char / display 'Q1' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
 				define median_char / display 'Median' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;		
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];		
 				define p75_char / display 'Q3' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;			
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];			
 				define max_char / display 'Maximum' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;		
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];		
 				define mean_char / display 'Mean' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;			
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];			
 				define std_char / display 'Standard*Deviation' 
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black] format=$nafmt.;	
+					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
 
             /*format grouplabel*/
             compute grouplabel;
-                if sortorder1=0 then call define (_col_,"style","style=[asis=on fontstyle=italic]");
-                else call define (_col_,"style","style=[pretext='     ']");
+                if sortorder1=0 then do;
+					%if &hdr. = Y %then %do;
+						call define (_col_,"style","style=[fontstyle=italic]");
+					%end;
+					%else %do;
+						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");
+						else call define (_row_,"style","style=[background=libgr font_weight=bold bordertopcolor=black borderbottomcolor=black]");
+					%end;
+				end;
+				else if &maxorder1=1 then call define(_col_,'style','style={indent=.15in}');
+				else do;
+					if sortorder2 = 0 then call define(_col_,'style','style={indent=.15in}');
+					else if sortorder2 ne 0 then call define(_col_,'style','style={indent=.25in}');
+				end;
             endcomp;
 
 			/* Add title */
@@ -268,11 +312,13 @@
 			endcomp;
           
             /*Add header rows*/
+			%if &hdr. = Y %then %do;
             compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
-			text = header;
-			num = 100;
-            line text $Varying. num; 
-            endcomp;
+				text = header;
+				num = 100;
+				line text $Varying. num;
+            endcomp; 
+			%end;
 
             /* Add Footnotes */
             %if %eval(&num_fn > 0) %then %do;

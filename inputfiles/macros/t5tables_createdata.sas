@@ -597,6 +597,7 @@
 								order, 
 								sortorder1, 
 								sortorder2,
+								header,	
 								&firststrat.
                                 %if &firststrat. = agegroup %then %do;
 								, agegroupnum

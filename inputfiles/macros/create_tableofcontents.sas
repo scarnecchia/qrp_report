@@ -637,6 +637,8 @@
                 %end;
             %end;
 
+			
+            /*Save the table of contents datasets for use during the Type 5 report output process*/
 			%isdata(dataset=t5_tempmap);
 			%if %eval(&nobs.>0) %then %do;
 				data t5_tempmap;
@@ -782,7 +784,9 @@
                cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
                disttitle=); 
     	%end;
-			
+		
+		
+        /*Additional variables for ordering Type 5 table report output*/			
 		data t5_tempmap;
 		 set t5_tempmap;
 		 length t5order 3;
