@@ -51,7 +51,7 @@
                 %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
             end;
             %if %index(&reporttype,T2L2) %then %do;
-            monitoringperiod=&periodid;
+            monitoringperiod=&j;
             %end;
         run;
 
