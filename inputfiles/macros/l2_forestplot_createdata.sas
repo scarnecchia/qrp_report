@@ -342,6 +342,9 @@
           ucl=adjor_UCL;
           end;
           %end;
+          %if "&reporttype" = "T2L2" %then %do;
+          format HR LCL UCL 5.2; 
+          %end;
           if lag_title = title then delete;
       run;
 
