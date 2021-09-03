@@ -164,7 +164,7 @@
 
         /*Add header if requested*/
         %if &includeheaderrow = Y %then %do; 
-            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
+            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             length text $100;
                 text = headerlabel;
                 num = 100;
@@ -179,7 +179,7 @@
                     style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=LIBGR borderbottomcolor=LIBGR];
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
                 text= grouplabel; 
                 num= 150;
