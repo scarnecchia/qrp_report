@@ -50,8 +50,8 @@
      select tablesub
             ,%if &censordataset. = t5censor %then %do; catx(' ',strat1, strat2) %end;
 			 %else %do; strat1 %end;
-	        ,"'"||strip(levelid1)||"'"
-			,"'"||strip(levelid2)||"'"
+	        ,case when strip(levelid1) is not missing then "'"||strip(levelid1)||"'" else '' end
+			,case when strip(levelid2) is not missing then "'"||strip(levelid2)||"'" else '' end
 	  into :tablesub_all separated by " "
 	       ,:censor_strat_all separated by " "
 		   ,:levels_all separated by " "
