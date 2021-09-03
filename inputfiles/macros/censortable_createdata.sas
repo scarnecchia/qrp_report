@@ -50,8 +50,8 @@
      select tablesub
             ,%if &censordataset. = t5censor %then %do; catx(' ',strat1, strat2) %end;
 			 %else %do; strat1 %end;
-	        ,case when strip(levelid1) is not missing then "'"||strip(levelid1)||"'" else '' end
-			,case when strip(levelid2) is not missing then "'"||strip(levelid2)||"'" else '' end
+	        ,"'"||strip(levelid1)||"'"
+			,"'"||strip(levelid2)||"'"
 	  into :tablesub_all separated by " "
 	       ,:censor_strat_all separated by " "
 		   ,:levels_all separated by " "
@@ -89,7 +89,7 @@
 	
 	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
 	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */
-	%if &censordataset. ne t5censor and %str(&level_overall) ne %str() %then %let distribution_var = censdays_value;
+	%if &censordataset. ne t5censor and %str(&level_overall) ne %str('') %then %let distribution_var = censdays_value;
 	%else %if %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
 	
@@ -120,10 +120,7 @@
  	Stack aggregated with DP tables when stratification by DP is requested.                                                   
    --------------------------------------------------------------------------------------------*/  
    /* Aggregate data across all DPs */
-   proc summary data = agg_&censordataset. 
-   		 								 %if %length(&levels) > 0 or %length(&levels_overall) > 0 %then %do;
-   										 (where=(level in (&levels. &level_overall.))) 
-   										 %end; nway missing;
+   proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
    	 class runid group &censor_strat. level &distribution_var.;
    	 var episodes &censorreason.;
    	 output out = censor_all (drop = _:) sum=;
@@ -131,10 +128,7 @@
    
    %if &stratifybydp. = Y %then %do;
      /* Aggregate by DP */
-     proc summary data = agg_&censordataset. 
-     										 %if %length(&levels) > 0 or %length(&levels_overall) > 0 %then %do;
-     										 (where=(level in (&levels. &level_overall.))) 
-     										 %end; nway missing;
+     proc summary data = agg_&censordataset. (where=(level in (&levels. &level_overall.))) nway missing;
       class runid dpidsiteid group &censor_strat. level &distribution_var.;
       var episodes &censorreason.;
       output out = censor_dps (drop = _:) sum=;
@@ -270,7 +264,7 @@
 	 
    /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
-        delete %if %str(&level_overall) ne %str() %then %do;_stats_: %end; %else %do; unique_groups %end;; 
+        delete %if %str(&level_overall) ne %str('') %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	   
    /* If episodenum or episodelength is requested for stratification need to summarize data by 
