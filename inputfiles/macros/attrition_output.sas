@@ -41,7 +41,7 @@
         %let milexcl = N;
         %let claim_level_descr = &tabletype.;
         data repdata.table&tablenum.&tableletter.;
-            set agg_&tabletype._attrition;
+            set agg_&tabletype._attrition&attrperiodid;
             if index(lowcase(report_descr), 'evidence of')>0 then do;
                 call symputx('num_fn', 1);
                 if claim_level = 'MIL' then call symputx('milexcl', 'Y'); /*to mark which row to apply superscript*/
@@ -117,7 +117,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.";
+            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.";
             endcomp;
 
           

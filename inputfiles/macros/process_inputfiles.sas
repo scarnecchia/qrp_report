@@ -592,6 +592,7 @@
     		runid = lowcase(runid);
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
+            labelvar = lowcase(labelvar);
         run;
 
         /* Determine length of label based off input file */
@@ -602,6 +603,8 @@
             set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
         run;
+
+        %let labelfileexists = Y;
     %end;
 
 /***************************************************************************************************
@@ -632,6 +635,7 @@
                 levelvars = lowcase(levelvars);
                 tableid = lowcase(tableID);
                 levelvars = tranwrd(levelvars, "*", " ");
+                levelid = strip(levelid);
 
                 /*****************************************/
                 /* Defensive coding for automatic strata */
@@ -717,7 +721,7 @@
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                       rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
+                       /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
@@ -789,7 +793,7 @@
             %alphabetizevarutil(array=a, in=levelid1, out=levelid1_out);
             %alphabetizevarutil(array=b, in=levelid2, out=levelid2_out);
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
-            %alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
+            *%alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
         run;
 
@@ -814,6 +818,7 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+                         , table.categories
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -829,19 +834,19 @@
                 quit;
    
 				/*Assign stratificationorder to maintain default stratification order of tables*/
-                /*Create a list of all the datasets*/
+                /*Assign macro variable DATASETLIST for list of datasets*/
                 proc sql noprint;
-                  select distinct dataset 
-                  into: datalist separated by ' ' 
-                  from tablefile;
+                    select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
+                    from tablefile(where=(missing(dataset)=0))
                 quit;
-                %put datalist = &datalist; 
+                %let datasetlist = &tdatasetlist.;
+				%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
 
                 /*Loop through for all datasets*/
-                %do ds = 1 %to %sysfunc(countw(&datalist));
+                %do ds = 1 %to %eval(&tdatasetlistnum.);
 
                   data tablefile_&ds.;
-                    set tablefile (where=(dataset= "%scan(&datalist, &ds, ' ')"));
+                    set tablefile (where=(dataset= "%scan(&tdatasetlist, &ds, ' ')"));
 					length n 3;
                     n =_n_;
                   run;
@@ -905,13 +910,41 @@
                    %abort;
                 %end;
                 %else %do;
-                    /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
+                    /*Put list of requested figures into macro variable TABLELIST*/
                     proc sql noprint;
-                        select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
-                        from tablefile(where=(missing(dataset)=0))
+                        select distinct table into: tablelist separated by ' '
+                        from tablefile;
                     quit;
-                    %let datasetlist = &tdatasetlist.;
-					%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
+
+                    /*Type 5:
+                       - Tables T1-T10 require overall category
+                       - Tables T1, T3, T5, T7 all require categories
+                       - Must specify the same category for all stratifications within a table*/
+                    %if &reporttype. = T5 %then %do;
+                        %do t =1 %to %sysfunc(countw(&tablelist.));
+                            %let overallrequested = N;
+                            data _null_;    
+                                set tablefile(where=(table="%scan(&tablelist, &t, ' ')"));
+                                if _n_ = 1 then do;
+                                    categoryfortable = categories;
+                                end;
+                                retain categoryfortable;
+                                if tablesub = 'overall' then call symputx('overallrequested', 'Y');
+                                if table in ('T1', 'T3', 'T5','T7') and missing(categories) then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
+                                    abort;
+                                end; 
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for all stratifications for table %scan(&tablelist, &t, ' ')";
+                                    abort;
+                                end;
+                            run;
+                            %if &overallrequested. = N %then %do;
+                               %put ERROR: (Sentinel) Overall table required for table %scan(&tablelist, &t, ' ');
+                               %abort;
+                            %end;
+                        %end;
+                    %end;
 					
 					/* Read in table columns file*/
 					%if %str("&tablecolumnsfile.") ne %str("") %then %do;
@@ -1259,6 +1292,7 @@
      1: Read in L2ComparisonFile
      2: For T4 reports: read in optional SelectionProbabilitiesFile
      3: create master PS/CS input file dataset    
+     4. Add unique psestimategrp flag to the l2comparisonfile    
 ***************************************************************************************************/
 
     %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
@@ -1423,15 +1457,36 @@
 			run;
         %end;
 
+        *Add unique psestimategrp flag to the l2comparisonfile;                     
+    	 proc sql noprint;
+    	   create table _l2comparisonfile_ps as
+    	     select base.*
+    	 	       ,pscs.psestimategrp
+    	     from l2comparisonfile as base
+    	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+    	 	  on base.runid = pscs.runid
+    	      and base.analysisgrp = pscs.analysisgrp
+    	      order by runid, psestimategrp, order;
+    	 quit;
+    	 
+    	 data l2comparisonfile;
+    	   set _l2comparisonfile_ps; 
+    	   length unique_psestimate 3;
+    	   retain unique_psestimate;
+    	   by runid psestimategrp order;
+    	   unique_psestimate +1;
+           if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
+    	 run;
+    
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
         run;
-	%end;	
+    %end;	
 	
- /***************************************************************************
-   Read in and Output TXT file for treelookup file per runid when it exists
-  ***************************************************************************/
-     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+    /***************************************************************************
+    Read in and Output TXT file for treelookup file per runid when it exists
+    ***************************************************************************/
+    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 	   /*Set each table by looping through runIDs*/
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);
