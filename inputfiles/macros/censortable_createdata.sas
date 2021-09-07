@@ -93,6 +93,10 @@
 	%else %if %index(&censor_strat.,episodelength) > 0 %then %let distribution_var = episodelength;
 	%else %let distribution_var = ;
 	
+	/* Count the number of unique censor reassons across all tables and for table 3 only */
+	%let cens_num_t3 = %sysfunc(countw(&censorreason_t3., %str( )));
+ 	%let cens_num = %sysfunc(countw(&censorreason., %str( )));
+	
  /*--------------------------------------------------------------------------------------------
     If T5Censor apply censdays_value_cat to the agg_t5censor data
    --------------------------------------------------------------------------------------------*/  
@@ -113,7 +117,45 @@
               end;
           %end;            
       run;
-   %end;
+	  
+	  /* Square table censdays_value_cat and censorcat_sort */
+	  proc sql noprint;
+ 	   	 create table _unique_groups as
+ 	   	 select distinct dpidsiteid, group, runid, level
+ 	   	 from agg_&censordataset. (where = (level in (&levels.)))
+		 order by dpidsiteid, group, runid, level;
+ 	  quit;
+	  
+	  data _square_censdays;
+	    set _unique_groups;
+		by dpidsiteid group runid level;
+		length censdays_value_cat $50. censorcat_sort 3;
+		%do c =1 %to &num_categories.;
+           censdays_value_cat = "%scan(&catvar., &c., ' ')";
+           censorcat_sort = &c.;
+		   episodes = 0;
+		   %do cn= 1 %to &cens_num_t3.;
+  	      	 %scan(&censorreason, &cn) = 0;
+  	       %end;
+		   output;
+        %end; 
+	  run;
+	  
+	  proc sort data = agg_&censordataset.;
+	    by dpidsiteid group runid level censorcat_sort;
+	  run;
+	  
+	  data agg_&censordataset;
+	    merge _square_censdays
+		      agg_&censordataset;
+	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
+	  run;
+	  
+	  /* Clean up work files */
+      proc datasets lib=work nowarn nolist noprint;
+       delete _square_censdays _unique_groups; 
+      quit;
+   %end;	
    
  /*--------------------------------------------------------------------------------------------
  	Aggregate by censor reason and stratifications.
@@ -182,10 +224,7 @@
  /*--------------------------------------------------------------------------------------------
  	Set default values for summary statistics when censdays_value or episodelength stratification
     not requested	
-   --------------------------------------------------------------------------------------------*/
- 	 %let cens_num_t3 = %sysfunc(countw(&censorreason_t3., %str( )));
- 	 %let cens_num = %sysfunc(countw(&censorreason., %str( )));
-	 
+   --------------------------------------------------------------------------------------------*/ 
     /* Create a blank table if overall table not requested */
 	%if %str(&distribution_var.) = %str() %then %do;
  	   proc sql noprint;
