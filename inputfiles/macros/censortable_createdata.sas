@@ -121,21 +121,20 @@
 	  /* Square table censdays_value_cat and censorcat_sort */
 	  proc sql noprint;
  	   	 create table _unique_groups as
- 	   	 select distinct dpidsiteid, group, runid, level
+ 	   	 select distinct group, runid, level
  	   	 from agg_&censordataset. (where = (level in (&levels.)))
-		 order by dpidsiteid, group, runid, level;
+		 order by group, runid, level;
  	  quit;
 	  
 	  data _square_censdays;
 	    set _unique_groups;
-		by dpidsiteid group runid level;
-		length censdays_value_cat $50. censorcat_sort 3 episodelength 8;
+		by group runid level;
+		length censdays_value_cat $50. censorcat_sort 3;
 		%do c =1 %to &num_categories.;
            censdays_value_cat = "%scan(&catvar., &c., ' ')";
            censorcat_sort = &c.;
 		   episodes = 0;
-		   episodenum = 1;
-		   episodelength = 0;
+		   npts = 0;
 		   %do cn= 1 %to &cens_num_t3.;
   	      	 %scan(&censorreason, &cn) = 0;
   	       %end;
@@ -144,13 +143,19 @@
 	  run;
 	  
 	  proc sort data = agg_&censordataset.;
-	    by dpidsiteid group runid level censorcat_sort;
+	    by group runid level censorcat_sort;
 	  run;
 	  
 	  data agg_&censordataset;
-	    merge _square_censdays
-		      agg_&censordataset;
-	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
+	    merge _square_censdays (in = square)
+		      agg_&censordataset (in = censor);
+	    by group runid level censorcat_sort censdays_value_cat;
+		if square and not censor and not missing(censdays_value_cat) then do;
+		  episodenum = 1;
+		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
+		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
+		  else episodelength = input(censdays_value_cat,8.);
+		end;
 	  run;
 	  
 	  /* Clean up work files */
