@@ -187,18 +187,22 @@
                     %end;
 
                     %else %if &tableid. = T2 %then %do;
-/*                    %censortable_output_table2(tablename=&tablename.,*/
-/*                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),*/
-/*                                               where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat."),*/
-/*                                               reasonlist= &t2censorreasons.,
-                                                 episodesorpatients=Episodes); */
+                    %censortable_output_table2(tablename=&tablename.,
+                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                               where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                               reasonlist= &t2censorreasons.,
+											   tablesub=&strat.,
+                                               episodesorpatients=Episodes,
+                                               censorreason = ); 
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
-/*                    %censortable_output_table2(tablename=&tablename.,*/
-/*                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),*/
-/*                                               where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat."),*/
-/*                                               reasonlist= &t2censorreasons.,
-                                                 episodesorpatients=Episodes); */
+                    %censortable_output_table2(tablename=&tablename.,
+                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                               where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                               reasonlist= &t2censorreasons.,
+											   tablesub=dpidsiteid,
+                                               episodesorpatients=Episodes,
+                                               censorreason = ); 
                     %end;
                     %end;
 

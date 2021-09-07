@@ -18,8 +18,8 @@
 *	- Where – where clause to filter the &tablename dataset
 *   - Reasonlist – list of reasons to include in table 
 *   - Tablesub - table stratifier
+*   - tablenum - table number
 *   - episodesorpatients - Episodes or Patients label
-*   - censorreason - censor reason 
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -30,13 +30,12 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
-%macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=,tablesub=, stratification =, episodesorpatients =, censorreason= );
-%put jolene;
-options symbolgen macrogen ; 
+%macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=, tablesub=,  episodesorpatients =, tablenum =);
+
  /*Save to reportdata folder*/
     %isdata(dataset=&tablename);
     %if %eval(&nobs.>1) %then %do;
-        data repdata.table2_&Tablename.;
+        data repdata.table&tablenum.;
             set &tablename(where=(&where.));
         run; 
     %end;
@@ -86,7 +85,7 @@ options symbolgen macrogen ;
 
     ods proclabel = "Table &tablenum.";
 
-    proc report data = repdata.table2_&Tablename. nofs nowd spanrows missing split="*"
+    proc report data = repdata.table&tablenum. nofs nowd spanrows missing split="*"
     	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
@@ -108,7 +107,7 @@ options symbolgen macrogen ;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
 	    %if &includeheaderrow = Y %then %do; 
-/*        define headerlabel / group noprint order=data ' ';*/
+        define headerlabel / group noprint order=data ' ';
         %end;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
@@ -133,11 +132,9 @@ options symbolgen macrogen ;
         %do i = 1 %to %sysfunc(countw(&reasonlist));
 		  %let CEN_VAR = %lowcase(%scan(&reasonlist., &i));
 		  define &cen_var._tot_char / group "Total Number of &episodesorpatients" 
-		    style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
 		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
-		     style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         %end;
 
         /*Footnotes*/
