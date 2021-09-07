@@ -129,11 +129,13 @@
 	  data _square_censdays;
 	    set _unique_groups;
 		by dpidsiteid group runid level;
-		length censdays_value_cat $50. censorcat_sort 3;
+		length censdays_value_cat $50. censorcat_sort 3 episodelength 8;
 		%do c =1 %to &num_categories.;
            censdays_value_cat = "%scan(&catvar., &c., ' ')";
            censorcat_sort = &c.;
 		   episodes = 0;
+		   episodenum = 1;
+		   episodelength = 0;
 		   %do cn= 1 %to &cens_num_t3.;
   	      	 %scan(&censorreason, &cn) = 0;
   	       %end;
@@ -259,10 +261,10 @@
 	 %if %str(&distribution_var.) ne %str() %then %do;
  	    %do sl = 1 %to %sysfunc(countw(episodes &censorreason_t3., %str( )));
  	    	%let cen_stat = %scan(episodes &censorreason_t3.,&sl.);
- 	    	   proc sql noprint;
- 	    	     select sum(&cen_stat.) into: checksum
- 	    	     from censor_data_overall &whereclause.;
- 	    	   quit;
+ 	    	 proc sql noprint;
+ 	    	   select sum(&cen_stat.) into: checksum
+ 	    	   from censor_data_overall &whereclause.;
+ 	    	 quit;
  	    	   
  	    	 %if &checksum ^= 0 %then %do;
            
