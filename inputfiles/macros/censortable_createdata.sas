@@ -80,7 +80,7 @@
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  %let censor_strat = &censor_strat. censorcat_sort; %end;
 	%if %index(&censor_strat.,agegroup) > 0 %then %do; %let censor_strat = &censor_strat. agegroupnum; %end;
-	%if %index(&censor_strat.,episode) > 0 %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
+	%if %index(&censor_strat.,episode) > 0 and %str(&tables.) ne %str("T14") %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
 	
 	/* All possible censor reasons based on dataset type */
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
@@ -267,8 +267,9 @@
         delete %if %str(&level_overall) ne %str('') %then %do;_stats_: %end; %else %do; unique_groups %end;; 
       quit;	
 	   
-   /* If episodenum or episodelength is requested for stratification need to summarize data by 
-      runid group dpidsiteid level and censorcat_sort for tables 2 and 3   */
+   /* If episodelength is requested for stratification need to summarize data by 
+      runid group dpidsiteid level and censorcat_sort for tables 2 and 3. If only
+      episodenum is requested (table 14), then summarize by runid group dpidsiteid level. */
       %if %index(&censor_strat.,episode) > 0 %then %do; 
 	    proc sql noprint undo_policy=none;
 		  create table censor_data&dset_suffix. as 
@@ -276,15 +277,21 @@
 			       ,group
 				   ,dpidsiteid
 				   ,level
-				   ,censdays_value_cat 
-				   ,censorcat_sort
+				   %if %index(&tables.,T15) > 0 | %index(&tables.,T17) > 0 %then %do;
+				     ,censdays_value_cat 
+				     ,censorcat_sort
+				   %end;
 				   ,sum(episodes) as episodes
 				   %do cn= 1 %to &cens_num;
   	      	          %let var = %scan(&censorreason, &cn);
 					  ,sum(&var.) as &var.
   	      	       %end;
 		     from censor_data &whereclause.
-			 group by runid, group, dpidsiteid, level, censdays_value_cat, censorcat_sort;
+			 group by runid, group, dpidsiteid, level
+			       %if %index(&tables.,T15) > 0 | %index(&tables.,T17) > 0 %then %do;
+				     ,censdays_value_cat
+					 ,censorcat_sort
+				   %end;;
 		quit;
 	  %end;
 	  
