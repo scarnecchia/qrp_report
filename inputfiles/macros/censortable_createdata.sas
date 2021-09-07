@@ -106,7 +106,7 @@
       data agg_&censordataset.;
           set agg_&censordataset. (where=(level in (&levels. &level_overall.)));
           *assign categories;
-          length censdays_value_cat $50. censorcat_sort 3;
+          length censdays_value_cat $15. censorcat_sort 3;
 		  *initialize values;
 		  call missing(censdays_value_cat);
 		  censorcat_sort = 1;
@@ -507,14 +507,13 @@
    	         %let var = %scan(&censorreason_t3., &cn);
    	         if table_name = "&var" then do;
    	         	  episodes = &var;
-   	        	  epi_tot_pct = &var._pct;
+				  epi_tot_pct = &var._pct;
    	        	  &var = &var._tot;
 				  drop &var._pct;
    	         end;
-   	         if missing(&var._pct) then &var._pct = 0;
-   	         if missing(epi_tot_pct) then epi_tot_pct = 0;
    	       %end;
 	     %end;
+		 if missing(epi_tot_pct) then epi_tot_pct = 0;
    	     format epi_tot_pct percent10.1;
    	   run;
 	   
