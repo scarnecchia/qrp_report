@@ -33,11 +33,11 @@
 %macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=, tablesub=,  episodesorpatients =, tablenum =);
 
  /*Save to reportdata folder*/
-    %isdata(dataset=&tablename);
-    %if %eval(&nobs.>1) %then %do;
+	%isdata(dataset=repdata.table&tablenum.);
+    %if %eval(&nobs.<1) %then %do;
         data repdata.table&tablenum.;
             set &tablename(where=(&where.));
-        run; 
+        run;
     %end;
 
   /*Footnotes*/
