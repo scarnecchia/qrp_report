@@ -192,8 +192,8 @@
                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=&strat.,
-                                               episodesorpatients=Episodes,
-                                               censorreason = ); 
+											   tablenum=&tablenum.&tableletter.,
+                                               episodesorpatients=Episodes); 
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
                     %censortable_output_table2(tablename=&tablename.,
@@ -201,8 +201,8 @@
                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=dpidsiteid,
-                                               episodesorpatients=Episodes,
-                                               censorreason = ); 
+											   tablenum=&tablenum.&tableletter.,
+                                               episodesorpatients=Episodes); 
                     %end;
                     %end;
 
@@ -312,18 +312,23 @@
             %if &stratifybydp. = Y %then %let tablecount = 1;
             %else %let tablecount = 0;
             %tableletter();
-/*                %censortable_output_table2(tablename=&tablename.,*/
-/*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),*/
-/*                                           where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall"),*/
-/*                                           reasonlist= &t2censorreasons.,
-                                             episodesorpatients=&episodesorpatients.);*/
+
+                %censortable_output_table2(tablename=&tablename.,
+                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                           reasonlist= &t2censorreasons.,
+										   tablenum=&tablenum.&tableletter.,
+										   tablesub=&strat.,
+                                           episodesorpatients=&episodesorpatients.);
             %if &stratifybydp. = Y %then %do;
             %tableletter();
-/*                %censortable_output_table2(tablename=&tablename.,*/
-/*                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),*/
-/*                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall"),*/
-/*                                           reasonlist= &t2censorreasons.,
-                                             episodesorpatients=&episodesorpatients.);*/
+                %censortable_output_table2(tablename=&tablename.,
+                                           title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                           reasonlist= &t2censorreasons.,
+										   tablesub=dpidsiteid,
+			                               tablenum=&tablenum.&tableletter.,
+                                           episodesorpatients=&episodesorpatients.);
             %end;
             %let tablenum = %eval(&tablenum + 1);
         %end;
