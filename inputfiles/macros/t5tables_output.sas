@@ -114,7 +114,7 @@
 		%else %if %index(&dataset,T9_) %then %do; %let t5title = Categorical Summary of Second and Subsequent Treatment Episodes,; %end;
 		%else %if %index(&dataset,T18_) %then %do; 
 			%let t5title = Summary of Filled Daily Dose in Each Dispensing,; 
-			%let t5head = Summary of Average Filled Daily Dose in Each Treatment Episode,; 
+			%let t5head = Number of Dispensings by Filled Daily Dose; 
 		%end;
 		%else %if %index(&dataset,T19_) %then %do; 
 			%let t5title = Summary of Average Filled Daily Dose in Each Treatment Episode,; 
