@@ -12,15 +12,15 @@
 * 
 *  Program outputs:                                                                                                                                       
 *
-*  PARAMETERS: •	
+*  PARAMETERS:	
 *   - Tablename – dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
 *	- Title – table title
 *	- Where – where clause to filter the &tablename dataset
 *   - Reasonlist – list of reasons to include in table 
 *   - Tablesub - table stratifier
-*   - tablenum - table number
 *   - episodesorpatients - Episodes or Patients label
-*            
+*   - tablenum - table number
+* 
 *  Programming Notes:                                                                                
 *                                                                           
 *
@@ -30,17 +30,18 @@
 *  info@sentinelsystem.org
 *
 ***************************************************************************************************;
+
 %macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=, tablesub=,  episodesorpatients =, tablenum =);
 
- /*Save to reportdata folder*/
-    %isdata(dataset=&tablename);
-    %if %eval(&nobs.>1) %then %do;
-        data repdata.table&tablenum.;
-            set &tablename(where=(&where.));
-        run; 
+    /*Save to reportdata folder*/
+    %isdata(dataset=repdata.table&tablenum.);
+    %if %eval(&nobs.<1) %then %do;
+    data repdata.table&tablenum.;
+        set &tablename(where=(&where.));
+    run; 
     %end;
 
-  /*Footnotes*/
+    /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
        set lookup.lookup_footnotes_censortables(where = (order in (999
@@ -73,12 +74,18 @@
     
 	/* Assign macro variables for superscipts */
 	%assign_superscripts(type =title, order =1 2 3);
-	%assign_superscripts(type =reason, order =4 5 6 7 8 9 10);
+	%assign_superscripts(type =cens_episend, order =4);
+	%assign_superscripts(type =cens_event, order =5);
+	%assign_superscripts(type =cens_spec, order =6);
+	%assign_superscripts(type =cens_dth, order =7);
+	%assign_superscripts(type =cens_elig, order =8);
+	%assign_superscripts(type =cens_dpend, order =9);
+	%assign_superscripts(type =cens_qryend, order =10);
 
     proc datasets nowarn noprint lib=work;
         delete _footnotes;
     quit;
- 
+
     %if &destination. = excel %then %do;
     ods excel options(sheet_name="Table &tablenum." tab_color = "green");
     %end;
@@ -90,20 +97,11 @@
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
-
-              ("^S={background=BGR}&title."
-             %do i = 1 %to %sysfunc(countw(&reasonlist));
-                %let CEN_VAR = %lowcase(%scan(&reasonlist., &i));
-				    %if "&cen_var" = "cens_episend" %then %let cenlabel = End of Exposure Episode;
-					%if "&cen_var" = "cens_event" %then %let cenlabel = Occurrence of Outcome of Interest;
-					%if "&cen_var" = "cens_spec" %then %let cenlabel = Occurrence of User-Defined Censoring Criteria;
-					%if "&cen_var" = "cens_dth" %then %let cenlabel = Evidence of Death;
-					%if "&cen_var" = "cens_elig" %then %let cenlabel = Disenrollment;
-					%if "&cen_var" = "cens_dpend" %then %let cenlabel = End of Data;
-					%if "&cen_var" = "cens_qryend" %then %let cenlabel = End of Study Period;                                     
-                ("^S={background=$backgroundfmt.}&cenlabel" &cen_var._tot_char &cen_var._tot_pct_char)
-             %end;
-            ));
+                %do corder = 1 %to 7;
+                    %let cen_var = %scan(&defaultcensororder., &corder.);
+                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
+                %end;
+                );
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
 	    %if &includeheaderrow = Y %then %do; 
@@ -129,18 +127,26 @@
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
-        %do i = 1 %to %sysfunc(countw(&reasonlist));
-		  %let CEN_VAR = %lowcase(%scan(&reasonlist., &i));
-		  define &cen_var._tot_char / group "Total Number of &episodesorpatients" 
-		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
-		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        %do corder = 1 %to 7;
+            %let cen_var = %scan(&defaultcensororder., &corder.);
+            %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
+    		  define &cen_var._tot_char / group "Total Number of &episodesorpatients" 
+    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+    		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
+    		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+            %end;
         %end;
+
+        /*Add title*/
+        compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
+    	                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+        line "Table &tablenum.. &title.&super_title";
+        endcomp;
 
         /*Footnotes*/
         %if %eval(&num_fn.>0) %then %do;
     		compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize.
-    		                        height=.75in bordertopwidth = &bordersize tagattr="wrap:yes"];
+    		                        height=1in bordertopwidth = &bordersize tagattr="wrap:yes"];
     		  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
     		  %end;
@@ -148,8 +154,5 @@
         %end;
 
     run;
-
-
-
 
 %mend censortable_output_table2;
