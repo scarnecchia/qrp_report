@@ -488,8 +488,9 @@
            where lowcase(substr(name, length(name) - 3,4)) = "_tot";
 	   quit;
 
-       %let stat_char = min q1 median q3 max mean std ;
-	   %let all_char = &cen_tot &stat_char &pct ;
+       %let stat_char = min q1 median q3 max mean std;
+	   %let cen_tot = &cen_tot &censorreason;
+       %let all_char = &cen_tot &stat_char &pct;
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
@@ -502,7 +503,7 @@
 	     /*stat variables*/
 	     %do  cr = 1 %to %sysfunc(countw(&stat_char));
            %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &cr, ' '))) %then %do;
-             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), 10.8));
+             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), 10.1));
            %end;
            %else %do;
              %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma8.0));
@@ -513,12 +514,13 @@
            %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
          %end;
          %do cr = 1 %to %sysfunc(countw(&all_char));
-         if (episodes = . or episodes = 0) 
-		   and overall_tot > 0
+         if ((episodes = . or episodes = 0) 
+		   and overall_tot > 0)
+		   or (%scan(&all_char, &cr, ' ') = "std" and overall_tot = 1)
            then do;
              %scan(&all_char, &cr, ' ')_char = "NaN"; 	   
          end;
-         else if overall_tot = 0
+         else if (overall_tot = 0 and %scan(&all_char, &cr, ' ') ne "Epi_tot_char")
            then do;
              %scan(&all_char, &cr, ' ')_char = ".";		  
          end;
