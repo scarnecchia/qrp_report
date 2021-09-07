@@ -470,8 +470,6 @@
    	   run;
 	   
 	   /*Assign missing values indicators*/
-       %let is_e =0;
-	   %let is_p =0;
 	   %let pct = '';
 	   %let tot = '';
 
@@ -479,79 +477,53 @@
 	   quit;
 
 	   proc sql noprint;
-	     select count(*) into :is_e from &censordataset._vars where lowcase(name) = 'episodes';
-	     select count(*) into :is_p from &censordataset._vars where lowcase(name) = 'patients';
 	     select distinct name into :pct 
            separated by ' '
            from &censordataset._vars 
            where lowcase(substr(name, length(name) - 3,4)) = "_pct";
-		   select distinct name into :cen_tot 
+
+           select distinct name into :cen_tot 
            separated by ' '
            from &censordataset._vars 
            where lowcase(substr(name, length(name) - 3,4)) = "_tot";
 	   quit;
 
-       proc datasets nowarn noprint lib=work;
-        delete &censordataset._vars;
-       quit;
-
-       %let var_pe = ;
-       %if &is_p> 0 %then %let var_pe = Patients;
-       %if &is_e> 0 %then %let var_pe = &var_pe Episodes;
        %let stat_char = min q1 median q3 max mean std ;
+	   %let all_char = &cen_tot &stat_char &pct ;
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
-
+	    
 	     /*_tot variable char and missing creation */
+	     episodes_char = strip(put(episodes, comma8.0));
          %do  cr = 1 %to %sysfunc(countw(&cen_tot));
            %scan(&cen_tot, &cr, ' ')_char = strip(put(%scan(&cen_tot, &cr, ' '), comma8.0));
-
-         if (%do pe = 1 %to %sysfunc(countw(&var_pe));
-              %if &pe = 1 %then %do;
-               (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0)
-	          %end;
-	          %else %do;
-	           and (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0) 
-	          %end;
-             %end;)
-		   and overall_tot > 0
-           then do;
-             %scan(&cen_tot, &cr, ' ')_char = "NaN";   
-         end;
-         else if overall_tot = 0
-           then do;
-             %scan(&cen_tot, &cr, ' ')_char = ".";
-         end;
-	   %end;
-
-	   /*stat variables*/
-	   %do  st_c = 1 %to %sysfunc(countw(&stat_char));
-         %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &st_c, ' '))) %then %do;
-           %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), 10.8));
          %end;
-         %else %do;
-           %scan(&stat_char, &st_c, ' ')_char = strip(put(%scan(&stat_char, &st_c, ' '), comma8.0));
-         %end; 
-
-         if
-           (%do pe = 1 %to %sysfunc(countw(&var_pe));
-             %if &pe = 1 %then %do;
-               (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0)
-	         %end;
-	         %else %do;
-	           and (%scan(&var_pe, &pe, ' ') = . or %scan(&var_pe, &pe, ' ') = 0) 
-	         %end;
-           %end;)
+	     /*stat variables*/
+	     %do  cr = 1 %to %sysfunc(countw(&stat_char));
+           %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &cr, ' '))) %then %do;
+             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), 10.8));
+           %end;
+           %else %do;
+             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma8.0));
+           %end; 
+	     %end;
+	     /*_pct variables*/
+	     %do  cr = 1 %to %sysfunc(countw(&pct));    
+           %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
+         %end;
+         %do cr = 1 %to %sysfunc(countw(&all_char));
+         if (episodes = . or episodes = 0) 
 		   and overall_tot > 0
-         then do;
-		   %scan(&stat_char, &st_c, ' ')_char = "NaN";
+           then do;
+             %scan(&all_char, &cr, ' ')_char = "NaN"; 	   
          end;
          else if overall_tot = 0
            then do;
-		     %scan(&stat_char, &st_c, ' ')_char = ".";
+             %scan(&all_char, &cr, ' ')_char = ".";		  
          end;
-        %end;
+	     %end;
+     run;
 
         /*final sort of data*/
         proc sort data=&censordataset.&dset_suffix. ;
