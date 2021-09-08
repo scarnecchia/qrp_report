@@ -697,9 +697,56 @@
     	%end;
     %end;
 
+    /*Create footnote lookup table - used for dose tables*/
+    %if &createfootnote. = Y %then %do;
+
+        /*Identify unit and categories for each group*/
+        proc sql noprint;
+            create table _temp_unit as
+            select a.group
+                 , a.order        
+                 , b.unit
+                 , c.&catvar.
+                   %if &labelfileexists = Y %then %do;
+                 ,  case when not missing(lbl.label) then lbl.label  
+                    else a.group 
+                    end as grouplabel length=&t5tablelabellength.
+                   %end;
+            from groupsfile(keep=group runid order) as a
+            inner join
+                (select distinct group, runid, unit
+                from master_cohortcodes(keep=group runid unit indexcriteria)
+                where indexcriteria = 'DEF' and missing(unit)=0) as b
+            on a.group = b.group and a.runid = b.runid
+            inner join
+                (select group, runid, &catvar.
+                from master_typefile(keep=group runid &catvar.)) as c
+            on a.group=c.group and a.runid=c.runid
+            %if &labelfileexists = Y %then %do;
+            left join labelfile(where=(labeltype='grouplabel')) as lbl
+            on a.group = lbl.group and a.runid = lbl.runid
+            %end;
+            ;
+        quit;
+
+        /*Create footnote*/
+        data &cattableid._lookup_footnotes_dose;
+            set _temp_unit;
+            length description $575 ;
+            %do c =1 %to &num_categories.;
+            length label&c $200;
+            label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '));
+            %end;
+
+            description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
+            keep order description;
+        run;
+
+    %end;
+
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _t5data_summed:;
+        delete _t5data_summed: _temp_unit;
     quit;
 
     %put =====> END MACRO: t5tables_createdata ;
