@@ -87,7 +87,6 @@
             else if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
             else if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
             else if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
-            else if dataset = 't5first' then call symputx('dataset', 'agg_t5first');
             else if dataset = 't6plota' then call symputx('dataset', 'agg_t6plota');
             else if dataset = 't6plotb' then call symputx('dataset', 'agg_t6plotb');
 
@@ -119,7 +118,7 @@
             %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figure.)) %then %do;
                 %isdata(dataset=figuref123);
                 %if %eval(&nobs.<1) %then %do;
-                    *%figure_t5_createdata();
+                    %figure_t5_createdata();
                 %end;
             %end;
             %else %if %sysfunc(prxmatch(m/F4|F5/i,&figure.)) %then %do;
