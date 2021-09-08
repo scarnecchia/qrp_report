@@ -726,7 +726,7 @@
             left join labelfile(where=(labeltype='grouplabel')) as lbl
             on a.group = lbl.group and a.runid = lbl.runid
             %end;
-            ;
+            order by a.order;
         quit;
 
         /*Create footnote*/

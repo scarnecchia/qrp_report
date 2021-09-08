@@ -69,6 +69,21 @@
 				call symputx('categories', cumdose_output_cat);	
 			%end;
 		run;
+
+        /*Footnotes*/
+        proc sql noprint;
+          select max(order) into: num_fn trimmed
+          from %substr(&dataset.,1,3)_lookup_footnotes_dose;
+        quit;
+
+        %if %eval(&num_fn.>0) %then %do;
+        proc sql noprint;
+          select description into: fn1 - :fn&num_fn.
+          from %substr(&dataset.,1,3)_lookup_footnotes_dose
+          order by order;
+        quit;
+        %end;
+        
 	%end;
 	%else %do;
 		data _null_;
@@ -318,21 +333,11 @@
 				line text $Varying. num;
             endcomp; 
 			%end;
-
-            /* Add Footnotes */
-            %if %eval(&num_fn > 0) %then %do;
-                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize];
-    		    %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
-    		    %end;
-                endcomp;
-            %end;
-            %else %do;
-                /*Add thick line to bottom of report*/
-                compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
-                line ' ';
-                endcomp;
-            %end;
+         
+            /*Add thick line to bottom of report*/
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
         run;
 	%end;	/* Continuous */
 		
