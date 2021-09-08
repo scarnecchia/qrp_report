@@ -169,7 +169,7 @@
         /*Footnotes*/
         %if %eval(&num_fn.>0) %then %do;
     		compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize.
-    		                        height=1in bordertopwidth = &bordersize tagattr="wrap:yes"];
+    		                        height=1.25in bordertopwidth = &bordersize tagattr="wrap:yes"];
     		  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
     		  %end;
