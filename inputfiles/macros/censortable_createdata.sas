@@ -118,11 +118,19 @@
           %end;            
       run;
 	  
+	  /* Identify levels associated with Table 3 */
+	  proc sql noprint;
+	     select case when table = "T15" then "'"||strip(levelid1)||"'"
+                else "'"||strip(levelid2)||"'" end 
+		 into: levels_t3 separated by ' '
+		 from tablefile (where = (dataset = "t5censor" and table in ("T15", "T17")));
+	  quit;
+	  
 	  /* Square table censdays_value_cat and censorcat_sort */
 	  proc sql noprint;
  	   	 create table _unique_groups as
  	   	 select distinct dpidsiteid, group, runid, level
- 	   	 from agg_&censordataset. (where = (not missing(episodelength)))
+ 	   	 from agg_&censordataset. (where = (level in (&levels_t3.)))
 		 order by dpidsiteid, group, runid, level;
  	  quit;
 	  
