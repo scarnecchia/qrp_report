@@ -1321,6 +1321,7 @@
      1: Read in L2ComparisonFile
      2: For T4 reports: read in optional SelectionProbabilitiesFile
      3: create master PS/CS input file dataset    
+     4. Add unique psestimategrp flag to the l2comparisonfile    
 ***************************************************************************************************/
 
     %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
@@ -1485,15 +1486,36 @@
 			run;
         %end;
 
+        *Add unique psestimategrp flag to the l2comparisonfile;                     
+    	 proc sql noprint;
+    	   create table _l2comparisonfile_ps as
+    	     select base.*
+    	 	       ,pscs.psestimategrp
+    	     from l2comparisonfile as base
+    	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+    	 	  on base.runid = pscs.runid
+    	      and base.analysisgrp = pscs.analysisgrp
+    	      order by runid, psestimategrp, order;
+    	 quit;
+    	 
+    	 data l2comparisonfile;
+    	   set _l2comparisonfile_ps; 
+    	   length unique_psestimate 3;
+    	   retain unique_psestimate;
+    	   by runid psestimategrp order;
+    	   unique_psestimate +1;
+           if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
+    	 run;
+    
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
         run;
-	%end;	
+    %end;	
 	
- /***************************************************************************
-   Read in and Output TXT file for treelookup file per runid when it exists
-  ***************************************************************************/
-     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+    /***************************************************************************
+    Read in and Output TXT file for treelookup file per runid when it exists
+    ***************************************************************************/
+    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 	   /*Set each table by looping through runIDs*/
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);

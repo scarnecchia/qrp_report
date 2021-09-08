@@ -54,33 +54,6 @@
             SubComp=SubComp-1;
         run;
     %mend;
-	
-	***********************************************************************************************;
-    * Add unique psestimategrp flag to the l2comparisonfile                      
-    ***********************************************************************************************;
-	 proc sql noprint;
-	   create table _l2comparisonfile_ps as
-	     select base.*
-	 	       ,pscs.psestimategrp
-	     from l2comparisonfile as base
-	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
-	 	  on base.runid = pscs.runid
-	      and base.analysisgrp = pscs.analysisgrp
-	      order by runid, psestimategrp, order;
-	 quit;
-	 
-	 data l2comparisonfile;
-	   set _l2comparisonfile_ps; 
-	   length unique_psestimate 3;
-	   retain unique_psestimate;
-	   by runid psestimategrp order;
-	   unique_psestimate +1;
-       if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
-	 run;
-	 
-	 proc sort data = l2comparisonfile;
-	   by order;
-	 run;
 
     ***********************************************************************************************;
     * Loop through each AnalysisGrp                               
