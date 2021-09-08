@@ -80,7 +80,7 @@
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  %let censor_strat = &censor_strat. censorcat_sort; %end;
 	%if %index(&censor_strat.,agegroup) > 0 %then %do; %let censor_strat = &censor_strat. agegroupnum; %end;
-	%if %index(&censor_strat.,episode) > 0 and %str(&tables.) ne %str("T14") %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
+	%if %index(&tables.,T15) > 0 | %index(&tables.,T17) > 0 %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
 	
 	/* All possible censor reasons based on dataset type */
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
@@ -118,43 +118,56 @@
           %end;            
       run;
 	  
+	  /* Identify levels associated with Table 3 */
+	  proc sql noprint;
+	     select case when table = "T15" then "'"||strip(levelid1)||"'"
+                else "'"||strip(levelid2)||"'" end 
+		 into: levels_t3 separated by ' '
+		 from tablefile (where = (dataset = "t5censor" and table in ("T15", "T17")));
+	  quit;
+	  
 	  /* Square table censdays_value_cat and censorcat_sort */
 	  proc sql noprint;
  	   	 create table _unique_groups as
- 	   	 select distinct group, runid, level
- 	   	 from agg_&censordataset. (where = (level in (&levels.)))
-		 order by group, runid, level;
+ 	   	 select distinct dpidsiteid, group, runid, level
+ 	   	 from agg_&censordataset. (where = (level in (&levels_t3.)))
+		 order by dpidsiteid, group, runid, level;
  	  quit;
 	  
 	  data _square_censdays;
 	    set _unique_groups;
-		by group runid level;
+		by dpidsiteid group runid level;
 		length censdays_value_cat $50. censorcat_sort 3;
 		%do c =1 %to &num_categories.;
            censdays_value_cat = "%scan(&catvar., &c., ' ')";
            censorcat_sort = &c.;
-		   episodes = 0;
-		   npts = 0;
+		   _episodes = 0;
+		   _npts = 0;
 		   %do cn= 1 %to &cens_num_t3.;
-  	      	 %scan(&censorreason, &cn) = 0;
+  	      	 _%scan(&censorreason, &cn) = 0;
   	       %end;
 		   output;
         %end; 
 	  run;
 	  
 	  proc sort data = agg_&censordataset.;
-	    by group runid level censorcat_sort;
+	    by dpidsiteid group runid level censorcat_sort;
 	  run;
 	  
-	  data agg_&censordataset;
+	  data agg_&censordataset (drop = _:);
 	    merge _square_censdays (in = square)
 		      agg_&censordataset (in = censor);
-	    by group runid level censorcat_sort censdays_value_cat;
+	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 		if square and not censor and not missing(censdays_value_cat) then do;
 		  episodenum = 1;
 		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
 		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
 		  else episodelength = input(censdays_value_cat,8.);
+		  episodes = _episodes;
+		  npts = _npts;
+		  %do cn= 1 %to &cens_num_t3.;
+  	      	 %scan(&censorreason, &cn) = _%scan(&censorreason, &cn);
+  	      %end;
 		end;
 	  run;
 	  
