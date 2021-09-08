@@ -695,8 +695,8 @@
     	%if %sysfunc(prxmatch(m/T3\b|T4\b/i,&tablelist.)) > 0 %then %do;
         %t5toc(cattableid=%if %sysfunc(prxmatch(m/T3\b/i,&tablelist.)) > 0 %then %do; T3 %end;,
                disttableid=%if %sysfunc(prxmatch(m/T4\b/i,&tablelist.)) > 0 %then %do; T4 %end;,
-               cattitle=Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations,
-               disttitle=Continuous Summary of Patients%str(%') Cumulative Treatment Episode Durations); 
+               cattitle=Categorical Summary of Patients%str(%') Cumulative Exposure Duration,
+               disttitle=Continuous Summary of Patients%str(%') Cumulative Exposure Duration); 
     	%end;
 
     	/*T5/T6 - Episode duration - all episodes*/

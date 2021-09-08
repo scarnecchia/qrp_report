@@ -40,7 +40,6 @@
 		set &dataset.;
 		if missing(header)=0 then call symputx('hdr','Y');
 	run;
-	%put hdr = &hdr.;
 	
 	proc sql noprint;
 	select max(sortorder1), max(sortorder2)
@@ -108,7 +107,7 @@
 		%let t5head = ;
 		%let t5type = Dispensings;
 		%if %index(&dataset,T1_) %then %do; %let t5title = Categorical Summary of Days Supplied per Dispensing; %end;
-		%else %if %index(&dataset,T3_) %then %do; %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations,; %end;
+		%else %if %index(&dataset,T3_) %then %do; %let t5title = Categorical Summary of Patients%str(%') Cumulative Exposure Duration,; %end;
 		%else %if %index(&dataset,T5_) %then %do; %let t5title = Categorical Summary of All Treatment Episodes,; %end;
 		%else %if %index(&dataset,T7_) %then %do; %let t5title = Categorical Summary of First Treatment Episodes,; %end;
 		%else %if %index(&dataset,T9_) %then %do; %let t5title = Categorical Summary of Second and Subsequent Treatment Episodes,; %end;
@@ -236,7 +235,7 @@
 	%if &reporttype. = dist %then %do;
 	
 		%if %index(&dataset,T2_) %then %do; %let t5title = Continuous Summary of Days Supplied per Dispensing; %end;
-		%else %if %index(&dataset,T4_) %then %do; %let t5title = Continuous Summary of Patients%str(%') Cumulative Treatment Episode Durations; %end;
+		%else %if %index(&dataset,T4_) %then %do; %let t5title = Continuous Summary of Patients%str(%') Cumulative Exposure Duration; %end;
 		%else %if %index(&dataset,T6_) %then %do; %let t5title = Continuous Summary of All Treatment Episodes; %end;
 		%else %if %index(&dataset,T8_) %then %do; %let t5title = Continuous Summary of First Treatment Episodes; %end;
 		%else %if %index(&dataset,T10_) %then %do; %let t5title = Continuous Summary of Second and Subsequent Treatment Episodes; %end;
