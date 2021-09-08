@@ -24,7 +24,7 @@
 *   - cattableid: category table ID from TABLEFILE
 *   - disttableid: distribution table ID from TABLEFILE
 *   - catvarsort: variable on the input dataset containing category indicators
-*
+*   - createfootnote: Y/N indicator to create group-specific footnote table (for dose tables)
 * 
 *  Programming Notes:                                                                                
 *  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
@@ -45,7 +45,8 @@
                            countvar=,
                            cattableid=,
                            disttableid=,
-                           catvarsort=);
+                           catvarsort=,
+                           createfootnote=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -540,8 +541,8 @@
     /*----------------------------------------------------------------------------------------------*/
 
     /*Increase length of label if < longest stratification label*/
-    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(40, &label_length.));
-    %else %let t5tablelabellength = 40;
+    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(50, &label_length.+50));
+    %else %let t5tablelabellength = 50;
 
     /*utility macro*/
     %macro assignlabelvars(format=, sortorder1 = , sortorder2=);
@@ -651,6 +652,13 @@
                         %end;
                     end;
                 %end;
+            %end;
+
+            /*Add footnote superscrip*/
+            %if &createfootnote. = Y %then %do;
+                if sortorder1 = 0 and sortorder2 = 0 then do;
+                    grouplabel=cat(strip(grouplabel), "^{super", " ", order, "}");
+                end;
             %end;
         run;
         
