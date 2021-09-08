@@ -664,10 +664,12 @@
 				  %if %varexist(_tempmap,stratificationorder) = 1 %then %do;
 					  if stratificationorder ne . then do;
 						 %if %str("&cattableid.") ne %str("") %then %do;
+							 length cattable $3;
 							 cattable="&cattableid";
 							 catstratificationorder = stratificationorder;
 						 %end;
 						 %else %if %str("&disttableid.") ne %str("") %then %do;
+							 length disttable $3;
 							 disttable="&disttableid";
 							 diststratificationorder = stratificationorder;
 						 %end;
@@ -801,7 +803,9 @@
 		 set t5_tempmap;
 		 by table;
 		 length numtables tableorder 3;
-		 if first.table and last.table and (cattable = '' or disttable = '') then numtables=1;
+		 if first.table and last.table
+			%if %varexist(t5_tempmap,cattable) = 1 & %varexist(t5_tempmap,disttable) = 1 %then %do; and (cattable = '' or disttable = '') %end;
+		  then numtables=1;
 		 else numtables=2;
 		 retain tableorder;
 		 if first.table then tableorder=0;
@@ -811,6 +815,7 @@
 		proc sort data = t5_tempmap;
 		by t5order table;
 		run;
+			
     %end; /*type 5 tables*/
      
     /*********************************************************************************************/

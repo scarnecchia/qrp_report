@@ -35,10 +35,10 @@
 
 	%put =====> MACRO CALLED: t5tables_output;
 	
-	%let hdr=N;
+	%let header=;
 	data repdata.table&tablenum.&tableletter.;
 		set &dataset.;
-		if missing(header)=0 then call symputx('hdr','Y');
+		if missing(header)=0 then call symputx('header','header');
 	run;
 	
 	proc sql noprint;
@@ -82,8 +82,7 @@
           from %substr(&dataset.,1,3)_lookup_footnotes_dose
           order by order;
         quit;
-        %end;
-        
+        %end;        
 	%end;
 	%else %do;
 		data _null_;
@@ -119,7 +118,7 @@
 	/* Categorical */
 	%if &reporttype. = cat %then %do;
 		
-		%let t5head = ;
+		%let t5head = Number of Dispensings by Days Supplied;
 		%let t5type = Dispensings;
 		%if %index(&dataset,T1_) %then %do; %let t5title = Categorical Summary of Days Supplied per Dispensing; %end;
 		%else %if %index(&dataset,T3_) %then %do; %let t5title = Categorical Summary of Patients%str(%') Cumulative Exposure Duration,; %end;
@@ -158,24 +157,21 @@
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
             style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];	
-
-		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
-			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("&t5head." 
+			
+			column &header. order sortorder1 sortorder2 grouplabel total_count_char ("&t5head." 
 					  %do s = 1 %to %eval(&num_categories);
-						 %let t5cat = %scan(&categories., &s, %str( ));
-						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&&lbl&s.." _&s._char _&s._percent_char)
-                      %end;
-					);
+		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
+						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&&lbl&s.."
 		%end;
 		%else %do;
-			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("Number of Dispensings by Days Supplied" 
-					  %do s = 1 %to %eval(&num_categories);
 						 %let t5cat = %scan(&categories., &s, %str( ));
-						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&t5cat. Days" _&s._char _&s._percent_char)
+						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&t5cat. Days"
+		%end;
+						 _&s._char _&s._percent_char)
                       %end;
 					);
-		%end;
-				%if &hdr. = Y %then %do; 
+
+				%if %str("&header.") ne %str("") %then %do; 
 				define header / group noprint order=data;
 				%end;
 			   	define order / order noprint order=data;
@@ -199,7 +195,7 @@
             /*format grouplabel*/
             compute grouplabel;
                 if sortorder1=0 then do;
-					%if &hdr. = Y %then %do;
+					%if %str("&header.") ne %str("") %then %do; 
 						call define (_col_,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
@@ -221,7 +217,7 @@
             endcomp;
           
             /*Add header rows*/
-			%if &hdr. = Y %then %do;
+			%if %str("&header.") ne %str("") %then %do; 
             compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
 				text = header;
 				num = 100;
@@ -266,8 +262,8 @@
             style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=black borderrightcolor=black] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];
 
-			column %if &hdr. = Y %then %do; header %end; order sortorder1 sortorder2 grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
-				%if &hdr. = Y %then %do; 
+			column &header. order sortorder1 sortorder2 grouplabel total_count_char ("Distribution of Days Supplied by Dispensing" min_char p25_char median_char p75_char max_char mean_char std_char);
+				%if %str("&header.") ne %str("") %then %do; 
 				define header / group noprint order=data;
 				%end;
 			   	define order / order noprint order=data;
@@ -304,7 +300,7 @@
             /*format grouplabel*/
             compute grouplabel;
                 if sortorder1=0 then do;
-					%if &hdr. = Y %then %do;
+					%if %str("&header.") ne %str("") %then %do;
 						call define (_col_,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
@@ -326,7 +322,7 @@
 			endcomp;
           
             /*Add header rows*/
-			%if &hdr. = Y %then %do;
+			%if %str("&header.") ne %str("") %then %do;
             compute before header / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black]; 
 				text = header;
 				num = 100;

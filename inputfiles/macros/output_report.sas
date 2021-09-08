@@ -116,6 +116,7 @@
 * Type 5 summary tables                                                      
 ***************************************************************************************************;
 	%if %str("&reporttype") = %str("T5") %then %do;	
+    options orientation = landscape;
 		/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
 		%isdata(dataset=t5_tempmap);
 		%let t5tableobs = &nobs.;
@@ -130,12 +131,12 @@
 				if _n_ = &st. then do;
 					call symputx('numtables', numtables);
 					call symputx('tableorder', tableorder);
-					if missing(cattable)=0 then do;
-						call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
-					end;
-					if missing(disttable)=0 then do;
-						call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
-					end;
+					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
+						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
+					%end;
+					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
+						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
+					%end;
 				end;
 			run;
 
@@ -158,6 +159,7 @@
 			%end;			
         %end;		
 		%let tablenum = %eval(&tablenum + 1);
+    options orientation = portrait;
     %end; 
 
 ***************************************************************************************************;
