@@ -55,6 +55,35 @@
     %let tablesub = ;
     %let tablesublist = ;
 
+	/*Set &cattableid and &disttableid to missing if not requested*/
+	%let table = "&cattableid.","&disttableid.";
+
+	data _tablecheck&cattableid.
+		 _tablecheck&disttableid.;
+		 set tablefile(where=(table in (&table.)));
+		 
+		 if table = "&cattableid" then output _tablecheck&cattableid.;
+		 if table = "&disttableid" then output _tablecheck&disttableid.;
+	run;
+
+	%isdata(dataset=_tablecheck&cattableid.);
+	%if %eval(&nobs.<1) %then %do;
+		%let cattableid = ;
+	%end;
+	%isdata(dataset=_tablecheck&disttableid.);
+	%if %eval(&nobs.<1) %then %do;
+		%let disttableid = ;
+	%end;
+
+	proc datasets nowarn noprint lib=work;
+    delete _tablecheck:;
+	quit;
+
+    data tablefile;
+	set tablefile;
+	if tablesub = 'overall' then order_overall=0; else order_overall=1;
+	run;
+
     proc sql noprint;
         select distinct quote(levelid1), quote(levelid2) 
         into :levellist1 separated by ',',
@@ -70,14 +99,14 @@
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
               and tablesub ne 'overall';
         /*stratifications to compute*/
-        select distinct tablesub, stratificationorder
+        select distinct tablesub, order_overall
         into :tablesublist separated by '|', :stratorderlist
         from tablefile
         where table in (%if %str("&cattableid.") ne %str("") %then %do; "&cattableid" %end;
                         %if %str("disttableid") ne %str("") %then %do; "&disttableid" %end;)
-        order by stratificationorder;
+        order by order_overall;
     quit;
-   
+ 
     /*dedup stratvars list*/
     %if %str("&tablesub") ne %str("") %then %do;
         %nonrep(invar=tablesub, outvar=stratvars);
@@ -118,7 +147,7 @@
     run;
 
     /*----------------------------------------------------------------------------------------------*/
-    /* Compute overall (required - already checked in process_inputifles  and stratifiation metrics */
+    /* Compute overall (required - already checked in process_inputfiles  and stratification metrics */
     /*----------------------------------------------------------------------------------------------*/
 
     /*Loop through each tablesub*/
@@ -154,7 +183,8 @@
         %else %do;
             %if %index(&tablesub., agegroup)>0 %then %let tablesub = &tablesub. agegroupnum;
             %let dpwhere = and dpidsiteid = 'all';
-        %end;   
+        %end;  
+ 
 
     	/*Extract column 1: Total*/
     	proc sort data=_t5data_summed out=_total_bydp(rename=&countvar.=total_count keep=dpidsiteid runid group &tablesub. &countvar.);
@@ -163,7 +193,7 @@
     	run;
 
         /*Group continous var into categories*/
-        %if "&cattableid." ne "" %then %do;
+		%if %eval(&cattablestratorder>0) %then %do;
 
             /*Group continuous variable into categories*/
             %if %str("&catvarsort.") = %str("") %then %do;
@@ -357,7 +387,152 @@
     				by dpidsiteid runid group &tablesub.;
     			run;
             %end; /*compute stratification percents*/
-        %end; /*category tables*/		
+        %end; /*category tables*/
+
+        /*Continous var metrics*/
+        %if %eval(&disttablestratorder>0) %then %do;
+
+			proc means data=_t5data_summed (where=(level in ("&levelid2."))) noprint nway;
+			var &catvar.;
+			freq &countvar.;
+			class dpidsiteid runid group &tablesub.;
+			output out=table_&disttableid.a(drop=_type_ _freq_) p25=_p25 p75=_p75 
+													max=_max 
+													min=_min 
+													median=_median 
+													mean=_mean 
+													std =_std;		
+			run;
+
+			proc sort data=_t5data_summed (where=(level = "&levelid2")) nodupkey out=table_&disttableid.a2(keep=runid group dpidsiteid &tablesub.);
+			by dpidsiteid runid group &tablesub.;
+			run;
+
+			data table_&disttableid.a;
+				merge table_&disttableid.a(in=a) 	
+					  table_&disttableid.a2(in=b);
+				by dpidsiteid runid group &tablesub.;
+
+				if b and not a then do;
+					total_count=0;
+				end;
+			run;
+
+			%if %eval(&s.>1) %then %do;
+
+			    data table_&disttableid.a;
+                    set table_&disttableid.a
+				    &disttableid._1 (where=(dpidsiteid = 'all') keep=runid group dpidsiteid total_count mean_char std_char min_char p25_char median_char p75_char max_char);
+                run;
+
+			    *Retrieve N Overall;
+                proc sql noprint undo_policy=none;
+				    create table table_&disttableid.a as
+				    select x.*
+					       , y.total_count as overall_total
+                           , y.total_count_char as overall_count_char
+						   , y.mean_char as total_mean
+						   , y.std_char as total_std
+						   , y.min_char as total_min
+						   , y.p25_char as total_p25
+						   , y.median_char as total_median
+						   , y.p75_char as total_p75
+						   , y.max_char as total_max
+    				from table_&disttableid.a as x,
+    					 &disttableid._1 as y
+    				where x.group = y.group and x.runid = y.runid and x.dpidsiteid=y.dpidsiteid;
+    			quit;
+
+				proc sort data = table_&disttableid.a;
+				by dpidsiteid runid group &tablesub.;
+				run;
+
+			%end;
+
+			/*Merge in totals*/
+			data &disttableid._&disttablestratorder.;	
+				merge table_&disttableid.a %if %eval(&s.>1) %then %do; (where=(dpidsiteid = 'all')) %end; _total_bydp;
+				by dpidsiteid runid group &tablesub.;
+
+				 total_count_char = strip(put(total_count, comma12.0));
+
+				 %if %eval(&s.=1) %then %do;
+					 mean_char = strip(put(_mean, comma12.1));
+					 std_char = strip(put(_std, comma12.1));
+
+					 min_char = strip(put(_min, comma12.0));
+					 p25_char = strip(put(_p25, comma12.0));
+					 median_char = strip(put(_median, comma12.0));
+					 p75_char = strip(put(_p75, comma12.0));
+					 max_char = strip(put(_max, comma12.0));
+				 %end;
+
+				 %if %eval(&s.>1) %then %do;
+					 if missing(mean_char)=1 then mean_char = strip(put(_mean, comma12.1));
+					 if missing(std_char)=1 then std_char = strip(put(_std, comma12.1));
+
+					 if missing(min_char)=1 then min_char = strip(put(_min, comma12.0));
+					 if missing(p25_char)=1 then p25_char = strip(put(_p25, comma12.0));
+					 if missing(median_char)=1 then median_char = strip(put(_median, comma12.0));
+					 if missing(p75_char)=1 then p75_char = strip(put(_p75, comma12.0));
+					 if missing(max_char)=1 then max_char = strip(put(_max, comma12.0));
+				 %end;
+
+                format total_count_char $15. mean_char std_char p25_char median_char p75_char max_char $12.;
+
+				%if %eval(&s.=1) %then %do;
+		    		if total_count = 0 then do;
+						mean_char = '.';
+						std_char = '.';
+
+						min_char = '.';
+						p25_char = '.';
+						median_char = '.';
+						p75_char = '.';
+						max_char = '.';
+		    		end;
+				%end;
+
+				%if %eval(&s.>1) %then %do;
+	    			if overall_total >0 then do;
+		    			if total_count = 0 then do;
+							mean_char = 'NaN';
+						 	std_char = 'NaN';
+
+							min_char = 'NaN';
+							p25_char = 'NaN';
+							median_char = 'NaN';
+							p75_char = 'NaN';
+							max_char = 'NaN';
+		    			end;
+					end;
+					if overall_total = 0 then do;
+		    			if total_count = 0 then do;
+							mean_char = '.';
+						 	std_char = '.';
+
+							min_char = '.';
+							p25_char = '.';
+							median_char = '.';
+							p75_char = '.';
+							max_char = '.';
+		    			end;
+					end;
+
+					drop total_mean total_std total_min total_max total_p25 total_p75 total_median;
+				%end;
+
+				if total_count = 1 then std_char = 'NaN';
+
+			run;
+
+		    proc datasets nowarn noprint lib=work;
+            delete table_&disttableid.a table_&disttableid.a2;
+		    quit;
+
+		%end; /*continuous tables*/
+
+	
 	%end; /*loop through each tablesub*/
 
     /*----------------------------------------------------------------------------------------------*/
@@ -509,6 +684,7 @@
     		%addlabelstodisttables(data=&cattableid._&cattablestratorder., tablesub=&tablesub.);
     	%end;
     	%if %eval(&disttablestratorder.>0) %then %do;
+    		%addlabelstodisttables(data=&disttableid._&disttablestratorder., tablesub=&tablesub.);
     	%end;
     %end;
 
