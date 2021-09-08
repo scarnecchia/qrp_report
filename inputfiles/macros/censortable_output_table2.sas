@@ -103,24 +103,17 @@
                 %end;
                 );
 
-        /*if overall - print grouplabel, if stratified - group label will be in compute block*/
 	    %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
         %end;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data 
-          style(column)=[just=L width =1.5in fontstyle=italic] 
-          style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
         %end;
         %else %do;
-        define &tablesub. / group  "" order=data 
-          style(column)=[just=L width=.9in];
-		define grouplabel / group  "" order=data 
-          style(column)=[just=L width =1.5in fontstyle=italic] 
-          style(header)=[background = BGR borderleftcolor = BGR] ; 
-		
+        define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
+        define grouplabel /group noprint;
         %end;
 
         define epi_tot_char / group "Total Number of &episodesorpatients"
@@ -142,6 +135,36 @@
     	                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
         line "&title.&super_title";
         endcomp;
+
+        /*Add header if requested*/
+        %if &includeheaderrow = Y %then %do; 
+            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            length text $100;
+                text = headerlabel;
+                num = 100;
+                line text $varying. num;
+            endcomp;
+        %end;
+
+        /*Add group label spanning header if stratified table and indent labels*/
+        %if &tablesub. ne overall %then %do; 
+            compute before grouplabel /
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
+                text= grouplabel; 
+                num= 150;
+            	line text $varying. num; 
+            endcomp;
+
+            /*indent*/
+            compute &tablesub.;
+                call define(_col_,'style','style={indent=25}');
+            endcomp;
+        %end;
 
         /*Footnotes*/
         %if %eval(&num_fn.>0) %then %do;
