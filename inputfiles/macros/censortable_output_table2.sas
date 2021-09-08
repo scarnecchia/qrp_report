@@ -99,7 +99,7 @@
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
                 %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
-                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
+                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("^S={cellheight=50pt}&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
                 %end;
                 );
 
