@@ -80,7 +80,7 @@
       
 	%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;  %let censor_strat = &censor_strat. censorcat_sort; %end;
 	%if %index(&censor_strat.,agegroup) > 0 %then %do; %let censor_strat = &censor_strat. agegroupnum; %end;
-	%if %index(&censor_strat.,episode) > 0 and %str(&tables.) ne %str("T14") %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
+	%if %index(&tables.,T15) > 0 | %index(&tables.,T17) > 0 %then %do; %let censor_strat = &censor_strat. censdays_value_cat censorcat_sort; %end;
 	
 	/* All possible censor reasons based on dataset type */
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
