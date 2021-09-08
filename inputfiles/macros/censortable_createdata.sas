@@ -490,7 +490,7 @@
 
        %let stat_char = min q1 median q3 max mean std;
 	   %let cen_tot = &cen_tot &censorreason;
-       %let all_char = &cen_tot &stat_char &pct;
+       %let all_char = &cen_tot &stat_char;
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
@@ -512,15 +512,17 @@
 	     /*_pct variables*/
 	     %do  cr = 1 %to %sysfunc(countw(&pct));    
            %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
+		   if (episodes = . or episodes = 0) and overall_tot = 0 then do;
+		     %scan(&pct, &cr, ' ')_char = "NaN"; 
          %end;
+
          %do cr = 1 %to %sysfunc(countw(&all_char));
          if ((episodes = . or episodes = 0) 
 		   and overall_tot > 0)
-		   or (%scan(&all_char, &cr, ' ') = "std" and overall_tot = 1)
            then do;
-             %scan(&all_char, &cr, ' ')_char = "NaN"; 	   
+             %scan(&all_char, &cr, ' ')_char = "0"; 	   
          end;
-         else if (overall_tot = 0 and %scan(&all_char, &cr, ' ') ne "Epi_tot_char")
+         else if overall_tot = 0
            then do;
              %scan(&all_char, &cr, ' ')_char = ".";		  
          end;
