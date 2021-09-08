@@ -315,10 +315,10 @@
 
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                           where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
                                            reasonlist= &t2censorreasons.,
 										   tablenum=&tablenum.&tableletter.,
-										   tablesub=&strat.,
+										   tablesub= overall,
                                            episodesorpatients=&episodesorpatients.);
             %if &stratifybydp. = Y %then %do;
             %tableletter();
