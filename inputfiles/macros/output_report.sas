@@ -129,6 +129,9 @@
                 from tablefile(where=(dataset in ("&tablename.")));
             quit;
 
+            %isdata(dataset=&tablename.);
+            %if %eval(&nobs.>0) %then %do;
+
             %if %str("&tableidlist") ne %str("") %then %do;
             %do t = 1 %to %sysfunc(countw(&tableidlist.));
                 %let tableid = %scan(&tableidlist., &t.);
@@ -275,6 +278,7 @@
                 %if %sysfunc(prxmatch(m/T1|T2/i,&tableid.)) > 0 %then %do;
                 %let tablenum = %eval(&tablenum + 1);
                 %end;
+            %end; /*underlying data exists*/
             %end; /*loop through each table*/
             %end; /*table requested*/
         %mend;

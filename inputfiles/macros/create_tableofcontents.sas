@@ -539,6 +539,7 @@
         %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&tdatasetlist.)) > 0 %then %do;
 
             %macro t1t2censortoc(tablename=, title=);
+
                 %let tableidlist=;
                 proc sql noprint;
                     select distinct table into: tableidlist separated by ' '
@@ -546,6 +547,10 @@
                 quit;
 
                 %if %str("&tableidlist") ne %str("") %then %do;
+
+                %isdata(dataset=&tablename.);
+                %if %eval(&nobs.>0) %then %do;
+
                 %do t = 1 %to %sysfunc(countw(&tableidlist.));
                     %let tableid = %scan(&tableidlist., &t.);
                     %let stratificationorder = 0;
@@ -639,6 +644,7 @@
                     %if %sysfunc(prxmatch(m/T1|T2/i,&tableid.)) > 0 %then %do;
                     %let tablenum = %eval(&tablenum + 1);
                     %end;
+                %end; /*underlying data exists*/
                 %end; /*loop through each table*/
                 %end; /*table requested*/
             %mend;
