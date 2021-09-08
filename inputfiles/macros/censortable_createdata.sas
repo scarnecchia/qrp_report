@@ -514,6 +514,7 @@
            %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
 		   if (episodes = . or episodes = 0) and overall_tot = 0 then do;
 		     %scan(&pct, &cr, ' ')_char = "NaN"; 
+		   end;
          %end;
 
          %do cr = 1 %to %sysfunc(countw(&all_char));
