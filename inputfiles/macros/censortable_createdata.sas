@@ -245,31 +245,30 @@
  	Set default values for summary statistics when censdays_value or episodelength stratification
     not requested	
    --------------------------------------------------------------------------------------------*/ 
-    /* Create a blank table if overall table not requested */
-	%if %str(&distribution_var.) = %str() %then %do;
- 	   proc sql noprint;
- 	   	 create table unique_groups as
- 	   	 select distinct dpidsiteid, group, runid
- 	   	 from censor_data;
- 	   quit;
- 	   	   
- 	   data _stats;
- 	   	 set unique_groups;
- 	   	 length table_name $12 min q1 median q3 max mean std 8;
- 	   	 call missing(min, q1, median, q3, max, mean, std);
- 	   	 table_name = "overall";
- 	   	 output;
-		 
-	     %if &cens_num_t3. > 0 %then %do;
- 	   	   %do cn= 1 %to &cens_num_t3;
- 	   	      %let var = %scan(&censorreason_t3, &cn);
- 	   	      table_name = "&var.";
- 	   	      output;
- 	   	   %end;
-	     %end;
- 	   run; 
-	 %end;
-	 
+  /* Create a blank table. If overall table not requested or there are no episodes on the dataset this
+     dataset is used as a table shell. */
+     proc sql noprint;
+   	   create table unique_groups as
+   	   select distinct dpidsiteid, group, runid
+   	   from censor_data;
+     quit;
+   	   
+     data %if %str(&distribution_var.) ne %str() %then %do;_square_stats %end;
+	      %else %do; _stats %end;;
+   	   set unique_groups;
+   	   length table_name $12 min q1 median q3 max mean std 8;
+   	   call missing(min, q1, median, q3, max, mean, std);
+   	   table_name = "overall";
+   	   output;
+   
+       %if &cens_num_t3. > 0 %then %do;
+   	     %do cn= 1 %to &cens_num_t3;
+   	       table_name = "%scan(&censorreason_t3, &cn)";
+   	       output;
+   	     %end;
+       %end;
+     run; 
+   
  /*--------------------------------------------------------------------------------------------
  	Calculate summary statistics	
    --------------------------------------------------------------------------------------------*/
@@ -279,6 +278,9 @@
 	 %if %str(&distribution_var.) ne %str() %then %do;
  	    %do sl = 1 %to %sysfunc(countw(episodes &censorreason_t3., %str( )));
  	    	%let cen_stat = %scan(episodes &censorreason_t3.,&sl.);
+			%if &cen_stat. = episodes %then %do; %let table_name = overall; %end;
+ 	    	%else %do; %let table_name = &cen_stat.; %end;
+				  
  	    	 proc sql noprint;
  	    	   select sum(&cen_stat.) into: checksum
  	    	   from censor_data_overall &whereclause.;
@@ -304,14 +306,18 @@
  	    	   data _stats_&cen_stat.;
  	    	      length table_name $12;
  	    	      set _stats_&cen_stat.;
- 	    	      %if &cen_stat. = episodes %then %do;
- 	    	        table_name = "overall";
- 	    	      %end;
- 	    	      %else %do;
- 	    	        table_name = "&cen_stat.";
- 	    	      %end;
+				  table_name = "&table_name.";
  	    	   run;
+			   
  	    	 %end; /* checksum */
+			 %else %do;
+			   /* Use table shell when there are not any episodes */
+			   data _stats_&cen_stat.;
+			     length table_name $12;
+			     set _square_stats (where = (table_name = "&table_name."));
+			   run;
+			   
+			 %end;
  		%end; /* censor reasons*/
 		
 		/* Stack all datasets together with one unique row per censor reason */
@@ -323,7 +329,8 @@
 	 
    /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
-        delete %if %str(&level_overall) ne %str('') %then %do;_stats_: %end; %else %do; unique_groups %end;; 
+        delete %if %str(&distribution_var.) ne %str() %then %do;_stats_: %end; 
+		       unique_groups; 
       quit;	
 	   
    /* If episodelength is requested for stratification need to summarize data by 
@@ -555,7 +562,7 @@
    
     /* Clean up work files */
     proc datasets lib=work nowarn nolist noprint;
-       delete _stats censor_data:; 
+       delete _stats censor_data: _square_stats; 
     quit;
    
    %put =====> END MACRO: censortable_createdata;
