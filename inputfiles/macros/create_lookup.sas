@@ -14,7 +14,7 @@
 *   -lookup_footnotes_baseline      = Footnotes for baseline table
 *   -lookup_footnotes_effectest     = Footnotes for L2 effect estimates table
 *   -lookup_footnotes_attrition     = Footnotes for attrition table
-*   -lookup_footnotes_kmcdf         = Footnotes for KM/CFD figures
+*   -lookup_footnotes_kmcdf         = Footnotes for KM/CDF figures
 *   -lookup_footnotes_censortables  = Footnotes for types 1, 2, and 5 censor tables
 *   -lookup_attrition               = Mapping QRP attrition descriptions to report descriptions
 *
