@@ -93,15 +93,18 @@
     ods proclabel = "Table &tablenum.";
 
     proc report data = repdata.table&tablenum. nofs nowd spanrows missing split="*"
-    	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+    	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b cellheight=50pt] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
-    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
+    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel 
+             (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
                 %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
-                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
+                  %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
+                      ("&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char)
+                    %end;
                 %end;
-                );
+                );        
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
 	    %if &includeheaderrow = Y %then %do; 
