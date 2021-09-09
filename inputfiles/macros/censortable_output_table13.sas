@@ -201,6 +201,12 @@
     		  %end;
             endcomp;
         %end;
+        %else %do;
+            /*Add thick line to bottom of report*/
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
+        %end;
     run;
 
 %mend censortable_output_table13;

@@ -27,7 +27,6 @@
 %macro t5tables_driver();
 
     %put =====> MACRO CALLED: t5tables_driver ;
-
 	*** Distribution of days supplied per dispensing (using AdjustedCodeCount) ***;
 	%if %sysfunc(prxmatch(m/T1\b|T2\b/i,&tablelist.)) > 0 %then %do;
 	    %t5tables_createdata(dataset=agg_t5disp,
@@ -35,7 +34,7 @@
                              catvar=daysupp,
                              countvar=adjustedcodecount,
                              cattableid=T1,
-                             disttableid=/*T2*/,
+                             disttableid=T2,
                              catvarsort=);
 	%end;
 
@@ -46,7 +45,7 @@
                             catvar=cumepisodelength,
                             countvar=npts,
                             cattableid=T3,
-                            disttableid=/*T4*/,
+                            disttableid=T4,
                             catvarsort=);
 	%end;
 
@@ -57,7 +56,7 @@
                              catvar=episodelength,
                              countvar=episodes,
                              cattableid=T5,
-                             disttableid=/*T6*/,
+                             disttableid=T6,
                              catvarsort=);
 
 	%end; 
@@ -67,7 +66,7 @@
                              catvar=episodelength,
                              countvar=episodes,
                              cattableid=T7,
-                             disttableid=/*T8*/,
+                             disttableid=T8,
                              catvarsort=);
 
 	%end;
@@ -78,7 +77,41 @@
                              catvar=episodelength,
                              countvar=episodes,
                              cattableid=T9,
-                             disttableid=/*T10*/,
+                             disttableid=T10,
+                             catvarsort=);
+	%end;
+	
+	*********************;
+    *** Gap analysis ****;
+    *********************;
+
+	%if %sysfunc(prxmatch(m/T11\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=1,
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T11,
+                             catvarsort=);
+	%end;
+
+	%if %sysfunc(prxmatch(m/T12\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=(gapnum <=1),
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T12,
+                             catvarsort=);
+	%end;
+
+	%if %sysfunc(prxmatch(m/T13\b/i,&tablelist.)) > 0 %then %do;
+        %t5tables_createdata(dataset=agg_t5gaps,
+                             whereclause=(gapnum >=2),
+                             catvar=gaplength,
+                             countvar=episodes,
+                             cattableid=,
+                             disttableid=T13,
                              catvarsort=);
 	%end;
 

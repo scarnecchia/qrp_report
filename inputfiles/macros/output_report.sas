@@ -129,6 +129,9 @@
                 from tablefile(where=(dataset in ("&tablename.")));
             quit;
 
+            %isdata(dataset=&tablename.);
+            %if %eval(&nobs.>0) %then %do;
+
             %if %str("&tableidlist") ne %str("") %then %do;
             %do t = 1 %to %sysfunc(countw(&tableidlist.));
                 %let tableid = %scan(&tableidlist., &t.);
@@ -275,6 +278,7 @@
                 %if %sysfunc(prxmatch(m/T1|T2/i,&tableid.)) > 0 %then %do;
                 %let tablenum = %eval(&tablenum + 1);
                 %end;
+            %end; /*underlying data exists*/
             %end; /*loop through each table*/
             %end; /*table requested*/
         %mend;
@@ -324,7 +328,7 @@
             %tableletter();
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
-                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
+                                           where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
                                            reasonlist= &t2censorreasons.,
 										   tablesub=dpidsiteid,
 			                               tablenum=&tablenum.&tableletter.,

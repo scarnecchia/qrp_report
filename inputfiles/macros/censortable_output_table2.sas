@@ -100,30 +100,22 @@
              (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
                 %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
-                  %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
-                      ("&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char)
-                    %end;
+
+                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("^S={cellheight=50pt}&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
                 %end;
                 );        
 
-        /*if overall - print grouplabel, if stratified - group label will be in compute block*/
 	    %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
         %end;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data 
-          style(column)=[just=L width =1.5in fontstyle=italic] 
-          style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
         %end;
         %else %do;
-        define &tablesub. / group  "" order=data 
-          style(column)=[just=L width=.9in];
-		define grouplabel / group  "" order=data 
-          style(column)=[just=L width =1.5in fontstyle=italic] 
-          style(header)=[background = BGR borderleftcolor = BGR] ; 
-		
+        define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
+        define grouplabel /group noprint;
         %end;
 
         define epi_tot_char / group "Total Number of &episodesorpatients"
@@ -146,10 +138,40 @@
         line "&title.&super_title";
         endcomp;
 
+        /*Add header if requested*/
+        %if &includeheaderrow = Y %then %do; 
+            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            length text $100;
+                text = headerlabel;
+                num = 100;
+                line text $varying. num;
+            endcomp;
+        %end;
+
+        /*Add group label spanning header if stratified table and indent labels*/
+        %if &tablesub. ne overall %then %do; 
+            compute before grouplabel /
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
+                text= grouplabel; 
+                num= 150;
+            	line text $varying. num; 
+            endcomp;
+
+            /*indent*/
+            compute &tablesub.;
+                call define(_col_,'style','style={indent=25}');
+            endcomp;
+        %end;
+
         /*Footnotes*/
         %if %eval(&num_fn.>0) %then %do;
     		compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize.
-    		                        height=1in bordertopwidth = &bordersize tagattr="wrap:yes"];
+    		                        height=2in bordertopwidth = &bordersize tagattr="wrap:yes"];
     		  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
     		  %end;
