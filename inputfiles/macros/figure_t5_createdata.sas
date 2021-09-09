@@ -59,9 +59,9 @@
     /*F2 = adjustedcodecount*/ %let adjustedcodecount = ;
     /*F3 = daysupp*/ %let daysupp = ;
 
-    %if %sysfunc(prxmatch(m/F1/i,&figure.)) %then %let npts = npts;
-    %if %sysfunc(prxmatch(m/F2/i,&figure.)) %then %let adjustedcodecount = adjustedcodecount;
-    %if %sysfunc(prxmatch(m/F3/i,&figure.)) %then %let daysupp = daysupp;
+    %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %let npts = npts;
+    %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %let adjustedcodecount = adjustedcodecount;
+    %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %let daysupp = daysupp;
 
     /*--------------------------------------------------------------------------------------------*/
     /* Aggregate data across all DPs                                                              */
@@ -96,7 +96,7 @@
 			end;
 		run;
 
-        proc sort data=agg_t5first_all(where=(level="&levelid" and mntsfromstart >=0)) 
+        proc sort data=agg_t5first_all(where=(level="&levelid")) 
 			out=_temp_figure123_&strat.(keep=group runid mntsfromstart &npts. &daysupp. &adjustedcodecount. &stratvars. 
                                              %if &figuresub. = agegroup %then %do; agegroup %end; );
 			by runid group &stratvars. mntsfromstart;
@@ -113,55 +113,74 @@
 			%if "&stratvars." = "" %then %do;
 			if first.group then do;
 			%end;
-                %if %sysfunc(prxmatch(m/F1/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do;
 				cumulative_npts = npts;
                 %end;
-                %if %sysfunc(prxmatch(m/F2/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do;
 				cumulative_adjustedcodecount = adjustedcodecount;
                 %end;
-                %if %sysfunc(prxmatch(m/F3/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do;
 				cumulative_daysupp = daysupp;
                 %end;
 			end;
 			else do;
-                %if %sysfunc(prxmatch(m/F1/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do;
 				cumulative_npts = sum(cumulative_npts, npts);
                 %end;
-                %if %sysfunc(prxmatch(m/F2/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do;
 				cumulative_adjustedcodecount = sum(cumulative_adjustedcodecount, adjustedcodecount);
                 %end;
-                %if %sysfunc(prxmatch(m/F3/i,&figure.)) %then %do;
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do;
 				cumulative_daysupp = sum(cumulative_daysupp, daysupp);
                 %end;
 			end;
-			retain %if %sysfunc(prxmatch(m/F1/i,&figure.)) %then %do; cumulative_npts %end;
-                   %if %sysfunc(prxmatch(m/F2/i,&figure.)) %then %do; cumulative_adjustedcodecount %end;
-                   %if %sysfunc(prxmatch(m/F3/i,&figure.)) %then %do; cumulative_daysupp %end; ;
+			retain %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do; cumulative_npts %end;
+                   %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do; cumulative_adjustedcodecount %end;
+                   %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do; cumulative_daysupp %end; ;
 
-			*assign label;
-            %if &figuresub. ne overall %then %do;
+			*assign label and stratification order;
             length label $40; 
+            sortorder=1;
+            label = '';
+            %if &figuresub. ne overall %then %do;
             %if &figuresub. = agegroup %then %do;
                 label = put(&figuresub., $agefmt.);
+                sortorder = agegroupnum;
             %end;
             %else %do;
                 label = put(&figuresub., $&figuresub.fmt.);
+                sortorder = input(put(&figuresub., &figuresub.sort.),1.);
             %end;
+            %end;
+
+            %if %str(&stratvars.) ne %str() %then %do;
+                drop &stratvars. %if &figuresub. = agegroup %then %do; agegroup %end;;
             %end;
 		run;
+
+        %if %eval(&strat.=1) %then %do;
+            data figure123;
+                set figure123_&strat.;
+                length figuresub $10;
+                figuresub = "&figuresub.";
+            run;
+        %end;
+        %else %do;
+            data figure123;
+                set figure123 figure123_&strat.(in=a);
+                if a then do;
+                figuresub = "&figuresub.";
+                end;
+            run;
+        %end;
 
     %end; /*loop through stratifications*/
 
     /*--------------------------------------------------------------------------------------------*/
-    /* Stack and assign group label and order                                                     */
+    /* Assign group label and order                                                               */
     /*--------------------------------------------------------------------------------------------*/
-
-    data figure123;
-        set figure123_:;
-    run;
-
     proc sql noprint undo_policy=none;
-		create table figure123 as
+		create table output.figure123 as
 		select x.*,
                %if &labelfileexists = Y %then %do;
                case when not missing(lbla.label) then lbla.label  
@@ -178,7 +197,8 @@
         %if &labelfileexists = Y %then %do;
         left join labelfile(where=(labeltype='grouplabel')) as lbla
         on x.group = lbla.group and x.runid = lbla.runid
-        %end; ;
+        %end; 
+        order by y.order, x.figuresub, x.sortorder, x.mntsfromstart;
 	quit;
 
     proc datasets nowarn noprint lib=work;
