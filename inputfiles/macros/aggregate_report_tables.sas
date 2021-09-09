@@ -106,6 +106,7 @@
     					  runid= "&runid.";
     					    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
     					      if gapnum = 999 then delete;
+							  if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
     					    %end;				   
     					run;
 
