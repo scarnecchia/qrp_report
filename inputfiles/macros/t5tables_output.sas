@@ -276,25 +276,25 @@
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=bgr borderleftwidth=1 borderrightcolor=bgr borderbottomcolor=black];
 				define min_char / display 'Minimum' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr bordertopcolor=black borderbottomcolor=black];	
 				define p25_char / display 'Q1' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
 				define median_char / display 'Median' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];		
 				define p75_char / display 'Q3' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];			
 				define max_char / display 'Maximum' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];		
 				define mean_char / display 'Mean' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];			
 				define std_char / display 'Standard*Deviation' 
-					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+					style(column)=[tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=black borderrightcolor=bgr borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
 
             /*format grouplabel*/
