@@ -227,6 +227,7 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/figure_cdf_km_output.sas";
 
 %include "&reportroot.inputfiles/macros/figure_t5_createdata.sas";
+%include "&reportroot.inputfiles/macros/figure_t5_output.sas";
 
 /*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
