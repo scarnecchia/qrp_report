@@ -55,7 +55,7 @@
         run;
 
         /*assign axes*/
-        %figure_axes(data=&dataset., figure=&figure., where=&where., xtickmarks=kmxtickmarks, ytickmarks=kmytickmarks);
+        %figure_axes(data=&dataset., figure=&figure., figuresub=overall, where=&where., xtickmarks=kmxtickmarks, ytickmarks=kmytickmarks);
 
         %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);

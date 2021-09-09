@@ -17,6 +17,7 @@
 *  PARAMETERS:    
 *   - data: figure data
 *   - figure: figure #
+*   - figuresub: figuresub from figurefile
 *   - where: where clause to restrict figure data 
 *   - xtickmarks: macro variable name for x tick mark list
 *   - ytickmarks: macro variable name for y tick mark list
@@ -31,7 +32,7 @@
 *
 ***************************************************************************************************;
 
-%macro figure_axes(data=, figure=, where=, xtickmarks=, ytickmarks=);
+%macro figure_axes(data=, figure=, figuresub=, where=, xtickmarks=, ytickmarks=);
     
   %put =====> MACRO CALLED: figure_axes;
 
@@ -53,7 +54,7 @@
 
   /*Extract axis parameters from figurefile*/
     data _null_;
-        set figurefile(where=(figure="&figure."));
+        set figurefile(where=(figure="&figure." and figuresub="&figuresub"));
 
         /*set min/max defaults if missing*/
         if missing(xmin) then xmin = &datamin.;
