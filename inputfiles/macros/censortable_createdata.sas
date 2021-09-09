@@ -490,7 +490,7 @@
 
        %let stat_char = min q1 median q3 max mean std;
 	   %let cen_tot = &cen_tot &censorreason;
-       %let all_char = &cen_tot &stat_char;
+	   %let pct_stat = &stat_char &pct;
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
@@ -512,23 +512,26 @@
 	     /*_pct variables*/
 	     %do  cr = 1 %to %sysfunc(countw(&pct));    
            %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
-		   if (episodes = . or episodes = 0) and overall_tot = 0 then do;
-		     %scan(&pct, &cr, ' ')_char = "."; 
+		   
+         %end;
+         /* pct and stat variables */ 
+		 %do  cr = 1 %to %sysfunc(countw(&pct_stat));
+		 if (episodes = . or episodes = 0) and overall_tot = 0 then do;
+		     %scan(&pct_stat, &cr, ' ')_char = "."; 
 		   end;
 		   else if (episodes = . or episodes = 0) then do;
-		     %scan(&pct, &cr, ' ')_char = "NaN"; 
+		     %scan(&pct_stat, &cr, ' ')_char = "NaN"; 
 		   end;
-         %end;
 
-         %do cr = 1 %to %sysfunc(countw(&all_char));
+         %do cr = 1 %to %sysfunc(countw(&cen_tot));
          if ((episodes = . or episodes = 0) 
 		   and overall_tot > 0)
            then do;
-             %scan(&all_char, &cr, ' ')_char = "0"; 	   
+             %scan(&cen_tot, &cr, ' ')_char = "0"; 	   
          end;
          else if overall_tot = 0
            then do;
-             %scan(&all_char, &cr, ' ')_char = ".";		  
+             %scan(&cen_tot, &cr, ' ')_char = ".";		  
          end;
 	     %end;
      run;
