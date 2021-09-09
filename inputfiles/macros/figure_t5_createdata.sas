@@ -102,7 +102,7 @@
 			by runid group &stratvars. mntsfromstart;
 		run;
 			
-		data output.figure123_&strat.;
+		data figure123_&strat.;
 			set _temp_figure123_&strat.;
 			by runid group &stratvars. mntsfromstart;
 
@@ -138,39 +138,54 @@
                    %if %sysfunc(prxmatch(m/F2/i,&figure.)) %then %do; cumulative_adjustedcodecount %end;
                    %if %sysfunc(prxmatch(m/F3/i,&figure.)) %then %do; cumulative_daysupp %end; ;
 
-
-/*			*assign label;*/
-/*			%if "&stratvars." = "sex" %then %do;*/
-/*				if &stratvars. = 'F' then label = 'Female';*/
-/*				if &stratvars. = 'M' then label = 'Male'; */
-/*				if &stratvars. = 'O' then label = 'Other';*/
-/*			%end;*/
-/*			%if "&stratvars." = "agegroup" %then %do;*/
-/*				label = agegroup;*/
-/*			%end;*/
-/*			%if "&stratvars." = "race" %then %do;*/
-/*				if &stratvars. = '0' then label = 'Unknown';*/
-/*				if &stratvars. = '1' then label = 'American Indian/Alaska Native';*/
-/*				if &stratvars. = '2' then label = 'Asian';*/
-/*				if &stratvars. = '3' then label = 'Black/African American';*/
-/*				if &stratvars. = '4' then label = 'Native Hawaiian/Other Pacific Islander';*/
-/*				if &stratvars. = '5' then label = 'White';*/
-/*				%end;*/
-/*			%if "&stratvars." = "hispanic" %then %do;*/
-/*				if &stratvars.= 'N' then label = 'Not Hispanic Origin';*/
-/*				if &stratvars. = 'Y' then label = 'Hispanic Origin';*/
-/*				if &stratvars. = 'U' then label = 'Unknown';*/
-/*			%end;*/
+			*assign label;
+            %if &figuresub. ne overall %then %do;
+            length label $40; 
+            %if &figuresub. = agegroup %then %do;
+                label = put(&figuresub., $agefmt.);
+            %end;
+            %else %do;
+                label = put(&figuresub., $&figuresub.fmt.);
+            %end;
+            %end;
 		run;
-
 
     %end; /*loop through stratifications*/
 
+    /*--------------------------------------------------------------------------------------------*/
+    /* Stack and assign group label and order                                                     */
+    /*--------------------------------------------------------------------------------------------*/
+
+    data figure123;
+        set figure123_:;
+    run;
+
+    proc sql noprint undo_policy=none;
+		create table figure123 as
+		select x.*,
+               %if &labelfileexists = Y %then %do;
+               case when not missing(lbla.label) then lbla.label  
+                else y.group 
+                end as grouplabel length=&label_length.,
+               %end;
+               %else %do;
+   			   y.group as grouplabel length=&label_length.,
+               %end;
+			   y.order
+		from figure123 as x
+		inner join groupsfile(where=(includeinfigure='Y')) as y
+		on x.group = y.group and x.runid = y.runid
+        %if &labelfileexists = Y %then %do;
+        left join labelfile(where=(labeltype='grouplabel')) as lbla
+        on x.group = lbla.group and x.runid = lbla.runid
+        %end; ;
+	quit;
+
     proc datasets nowarn noprint lib=work;
-        delete agg_t5first_all _temp_figure123_:;
+        delete agg_t5first_all _temp_figure123_: figure123_:;
     quit;
 
-    %end;
+    %end; /*agg_first exists*/
 
 	%put =====> END MACRO: figure_t5_createdata;
 
