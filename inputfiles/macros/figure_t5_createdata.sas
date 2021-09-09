@@ -12,11 +12,10 @@
 *  	-agg_t5_firsteps
 * 
 *  Program outputs:                                                                                                                           
-*   - 
+*   - figure123.sas7bdat
 * 
 *  PARAMETERS: 
-*   - 
-*
+*   - N/A
 * 
 *  Programming Notes:                                                                                
 *

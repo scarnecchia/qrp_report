@@ -737,9 +737,9 @@
 
             /**********************************************************************************************
              T5: 2 figures:
-                1) F1 (not yet implemented)
-                2) F2 (not yet implemented)
-                3) F3 (not yet implemented)
+                1) F1: Patient Entry into Study by Month
+                2) F2: Number of Prescription Dispensings in Patients First Episodes by Month
+                3) F3: Total Days Supply in Patients First Episodes by Month
                 4) F4: t5censor = Reasons for End of First Treatment Episode by Group
                 5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
             /**********************************************************************************************/
