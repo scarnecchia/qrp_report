@@ -15,7 +15,9 @@
 *   - N/A
 * 
 *  PARAMETERS: 
-*   - 
+*   -figurenum: figure number
+*   -title: figure title
+*   -where: where clause to restrict figure123.sas7bdat
 * 
 *  Programming Notes:                                                                                
 *
@@ -27,23 +29,22 @@
 *
 ***************************************************************************************************;
 
-%macro figure_t5_output();
+%macro figure_t5_output(figurenum=, title=, where=);
 
 	%put =====> MACRO CALLED: figure_t5_output;
 
-    /*--------------------------------------------------------------------------------------------*/
-    /* Dataset exists                                                                             */
-    /*--------------------------------------------------------------------------------------------*/
-
-    %isdata(dataset=figure123);
-    %if %eval(&nobs.>0) %then %do;
-    
+    /*Save dataset to REPORTDATA folder*/
+    %isdata(dataset=repdata.figure&tablenum.);
+    %if %eval(&nobs.<1) %then %do;
+        data repdata.figure&tablenum.;
+            set figure123(where=(&where.));
+        run;
+    %end;
    
 
 
 
 
-    %end; /*figure123 exists*/
 
 	%put =====> END MACRO: figure_t5_output;
 
