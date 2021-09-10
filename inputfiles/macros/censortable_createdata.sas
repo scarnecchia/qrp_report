@@ -597,9 +597,11 @@
 		   else if (episodes = 0)and overall_tot > 0 then do;
 		     %scan(&pct_stat, &cr, ' ')_char = "0.0%"; 
 		   end;
-         end;
+         %end;
+
          %do cr = 1 %to %sysfunc(countw(&cen_tot));
-         if ((episodes = . or episodes = 0) 
+         if ((episodes = . or episodes = 0) and 
+           "%scan(&cen_tot, &cr, ' ')_char" ne "epi_tot_char"
 		   and overall_tot > 0)
            then do;
              %scan(&cen_tot, &cr, ' ')_char = "0"; 	   
