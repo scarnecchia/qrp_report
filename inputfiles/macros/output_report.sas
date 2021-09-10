@@ -309,7 +309,7 @@
             data _null_;
                 set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
                 /*censor reasons*/
-                call symputx('t2censorreasons', censorreason);
+                call symputx('t5censorreasons', censorreason);
             run;
 
             /*counter for determining table letter*/
@@ -320,7 +320,7 @@
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
                                            where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
-                                           reasonlist= &t2censorreasons.,
+                                           reasonlist= &t5censorreasons.,
 										   tablenum=&tablenum.&tableletter.,
 										   tablesub= overall,
                                            episodesorpatients=&episodesorpatients.);
@@ -329,7 +329,7 @@
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                            where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
-                                           reasonlist= &t2censorreasons.,
+                                           reasonlist= &t5censorreasons.,
 										   tablesub=dpidsiteid,
 			                               tablenum=&tablenum.&tableletter.,
                                            episodesorpatients=&episodesorpatients.);
