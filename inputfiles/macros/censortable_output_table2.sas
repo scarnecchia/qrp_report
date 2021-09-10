@@ -33,14 +33,6 @@
 
 %macro censortable_output_table2 (Tablename=, Title=, Where=, Reasonlist=, tablesub=,  episodesorpatients =, tablenum =);
 
-    /*Save to reportdata folder*/
-    %isdata(dataset=repdata.table&tablenum.);
-    %if %eval(&nobs.<1) %then %do;
-    data repdata.table&tablenum.;
-        set &tablename(where=(&where.));
-    run; 
-    %end;
-
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
@@ -86,6 +78,21 @@
         delete _footnotes;
     quit;
 
+    /*Save to reportdata folder*/
+    %isdata(dataset=repdata.table&tablenum.);
+    %if %eval(&nobs.<1) %then %do;
+    data repdata.table&tablenum.;
+        set &tablename(where=(&where.));
+        %do corder = 1 %to 7;
+            %let cen_var = %scan(&defaultcensororder., &corder.);
+            %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
+                %let cens_dth_label = A really really really long label that is really annoying to type out and I wish I could stop typing now;
+                &cen_var._label = "&&&cen_var._label.&&super_&cen_var.";
+            %end;
+        %end;
+    run; 
+    %end;
+
     %if &destination. = excel %then %do;
     ods excel options(sheet_name="Table &tablenum." tab_color = "green");
     %end;
@@ -93,15 +100,14 @@
     ods proclabel = "Table &tablenum.";
 
     proc report data = repdata.table&tablenum. nofs nowd spanrows missing split="*"
-    	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b cellheight=50pt] split='*'
+    	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel 
              (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
                 %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
-
-                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; ("^S={cellheight=50pt}&&&cen_var._label.&&super_&cen_var." &cen_var._tot_char &cen_var._tot_pct_char) %end;
+                    %if %index(&reasonlist.,&cen_var.)>0 %then %do; (&cen_var._label,(&cen_var._tot_char &cen_var._tot_pct_char)) %end;
                 %end;
                 );        
 
@@ -125,7 +131,9 @@
         %do corder = 1 %to 7;
             %let cen_var = %scan(&defaultcensororder., &corder.);
             %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
-    		  define &cen_var._tot_char / group "Total Number of &episodesorpatients" 
+              define &cen_var._label / across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
+                                                                  borderleftcolor=black borderleftwidth=1 borderrightwidth=1 cellheight=.75in];
+    		  define &cen_var._tot_char / group "Number of &episodesorpatients" 
     		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
     		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
     		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
@@ -157,9 +165,7 @@
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
-                text= grouplabel; 
                 num= 150;
-            	line text $varying. num; 
             endcomp;
 
             /*indent*/
