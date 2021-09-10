@@ -157,9 +157,10 @@
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
-                text= grouplabel; 
+				length text2 $100;
+                text2= grouplabel; 
                 num= 150;
-            	line text $varying. num; 
+            	line text2 $varying. num; 
             endcomp;
 
             /*indent*/
