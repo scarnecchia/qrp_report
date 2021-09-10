@@ -13,13 +13,13 @@
 *  Program outputs:                                                                                                                                       
 *
 *  PARAMETERS:	
-*   - Tablename – dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
-*	- Title – table title
-*	- Where – where clause to filter the &tablename dataset
-*   - Reasonlist – list of reasons to include in table 
-*   - Tablesub - table stratifier
-*   - episodesorpatients - Episodes or Patients label
-*   - tablenum - table number
+*   - Tablename: dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
+*	- Title: table title
+*	- Where: where clause to filter the &tablename dataset
+*   - Reasonlist: list of reasons to include in table 
+*   - Tablesub: table stratifier
+*   - episodesorpatients: Episodes or Patients label
+*   - tablenum: table number
 * 
 *  Programming Notes:                                                                                
 *                                                                           
