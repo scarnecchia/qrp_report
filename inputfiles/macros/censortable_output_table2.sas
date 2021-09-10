@@ -86,7 +86,6 @@
         %do corder = 1 %to 7;
             %let cen_var = %scan(&defaultcensororder., &corder.);
             %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
-                %let cens_dth_label = A really really really long label that is really annoying to type out and I wish I could stop typing now;
                 &cen_var._label = "&&&cen_var._label.&&super_&cen_var.";
             %end;
         %end;
@@ -134,9 +133,9 @@
               define &cen_var._label / across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1 cellheight=.75in];
     		  define &cen_var._tot_char / group "Number of &episodesorpatients" 
-    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
     		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
-    		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+    		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
             %end;
         %end;
 
@@ -165,7 +164,7 @@
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
-				length text2 $100;
+				length text2 $150;
                 text2= grouplabel; 
                 num= 150;
             	line text2 $varying. num; 

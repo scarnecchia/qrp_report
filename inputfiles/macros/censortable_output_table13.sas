@@ -139,11 +139,12 @@
         %end;
 
         define censdays_value_cat_format / across '' order=data
-            style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+            style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor=black 
+                                                                  borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
         define episodes_char / "Number of &episodesorpatients" group
-           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
         define Epi_Tot_Pct_char / "Percent of &episodesorpatients" group
-           style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+           style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
 
         %if &continuousmetrics. = Y %then %do;
         define dummy / across "Distribution of &conttableheader." style(header)=[background = BGR borderleftcolor = BGR];
@@ -181,9 +182,10 @@
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
-                text= grouplabel; 
+                length text2 $150;
+                text2= grouplabel; 
                 num= 150;
-            	line text $varying. num; 
+            	line text2 $varying. num; 
             endcomp;
 
             /*indent*/
