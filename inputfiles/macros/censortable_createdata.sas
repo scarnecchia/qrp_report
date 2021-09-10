@@ -566,7 +566,6 @@
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
-	    
 	     /*_tot variable char and missing creation */
 	     episodes_char = strip(put(episodes, comma8.0));
          %do  cr = 1 %to %sysfunc(countw(&cen_tot));
