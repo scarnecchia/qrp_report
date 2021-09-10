@@ -96,53 +96,57 @@
 
     %put &xmin &xmax &xtick &ymin &ymax &ytick;
 
-    %let xloop = &xmin.;
-    %let yloop = &ymin.;
-
     /*xaxis*/
-    %let axisloopcount = 1;
-    %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
-    %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
-    %let fxtickmarks = &fxtickmarks%str( )&xloop.;
-    %end;
-    %else %do;
-    %let fxtickmarks = &fxtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
-        /*Add max value if gap between last tick mark and max value is >tick/2*/
-        %if %scan(&fxtickmarks., -1) ne &xmax. %then %do;
-            %let diff = %sysevalf(&xmax.-%scan(&fxtickmarks., -1));
-            %let div2 = %sysfunc(divide(&xtick.,2));
-            %if %sysevalf(&diff.>&div2.) %then %do;
-                %let fxtickmarks = &fxtickmarks%str( )&xmax.;
+    %if %str(&xtickmarks) ne %str() %then %do;
+        %let xloop = &xmin.;
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
+        %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
+        %let fxtickmarks = &fxtickmarks%str( )&xloop.;
+        %end;
+        %else %do;
+        %let fxtickmarks = &fxtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
+            /*Add max value if gap between last tick mark and max value is >tick/2*/
+            %if %scan(&fxtickmarks., -1) ne &xmax. %then %do;
+                %let diff = %sysevalf(&xmax.-%scan(&fxtickmarks., -1));
+                %let div2 = %sysfunc(divide(&xtick.,2));
+                %if %sysevalf(&diff.>&div2.) %then %do;
+                    %let fxtickmarks = &fxtickmarks%str( )&xmax.;
+                %end;
             %end;
         %end;
-    %end;
-    %let xloop=%sysevalf(&xloop + &xtick);
-    %let axisloopcount = %eval(&axisloopcount+1);
+        %let xloop=%sysevalf(&xloop + &xtick);
+        %let axisloopcount = %eval(&axisloopcount+1);
+        %end;
+
+        %let &xtickmarks = &fxtickmarks;
     %end;
     
     /*yaxis*/
-    %let axisloopcount = 1;
-    %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
-    %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
-    %let fytickmarks = &fytickmarks%str( )&yloop.;
-    %end;
-    %else %do;
-    %let fytickmarks = &fytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
-        /*Add max value if gap between last tick mark and max value is >tick/2*/
-        %if %scan(&fytickmarks., -1) ne &ymax. %then %do;
-            %let diff = %sysevalf(&ymax.-%scan(&fytickmarks., -1));
-            %let div2 = %sysfunc(divide(&ytick.,2));
-            %if %sysevalf(&diff.>&div2.) %then %do;
-                %let fytickmarks = &fytickmarks%str( )&ymax.;
+    %if %str(&ytickmarks) ne %str() %then %do;
+        %let yloop = &ymin.;
+        %let axisloopcount = 1;
+        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
+        %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
+        %let fytickmarks = &fytickmarks%str( )&yloop.;
+        %end;
+        %else %do;
+        %let fytickmarks = &fytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
+            /*Add max value if gap between last tick mark and max value is >tick/2*/
+            %if %scan(&fytickmarks., -1) ne &ymax. %then %do;
+                %let diff = %sysevalf(&ymax.-%scan(&fytickmarks., -1));
+                %let div2 = %sysfunc(divide(&ytick.,2));
+                %if %sysevalf(&diff.>&div2.) %then %do;
+                    %let fytickmarks = &fytickmarks%str( )&ymax.;
+                %end;
             %end;
         %end;
-    %end;
-    %let yloop=%sysfunc(round(%sysevalf(&yloop + &ytick),.001));
-    %let axisloopcount = %eval(&axisloopcount+1);
-    %end;    
+        %let yloop=%sysfunc(round(%sysevalf(&yloop + &ytick),.001));
+        %let axisloopcount = %eval(&axisloopcount+1);
+        %end;    
 
-    %let &xtickmarks = &fxtickmarks;
-    %let &ytickmarks = &fytickmarks;
+        %let &ytickmarks = &fytickmarks;
+    %end;
 
     %put =====> END MACRO: figure_axes;
 
