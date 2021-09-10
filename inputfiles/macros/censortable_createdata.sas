@@ -562,11 +562,11 @@
 
        %let stat_char = min q1 median q3 max mean std;
 	   %let cen_tot = &cen_tot &censorreason;
-	   %let pct_stat = &stat_char &pct;
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
-	     /*_tot variable char and missing creation */
+	         
+	       /*_tot variable char and missing creation */
 	     episodes_char = strip(put(episodes, comma8.0));
          %do  cr = 1 %to %sysfunc(countw(&cen_tot));
            %scan(&cen_tot, &cr, ' ')_char = strip(put(%scan(&cen_tot, &cr, ' '), comma8.0));
@@ -580,37 +580,51 @@
              %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma8.0));
            %end; 
 	     %end;
+
 	     /*_pct variables*/
 	     %do  cr = 1 %to %sysfunc(countw(&pct));    
-           %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));
-		   
+           %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));	   
          %end;
+
+		 %do cr1 = 1 %to %sysfunc(countw(&cen_tot));
          /* pct and stat variables */ 
-		 %do  cr = 1 %to %sysfunc(countw(&pct_stat));
-		 if (episodes = . or episodes = 0) and overall_tot = 0 then do;
-		     %scan(&pct_stat, &cr, ' ')_char = "."; 
+		 %do  cr = 1 %to %sysfunc(countw(&pct));
+		   if overall_tot = 0 then do;
+		     %scan(&pct, &cr, ' ')_char = "."; 
 		   end;
-		   else if (episodes = .)and overall_tot > 0 then do;
-		     %scan(&pct_stat, &cr, ' ')_char = "NaN"; 
+		   else if (%scan(&cen_tot, &cr1, ' ') = 0) and overall_tot > 0 
+		       and episodes = 0
+             then do;
+		     %scan(&pct, &cr, ' ')_char = "NaN"; 
 		   end;
-		   else if (episodes = 0)and overall_tot > 0 then do;
-		     %scan(&pct_stat, &cr, ' ')_char = "0.0%"; 
+		   else if (%scan(&cen_tot, &cr1, ' ') > 0) and overall_tot > 0  
+                and episodes = 0 then do;
+		     %scan(&pct, &cr, ' ')_char = "0.0%"; 
 		   end;
          %end;
 
-         %do cr = 1 %to %sysfunc(countw(&cen_tot));
-         if ((episodes = . or episodes = 0) and 
-           "%scan(&cen_tot, &cr, ' ')_char" ne "epi_tot_char"
-		   and overall_tot > 0)
+		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
+		 if overall_tot = 0 then do;
+		     %scan(&stat_char, &cr, ' ')_char = "."; 
+		   end;
+		   else if (episodes = 0)and overall_tot > 0 
+             then do;
+		     %scan(&stat_char, &cr, ' ')_char = "NaN"; 
+		   end;		   
+         %end;
+         
+		 if overall_tot = 0
            then do;
-             %scan(&cen_tot, &cr, ' ')_char = "0"; 	   
+             %scan(&cen_tot, &cr1, ' ')_char = ".";		  
          end;
-         else if overall_tot = 0
+         else if (%scan(&cen_tot, &cr1, ' ') = 0 and overall_tot > 0)
            then do;
-             %scan(&cen_tot, &cr, ' ')_char = ".";		  
+             %scan(&cen_tot, &cr1, ' ')_char = "0"; 	   
          end;
+         
 	     %end;
      run;
+
 
         /*final sort of data*/
         proc sort data=&censordataset.&dset_suffix. ;
