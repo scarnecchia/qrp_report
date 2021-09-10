@@ -20,7 +20,9 @@
 *   - figuresub: figuresub from figurefile
 *   - where: where clause to restrict figure data 
 *   - xtickmarks: macro variable name for x tick mark list
+*   - xvar = variable with xaxis metric
 *   - ytickmarks: macro variable name for y tick mark list
+*   - yvar= variable with yaxis metric
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -32,7 +34,7 @@
 *
 ***************************************************************************************************;
 
-%macro figure_axes(data=, figure=, figuresub=, where=, xtickmarks=, ytickmarks=);
+%macro figure_axes(data=, figure=, figuresub=, where=, xtickmarks=, xvar=, ytickmarks=, yvar=);
     
   %put =====> MACRO CALLED: figure_axes;
 
@@ -46,10 +48,16 @@
     %let fxtickmarks = ;
     %let fytickmarks = ;
 
-  /*select min and max day from input dataset for x axis*/
+  /*select min and max value from input dataset for x axis*/
    %if %str(&xtickmarks) ne %str() %then %do;
    proc sql noprint;
-       select min(day), max(day) into :datamin, :datamax
+       select min(&xvar.), max(&xvar.) into :datamin, :datamax
+       from &data(where=(&where.));
+   quit;
+   %end;
+   %if %str(&yvar.) ne %str() %then %do;
+   proc sql noprint;
+       select max(&yvar.) into :datamax
        from &data(where=(&where.));
    quit;
    %end;
@@ -64,14 +72,20 @@
         if missing(xmax) then xmax = &datamax.;
         %end;
         %if %str(&ytickmarks) ne %str() %then %do;
-        if missing(ymin) then ymin = 0;
-        if missing(ymax) then ymax = 1;
+            if missing(ymin) then ymin = 0;
+            %if %str(&yvar.) = %str() %then %do;
+            if missing(ymax) then ymax = 1;
+            %end;
+            %else %do;
+            if missing(ymax) then ymax = &datamax.+5; /*add +5 to prevent cut off data*/
+            %end;
         %end;
 
         /*set default tick if missing:
             - 6 total tick marks (min, max, and 4 interim)
             - for x axis - round to the nearest divisor of 1, 5, or 30
-                           depending on length of axis                */
+                           depending on length of axis               
+            - for y axis - round to nearest divisor of 10 */
 
         %if %str(&xtickmarks) ne %str() %then %do;
         if missing(xtick) then do;
@@ -87,10 +101,13 @@
         call symputx('xtick', xtick);
         call symputx('xloopcount', xloopcount);
         %end;
+
         %if %str(&ytickmarks) ne %str() %then %do;
         if missing(ytick) then do;
             ymaxminusmin = ymax-ymin;
-            if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
+            if ymaxminusmin>1 then ytick = round(ymaxminusmin/5, 10); /*tick every 10*/
+            /*two tick options for 0-1 axis*/
+            else if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01); 
             else ytick = round(ymaxminusmin/5, .001);
             if ytick = 0 then ytick = .001;
         end;

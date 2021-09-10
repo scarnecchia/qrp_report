@@ -155,6 +155,24 @@
             %if %str(&stratvars.) ne %str() %then %do;
                 drop &stratvars. %if &figuresub. = agegroup %then %do; agegroup %end;;
             %end;
+
+            /*format for axis and legend labels*/
+             
+            %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do; 
+                format cumulative_npts npts comma12.0;
+                label npts ='Monthly'
+                      cumulative_npts ='Cumulative';
+            %end;
+            %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do; 
+                format cumulative_adjustedcodecount adjustedcodecount comma12.0;
+                label adjustedcodecount ='Monthly'
+                      cumulative_adjustedcodecount ='Cumulative';
+            %end;
+            %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do; 
+                format cumulative_daysupp daysupp comma12.0;
+                label daysupp ='Monthly'
+                      cumulative_daysupp ='Cumulative';
+            %end;
 		run;
 
         %if %eval(&strat.=1) %then %do;
@@ -179,7 +197,7 @@
     /* Assign group label and order                                                               */
     /*--------------------------------------------------------------------------------------------*/
     proc sql noprint undo_policy=none;
-		create table output.figure123 as
+		create table figure123 as
 		select x.*,
                %if &labelfileexists = Y %then %do;
                case when not missing(lbla.label) then lbla.label  
