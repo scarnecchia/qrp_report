@@ -36,10 +36,28 @@
 	%put =====> MACRO CALLED: t5tables_output;
 	
 	%let header=;
-	data repdata.table&tablenum.&tableletter.;
-		set &dataset.;
-		if missing(header)=0 then call symputx('header','header');
-	run;
+	%if &labelfileexists. = Y %then %do;
+		data headerlabelyes;
+		 set labelfile(where=(labeltype='header'));
+		run;
+		%isdata(dataset=headerlabelyes);
+		data repdata.table&tablenum.&tableletter.;
+			set &dataset.;
+			%if %eval(&nobs.>0) %then %do;
+				if missing(header)=0 then call symputx('header','header');
+			%end;
+		run;
+		
+		/*Clean up*/
+		proc datasets nowarn noprint lib=work;
+			delete headerlabelyes;
+		quit;
+	%end;
+	%else %do;
+		data repdata.table&tablenum.&tableletter.;
+			set &dataset.;
+		run;
+	%end;
 	
 	proc sql noprint;
 	select max(sortorder1), max(sortorder2)
@@ -68,6 +86,14 @@
 			%if %sysfunc(prxmatch(m/T21_|T22_/i,&dataset.)) > 0 %then %do;
 				call symputx('categories', cumdose_output_cat);	
 			%end;
+		run;
+		
+		data _null_;
+			set tablefile;
+			if "&dataset" = catx('_',table,put(stratificationorder,1.)) then do;
+				if tablesub = 'overall' and "&stratifybydp." = "Y" then call symputx('tabletitle', ', by Data Partner');
+				else call symputx('tabletitle', tabletitle);
+			end;
 		run;
 
         /*Footnotes*/

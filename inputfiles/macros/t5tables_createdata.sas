@@ -561,9 +561,10 @@
                    case when not missing(lbla.label) then lbla.label  
                     else y.group 
                     end as grouplabel length=&t5tablelabellength.,
-                   case when not missing(lblb.label) then lblb.label  
-                    else ' ' 
-                    end as header length=&t5tablelabellength.,
+				    case when not missing(lblb.label) then lblb.label 
+                         when not missing(lbla.label) then lbla.label  
+                     else ' '  
+					end as header length=&t5tablelabellength.,
                    %end;
                    %else %do;
    				   y.group as grouplabel length=&t5tablelabellength.,
@@ -582,7 +583,7 @@
             on x.group = lblb.group and x.runid = lblb.runid
             %end; ;
 		quit;
-
+		
         /*Number of stratifications*/
         %let stratnum = %sysfunc(countw(&tablesub.));
 
