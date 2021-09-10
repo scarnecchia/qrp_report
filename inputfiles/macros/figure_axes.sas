@@ -77,7 +77,7 @@
             if missing(ymax) then ymax = 1;
             %end;
             %else %do;
-            if missing(ymax) then ymax = &datamax.+5; /*add +5 to prevent cut off data*/
+            if missing(ymax) then ymax = round(&datamax.+4,10); /*to prevent cut off data*/
             %end;
         %end;
 
