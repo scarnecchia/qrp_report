@@ -13,13 +13,13 @@
 *  Program outputs:                                                                                                                                       
 *
 *  PARAMETERS:	
-*   - Tablename – dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
-*	- Title – table title
-*	- Where – where clause to filter the &tablename dataset
-*   - Reasonlist – list of reasons to include in table 
-*   - Tablesub - table stratifier
-*   - episodesorpatients - Episodes or Patients label
-*   - tablenum - table number
+*   - Tablename: dataset name (t1censor/t2censor/t2followuptime/t5censor/t5censor_first)
+*	- Title: table title
+*	- Where: where clause to filter the &tablename dataset
+*   - Reasonlist: list of reasons to include in table 
+*   - Tablesub: table stratifier
+*   - episodesorpatients: Episodes or Patients label
+*   - tablenum: table number
 * 
 *  Programming Notes:                                                                                
 *                                                                           
@@ -165,7 +165,10 @@
                     %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
+				length text2 $100;
+                text2= grouplabel; 
                 num= 150;
+            	line text2 $varying. num; 
             endcomp;
 
             /*indent*/

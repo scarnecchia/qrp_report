@@ -89,7 +89,7 @@
 	   order = 6;  description = "Represents episodes censored due to occurrence of additional user-defined criteria using drug, procedure, diagnosis, and/or laboratory codes."; output;
 	   order = 7;  description = "Represents episodes censored due to evidence of death. Death data source and completeness varies by Data Partner."; output;
 	   order = 8;  description = 'Represents episodes censored due to disenrollment from health plan. Data Partners often artificially assign a ""disenrollment"" date equal to data end date for members still enrolled on that date. Therefore, a patient may have dual reasons for censoring as ""disenrollment"" and ""end of data"" on the same day - this can be interpreted as right-censoring in most cases.'; output;
-	   order = 9;  description = "Represents episodes censored due to Data Partner data end date. This end date represents the last day of the most recent year-month in which all of a Data Partner’s data tables in the Sentinel Common Data Model have at least 80% of the record count relative to the prior month."; output;
+	   order = 9;  description = "Represents episodes censored due to Data Partner data end date. This end date represents the last day of the most recent year-month in which all of a Data Partner's data tables in the Sentinel Common Data Model have at least 80% of the record count relative to the prior month."; output;
 	   order = 10;  description = "Represents episodes censored due to user-specified study end date."; output;
 	 run; 
 
