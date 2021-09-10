@@ -46,27 +46,34 @@
     %let fxtickmarks = ;
     %let fytickmarks = ;
 
-  /*select min and max day from input dataset*/
+  /*select min and max day from input dataset for x axis*/
+   %if %str(&xtickmarks) ne %str() %then %do;
    proc sql noprint;
        select min(day), max(day) into :datamin, :datamax
        from &data(where=(&where.));
    quit;
+   %end;
 
   /*Extract axis parameters from figurefile*/
     data _null_;
         set figurefile(where=(figure="&figure." and figuresub="&figuresub"));
 
         /*set min/max defaults if missing*/
+        %if %str(&xtickmarks) ne %str() %then %do;
         if missing(xmin) then xmin = &datamin.;
         if missing(xmax) then xmax = &datamax.;
-
+        %end;
+        %if %str(&ytickmarks) ne %str() %then %do;
         if missing(ymin) then ymin = 0;
         if missing(ymax) then ymax = 1;
+        %end;
 
         /*set default tick if missing:
             - 6 total tick marks (min, max, and 4 interim)
             - for x axis - round to the nearest divisor of 1, 5, or 30
                            depending on length of axis                */
+
+        %if %str(&xtickmarks) ne %str() %then %do;
         if missing(xtick) then do;
             xmaxminusmin = xmax-xmin;
             if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
@@ -75,7 +82,12 @@
             if xtick = 0 then xtick = 1;
         end;
         xloopcount=round(divide(xmax-xmin,xtick))+1;
-
+        call symputx('xmin', xmin);
+        call symputx('xmax', xmax);
+        call symputx('xtick', xtick);
+        call symputx('xloopcount', xloopcount);
+        %end;
+        %if %str(&ytickmarks) ne %str() %then %do;
         if missing(ytick) then do;
             ymaxminusmin = ymax-ymin;
             if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
@@ -83,18 +95,12 @@
             if ytick = 0 then ytick = .001;
         end;
         yloopcount=round(divide(ymax-ymin,ytick))+1;
-
-        call symputx('xmin', xmin);
-        call symputx('xmax', xmax);
-        call symputx('xtick', xtick);
         call symputx('ymin', ymin);
         call symputx('ymax', ymax);
         call symputx('ytick', ytick);
-        call symputx('xloopcount', xloopcount);
         call symputx('yloopcount', yloopcount);
+        %end;
     run;
-
-    %put &xmin &xmax &xtick &ymin &ymax &ytick;
 
     /*xaxis*/
     %if %str(&xtickmarks) ne %str() %then %do;
