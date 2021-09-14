@@ -104,11 +104,11 @@
     		
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel 
              (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
-                %do corder = 1 %to 7;
+                ("^S={background=BGR} Censoring Reason" %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
                     %if %index(&reasonlist.,&cen_var.)>0 %then %do; (&cen_var._label,(&cen_var._tot_char &cen_var._tot_pct_char)) %end;
                 %end;
-                );        
+                ));        
 
 	    %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
@@ -133,7 +133,7 @@
               define &cen_var._label / across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1 cellheight=.75in];
     		  define &cen_var._tot_char / group "Number of &episodesorpatients" 
-    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
+    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = black borderrightcolor = BGR];
     		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
     		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
             %end;

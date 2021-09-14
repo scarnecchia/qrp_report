@@ -112,7 +112,7 @@
 
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
                 %if %str("&censorreason") ne %str("") %then %do; &censorreason._char %end;
-                ("^S={background=BGR}Number of &episodesorpatients. &cattableheader." censdays_value_cat_format, (episodes_char epi_tot_pct_char) ) 
+                ("^S={background=BGR cellheight=0.75in}Number of &episodesorpatients. &cattableheader." censdays_value_cat_format, (episodes_char epi_tot_pct_char) ) 
                 %if &continuousmetrics. = Y %then %do; (dummy, (min_char q1_char median_char q3_char max_char mean_char std_char) ) %end;);
 
         %if &includeheaderrow = Y %then %do; 
@@ -134,7 +134,7 @@
 
         %if %str("&censorreason") ne %str("") %then %do; 
         define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))&super_reason."
-            style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.] 
+            style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.  borderleftcolor=black] 
             style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
 
@@ -142,13 +142,13 @@
             style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
         define episodes_char / "Number of &episodesorpatients" group
-           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
+           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string" ] style(header)=[just=C background = BGR borderleftcolor = black borderrightcolor = BGR];
         define Epi_Tot_Pct_char / "Percent of &episodesorpatients" group
            style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
 
         %if &continuousmetrics. = Y %then %do;
         define dummy / across "Distribution of &conttableheader." style(header)=[background = BGR borderleftcolor = BGR];
-        define min_char /group 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define min_char /group 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = black];
         define q1_char /group 'Q1' style(column)=[just=C width=27 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define median_char /group 'Median' style(column)=[just=C width=30pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define q3_char /group 'Q3' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
