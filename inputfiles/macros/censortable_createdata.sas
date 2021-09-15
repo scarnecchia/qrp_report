@@ -565,8 +565,7 @@
 
        data &censordataset.&dset_suffix.(drop= overall_tot:);
          set &censordataset.&dset_suffix.;
-	         
-	       /*_tot variable char and missing creation */
+	      /*_tot variable char and missing creation */
 	     episodes_char = strip(put(episodes, comma8.0));
          %do  cr = 1 %to %sysfunc(countw(&cen_tot));
            %scan(&cen_tot, &cr, ' ')_char = strip(put(%scan(&cen_tot, &cr, ' '), comma8.0));
@@ -608,9 +607,19 @@
 		     %scan(&stat_char, &cr, ' ')_char = "."; 
 		   end;
 		   else if (episodes = 0)and overall_tot > 0 
+             and strat ne "overall" 
              then do;
 		     %scan(&stat_char, &cr, ' ')_char = "NaN"; 
-		   end;		   
+		   end;
+         if "%scan(&stat_char, &cr, ' ')" = "std" and episodes = 1 
+           and strat ne "overall"
+		   then do;
+		   %scan(&stat_char, &cr, ' ')_char = "NaN";
+		 end;
+		 if strat ne "overall" and %scan(&stat_char, &cr, ' ')_char = "NaN" 
+		   then do;
+		    %scan(&stat_char, &cr, ' ')_char = ".";
+         end; 
          %end;
          
 		 if overall_tot = 0
@@ -624,6 +633,7 @@
          
 	     %end;
      run;
+
 
 
         /*final sort of data*/
