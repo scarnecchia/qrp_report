@@ -607,10 +607,12 @@
 		     %scan(&stat_char, &cr, ' ')_char = "."; 
 		   end;
 		   else if (episodes = 0)and overall_tot > 0 
+             and strat ne "overall" 
              then do;
 		     %scan(&stat_char, &cr, ' ')_char = "NaN"; 
 		   end;
          if "%scan(&stat_char, &cr, ' ')" = "std" and episodes = 1 
+           and strat ne "overall"
 		   then do;
 		   %scan(&stat_char, &cr, ' ')_char = "NaN";
 		 end;
