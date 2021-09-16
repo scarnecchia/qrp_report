@@ -25,6 +25,8 @@
 *   - disttableid: distribution table ID from TABLEFILE
 *   - catvarsort: variable on the input dataset containing category indicators
 *   - createfootnote: Y/N indicator to create group-specific footnote table (for dose tables)
+*   - dosevar: name of variable containing statistic names for dosing tables continuous metrics
+*   - totalcountdosevar: name of variable containing counts for dosing tables continuous metrics
 * 
 *  Programming Notes:                                                                                
 *  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
@@ -46,7 +48,9 @@
                            cattableid=,
                            disttableid=,
                            catvarsort=,
-                           createfootnote=);
+                           createfootnote=,
+						   dosevar=,
+						   totalcountdosevar=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -164,6 +168,7 @@
             if _n_ = 1 then do; /*levelid1 and levelid2 same for both tables*/
             	call symputx('levelid1', levelid1);
             	call symputx('levelid2', levelid2);
+				call symputx('levelid3', levelid3);
             end;
             if table = "&cattableid" then do;
                 call symputx('categories', categories);
@@ -323,6 +328,79 @@
             proc datasets nowarn noprint lib=work;
                 delete _totalbydp _catdata_trans _catdata _total_bystrat _distribution_cat:;
 		    quit;
+
+            /*Compute dose distribution metrics*/
+	        %if %sysfunc(prxmatch(m/T18\b|T19\b|T20\b|T21\b|T22\b/i,&tablelist.)) > 0 %then %do;
+				%if %eval(&s. eq 1) %then %let output_t5dose_continuous_data = N;
+
+				%if %eval(&s. eq 1) and %str("&levelid3.") ne %str("") %then %do;	
+						
+		    		proc sort data=&dataset.(where=(&whereclause. and level in ("&levelid3.")))
+							  out=_t5data_dose_stats;	
+					by runid group dpidsiteid;
+					keep runid group dpidsiteid &dosevar. metricvalue; 	
+					run;
+
+					proc transpose data=_t5data_dose_stats out=_t5data_dose_stats_trans;
+					by runid group dpidsiteid;
+					var metricvalue;
+					id &dosevar.;
+					run;
+
+					data _t5data_dose_stats;
+					set _t5data_dose_stats_trans;
+					count_std=0;
+					weighted_std=0;
+					if missing(mean) = 0 then weighted_mean = mean * &totalcountdosevar.;
+					if missing(stddev) = 0 then do;
+						weighted_std = (stddev**2)*(&totalcountdosevar. - 1);
+						count_std=1;
+					end;
+					run;
+
+					proc means data=_t5data_dose_stats nway missing noprint;
+					var minimum maximum count_std weighted_std &totalcountdosevar. weighted_mean;
+					class runid group;					
+					output out=_t5data_dose_stats(drop=_:) min(minimum)=minimum
+														   max(maximum)=maximum
+														   sum(count_std)=count_std
+														   sum(weighted_std)=weighted_std
+														   sum(&totalcountdosevar.)=&totalcountdosevar.
+														   sum(weighted_mean)=weighted_mean;
+					run;
+
+					data _t5data_dose_stats;
+					length dpidsiteid $6.;
+					set _t5data_dose_stats(in=a)
+					%if &stratifybydp. = Y %then %do;
+		            	_t5data_dose_stats_trans
+		            %end; ;
+					format mean_char stddev_char minimum_char maximum_char $15.;
+					if a then do;
+						dpidsiteid = 'all';
+						mean = weighted_mean / &totalcountdosevar.;
+						if missing(weighted_std) = 0 then stddev = sqrt(weighted_std /(&totalcountdosevar. - count_std));
+					end;
+					mean_char = strip(put(mean, comma12.1));
+					stddev_char = strip(put(stddev, comma12.1));
+					minimum_char = strip(put(minimum, comma12.0));
+					maximum_char = strip(put(maximum, comma12.0));
+					keep runid group dpidsiteid mean_char stddev_char minimum_char maximum_char;
+					run;
+			
+					proc sort data=_t5data_dose_stats;
+					by dpidsiteid runid group;
+					run;
+
+					data &cattableid._&cattablestratorder.;
+	    			merge &cattableid._&cattablestratorder.
+						  _t5data_dose_stats;
+	    			by dpidsiteid runid group;
+					run;	
+
+					%let output_t5dose_continuous_data = Y;
+				%end;						
+			%end;
 
             /*compute stratification percents and merge in total row*/
             %if %eval(&s.>1) %then %do;
@@ -713,6 +791,9 @@
                     else a.group 
                     end as grouplabel length=&t5tablelabellength.
                    %end;
+				   %else %do;
+				 , 	a.group as grouplabel length=&t5tablelabellength.
+				   %end;
             from groupsfile(keep=group runid order) as a
             inner join
                 (select distinct group, runid, unit

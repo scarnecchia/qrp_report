@@ -139,6 +139,10 @@
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
 
+	/*output t5 dose continuous data*/
+    %global output_t5dose_continuous_data;
+    %let output_t5dose_continuous_data = N;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

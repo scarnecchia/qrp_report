@@ -36,7 +36,9 @@
                              cattableid=T1,
                              disttableid=T2,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 
 	*** Distribution of total episode duration ***;
@@ -48,7 +50,9 @@
                             cattableid=T3,
                             disttableid=T4,
                             catvarsort=,
-                            createfootnote=N);
+                            createfootnote=N,
+							dosevar=,
+						    totalcountdosevar=);
 	%end;
 
 	*** Distribution of episode duration ***;
@@ -60,7 +64,9 @@
                              cattableid=T5,
                              disttableid=T6,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end; 
 	%if %sysfunc(prxmatch(m/T7\b|T8\b/i,&tablelist.)) > 0 %then %do;
 		%t5tables_createdata(dataset=agg_t5episdur,
@@ -70,7 +76,9 @@
                              cattableid=T7,
                              disttableid=T8,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 
 	%if %sysfunc(prxmatch(m/T9\b|T10\b/i,&tablelist.)) > 0 %then %do;
@@ -81,7 +89,9 @@
                              cattableid=T9,
                              disttableid=T10,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 	
 	*********************;
@@ -96,7 +106,9 @@
                              cattableid=,
                              disttableid=T11,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 
 	%if %sysfunc(prxmatch(m/T12\b/i,&tablelist.)) > 0 %then %do;
@@ -107,7 +119,9 @@
                              cattableid=,
                              disttableid=T12,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 
 	%if %sysfunc(prxmatch(m/T13\b/i,&tablelist.)) > 0 %then %do;
@@ -118,7 +132,9 @@
                              cattableid=,
                              disttableid=T13,
                              catvarsort=,
-                             createfootnote=N);
+                             createfootnote=N,
+							 dosevar=,
+						     totalcountdosevar=);
 	%end;
 
     *********************;
@@ -133,7 +149,9 @@
                                  cattableid=T18,
                                  disttableid=,
                                  catvarsort=cfdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cfdd,
+								 totalcountdosevar=adjustedcodecount);
     	%end;
         /*average filled daily dose*/
     	%if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
@@ -144,7 +162,9 @@
                                  cattableid=T19,
                                  disttableid=,
                                  catvarsort=afdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=afdd,
+								 totalcountdosevar=episodes);
     	%end;
     	%if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5dose,
@@ -154,7 +174,9 @@
                                  cattableid=T20,
                                  disttableid=,
                                  catvarsort=afdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=afdd,
+								 totalcountdosevar=episodes);
     	%end;
         /*cumulative dose*/
     	%if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
@@ -165,7 +187,9 @@
                                  cattableid=T21,
                                  disttableid=,
                                  catvarsort=cumdose_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cumdose,
+								 totalcountdosevar=episodes);
     	%end;
     	%if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5dose,
@@ -175,7 +199,9 @@
                                  cattableid=T22,
                                  disttableid=,
                                  catvarsort=cumdose_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cumdose,
+								 totalcountdosevar=episodes);
     	%end;
 
 	%put =====> END MACRO: t5tables_driver ;
