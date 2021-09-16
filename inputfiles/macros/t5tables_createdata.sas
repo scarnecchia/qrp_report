@@ -24,7 +24,7 @@
 *   - cattableid: category table ID from TABLEFILE
 *   - disttableid: distribution table ID from TABLEFILE
 *   - catvarsort: variable on the input dataset containing category indicators
-*
+*   - createfootnote: Y/N indicator to create group-specific footnote table (for dose tables)
 * 
 *  Programming Notes:                                                                                
 *  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
@@ -45,7 +45,8 @@
                            countvar=,
                            cattableid=,
                            disttableid=,
-                           catvarsort=);
+                           catvarsort=,
+                           createfootnote=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -313,7 +314,7 @@
                     %end; 
     			%end;        
 
-    			*Add labels - label for _&c. variables will be used for proc report;
+    			*Add labels - label for _&c.;
     			%do c =1 %to &num_categories.;
     				label _&c. = "&&&lbl&c.";
     			%end;
@@ -540,8 +541,8 @@
     /*----------------------------------------------------------------------------------------------*/
 
     /*Increase length of label if < longest stratification label*/
-    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(40, &label_length.));
-    %else %let t5tablelabellength = 40;
+    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(50, &label_length.+50));
+    %else %let t5tablelabellength = 50;
 
     /*utility macro*/
     %macro assignlabelvars(format=, sortorder1 = , sortorder2=);
@@ -560,9 +561,10 @@
                    case when not missing(lbla.label) then lbla.label  
                     else y.group 
                     end as grouplabel length=&t5tablelabellength.,
-                   case when not missing(lblb.label) then lblb.label  
-                    else ' ' 
-                    end as header length=&t5tablelabellength.,
+				    case when not missing(lblb.label) then lblb.label 
+                         when not missing(lbla.label) then lbla.label  
+                     else ' '  
+					end as header length=&t5tablelabellength.,
                    %end;
                    %else %do;
    				   y.group as grouplabel length=&t5tablelabellength.,
@@ -581,7 +583,7 @@
             on x.group = lblb.group and x.runid = lblb.runid
             %end; ;
 		quit;
-
+		
         /*Number of stratifications*/
         %let stratnum = %sysfunc(countw(&tablesub.));
 
@@ -597,6 +599,7 @@
 								order, 
 								sortorder1, 
 								sortorder2,
+								header,	
 								&firststrat.
                                 %if &firststrat. = agegroup %then %do;
 								, agegroupnum
@@ -651,6 +654,13 @@
                     end;
                 %end;
             %end;
+
+            /*Add footnote superscrip*/
+            %if &createfootnote. = Y %then %do;
+                if sortorder1 = 0 and sortorder2 = 0 then do;
+                    grouplabel=cat(strip(grouplabel), "^{super", " ", order, "}");
+                end;
+            %end;
         run;
         
 		proc sort data=&data. sortseq=linguistic(numeric_collation=on);;
@@ -688,9 +698,56 @@
     	%end;
     %end;
 
+    /*Create footnote lookup table - used for dose tables*/
+    %if &createfootnote. = Y %then %do;
+
+        /*Identify unit and categories for each group*/
+        proc sql noprint;
+            create table _temp_unit as
+            select a.group
+                 , a.order        
+                 , b.unit
+                 , c.&catvar.
+                   %if &labelfileexists = Y %then %do;
+                 ,  case when not missing(lbl.label) then lbl.label  
+                    else a.group 
+                    end as grouplabel length=&t5tablelabellength.
+                   %end;
+            from groupsfile(keep=group runid order) as a
+            inner join
+                (select distinct group, runid, unit
+                from master_cohortcodes(keep=group runid unit indexcriteria)
+                where indexcriteria = 'DEF' and missing(unit)=0) as b
+            on a.group = b.group and a.runid = b.runid
+            inner join
+                (select group, runid, &catvar.
+                from master_typefile(keep=group runid &catvar.)) as c
+            on a.group=c.group and a.runid=c.runid
+            %if &labelfileexists = Y %then %do;
+            left join labelfile(where=(labeltype='grouplabel')) as lbl
+            on a.group = lbl.group and a.runid = lbl.runid
+            %end;
+            order by a.order;
+        quit;
+
+        /*Create footnote*/
+        data &cattableid._lookup_footnotes_dose;
+            set _temp_unit;
+            length description $575 ;
+            %do c =1 %to &num_categories.;
+            length label&c $200;
+            label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '));
+            %end;
+
+            description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
+            keep order description;
+        run;
+
+    %end;
+
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _t5data_summed:;
+        delete _t5data_summed: _temp_unit;
     quit;
 
     %put =====> END MACRO: t5tables_createdata ;
