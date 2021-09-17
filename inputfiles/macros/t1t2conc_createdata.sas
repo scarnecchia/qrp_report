@@ -148,21 +148,31 @@
 	     on a.covarnum = b.covarnum;
        quit;
      %end;
+
+     /* Check to see if POINT was specified in T2 queries */
+     %if %index(&reporttype,T2) %then %do;
+     	proc sql noprint;
+     		select a.*, b.point 
+     		from &dsnin a 
+     		left join master_typefile b 
+     		on a.group = b.group;
+     	quit;
+     %end;
    /************************************************************************************************
        Prepare final summary datasets           
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
-	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; );
+	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
 		/* Calculated vars and labels */
         %do vv = 1 %to &numcolumns;
 		  label &&var&vv. = "&&label&vv.";
-		  
-	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
+		  label &&var&vv.._char = "&&label&vv";
+	      %if %index(&&formula&vv.,/) > 0 %then %do;
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
 			   format &&var&vv. $30.;
 			   if &&cidenom&vv.. > 0 and &&num&vv. > 0 then do;
@@ -171,11 +181,16 @@
 			      ci_lower = exp(log(lambda) - 1.96 * se);
                   ci_upper = exp(log(lambda) + 1.96 * se);
 			      &&var&vv. = strip(put(lambda, &&format&vv.)) || " (" || strip(put(ci_lower, &&format&vv.)) || ", " || strip(put(ci_upper, &&format&vv.)) || ")";
+			      &&var&vv.._char=&&var&vv.;
 			   end;
 			   else if &&num&vv. = 0 and &&cidenom&vv.. > 0 then do;
 			      &&var&vv. = strip(put(0, &&format&vv.)) || " (" || strip(put(0, &&format&vv.)) || ", " || strip(put(0, &&format&vv.)) || ")";
+			      &&var&vv.._char=&&var&vv.;
 			   end;
-			   else &&var&vv. = "NaN";
+			   else do;
+			   	&&var&vv. = "NaN";
+			   	&&var&vv.._char=&&var&vv.;
+			   end;
              %end;	
 			 %else %if %str("&&cirate&vv.") = %str("P") %then %do;
                format &&var&vv. $30.;			 
@@ -187,22 +202,34 @@
                  ci_upper = p + 1.96 * se;
 			     %if %eval(&&multi&vv. > 0) %then %do;
 			       &&var&vv. = strip(put(p*&&multi&vv., &&format&vv.)) || " (" || strip(put(ci_lower*&&multi&vv., &&format&vv.)) || ", " || strip(put(ci_upper*&&multi&vv., &&format&vv.)) || ")";
+			       &&var&vv.._char = &&var&vv.;
 			     %end;
 			     %else %do;
 			       &&var&vv. = strip(put(p, &&format&vv.)) || " (" || strip(put(ci_lower, &&format&vv.)) || ", " || strip(put(ci_upper, &&format&vv.)) || ")";
+			       &&var&vv.._char = &&var&vv.;
 			     %end;
                end;
-			   else &&var&vv. = "NaN";
+			   else do;
+			   	&&var&vv. = "NaN";
+			   	&&var&vv.._char=&&var&vv.;
+			   end;
 			 %end;
 			 %else %do;
 			   format &&var&vv. &&format&vv.;
-			   if &&denominator&vv. > 0 then &&var&vv. = &&formula&vv.;
-			   else &&var&vv. =0;
+			   if &&denominator&vv. > 0 then do;
+			   	&&var&vv. = &&formula&vv.;
+			   	&&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
+			   end;
+			   else do;
+			   	&&var&vv. =0;
+			   	&&var&vv.._char="NaN";
+			   end;
 			 %end;
 		  %end;
 		  %else %do;
 		     format &&var&vv. &&format&vv.;
 		     &&var&vv. = &&formula&vv.;
+		     &&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
 		  %end;
 	    %end;
 		
@@ -295,6 +322,10 @@
 		  by &dpvar. order level %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
 		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
 			 %if %index(&&&table._stratification,state) > 0 %then %do; sortorder_state %end;;
+		run;
+
+		data output.&dsout;
+			set &dsout;
 		run;
     %mend;
 
