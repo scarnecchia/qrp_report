@@ -736,7 +736,7 @@
             length description $575 ;
             %do c =1 %to &num_categories.;
             length label&c $200;
-            label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '));
+            label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '), ' ', unit);
             %end;
 
             description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
