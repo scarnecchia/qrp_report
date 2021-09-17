@@ -91,6 +91,7 @@
 		data _null_;
 			set tablefile;
 			if "&dataset" = catx('_',table,put(stratificationorder,1.)) then do;
+				call symputx('tablesub', tablesub);
 				if tablesub = 'overall' and "&stratifybydp." = "Y" then call symputx('tabletitle', ', by Data Partner');
 				else call symputx('tabletitle', tabletitle);
 			end;
@@ -115,6 +116,7 @@
 			set tablefile;
 			if "&dataset" = catx('_',table,put(stratificationorder,1.)) then do;
 				call symputx('categories', categories);
+				call symputx('tablesub', tablesub);
 				if tablesub = 'overall' and "&stratifybydp." = "Y" then call symputx('tabletitle', ', by Data Partner');
 				else call symputx('tabletitle', tabletitle);
 			end;
@@ -140,7 +142,7 @@
 			run;
 		%end;
 	%end;
-	
+
 	/* Categorical */
 	%if &reporttype. = cat %then %do;
 		
@@ -154,26 +156,31 @@
 		%else %if %index(&dataset,T18_) %then %do; 
 			%let t5title = Summary of Filled Daily Dose in Each Dispensing,; 
 			%let t5head = Number of Dispensings by Filled Daily Dose; 
+			%let t5distributiontitle=%str(Distribution of Filled Daily Dose);
 		%end;
 		%else %if %index(&dataset,T19_) %then %do; 
 			%let t5title = Summary of Average Filled Daily Dose in Each Treatment Episode,; 
 			%let t5head = Number of Episodes by Average Filled Daily Dose; 
 			%let t5type = Episodes;
+			%let t5distributiontitle=%str(Distribution of Average Filled Daily Dose);
 		%end;
 		%else %if %index(&dataset,T20_) %then %do; 
 			%let t5title = Summary of Average Filled Daily Dose in Each Patient%str(%')s First Valid Episode,; 
 			%let t5head = Number of Patients by Average Filled Daily Dose in First Treatment Episode; 
 			%let t5type = Patients;
+			%let t5distributiontitle=%str(Distribution of Average Filled Daily Dose);
 		%end;
 		%else %if %index(&dataset,T21_) %then %do; 
 			%let t5title = Summary of Cumulative Filled Dose in All Treatment Episodes,; 
 			%let t5head = Number of Patients by Cumulative Filled Dose; 
 			%let t5type = Patients;
+			%let t5distributiontitle=%str(Distribution of Cumulative Filled Dose);
 		%end;
 		%else %if %index(&dataset,T22_) %then %do; 
 			%let t5title = Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,; 
 			%let t5head = Number of Patients by Cumulative Filled Dose in First Treatment Episode; 
 			%let t5type = Patients;
+			%let t5distributiontitle=%str(Distribution of Cumulative Filled Dose);
 		%end;
         
 		%if &destination = excel %then %do;
@@ -186,7 +193,7 @@
 			
 			column &header. order sortorder1 sortorder2 grouplabel total_count_char ("&t5head." 
 					  %do s = 1 %to %eval(&num_categories);
-		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
+		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 and &labelfileexists = Y %then %do;
 						 ("^S={ borderleftcolor=bgr bordertopcolor=black}&&lbl&s.."
 		%end;
 		%else %do;
@@ -195,7 +202,14 @@
 		%end;
 						 _&s._char _&s._percent_char)
                       %end;
-					);
+					)
+					%if &output_t5dose_continuous_data. eq Y and &tablesub. eq overall %then %do;
+					("^S={}" 
+						("^S={ borderleftcolor=bgr borderbottomcolor=black}&t5distributiontitle." minimum_char maximum_char mean_char stddev_char 							 
+						)
+					)
+					%end; 
+					;
 
 				%if %str("&header.") ne %str("") %then %do; 
 				define header / group noprint order=data;
@@ -216,6 +230,20 @@
 					define _&s._percent_char / display "Percent of Total*&t5type."  
 					style(column)=[background=$backgroundfmt. tagattr="type:string"] 
 					style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1 bordertopcolor=black borderbottomcolor=black];	
+				%end;
+				%if &output_t5dose_continuous_data. eq Y and &tablesub. eq overall %then %do;
+					define minimum_char / display "Minimum"  
+						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
+					define maximum_char / display "Maximum"  
+						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
+					define mean_char / display "Mean"  
+						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
+					define stddev_char / display "Standard*Deviation"  
+						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 				%end;
 
             /*format grouplabel*/
