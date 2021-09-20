@@ -1242,7 +1242,8 @@ libname tempfl "";
 			  Order        		length = 3		format = 3.
 			  ColumnLabel       length = $100	format = $100.
 			  ColumnFormat      length = $10	format = $10.
-              CIrate		  	length = $1		format = $1.;
+              CIrate		  	length = $1		format = $1.
+              ColumnWidth       length = $10    format = $10.;
 	   Column = "Npts"; ColumnLabel = "New Users"; ColumnFormat = "comma10.0"; Table = "t1cida"; CIrate = "N"; order = 1; IncludeinReport = "Y"; output; Table = "t2cida"; output; Table = "t2conc"; output;
 	   Column = "(Npts/DenNumPts)*X"; ColumnLabel = "New Users per X Eligible Members"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "N"; IncludeinReport = "N"; order = 2; output; Table = "t2cida"; output;
 	   Column = "npts/dennumpts"; ColumnLabel = "Proportion of New Users per Eligible Member (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t1cida"; CIrate = "P"; order = 3; includeinreport = 'N'; output;
@@ -1283,7 +1284,7 @@ libname tempfl "";
 	   Column = "(eps_wevents/episodes)*X"; ColumnLabel = "Proportion of Episodes with an Event per X New Episodes (95% Confidence Interval)"; ColumnFormat = "comma13.2"; Table = "t2cida"; CIrate = "P"; order = 30; includeinreport = 'N'; output; Table = "t2conc"; order = 28; output;
 	   Column = "All_Events"; ColumnLabel = "All Events"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 31; output; Table = "t2conc"; order = 29; includeinreport = 'Y'; output;
 	   Column = "followuptime"; ColumnLabel = "Days at Risk"; ColumnFormat = "comma10.0"; Table = "t2cida"; CIrate = "N"; order = 32; includeinreport = 'Y'; output; Table = "t2conc"; order = 30; output;
-	   Column = "followuptime/365.25"; ColumnLabel = "Years at Risk"; ColumnFormat = "comma13.1"; Table = "t2cida"; CIrate = "N"; includeinreport = 'Y'; order = 33; output; Table = "t2conc"; order = 31; output;
+	   Column = "followuptime/365.25"; ColumnLabel = "Years at Risk"; ColumnFormat = "comma13.1"; Table = "t2cida"; CIrate = "N"; includeinreport = 'Y'; order = 33; output; Table = "t2conc"; order = 31; output; ColumnWidth=''; output;
 	 run; 
 
 	 proc sort data = tablecolumnsfile;
