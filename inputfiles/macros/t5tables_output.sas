@@ -186,7 +186,7 @@
 		* Check if continuous metrics are required for dose tables;
 		%let output_t5dose_continuous_data=N;
 		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
-			proc contents data=repdata.table2a out=_contents noprint;
+			proc contents data=repdata.table&tablenum.&tableletter. out=_contents noprint;
 			quit;
 
 			%let varcount=0;
