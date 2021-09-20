@@ -182,6 +182,20 @@
 			%let t5type = Patients;
 			%let t5distributiontitle=%str(Distribution of Cumulative Filled Dose);
 		%end;
+
+		* Check if continuous metrics are required for dose tables;
+		%let output_t5dose_continuous_data=N;
+		%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
+			proc contents data=repdata.table2a out=_contents noprint;
+			quit;
+
+			%let varcount=0;
+			proc sql noprint;
+			select count(*) into :varcount trimmed from _contents where lowcase(name)="mean_char";
+			quit;
+
+			%if %eval(&varcount. > 0) %then %let output_t5dose_continuous_data=Y;
+		%end;
         
 		%if &destination = excel %then %do;
 			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
@@ -233,16 +247,16 @@
 				%end;
 				%if &output_t5dose_continuous_data. eq Y and &tablesub. eq overall %then %do;
 					define minimum_char / display "Minimum"  
-						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(column)=[tagattr="type:string"] 
 						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;	
 					define maximum_char / display "Maximum"  
-						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(column)=[tagattr="type:string"] 
 						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 					define mean_char / display "Mean"  
-						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(column)=[tagattr="type:string"] 
 						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 					define stddev_char / display "Standard*Deviation"  
-						style(column)=[background=$backgroundfmt. tagattr="type:string"] 
+						style(column)=[tagattr="type:string"] 
 						style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 				%end;
 

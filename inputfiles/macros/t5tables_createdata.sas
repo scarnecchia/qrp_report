@@ -330,15 +330,12 @@
 		    quit;
 
             /*Compute dose distribution metrics*/
-	        %if %sysfunc(prxmatch(m/T18\b|T19\b|T20\b|T21\b|T22\b/i,&tablelist.)) > 0 %then %do;
-				%if %eval(&s. eq 1) %then %let output_t5dose_continuous_data = N;
-
+	        %if %sysfunc(prxmatch(m/T18\b|T19\b|T20\b|T21\b|T22\b/i,&&cattableid.)) > 0 %then %do;				
 				%if %eval(&s. eq 1) and %str("&levelid3.") ne %str("") %then %do;	
 						
 		    		proc sort data=&dataset.(where=(&whereclause. and level in ("&levelid3.")))
-							  out=_t5data_dose_stats;	
-					by runid group dpidsiteid;
-					keep runid group dpidsiteid &dosevar. metricvalue; 	
+							  out=_t5data_dose_stats(keep=runid group dpidsiteid &dosevar. metricvalue);	
+					by runid group dpidsiteid;					 	
 					run;
 
 					proc transpose data=_t5data_dose_stats out=_t5data_dose_stats_trans;
@@ -396,9 +393,7 @@
 	    			merge &cattableid._&cattablestratorder.
 						  _t5data_dose_stats;
 	    			by dpidsiteid runid group;
-					run;	
-
-					%let output_t5dose_continuous_data = Y;
+					run;						
 				%end;						
 			%end;
 
