@@ -149,20 +149,24 @@
        quit;
      %end;
 
-     /* Check to see if POINT was specified in T2 queries */
-     %if %index(&reporttype,T2) %then %do;
-     	proc sql noprint;
-     		select a.*, b.point 
-     		from &dsnin a 
-     		left join master_typefile b 
-     		on a.group = b.group;
-     	quit;
-     %end;
    /************************************************************************************************
        Prepare final summary datasets           
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
+    	/* Check to see if POINT was specified in T2 queries */
+    	%let pointflag = N;
+	    %if %index(&reporttype,T2) %then %do;
+	    	%let pointflag = Y;
+	     	proc sql noprint undo_policy=none;
+	     		create table &dsin as 
+	     		select a.*, upper(b.point) as point 
+	     		from &dsin a 
+	     		left join master_typefile b 
+	     		on a.group = b.group;
+	     	quit;
+	   %end;
+
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
 	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
          set &dsin.;
@@ -190,7 +194,13 @@
 			   else do;
 			   	&&var&vv. = "NaN";
 			   	&&var&vv.._char=&&var&vv.;
+			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			   	%end;
 			   end;
+			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			   %end;			   
              %end;	
 			 %else %if %str("&&cirate&vv.") = %str("P") %then %do;
                format &&var&vv. $30.;			 
@@ -212,24 +222,45 @@
 			   else do;
 			   	&&var&vv. = "NaN";
 			   	&&var&vv.._char=&&var&vv.;
+			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			   	%end;
 			   end;
+			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			   %end;
 			 %end;
 			 %else %do;
 			   format &&var&vv. &&format&vv.;
 			   if &&denominator&vv. > 0 then do;
 			   	&&var&vv. = &&formula&vv.;
 			   	&&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
+			 	%if &&num&vv. = 0 %then %do;
+			 	   &&var&vv.._char='.';
+			 	%end;
 			   end;
 			   else do;
 			   	&&var&vv. =0;
 			   	&&var&vv.._char="NaN";
 			   end;
+				 %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			     %end;
 			 %end;
 		  %end;
 		  %else %do;
 		     format &&var&vv. &&format&vv.;
 		     &&var&vv. = &&formula&vv.;
 		     &&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
+		     %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+		     	if point = 'Y' then &&var&vv.._char='N/A';
+		     %end;
+		     %if &&num&vv. = 0 %then %do;
+			 	   &&var&vv.._char='.';
+			 %end;
+			 %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			 %end;
 		  %end;
 	    %end;
 		
