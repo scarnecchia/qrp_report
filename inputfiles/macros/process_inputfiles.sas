@@ -74,6 +74,10 @@
 		  %let stratifybydp = N;
 		  %let report_destination = PDF;
 	    %end;
+		/* Set reportid suffix to missing when not a leave behind report */
+		%else %do;
+		  %let reportid = ;
+		%end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
