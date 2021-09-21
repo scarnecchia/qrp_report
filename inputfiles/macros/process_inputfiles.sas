@@ -39,6 +39,13 @@
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
         %abort;
     %end;
+	
+	/* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
+	   Create macro variable to identify if it is a leave behind report */
+	   %isdata(dataset=input.report_parameters);
+       %if %eval(&nobs.>0) %then %do;
+		  %let leavebehindreport = Y;
+	   %end;
 
         proc sql noprint;
             select count(*) into: numparms
@@ -65,6 +72,12 @@
             run;
             %let &parameter. = &value.;
         %end;
+		
+		/* If leave behind report is requested stratify by DP is set to N and report destination is PDF */
+		%if &leavebehindreport = Y %then %do;
+		  %let stratifybydp = N;
+		  %let report_destination = PDF;
+		%end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
