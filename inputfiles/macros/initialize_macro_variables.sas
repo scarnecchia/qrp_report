@@ -138,9 +138,6 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-	
-	/* Leave behind report */
-	%let leavebehindreport = N;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
