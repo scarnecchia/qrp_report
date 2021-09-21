@@ -163,7 +163,12 @@
 	     		select a.*, upper(b.point) as point 
 	     		from &dsin a 
 	     		left join master_typefile b 
-	     		on a.group = b.group;
+	     		on %if %index(&dsin.,t2conc) %then %do; 
+	     		   a.analysisgrp 
+	     		   %end; 
+	     		   %else %do; 
+	     		   a.group 
+	     		   %end; = b.group;
 	     	quit;
 	   %end;
 
