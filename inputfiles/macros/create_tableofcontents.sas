@@ -527,6 +527,47 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
+    /*********************************************************************************************/
+    /* Type 1, Type 2 and Concomitant Use CIDA tables                                            */
+    /*********************************************************************************************/
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+        /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
+          %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+
+
+                %isdata(dataset=tablefile);
+                %let tableobs = &nobs.;
+                %let tablecount=1;
+                %do z = 1 %to %eval(&tableobs.);
+
+                data _null_;
+                    set tablefile;
+                    if _n_ = &z then do;
+                    call symputx('tabletitle', tabletitle);
+                    end;
+                run;
+
+                %if %eval(&tableobs.=1) %then %let tablecount=0;
+
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                %end;
+
+                %if &stratifybydp. = Y %then %do;    
+                    %do dps = 1 %to %eval(&num_dp.);
+                        %let maskedID = %scan(&masked_dplist,&dps); 
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted, by &maskedID.));    
+                    %end;
+                %end; 
+
+                %let tablenum = %eval(&tablenum + 1);
+
+          %end;
+    %end;
+
  
     /*********************************************************************************************/
     /* Type 5 summary tables                                                                     */
