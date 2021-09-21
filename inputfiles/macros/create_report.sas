@@ -38,9 +38,15 @@
     %put =====> MACRO CALLED: create_report;
 
     /*clear work and output*/
-    proc datasets nowarn nolist lib=work kill; quit;
     proc datasets nowarn nolist lib=repdata kill; quit;
-    proc datasets nowarn nolist lib=msocdata kill; quit;    
+	
+	/* msocdata folder not needed for leave behind report 
+	   and need to retain work datasets from qrp */
+	%isdata(dataset=input.report_parameters);
+    %if %eval(&nobs.=0) %then %do;
+       proc datasets nowarn nolist lib=msocdata kill; quit;   
+	   proc datasets nowarn nolist lib=work kill; quit;
+	%end;
 
     /*Initialize global macro variables*/
     %initialize_macro_variables();

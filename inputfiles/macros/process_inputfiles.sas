@@ -68,15 +68,18 @@
             %let &parameter. = &value.;
         %end;
 		
-		/* If leave behind report is requested stratify by DP is set to N and report destination is PDF */
+		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+           and dpfile is set to the work dpinfofile */
 	    %isdata(dataset=input.report_parameters);
         %if %eval(&nobs.>0) %then %do;
 		  %let stratifybydp = N;
 		  %let report_destination = PDF;
+		  %let dpfile = dpinfofile;
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
 		  %let reportid = ;
+		  %let dpfile = input.&DPInfoFile.;
 		%end;
 
 /***************************************************************************************************
@@ -105,7 +108,9 @@
 ***************************************************************************************************/
 
     /*Check if DPINFOFILE exists and contains at least 1 DP to include in report*/
-    %isdata(dataset=input.&DPInfoFile.);
+	/* User specified dpinfofile */
+	%put dp file is &dpinfofile.;
+    %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
         %put ERROR: (Sentinel) DPINFOFILE is missing.;
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
@@ -115,7 +120,7 @@
         /*Number of DPs to include in report and list of DPs*/
         data dpinfofile;
             length database $250;
-            set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
+            set &dpfile. (where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
             dp=lowcase(dp);
             if missing(database) then database = 'Sentinel Distributed Database';
