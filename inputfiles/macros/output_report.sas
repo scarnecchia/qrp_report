@@ -113,6 +113,38 @@
     %end;
 
 ***************************************************************************************************;
+* T1/T2/Concomitant Use tables                                                      
+***************************************************************************************************;
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+        /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
+          %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+          %do td = 1 %to &tdatasetlistnum.; 
+            %let reporttable = %scan(&tdatasetlist, &td.);
+                %isdata(dataset=tablefile);
+                %let tableobs = &nobs.;
+                %let tablecount=1;
+                %do z = 1 %to %eval(&tableobs.);
+
+                data _null_;
+                    set tablefile(where=(dataset="&reporttable"));
+                    if _n_ = &z then do;
+                    call symputx('tabletitle', tabletitle);
+                    end;
+                run;
+
+                %if %eval(&tableobs.=1) %then %let tablecount=0;
+                %t1t2conc_output(dataset=final_&reporttable);
+                %end;
+
+                %if &stratifybydp = Y %then %do;
+                %t1t2conc_output(dataset=final_dps_&reporttable);
+                %end;
+          %end;
+          %end;
+    %end;
+
+
+***************************************************************************************************;
 * Type 5 summary tables                                                      
 ***************************************************************************************************;
 	%if %str("&reporttype") = %str("T5") %then %do;	
