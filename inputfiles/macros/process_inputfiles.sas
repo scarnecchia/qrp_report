@@ -69,7 +69,7 @@
         %end;
 		
 		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
-           dpfile is set to the work dpinfofile and reportdata is N */
+           dpfile is set to the work dpinfofile and reportdata is N. */
 	    %isdata(dataset=input.report_parameters);
         %if %eval(&nobs.>0) %then %do;
 		  %let stratifybydp = N;
@@ -83,12 +83,11 @@
 		%end;
 		
 /***************************************************************************************************
-*   If reportdata is set to N then set reportdata and msocdata folders to the work folder
-*   Otherwise assign the repdata folder and libname
+*   If reportdata is set to N then set reportdata folder to the work folder, otherwise assign the 
+    repdata folder and libname
 ***************************************************************************************************/
   %if &reportdata. = N %then %do;
-     libname repdata %sysfunc(quote(%sysfunc(pathname(work))));
-	 libname msocdata  %sysfunc(quote(%sysfunc(pathname(work))));
+     libname repdata %sysfunc(quote(%sysfunc(pathname(work))));	 
   %end;
   %else %do; 
      %let repdata = &output.reportdata_&reportid.;
