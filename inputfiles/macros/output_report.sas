@@ -56,7 +56,7 @@
             flow="tables");
     %end;
     %if &destination. = pdf %then %do;
-    ods pdf file="&REPORTROOT.output/qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
+    ods pdf file="&output./qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
     %end;
 
     ods noproctitle;
