@@ -232,6 +232,7 @@
     %if %eval(&nobs.>0) %then %do;
 	  proc datasets nowarn nolist lib=msocdata kill; quit; 
 	%end;
+	
     /* End log */
     proc printto;
     run;
