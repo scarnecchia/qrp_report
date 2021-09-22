@@ -125,8 +125,9 @@
     %global output_agg_data;
     %let output_agg_data = Y;
 	
-	/*zipfile*/
-	%global zipfile;
+	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
+	%isdata(dataset=input.report_parameters);
+    %if %eval(&nobs.=0) %then %do;%global zipfile; %end;
 	%let zipfile = ;
 	
 	/* covariate codes formats */
