@@ -172,6 +172,17 @@
 	     	quit;
 	   %end;
 
+	   /* Check to see if there are 0 total patients per cohort */
+	   proc sql noprint undo_policy=none;
+	   	create table &dsin as 
+	   	select a.*, b.totalnpts
+	   	from &dsin a 
+	   	left join (select group, sum(npts) as totalnpts
+	   			   from &dsin.
+	   			   group by group) b
+	   	on a.group=b.group;
+	   quit;
+
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
 	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
          set &dsin.;
@@ -240,9 +251,9 @@
 			   if &&denominator&vv. > 0 then do;
 			   	&&var&vv. = &&formula&vv.;
 			   	&&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
-			 	%if &&num&vv. = 0 %then %do;
+			 	if totalnpts = 0 then do;
 			 	   &&var&vv.._char='.';
-			 	%end;
+			 	end;
 			   end;
 			   else do;
 			   	&&var&vv. =0;
@@ -260,9 +271,9 @@
 		     %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
 		     	if point = 'Y' then &&var&vv.._char='N/A';
 		     %end;
-		     %if &&num&vv. = 0 %then %do;
+		     if totalnpts = 0 then do;
 			 	   &&var&vv.._char='.';
-			 %end;
+			 end;
 			 %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
 			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
 			 %end;
@@ -358,10 +369,6 @@
 		  by &dpvar. order level %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
 		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
 			 %if %index(&&&table._stratification,state) > 0 %then %do; sortorder_state %end;;
-		run;
-
-		data output.&dsout;
-			set &dsout;
 		run;
     %mend;
 
