@@ -70,16 +70,19 @@
 		
 		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
            dpfile is set to the work dpinfofile and reportdata is N. */
+		%global leavebehindreport;
 	    %isdata(dataset=input.report_parameters);
         %if %eval(&nobs.>0) %then %do;
 		  %let stratifybydp = N;
 		  %let report_destination = PDF;
 		  %let dpfile = dpinfofile;
+		  %let leavebehindreport = Y;
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
 		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
+		  %let leavebehindreport = N;
 		%end;
 		
 /***************************************************************************************************
@@ -123,7 +126,6 @@
 
     /*Check if DPINFOFILE exists and contains at least 1 DP to include in report*/
 	/* User specified dpinfofile */
-	%put dp file is &dpinfofile.;
     %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
         %put ERROR: (Sentinel) DPINFOFILE is missing.;

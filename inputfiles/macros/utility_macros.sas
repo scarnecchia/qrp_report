@@ -179,7 +179,7 @@
 %mend convert_categories;
 
 %macro output_datasets (dataset=, inlib=work, outlib=, name=&infile.);
-	%if &output_agg_data. = Y %then %do;
+	%if &output_agg_data. = Y and &leavebehindreport = N %then %do;
 
 		proc datasets library = &inlib;
 	    copy out=&outlib. memtype=data;
