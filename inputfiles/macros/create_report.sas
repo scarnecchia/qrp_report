@@ -39,12 +39,11 @@
 
     /*clear work and output*/
     proc datasets nowarn nolist lib=repdata kill; quit;
+	proc datasets nowarn nolist lib=msocdata kill; quit; 
 	
-	/* msocdata folder not needed for leave behind report 
-	   and need to retain work datasets from qrp */
+	/* Need to retain work datasets from qrp for leave behind report */
 	%isdata(dataset=input.report_parameters);
     %if %eval(&nobs.=0) %then %do;
-       proc datasets nowarn nolist lib=msocdata kill; quit;   
 	   proc datasets nowarn nolist lib=work kill; quit;
 	%end;
 
@@ -226,6 +225,13 @@
 
     proc datasets nowarn nolist lib=work kill; quit;
 
+***************************************************************************************************;
+*   Remove msocdata if leave behind report is run                                                                               
+***************************************************************************************************;
+    %isdata(dataset=input.report_parameters);
+    %if %eval(&nobs.>0) %then %do;
+	  proc datasets nowarn nolist lib=msocdata kill; quit; 
+	%end;
     /* End log */
     proc printto;
     run;
