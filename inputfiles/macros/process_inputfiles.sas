@@ -93,7 +93,7 @@
      libname repdata %sysfunc(quote(%sysfunc(pathname(work))));	 
   %end;
   %else %do; 
-     %let repdata = &output.reportdata_&reportid.;
+     %let repdata = &output.reportdata;
 	 options DLCREATEDIR ;
 	 libname repdata "&repdata" ;
 	 options NODLCREATEDIR;
