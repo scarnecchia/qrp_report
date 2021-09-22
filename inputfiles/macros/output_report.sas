@@ -48,7 +48,7 @@
     ods noresults;
     options nodate nonumber orientation = landscape;
     %if &destination. = excel %then %do;
-    ods excel file="&REPORTROOT.output/qrp_report.xlsx" NOGTITLE style = qrp_report_excel
+    ods excel file="&output./qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
