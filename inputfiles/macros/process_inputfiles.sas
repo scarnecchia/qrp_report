@@ -57,6 +57,8 @@
                     if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
+                    /*default stratifybydp*/
+                    if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
                     if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
                 end;
@@ -389,6 +391,24 @@
 	 run;
 
 /***************************************************************************************************
+*   Create a combined cohortcodes for all runs                                                
+***************************************************************************************************/
+
+	 data master_cohortcodes;
+	 set %do n = 1 %to &numrunid.;
+	 		%let runid=&&id&n..;
+			infolder.&&&runid._cohortcodes(in=n&n.)
+		%end;
+	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+	 		runid = "&&id&n.";
+            end;
+        %end;
+	 run;
+
+/***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
@@ -593,6 +613,8 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
+            /*set reporttile if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
         run;
 
         /* Determine length of label based off input file */
@@ -603,8 +625,9 @@
             set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
         run;
-
-        %let labelfileexists = Y;
+		
+		%let labelfileexists = Y;
+		
     %end;
 
 /***************************************************************************************************
@@ -723,6 +746,18 @@
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                        /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			length censorreason $85;
+			%if &typenum. = 4 | &typenum. = 3 %then %do;
+			  call missing(censorreason);
+			%end;
+			%else %do;
+			  if missing(censorreason) then do;
+			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
+				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+			  end;
+			  else censorreason = lowcase(censorreason);
+			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
             tablesubstrat=lowcase(tablesubstrat);
@@ -818,11 +853,12 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+						 , table.censorreason
                          , table.categories
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
-						 ,table.n
+						 , table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
@@ -930,7 +966,7 @@
                                 end;
                                 retain categoryfortable;
                                 if tablesub = 'overall' then call symputx('overallrequested', 'Y');
-                                if table in ('T1', 'T3', 'T5','T7') and missing(categories) then do;
+                                if table in ('T1', 'T3', 'T5', 'T7', 'T15', 'T17') and missing(categories) then do;
                                     put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
                                     abort;
                                 end; 
@@ -944,6 +980,21 @@
                                %abort;
                             %end;
                         %end;
+						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
+						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						   data _null_;    
+                                set tablefile(where=(table in ('T15' 'T17')));
+								retain categoryfortable;
+                                if _n_ = 1 then do;
+                                   categoryfortable = categories;
+                                end;
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for tables T15 and T17.";
+									put "Categories for table " table " are " categories ", expected categories are " categoryfortable ".";
+                                    abort;
+                                end;
+                            run;
+						%end;
                     %end;
 					
 					/* Read in table columns file*/
