@@ -167,15 +167,76 @@
         %end;
         %if %index(&figurelist,F2) %then %do;
         %l2_forestplot_driver;
-        %end;
+        %end;   
     %end; 
 
     ************************************************;
     * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
     ************************************************;
     options orientation = landscape;
-    %figure_cdf_km_output;
-    options orientation = portrait;
+
+	%if %sysfunc(prxmatch(m/T5/i,&reporttype.)) %then %do;
+	  /* Figures F1, F2, and F3 */
+      %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
+        %let F123_figurelist = %sysfunc(tranwrd(&figurelist., %str(F5), %str()));
+	   
+        %do figure_list = 1 %to %sysfunc(countw(&F123_figurelist.)); 
+		  
+        %let current_figurelist = %scan(&F123_figurelist, &figure_list, ' ');
+
+		/*set up titles for F123 figures */
+        %if "&current_figurelist" = "F1" %then %do;
+          %let title_f123 =  Patient Entry into Study by Month;
+		  %let yvarF123 = npts;
+		%end;
+		%if "&current_figurelist" = "F2" %then %do;
+          %let title_f123 =  Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study;
+		  %let yvarF123 = adjustedcodecount;
+		%end;
+		%if "&current_figurelist" = "F3" %then %do;
+          %let title_f123 =  Total Days Supply in Patients First Episodes by Month Patient Entered into Study;
+          %let yvarF123 = daysupp;
+        %end;
+
+		/*loop through the figuresubs to create &current_figuresub*/ 
+	    proc sql noprint;
+          select distinct max(order) into: max_order separated by ' '
+            from figurefile(where=(figure = "&current_figurelist"));
+			select figuresub into: current_figuresub separated by ' '
+            from figurefile(where=(figure = "&current_figurelist"))
+            order by order;
+			select y1label into: y1label separated by ' '
+            from figurefile(where=(figure = "&current_figurelist"))
+            order by order;
+			select y2label into: y2label separated by ' '
+            from figurefile(where=(figure = "&current_figurelist"))
+            order by order;
+			select distinct grouplabel into: grouplabel separated by ' '
+            from figure123;
+        quit;
+		%do t = 1 %to &max_order;
+		 
+		
+		  %tableletter();
+		  %if "&current_figuresub" = "overall" %then %do; 
+		    %let tableletter = ;
+		  %end;
+		  %let current_figuresub = %scan(&current_figuresub, &t, ' ');
+		  %let current_y1label = %scan(&y1label, &t, ' ');
+	      %let current_y2label = %scan(&y2label, &t, ' ');
+		  %figure_t5_output(figure=&current_figurelist, figurenum=&figure_list, figureletter=&tableletter., 
+                          title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.),
+                          where= figuresub = "&current_figuresub" and order = &t, figuresub=&current_figuresub, 
+                          yaxislabel1= &current_y1label, yaxislabel2= &current_y2label, yvar=&yvarF123.);
+		%end;
+		%let tableorder = tableorder &t;
+	  %end;
+	%end;
+
+	%end;
+	
+      %figure_cdf_km_output;
+     options orientation = portrait;
     
 ***************************************************************************************************;
 * Appendices                                                                                
