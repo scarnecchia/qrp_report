@@ -285,7 +285,11 @@
    		%if %index(&reporttype,T4L2) %then %do;
    		create table agg_mil_attrition as 
    		select a.*, b.group as l2eoirefgroups
-   		from agg_mil_attrition a 
+   		from agg_mil_attrition 
+   		%if %varexist(agg_mil_attrition,l2eoirefgroups) = 1 %then %do; 
+   		(drop=l2eoirefgroups)
+   		%end;
+   		a 
    		left join 
    		agg_adj_attrition_&periodid b 
    		on a.analysisgrp = scan(b.group,-1,'@');
