@@ -35,7 +35,7 @@
 ***************************************************************************************************;
 
 %macro figure_axes(data=, figure=, figuresub=, where=, xtickmarks=, xvar=, ytickmarks=, yvar=);
-    
+ 
   %put =====> MACRO CALLED: figure_axes;
 
   	%let xmax = ;
@@ -109,7 +109,7 @@
             /*two tick options for 0-1 axis*/
             else if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01); 
             else ytick = round(ymaxminusmin/5, .001);
-            if ytick = 0 then ytick = .001;
+            if ytick = 0 or ytick= . then ytick = .01; 
         end;
         yloopcount=round(divide(ymax-ymin,ytick))+1;
         call symputx('ymin', ymin);
@@ -132,7 +132,7 @@
             /*Add max value if gap between last tick mark and max value is >tick/2*/
             %if %scan(&fxtickmarks., -1) ne &xmax. %then %do;
                 %let diff = %sysevalf(&xmax.-%scan(&fxtickmarks., -1));
-                %let div2 = %sysfunc(divide(&xtick.,2));
+                %let div2 = %sysfunc(divide(&xtick.,2)); /*jolene this was 2*/
                 %if %sysevalf(&diff.>&div2.) %then %do;
                     %let fxtickmarks = &fxtickmarks%str( )&xmax.;
                 %end;
@@ -144,7 +144,7 @@
 
         %let &xtickmarks = &fxtickmarks;
     %end;
-    
+  
     /*yaxis*/
     %if %str(&ytickmarks) ne %str() %then %do;
         %let yloop = &ymin.;
@@ -170,7 +170,6 @@
 
         %let &ytickmarks = &fytickmarks;
     %end;
-
     %put =====> END MACRO: figure_axes;
 
 %mend figure_axes;

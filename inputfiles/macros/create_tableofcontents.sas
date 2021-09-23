@@ -27,7 +27,6 @@
 ***************************************************************************************************;
 
 %macro create_tableofcontents();
-
     %put =====> MACRO CALLED: create_tableofcontents;
 
     /*********************************************************************************************/
@@ -291,6 +290,7 @@
                 grouplabel='';
                 if cohort = 'mi' then group2=scan(group,1,'_');
                 else group2=group;
+
                 if cohort = 'switch' then switchlabel = ' ';
                 call symputx('runid',runid);
             run;
@@ -661,19 +661,25 @@
         /***************************************************************************************/
         /* L1 Figures                                                                          */
         /***************************************************************************************/
-
         %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) > 0 %then %do;
 
             /*utility macro to loop through groups*/
             %macro l1kmtoc(figure=, title =);
-                %isdata(dataset=figure&figure.);
+			  %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
+			    %let figure_dataset = figure123;
+			  %end;
+			  %else %do;
+			     %let figure_dataset = figure&figure.;
+			  %end;
+
+                %isdata(dataset=&figure_dataset.);
                 %if %eval(&nobs.>0) %then %do;
 
                 /*number of distinct groups in figure to loop through determine whether to add letter to figure #*/
                 proc sql noprint;
                     select distinct order
                     into :fgrouporderlist separated by ' '
-                    from figure&figure.
+                    from &figure_dataset.
                     order by order;
                 quit;
                    
@@ -686,7 +692,7 @@
                     %let switch2indicator = ;
                     
                     data _null_;
-                        set figure&figure.(where=(order = &order.));
+                        set &figure_dataset.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
                         end;
@@ -736,32 +742,44 @@
             %end; /*T2L1*/
 
             /**********************************************************************************************
-             T5: 2 figures:
+             T5: 5 figures:
                 1) F1: Patient Entry into Study by Month
                 2) F2: Number of Prescription Dispensings in Patients First Episodes by Month
                 3) F3: Total Days Supply in Patients First Episodes by Month
                 4) F4: t5censor = Reasons for End of First Treatment Episode by Group
                 5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
             /**********************************************************************************************/
+			
             %if &reporttype. = T5 %then %do;
-                /*F4: 1 figure per group*/
-                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
-                %end; /*figuref4*/
+			  /* F1 */
+			  %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
+			    %l1kmtoc(figure=F1, title =Patient Entry into Study by Month);
+			  %end;
+
+			  /* F2 */
+		      %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+			    %l1kmtoc(figure=F2, title =Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study);
+		      %end;
+
+			  /* F3 */
+		      %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
+			    %l1kmtoc(figure=F3, title =Total Days Supply in Patients First Episodes by Month Patient Entered into Study);
+		      %end;
+
+              /*F4: 1 figure per group*/
+              %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
+                %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
+              %end; /*figuref4*/
 
                 /*F5: 1 figure per report*/
-                %isdata(dataset=figuref5);
-                %if %eval(&nobs.>0) %then %do;
-                    /*Censor reason*/
-                      data _null_;
-                        set figurefile(where=(figure="F5"));
-                        call symputx('censordisplay', censordisplay);
-                    run;
-
-                	%addtotoc(tabnum=Figure &figurenum.,
-                			  caption=%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
-                    %let figurenum = %eval(&figurenum.+1); 
-                %end;
+			  %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
+                data _null_;
+                  set figurefile(where=(figure="F5"));
+                  call symputx('censordisplay', censordisplay);
+                run;
+                %l1kmtoc(figure=F5, title =%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
+              %end;  	
+             
             %end; /*T5*/
 
             /**********************************************************************************************

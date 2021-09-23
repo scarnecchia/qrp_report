@@ -40,28 +40,32 @@
 	%put =====> MACRO CALLED: figure_t5_output;
 
     /*Save dataset to REPORTDATA folder*/
-    %isdata(dataset=repdata.figure&figurenum.&figureletter.);
+	
+    %isdata(dataset=repdata.figureF&figurenum.&figureletter.);
     %if %eval(&nobs.<1) %then %do;
-        data repdata.figure&figurenum.&figureletter.;
+        data repdata.figureF&figurenum.&figureletter.;
             set figure123(where=(&where.));
         run;
     %end;
 
     /*stratified plot - collapse strata to determine correct Y axis*/
-    %let axisdata = repdata.figure&figurenum.&figureletter.;
+    %let axisdata = repdata.figureF&figurenum.&figureletter.;
     %if &figuresub. ne overall %then %do;
         proc sql noprint;
             create table _collaspseddata as
             select mntsfromstart, sum(&yvar.) as &yvar.
-            from repdata.figure&figurenum.&figureletter.
+            from repdata.figureF&figurenum.&figureletter.
             group by mntsfromstart;
         quit;
         %let axisdata = _collaspseddata;
     %end;
 
-    /*assign axes - compute Y axis and maximum month for xaxis*/
+	/* Obtain y axis values */
     %let t5ytickmarks = ;
+
+    /*assign axes - compute Y axis and maximum month for xaxis*/
     %figure_axes(data=&axisdata., figure=&figure., figuresub=&figuresub., where=1 , xtickmarks=, xvar=, ytickmarks=t5ytickmarks, yvar=&yvar.);
+
     proc sql noprint;
        select max(mntsfromstart) into :datamax
        from &axisdata.;
@@ -100,19 +104,20 @@
 	run;
 
 	%if &destination. = pdf %then %do;
-	ODS PDF BOOKMARKGEN = OFF; 
+	ODS PDF BOOKMARKGEN = OFF;   
 	%end;
 
-	proc sgplot data=repdata.figure&figurenum.&figureletter. noborder;
+	proc sgplot data=repdata.figureF&figurenum.&figureletter. noborder;
 		styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
 									  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
 									  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
 
         vbar mntsfromstart 
-             / response=&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; nostatlabel name='raw' missing;
+             / response=&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; nostatlabel name='raw' missing ;
 		vline mntsfromstart
             / response=cumulative_&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; name='cumulative' missing y2axis markers lineattrs=(pattern=solid thickness=2);
-        xaxis label = "Months since Study Start" values=(0 to &datamax. by 1) valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font); 
+        xaxis label = "Months after Study Start"/* values=(0 to &datamax. by 1)*/ valueattrs=(color=black size=&fontsize. family=&font.) 
+             labelattrs=(color=black size=&fontsize family=&font) ; 
 		yaxis label = "&yaxislabel1" values=(&t5ytickmarks.) valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
         y2axis label = "&yaxislabel2" valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
 		keylegend 'raw' 'cumulative' / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in;
