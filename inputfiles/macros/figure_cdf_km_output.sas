@@ -207,7 +207,6 @@
 	%end; 
 
 	%mend output_cdf_km;
-
 		*reset tablecount; 
 		%let tablecount = 1;
 		%let tableletter =a;
@@ -225,8 +224,9 @@
 			/*Loop through each figure */
 			%if %length(&figurelist) > 0 %then %do;
 			%do f = 1 %to %sysfunc(countw(&figurelist));
-			%let figure = %scan(&figurelist,&f);
-
+			  %let figure = %scan(&figurelist,&f);
+              %if ((&figure ne F1 and &figure ne F2 and &figure ne F3) and &reporttype = T5) %then %do;
+			    %let figurenum = &f;
 		 		%isdata(dataset=figure&figure.);
 		 		%let fignobs = &nobs;
                 %if %eval(&fignobs.>0) %then %do;
@@ -238,7 +238,7 @@
                     from figure&figure.
                     order by order;
                 quit;
-
+         
                 %if %sysfunc(countw(&fgrouporderlist.)) = 1 %then %let tablecount = 0;
                 %else %let tablecount = 1;
 
@@ -333,6 +333,7 @@
 						%let title = Reasons for Censoring at Second Switch Evaluation Among &grouplabel.;
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
+                      
 
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order=&order.),
@@ -344,14 +345,14 @@
 									 font=&fontfamily,
 									 kmrefpop=);
 				%end;
-
+     
 				%end; /* order loop */
 				%let figurenum=%eval(&figurenum+1);
 
 				%end; /* fignobs */
 
 			%end; /* f */
-
+          %end;
 		%end; /* figurelist */
 
 		%end; /* reporttype */
