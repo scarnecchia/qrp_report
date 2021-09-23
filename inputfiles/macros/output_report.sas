@@ -136,7 +136,7 @@
                           ,cats(columnwidth,'in')
                     into :outvarlist separated by ' ',
                          :outformat separated by ' ',
-                         :outwidth separated by ' ',
+                         :outwidth separated by ' '
                     from tablecolumns
                     where table="&reporttable"
                     order by order;
@@ -149,6 +149,11 @@
                     %let strataname = %scan(&stratanames,&z,$);
 
                     data _null_;
+                        set tablefile;
+                        if _n_ = &z then do;
+                        call symputx('tabletitle', tabletitle);
+                        end;
+                    run;
 
                     %tableletter();
                     %t1t2conc_output(dataset=final_&reporttable(where=(levelid="&strata")),
