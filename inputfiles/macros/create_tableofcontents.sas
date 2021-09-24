@@ -906,35 +906,41 @@
     /*********************************************************************************************/
     /* Attrition table                                                                           */
     /*********************************************************************************************/
-    %isdata(dataset=agg_patient_attrition);
-    %let attrition_patient = &nobs;
-    %isdata(dataset=agg_episode_attrition);
-    %let attrition_episode = &nobs;
 	
     /* reset counter to reset table letter */
     %let tablecount=1;
+
+    %do j = %eval(&look_start.) %to %eval(&look_end.);
+
+        %if %index(&reporttype,L2) %then %let attrperiodid = _&j;
+        %isdata(dataset=agg_patient_attrition&attrperiodid);
+        %let attrition_patient = &nobs;
+        %isdata(dataset=agg_episode_attrition&attrperiodid);
+        %let attrition_episode = &nobs;
 	
-    %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
+        %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
 
-		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
-			%let tablecount = 0;
-		%end;
+    		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
+    			%let tablecount = 0;
+    		%end;
 
-		%if &attrition_episode > 0 %then %do;
-			%tableletter();
-			%addtotoc(tabnum=Table &tablenum.&tableletter.,
-					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
-		%end; 
+    		%if &attrition_episode > 0 %then %do;
+    			%tableletter();
+    			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+    					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.));			 
+    		%end; 
 
-		%if &attrition_patient > 0 %then %do;
-			%tableletter();	
-			%addtotoc(tabnum=Table &tablenum.&tableletter.,
-					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
-		%end;
-	
-        %let tablenum = %eval(&tablenum + 1);
+    		%if &attrition_patient > 0 %then %do;
+    			%tableletter();	
+    			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+    					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+    		%end;
+    	
+            %let tablenum = %eval(&tablenum + 1);
 
-    %end; /* attrition_groups file */
+        %end;/* attrition_groups file */
+
+    %end;/*periodid */ 
 
 
     /*** END TABLES **/
