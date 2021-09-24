@@ -150,18 +150,49 @@
 	     on a.covarnum = b.covarnum;
        quit;
      %end;
+
    /************************************************************************************************
        Prepare final summary datasets           
     ************************************************************************************************/ 
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
+    	/* Check to see if POINT was specified in T2 queries */
+    	%let pointflag = N;
+	    %if %index(&reporttype,T2) %then %do;
+	    	%let pointflag = Y;
+	     	proc sql noprint undo_policy=none;
+	     		create table &dsin as 
+	     		select a.*, upper(b.point) as point 
+	     		from &dsin a 
+	     		left join master_typefile b 
+	     		on %if %index(&dsin.,t2conc) %then %do; 
+	     		   a.analysisgrp 
+	     		   %end; 
+	     		   %else %do; 
+	     		   a.group 
+	     		   %end; = b.group;
+	     	quit;
+	   %end;
+
+	   /* Check to see if there are 0 total patients per cohort */
+	   proc sql noprint undo_policy=none;
+	   	create table &dsin as 
+	   	select a.*, b.totalnpts
+	   	from &dsin a 
+	   	left join (select group, sum(npts) as totalnpts
+	   			   from &dsin.
+	   			   group by group) b
+	   	on a.group=b.group;
+	   quit;
+
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
-	                  %do vv = 1 %to &numcolumns; &&var&vv. %end; );
+	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
          set &dsin.;
 		 length lambda se ci_lower ci_upper p q 8;
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
 		/* Calculated vars and labels */
         %do vv = 1 %to &numcolumns;
+<<<<<<< HEAD
           %if &&footnote&vv. > 0 %then %do;
 		    label &&var&vv. = "&&label&vv.^{super 1}";
 		  %end;
@@ -170,6 +201,11 @@
 		  %end;
 		  
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
+=======
+		  label &&var&vv. = "&&label&vv.";
+		  label &&var&vv.._char = "&&label&vv";
+	      %if %index(&&formula&vv.,/) > 0 %then %do;
+>>>>>>> staging
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
 			   format &&var&vv. $30.;
 			   if &&cidenom&vv.. > 0 and &&num&vv. > 0 then do;
@@ -178,11 +214,25 @@
 			      ci_lower = exp(log(lambda) - 1.96 * se);
                   ci_upper = exp(log(lambda) + 1.96 * se);
 			      &&var&vv. = strip(put(lambda, &&format&vv.)) || " (" || strip(put(ci_lower, &&format&vv.)) || ", " || strip(put(ci_upper, &&format&vv.)) || ")";
+			      &&var&vv.._char=&&var&vv.;
 			   end;
 			   else if &&num&vv. = 0 and &&cidenom&vv.. > 0 then do;
 			      &&var&vv. = strip(put(0, &&format&vv.)) || " (" || strip(put(0, &&format&vv.)) || ", " || strip(put(0, &&format&vv.)) || ")";
+			      &&var&vv.._char=&&var&vv.;
 			   end;
-			   else &&var&vv. = "NaN";
+			   else do;
+			   	&&var&vv. = "NaN";
+			   	&&var&vv.._char=&&var&vv.;
+				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
+				 %end;	
+			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			   	%end;
+			   end;
+			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			   %end;			   
              %end;	
 			 %else %if %str("&&cirate&vv.") = %str("P") %then %do;
                format &&var&vv. $30.;			 
@@ -194,22 +244,61 @@
                  ci_upper = p + 1.96 * se;
 			     %if %eval(&&multi&vv. > 0) %then %do;
 			       &&var&vv. = strip(put(p*&&multi&vv., &&format&vv.)) || " (" || strip(put(ci_lower*&&multi&vv., &&format&vv.)) || ", " || strip(put(ci_upper*&&multi&vv., &&format&vv.)) || ")";
+			       &&var&vv.._char = &&var&vv.;
 			     %end;
 			     %else %do;
 			       &&var&vv. = strip(put(p, &&format&vv.)) || " (" || strip(put(ci_lower, &&format&vv.)) || ", " || strip(put(ci_upper, &&format&vv.)) || ")";
+			       &&var&vv.._char = &&var&vv.;
 			     %end;
                end;
-			   else &&var&vv. = "NaN";
+			   else do;
+			   	&&var&vv. = "NaN";
+			   	&&var&vv.._char=&&var&vv.;
+				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
+				 %end;			
+			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			   	%end;
+			   end;
+			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			   %end;
 			 %end;
 			 %else %do;
 			   format &&var&vv. &&format&vv.;
-			   if &&denominator&vv. > 0 then &&var&vv. = &&formula&vv.;
-			   else &&var&vv. =0;
+			   if &&denominator&vv. > 0 then do;
+			   	&&var&vv. = &&formula&vv.;
+			   	&&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
+				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
+				 %end;
+			   end;
+			   else do;
+			   	&&var&vv. =0;
+			   	&&var&vv.._char="NaN";
+				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
+				 %end;	
+			   end;
+				 %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+			     	if point = 'Y' then &&var&vv.._char='N/A';
+			     %end;
 			 %end;
 		  %end;
 		  %else %do;
 		     format &&var&vv. &&format&vv.;
 		     &&var&vv. = &&formula&vv.;
+		     &&var&vv.._char=strip(put(&&var&vv.,&&format&vv.));
+		     %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
+		     	if point = 'Y' then &&var&vv.._char='N/A';
+		     %end;
+			 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+				if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
+			 %end;
+			 %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
+			 %end;
 		  %end;
 	    %end;
 		

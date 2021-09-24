@@ -347,7 +347,7 @@
                                                                 and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
-                                               settomissvars=%str(evexp evunexp nexp nunexp),
+                                               settomissvars=%str(evexp,evunexp,nexp,nunexp),
                                                runidvar=&runid.);                      
                         %end;
                 %end;

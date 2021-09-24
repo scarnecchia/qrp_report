@@ -96,8 +96,9 @@
     %let discardnegativetimegroups = ;
 
     /*L2 report variables*/
-    %global numl2comparisons;
+    %global numl2comparisons attrperiodid;
     %let numl2comparisons = 0;
+    %let attrperiodid=;
 
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
@@ -138,7 +139,7 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-
+	
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
