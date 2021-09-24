@@ -41,20 +41,20 @@
 
     /*Save dataset to REPORTDATA folder*/
 	
-    %isdata(dataset=repdata.figureF&figurenum.&figureletter.);
+    %isdata(dataset=repdata.figure&figure.&figureletter.);
     %if %eval(&nobs.<1) %then %do;
-        data repdata.figureF&figurenum.&figureletter.;
+        data repdata.figure&figure.&figureletter.;
             set figure123(where=(&where.));
         run;
     %end;
 
     /*stratified plot - collapse strata to determine correct Y axis*/
-    %let axisdata = repdata.figureF&figurenum.&figureletter.;
+    %let axisdata = repdata.figure&figure.&figureletter.;
     %if &figuresub. ne overall %then %do;
         proc sql noprint;
             create table _collaspseddata as
             select mntsfromstart, sum(&yvar.) as &yvar.
-            from repdata.figureF&figurenum.&figureletter.
+            from repdata.figure&figure.&figureletter.
             group by mntsfromstart;
         quit;
         %let axisdata = _collaspseddata;
@@ -107,7 +107,7 @@
 	ODS PDF BOOKMARKGEN = OFF;   
 	%end;
 
-	proc sgplot data=repdata.figureF&figurenum.&figureletter. noborder;
+	proc sgplot data=repdata.figure&figure.&figureletter. noborder;
 		styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
 									  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
 									  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
