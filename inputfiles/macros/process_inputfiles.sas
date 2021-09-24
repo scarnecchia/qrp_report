@@ -83,6 +83,7 @@
 		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
 		  %let leavebehindreport = N;
+		  %let reportdata = Y;
 		%end;
 		
 /***************************************************************************************************
