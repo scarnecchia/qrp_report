@@ -1049,12 +1049,12 @@
 
 			  /* F2 */
 		      %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
-			    %l1kmtoc(figure=F2, title =Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study);
+			    %l1kmtoc(figure=F2, title =Number of Prescription Dispensings in Patients%str(%') First Episodes by Month Patient Entered into Study);
 		      %end;
 
 			  /* F3 */
 		      %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
-			    %l1kmtoc(figure=F3, title =Total Days Supply in Patients First Episodes by Month Patient Entered into Study);
+			    %l1kmtoc(figure=F3, title =Total Days Supply in Patients%str(%') First Episodes by Month Patient Entered into Study);
 		      %end;
 
               /*F4: 1 figure per group*/
