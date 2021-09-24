@@ -93,6 +93,7 @@
 			,scan(compress(column,'()*0123456789.'),2,'/') as cidenominator
 			,scan(column,2,'*') as multiplier
 			,cirate
+			,footnote
 	   into: var1 -:var&numcolumns.
 		    ,:formula1 - :formula&numcolumns.
 			,:label1 - :label&numcolumns.
@@ -102,6 +103,7 @@
 			,:cidenom1 - :cidenom&numcolumns.
 			,:multi1 - :multi&numcolumns.
 			,:cirate1 - :cirate&numcolumns.
+			,:footnote1 - :footnote&numcolumns.
 	  from tablecolumns where table = "&table.";
     quit;
 	
@@ -160,7 +162,12 @@
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
 		/* Calculated vars and labels */
         %do vv = 1 %to &numcolumns;
-		  label &&var&vv. = "&&label&vv.";
+          %if &&footnote&vv. > 0 %then %do;
+		    label &&var&vv. = "&&label&vv.^{super 1}";
+		  %end;
+		  %else %do;
+		    label &&var&vv. = "&&label&vv.";
+		  %end;
 		  
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;

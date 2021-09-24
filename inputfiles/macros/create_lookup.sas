@@ -75,6 +75,19 @@
 	          description  length = $575 format = $575.;
 	   order = 1; description = 'A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day.'; output;
 	 run;  
+
+	 data lookup.lookup_footnotes_t1t2conc;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1; description = 'Eligible Members are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 2; description = 'Eligible Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 3; description = 'Eligible Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 4; description = 'Eligible Member-Days and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 5; description = 'Eligible Members and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 6; description = 'Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 7; description = 'Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period'; output;
+	   order = 8; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	 run;  
 	 
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.

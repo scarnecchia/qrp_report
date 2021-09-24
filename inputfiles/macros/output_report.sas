@@ -120,7 +120,7 @@
           %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
           %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
-
+                %let tablecount=1;
                 proc sql noprint;
                     select distinct levelid1, tablesub, stratificationorder 
                     into :stratalevelid separated by ' ', 
@@ -132,16 +132,18 @@
 
                     select columnname, 
                            case when cirate in ("P","R") then "$30." 
-                           else columnformat end as fmt 
+                           else columnformat end as fmt
                           ,cats(columnwidth,'in')
                     into :outvarlist separated by ' ',
-                         :outformat separated by ' ',
-                         :outwidth separated by ' '
+                         :outformats separated by ' ',
+                         :outwidths separated by ' '
                     from tablecolumns
                     where table="&reporttable"
                     order by order;
                 quit; 
                 
+                %isdata(dataset=tablefile);
+                %let tableobs = &nobs;
                 %if %eval(&tableobs.=1) %then %let tablecount=0;
 
                 %do z = 1 %to %sysfunc(countw(&stratalevelid));
@@ -155,8 +157,11 @@
                         end;
                     run;
 
+                    %if &reporttable = t2conc %then %do;
+                    %end;
+
                     %tableletter();
-                    %t1t2conc_output(dataset=final_&reporttable(where=(levelid="&strata")),
+                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
                                      varlist = &outvarlist,
                                      var = %quote(&strataname),
                                      varwidths = %bquote(&outwidths.),
@@ -167,15 +172,16 @@
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                         %tableletter();
-                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(levelid="&strata" and dpidsiteid="&maskedID")),
+                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
                                          varlist = &outvarlist,
-                                         var = %quote(&strata),
+                                         var = %quote(&strataname),
                                          varwidths = %bquote(&outwidths.),
-                                         title = %bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted, by &maskedID.),
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.),
                                          varformats =%bquote(&outformats.));
                     %end;
                 %end;
                 %end;
+                %let tablenum = %eval(&tablenum + 1);
           %end;
           %end;
     %end;

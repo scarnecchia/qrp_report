@@ -552,16 +552,17 @@
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
                     caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
-                %end;
 
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted, by &maskedID.));    
+                    caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
                     %end;
                 %end; 
+
+                %end;
 
                 %let tablenum = %eval(&tablenum + 1);
 

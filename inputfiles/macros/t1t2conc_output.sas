@@ -27,32 +27,57 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_output(dataset=,varlist=,var=,);
+%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,title=,varformats=);
+
+    options orientation = landscape;
+    options missing = ' ';
+
+    %let outfootnotes=;
+    %let headercheck=;
 
 	data repdata.table&tablenum.&tableletter;
 		set &dataset;
+        if not missing(header) then call symputx("headercheck",header);
 	run;
+
+    proc sql noprint;
+        select distinct footnote 
+        into :outfootnotes 
+        separated by "|"
+        from tablecolumns
+        where table="&reporttable" and not missing(footnote)
+        order by footnote;
+    quit;
 
      /* Select Footnotes */  
          data _footnotes;
            length footnote_order 3; 
            /* Always displayed across all types */
-           set lookup.lookup_footnotes_effectest (where=(order in ( 0
+           set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
               
-              %if "&conditional" = "Y" and %length(&weightscheme) = 0 %then %do;
-              4
-              %end;
-              %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
+              %if %str("&outfootnotes.") = %str("1") %then %do;
               1
               %end;
-              %if %length(&weightscheme) > 0 %then %do;
-              5
-              %end;
-              %if &covarnum = 1012 %then %do;
+              %if %str("&outfootnotes.") = %str("2") %then %do;
               2
               %end;
-              %if &covarnum = 1014 %then %do;
+              %if %str("&outfootnotes.") = %str("3") %then %do;
               3
+              %end;
+              %if %str("&outfootnotes.") = %str("2|3") %then %do;
+              4
+              %end;
+              %if %str("&outfootnotes.") = %str("1|3") %then %do;
+              5
+              %end;
+              %if %str("&outfootnotes.") = %str("1|2") %then %do;
+              6
+              %end;
+              %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
+              7
+              %end;
+              %if %index(&var.,race) %then %do;
+              8
               %end;
             )));
            by order;
@@ -70,19 +95,17 @@
           %end;
         quit;
 
-        /* Assign macro variables for superscipts */
-        %assign_superscripts(type =title, order = 2 3);
-        %assign_superscripts(type =weight, order =1);
-        %assign_superscripts(type =line, order =4 5);
+        %assign_superscripts(type=line, order = 1 2 3 4 5 6 7);
+        %assign_superscripts(type=title, order = 8);
 
     %if &destination = excel %then %do;
-	ods excel options(sheet_name="Table&tablenum.&tableletter", tab_color='green');
+	ods excel options(sheet_name="Table&tablenum.&tableletter" tab_color='green');
     %end;
     ods proclabel = "Table&tablenum.&tableletter";
 
      proc report data = repdata.table&tablenum.&tableletter nofs nowd spanrows missing headskip split="*"
-        style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-        style(report)=[rules=none frame=box cellpadding =1.75pt];
+        style(header)=[rules=none vjust=b] split='*'
+        style(report)=[rules=none frame=void cellpadding =1.75pt];
             
         columns (group level &var. &varlist. header grouplabel /* newcategory */);
 
@@ -90,24 +113,19 @@
         define grouplabel / order noprint order=data ' ';
 /*         define newcategory / order noprint order=data ' '; */
             
-        %if "&&var." = "" %then %do;
-        define level / id style=[backgroundcolor = white color = white];
-        %end;
-        %else %do;
         define level / noprint;
-        %end;
             
-        %do c = 1 %to %sysfunc(countw(&&var.));         
-            %let cat = %scan(&&var., &c.);
-             %if %sysfunc(countw(&&var.)) = 1 or &c. = %sysfunc(countw(&&var.)) %then %do;
-                define &cat. / id 
-                    style(column)=[font_size=8pt color=black fontfamily=arial
+        %do c = 1 %to %sysfunc(countw(&var.));         
+            %let cat = %scan(&var., &c.);
+             %if %sysfunc(countw(&var.)) = 1 or &c. = %sysfunc(countw(&var.)) %then %do;
+                define &cat. / id ' ' 
+                    style(column)=[just=L
                         %if "%lowcase(&cat.)" = "race" or "%lowcase(&cat.)" = "hispanic" %then width= 2.3in;
                                                                                          %else %if "%lowcase(&cat.)" = "agegroup" %then width = 1.1in;
                                                                                          %else %if "%lowcase(&cat.)" = "hhs_reg" %then width = 1.35in;
                                                                                          %else %if %index("%lowcase(&cat.)", covar) >0 %then width = 2in;
-                                                                                         %else width =.81in; just=l indent=20] 
-                        style(header)=[just=C background=white borderbottomcolor=black];
+                                                                                         %else width =.81in; indent=20] 
+                        style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray];
             %end;
              %else %do;
                 define &cat. / noprint;
@@ -120,13 +138,12 @@
 			%let varformat = %lowcase(%scan(&varformats., &v.,%str( )));
 			
 			   define &varname. / display format=&varformat.
-                     style(column)=[font_size=8pt color=black fontfamily=arial width=&varwidth. just=c 
-					      background = %if %str("&varsmallcell.") = %str("y") %then %do; background_n_fmt. %end; %else %do; background_greynum. %end;] 
+                     style(column)=[width=&varwidth. just=c background=background_n_fmt.] 
 					 %if %str("&varformat.") = %str("$30.") %then %do;
-					    style(header)=[just=C width=.82in background=white borderbottomcolor=black];
+					    style(header)=[just=C width=.82in borderbottomcolor=black];
 					 %end;
 					 %else %do;
-					    style(header)=[just=C background=white borderbottomcolor=black];
+					    style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray borderrightcolor=darkgray borderleftcolor=darkgray];
 			         %end;
         %end;
 
@@ -134,20 +151,33 @@
 
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                       borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-        line "Table &tablenum.&tableletter.. &title.";
+                                       borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+        line "Table &tablenum.&tableletter.. &title.&super_title.";
 		endcomp;
 
         /*add header line*/
-        compute before header / style=[backgroundcolor=darkgray fontfamily=arial font_size=8pt color=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+        %if %length(&headercheck) > 0 %then %do;
+        compute before header / style=[backgroundcolor=lightgray font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             text = header;
             num = 100;
             line text $varying. num;
         endcomp;
+        %end;
         
         /*add grouplabel*/
-        compute before grouplabel / style=[fontstyle=italic bordertopcolor=black ];
+        compute before grouplabel / %if %length(&headercheck) = 0 %then %do;
+                                        style=[%if &var ^= overall %then %do;
+                                                    backgroundcolor=lightgray font_weight=bold 
+                                               %end; 
+                                               %else %do; 
+                                               fontstyle=italic 
+                                               %end; just=L bordertopcolor=black borderbottomcolor=white];
+                                    %end;
+                                    %else %do;
+                                    style=[fontstyle=italic just=L bordertopcolor=black borderbottomcolor=white];
+                                    %end;
+
             length text $100;
             text = grouplabel;
             num = 100;
@@ -164,57 +194,18 @@
         %end; */
 
         /* Add Footnotes */
+        %if %str("&outfootnotes.") ne %str("") %then %do;
             %if &num_fn > 0 %then %do;
-            compute after / style=[just=L nobreakspace=off];
+            compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize];
              line '';
               %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
+                line "^{super &f}&&fn&f.";
               %end;
             endcomp;
             %end;
-
-
-        /*footnote in table*/
-        %if %str("&outfootnotes.") ne %str("") %then %do;
-        compute after / style=[just=L fontfamily=arial font_size=7.5pt color=black bordertopcolor=black];
-            line '';
-
-            *eligible members only;
-            %if %str("&outfootnotes.") = %str("1") %then %do;
-            line "^{super 1}Eligible Members are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible member days only;
-            %if %str("&outfootnotes.") = %str("2") %then %do;
-            line "^{super 1}Eligible Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible member years only;
-            %if %str("&outfootnotes.") = %str("3") %then %do;
-            line "^{super 1}Eligible Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible member days and years;
-            %if %str("&outfootnotes.") = %str("2|3") %then %do;
-            line "^{super 1}Eligible Member-Days and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible members and years;
-			%if %str("&outfootnotes.") = %str("1|3") %then %do;
-            line "^{super 1}Eligible Members and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible members and days;
-            %if %str("&outfootnotes.") = %str("1|2") %then %do;
-		    line "^{super 1}Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-
-            *eligible members, days, and years;
-            %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
-			line "^{super 1}Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period";
-            %end;
-        endcomp;
         %end;
     run;
+
+    options missing = '.';
 
 %mend t1t2conc_output;
