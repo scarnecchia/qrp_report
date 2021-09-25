@@ -166,11 +166,11 @@
         /*add grouplabel*/
         compute before grouplabel / %if %length(&headercheck) = 0 %then %do;
                                         style=[%if &var ^= overall %then %do;
-                                                    backgroundcolor=lightgray font_weight=bold borderbottomcolor=black
+                                                    backgroundcolor=lightgray font_weight=bold bordertopcolor=black borderbottomcolor=black
                                                %end; 
                                                %else %do; 
-                                               fontstyle=italic borderbottomcolor=white
-                                               %end; just=L bordertopcolor=black];
+                                               fontstyle=italic bordertopcolor=white borderbottomcolor=white
+                                               %end; just=L];
                                     %end;
                                     %else %do;
                                     style=[fontstyle=italic just=L bordertopcolor=black borderbottomcolor=white];
