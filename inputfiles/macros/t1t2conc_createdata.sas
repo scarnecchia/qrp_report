@@ -158,6 +158,8 @@
     %macro prept1t2data(dsin=, dsout=, dpvar=);
     	/* Check to see if POINT was specified in T2 queries */
     	%let pointflag = N;
+    	%if %index(&dsin.,t2conc) %then %let t2group=analysisgrp;
+    	%else %let t2group=group;
 	    %if %index(&reporttype,T2) %then %do;
 	    	%let pointflag = Y;
 	     	proc sql noprint undo_policy=none;
@@ -165,12 +167,7 @@
 	     		select a.*, upper(b.point) as point 
 	     		from &dsin a 
 	     		left join master_typefile b 
-	     		on %if %index(&dsin.,t2conc) %then %do; 
-	     		   a.analysisgrp 
-	     		   %end; 
-	     		   %else %do; 
-	     		   a.group 
-	     		   %end; = b.group;
+	     		on a.&t2group = b.group;
 	     	quit;
 	   %end;
 
@@ -179,10 +176,10 @@
 	   	create table &dsin as 
 	   	select a.*, b.totalnpts
 	   	from &dsin a 
-	   	left join (select group, sum(npts) as totalnpts
+	   	left join (select &t2group, sum(npts) as totalnpts
 	   			   from &dsin.
-	   			   group by group) b
-	   	on a.group=b.group;
+	   			   group by &t2group) b
+	   	on a.&t2group =b.&t2group;
 	   quit;
 
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
@@ -192,20 +189,16 @@
 		 call missing(lambda, se, ci_lower, ci_upper, p, q);
 		/* Calculated vars and labels */
         %do vv = 1 %to &numcolumns;
-<<<<<<< HEAD
           %if &&footnote&vv. > 0 %then %do;
 		    label &&var&vv. = "&&label&vv.^{super 1}";
+		    label &&var&vv.._char = "&&label&vv.^{super 1}";
 		  %end;
 		  %else %do;
 		    label &&var&vv. = "&&label&vv.";
+		    label &&var&vv.._char = "&&label&vv.";
 		  %end;
 		  
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
-=======
-		  label &&var&vv. = "&&label&vv.";
-		  label &&var&vv.._char = "&&label&vv";
-	      %if %index(&&formula&vv.,/) > 0 %then %do;
->>>>>>> staging
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
 			   format &&var&vv. $30.;
 			   if &&cidenom&vv.. > 0 and &&num&vv. > 0 then do;

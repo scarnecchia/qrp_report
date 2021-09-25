@@ -534,7 +534,6 @@
         /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
           %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
 
-
                 %isdata(dataset=tablefile);
                 %let tableobs = &nobs.;
                 %let tablecount=1;

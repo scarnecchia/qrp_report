@@ -27,7 +27,7 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,title=,varformats=);
+%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,title=);
 
     options orientation = landscape;
     options missing = ' ';
@@ -37,7 +37,7 @@
 
 	data repdata.table&tablenum.&tableletter;
 		set &dataset;
-        if not missing(header) then call symputx("headercheck",header);
+        if not missing(header) then call symputx("headercheck",1);
 	run;
 
     proc sql noprint;
@@ -107,11 +107,10 @@
         style(header)=[rules=none vjust=b] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
             
-        columns (group level &var. &varlist. header grouplabel /* newcategory */);
+        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &var. &varlist. header grouplabel);
 
         define header / order noprint order=data ' ';
         define grouplabel / order noprint order=data ' ';
-/*         define newcategory / order noprint order=data ' '; */
             
         define level / noprint;
             
@@ -135,19 +134,18 @@
         %do v = 1 %to %sysfunc(countw(&varlist.));
             %let varname = %lowcase(%scan(&varlist., &v.,%str( )));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
-			%let varformat = %lowcase(%scan(&varformats., &v.,%str( )));
 			
-			   define &varname. / display format=&varformat.
+			   define &varname. / display 
                      style(column)=[width=&varwidth. just=c background=background_n_fmt.] 
-					 %if %str("&varformat.") = %str("$30.") %then %do;
-					    style(header)=[just=C width=.82in borderbottomcolor=black];
-					 %end;
-					 %else %do;
-					    style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray borderrightcolor=darkgray borderleftcolor=darkgray];
-			         %end;
+					 style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray borderrightcolor=darkgray borderleftcolor=darkgray];
         %end;
 
+        %if &reporttable = t2conc %then %do;
+        define analysisgrp / noprint;
+        %end;
+        %else %do;
         define group / noprint;
+        %end;
 
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
@@ -168,11 +166,11 @@
         /*add grouplabel*/
         compute before grouplabel / %if %length(&headercheck) = 0 %then %do;
                                         style=[%if &var ^= overall %then %do;
-                                                    backgroundcolor=lightgray font_weight=bold 
+                                                    backgroundcolor=lightgray font_weight=bold borderbottomcolor=black
                                                %end; 
                                                %else %do; 
-                                               fontstyle=italic 
-                                               %end; just=L bordertopcolor=black borderbottomcolor=white];
+                                               fontstyle=italic borderbottomcolor=white
+                                               %end; just=L bordertopcolor=black];
                                     %end;
                                     %else %do;
                                     style=[fontstyle=italic just=L bordertopcolor=black borderbottomcolor=white];
@@ -183,15 +181,6 @@
             num = 100;
             line text $varying. num;    
         endcomp;
-            
-/*         %if %sysfunc(countw(&&var.)) ge 2 %then %do;
-        compute before newcategory / style=[fontstyle=italic bordertopcolor=black ];
-            length text $100;
-            text = newcategory;
-            num = 100;
-            line text $varying. num;    
-        endcomp;
-        %end; */
 
         /* Add Footnotes */
         %if %str("&outfootnotes.") ne %str("") %then %do;
@@ -203,6 +192,11 @@
               %end;
             endcomp;
             %end;
+        %end;
+        %else %do;
+        compute after / style=[bordertopwidth=&bordersize borderbottomcolor=white];
+             line '';
+        endcomp;
         %end;
     run;
 

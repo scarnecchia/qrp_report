@@ -115,6 +115,7 @@
 ***************************************************************************************************;
 * T1/T2/Concomitant Use tables                                                      
 ***************************************************************************************************;
+    options mprint mlogic symbolgen source2;
     %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
         /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
           %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
@@ -130,12 +131,9 @@
                     where dataset="&reporttable"
                     order by stratificationorder;
 
-                    select columnname, 
-                           case when cirate in ("P","R") then "$30." 
-                           else columnformat end as fmt
+                    select cats(columnname,'_char') 
                           ,cats(columnwidth,'in')
                     into :outvarlist separated by ' ',
-                         :outformats separated by ' ',
                          :outwidths separated by ' '
                     from tablecolumns
                     where table="&reporttable"
@@ -157,16 +155,12 @@
                         end;
                     run;
 
-                    %if &reporttable = t2conc %then %do;
-                    %end;
-
                     %tableletter();
                     %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
                                      varlist = &outvarlist,
                                      var = %quote(&strataname),
                                      varwidths = %bquote(&outwidths.),
-                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
-                                     varformats =%bquote(&outformats.));
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
 
                 %if &stratifybydp = Y %then %do;
                     %do dps = 1 %to %eval(&num_dp.);
@@ -176,8 +170,7 @@
                                          varlist = &outvarlist,
                                          var = %quote(&strataname),
                                          varwidths = %bquote(&outwidths.),
-                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.),
-                                         varformats =%bquote(&outformats.));
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
                     %end;
                 %end;
                 %end;
