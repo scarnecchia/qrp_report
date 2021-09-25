@@ -115,7 +115,6 @@
 ***************************************************************************************************;
 * T1/T2/Concomitant Use tables                                                      
 ***************************************************************************************************;
-    options mprint mlogic symbolgen source2;
     %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
         /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
           %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
