@@ -108,7 +108,7 @@
             if ymaxminusmin>1 then ytick = round(ymaxminusmin/5, 10); /*tick every 10*/
             /*two tick options for 0-1 axis*/
             else if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01); 
-            else ytick = round(ymaxminusmin/5, .001);
+            else ytick = round(ymaxminusmin/5, .01);
             if ytick = 0 or ytick= . then ytick = .01; 
         end;
         yloopcount=round(divide(ymax-ymin,ytick))+1;
