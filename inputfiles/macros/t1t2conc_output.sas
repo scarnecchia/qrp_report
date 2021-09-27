@@ -149,7 +149,7 @@
 
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                       borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+                                       borderbottomwidth=&bordersize tagattr="wrap:yes" cellheight=.3in];
         line "Table &tablenum.&tableletter.. &title.&super_title.";
 		endcomp;
 

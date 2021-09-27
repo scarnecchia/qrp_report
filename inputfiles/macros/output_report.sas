@@ -139,7 +139,7 @@
                     order by order;
                 quit; 
                 
-                %isdata(dataset=tablefile);
+                %isdata(dataset=tablefile(where=(dataset="&reporttable")));
                 %let tableobs = &nobs;
                 %if %eval(&tableobs.=1) %then %let tablecount=0;
 
@@ -148,7 +148,7 @@
                     %let strataname = %scan(&stratanames,&z,$);
 
                     data _null_;
-                        set tablefile;
+                        set tablefile(where=(dataset="&reporttable"));
                         if _n_ = &z then do;
                         call symputx('tabletitle', tabletitle);
                         end;
