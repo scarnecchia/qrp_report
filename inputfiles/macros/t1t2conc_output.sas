@@ -18,7 +18,7 @@
 *  PARAMETERS:               
 *   - dataset = Input dataset (aggregated t1cida/t2cida/t2conc dataset)
 *   - varlist = List of character columns to be printed
-*   - var = Stratification variable
+*   - stratavar = Stratification variable
 *   - varwidth = Width of variable 
 *   - varsmallcells = Determine small cell count highlighting
 *   - title = Report title                                               
@@ -33,39 +33,55 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,varsmallcells=,title=);
+%macro t1t2conc_output(dataset=,varlist=,stratavar=,varwidths=,varsmallcells=,title=);
 
     %let outfootnotes=;
+    %let atleastoneheader=;
+    /* Check to see if at least 1 header was specified */
+    %if &labelfileexists. = Y %then %do;
+    proc sql noprint;
+        select label
+        into :atleastoneheader 
+        from labelfile 
+        where not missing(label) and labeltype='header';
+    quit;
+    %end;
 
+    %isdata(dataset=repdata.table&tablenum.&tableletter.);
+    %if %eval(&nobs.<1) %then %do;
 	data repdata.table&tablenum.&tableletter;
 		set &dataset;
         length newcategory $80;
         newcategory = "";
-     %if %sysfunc(countw(&var.)) >=2 %then %do;
-      %do cat = 1 %to %eval(%sysfunc(countw(&var.))-1);
+        %if %length(&atleastoneheader) > 0 %then %do;
+        if missing(header) then header=grouplabel;
+        %end;
+     %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
+      %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
         %if &cat. = 1 %then %do;
-          %if %index(%lowcase(%scan(&var., &cat.)), agegroup) %then 
-            newcategory = "Aged "||strip(%scan(&var., &cat.));
-          %else %if %index(%lowcase(%scan(&var., &cat.)), zip3) %then 
-            newcategory = "3-Digit Zip/State ("||strip(%scan(&var., &cat.))||")";
-          %else %if %index(%lowcase(%scan(&var., &cat.)), cb_reg) %then 
-            newcategory = "Census Region ("||strip(%scan(&var., &cat.))||")";
+          %if %index(%lowcase(%scan(&stratavar., &cat.)), agegroup) %then 
+            newcategory = "Age Group "||strip(%scan(&stratavar., &cat.));
+          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), zip3) %then 
+            newcategory = "3-Digit Zip Code/State ("||strip(%scan(&stratavar., &cat.))||")";
+          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), cb_reg) %then 
+            newcategory = "Census Bureau Region ("||strip(%scan(&stratavar., &cat.))||")";
            %else
-            newcategory = strip(%scan(&var., &cat.));;
+            newcategory = strip(%scan(&stratavar., &cat.));;
         %end;
         %else %do;
-          %if %index(%lowcase(%scan(&var., &cat.)), agegroup) %then 
-          newcategory = cat(strip(newcategory),", ", "Aged "||strip(%scan(&var., &cat.)));
-          %else %if %index(%lowcase(%scan(%quote(&var.), &cat.)), zip3) %then 
-          newcategory = cat(strip(newcategory),", ", "3-Digit Zip/State ("||strip(%scan(&var., &cat.)),")");
-          %else %if %index(%lowcase(%scan(%quote(&var.), &cat.)), cb_reg) %then 
-          newcategory = cat(strip(newcategory),", ", "Census Region ("||strip(%scan(&var., &cat.)),")");
+          %if %index(%lowcase(%scan(&stratavar., &cat.)), agegroup) %then 
+          newcategory = cat(strip(newcategory),", ", "Aged "||strip(%scan(&stratavar., &cat.)));
+          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), zip3) %then 
+          newcategory = cat(strip(newcategory),", ", "3-Digit Zip/State ("||strip(%scan(&stratavar., &cat.)),")");
+          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), cb_reg) %then 
+          newcategory = cat(strip(newcategory),", ", "Census Region ("||strip(%scan(&stratavar., &cat.)),")");
           %else 
-          newcategory = cat(strip(newcategory),", ", strip(%scan(&var., &cat.)));;
+          newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
         %end;
       %end;        
     %end;
 	run;
+    %end;
 
     proc sql noprint;
         select distinct footnote 
@@ -81,7 +97,7 @@
            length footnote_order 3; 
            /* Always displayed across all types */
            set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
-              %if %index(&var.,race) %then %do;
+              %if %index(&stratavar.,race) %then %do;
               1
               %end;
               %if %str("&outfootnotes.") = %str("1") %then %do;
@@ -133,7 +149,7 @@
         style(header)=[rules=none vjust=b] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
             
-        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &var. &varlist. header grouplabel newcategory);
+        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &stratavar. &varlist. header grouplabel newcategory);
 
         define header / order noprint order=data ' ';
         define grouplabel / order noprint order=data ' ';
@@ -141,9 +157,9 @@
             
         define level / noprint;
             
-        %do c = 1 %to %sysfunc(countw(&var.));         
-            %let cat = %scan(&var., &c.);
-             %if %sysfunc(countw(&var.)) = 1 or &c. = %sysfunc(countw(&var.)) %then %do;
+        %do c = 1 %to %sysfunc(countw(&stratavar.));         
+            %let cat = %scan(&stratavar., &c.);
+             %if %sysfunc(countw(&stratavar.)) = 1 or &c. = %sysfunc(countw(&stratavar.)) %then %do;
                 define &cat. / id ' ' 
                     style(column)=[just=L
                         %if "%lowcase(&cat.)" = "race" or "%lowcase(&cat.)" = "hispanic" %then width= 2.3in;
@@ -151,7 +167,7 @@
                                                                                          %else %if "%lowcase(&cat.)" = "hhs_reg" %then width = 1.35in;
                                                                                          %else %if %index("%lowcase(&cat.)", covar) >0 %then width = 2in;
                                                                                          %else width =.81in; indent=20] 
-                        style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray];
+                        style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr];
             %end;
              %else %do;
                 define &cat. / noprint;
@@ -165,7 +181,7 @@
 			
 			   define &varname. / display 
                      style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=background_n_fmt. %end;] 
-					 style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray borderrightcolor=darkgray borderleftcolor=darkgray];
+					 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
         %end;
 
         %if &reporttable = t2conc %then %do;
@@ -183,7 +199,7 @@
 
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
-        compute before header / style=[backgroundcolor=lightgray font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+        compute before header / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             text = header;
             num = 100;
@@ -193,8 +209,8 @@
         
         /*add grouplabel*/
         compute before grouplabel / %if &includeheaderrow ^= Y %then %do;
-                                        style=[%if &var ^= overall %then %do;
-                                                    backgroundcolor=lightgray font_weight=bold bordertopcolor=black borderbottomcolor=black
+                                        style=[%if &stratavar ^= overall %then %do;
+                                                    backgroundcolor=libgr font_weight=bold bordertopcolor=black borderbottomcolor=black
                                                %end; 
                                                %else %do; 
                                                fontstyle=italic bordertopcolor=white borderbottomcolor=white
@@ -210,7 +226,7 @@
             line text $varying. num;    
         endcomp;
 
-        %if %sysfunc(countw(&var.)) >= 2 %then %do;
+        %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
         /*add grouplabel*/
         compute before newcategory / style=[fontstyle=italic just=L font_weight=medium bordertopcolor=white borderbottomcolor=white];
             length text $100;
