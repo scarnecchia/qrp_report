@@ -66,7 +66,7 @@
 	 
 	 /* If T5Censor then acquire categories from the tablefile */  
      %if &censordataset. = t5censor %then %do;
-        select distinct(categories) into: catvar
+      select distinct(categories) into: catvar
 		  from tablefile (where = (dataset = "&censordataset." and table in ("T15", "T17")));
      %end;
    quit;
@@ -429,15 +429,15 @@
       data censor_data_den&dset_suffix;
         set den:;
       run;
-	
+      
     /* Clean up work files */
       proc datasets lib=work nowarn nolist noprint;
        delete den:; 
       quit;	
- 	    
+		
 	  proc sql noprint;
   	     create table &censordataset.&dset_suffix. as
-  	     select distinct a.*, 
+  	     select distinct a.*,
   	   		 b.table_name,
   	   		 b.min, 
   	   		 b.q1, 
@@ -446,18 +446,18 @@
   	   		 b.max,
   	   		 b.mean,
   	   		 b.std,
-	  		 e.order
+	  		   e.order
 	  		 %if &labelfileexists. = Y %then %do;
-  	     		   ,case when not missing(c.label) then c.label 
-                 else a.group end as grouplabel
-  	     		   ,case when not missing(d.label) then d.label 
+  	     	 ,case when not missing(c.label) then c.label 
+            else a.group end as grouplabel
+  	     	 ,case when not missing(d.label) then d.label 
                  when not missing(c.label) then c.label 
 				 else a.group end as headerlabel
-  	   		 %end;
-  	   		 %else %do;
-  	   		   ,a.group as grouplabel
+  	   	 %end;
+  	   	 %else %do;
+  	   	   ,a.group as grouplabel
 	  		   ,'' as headerlabel
-  	   		 %end;
+  	   	 %end;
   	     from censor_data_den&dset_suffix a 
 	     left join _stats b
   	     on a.runid = b.runid 
@@ -468,13 +468,13 @@
   	       on a.group = c.group
   	       left join labelfile(where=(labeltype='header')) d
   	       on a.group = d.group
-  	     %end;
+  	   %end;
 	     left join groupsfile e
 	     on a.group = e.group
 		 %if %str(&distribution_var.) = %str(censdays_value) %then %do;
 	     where not missing(censdays_value_cat) %end;;
   	   quit;
-	  
+
     /* Clean up work files */
        proc datasets lib=work nowarn nolist noprint;
         delete den:; 
@@ -607,10 +607,12 @@
 		     %scan(&stat_char, &cr, ' ')_char = "."; 
 		   end;
 		   else if (episodes = 0)and overall_tot > 0 
+             and strat ne "overall" 
              then do;
 		     %scan(&stat_char, &cr, ' ')_char = "NaN"; 
 		   end;
          if "%scan(&stat_char, &cr, ' ')" = "std" and episodes = 1 
+           and strat ne "overall"
 		   then do;
 		   %scan(&stat_char, &cr, ' ')_char = "NaN";
 		 end;
@@ -636,24 +638,24 @@
 
         /*final sort of data*/
         proc sort data=&censordataset.&dset_suffix. ;
-   	      by order dpidsiteid censorcat_sort table_name 
+   	      by order censorcat_sort table_name dpidsiteid
 	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
 	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
 	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
-   	   run;	   
-
+   	   run;
+ 
    %mend censor_summary;
 
    /* If episodenum is a stratification variable then create first episode tables */
-    %if %index(&censor_strat.,episodenum) > 0 %then %do;
+   %if %index(&censor_strat.,episodenum) > 0 %then %do;
       %censor_summary (dset_suffix = _first, whereclause = %str((where = (episodenum = 1))));
-	%end;
-
+   %end;
+   
    /* Create all episodes tables */
     %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&censordataset.)) > 0 | (&censordataset=t5censor and %sysfunc(prxmatch(m/T16|T17/i,&tables.)) > 0) %then %do;
-      %censor_summary;
+   %censor_summary;
     %end;
-
+   
    /* Clean up work files */
     proc datasets lib=work nowarn nolist noprint;
        delete _stats censor_data: _square_stats; 
