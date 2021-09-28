@@ -81,29 +81,28 @@
            length footnote_order 3; 
            /* Always displayed across all types */
            set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
-              
-              %if %str("&outfootnotes.") = %str("1") %then %do;
+              %if %index(&var.,race) %then %do;
               1
               %end;
-              %if %str("&outfootnotes.") = %str("2") %then %do;
+              %if %str("&outfootnotes.") = %str("1") %then %do;
               2
               %end;
-              %if %str("&outfootnotes.") = %str("3") %then %do;
+              %if %str("&outfootnotes.") = %str("2") %then %do;
               3
               %end;
-              %if %str("&outfootnotes.") = %str("2|3") %then %do;
+              %if %str("&outfootnotes.") = %str("3") %then %do;
               4
               %end;
-              %if %str("&outfootnotes.") = %str("1|3") %then %do;
+              %if %str("&outfootnotes.") = %str("2|3") %then %do;
               5
               %end;
-              %if %str("&outfootnotes.") = %str("1|2") %then %do;
+              %if %str("&outfootnotes.") = %str("1|3") %then %do;
               6
               %end;
-              %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
+              %if %str("&outfootnotes.") = %str("1|2") %then %do;
               7
               %end;
-              %if %index(&var.,race) %then %do;
+              %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
               8
               %end;
             )));
@@ -122,8 +121,8 @@
           %end;
         quit;
 
-        %assign_superscripts(type=line, order = 1 2 3 4 5 6 7);
-        %assign_superscripts(type=title, order = 8);
+        %assign_superscripts(type=title, order = 1);
+        %assign_superscripts(type=line, order = 2 3 4 5 6 7 8);
 
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table&tablenum.&tableletter" tab_color='green');
