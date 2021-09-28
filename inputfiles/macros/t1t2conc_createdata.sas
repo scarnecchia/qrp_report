@@ -293,6 +293,12 @@
 			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
 			 %end;
 		  %end;
+		  %if %index(%lowcase(&&formula&vv.),npts) %then %do;
+		  if totalnpts = 0 then &&var&vv.._char='0';
+		  %end;
+		  %else %do;
+		  if totalnpts = 0 then &&var&vv.._char='.';
+		  %end;
 	    %end;
 		
         /*labels for stratification variables*/

@@ -27,17 +27,38 @@
 *
 ***************************************************************************************************;
 
-%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,title=);
-
-    options orientation = landscape;
-    options missing = ' ';
+%macro t1t2conc_output(dataset=,varlist=,var=,varwidths=,varsmallcells=,title=);
 
     %let outfootnotes=;
-    %let headercheck=;
 
 	data repdata.table&tablenum.&tableletter;
 		set &dataset;
-        if not missing(header) then call symputx("headercheck",1);
+        length newcategory $80;
+        newcategory = "";
+     %if %sysfunc(countw(&var.)) >=2 %then %do;
+      %do cat = 1 %to %eval(%sysfunc(countw(&var.))-1);
+        %if &cat. = 1 %then %do;
+          %if %index(%lowcase(%scan(&var., &cat.)), agegroup) %then 
+            newcategory = "Aged "||strip(%scan(&var., &cat.));
+          %else %if %index(%lowcase(%scan(&var., &cat.)), zip3) %then 
+            newcategory = "3-Digit Zip/State ("||strip(%scan(&var., &cat.))||")";
+          %else %if %index(%lowcase(%scan(&var., &cat.)), cb_reg) %then 
+            newcategory = "Census Region ("||strip(%scan(&var., &cat.))||")";
+           %else
+            newcategory = strip(%scan(&var., &cat.));;
+        %end;
+        %else %do;
+          %if %index(%lowcase(%scan(&var., &cat.)), agegroup) %then 
+          newcategory = cat(strip(newcategory),", ", "Aged "||strip(%scan(&var., &cat.)));
+          %else %if %index(%lowcase(%scan(%quote(&var.), &cat.)), zip3) %then 
+          newcategory = cat(strip(newcategory),", ", "3-Digit Zip/State ("||strip(%scan(&var., &cat.)),")");
+          %else %if %index(%lowcase(%scan(%quote(&var.), &cat.)), cb_reg) %then 
+          newcategory = cat(strip(newcategory),", ", "Census Region ("||strip(%scan(&var., &cat.)),")");
+          %else 
+          newcategory = cat(strip(newcategory),", ", strip(%scan(&var., &cat.)));;
+        %end;
+      %end;        
+    %end;
 	run;
 
     proc sql noprint;
@@ -107,10 +128,11 @@
         style(header)=[rules=none vjust=b] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
             
-        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &var. &varlist. header grouplabel);
+        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &var. &varlist. header grouplabel newcategory);
 
         define header / order noprint order=data ' ';
         define grouplabel / order noprint order=data ' ';
+        define newcategory / order noprint order=data ' ';
             
         define level / noprint;
             
@@ -134,9 +156,10 @@
         %do v = 1 %to %sysfunc(countw(&varlist.));
             %let varname = %lowcase(%scan(&varlist., &v.,%str( )));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
+            %let varsmallcell = %lowcase(%scan(&varsmallcells., &v.,%str( )));
 			
 			   define &varname. / display 
-                     style(column)=[width=&varwidth. just=c background=background_n_fmt.] 
+                     style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=background_n_fmt. %end;] 
 					 style(header)=[just=C borderbottomcolor=black backgroundcolor=darkgray borderrightcolor=darkgray borderleftcolor=darkgray];
         %end;
 
@@ -154,7 +177,7 @@
 		endcomp;
 
         /*add header line*/
-        %if %length(&headercheck) > 0 %then %do;
+        %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=lightgray font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             text = header;
@@ -182,6 +205,16 @@
             line text $varying. num;    
         endcomp;
 
+        %if %sysfunc(countw(&var.)) >= 2 %then %do;
+        /*add grouplabel*/
+        compute before newcategory / style=[fontstyle=italic just=L font_weight=medium bordertopcolor=black];
+            length text $100;
+            text = newcategory;
+            num = 100;
+            line text $varying. num;    
+        endcomp;
+        %end;
+
         /* Add Footnotes */
         %if %str("&outfootnotes.") ne %str("") %then %do;
             %if &num_fn > 0 %then %do;
@@ -199,7 +232,5 @@
         endcomp;
         %end;
     run;
-
-    options missing = '.';
 
 %mend t1t2conc_output;
