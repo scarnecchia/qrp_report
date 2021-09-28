@@ -193,7 +193,7 @@
         %end;
         
         /*add grouplabel*/
-        compute before grouplabel / %if %length(&headercheck) = 0 %then %do;
+        compute before grouplabel / %if &includeheaderrow ^= Y %then %do;
                                         style=[%if &var ^= overall %then %do;
                                                     backgroundcolor=lightgray font_weight=bold bordertopcolor=black borderbottomcolor=black
                                                %end; 
@@ -213,7 +213,7 @@
 
         %if %sysfunc(countw(&var.)) >= 2 %then %do;
         /*add grouplabel*/
-        compute before newcategory / style=[fontstyle=italic just=L font_weight=medium bordertopcolor=black];
+        compute before newcategory / style=[fontstyle=italic just=L font_weight=medium bordertopcolor=white borderbottomcolor=white];
             length text $100;
             text = newcategory;
             num = 100;
