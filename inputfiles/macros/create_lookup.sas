@@ -11,10 +11,12 @@
 *  Program inputs:                                                                                   
 * 
 *  Program outputs: The following lookuptables files are created:
-*   -lookup_footnotes_baseline  = Footnotes for baseline table
-*   -lookup_footnotes_effectest = Footnotes for L2 effect estimates table
-*   -lookup_footnotes_attrition = Footnotes for attrition table
-*   -lookup_attrition           = Mapping QRP attrition descriptions to report descriptions
+*   -lookup_footnotes_baseline      = Footnotes for baseline table
+*   -lookup_footnotes_effectest     = Footnotes for L2 effect estimates table
+*   -lookup_footnotes_attrition     = Footnotes for attrition table
+*   -lookup_footnotes_kmcdf         = Footnotes for KM/CDF figures
+*   -lookup_footnotes_censortables  = Footnotes for types 1, 2, and 5 censor tables
+*   -lookup_attrition               = Mapping QRP attrition descriptions to report descriptions
 *
 *  PARAMETERS:                                                                       
 *            
@@ -89,6 +91,21 @@
 	   order = 8; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
 	 run;  
 	 
+     data lookup.lookup_footnotes_censortables;
+	   attrib order        length = 3    format = 3.
+	          description  length = $575 format = $575.;
+	   order = 1;  description = "An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes."; output;
+	   order = 2;  description = "A patient's episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of patients."; output;
+	   order = 3;  description = "Time to end of observable data is for characterization purposes only. It does not necessarily represent at-risk time, and does not consider episode end, outcome occurrence, blackout period, or delay risk period start."; output;
+	   order = 4;  description = "Represents episodes censored due to end of the exposure episode. In as-treated analyses, exposure episodes are defined using days supplied as recorded in outpatient pharmacy dispensing records, and episodes end after days supplied are exhausted or a pre-determined maximum episode duration is met. In point exposure analyses, exposure episodes end when a pre-determined maximum episode duration is met."; output;
+	   order = 5;  description = "Represents episodes censored due to occurrence of request-defined event."; output;
+	   order = 6;  description = "Represents episodes censored due to occurrence of additional user-defined criteria using drug, procedure, diagnosis, and/or laboratory codes."; output;
+	   order = 7;  description = "Represents episodes censored due to evidence of death. Death data source and completeness varies by Data Partner."; output;
+	   order = 8;  description = 'Represents episodes censored due to disenrollment from health plan. Data Partners often artificially assign a ""disenrollment"" date equal to data end date for members still enrolled on that date. Therefore, a patient may have dual reasons for censoring as ""disenrollment"" and ""end of data"" on the same day - this can be interpreted as right-censoring in most cases.'; output;
+	   order = 9;  description = "Represents episodes censored due to Data Partner data end date. This end date represents the last day of the most recent year-month in which all of a Data Partner's data tables in the Sentinel Common Data Model have at least 80% of the record count relative to the prior month."; output;
+	   order = 10;  description = "Represents episodes censored due to user-specified study end date."; output;
+	 run; 
+
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.
               descr  		length = $500	format = $500.

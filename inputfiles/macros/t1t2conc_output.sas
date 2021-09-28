@@ -15,7 +15,13 @@
 *  Program outputs: 
 * 	- repdata.table&tablenum.&tableletter
 * 
-*  PARAMETERS:                                                                       
+*  PARAMETERS:               
+*   - dataset = Input dataset (aggregated t1cida/t2cida/t2conc dataset)
+*   - varlist = List of character columns to be printed
+*   - var = Stratification variable
+*   - varwidth = Width of variable 
+*   - varsmallcells = Determine small cell count highlighting
+*   - title = Report title                                               
 *            
 *  Programming Notes:         
 *                                                                           

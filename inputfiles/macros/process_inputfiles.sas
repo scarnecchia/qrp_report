@@ -615,6 +615,7 @@
             labelvar = lowcase(labelvar);
             /*set reporttile if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
+            if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
@@ -626,8 +627,13 @@
             call symputx('label_length',length);
         run;
 		
-		%let labelfileexists = Y;
-		
+		%let labelfileexists = Y;		
+
+        /*Assign user censoring criteria labels*/
+        data _null_;
+            set labelfile(where=(labeltype='censorlabel'));
+            call symputx(cats(labelvar,'_label'), label);
+        run;
     %end;
 
 /***************************************************************************************************
