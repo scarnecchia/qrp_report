@@ -153,12 +153,9 @@
 ***************************************************************************************************;
 
     %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
-        %if &look_start = 1 %then %do;
-            %let look_end = 1;
-            %do periodid = %eval(&look_start) %to %eval(&look_end);
+        %do periodid = %eval(&look_start) %to %eval(&look_end);
             %attrition_createdata;
-            %end;
-        %end; /* NOTE: Remove when Monitoring period bug is fixed in DEV-18262 */
+        %end;
     %end;
 
 ***************************************************************************************************;

@@ -57,6 +57,8 @@
                     if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
+                    /*default stratifybydp*/
+                    if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
                     if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
                 end;
@@ -378,6 +380,24 @@
 	 set %do n = 1 %to &numrunid.;
 	 		%let runid=&&id&n..;
 			infolder.&&&runid._cohortfile(in=n&n.)
+		%end;
+	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+	 		runid = "&&id&n.";
+            end;
+        %end;
+	 run;
+
+/***************************************************************************************************
+*   Create a combined cohortcodes for all runs                                                
+***************************************************************************************************/
+
+	 data master_cohortcodes;
+	 set %do n = 1 %to &numrunid.;
+	 		%let runid=&&id&n..;
+			infolder.&&&runid._cohortcodes(in=n&n.)
 		%end;
 	 ;
      format runid $6.;
@@ -844,7 +864,7 @@
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
-						 ,table.n
+						 , table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
