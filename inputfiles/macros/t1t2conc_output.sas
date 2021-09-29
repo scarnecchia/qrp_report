@@ -92,7 +92,6 @@
       quit;
 	%end;
     %end;
-    %end;
 
     proc sql noprint;
         select distinct footnote 
