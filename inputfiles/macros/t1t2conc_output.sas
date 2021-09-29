@@ -60,10 +60,12 @@
 	run;
     %end;
 
-	%if "&var" = "race" %then %do;
+	%if %index(&stratavar,race) %then %do;
 	proc contents data = repdata.table&tablenum.&tableletter out = t noprint;
 	run; 
 	
+    %let label_change_var=;
+    %let label_change=;
 	proc sql noprint;
 	select name
       into: Label_change_var
@@ -79,6 +81,7 @@
 	  ;
 	quit;
 
+    %if %length(&label_change_var) > 0 %then %do;
 	data _null_;
 	label_change2 = tranwrd("&label_change", "super 1", "super 2");
 	call symput("label_change2", trim(label_change2));
@@ -92,6 +95,7 @@
 	    label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
       %end;
     quit;
+    %end;
     %end;
 
     proc sql noprint;
@@ -136,16 +140,6 @@
            by order;
            footnote_order = _n_;
         run;
-
-		/* Need to rearrange the superscript for title when var = race*/
-		%if "&var." = "race" %then %do;
-		  data _footnotes;
-		    set _footnotes;
-            if order = 8 then do; footnote_order = 0; order = 0; end; 
-			footnote_order = footnote_order + 1;
-			order = order +1;
-		  run;
-		%end;
 		 
         proc sql noprint;
           select count(order) into: num_fn trimmed
