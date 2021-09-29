@@ -67,6 +67,40 @@
     %end;
 	run;
 
+	%if "&var" = "race" %then %do;
+	proc contents data = repdata.table&tablenum.&tableletter out = t noprint;
+	run; 
+	
+	proc sql noprint;
+	select name
+      into: Label_change_var
+	  separated by ' '
+	  from t
+      where label contains ("super 1") 
+	  ;
+	  select label
+      into: Label_change
+	  separated by ","
+	  from t
+      where label contains ("super 1") 
+	  ;
+	quit;
+
+	data _null_;
+	label_change2 = tranwrd("&label_change", "super 1", "super 2");
+	call symput("label_change2", trim(label_change2));
+	run;
+	 
+	
+	proc datasets lib=repdata nolist;
+      modify  table&tablenum.&tableletter;
+      %let val = %sysfunc(countw(&label_change_var));
+	  %do lab = 1 %to &val;
+	    label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
+      %end;
+    quit;
+    %end;
+
     proc sql noprint;
         select distinct footnote 
         into :outfootnotes 
@@ -111,6 +145,16 @@
            footnote_order = _n_;
         run;
 
+		/* Need to rearrange the superscript for title when var = race*/
+		%if "&var." = "race" %then %do;
+		  data _footnotes;
+		    set _footnotes;
+            if order = 8 then do; footnote_order = 0; order = 0; end; 
+			footnote_order = footnote_order + 1;
+			order = order +1;
+		  run;
+		%end;
+		 
         proc sql noprint;
           select count(order) into: num_fn trimmed
           from _footnotes;
@@ -118,12 +162,13 @@
           %if &num_fn > 0 %then %do;
           select description into: fn1 - :fn&num_fn.
           from _footnotes
-          order by order;
-          %end;
+            order by order;
+		   %end;
         quit;
-
-        %assign_superscripts(type=line, order = 1 2 3 4 5 6 7);
-        %assign_superscripts(type=title, order = 8);
+      
+		%assign_superscripts(type=title, order = 1);
+        %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
+		
 
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table&tablenum.&tableletter" tab_color='green');
@@ -142,7 +187,7 @@
             
         define level / noprint;
             
-        %do c = 1 %to %sysfunc(countw(&var.));         
+        %do c = 1 %to %sysfunc(countw(&var.));              
             %let cat = %scan(&var., &c.);
              %if %sysfunc(countw(&var.)) = 1 or &c. = %sysfunc(countw(&var.)) %then %do;
                 define &cat. / id ' ' 
