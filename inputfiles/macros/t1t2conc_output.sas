@@ -138,18 +138,6 @@
            by order;
            footnote_order = _n_;
         run;
-
-
-		/* Need to rearrange the superscript for title when var = race*/
-		%if %index(&stratavar,race) %then %do;
-		  data _footnotes;
-		    set _footnotes;
-            if order = 8 then do; footnote_order = 0; order = 0; end; 
-			footnote_order = footnote_order + 1;
-			order = order +1;
-		  run;
-		%end;
-
 		 
         proc sql noprint;
           select count(order) into: num_fn trimmed
