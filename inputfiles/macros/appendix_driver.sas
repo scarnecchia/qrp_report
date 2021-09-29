@@ -530,7 +530,7 @@
 			%end; /*fileexist codesfile check*/
 			%else %do;				
 				/* Resume writing to log */
-				proc printto log="&reportroot.output/qrp_report_log.log";
+				proc printto log="&output./qrp_report_log.log";
 				run;
 				%put WARNING: (Sentinel) &eachCodeFile. CodesFile does not exist.;
 			%end;	
