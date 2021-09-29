@@ -68,7 +68,7 @@
     %let label_change=;
 	proc sql noprint;
 	select name, label
-      into: Label_change_var separated by ' ', :Label_change separated by ' '
+      into: Label_change_var separated by ' ', :Label_change separated by ','
 	  from t
       where label contains ("super 1") 
 	  ;
