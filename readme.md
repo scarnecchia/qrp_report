@@ -4,7 +4,7 @@
 ## How to execute an analytic request package using the query request package (QRP) reporting tool
 
 ### Overview 
-The Sentinel Routine Querying System Reporting Tool is a SAS® program that is designed to run against the output of the <u>[Sentinel routine querying tools](https://dev.sentinelsystem.org/projects/AD/repos/qrp/browse)</u>. The QRP Reporting Tool is made up of SAS macros that allow users to aggregate results across multiple Data Partner sites in the Sentinel Distributed Database (SDD) and create formatted reports. For inferential analyses, users are able to adjust for confounders and generate effect estimates, utilizing various methods based upon the study design and balancing technique requested in the Sentinel routine querying tools. Note that data must be in the form of SAS datasets in order to use this analytic program.
+The Sentinel QRP Reporting Tool is a SAS® program that is designed to run against the output of the <u>[Sentinel routine querying tools](https://dev.sentinelsystem.org/projects/AD/repos/qrp/browse)</u>. The QRP Reporting Tool is made up of SAS macros that allow users to aggregate results across multiple Data Partner sites in the Sentinel Distributed Database (SDD) and create formatted reports. For inferential analyses, users are able to adjust for confounders and generate effect estimates, utilizing various methods based upon the study design and balancing technique requested in the Sentinel routine querying tools. Note that data must be in the form of SAS datasets in order to use this analytic program.
 
 ### Analytic Request Package Folder Structure
 * <b> inputfiles:</b> contains SAS datasets specific to the given report
