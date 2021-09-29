@@ -536,12 +536,14 @@
             %let reporttable = %scan(&tdatasetlist, &td.);
             %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
 
-                data _tempt1t2conc;
-                    set tablefile(where=(dataset="&reporttable"));
-                run;
+                proc sql noprint;
+                    %let tableobs = 0;
+                    select max(stratificationorder)
+                    into :tableobs trimmed 
+                    from tablefile
+                    where dataset="&reporttable";
+                quit;
 
-                %isdata(dataset=_tempt1t2conc);
-                %let tableobs = &nobs.;
                 %let tablecount=1;
                 %do z = 1 %to %eval(&tableobs.);
 
@@ -553,6 +555,7 @@
                 run;
 
                 %if %eval(&tableobs.=1) or &stratifybydp ^= Y %then %let tablecount=0;
+                %if %eval(&tableobs.=1) and &stratifybydp = Y %then %let tablecount=1;
 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
@@ -574,9 +577,6 @@
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
-          proc datasets nowarn noprint lib=work;
-                delete _tempt1t2conc;
-          quit;
         %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
         /*****************************************************************************************/

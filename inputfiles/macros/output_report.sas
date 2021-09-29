@@ -125,14 +125,6 @@
             %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
                 %let tablecount=1;
                 proc sql noprint;
-                    select distinct levelid1, tablesub, stratificationorder 
-                    into :stratalevelid separated by ' ', 
-                         :stratanames separated by '$',
-                         :dummy
-                    from tablefile
-                    where dataset="&reporttable"
-                    order by stratificationorder;
-
                     select cats(columnname,'_char') 
                           ,cats(columnwidth,'in')
                           ,smallcellyn
@@ -142,24 +134,25 @@
                     from tablecolumns
                     where table="&reporttable"
                     order by order;
+
+                    %let tableobs = 0;
+                    select max(stratificationorder)
+                    into :tableobs trimmed 
+                    from tablefile
+                    where dataset="&reporttable";
                 quit; 
-
-                data _tempt1t2conc;
-                    set tablefile(where=(dataset="&reporttable"));
-                run;
                 
-                %isdata(dataset=_tempt1t2conc);
-                %let tableobs = &nobs;
-                %if %eval(&tableobs.=1)  or &stratifybydp ^= Y %then %let tablecount=0;
+                %if %eval(&tableobs.=1) or &stratifybydp ^= Y %then %let tablecount=0;
+                %if %eval(&tableobs.=1) and &stratifybydp = Y %then %let tablecount=1;
 
-                %do z = 1 %to %sysfunc(countw(&stratalevelid));
-                    %let strataid = %scan(&stratalevelid,&z);
-                    %let strataname = %scan(&stratanames,&z,$);
+                %do z = 1 %to &tableobs;
 
                     data _null_;
                         set tablefile(where=(dataset="&reporttable"));
                         if _n_ = &z then do;
                         call symputx('tabletitle', tabletitle);
+                        call symputx('strataid',levelid1);
+                        call symputx('strataname',tablesub);
                         end;
                     run;
 
@@ -189,13 +182,8 @@
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
-
           options missing = '.';
           options orientation = portrait;
-          proc datasets nowarn noprint lib=work;
-                delete _tempt1t2conc;
-          quit;
-
         %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
     /*****************************************************************************************/
