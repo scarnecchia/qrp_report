@@ -36,7 +36,6 @@
 %macro t1t2conc_output(dataset=,varlist=,stratavar=,varwidths=,varsmallcells=,title=);
 
     %let outfootnotes=;
-    %let atleastoneheader=;
 
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
@@ -61,7 +60,7 @@
     %end;
 
 	%if %index(&stratavar,race) %then %do;
-	proc contents data = repdata.table&tablenum.&tableletter out = t noprint;
+	proc contents data = repdata.table&tablenum.&tableletter out = t(keep=name label) noprint;
 	run; 
 	
     %let label_change_var=;
@@ -77,10 +76,10 @@
 
 
     %if %length(&label_change_var) > 0 %then %do;
-	data _null_;
-	label_change2 = tranwrd("&label_change", "super 1", "super 2");
-	call symput("label_change2", trim(label_change2));
-	run;
+	  data _null_;
+	  label_change2 = tranwrd("&label_change", "super 1", "super 2");
+	  call symput("label_change2", trim(label_change2));
+	  run;
 	 
 	
 	  proc datasets lib=repdata nolist;
@@ -89,6 +88,10 @@
 	    %do lab = 1 %to &val;
 	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
         %end;
+      quit;
+
+      proc datasets lib=work noprint nowarn;
+        delete t;
       quit;
 	%end;
     %end;

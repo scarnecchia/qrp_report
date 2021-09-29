@@ -115,12 +115,11 @@
 /*********************************************************************************************/
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
-        /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
-          /* Set options to missing to prevent dot from printing in row */
-          options orientation = landscape;
-          options missing = ' ';
-          %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+              /* Set options to missing to prevent dot from printing in row */
+              options orientation = landscape;
+              options missing = ' ';
           %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
             %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
@@ -190,13 +189,14 @@
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
-          %end; /* tdatasetlist */
+
           options missing = '.';
           options orientation = portrait;
           proc datasets nowarn noprint lib=work;
                 delete _tempt1t2conc;
           quit;
-    %end; /* reporttype, tdatasetlistnum */
+
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
     /*****************************************************************************************/
     /* Type 1 and 2 censor tables                                                            */
