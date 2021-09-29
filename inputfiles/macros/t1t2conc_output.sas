@@ -209,7 +209,7 @@
             %let varsmallcell = %lowcase(%scan(&varsmallcells., &v.,%str( )));
 			
 			   define &varname. / display 
-                     style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=background_n_fmt. %end;] 
+                     style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end;] 
 					 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
         %end;
 
