@@ -587,20 +587,23 @@
 
 		 %do cr1 = 1 %to %sysfunc(countw(&cen_tot));
          /* pct and stat variables */ 
-		 %do  cr = 1 %to %sysfunc(countw(&pct));
+
+		 	%let step1 = %scan(&cen_tot, &cr1, ' ');
+			%let pctVar = %sysfunc(tranwrd(&step1.,tot,pct)); 
+			%if %index(lowcase(&step1.),tot) = 0 %then %let pctVar = &step1._pct; 		 
+		 
 		   if overall_tot = 0 then do;
-		     %scan(&pct, &cr, ' ')_char = "."; 
+		     &pctVar._char = "."; 
 		   end;
 		   else if (%scan(&cen_tot, &cr1, ' ') = 0) and overall_tot > 0 
 		       and episodes = 0
              then do;
-		     %scan(&pct, &cr, ' ')_char = "NaN"; 
+		     &pctVar._char = "NaN";
 		   end;
 		   else if (%scan(&cen_tot, &cr1, ' ') > 0) and overall_tot > 0  
                 and episodes = 0 then do;
-		     %scan(&pct, &cr, ' ')_char = "0.0%"; 
+		     &pctVar._char = "0.0%";
 		   end;
-         %end;
 
 		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
 		 if overall_tot = 0 then do;
