@@ -115,7 +115,88 @@
 /*********************************************************************************************/
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+        /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
+          /* Set options to missing to prevent dot from printing in row */
+          options orientation = landscape;
+          options missing = ' ';
+          %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+          %do td = 1 %to &tdatasetlistnum.; 
+            %let reporttable = %scan(&tdatasetlist, &td.);
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+                %let tablecount=1;
+                proc sql noprint;
+                    select distinct levelid1, tablesub, stratificationorder 
+                    into :stratalevelid separated by ' ', 
+                         :stratanames separated by '$',
+                         :dummy
+                    from tablefile
+                    where dataset="&reporttable"
+                    order by stratificationorder;
 
+                    select cats(columnname,'_char') 
+                          ,cats(columnwidth,'in')
+                          ,smallcellyn
+                    into :outvarlist separated by ' ',
+                         :outwidths separated by ' ',
+                         :outsmallcells separated by ' '
+                    from tablecolumns
+                    where table="&reporttable"
+                    order by order;
+                quit; 
+
+                data _tempt1t2conc;
+                    set tablefile(where=(dataset="&reporttable"));
+                run;
+                
+                %isdata(dataset=_tempt1t2conc);
+                %let tableobs = &nobs;
+                %if %eval(&tableobs.=1)  or &stratifybydp ^= Y %then %let tablecount=0;
+
+                %do z = 1 %to %sysfunc(countw(&stratalevelid));
+                    %let strataid = %scan(&stratalevelid,&z);
+                    %let strataname = %scan(&stratanames,&z,$);
+
+                    data _null_;
+                        set tablefile(where=(dataset="&reporttable"));
+                        if _n_ = &z then do;
+                        call symputx('tabletitle', tabletitle);
+                        end;
+                    run;
+
+                    %tableletter();
+                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
+                                     varlist = &outvarlist,
+                                     stratavar = %quote(&strataname),
+                                     varwidths = %bquote(&outwidths.),
+                                     varsmallcells = &outsmallcells,
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                %if &stratifybydp = Y %then %do;
+                    %do dps = 1 %to %eval(&num_dp.);
+                        %let maskedID = %scan(&masked_dplist,&dps); 
+                        %tableletter();
+                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
+                                         varlist = &outvarlist,
+                                         stratavar = %quote(&strataname),
+                                         varwidths = %bquote(&outwidths.),
+                                         varsmallcells = &outsmallcells,
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
+                    %end;
+                %end;
+                %let tablenum = %eval(&tablenum + 1);
+                %if &stratifybydp = Y %then %let tablecount = 1;
+                %else %let tablecount = 0;
+                %end; /* z */
+          %leavet1t2conc:
+          %end; /* td */
+          %end; /* tdatasetlist */
+          options missing = '.';
+          options orientation = portrait;
+          proc datasets nowarn noprint lib=work;
+                delete _tempt1t2conc;
+          quit;
+    %end; /* reporttype, tdatasetlistnum */
 
     /*****************************************************************************************/
     /* Type 1 and 2 censor tables                                                            */
@@ -297,226 +378,175 @@
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
 /*********************************************************************************************/
-
-    /*****************************************************************************************/
-    /* Type 5 censor tables                                                                  */
-    /*****************************************************************************************/
-
-    %macro t5censoroutput(tableid = , tablename=, first=, episodesorpatients=);
+	%if %str("&reporttype") = %str("T5") %then %do;
         options orientation = landscape;
 
-        %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
-            data _null_;
-                set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
-                /*censor reasons*/
-                call symputx('t5censorreasons', censorreason);
+        /*Split table order map file to T1-T13 and T18-T22*/
+		%isdata(dataset=t5_tempmap);
+        %if %eval(&nobs.>0) %then %do;
+            data _temp_t5_tempmap1 _temp_t5_tempmap2;
+                set t5_tempmap;
+                if table in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','T13') then output _temp_t5_tempmap1;
+                if table in ('T18','T19','T20','T21','T22') then output _temp_t5_tempmap2;
             run;
+	    %end;
 
-            /*counter for determining table letter*/
-            %if &stratifybydp. = Y %then %let tablecount = 1;
-            %else %let tablecount = 0;
-            %tableletter();
+        /*Macro to produce Tables T1-T13, T18-T22*/
+        %macro loopt5tablesoutput(dataset=);
+        	/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
+    		%isdata(dataset=&dataset.);
+            %if %eval(&nobs.>0) %then %do;
 
+        		%let t5tableobs = &nobs.;
+        		%do st = 1 %to %eval(&t5tableobs.);
+
+        			%let cattabledataset = ;
+        			%let distabledataset = ;
+        			%let tableorder=0;
+
+        			data _null_;
+        			 set &dataset.;
+        				if _n_ = &st. then do;
+        					call symputx('numtables', numtables);
+        					call symputx('tableorder', tableorder);               
+        					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
+        						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
+        					%end;
+        					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
+        						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
+        					%end;
+        				end;
+        			run;
+                        
+        			/*Increment the table number and reset the table letter counter*/
+        			%if %eval(&tableorder.=1) %then %do;
+        				%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
+        				%let tablecount=1;
+        			%end;
+        			
+        			/*reset table letter counter if only 1 table*/
+        			%if %eval(&numtables.=1) %then %let tablecount=0;
+
+        			%if %str("&cattabledataset.") ne %str("") %then %do;
+        				%tableletter();
+        				%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
+        			%end;
+        			%if %str("&distabledataset.") ne %str("") %then %do;
+        				%tableletter();
+        				%t5tables_output(dataset=&distabledataset.,reporttype=dist);
+        			%end;		
+                %end;		
+        		%let tablenum = %eval(&tablenum + 1);
+
+                proc datasets nowarn noprint lib=work;
+                    delete _temp_t5_tempmap1; 
+                quit;
+            %end;
+        %mend;
+
+        /*****************************************************************************************/
+        /* Type 5 Tables T1-T13                                                                  */
+        /*****************************************************************************************/
+        %loopt5tablesoutput(dataset=_temp_t5_tempmap1);
+	
+        /*****************************************************************************************/
+        /* Type 5 censor tables                                                                  */
+        /*****************************************************************************************/
+        %macro t5censoroutput(tableid = , tablename=, first=, episodesorpatients=);
+
+            %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
+                data _null_;
+                    set tablefile(where=(dataset in ("t5censor") and table = "&tableid"));
+                    /*censor reasons*/
+                    call symputx('t5censorreasons', censorreason);
+                run;
+
+                /*counter for determining table letter*/
+                %if &stratifybydp. = Y %then %let tablecount = 1;
+                %else %let tablecount = 0;
+                %tableletter();
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
                                            where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
                                            reasonlist= &t5censorreasons.,
-										   tablenum=&tablenum.&tableletter.,
-										   tablesub= overall,
+    									   tablenum=&tablenum.&tableletter.,
+    									   tablesub= overall,
                                            episodesorpatients=&episodesorpatients.);
-            %if &stratifybydp. = Y %then %do;
-            %tableletter();
+                %if &stratifybydp. = Y %then %do;
+                %tableletter();
                 %censortable_output_table2(tablename=&tablename.,
                                            title=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                            where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "overall" and censorcat_sort = 1),
                                            reasonlist= &t5censorreasons.,
-										   tablesub=dpidsiteid,
-			                               tablenum=&tablenum.&tableletter.,
+    									   tablesub=dpidsiteid,
+    		                               tablenum=&tablenum.&tableletter.,
                                            episodesorpatients=&episodesorpatients.);
-            %end;
-            %let tablenum = %eval(&tablenum + 1);
-        %end;
-
-        %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
-            /*loop through each reason for censoring*/
-            %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
-                %let reason = %scan(&defaultcensororder., &c.);
-                %let censorreasontable = N;
-
-                data _null_;
-                    set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
-                    /*check if censoring reason requested*/ 
-                    if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
-                run;
-
-                %if &censorreasontable. = Y %then %do;
-                /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
-                data chktable;
-                    set &tablename.(where=(table_name="&reason."));
-                run;
-                %isdata(dataset=chktable);
-                %if %eval(&nobs.>0) %then %do;
-                    /*note - table is not stratified by DP*/
-                    %censortable_output_table13(tablename=&tablename.,
-                     tablenum=&tablenum.,
-                     title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                     where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"),
-                     tablesub=overall,
-                     continuousmetrics=Y, /*continuous metrics always returned*/
-                     cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by Episode Length),
-                     conttableheader=%str(Treatment Episode Length, in Days),
-                     episodesorpatients=&episodesorpatients.,
-                     censorreason=&reason.);
-                    %let tablenum = %eval(&tablenum + 1);
-                %end;
-                proc datasets nowarn noprint lib=work;
-                    delete chktable;
-                quit;
-                %end;
-            %end;
-        %end;
-
-        options orientation = portrait;
-    %mend;
-
-    %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ),  episodesorpatients=Patients);
-    %end;
-    %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ), episodesorpatients=Patients);
-    %end;
-    %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T16, tablename = t5censor, first=, episodesorpatients=Episodes);
-    %end;
-    %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
-        %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
-    %end;
-
-
-***************************************************************************************************;
-* T1/T2/Concomitant Use tables                                                      
-***************************************************************************************************;
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
-        /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
-          /* Set options to missing to prevent dot from printing in row */
-          options orientation = landscape;
-          options missing = ' ';
-          %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
-          %do td = 1 %to &tdatasetlistnum.; 
-            %let reporttable = %scan(&tdatasetlist, &td.);
-                %let tablecount=1;
-                proc sql noprint;
-                    select distinct levelid1, tablesub, stratificationorder 
-                    into :stratalevelid separated by ' ', 
-                         :stratanames separated by '$',
-                         :dummy
-                    from tablefile
-                    where dataset="&reporttable"
-                    order by stratificationorder;
-
-                    select cats(columnname,'_char') 
-                          ,cats(columnwidth,'in')
-                          ,smallcellyn
-                    into :outvarlist separated by ' ',
-                         :outwidths separated by ' ',
-                         :outsmallcells separated by ' '
-                    from tablecolumns
-                    where table="&reporttable"
-                    order by order;
-                quit; 
-                
-                %isdata(dataset=tablefile(where=(dataset="&reporttable")));
-                %let tableobs = &nobs;
-                %if %eval(&tableobs.=1) %then %let tablecount=0;
-
-                %do z = 1 %to %sysfunc(countw(&stratalevelid));
-                    %let strataid = %scan(&stratalevelid,&z);
-                    %let strataname = %scan(&stratanames,&z,$);
-
-                    data _null_;
-                        set tablefile(where=(dataset="&reporttable"));
-                        if _n_ = &z then do;
-                        call symputx('tabletitle', tabletitle);
-                        end;
-                    run;
-
-                    %tableletter();
-                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
-                                     varlist = &outvarlist,
-                                     var = %quote(&strataname),
-                                     varwidths = %bquote(&outwidths.),
-                                     varsmallcells = &outsmallcells,
-                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
-
-                %if &stratifybydp = Y %then %do;
-                    %do dps = 1 %to %eval(&num_dp.);
-                        %let maskedID = %scan(&masked_dplist,&dps); 
-                        %tableletter();
-                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
-                                         varlist = &outvarlist,
-                                         var = %quote(&strataname),
-                                         varwidths = %bquote(&outwidths.),
-                                         varsmallcells = &outsmallcells,
-                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
-                    %end;
-                %end;
                 %end;
                 %let tablenum = %eval(&tablenum + 1);
-          %end;
-          %end;
-          options missing = '.';
-    %end;
+            %end;
 
+            %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
+                /*loop through each reason for censoring*/
+                %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                    %let reason = %scan(&defaultcensororder., &c.);
+                    %let censorreasontable = N;
 
-***************************************************************************************************;
-* Type 5 summary tables                                                      
-***************************************************************************************************;
-	%if %str("&reporttype") = %str("T5") %then %do;	
-    options orientation = landscape;
-		/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
-		%isdata(dataset=t5_tempmap);
-		%let t5tableobs = &nobs.;
-		%do st = 1 %to %eval(&t5tableobs.);
+                    data _null_;
+                        set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
+                        /*check if censoring reason requested*/ 
+                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                    run;
 
-			%let cattabledataset = ;
-			%let distabledataset = ;
-			%let tableorder=0;
+                    %if &censorreasontable. = Y %then %do;
+                    /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                    data chktable;
+                        set &tablename.(where=(table_name="&reason."));
+                    run;
+                    %isdata(dataset=chktable);
+                    %if %eval(&nobs.>0) %then %do;
+                        /*note - table is not stratified by DP*/
+                        %censortable_output_table13(tablename=&tablename.,
+                         tablenum=&tablenum.,
+                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"),
+                         tablesub=overall,
+                         continuousmetrics=Y, /*continuous metrics always returned*/
+                         cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by Episode Length),
+                         conttableheader=%str(Treatment Episode Length, in Days),
+                         episodesorpatients=&episodesorpatients.,
+                         censorreason=&reason.);
+                        %let tablenum = %eval(&tablenum + 1);
+                    %end;
+                    proc datasets nowarn noprint lib=work;
+                        delete chktable;
+                    quit;
+                    %end;
+                %end;
+            %end;
+        %mend;
 
-			data _null_;
-			 set t5_tempmap;
-				if _n_ = &st. then do;
-					call symputx('numtables', numtables);
-					call symputx('tableorder', tableorder);
-					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
-						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
-					%end;
-					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
-						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
-					%end;
-				end;
-			run;
+        %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T14, tablename = t5censor_first, first=%str(First ),  episodesorpatients=Patients);
+        %end;
+        %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T15, tablename = t5censor_first, first=%str(First ), episodesorpatients=Patients);
+        %end;
+        %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T16, tablename = t5censor, first=, episodesorpatients=Episodes);
+        %end;
+        %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
+            %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
+        %end;
 
-			/*Increment the table number and reset the table letter counter*/
-			%if %eval(&tableorder.=1) %then %do;
-				%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
-				%let tablecount=1;
-			%end;
-			
-			/*reset table letter counter if only 1 table*/
-			%if %eval(&numtables.=1) %then %let tablecount=0;
+        /*****************************************************************************************/
+        /* Type 5 Tables T1-T13                                                                  */
+        /*****************************************************************************************/
+        %loopt5tablesoutput(dataset=_temp_t5_tempmap2);
 
-			%if %str("&cattabledataset.") ne %str("") %then %do;
-				%tableletter();
-				%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
-			%end;
-			%if %str("&distabledataset.") ne %str("") %then %do;
-				%tableletter();
-				%t5tables_output(dataset=&distabledataset.,reporttype=dist);
-			%end;			
-        %end;		
-		%let tablenum = %eval(&tablenum + 1);
-    options orientation = portrait;
-    %end; 
+        options orientation = portrait;
+
+    %end; /*type 5 tables*/ 
+
 
 ***************************************************************************************************;
 * Code distribution tables                                                     
