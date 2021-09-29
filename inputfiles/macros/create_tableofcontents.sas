@@ -544,7 +544,6 @@
                     where dataset="&reporttable";
                 quit;
 
-                %let tablecount=1;
                 %do z = 1 %to %eval(&tableobs.);
 
                 data _null_;
@@ -554,8 +553,8 @@
                     end;
                 run;
 
-                %if %eval(&tableobs.=1) or &stratifybydp ^= Y %then %let tablecount=0;
-                %if %eval(&tableobs.=1) and &stratifybydp = Y %then %let tablecount=1;
+                %if &stratifybydp = Y %then %let tablecount=1;
+                %else %let tablecount=0;
 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
@@ -571,8 +570,6 @@
                 %end; 
 
                 %let tablenum = %eval(&tablenum + 1);
-                %if &stratifybydp = Y %then %let tablecount = 1;
-                %else %let tablecount = 0;
 
                 %end; /* z */
           %leavet1t2conc:

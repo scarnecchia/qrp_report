@@ -142,10 +142,10 @@
                     where dataset="&reporttable";
                 quit; 
                 
-                %if %eval(&tableobs.=1) or &stratifybydp ^= Y %then %let tablecount=0;
-                %if %eval(&tableobs.=1) and &stratifybydp = Y %then %let tablecount=1;
-
                 %do z = 1 %to &tableobs;
+
+                    %if &stratifybydp = Y %then %let tablecount=1;
+                    %else %let tablecount=0;
 
                     data _null_;
                         set tablefile(where=(dataset="&reporttable"));
@@ -177,8 +177,6 @@
                     %end;
                 %end;
                 %let tablenum = %eval(&tablenum + 1);
-                %if &stratifybydp = Y %then %let tablecount = 1;
-                %else %let tablecount = 0;
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
