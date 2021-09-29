@@ -158,7 +158,7 @@
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table &tablenum.&tableletter" tab_color='green');
     %end;
-    ods proclabel = "Table&tablenum.&tableletter";
+    ods proclabel = "Table &tablenum.&tableletter";
 
      proc report data = repdata.table&tablenum.&tableletter nofs nowd spanrows missing headskip split="*"
         style(header)=[rules=none vjust=b] split='*'
@@ -197,7 +197,7 @@
             %let varsmallcell = %lowcase(%scan(&varsmallcells., &v.,%str( )));
 			
 			   define &varname. / display 
-                     style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end;] 
+                     style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
 					 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
         %end;
 
