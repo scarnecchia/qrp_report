@@ -37,15 +37,6 @@
 
     %let outfootnotes=;
     %let atleastoneheader=;
-    /* Check to see if at least 1 header was specified */
-    %if &labelfileexists. = Y %then %do;
-    proc sql noprint;
-        select label
-        into :atleastoneheader 
-        from labelfile 
-        where not missing(label) and labeltype='header';
-    quit;
-    %end;
 
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
@@ -53,29 +44,15 @@
 		set &dataset;
         length newcategory $80;
         newcategory = "";
-        %if %length(&atleastoneheader) > 0 %then %do;
+        %if &includeheaderrow = Y %then %do;
         if missing(header) then header=grouplabel;
         %end;
      %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
       %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
         %if &cat. = 1 %then %do;
-          %if %index(%lowcase(%scan(&stratavar., &cat.)), agegroup) %then 
-            newcategory = "Age Group "||strip(%scan(&stratavar., &cat.));
-          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), zip3) %then 
-            newcategory = "3-Digit Zip Code/State ("||strip(%scan(&stratavar., &cat.))||")";
-          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), cb_reg) %then 
-            newcategory = "Census Bureau Region ("||strip(%scan(&stratavar., &cat.))||")";
-           %else
-            newcategory = strip(%scan(&stratavar., &cat.));;
+          newcategory = strip(%scan(&stratavar., &cat.));;
         %end;
         %else %do;
-          %if %index(%lowcase(%scan(&stratavar., &cat.)), agegroup) %then 
-          newcategory = cat(strip(newcategory),", ", "Aged "||strip(%scan(&stratavar., &cat.)));
-          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), zip3) %then 
-          newcategory = cat(strip(newcategory),", ", "3-Digit Zip/State ("||strip(%scan(&stratavar., &cat.)),")");
-          %else %if %index(%lowcase(%scan(&stratavar., &cat.)), cb_reg) %then 
-          newcategory = cat(strip(newcategory),", ", "Census Region ("||strip(%scan(&stratavar., &cat.)),")");
-          %else 
           newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
         %end;
       %end;        
@@ -141,7 +118,7 @@
         %assign_superscripts(type=line, order = 2 3 4 5 6 7 8);
 
     %if &destination = excel %then %do;
-	ods excel options(sheet_name="Table&tablenum.&tableletter" tab_color='green');
+	ods excel options(sheet_name="Table &tablenum.&tableletter" tab_color='green');
     %end;
     ods proclabel = "Table&tablenum.&tableletter";
 

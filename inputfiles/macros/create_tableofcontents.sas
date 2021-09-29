@@ -553,7 +553,7 @@
                     end;
                 run;
 
-                %if %eval(&tableobs.=1) %then %let tablecount=0;
+                %if %eval(&tableobs.=1) or &stratifybydp ^= Y %then %let tablecount=0;
 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
@@ -569,7 +569,8 @@
                 %end; 
 
                 %let tablenum = %eval(&tablenum + 1);
-                %let tablecount = 1;
+                %if &stratifybydp = Y %then %let tablecount = 1;
+                %else %let tablecount = 0;
 
                 %end; /* z */
           %leavet1t2conc:

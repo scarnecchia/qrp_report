@@ -141,7 +141,7 @@
 	     select count(covarnum) into: numcovars trimmed
 	     from _covars;
 	     %do cc = 1 %to &numcovars;
-	     %global covar&cc;
+	     %global covar&cc study&cc;
 	     %end;
 	   
 	     select cats('covar',a.covarnum),
