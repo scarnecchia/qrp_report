@@ -392,7 +392,7 @@
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
-    /* Set in condlevel value and delete un-needed rows */
+    /* Set in condlevel value and delete unneeded rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel
 					      %if %length(&milgrps) > 0 %then %do; millabel %end;
 						  t%substr(&reporttype,2,1)cohortdef);
