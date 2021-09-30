@@ -594,7 +594,7 @@
 		   if overall_tot = 0 then do;
 		     &pctVar._char = "."; 
 		   end;
-		   else if (%scan(&cen_tot, &cr1, ' ') = 0) and overall_tot > 0 
+		   else if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
 		       and episodes = 0
              then do;
 		     &pctVar._char = "0.0%";
