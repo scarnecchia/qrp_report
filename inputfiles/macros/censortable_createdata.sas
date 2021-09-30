@@ -124,6 +124,11 @@
                 else "'"||strip(levelid2)||"'" end 
 		 into: levels_t3 separated by ' '
 		 from tablefile (where = (dataset = "t5censor" and table in ("T15", "T17")));
+
+		 select case when table = "T15" then "'"||strip(levelid1)||"'"
+                else "'"||strip(levelid2)||"'" end 
+		 into: levels_t15 separated by ' '
+		 from tablefile (where = (dataset = "t5censor" and table in ("T15")));
 	  quit;
 	  
 	  /* Square table censdays_value_cat and censorcat_sort */
@@ -159,7 +164,9 @@
 		      agg_&censordataset (in = censor);
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 		if square and not censor and not missing(censdays_value_cat) then do;
-		  episodenum = 1;
+		  if level in (&levels_t15.) then do; 
+		    episodenum = 1;
+		  end;
 		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
 		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
 		  else episodelength = input(censdays_value_cat,8.);
@@ -632,7 +639,6 @@
          end;
          
 	     %end;
-		 if overall_tot = 0 then delete;  /*Need to remove blank/zero rows */
      run;
 
 
