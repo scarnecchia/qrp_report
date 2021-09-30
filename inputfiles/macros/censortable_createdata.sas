@@ -594,10 +594,17 @@
 		   if overall_tot = 0 then do;
 		     &pctVar._char = "."; 
 		   end;
-		   else if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
+		   if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
 		       and episodes = 0
              then do;
 		     &pctVar._char = "0.0%";
+		   end;
+		   if table_name ne "overall" then do;
+			   if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
+			       and episodes = 0
+	             then do;
+			     &pctVar._char = "NaN";
+			   end;
 		   end;
 
 		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
