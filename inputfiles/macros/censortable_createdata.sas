@@ -605,6 +605,7 @@
 	             then do;
 			     &pctVar._char = "NaN";
 			   end;
+			   if episodes = 0 and overall_tot > 0  then epi_tot_pct_char = "NaN";
 		   end;
 
 		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
