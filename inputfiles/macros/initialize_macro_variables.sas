@@ -35,9 +35,10 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid;
+    %global runidlist numrunid typenum;
     %let runidlist = ;
     %let numrunid = 0;
+    %let typenum = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -96,14 +97,15 @@
     %let discardnegativetimegroups = ;
 
     /*L2 report variables*/
-    %global numl2comparisons;
+    %global numl2comparisons attrperiodid;
     %let numl2comparisons = 0;
+    %let attrperiodid=;
 
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
-            cens_event_label cens_switch1_label cens_switch2_label;
-    %let reporttitle = Exposure of Interest;
-    %let labelfileexists = N;
+            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow;
+    %let reporttitle = Exposures of Interest;
+	%let labelfileexists = N;		
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
     %let cens_dth_label =Evidence of death;
@@ -114,6 +116,11 @@
     %let cens_event_label =Occurence of event;
     %let cens_switch1_label =First switch; 
     %let cens_switch2_label =Second switch; 
+    %let includeheaderrow = N;
+
+    /*censor reasons*/
+    %global defaultcensororder;
+    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend;
 
     /*Age stratification format */
     %global agefmt;
@@ -139,7 +146,7 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-	
+
 	/* Leave behind report */
 	%global leavebehindreport reportid foldersuffix dpfile;
 	%let foldersuffix = ;

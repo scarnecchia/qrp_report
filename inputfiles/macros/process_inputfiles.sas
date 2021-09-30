@@ -116,7 +116,7 @@
         - T5: Type 5 report
         - T6: Type 6 report
         - TREE2: tree aggregation for Type 2
-        - TREE3: tree aggregration for Type 3
+        - TREE3: tree aggregation for Type 3
         - TREE4: tree aggregation for Type 4 */
     %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
@@ -652,6 +652,7 @@
             labelvar = lowcase(labelvar);
             /*set reporttile if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
+            if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
@@ -663,8 +664,13 @@
             call symputx('label_length',length);
         run;
 		
-		%let labelfileexists = Y;
-		
+		%let labelfileexists = Y;		
+
+        /*Assign user censoring criteria labels*/
+        data _null_;
+            set labelfile(where=(labeltype='censorlabel'));
+            call symputx(cats(labelvar,'_label'), label);
+        run;
     %end;
 
 /***************************************************************************************************

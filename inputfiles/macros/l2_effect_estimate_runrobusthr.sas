@@ -120,7 +120,7 @@
 
         	proc sql noprint ;
         	/* Calculate Q1-Q6 */
-        	/* Important note: Q1-Q6 here are summed across all DPs. In original program, they are summed within each dp, then q is summed across all DPs */
+        	/* Important note: Q1-Q6 here are summed across all DPs. In original program, they are summed within each DP, then q is summed across all DPs */
         	create table weight_final_get as
         	select *, (q1)+(q2)+(q3)-2*(q4)+2*(q5)-2*(q6) as q
         			  from (select dpidsiteid, HR,

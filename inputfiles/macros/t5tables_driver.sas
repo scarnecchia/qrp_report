@@ -133,7 +133,9 @@
                                  cattableid=T18,
                                  disttableid=,
                                  catvarsort=cfdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cfdd,
+								 totalcountdosevar=adjustedcodecount);
     	%end;
         /*average filled daily dose*/
     	%if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
@@ -144,7 +146,9 @@
                                  cattableid=T19,
                                  disttableid=,
                                  catvarsort=afdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=afdd,
+								 totalcountdosevar=episodes);
     	%end;
     	%if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5dose,
@@ -154,7 +158,9 @@
                                  cattableid=T20,
                                  disttableid=,
                                  catvarsort=afdd_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=afdd,
+								 totalcountdosevar=episodes);
     	%end;
         /*cumulative dose*/
     	%if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
@@ -165,7 +171,9 @@
                                  cattableid=T21,
                                  disttableid=,
                                  catvarsort=cumdose_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cumdose,
+								 totalcountdosevar=episodes);
     	%end;
     	%if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
             %t5tables_createdata(dataset=agg_t5dose,
@@ -175,7 +183,9 @@
                                  cattableid=T22,
                                  disttableid=,
                                  catvarsort=cumdose_output_cat_sort,
-                                 createfootnote=Y);
+                                 createfootnote=Y,
+								 dosevar=cumdose,
+								 totalcountdosevar=episodes);
     	%end;
 
 	%put =====> END MACRO: t5tables_driver ;

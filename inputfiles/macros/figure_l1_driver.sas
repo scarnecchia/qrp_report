@@ -55,14 +55,6 @@
     %isdata(dataset=figurefile);
     %if %eval(&nobs>0) %then %do;
 
-    /*Assign user censoring criteria labels*/
-    %if &labelfileexists. = Y %then %do;
-        data _null_;
-            set labelfile(where=(labeltype='censorlabel'));
-            call symputx(cats(labelvar,'_label'), label);
-        run;
-    %end;
-
     /*Square groups*/
     proc sql noprint;
         create table _squaregroup as

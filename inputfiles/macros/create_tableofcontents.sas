@@ -253,7 +253,7 @@
                 /*Aggregated*/
                 %baselinetoc(Aggregated);
        
-                /*Output seperate table for each Data Partner - loop through each DP*/
+                /*Output separate table for each Data Partner - loop through each DP*/
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
         		        %let maskedID = %scan(&masked_dplist,&dps); 
@@ -527,7 +527,132 @@
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
 
- 
+    /*********************************************************************************************/
+    /* Type 1 and 2 summary tables                                                               */
+    /*********************************************************************************************/
+
+
+        /*****************************************************************************************/
+        /* Type 1 and 2 censor tables                                                            */
+        /*****************************************************************************************/
+        %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&tdatasetlist.)) > 0 %then %do;
+
+            %macro t1t2censortoc(tablename=, title=);
+
+                %let tableidlist=;
+                proc sql noprint;
+                    select distinct table into: tableidlist separated by ' '
+                    from tablefile(where=(dataset in ("&tablename.")));
+                quit;
+
+                %if %str("&tableidlist") ne %str("") %then %do;
+
+                %isdata(dataset=&tablename.);
+                %if %eval(&nobs.>0) %then %do;
+
+                %do t = 1 %to %sysfunc(countw(&tableidlist.));
+                    %let tableid = %scan(&tableidlist., &t.);
+                    %let stratificationorder = 0;
+                    proc sql noprint;
+                        select max(stratificationorder) into: stratificationorder
+                        from tablefile(where=(dataset in ("&tablename.") and table = "&tableid"));
+                    quit;
+
+                   /*counter for determining table letter*/
+                   %if %eval(&stratificationorder. = 1) & &stratifybydp. ne Y %then %let tablecount = 0;
+                   %else %let tablecount = 1;
+
+                    %do st = 1 %to &stratificationorder.;
+                        data _null_;
+                            set tablefile(where=(dataset in ("&tablename.") and table = "&tableid" and stratificationorder = &st.));
+                            call symputx('tabletitle', tabletitle);
+                        run;
+                     
+                        %tableletter();
+                        %if &tableid. = T1 %then %do;
+                            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                            caption=%quote(Summary of Time to End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                        %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
+                            %tableletter();
+                            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                            caption=%quote(Summary of Time to End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner));
+                            %end;
+                        %end;
+                        %else %if &tableid. = T2 %then %do;
+                            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                            caption=%quote(Summary of Reasons for End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                        %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
+                            %tableletter();
+                            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                            caption=%quote(Summary of Reasons for End of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner));
+                            %end;
+                        %end;
+                        %else %if &tableid. = T3 & %eval(&st.=1) %then %do;
+
+                            /*loop through each reason for censoring and within that - loop through stratificationorder*/
+                            %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                                %let reason = %scan(&defaultcensororder., &c.);
+                                /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                                data chktable;
+                                    set &tablename.(where=(table_name="&reason."));
+                                run;
+                                %isdata(dataset=chktable);
+                                %if %eval(&nobs.>0) %then %do;
+
+                                /*set table letter counter - need to check # of stratifications requested for censor reason*/
+                                proc sql noprint;
+                                    select count(distinct stratificationorder) into: reasonstratificationorder
+                                    from tablefile
+                                    where dataset in ("&tablename.") and table = "&tableid" and findw(censorreason, "&reason.")>0;
+                                quit;
+
+                                %if %eval(&reasonstratificationorder. = 1) %then %let tablecount = 0;
+                                %else %let tablecount = 1;
+
+                                /*loop through each stratification*/
+                                %do t3st = 1 %to &stratificationorder.;
+                                    %let censorreasontable = N;
+                                    data _null_;
+                                        set tablefile(where=(dataset in ("&tablename.") and table = "T3" and stratificationorder = &t3st.));
+                                        call symputx('tabletitle', tabletitle);
+                                        /*check if censoring reason requested*/ 
+                                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                                    run;
+
+                                    %if &censorreasontable. = Y %then %do;
+                                    %tableletter();
+                                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                                    caption=%quote(Summary of Time to End of &title. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                    %end; /*censor reason requested*/
+                                %end; /*loop through stratification*/
+
+                                proc datasets nowarn noprint lib=work;
+                                    delete chktable;
+                                quit;
+
+                                /*after each censor reason upnumber table*/
+                                %let tablenum = %eval(&tablenum + 1);
+                                %end; /*dataset exists*/
+                             %end; /*censor reason loop*/
+                        %end; /*T3*/
+                    %end; /*loop through stratifications*/
+
+                    /*if table = T1 or T2 - upnumber table*/
+                    %if %sysfunc(prxmatch(m/T1|T2/i,&tableid.)) > 0 %then %do;
+                    %let tablenum = %eval(&tablenum + 1);
+                    %end;
+                %end; /*underlying data exists*/
+                %end; /*loop through each table*/
+                %end; /*table requested*/
+            %mend;
+     
+            %t1t2censortoc(tablename=t2followuptime, title=At-Risk Period);
+            %t1t2censortoc(tablename=t&typenum.censor, title=Observable Data);
+        %end; /*t1censor and t2censor tables*/
+
+
     /*********************************************************************************************/
     /* Type 5 summary tables                                                                     */
     /*********************************************************************************************/
@@ -637,7 +762,6 @@
                 %end;
             %end;
 
-			
             /*Save the table of contents datasets for use during the Type 5 report output process*/
 			%isdata(dataset=t5_tempmap);
 			%if %eval(&nobs.>0) %then %do;
@@ -750,8 +874,66 @@
         /*****************************************************************************************/
         /* Type 5 censor tables (T14-T17)                                                        */
         /*****************************************************************************************/
-        
+        %macro t5censortoc(tableid=, first=, dataset=);
+            %if %sysfunc(prxmatch(m/T14\b|T16\b/i,&tableid.)) > 0 %then %do;
+                /*counter for determining table letter*/
+                %if &stratifybydp. = Y %then %let tablecount = 1;
+                %else %let tablecount = 0;
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                          caption=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                %if &stratifybydp. = Y %then %do;
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                          caption=%quote(Summary of Reasons &first.Treatment Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner));
+                %end;
+                %let tablenum = %eval(&tablenum + 1);
+            %end;
 
+            %if %sysfunc(prxmatch(m/T15\b|T17\b/i,&tableid.)) > 0 %then %do;
+                /*loop through each reason for censoring*/
+                %do c = 1 %to %sysfunc(countw(&defaultcensororder., ' '));
+                    %let reason = %scan(&defaultcensororder., &c.);
+                    %let censorreasontable = N;
+
+                    data _null_;
+                        set tablefile(where=(dataset in ("t5censor") and table = "&tableid."));
+                        /*check if censoring reason requested*/ 
+                        if findw(censorreason, "&reason.")>0 then call symputx('censorreasontable', 'Y');
+                    run;
+
+                    %if &censorreasontable. = Y %then %do;
+                    /*check if rows exist in table (censorreason parameter has already been applied in %censortables_createdata*/
+                    data chktable;
+                        set &dataset.(where=(table_name="&reason."));
+                    run;
+                    %isdata(dataset=chktable);
+                    %if %eval(&nobs.>0) %then %do;
+                        /*note - table is not stratified by DP*/
+                        %addtotoc(tabnum=Table &tablenum.,
+                                  caption=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                        %let tablenum = %eval(&tablenum + 1);
+                    %end;
+                    proc datasets nowarn noprint lib=work;
+                        delete chktable;
+                    quit;
+                    %end;
+                %end;
+            %end;
+        %mend;
+
+        %if %sysfunc(prxmatch(m/T14\b/i,&tablelist.)) > 0 %then %do;
+            %t5censortoc(tableid=T14, first=%str(First ), dataset=);
+        %end;
+        %if %sysfunc(prxmatch(m/T15\b/i,&tablelist.)) > 0 %then %do;
+            %t5censortoc(tableid=T15, first=%str(First ), dataset=t5censor_first);
+        %end;
+        %if %sysfunc(prxmatch(m/T16\b/i,&tablelist.)) > 0 %then %do;
+            %t5censortoc(tableid=T16, first=, dataset=);
+        %end;
+        %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
+            %t5censortoc(tableid=T17, first=, dataset=t5censor);
+        %end;
 
         /*****************************************************************************************/
         /* Type 5 Dose Tables T18-T22                                                            */
@@ -786,35 +968,37 @@
                cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
                disttitle=); 
     	%end;
-		
-		
-        /*Additional variables for ordering Type 5 table report output*/			
-		data t5_tempmap;
-		 set t5_tempmap;
-		 length t5order 3;
-		 t5order=_n_;
-		run; 
-			
-		proc sort data = t5_tempmap;
-		by table t5order;
-		run;
-		
-		data t5_tempmap;
-		 set t5_tempmap;
-		 by table;
-		 length numtables tableorder 3;
-		 if first.table and last.table
-			%if %varexist(t5_tempmap,cattable) = 1 & %varexist(t5_tempmap,disttable) = 1 %then %do; and (cattable = '' or disttable = '') %end;
-		  then numtables=1;
-		 else numtables=2;
-		 retain tableorder;
-		 if first.table then tableorder=0;
-		 tableorder+1;
-		run; 
-			
-		proc sort data = t5_tempmap;
-		by t5order table;
-		run;
+	
+        /*Additional variables for ordering Type 5 table report output*/		
+        %isdata(dataset=t5_tempmap);
+        %if %eval(&nobs.>0) %then %do;
+    		data t5_tempmap;
+    		 set t5_tempmap;
+    		 length t5order 3;
+    		 t5order=_n_;
+    		run; 
+    			
+    		proc sort data = t5_tempmap;
+    		by table t5order;
+    		run;
+    		
+    		data t5_tempmap;
+    		 set t5_tempmap;
+    		 by table;
+    		 length numtables tableorder 3;
+    		 if first.table and last.table
+    			%if %varexist(t5_tempmap,cattable) = 1 & %varexist(t5_tempmap,disttable) = 1 %then %do; and (cattable = '' or disttable = '') %end;
+    		  then numtables=1;
+    		 else numtables=2;
+    		 retain tableorder;
+    		 if first.table then tableorder=0;
+    		 tableorder+1;
+    		run; 
+    			
+    		proc sort data = t5_tempmap;
+    		by t5order table;
+    		run;
+        %end;
 			
     %end; /*type 5 tables*/
      
@@ -906,35 +1090,41 @@
     /*********************************************************************************************/
     /* Attrition table                                                                           */
     /*********************************************************************************************/
-    %isdata(dataset=agg_patient_attrition);
-    %let attrition_patient = &nobs;
-    %isdata(dataset=agg_episode_attrition);
-    %let attrition_episode = &nobs;
 	
     /* reset counter to reset table letter */
     %let tablecount=1;
+
+    %do j = %eval(&look_start.) %to %eval(&look_end.);
+
+        %if %index(&reporttype,L2) %then %let attrperiodid = _&j;
+        %isdata(dataset=agg_patient_attrition&attrperiodid);
+        %let attrition_patient = &nobs;
+        %isdata(dataset=agg_episode_attrition&attrperiodid);
+        %let attrition_episode = &nobs;
 	
-    %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
+        %if &attrition_patient > 0 or &attrition_episode > 0 %then %do;
 
-		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
-			%let tablecount = 0;
-		%end;
+    		%if (&attrition_patient > 0 and &attrition_episode = 0) or (&attrition_patient = 0 and &attrition_episode > 0) %then %do;
+    			%let tablecount = 0;
+    		%end;
 
-		%if &attrition_episode > 0 %then %do;
-			%tableletter();
-			%addtotoc(tabnum=Table &tablenum.&tableletter.,
-					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));			 
-		%end; 
+    		%if &attrition_episode > 0 %then %do;
+    			%tableletter();
+    			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+    					  caption=%quote(Summary of Episode Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.));			 
+    		%end; 
 
-		%if &attrition_patient > 0 %then %do;
-			%tableletter();	
-			%addtotoc(tabnum=Table &tablenum.&tableletter.,
-					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &enddateformatted.));
-		%end;
-	
-        %let tablenum = %eval(&tablenum + 1);
+    		%if &attrition_patient > 0 %then %do;
+    			%tableletter();	
+    			%addtotoc(tabnum=Table &tablenum.&tableletter.,
+    					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.));
+    		%end;
+    	
+            %let tablenum = %eval(&tablenum + 1);
 
-    %end; /* attrition_groups file */
+        %end;/* attrition_groups file */
+
+    %end;/*periodid */ 
 
 
     /*** END TABLES **/
