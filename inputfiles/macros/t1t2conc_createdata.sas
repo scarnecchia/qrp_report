@@ -177,9 +177,9 @@
 	   /* Check to see if there are 0 total patients per cohort */
 	   proc sql noprint undo_policy=none;
 	   	create table &dsin as 
-	   	select a.*, b.totalnpts
+	   	select a.*, b.totalnpts, b.totalepisodes
 	   	from &dsin a 
-	   	left join (select &t2group, sum(npts) as totalnpts
+	   	left join (select &t2group, sum(npts) as totalnpts, sum(episodes) as totalepisodes
 	   			   from &dsin.
 	   			   group by &t2group) b
 	   	on a.&t2group =b.&t2group;
@@ -296,11 +296,16 @@
 			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
 			 %end;
 		  %end;
-		  %if %index(%lowcase(&&formula&vv.),npts) %then %do;
-		  if totalnpts = 0 then &&var&vv.._char='0';
+		  %if %index(%lowcase(&&formula&vv.),npts) or %index(%lowcase(&&formula&vv.),episodes) %then %do;
+		  	%if ^%index(%lowcase(&&formula&vv.),/) %then %do;
+		  	if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='0';
+		  	%end;
+		  	%else %do;
+		  	&&var&vv.._char = '.';
+		  	%end;
 		  %end;
 		  %else %do;
-		  if totalnpts = 0 then &&var&vv.._char='.';
+		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
 		  %end;
 	    %end;
 		
