@@ -297,11 +297,11 @@
 			 %end;
 		  %end;
 		  %if %index(%lowcase(&&formula&vv.),npts) or %index(%lowcase(&&formula&vv.),episodes) %then %do;
-		  	%if ^%index(%lowcase(&&formula&vv.),/) %then %do;
-		  	if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='0';
+		  	%if ^%index(%lowcase(&&formula&vv.),/) and ^%index(%lowcase(&&formula&vv.),episodes)  %then %do;
+		  	if totalnpts = 0 then &&var&vv.._char='0';
 		  	%end;
 		  	%else %do;
-		  	&&var&vv.._char = '.';
+		  	if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char = '.';
 		  	%end;
 		  %end;
 		  %else %do;
