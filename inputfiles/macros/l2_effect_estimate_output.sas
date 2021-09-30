@@ -271,7 +271,7 @@
           %end;
         quit;
 
-        /* Assign macro variables for superscipts */
+        /* Assign macro variables for superscripts */
 		%assign_superscripts(type =title, order = 2 3);
 		%assign_superscripts(type =weight, order =1);
 		%assign_superscripts(type =line, order =4 5);

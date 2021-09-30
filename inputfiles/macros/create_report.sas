@@ -49,7 +49,7 @@
     %process_inputfiles();
 
 ***************************************************************************************************;
-* Create concactenated libname for each DP and output DP metadata                                                      
+* Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
 
     %createlibref(dplist = &random_dplist.,
@@ -86,10 +86,13 @@
 	%aggregate_report_tables;
 
     %if ^%index(&reporttype,TREE) %then %do;
+
 ***************************************************************************************************;
-*   Calculate summary tables                                             
+*   Calculate L1 summary tables                                             
 ***************************************************************************************************;
-    %if %eval(&tdatasetlistnum. > 0) %then %do;
+
+    /*ReportType T1 and T2L1*/
+    %if %sysfunc(prxmatch(m/T1|T2L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  
@@ -102,9 +105,35 @@
           %if &reporttable. = t2conc %then %do;
             %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
-	   %end;
+
+          /*Censor tables - Types 1, 2, and 5*/
+          %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime|t5censor/i,&reporttable.)) > 0 %then %do;
+            %isdata(dataset=agg_&reporttable.);
+            %if %eval(&nobs.>0) %then %do;
+            proc sql noprint;
+                select distinct quote(strip(table)) into: censortablelist separated by ' '
+                from tablefile(where=(dataset="&reporttable."));
+            quit;
+            %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
+            %end;
+          %end;
+
+       %end;
     %end;
 
+    /*ReportType T5*/
+	%if %str("&reporttype") = %str("T5") %then %do;
+	   %t5tables_driver();
+	%end;
+
+***************************************************************************************************;
+*   Compute L1 figures                                            
+***************************************************************************************************;
+
+    %if %str("&figurelist.") ne %str("") & %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
+        %figure_l1_driver();
+    %end;
+        
 ***************************************************************************************************;
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
@@ -123,8 +152,10 @@
 * Attrition tables                                                      
 ***************************************************************************************************;
 
-    %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
-    %attrition_createdata;
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
+        %do periodid = %eval(&look_start) %to %eval(&look_end);
+            %attrition_createdata;
+        %end;
     %end;
 
 ***************************************************************************************************;
@@ -173,7 +204,7 @@
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
-    /*loop agggregate tree processing by periodid*/
+    /*loop aggregate tree processing by periodid*/
     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %aggregate_tree();

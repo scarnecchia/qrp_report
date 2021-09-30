@@ -54,8 +54,11 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
+                    /*default stratifybydp*/
+                    if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
                     if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
                 end;
@@ -77,7 +80,7 @@
         - T5: Type 5 report
         - T6: Type 6 report
         - TREE2: tree aggregation for Type 2
-        - TREE3: tree aggregration for Type 3
+        - TREE3: tree aggregation for Type 3
         - TREE4: tree aggregation for Type 4 */
     %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
@@ -182,7 +185,7 @@
 	       input.&groupsfile. (keep = runid group)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
-		   input.&l2comparisonfile. (keep = runid)
+		   input.&l2comparisonfile. (keep = runid analysisgrp rename=analysisgrp=group)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
 		   input.&baselinefile. (keep = runid group)
@@ -294,9 +297,9 @@
 		run;
      %end;
 	 
-/***************************************************************************************************
+/***********************************************************************************************************
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
-***************************************************************************************************/
+************************************************************************************************************/
 
 	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
 		data groupsfile;
@@ -313,11 +316,16 @@
 			;
 			runid = lowcase(runid);
 			group = lowcase(group);
+            if missing(includeinfigure) then includeinfigure = 'N';
+            includeinfigure = upcase(includeinfigure);
+            %if &reporttype.=T6 %then %do;
+            includenegativetime = upcase(includenegativetime);
+            %end;
 		run;
 
 		 %do n = 1 %to &numrunid.;
 			%global grouplist_&n.;
-	         %let runid = %scan(&runidlist., &n.);
+	        %let runid = %scan(&runidlist., &n.);
 	     		proc sql noprint;
 	            /*RUNID specific list of groups*/
 	            select quote(strip(group), "'") into :grouplist_&n separated by ","
@@ -327,8 +335,10 @@
 				%put &&grouplist_&n..;
 	     %end;
 
-		 /* Check if code distribution is required */
+         /*Extract additional information from GROUPSFILE*/
 		 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+
+            /* Check if code distribution is required */
 			%let codedistcount = 0;
 
 			proc sql noprint;
@@ -338,14 +348,27 @@
 
 			%if %eval(&codedistcount. > 0) %then %do;
 				%let output_code_distribution = Y;
-
 				proc sort data=groupsfile(keep=group runid order codedist topncodedist) out=GroupsDist;
 				by order;
 				where strip(codedist) ne "";
 				run;
 			%end;
-
 			%put &=output_code_distribution;
+
+            /*Type 6 - assign to macro variable which groups to include negative time*/
+            %if &reporttype. = T6 %then %do;
+                proc sql noprint;
+    	            select quote(strip(group), "'") into :discardnegativetimegroups separated by ","
+    	            from groupsfile
+    	            where includenegativetime = "N";
+				quit;
+            %end;
+
+            /*Set max(order) value into NUMGROUPS*/
+			proc sql noprint;
+    			select max(order) into :numgroups 
+    			from input.&groupsfile.;
+			quit;
 		 %end;
 	 %end;
  
@@ -357,6 +380,24 @@
 	 set %do n = 1 %to &numrunid.;
 	 		%let runid=&&id&n..;
 			infolder.&&&runid._cohortfile(in=n&n.)
+		%end;
+	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+	 		runid = "&&id&n.";
+            end;
+        %end;
+	 run;
+
+/***************************************************************************************************
+*   Create a combined cohortcodes for all runs                                                
+***************************************************************************************************/
+
+	 data master_cohortcodes;
+	 set %do n = 1 %to &numrunid.;
+	 		%let runid=&&id&n..;
+			infolder.&&&runid._cohortcodes(in=n&n.)
 		%end;
 	 ;
      format runid $6.;
@@ -420,6 +461,70 @@
             end;
         %end;
      run;
+
+
+/*******************************************************************************************************
+*   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
+********************************************************************************************************/
+
+    %if &reporttype. = T6 %then %do;
+        data _treatmentpathways_shell;
+            length runid $5 analysisgrp group $40;
+            call missing(runid, analysisgrp, group);
+            stop;
+        run;
+
+        data master_treatmentpathways;
+            set 
+            %do n = 1 %to &numrunid.;
+                %let runid =&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._treatmentpathways)) %then %do;
+                infolder.&&&runid._treatmentpathways(in=n&n)
+                %end;
+                %else %do;
+                    _treatmentpathways_shell
+                %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+                %let runid =&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._treatmentpathways)) %then %do;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+                %end;
+            %end;
+        run;
+
+        /*add variables to GROUPSFILE to indicate whether group is a COHORTGRP or ANALYSISGRP*/
+        %isdata(dataset=groupsfile);
+        %if %eval(&nobs.>0) %then %do;
+            proc sql noprint undo_policy=none;
+                create table groupsfile as
+                select distinct x.*,
+                                case when missing(y.cohortgrp) then 'Y'
+                                else 'N'
+                                end as switchanalysis,
+                                case when missing(z.analysisgrp) then 'Y'
+                                else 'N'
+                                end as utilizationanalysis,
+                                case when a.switchevalstep = 2 then 'Y'
+                                else 'N'
+                                end as switch2indicator
+                from groupsfile as x
+                left join master_cohortfile as y
+                on x.group = y.cohortgrp and x.runid = y.runid
+                left join master_treatmentpathways as z
+                on x.group = z.analysisgrp and x.runid = z.runid
+                left join (select runid, analysisgrp, switchevalstep 
+                           from master_treatmentpathways 
+                           where switchevalstep=2) as a
+                on x.group = a.analysisgrp and x.runid = a.runid
+                order by x.order;
+            quit;
+        %end;
+    %end;
 
 /***************************************************************************************************
 *   Create a stacked t2 add-on file for all runs                                        
@@ -497,7 +602,6 @@
     %end;
 
 
-
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
@@ -508,6 +612,10 @@
     		runid = lowcase(runid);
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
+            labelvar = lowcase(labelvar);
+            /*set reporttile if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
+            if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
@@ -517,6 +625,14 @@
         data _null_;
             set _label_length(where=(lowcase(name)= 'label'));
             call symputx('label_length',length);
+        run;
+		
+		%let labelfileexists = Y;		
+
+        /*Assign user censoring criteria labels*/
+        data _null_;
+            set labelfile(where=(labeltype='censorlabel'));
+            call symputx(cats(labelvar,'_label'), label);
         run;
     %end;
 
@@ -537,8 +653,7 @@
 /***************************************************************************************************
 *   Userstrata, TableFile and FigureFile Processing                                         
 ***************************************************************************************************/
-
-    /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
+/*Userstrata file - loop through each runID, stack userstrata files and dedup*/
     %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         /*confirm userstrata file exists*/
@@ -549,6 +664,7 @@
                 levelvars = lowcase(levelvars);
                 tableid = lowcase(tableID);
                 levelvars = tranwrd(levelvars, "*", " ");
+                levelid = strip(levelid);
 
                 /*****************************************/
                 /* Defensive coding for automatic strata */
@@ -617,7 +733,8 @@
             %put The reporting code will abort;
             %abort;
         %end;
-        proc sort data=userstrata nodupkey dupout=_userstratadups;
+
+		 proc sort data=userstrata nodupkey dupout=_userstratadups;
             by tableid levelvars;
         run;
         %isdata(dataset=_userstratadups);
@@ -626,15 +743,27 @@
             %put The reporting code will abort;
             %abort;
         %end;
+        
     %end;
 
     /*Read in TableFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                       rename=tablesub_out=tablesub rename=tablesubstrat_out=tablesubstrat);
+                       /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
-
+			length censorreason $85;
+			%if &typenum. = 4 | &typenum. = 3 %then %do;
+			  call missing(censorreason);
+			%end;
+			%else %do;
+			  if missing(censorreason) then do;
+			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
+				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+			  end;
+			  else censorreason = lowcase(censorreason);
+			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
             tablesubstrat=lowcase(tablesubstrat);
@@ -642,6 +771,7 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+			n = _n_;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -704,7 +834,7 @@
             %alphabetizevarutil(array=a, in=levelid1, out=levelid1_out);
             %alphabetizevarutil(array=b, in=levelid2, out=levelid2_out);
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
-            %alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
+            *%alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
         run;
 
@@ -716,6 +846,7 @@
                 %abort;
             %end;
             %else %do;
+			
                 *Merge in levelids - need to do three times, 1 for each levelid;
                 proc sql noprint undo_policy=none;
                 	create table tablefile as
@@ -728,18 +859,83 @@
                          , table.levelid3 as strat3
                          , table.levelnum
                          , table.tabletitle
+						 , table.censorreason
+                         , table.categories
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+						 , table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
                     left join userstrata as strata1
                 	on strata1.tableid = table.dataset and strata1.levelvars = table.levelid2
                     left join userstrata as strata2
-                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3;
+                	on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
+                    order by table.n;
                 quit;
-        		
+   
+				/*Assign stratificationorder to maintain default stratification order of tables*/
+                /*Assign macro variable DATASETLIST for list of datasets*/
+                proc sql noprint;
+                    select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
+                    from tablefile(where=(missing(dataset)=0))
+                quit;
+                %let datasetlist = &tdatasetlist.;
+				%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
+
+                /*Loop through for all datasets*/
+                %do ds = 1 %to %eval(&tdatasetlistnum.);
+
+                  data tablefile_&ds.;
+                    set tablefile (where=(dataset= "%scan(&tdatasetlist, &ds, ' ')"));
+					length n 3;
+                    n =_n_;
+                  run;
+
+                  /*Keep only the first one, order matters and is kept with n*/
+                  proc sql noprint;
+                    create table tablefile_sub_&ds. (drop = n) as 
+                    select distinct table,  tablesub, n 
+                    from tablefile_&ds.
+                    group by table, tablesub
+                    having min(n) = n
+                    order by n;
+                  quit;
+
+                  proc sql noprint undo_policy=none;
+                    create table tablefile_post_&ds. (drop = so) as
+                    select distinct a.*, count(b.so) as stratificationorder length=3
+                    from (select  *, monotonic() as so from tablefile_sub_&ds.) a
+                    left join
+                    (select  *, monotonic() as so from tablefile_sub_&ds.) b
+                    on a.table=b.table  and b.so <= a.so
+                    group by  a.table, a.tablesub
+                    order by  a.table, stratificationorder;
+                  quit;
+
+                  proc sql noprint;
+                    create table tablefile_u_&ds. (drop = n) as 
+                    select a.*, b.stratificationorder from tablefile_&ds. as a 
+                    left join
+                    tablefile_post_&ds. as b
+                    on a.table = b.table  and a.tablesub = b.tablesub;
+                  quit;
+                %end;
+
+                /*Stack all datasets back up*/
+                data tablefile;
+                  set tablefile_u_:;
+                run;
+
+                proc sort data=tablefile sortseq=linguistic(numeric_collation=on);
+                  by table dataset stratificationorder;
+                quit;
+
+                proc datasets noprint nowarn lib = work;
+	              delete tablefile_:;
+	            quit;
+			
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                 	set tablefile;
@@ -756,13 +952,56 @@
                    %abort;
                 %end;
                 %else %do;
-                    /*Assign macro variable DATASETLIST for list of datasets to aggregate*/
+                    /*Put list of requested figures into macro variable TABLELIST*/
                     proc sql noprint;
-                        select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
-                        from tablefile(where=(missing(dataset)=0))
+                        select distinct table into: tablelist separated by ' '
+                        from tablefile;
                     quit;
-                    %let datasetlist = &tdatasetlist.;
-					%let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
+
+                    /*Type 5:
+                       - Tables T1-T10 require overall category
+                       - Tables T1, T3, T5, T7 all require categories
+                       - Must specify the same category for all stratifications within a table*/
+                    %if &reporttype. = T5 %then %do;
+                        %do t =1 %to %sysfunc(countw(&tablelist.));
+                            %let overallrequested = N;
+                            data _null_;    
+                                set tablefile(where=(table="%scan(&tablelist, &t, ' ')"));
+                                if _n_ = 1 then do;
+                                    categoryfortable = categories;
+                                end;
+                                retain categoryfortable;
+                                if tablesub = 'overall' then call symputx('overallrequested', 'Y');
+                                if table in ('T1', 'T3', 'T5', 'T7', 'T15', 'T17') and missing(categories) then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
+                                    abort;
+                                end; 
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for all stratifications for table %scan(&tablelist, &t, ' ')";
+                                    abort;
+                                end;
+                            run;
+                            %if &overallrequested. = N %then %do;
+                               %put ERROR: (Sentinel) Overall table required for table %scan(&tablelist, &t, ' ');
+                               %abort;
+                            %end;
+                        %end;
+						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
+						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						   data _null_;    
+                                set tablefile(where=(table in ('T15' 'T17')));
+								retain categoryfortable;
+                                if _n_ = 1 then do;
+                                   categoryfortable = categories;
+                                end;
+                                if categoryfortable ne categories then do;
+                                    put "ERROR: (Sentinel) CATEGORIES parameter must be the same for tables T15 and T17.";
+									put "Categories for table " table " are " categories ", expected categories are " categoryfortable ".";
+                                    abort;
+                                end;
+                            run;
+						%end;
+                    %end;
 					
 					/* Read in table columns file*/
 					%if %str("&tablecolumnsfile.") ne %str("") %then %do;
@@ -811,8 +1050,13 @@
     /*Read in FigureFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&figurefile.);
     %if %eval(&nobs.>0) %then %do;
+
+        /*macro variable to cross checkout Type 6 treatmentpathways file to ensure an analysisgrp has been requested*/
+        %let t6checktreatmentpathways = N;
+
+        /*read in figurefile*/
         data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                        rename=figuresub_out=figuresub);
+                        rename=figuresub_out=figuresub rename=censordisplay1=censordisplay);
             set input.&figurefile.(where=(upcase(includeinreport)='Y'));
 
         	figure=upcase(figure);
@@ -821,6 +1065,62 @@
         	levelid2 = lowcase(levelid2);
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
+            includeatrisktable = upcase(includeatrisktable);
+
+            *if censordisplay is missing, replace with default list of censoring reasons;
+            length censordisplay1 $80;
+            censordisplay1 = lowcase(censordisplay);
+            %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
+            if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
+            if index(dataset, 'followuptime') and figure = 'F2' and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event';
+            else if index(dataset, 'followuptime') and figure = 'F1' and missing(censordisplay) then censordisplay1 = 'cens_event';
+            /*Figure F1 is a KM curve for event of interest*/
+            if index(dataset, 'followuptime') and figure = 'F1' and censordisplay1 ne 'cens_event' then do;
+                put 'ERROR: (Sentinel) Figure F1 is a Kaplan-Meier Estimate of Event of Interest Not Occurring - censordisplay must be cens_event';
+                abort;
+            end;
+            %end;
+            %else %if &reporttype. = T5 %then %do;
+            if index(dataset, 'censor') and missing(censordisplay) and figure = 'F4' then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec';
+            /*for F5 - check to ensure a censoring criterion is specified and only 1 is specified*/
+            else if index(dataset, 'censor') and figure = 'F5' then do;
+                if missing(censordisplay) then do;
+                    put 'ERROR: (Sentinel) Figure F5 requires the user to specify one censor reason to display in the plot';
+                    abort;
+                end;
+                if countw(censordisplay) >1 then do;
+                    put 'ERROR: (Sentinel) Only 1 censor reason can be displayed in Figure F5';
+                    abort;
+                end;
+            end;
+            %end;
+            %else %if &reporttype. = T6 %then %do;
+                /*Type 6 variable names in datasets t6plota/t6plotb do not match other censor variables. If specified, replace with cens_ variables*/
+                /*Figure F4 and F5 are KM curves - censordisplay should be missing or set to cens_switch*/
+                if figure in ('F4', 'F5') then do;
+                    if missing(censordisplay)=0 and censordisplay not in ('switchedcount', 'cens_switch') then do;
+                        put 'ERROR: (Sentinel) Figures F4 and F5 are Kaplan-Meier Estimate of Switch not occuring - censordisplay cannot be specified';
+                        abort;
+                    end;
+                    else do;
+                        censordisplay1 = 'cens_switch';
+                    end;
+                end;
+                if figure in ('F6', 'F7') then do;
+                    if missing(censordisplay) then do; censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_switch'; end;
+                    else do;
+                        censordisplay1=tranwrd(censordisplay1, "endenrollmentcount", "cens_elig");
+                        censordisplay1=tranwrd(censordisplay1, "deathcount", "cens_dth");
+                        censordisplay1=tranwrd(censordisplay1, "endavaildatacount", "cens_dpend");
+                        censordisplay1=tranwrd(censordisplay1, "endquerycount", "cens_qryend");
+                        censordisplay1=tranwrd(censordisplay1, "productdiscontinuationcount", "cens_episend");
+                        censordisplay1=tranwrd(censordisplay1, "switchedcount", "cens_switch");
+                    end;
+                end;
+                /*if figure using t6plota/t6plotb dataset, need to request figures in at last 1 analysisgrp in the TREATMENTPATHWAYS file*/
+                if index(dataset, 't6plot') then call symputx('t6checktreatmentpathways', 'Y');
+            %end;
+            drop censordisplay;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -865,14 +1165,40 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
-      /*Put list of requested figures into macro variabl FIGURELIST*/
-        proc sql noprint;
-            select distinct figure into: figurelist separated by ' '
-            from figurefile;
-        quit;
-
         %isdata(dataset=figurefile);
-        %if %eval(&nobs.>0) & %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
+        %if %eval(&nobs.>0) %then %do; 
+
+            /*Type 6 figures - cross check that relevant groups requested in GROUPSFILE*/
+            %if &t6checktreatmentpathways. = Y %then %do;
+                proc sql noprint;
+                    create table _tempt6check as
+                    select group
+                    from groupsfile(where=(includeinfigure='Y' and switchanalysis='Y'));
+                quit;
+                %isdata(dataset=_tempt6check);
+                %if %eval(&nobs.<1) %then %do;
+                    %put ERROR: (Sentinel) Switch plots requested in the FIGUREFILE, however no switching analyses were requested in the GROUPSFILE;
+                    %abort;
+                %end;
+            %end;
+
+            /*Put list of requested figures into macro variable FIGURELIST*/
+            proc sql noprint;
+                select distinct figure into: figurelist separated by ' '
+                from figurefile;
+            quit;
+
+            /*T2L2: if KM curves requested, ensure events are not being redacted*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if %index(&redactcolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
+                    run;
+                %end;
+            %end;
+
+        %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
             /*USERSTRATA is optional for reporttype = T2L2, T4L2*/
             %if &userstrataspecified. = N %then %do;
@@ -892,6 +1218,14 @@
                          , figure.levelid3 as strat3
                          , figure.levelnum
                          , figure.figuretitle
+                         , figure.xmin
+                         , figure.xmax
+                         , figure.xtick 
+                         , figure.ymin
+                         , figure.ymax 
+                         , figure.ytick
+                         , figure.includeatrisktable
+                         , figure.censordisplay
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -909,6 +1243,27 @@
                     set figurefile;
                     where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
                 run;
+
+                /*For L1 figures, assign list of GROUPS to include in figures*/
+                %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
+                    %isdata(dataset=input.&groupsfile.);
+                    %if %eval(&nobs.>0) %then %do;
+                        proc sql noprint;
+                            select quote(strip(group), "'") into :includegroupinfigure separated by ' '
+                            from groupsfile
+                            where includeinfigure = 'Y'; 
+                        quit;
+
+                        %if %str("&includegroupinfigure") = %str("") %then %do;
+                            %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however INCLUDEINFIGURE is set to N for all groups;
+                            %abort;
+                        %end;
+                    %end;
+                    %else %do;
+                        %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however GROUPSFILE is missing. Specify a GROUPSFILE in CREATEREPORTFILE;
+                        %abort;
+                    %end;
+                %end;
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
@@ -928,6 +1283,7 @@
                     %let datasetlist = &datasetlist. &fdatasetlist.;
                 %end;
             %end;
+        %end; /*L1 figures*/
         %end; /*FigureFile has rows with IncludeinReport=Y and should be mapped to USERSTRATA file*/
         %else %if %eval(&nobs.<1) %then %do;
             %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
@@ -993,6 +1349,7 @@
      1: Read in L2ComparisonFile
      2: For T4 reports: read in optional SelectionProbabilitiesFile
      3: create master PS/CS input file dataset    
+     4. Add unique psestimategrp flag to the l2comparisonfile    
 ***************************************************************************************************/
 
     %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
@@ -1021,6 +1378,9 @@
                 if missing(OutputPSDistribution) then OutputPSDistribution = 'N';
                 else OutputPSDistribution=strip(upcase(OutputPSDistribution));
                 if OutputPSDistribution = 'Y' then call symputx('OutputPSDistribution', 'Y');
+
+                if missing(kmrefpop) then kmrefpop = 'unweighted';
+                else kmrefpop=strip(lowcase(kmrefpop));
             run;
 
             %let numl2comparisons = &nobs.;
@@ -1154,16 +1514,36 @@
 			run;
         %end;
 
+        *Add unique psestimategrp flag to the l2comparisonfile;                     
+    	 proc sql noprint;
+    	   create table _l2comparisonfile_ps as
+    	     select base.*
+    	 	       ,pscs.psestimategrp
+    	     from l2comparisonfile as base
+    	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+    	 	  on base.runid = pscs.runid
+    	      and base.analysisgrp = pscs.analysisgrp
+    	      order by runid, psestimategrp, order;
+    	 quit;
+    	 
+    	 data l2comparisonfile;
+    	   set _l2comparisonfile_ps; 
+    	   length unique_psestimate 3;
+    	   retain unique_psestimate;
+    	   by runid psestimategrp order;
+    	   unique_psestimate +1;
+           if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
+    	 run;
+    
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
         run;
-	%end;	
+    %end;	
 	
-		
- /***************************************************************************
-   Read in and Output TXT file for treelookup file per runid when it exists
-  ***************************************************************************/
-     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+    /***************************************************************************
+    Read in and Output TXT file for treelookup file per runid when it exists
+    ***************************************************************************/
+    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
 	   /*Set each table by looping through runIDs*/
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);
@@ -1215,12 +1595,13 @@
           %end; /* treelookup exists */
 		%end; /* runid loop */
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
+
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
 
 	 proc datasets noprint nowarn lib = work;
-	  delete _:;
+	  delete _: inclusioncodes_shell;
 	 quit;
 	
     %put =====> END MACRO: process_inputfiles;

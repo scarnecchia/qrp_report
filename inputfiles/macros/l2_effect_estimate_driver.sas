@@ -54,33 +54,6 @@
             SubComp=SubComp-1;
         run;
     %mend;
-	
-	***********************************************************************************************;
-    * Add unique psestimategrp flag to the l2comparisonfile                      
-    ***********************************************************************************************;
-	 proc sql noprint;
-	   create table _l2comparisonfile_ps as
-	     select base.*
-	 	       ,pscs.psestimategrp
-	     from l2comparisonfile as base
-	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
-	 	  on base.runid = pscs.runid
-	      and base.analysisgrp = pscs.analysisgrp
-	      order by runid, psestimategrp, order;
-	 quit;
-	 
-	 data l2comparisonfile;
-	   set _l2comparisonfile_ps; 
-	   length unique_psestimate 3;
-	   retain unique_psestimate;
-	   by runid psestimategrp order;
-	   unique_psestimate +1;
-       if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
-	 run;
-	 
-	 proc sort data = l2comparisonfile;
-	   by order;
-	 run;
 
     ***********************************************************************************************;
     * Loop through each AnalysisGrp                               
@@ -95,6 +68,7 @@
         %let covarnumlist =;
         %let numsubgroup = 0; /*number of subgroups*/
         %let convrule = ;
+        %let kmrefpop = unweighted;
 
         /*set parameters from l2comparisonfile for this loop*/
         data _null_;
@@ -106,6 +80,7 @@
             call symputx('classvars', classvars);
             call symputx('noclassvars', noclassvars);
 			call symputx('unique_psestimate', unique_psestimate);
+            call symputx('kmrefpop', kmrefpop);
             if not missing(convrule) then call symputx('convrule', convrule);
         run;
         %put now computing effect estimates for &analysisgrp.;
@@ -159,7 +134,6 @@
             %let ratio = ;
             %let ceiling = ;
             %let analysisgrpweight = ;
-            %let suppresscolumns = N;
             %let psestimategrp = ;
             %let stratavar = ;
             %let analysisgrpweight = ;
@@ -177,6 +151,9 @@
             %let s01=;
             %let s10=;
             %let s00=;
+
+            /*KM curves*/
+            %let kmplotlist = ;
 
             /*Use risk set or individual level return*/
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
@@ -200,10 +177,7 @@
                     %if &reporttype. = T4L2 %then %do;
                         if upcase(ratio) = "F" then call symputx('outputunconditional', 'Y');
                     %end;
-                    if upcase(ratio) = "V" then do;
-                        call symputx("suppresscolumns", "Y");
-                        call symputx('outputconditional', 'Y');
-                    end;
+                    if upcase(ratio) = "V" then call symputx('outputconditional', 'Y');
                 %end;
 
                 %if &pscsfile. = stratificationfile %then %do;
@@ -261,7 +235,30 @@
                     %end;
                 run;
             %end;
-            
+
+            /*If KM curves requested, determine which apply to the analysis*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                /*Fixed PS matched analysis: Unadjusted, Conditional, Unconditional*/
+                /*Variable PS matched analysis: Unadjusted, Conditional */
+                /*PS Stratification analysis: Unadjusted*/
+                %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let kmplotlist = &kmplotlist. 'Unadjusted';
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let kmplotlist = &kmplotlist. 'Conditional';
+                %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let kmplotlist = &kmplotlist. 'Unconditional';
+
+                /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
+                    %if &individualreturn. = N %then %do;
+                        %put WARNING: (Sentinel) Patient level data required to produce weighted KM curves. KMREFPOP will be set to Unweighted for &analysisgrp.;
+                        %let kmrefpop = unweighted;
+                    %end;
+                    %if &pscsfile. ne psmatchfile | (&pscsfile. = psmatchfile & &ratio. = F) %then %do;
+                        %put WARNING: (Sentinel) Weighted KM curves only available for Variable Ratio Match Analysis. KMREFPOP will be set to Unweighted for &analysisgrp.;
+                        %let kmrefpop = unweighted;
+                    %end;
+                %end;
+                %end;
+            %end;
            
             /****************************************************************************************/
             /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
@@ -320,26 +317,42 @@
 	                    end;
 	                run;
 					
-                %if &marginalweights. = Y %then %do;
-                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-                                       outfile=aggmw,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-			   					   
-			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                       outfile=aggwd,
-                                       pscsfile=&pscsfile.,
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       convrule=%quote(&convrule.),
-                                       convdata=&runid._estimates_&periodid.,
-                                       settomissvars=%str(n, min, max, mean, sd),
-                                       runidvar=&runid.);					   
-                %end; /* aggregate weighted and marginalweights data */	
-	                   
+                    %if &marginalweights. = Y %then %do;
+                    %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+                                           outfile=aggmw,
+                                           pscsfile=&pscsfile.,
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                           convrule=%quote(&convrule.),
+                                           convdata=&runid._estimates_&periodid.,
+                                           settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
+    			   					   
+    			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                           outfile=aggwd,
+                                           pscsfile=&pscsfile.,
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                           convrule=%quote(&convrule.),
+                                           convdata=&runid._estimates_&periodid.,
+                                           settomissvars=%str(n, min, max, mean, sd),
+                                           runidvar=&runid.);					   
+                    %end; /* aggregate weighted and marginalweights data */	
 	            %end; /*aggregate risk set data*/
+
+                /*if KM curves requested, aggregate survivaldata dataset - always overall*/
+                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
+                        %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                        %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
+                                               outfile=aggsurvival,
+                                               pscsfile=&pscsfile.,
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0 
+                                                                and analysis in (&kmplotlist.)), 
+                                               convrule=%quote(&convrule.),
+                                               convdata=&runid._estimates_&periodid.,
+                                               settomissvars=%str(evexp,evunexp,nexp,nunexp),
+                                               runidvar=&runid.);                      
+                        %end;
+                %end;
+
+                /*aggregate hdps vars for unique psestimategrps*/
 				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
 	                                      outfile=agghdps,
@@ -350,8 +363,7 @@
 										  settomissvars=%str(codecat, codetype, frequency, ranking, code),
 										  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
 	                                      runidvar=&runid.);	
-				%end;/*aggregate hdps vars for unique psestimategrps*/
-
+				%end;
 
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
                 %if &individualreturn. = Y %then %do;
@@ -402,7 +414,7 @@
                 /**************************************************************************************/
 
                 /*Unadjusted*/
-                %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = , donotreport=N);
+                %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="", analysis= "Unadjusted", subgroupcat = );
                 %if %str("&reporttype.") = %str("T2L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runcox(where=missing(subgroupcat), strata=dpidsiteid, analysis= "Unadjusted", subgroupcat = );
@@ -430,8 +442,7 @@
                 %if &outputconditional. = Y %then %do; 
                     %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="", 
                                                  analysis= "Conditional", 
-                                                 subgroupcat = , 
-                                                 donotreport=&suppresscolumns.);
+                                                 subgroupcat = );
                     %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
@@ -461,8 +472,7 @@
                 %if &outputunconditional = Y %then %do;
                     %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="", 
                                                  analysis= "Unconditional", 
-                                                 subgroupcat = , 
-                                                 donotreport=N);
+                                                 subgroupcat = );
                     %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0, 
@@ -491,8 +501,8 @@
                     - Weighted (Risk metrics and effect estimate)*/
                 %if &marginalweights. = Y %then %do;
                 %l2_effect_estimate_runrobusthr(where=analysis="Weighted", analysis="Weighted", subgroupcat=);
-                %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="", analysis= "Unweighted", subgroupcat = , donotreport=N);
-                %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="", analysis= "Weighted", subgroupcat = , donotreport=N);
+                %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="", analysis= "Unweighted", subgroupcat = );
+                %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="", analysis= "Weighted", subgroupcat = );
                 %end;
 
                 /**********************************************************************************/
@@ -507,7 +517,7 @@
 
                         /*Unadjusted*/
                         %l2_effect_estimate_runrd_rs(where=analysis="Unadjusted" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                    analysis= "Unadjusted", subgroupcat = &dpname., donotreport=N);
+                                                    analysis= "Unadjusted", subgroupcat = &dpname.);
                         %if %str("&reporttype.") = %str("T2L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runcox(where=missing(subgroupcat) and dpidsiteid="&dpname.", 
@@ -534,8 +544,7 @@
                         %if &outputconditional. = Y %then %do; 
                             %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname.", 
                                                          analysis= "Conditional", 
-                                                         subgroupcat = &dpname., 
-                                                         donotreport=&suppresscolumns.);
+                                                         subgroupcat = &dpname.);
                             %if %str("&reporttype.") = %str("T2L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
@@ -563,8 +572,7 @@
                         %if &outputunconditional. = Y %then %do;
                             %l2_effect_estimate_runrd_rs(where=analysis="Unconditional" and subgroupcat="" and dpidsiteid="&dpname.", 
                                                          analysis= "Unconditional", 
-                                                         subgroupcat = &dpname., 
-                                                         donotreport=N);
+                                                         subgroupcat = &dpname.);
                             %if %str("&reporttype.") = %str("T2L2") %then %do;
                                 %if &individualreturn. = Y %then %do;
                                 %l2_effect_estimate_runcox(where=missing(subgroupcat) and missing(&stratavar.)=0 and dpidsiteid="&dpname.", 
@@ -595,13 +603,24 @@
                         %if &marginalweights. = Y %then %do;
                         %l2_effect_estimate_runrobusthr(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
-                                                     analysis= "Unweighted", subgroupcat = &dpname., donotreport=N);
+                                                     analysis= "Unweighted", subgroupcat = &dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
-                                                     analysis= "Weighted", subgroupcat = &dpname., donotreport=N);
+                                                     analysis= "Weighted", subgroupcat = &dpname.);
                         %end;
                     %end; *dp;  
                 %end; /*stratifybyDP = Y*/
 
+                /**********************************************************************************/
+                /* Compute KM cuves                                                               */
+                /**********************************************************************************/
+                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
+                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                    %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
+                                                      kmrefpop=&kmrefpop.);
+                    %end;
+                %end; /*KM plots*/
+
+                /*Clean up*/
                 proc datasets library=work nowarn nolist;
                     delete cat_dp:;
                 quit;
@@ -660,7 +679,7 @@
                     /***************************************************************************************/
 
                     /*Unadjusted*/
-                    %l2_effect_estimate_runrd_rs(where=Analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat., donotreport=N);
+                    %l2_effect_estimate_runrd_rs(where=Analysis="Unadjusted", Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
                     %if %str("&reporttype.") = %str("T2L2") %then %do;
                     %if &individualreturn. = Y %then %do;
                     %l2_effect_estimate_runcox(where=missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unadjusted", subgroupcat = &subgroupcat.);
@@ -682,7 +701,7 @@
 
                     /*Conditional*/ 
                     %if &outputconditional. = Y %then %do; 
-                        %l2_effect_estimate_runrd_rs(where=Analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat., donotreport=&suppresscolumns.);
+                        %l2_effect_estimate_runrd_rs(where=Analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat.);
                         %if %str("&reporttype.") = %str("T2L2") %then %do;
                             %if &individualreturn. = Y %then %do;
                             %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &stratavar. &subgroupvar.), Analysis= "Conditional", subgroupcat = &subgroupcat.);
@@ -705,7 +724,7 @@
                
                     /*Unconditional - only for FRM PS match analysis*/
                     %if &outputunconditional. = Y %then %do;
-                        %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat., donotreport=N);
+                        %l2_effect_estimate_runrd_rs(where=Analysis="Unconditional", Analysis= "Unconditional", subgroupcat = &subgroupcat.);
                         %if %str("&reporttype.") = %str("T2L2") %then %do;
                         %if &individualreturn. = Y %then %do;
                         %l2_effect_estimate_runcox(where=missing(&stratavar.)=0 and missing(subgroupcat)=0, strata=%quote(dpidsiteid &subgroupvar.), Analysis= "Unconditional", subgroupcat = &subgroupcat.);
@@ -745,7 +764,7 @@
     %end; /*loop through each analysisgrp*/
 
 	proc datasets library=work nowarn nolist;
-        delete aggpl: aggrd: aggrs:;
+        delete aggpl: aggrd: aggrs: aggsurvival;
     quit;
 
     /*Merge together risk metrics and effect estimates*/

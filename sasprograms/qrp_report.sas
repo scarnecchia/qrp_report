@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 06/14/2021
-* VERSION: 0.1.0
+* LAST MODIFIED: 09/30/2021
+* VERSION: 1.0.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -26,11 +26,7 @@
 *
 *   Version   Date       Initials      Comment (reference external documentation when available)
 *   -------   --------   --------   ---------------------------------------------------------------
-*   0.1.0     06/14/21     SOC      Consolidated baseline table functionality across all query types
-*                                   Integrated Level 2 reporting features 
-*                                   Integrated mini-tools
-*                                   Added attrition table for Level 1 analyses
-*                                   Produce stacked MSOC output datasets
+*   See QRP Report Documentation Modification History for release notes   
 *
 ***************************************************************************************************;
 
@@ -113,7 +109,7 @@ options validvarname = v7;
   %put The parameter dir must be non-missing.; %abort cancel; %end;
   %local rc fileref return; %let rc=%qsysfunc(filename(fileref,&dir.)); 
   %let return=%qsysfunc(fexist(&fileref.));  
-  &return  /* returns value to calling enivornment, like a function */
+  &return  /* returns value to calling environment, like a function */
   %let rc=%qsysfunc(filename(fileref));  
 %mend soc_dirExist;
 %macro soc_quotepath(list);
@@ -123,7 +119,7 @@ options validvarname = v7;
   %if &d_exist eq 0 %then %do; %put Path &subpath does not exist; %abort cancel; %end;
   %let subpath="&subpath."; %let temppath=&temppath. &subpath.; %end;
   %let list=%qleft(&temppath);
-  &list /* returns value to calling enivornment, like a function */
+  &list /* returns value to calling environment, like a function */
 %mend soc_quotepath;
 %macro soc_lib(ref, paths, options=) ;
   %local libpaths; %if %length(&ref) eq 0 %then %do; %put libref is blank; %abort cancel; %end;
@@ -201,6 +197,7 @@ ods path(prepend) work.templat(update);
 
 /*L2 report macros*/
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
+%include "&reportroot.inputfiles/macros/l2_effect_estimate_km_createdata.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
@@ -209,8 +206,16 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
 %include "&reportroot.inputfiles/macros/l2_effect_estimate_output.sas";
 
-/*Table creation macros*/
+/*L1 table creation macros*/
 %include "&reportroot.inputfiles/macros/t1t2conc_createdata.sas";
+%include "&reportroot.inputfiles/macros/censortable_createdata.sas";
+%include "&reportroot.inputfiles/macros/t5tables_createdata.sas";
+%include "&reportroot.inputfiles/macros/t5tables_driver.sas";
+
+/*L1 table output macros*/
+%include "&reportroot.inputfiles/macros/censortable_output_table13.sas";
+%include "&reportroot.inputfiles/macros/censortable_output_table2.sas";
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
 
 /*Code distribution macros*/
 %include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
@@ -222,7 +227,9 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
 %include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
 
-
+%include "&reportroot.inputfiles/macros/figure_l1_driver.sas";
+%include "&reportroot.inputfiles/macros/figure_cdf_km_createdata.sas";
+%include "&reportroot.inputfiles/macros/figure_cdf_km_output.sas";
 
 /*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";

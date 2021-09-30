@@ -13,7 +13,7 @@
 *  Program outputs: The following template files are created:
 *   -TableFile (one file is created per REPORTTTYPE)
 *   -FigureFile (one file is created per REPORTTYPE)
-*        
+*   -TableColumnsFile     
 *
 *  PARAMETERS:                                                                       
 *            
@@ -29,7 +29,6 @@
 
 /*Define libname for location of templatefiles folder*/
 libname tempfl "";
-
 %macro create_templatefiles();
 
     *************************************
@@ -42,7 +41,7 @@ libname tempfl "";
 
     /*t1cida, t2cida, and t2concomitantuse tables*/
 
-	%let stratOneLevel = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| zip_uncertain;
+	%let stratOneLevel = sex| agegroup| year| year month| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
 	%let stratCovar = &stratOneLevel.| covar#;
     %let stratTwoLevel = 
 					 sex agegroup| sex agegroup year| sex agegroup year month| agegroup year| agegroup year month| sex year| sex year month| 
@@ -65,12 +64,13 @@ libname tempfl "";
 
 	%macro createt1t2cidatemplates(name);
 	    data lookup_&name.;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
 	        includeinreport = 'N';
+			categories = '';
             call missing(levelid3);
-
+             
 	        /*Table T1*/
 	        dataset = "&name.";
 	        table = 'T1';
@@ -111,14 +111,15 @@ libname tempfl "";
 	%createt1t2cidatemplates(t2conc);
 
 	/*t1censor & t2censor Tables*/
-    %let stratacensor = agegroup| year| sex;
-    %macro templatecensortablefigures(type,dsn,num);
+    %let stratacensor = | sex| agegroup| year;
+    %macro templatecensortablefigures(type,dsn,numstart,num);
         data lookup_&dsn.;
-            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+            retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories censorreason;
+            format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.  censorreason $85.; 
 
             includeinreport = 'N';
-            call missing(levelid3);
+			categories = '';
+            call missing(levelid3, censorreason);
 
     		%do t=1 %to 3;
     			/*Table T&t.*/
@@ -149,7 +150,7 @@ libname tempfl "";
                     output;
                 %end;
     		%end;
-    		%do f=1 %to &num.;
+    		%do f=&numstart. %to &num.;
     			/*Figure F&f.*/
     			dataset = "&dsn.";
     			table = "F&f.";
@@ -164,17 +165,18 @@ libname tempfl "";
     		%end;
         run;
     %mend templatecensortablefigures;
-	%templatecensortablefigures(1,t1censor,2);
-	%templatecensortablefigures(2,t2followuptime,3);
-	%templatecensortablefigures(2,t2censor,2);
+	%templatecensortablefigures(1,t1censor,1,1);
+	%templatecensortablefigures(2,t2followuptime,1,2);
+	%templatecensortablefigures(2,t2censor,3,3);
 
     /*Multiple Events Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg| adherence;
+    %let stratalist = sex| agegroup| year| year month| race| hispanic| zip3| state| cb_reg| hhs_reg| adherence;
     data lookup_t2multevent;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid3);
 
         /*Table T1*/
@@ -327,12 +329,13 @@ libname tempfl "";
     run;
 
 	/*Overlap Tables*/
-    %let stratalist = agegroup| year| sex| year month| race| hispanic| zip3| state| hhs_reg| cb_reg;
+    %let stratalist = sex| agegroup| year|  year month| race| hispanic| zip3| state| cb_reg| hhs_reg;
     data lookup_t2overlap;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid3);
 
         /*Table T1*/
@@ -435,7 +438,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
+			drop categories censorreason;
         run;
 
         /*t2l1tablefile*/
@@ -464,7 +467,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
+			drop categories censorreason;
         run;
 
     *************************************
@@ -487,7 +490,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -536,7 +538,6 @@ libname tempfl "";
         includeatrisktable = 'N';
         format censordisplay $50.;
         censordisplay = '';
-        includekmweightedpop = 'N';
 
         /*PS Histograms*/
         figure = 'F1';
@@ -557,10 +558,11 @@ libname tempfl "";
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
 
     data tempfl.t4l1tablefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(levelid2);
         call missing(levelid3);
 
@@ -605,6 +607,7 @@ libname tempfl "";
          %end;
     run;
 
+
     *************************************
      REPORTTYPE = T5 files:
         - T5TableFile
@@ -617,49 +620,15 @@ libname tempfl "";
     %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
 
 	data lookup_t5tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
-        call missing(levelid3);
-        call missing(tablesubstrat);
-
-        dataset = "t5episdur";
-		%do t = 1 %to 2;
-            %do s = 1 %to &stratlevels.;
-                table = "T&t.";
-			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    levelnum =2;
-			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
-			      levelid1 = "";
-			      levelid2 = "cumepisodelength";
-			    %end;
-			    %else %do;
-                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			      levelid2 = "cumepisodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    %end;
-                output;
-		     %end;
-		%end;
-		%do t = 3 %to 8;
-             %do s = 1 %to &stratlevels.;
-                table = "T&t.";
-			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    levelnum =2;
-			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
-			      levelid1 = "episodenum";
-			      levelid2 = "episodenum episodelength";
-			    %end;
-			    %else %do;
-                  levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			      levelid2 = "episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    %end;
-                output;
-		     %end;
-		  %end;
+		categories = '';
+        call missing(levelid3, tablesubstrat, censorreason);
 
 		dataset = "t5disp";
-		%do t = 9 %to 10;
+		%do t = 1 %to 2;
             %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -676,32 +645,201 @@ libname tempfl "";
 		     %end;
 		%end;
 
-		dataset = "t5gaps";
-		%do t = 11 %to 13;
-             %do s = 1 %to &stratlevels.;
+        dataset = "t5episdur";
+		%do t = 3 %to 4; 
+            %do s = 1 %to &stratlevels.;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			    levelnum =1;
+			    levelnum =2;
 			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
-			      levelid1 = "gaplength gapnum";
-			      levelid2 = "";
+			      levelid1 = "";
+			      levelid2 = "cumepisodelength";
 			    %end;
 			    %else %do;
-                  levelid1 = "gaplength gapnum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-			      levelid2 = "";
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "cumepisodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
 			    %end;
                 output;
 		     %end;
 		%end;
+		%do t = 5 %to 6; 
+             %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "";
+			      levelid2 = "episodelength";
+			    %end;
+			    %else %do;
+                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    %end;
+                output;
+		     %end;
+		%end;
+		%do t = 7 %to 10; 
+             %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "episodenum";
+			      levelid2 = "episodenum episodelength";
+			    %end;
+			    %else %do;
+                  levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "episodenum episodelength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    %end;
+                output;
+		     %end;
+		  %end;
 
+		dataset = "t5gaps";
+		%do s = 1 %to &stratlevels.;
+                table = "T11";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "gapnum";
+			      levelid2 = "gapnum gaplength";
+			    %end;
+			    %else %do;
+                  levelid1 = "gapnum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "gapnum gaplength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    %end;
+                output;
+		 %end;
+		%do t = 12 %to 13;
+             %do s = 1 %to &stratlevels.;
+                table = "T&t.";
+			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    levelnum =2;
+			    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+			      levelid1 = "gapnum";
+			      levelid2 = "gapnum gaplength";
+			    %end;
+			    %else %do;
+                  levelid1 = "gapnum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			      levelid2 = "gapnum gaplength %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+			    %end;
+                output;
+		     %end;
+	    %end;
+		
 		dataset = "t5censor";
 		table = "T14";
 		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "episodenum";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T15";
+		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "episodenum episodelength";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T16";
+		tablesub= "overall";
+		levelnum =1;
+		levelid1 = "";
+		levelid2 = "";
+        output;
+		dataset = "t5censor";
+		table = "T17";
+		tablesub= "overall";
 		levelnum =2;
 		levelid1 = "";
-		levelid2 = "episodenum";
+		levelid2 = "episodelength";
         output;
 
+        /*Dose tables*/
+		dataset = "t5disp";
+		%do s = 1 %to &stratlevels.;
+            table = "T18";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "";
+		      levelid2 = "cfdd_output_cat";
+              levelid3 = "cfdd";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "cfdd_output_cat %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+              levelid3 = "";
+		    %end;
+            output;
+		%end;
+		dataset = "t5dose";
+		%do s = 1 %to &stratlevels.;
+            table = "T19";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "";
+		      levelid2 = "afdd_output_cat";
+              levelid3 = "afdd";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "afdd_output_cat %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+              levelid3 = "";
+		    %end;
+            output;
+		%end;
+		%do s = 1 %to &stratlevels.;
+            table = "T20";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "episodenum";
+		      levelid2 = "afdd_output_cat episodenum";
+              levelid3 = "afdd episodenum";
+		    %end;
+		    %else %do;
+              levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "afdd_output_cat episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+              levelid3 = "";
+		    %end;
+            output;
+		%end;
+	    %do s = 1 %to &stratlevels.;
+            table = "T21";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "";
+		      levelid2 = "cumdose_output_cat";
+              levelid3 = "cumdose";
+		    %end;
+		    %else %do;
+              levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "cumdose_output_cat %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+              levelid3 = "";
+		    %end;
+            output;
+		%end;
+		%do s = 1 %to &stratlevels.;
+            table = "T22";
+		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		    levelnum =2;
+		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
+		      levelid1 = "episodenum";
+		      levelid2 = "cumdose_output_cat episodenum";
+              levelid3 = "cumdose episodenum";
+		    %end;
+		    %else %do;
+              levelid1 = "episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+		      levelid2 = "cumdose_output_cat episodenum %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
+              levelid3 = "";
+		    %end;
+            output;
+		%end;
+            
 		dataset = "t5first";
 		%do f = 1 %to 3;
              %do s = 1 %to &stratflevels.;
@@ -752,7 +890,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
+			drop categories censorreason;
         run;
 
    
@@ -768,11 +906,12 @@ libname tempfl "";
     %let stratflevels = %sysfunc(countw(&stratfirst.,'|'));
 
 	data lookup_t6tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
-        call missing(tablesubstrat);
+		categories = '';
+        call missing(tablesubstrat, censorreason);
 
         dataset = "t6counts";
 		%do t = 1 %to 2;
@@ -971,9 +1110,9 @@ libname tempfl "";
             %if %eval(&f.=5) | %eval(&f.=7) %then %do; dataset = "t6plotb"; %end;
             table = "F&f.";
 		    tablesub= "overall";
-		    levelnum =2;
-		    levelid1 = "";
-		    levelid2 = "ttswitch";
+		    levelnum =1;
+		    levelid1 = "ttswitch";
+		    levelid2 = "";
             levelid3 = "";
 			output;
 		%end;
@@ -1001,7 +1140,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
+			drop categories censorreason;
         run;
    
     *************************************
@@ -1014,10 +1153,11 @@ libname tempfl "";
     %let intervallist = year|month year|quarter year;
 
 	data lookup_its_tablefigurefile;
-        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55.;
+        retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
 
         includeinreport = 'N';
+		categories = '';
         call missing(tablesubstrat);
 
         dataset = "t2its";
@@ -1087,7 +1227,7 @@ libname tempfl "";
             includeatrisktable = 'N';
             format censordisplay $50.;
             censordisplay = '';
-            includekmweightedpop = 'N';
+			drop categories;
         run;
 
     /*Clean up*/

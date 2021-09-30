@@ -120,7 +120,7 @@
 	                %end;
 	                %else %do; /* end aggregate do statement */
 	                    %let dpsiteid = %scan(&masked_dplist,&dps);
-	                %end; /* end dp assignment for non-agg do statement */
+	                %end; /* end DP assignment for non-agg do statement */
 
 	                data raw_histogram;
 	                   set %if &dps=0 %then %do; hist_&dps.; %end;

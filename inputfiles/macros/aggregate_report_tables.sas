@@ -6,11 +6,13 @@
 * Created (mm/dd/yyyy): 01/20/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro imports and aggregates the following tables relevant to report:
-
-*			-[RUNID]_t1_cida.sas7bdat 
+* PURPOSE: The macro imports and aggregates tables produced by QRP
+*
+*
+*  Program inputs:                                                                                   
+* 			-[RUNID]_t1_cida.sas7bdat 
 *			-[RUNID]_censor_cida.sas7bdat 
-
+*
 *			-[RUNID]_t2_cida.sas7bdat 
 *			-[RUNID]_t2_followuptime_cida.sas7bdat 
 *			-[RUNID]_censor_cida.sas7bdat 
@@ -18,20 +20,21 @@
 *			-[RUNID]_t2_multevent.sas7bdat 
 *			-[RUNID]_t2_epigap.sas7bdat 
 *			-[RUNID]_t2_overlap.sas7bdat 
-
+*
 *			-[RUNID]_psdistribution_[LOOK].sas7bdat 
-
+*
 *			-[RUNID]_t4_cida_preg.sas7bdat 
 *			-[RUNID]_t4_cida_preg_gestwk.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
-
+*
 *			-[runid]_t5_cida_disp_by_daysupp
+*           -[runid]_t5_cida_dose
 *			-[runid]_t5_cida_episdur
 *			-[runid]_t5_cida_episdur_censor
 *			-[runid]_t5_cida_gaps
 *			-[runid]_t5_cida_firsteps
-
+*
 *			-[runid]_t6_utilcounts
 *     		-[runid]_t6_trendcounts
 *			-[runid]_t6_utildispstats
@@ -46,17 +49,19 @@
 *			-[RUNID]_distindexmap.sas7bdat
 *
 *			-[RUNID]_attrition.sas7bdat
-*
-*  Program inputs:                                                                                   
-*  	-
+*		    -[RUNID]_mil_attrition.sas7bdat
+*	        -[RUNID]_adjusted_attrition.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 *  	-
 * 
 *  PARAMETERS:        
-
+*
+*
 *  Programming Notes:                                                                                
-*                                                                           
+*    - Contains macro %agg_report which loops through each DP, reads in specified file, output
+*      dataset to MSOCDATA, and applies stratification formats if requested 
+* 
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -69,7 +74,7 @@
 
 	%put =====> MACRO CALLED: aggregate_report_tables;
 
-        %macro agg_report(infile=, outfile=, name= , stratification = N, where=);
+        %macro agg_report(infile=, outfile=, name= , stratification = N, where=1);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
 				
@@ -91,7 +96,7 @@
     				   %put NOTE: (Sentinel) &&runid._&infile does not exist for &dpidsiteid..;
     			   %end;
     			   %else %do;
-				   	%if %length(&&grouplist_&n..) > 0 | &infile = attrition %then %do;    			   
+				   	%if %length(&&grouplist_&n..) > 0 | %index(&infile, attrition) %then %do;    			   
     				   data temp_&dps.; 
     				      length runid $5. dpidsiteid $6.;
     					  set &dpidsiteid..&&runid._&infile; 
@@ -101,6 +106,7 @@
     					  runid= "&runid.";
     					    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
     					      if gapnum = 999 then delete;
+							  if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
     					    %end;				   
     					run;
 
@@ -241,7 +247,7 @@
 			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
-			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
+			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2multevent) > 0 %then %do;
 			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
@@ -299,6 +305,9 @@
 			%if %index(&datasetlist.,t5disp) > 0 %then %do;
 			  %agg_report(infile=t5_cida_disp_by_daysupp, outfile=agg_t5disp, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
+			%if %index(&datasetlist.,t5dose) > 0 %then %do;
+			  %agg_report(infile=t5_cida_dose, outfile=agg_t5dose, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
+			%end;
 			%if %index(&datasetlist.,t5gaps) > 0 %then %do;
 			  %agg_report(infile=t5_cida_gaps, outfile=agg_t5gaps, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
@@ -343,8 +352,18 @@
 			%agg_report(infile=distindexmap, outfile=agg_distindexmap, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end;
 
-		/* Attrition table */
-		%agg_report(infile=attrition, outfile=agg_attrition, name=group, where=1);
+		/* Attrition tables */
+		%agg_report(infile=attrition, outfile=agg_attrition, name=group);
+        %isdata(dataset=master_mil);
+        %if %eval(&nobs.>0) %then %do;
+		  %agg_report(infile=mil_attrition, outfile=agg_mil_attrition, name=analysisgrp);
+        %end;
+
+        %if %index(&reporttype,L2) %then %do;
+          %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+		  %agg_report(infile=adjusted_attrition_&periodid., outfile=agg_adjusted_attrition_&periodid., name=analysisgrp);
+          %end;
+        %end;
 
 	%put =====> END MACRO: aggregate_report_tables;
 
