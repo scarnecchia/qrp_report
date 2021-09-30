@@ -632,6 +632,7 @@
          end;
          
 	     %end;
+		 if overall_tot = 0 then delete;  /*Need to remove blank/zero rows */
      run;
 
 
