@@ -49,7 +49,7 @@
     %process_inputfiles();
 
 ***************************************************************************************************;
-* Create concactenated libname for each DP and output DP metadata                                                      
+* Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
 
     %createlibref(dplist = &random_dplist.,
@@ -204,7 +204,7 @@
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
-    /*loop agggregate tree processing by periodid*/
+    /*loop aggregate tree processing by periodid*/
     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %aggregate_tree();

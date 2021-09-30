@@ -49,7 +49,6 @@ proc template;
     layout lattice / columns=1;
 
     /*--Column headers--*/
-    /*--Need to make proportional to table size - or add header to table?*/
     sidebar / align=top;
     layout lattice / columns=2 rowweights=uniform columnweights=(0.6 .4)
     backgroundcolor=_headerColor opaque=true;

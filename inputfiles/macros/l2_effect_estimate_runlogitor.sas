@@ -200,7 +200,7 @@
 
   			keep analysisgrp covarnum catnum analysis subgroupcat MonitoringPeriod or or_95ci or_se adjor adjor_95ci LCL UCL adjor_LCL adjor_UCL;
   		run;
-    %end; /* end do statment for formating output for data with adequate events */
+    %end; /* end do statement for formatting output for data with adequate events */
 
     /****************************************/
     /* create empty dataset if not computed */
