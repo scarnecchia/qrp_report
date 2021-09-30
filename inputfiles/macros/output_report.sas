@@ -148,12 +148,10 @@
                     %else %let tablecount=0;
 
                     data _null_;
-                        set tablefile(where=(dataset="&reporttable"));
-                        if _n_ = &z then do;
+                        set tablefile(where=(dataset="&reporttable" and stratificationorder=&z));
                         call symputx('tabletitle', tabletitle);
                         call symputx('strataid',levelid1);
                         call symputx('strataname',tablesub);
-                        end;
                     run;
 
                     %tableletter();

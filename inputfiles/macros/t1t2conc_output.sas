@@ -234,7 +234,7 @@
                                                %end; just=L];
                                     %end;
                                     %else %do;
-                                    style=[fontstyle=italic just=L bordertopcolor=black borderbottomcolor=white];
+                                    style=[fontstyle=italic just=L bordertopcolor=white borderbottomcolor=white];
                                     %end;
 
             length text $100;

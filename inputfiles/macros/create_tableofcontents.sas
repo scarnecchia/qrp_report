@@ -547,10 +547,8 @@
                 %do z = 1 %to %eval(&tableobs.);
 
                 data _null_;
-                    set tablefile(where=(dataset="&reporttable"));
-                    if _n_ = &z then do;
+                    set tablefile(where=(dataset="&reporttable" and stratificationorder=&z));
                     call symputx('tabletitle', tabletitle);
-                    end;
                 run;
 
                 %if &stratifybydp = Y %then %let tablecount=1;
