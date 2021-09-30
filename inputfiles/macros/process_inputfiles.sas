@@ -70,7 +70,6 @@
 		
 		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
            dpfile is set to the work dpinfofile and reportdata is N. */
-		%global leavebehindreport;
 	    %isdata(dataset=input.report_parameters);
         %if %eval(&nobs.>0) %then %do;
 		  %let stratifybydp = N;
