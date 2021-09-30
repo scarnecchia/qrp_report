@@ -589,8 +589,7 @@
          /* pct and stat variables */ 
 
 		 	%let step1 = %scan(&cen_tot, &cr1, ' ');
-			%let pctVar = %sysfunc(tranwrd(&step1.,tot,pct)); 
-			%if %index(lowcase(&step1.),tot) = 0 %then %let pctVar = &step1._pct; 		 
+			%let pctVar = &step1._pct;  
 		 
 		   if overall_tot = 0 then do;
 		     &pctVar._char = "."; 
@@ -598,10 +597,6 @@
 		   else if (%scan(&cen_tot, &cr1, ' ') = 0) and overall_tot > 0 
 		       and episodes = 0
              then do;
-		     &pctVar._char = "NaN";
-		   end;
-		   else if (%scan(&cen_tot, &cr1, ' ') > 0) and overall_tot > 0  
-                and episodes = 0 then do;
 		     &pctVar._char = "0.0%";
 		   end;
 
