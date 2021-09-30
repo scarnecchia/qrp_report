@@ -76,9 +76,7 @@
 		  %let report_destination = PDF;
 		  %let dpfile = dpinfofile;
 		  %let leavebehindreport = Y;
-		  %if &numreports. > 1 %then %do;
-		    %let foldersuffix = &reportid.;
-		  %end;
+		  %let foldersuffix = &reportid.;
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
