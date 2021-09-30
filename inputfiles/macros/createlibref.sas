@@ -6,8 +6,8 @@
 * Created (mm/dd/yyyy): 11/28/2017
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro creates concactenated libref from a list of DPs and a file path,
-*	automatically defaults to most recent version, and checks for the existance of each folder path 
+* PURPOSE: This macro creates concatenated libref from a list of DPs and a file path,
+*	automatically defaults to most recent version, and checks for the existence of each folder path 
 *                                        
 *  Program inputs:                                                                                   
 *  	-
@@ -71,7 +71,7 @@
 		quit;
 		%put &versions;
 
-		/*For each DP, confirm the existance of the directory. Only include directories that exist in the final concactenated libname*/
+		/*For each DP, confirm the existence of the directory. Only include directories that exist in the final concatenated libname*/
         %let dp_list = %lowcase(&dp_list);
 		%let DpCnt = %sysfunc(Countw(&dp_list)); /*Number of DPs to loop*/
 		%let VerCnt = %sysfunc(Countw(&versions)); /*Number of versions to loop*/
@@ -94,16 +94,16 @@
 			%put The libname for &DPSITEID contains the following Package Versions: &in_version;
 
 			%if %length(&in_version) = 0 %then %do;
-				%put WARNING: There are no valid directories for DP="&DPSITEID." Check for the existance of this DP directory or designate a bypass directory path;
+				%put WARNING: There are no valid directories for DP="&DPSITEID." Check for the existence of this DP directory or designate a bypass directory path;
 			%end;
 			%else %do;
-				/*Loop through each valid directory to create concactenated libname*/
+				/*Loop through each valid directory to create concatenated libname*/
 				%let DirCnt = %sysfunc(Countw(&in_version)); /*Number of versions to include in libname*/	
 				%let VerList = ;
 				%do c = 1 %to &DirCnt;
 					%let CurrDir = %scan(&in_version,&c); 
 						%let &DPSITEID&c = &dataroot.&CurrDir./&DPSITEID./msoc/.;
-						/*assign final concactenated libname*/
+						/*assign final concatenated libname*/
 						%if &c = 1 %then %do;
 							libname &DPSITEID ("&&&DPSITEID.&c.") access=readonly;
 						%end;

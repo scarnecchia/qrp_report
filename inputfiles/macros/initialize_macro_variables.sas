@@ -35,9 +35,10 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid;
+    %global runidlist numrunid typenum;
     %let runidlist = ;
     %let numrunid = 0;
+    %let typenum = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -75,11 +76,13 @@
     %let report_destination = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist tdatasetlist tdatasetlistnum;
+    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
 	%let tdatasetlist = ;
 	%let tdatasetlistnum = ;
     %let figurelist = ;
+    %let tablelist = ;
+    %let includegroupinfigure = ;
 
     /*baseline table variables*/
     %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;
@@ -88,16 +91,36 @@
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
-    %global output_code_distribution;
+    %global output_code_distribution numgroups discardnegativetimegroups;
+    %let numgroups = 0;
     %let output_code_distribution = N;
+    %let discardnegativetimegroups = ;
 
     /*L2 report variables*/
-    %global numl2comparisons;
+    %global numl2comparisons attrperiodid;
     %let numl2comparisons = 0;
+    %let attrperiodid=;
 
     /*label file variables */
-    %global label_length;
+    %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
+            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow;
+    %let reporttitle = Exposures of Interest;
+	%let labelfileexists = N;		
     %let label_length = 250;
+    %let cens_elig_label =Disenrollment;
+    %let cens_dth_label =Evidence of death;
+    %let cens_dpend_label =End of data partner data;
+    %let cens_qryend_label =End of query period;
+    %let cens_episend_label =End of exposure episode;
+    %let cens_spec_label =Occurence of request-defined censoring criteria;
+    %let cens_event_label =Occurence of event;
+    %let cens_switch1_label =First switch; 
+    %let cens_switch2_label =Second switch; 
+    %let includeheaderrow = N;
+
+    /*censor reasons*/
+    %global defaultcensororder;
+    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend;
 
     /*Age stratification format */
     %global agefmt;
@@ -122,7 +145,7 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-
+	
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

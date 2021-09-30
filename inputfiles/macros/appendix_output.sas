@@ -278,7 +278,7 @@
 * Appendix A: list of DPs                                            
 ***************************************************************************************************;
 
-    /*Put dpname into list for appendix A*/
+    /*Put dpname into list for Appendix A*/
     %let dpnamelist = ;
     %do a = 1 %to &num_dp.;
         data _null_;
