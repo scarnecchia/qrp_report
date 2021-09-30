@@ -118,6 +118,7 @@
           %end;            
       run;
 	  
+	  %let levels_t15 =;
 	  /* Identify levels associated with Table 3 */
 	  proc sql noprint;
 	     select case when table = "T15" then "'"||strip(levelid1)||"'"
