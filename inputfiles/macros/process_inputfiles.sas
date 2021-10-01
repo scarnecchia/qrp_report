@@ -630,8 +630,8 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
-            /*set reporttile if specified*/
-            if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
+            /*set reporttitle if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', label);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
@@ -844,7 +844,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&covar');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&study');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;

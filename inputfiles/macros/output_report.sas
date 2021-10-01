@@ -124,6 +124,71 @@
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
 
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+              /* Set options to missing to prevent dot from printing in row */
+              options orientation = landscape;
+              options missing = ' ';
+          %do td = 1 %to &tdatasetlistnum.; 
+            %let reporttable = %scan(&tdatasetlist, &td.);
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+                %let tablecount=1;
+                proc sql noprint;
+                    select cats(columnname,'_char') 
+                          ,cats(columnwidth,'in')
+                          ,smallcellyn
+                    into :outvarlist separated by ' ',
+                         :outwidths separated by ' ',
+                         :outsmallcells separated by ' '
+                    from tablecolumns
+                    where table="&reporttable"
+                    order by order;
+
+                    %let tableobs = 0;
+                    select max(stratificationorder)
+                    into :tableobs trimmed 
+                    from tablefile
+                    where dataset="&reporttable";
+                quit; 
+                
+                %do z = 1 %to &tableobs;
+
+                    %if &stratifybydp = Y %then %let tablecount=1;
+                    %else %let tablecount=0;
+
+                    data _null_;
+                        set tablefile(where=(dataset="&reporttable" and stratificationorder=&z));
+                        call symputx('tabletitle', tabletitle);
+                        call symputx('strataid',levelid1);
+                        call symputx('strataname',tablesub);
+                    run;
+
+                    %tableletter();
+                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
+                                     varlist = &outvarlist,
+                                     stratavar = %quote(&strataname),
+                                     varwidths = %bquote(&outwidths.),
+                                     varsmallcells = &outsmallcells,
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                %if &stratifybydp = Y %then %do;
+                    %do dps = 1 %to %eval(&num_dp.);
+                        %let maskedID = %scan(&masked_dplist,&dps); 
+                        %tableletter();
+                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
+                                         varlist = &outvarlist,
+                                         stratavar = %quote(&strataname),
+                                         varwidths = %bquote(&outwidths.),
+                                         varsmallcells = &outsmallcells,
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
+                    %end;
+                %end;
+                %let tablenum = %eval(&tablenum + 1);
+                %end; /* z */
+          %leavet1t2conc:
+          %end; /* td */
+          options missing = '.';
+          options orientation = portrait;
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
     /*****************************************************************************************/
     /* Type 1 and 2 censor tables                                                            */
@@ -473,6 +538,7 @@
         options orientation = portrait;
 
     %end; /*type 5 tables*/ 
+
 
 ***************************************************************************************************;
 * Code distribution tables                                                     
