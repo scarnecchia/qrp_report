@@ -46,6 +46,9 @@
 /* Enter the name of the CREATEREPORTFILE file*/
 %let CREATEREPORTFILE =; 
 
+/* Report id to use as log and repdata suffix */
+%let reportid = ;
+
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
 *******                         DO NOT EDIT BELOW THIS LINE                                  ******

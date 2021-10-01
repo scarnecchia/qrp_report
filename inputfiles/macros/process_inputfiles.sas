@@ -76,11 +76,9 @@
 		  %let report_destination = PDF;
 		  %let dpfile = dpinfofile;
 		  %let leavebehindreport = Y;
-		  %let foldersuffix = &reportid.;
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
-		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
 		  %let leavebehindreport = N;
 		  %let reportdata = Y;
@@ -94,7 +92,7 @@
      libname repdata %sysfunc(quote(%sysfunc(pathname(work))));	 
   %end;
   %else %do; 
-     %let repdata = &output.reportdata&foldersuffix.;
+     %let repdata = &output.reportdata&reportid.;
 	 options DLCREATEDIR ;
 	 libname repdata "&repdata" ;
 	 options NODLCREATEDIR;
