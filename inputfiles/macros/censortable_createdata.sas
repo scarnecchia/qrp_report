@@ -118,7 +118,6 @@
           %end;            
       run;
 	  
-	  %let levels_t15 =;
 	  /* Identify levels associated with Table 3 */
 	  proc sql noprint;
 	     select case when table = "T15" then "'"||strip(levelid1)||"'"
@@ -166,8 +165,10 @@
 		      agg_&censordataset (in = censor);
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 		if square and not censor and not missing(censdays_value_cat) then do;
-		  %if %index(&tables.,T15) > 0 %then %do; 
-		    episodenum = 1;
+		  %if %index(&tables.,T15) > 0 %then %do;
+            if level in (&levels_t15.) then do;  
+		      episodenum = 1;
+			end;
 		  %end;
 		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
 		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
