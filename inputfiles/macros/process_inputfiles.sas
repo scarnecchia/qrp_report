@@ -79,6 +79,7 @@
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
+		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
 		  %let leavebehindreport = N;
 		  %let reportdata = Y;

@@ -30,11 +30,17 @@
 ***************************************************************************************************;
 * Initialize global macro variables and read in input files                                  
 ***************************************************************************************************;
-
+    /* If leave behind report runs then use reportid for log suffix */
+    %isdata(dataset=input.report_parameters);
+    %if %eval(&nobs.>0) %then %do;
     /* Start log */
-    proc printto log="&output.qrp_report_log&reportid..log" new;
-    run;
-
+       proc printto log="&output.qrp_report_log&reportid..log" new;
+       run;
+    %end;
+	%else %do;
+       proc printto log="&output.qrp_report_log.log" new;
+	%end;
+	
     %put =====> MACRO CALLED: create_report;
 	
 	/* Need to retain work datasets from qrp for leave behind report.
