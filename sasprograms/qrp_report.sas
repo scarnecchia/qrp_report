@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 06/14/2021
-* VERSION: 0.1.0
+* LAST MODIFIED: 09/30/2021
+* VERSION: 1.0.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -213,6 +213,8 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/t5tables_driver.sas";
 
 /*L1 table output macros*/
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
+%include "&reportroot.inputfiles/macros/t1t2conc_output.sas";
 %include "&reportroot.inputfiles/macros/censortable_output_table13.sas";
 %include "&reportroot.inputfiles/macros/censortable_output_table2.sas";
 %include "&reportroot.inputfiles/macros/t5tables_output.sas";
