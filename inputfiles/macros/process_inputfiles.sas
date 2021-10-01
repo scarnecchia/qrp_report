@@ -70,34 +70,17 @@
 		
 		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
            dpfile is set to the work dpinfofile and reportdata is N. */
-	    %isdata(dataset=input.report_parameters);
-        %if %eval(&nobs.>0) %then %do;
+        %if &leavebehindreport = Y %then %do;
 		  %let stratifybydp = N;
 		  %let report_destination = PDF;
 		  %let dpfile = dpinfofile;
-		  %let leavebehindreport = Y;
 	    %end;
 		/* Set reportid suffix to missing when not a leave behind report */
 		%else %do;
 		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
-		  %let leavebehindreport = N;
 		  %let reportdata = Y;
 		%end;
-		
-/***************************************************************************************************
-*   If reportdata is set to N then set reportdata folder to the work folder, otherwise assign the 
-    repdata folder and libname
-***************************************************************************************************/
-  %if &reportdata. = N %then %do;
-     libname repdata %sysfunc(quote(%sysfunc(pathname(work))));	 
-  %end;
-  %else %do; 
-     %let repdata = &output.reportdata&reportid.;
-	 options DLCREATEDIR ;
-	 libname repdata "&repdata" ;
-	 options NODLCREATEDIR;
-  %end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
