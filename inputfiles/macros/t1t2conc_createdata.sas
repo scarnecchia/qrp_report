@@ -179,10 +179,10 @@
 	   	create table &dsin as 
 	   	select a.*, b.totalnpts, b.totalepisodes
 	   	from &dsin a 
-	   	left join (select &t2group, sum(npts) as totalnpts, sum(episodes) as totalepisodes
+	   	left join (select &t2group, %if %length(&dpvar) > 0 %then %do; dpidsiteid, %end; sum(npts) as totalnpts, sum(episodes) as totalepisodes
 	   			   from &dsin.
-	   			   group by &t2group) b
-	   	on a.&t2group =b.&t2group;
+	   			   group by &t2group %if %length(&dpvar) >0 %then %do; ,dpidsiteid %end;) b
+	   	on a.&t2group =b.&t2group %if %length(&dpvar) > 0 %then %do; and a.dpidsiteid = b.dpidsiteid %end; ;
 	   quit;
 
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
