@@ -600,12 +600,8 @@
 		     &pctVar._char = "0.0%";
 		   end;
 		   if table_name ne "overall" then do;
-			   if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
-			       and episodes = 0
-	             then do;
-			     &pctVar._char = "NaN";
-			   end;
-			   if episodes = 0 and overall_tot > 0  then epi_tot_pct_char = "NaN";
+		   	   if  table_name = "%scan(&cen_tot, &cr1, ' ')" and (%scan(&cen_tot, &cr1, ' ')) = 0
+			   and overall_tot > 0  then epi_tot_pct_char = "NaN";
 		   end;
 
 		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
