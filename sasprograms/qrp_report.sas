@@ -213,6 +213,8 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/t5tables_driver.sas";
 
 /*L1 table output macros*/
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
+%include "&reportroot.inputfiles/macros/t1t2conc_output.sas";
 %include "&reportroot.inputfiles/macros/censortable_output_table13.sas";
 %include "&reportroot.inputfiles/macros/censortable_output_table2.sas";
 %include "&reportroot.inputfiles/macros/t5tables_output.sas";
