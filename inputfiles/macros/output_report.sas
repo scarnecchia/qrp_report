@@ -56,7 +56,15 @@
             flow="tables");
     %end;
     %if &destination. = pdf %then %do;
-    ods pdf file="&output.qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
+	  /* Prevent path from being written to log */
+	     proc printto log=log;
+		 run;
+		
+		 ods pdf file="&output.qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;	
+				 
+	  /* Resume writing to log */
+		 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+		 run;
     %end;
 
     ods noproctitle;
