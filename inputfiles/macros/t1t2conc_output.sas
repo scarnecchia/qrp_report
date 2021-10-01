@@ -60,27 +60,23 @@
     %end;
 
 	%if %index(&stratavar,race) %then %do;
-	proc contents data = repdata.table&tablenum.&tableletter out = t(keep=name label) noprint;
+    proc contents data = repdata.table&tablenum.&tableletter out=t noprint;
 	run; 
 	
     %let label_change_var=;
     %let label_change=;
 
 	proc sql noprint;
-	select name, label
+	  select name, label
       into: Label_change_var separated by ' ', :Label_change separated by ','
 	  from t
-      where label contains ("super 1") 
-	  ;
+      where label contains ("super 1");
 	quit;
 
 
     %if %length(&label_change_var) > 0 %then %do;
-	  data _null_;
-	  label_change2 = tranwrd("&label_change", "super 1", "super 2");
-	  call symput("label_change2", trim(label_change2));
-	  run;
-	 
+
+      %let label_change2 = %sysfunc(tranwrd(%bquote(&label_change),%str(super 1),%str(super 2)));
 	
 	  proc datasets lib=repdata nolist;
         modify  table&tablenum.&tableletter;
