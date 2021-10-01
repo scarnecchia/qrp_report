@@ -531,6 +531,48 @@
     /* Type 1 and 2 summary tables                                                               */
     /*********************************************************************************************/
 
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+           %do td = 1 %to &tdatasetlistnum.; 
+            %let reporttable = %scan(&tdatasetlist, &td.);
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+
+                proc sql noprint;
+                    %let tableobs = 0;
+                    select max(stratificationorder)
+                    into :tableobs trimmed 
+                    from tablefile
+                    where dataset="&reporttable";
+                quit;
+
+                %do z = 1 %to %eval(&tableobs.);
+
+                data _null_;
+                    set tablefile(where=(dataset="&reporttable" and stratificationorder=&z));
+                    call symputx('tabletitle', tabletitle);
+                run;
+
+                %if &stratifybydp = Y %then %let tablecount=1;
+                %else %let tablecount=0;
+
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                %if &stratifybydp. = Y %then %do;    
+                    %do dps = 1 %to %eval(&num_dp.);
+                        %let maskedID = %scan(&masked_dplist,&dps); 
+                %tableletter();
+                %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
+                    %end;
+                %end; 
+
+                %let tablenum = %eval(&tablenum + 1);
+
+                %end; /* z */
+          %leavet1t2conc:
+          %end; /* td */
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
         /*****************************************************************************************/
         /* Type 1 and 2 censor tables                                                            */
@@ -651,8 +693,7 @@
             %t1t2censortoc(tablename=t2followuptime, title=At-Risk Period);
             %t1t2censortoc(tablename=t&typenum.censor, title=Observable Data);
         %end; /*t1censor and t2censor tables*/
-
-
+ 
     /*********************************************************************************************/
     /* Type 5 summary tables                                                                     */
     /*********************************************************************************************/
