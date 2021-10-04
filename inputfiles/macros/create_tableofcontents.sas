@@ -1214,9 +1214,15 @@
                         end;
                     run;
 
+					%let figuretitle = "";
+		            data _null_;
+                      set figurefile(where=(order = &order.));
+                      call symputx('figuretitle', figuretitle);
+                    run;
+
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.));
                 %end; /*loop through each figure*/
                 %let figurenum = %eval(&figurenum.+1); 
                 %end; /*figure dataset exists*/
