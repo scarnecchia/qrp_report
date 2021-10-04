@@ -610,14 +610,20 @@
 		/*set up titles for F123 figures */
         %if "&current_figurelist" = "F1" %then %do;
           %let title_f123 =  Patient Entry into Study by Month;
+		  %let y1label = Monthly number of patients;
+		  %let y2label = Cumulative number of patients in study;
 		  %let yvarF123 = npts;
 		%end;
 		%if "&current_figurelist" = "F2" %then %do;
           %let title_f123 =  Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study;
+		  %let y1label = Monthly number of prescription dispensings;
+		  %let y2label = Cumulative number of prescription dispensings;
 		  %let yvarF123 = adjustedcodecount;
 		%end;
 		%if "&current_figurelist" = "F3" %then %do;
           %let title_f123 =  Total Days Supply in Patients First Episodes by Month Patient Entered into Study;
+		  %let y1label = Monthly total days supply;
+		  %let y2label = Cumulative days supply;
           %let yvarF123 = daysupp;
         %end;
 
@@ -626,12 +632,6 @@
           select distinct max(order) into: max_order separated by ' '
             from figurefile(where=(figure = "&current_figurelist"));
 			select figuresub into: current_figuresub separated by ' '
-            from figurefile(where=(figure = "&current_figurelist"))
-            order by order;
-			select y1label into: y1label separated by ' '
-            from figurefile(where=(figure = "&current_figurelist"))
-            order by order;
-			select y2label into: y2label separated by ' '
             from figurefile(where=(figure = "&current_figurelist"))
             order by order;
 			select distinct grouplabel into: grouplabel separated by ' '

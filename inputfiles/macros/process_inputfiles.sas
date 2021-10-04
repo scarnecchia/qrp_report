@@ -1227,8 +1227,6 @@
                          , figure.includeatrisktable
                          , figure.censordisplay
 						 , figure.order
-						 , figure.y1label
-						 , figure.y2label
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
