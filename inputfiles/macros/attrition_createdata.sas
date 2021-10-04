@@ -31,7 +31,6 @@
 ***************************************************************************************************;
 
 %macro attrition_createdata;
-
 /* Link all required groups from inputfiles */
 
 	%isdata(dataset=master_t2addon)
@@ -286,7 +285,11 @@
    		%if %index(&reporttype,T4L2) %then %do;
    		create table agg_mil_attrition as 
    		select a.*, b.group as l2eoirefgroups
-   		from agg_mil_attrition a 
+   		from agg_mil_attrition 
+   		%if %varexist(agg_mil_attrition,l2eoirefgroups) = 1 %then %do; 
+   		(drop=l2eoirefgroups)
+   		%end;
+   		a 
    		left join 
    		agg_adj_attrition_&periodid b 
    		on a.analysisgrp = scan(b.group,-1,'@');
@@ -389,7 +392,7 @@
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
-    /* Set in condlevel value and delete un-needed rows */
+    /* Set in condlevel value and delete unneeded rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel
 					      %if %length(&milgrps) > 0 %then %do; millabel %end;
 						  t%substr(&reporttype,2,1)cohortdef);
@@ -588,14 +591,16 @@
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
+	  %if %index(&reporttype,L2) %then %let attrperiodid=_&periodid;
+
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
-	  proc sort data = all_attrition_agg out=agg_patient_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
+	  proc sort data = all_attrition_agg out=agg_patient_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
 	  	by level report_descr group;
 	  run;
 	  %end;
 
-	  proc sort data = all_attrition_agg out=agg_episode_attrition(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
+	  proc sort data = all_attrition_agg out=agg_episode_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
 	  	by level report_descr group;
 	  run;
 
