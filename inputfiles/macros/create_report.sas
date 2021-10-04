@@ -43,9 +43,9 @@
     %put =====> MACRO CALLED: create_report;
 	
 	/* Need to retain work datasets from qrp for leave behind report.
-       Repdata and msocdata directories are set to work for leave behind report.	*/
-	%isdata(dataset=input.report_parameters);
-    %if %eval(&nobs.=0) %then %do;
+       Repdata is set to work directory when leave behind report is run,
+	   and data for qrp report is in the msocdata folder	*/
+	%if &leavebehindreport = N %then %do;
 	   proc datasets nowarn nolist lib=work kill; quit;
 	   proc datasets nowarn nolist lib=repdata kill; quit;
 	   proc datasets nowarn nolist lib=msocdata kill; quit; 
@@ -226,13 +226,6 @@
 
     proc datasets nowarn nolist lib=work kill; quit;
 
-***************************************************************************************************;
-*   Remove msocdata if leave behind report is run                                                                               
-***************************************************************************************************;
-    %isdata(dataset=input.report_parameters);
-    %if %eval(&nobs.>0) %then %do;
-	  proc datasets nowarn nolist lib=msocdata kill; quit; 
-	%end;
 	
     /* End log */
     proc printto;
