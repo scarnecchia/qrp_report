@@ -133,7 +133,7 @@
             /*Add max value if gap between last tick mark and max value is >tick/2*/
             %if %scan(&fxtickmarks., -1) ne &xmax. %then %do;
                 %let diff = %sysevalf(&xmax.-%scan(&fxtickmarks., -1));
-                %let div2 = %sysfunc(divide(&xtick.,2)); /*jolene this was 2*/
+                %let div2 = %sysfunc(divide(&xtick.,2)); 
                 %if %sysevalf(&diff.>&div2.) %then %do;
                     %let fxtickmarks = &fxtickmarks%str( )&xmax.;
                 %end;

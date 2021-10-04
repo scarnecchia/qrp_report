@@ -134,7 +134,7 @@
 
                     %if %index(&censordisplayf4., &censordisplay.)>0 %then %do;
                         data figure&figure.;
-                            set figure&figure.;
+                            set figuref4;
                             keep day group: order episodes_atrisk: cdf_&censordisplay.;
                         run;
                         %let transposedata = T;
