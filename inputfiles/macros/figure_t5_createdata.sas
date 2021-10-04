@@ -221,9 +221,7 @@
     proc datasets nowarn noprint lib=work;
         delete agg_t5first_all _temp_figure123_: figure123_:;
     quit;
-/*data repdata.figure123;*/
-/*set figure123;*/
-/*run;*/
+
     %end; /*agg_first exists*/
 
 	%put =====> END MACRO: figure_t5_createdata;
