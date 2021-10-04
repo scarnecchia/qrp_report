@@ -225,7 +225,6 @@
 			%if %length(&figurelist) > 0 %then %do;
 			%do f = 1 %to %sysfunc(countw(&figurelist));
 			  %let figure = %scan(&figurelist,&f);
-              %if ((&figure ne F1 and &figure ne F2 and &figure ne F3) and &reporttype = T5) %then %do;
 			    %let figurenum = &f;
 		 		%isdata(dataset=figure&figure.);
 		 		%let fignobs = &nobs;
@@ -352,7 +351,6 @@
 				%end; /* fignobs */
 
 			%end; /* f */
-          %end;
 		%end; /* figurelist */
 
 		%end; /* reporttype */
