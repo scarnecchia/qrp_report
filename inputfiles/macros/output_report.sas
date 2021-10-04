@@ -615,8 +615,16 @@
 ***************************************************************************************************;
 * Clean up                                                                                
 ***************************************************************************************************;
+ /* Prevent path from being written to log */
+    proc printto log=log;
+    run;
 
-    ods _all_ close;
+    ods _all_ close;	
+		 
+ /* Resume writing to log */
+    proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+    run;
+   
     ods listing;
     ods results;
 
