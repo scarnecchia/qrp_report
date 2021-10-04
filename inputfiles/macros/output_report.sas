@@ -78,6 +78,13 @@
     /* Counter for table number */
     %let tablenum=1;
 
+    /*leavebehindreport logo*/
+    %if &leavebehindreport. = Y %then %do;
+        %if %str("&logofile") ne %str("") & &destination. = pdf %then %do;
+            title j=L "^{style[preimage='&input./&logofile.']}" ' ';
+        %end;
+    %end;
+
 ***************************************************************************************************;
 * Table of Contents                                            
 ***************************************************************************************************;  
@@ -615,6 +622,10 @@
 ***************************************************************************************************;
 * Clean up                                                                                
 ***************************************************************************************************;
+
+    /*reset title*/
+    %let title = ;
+
  /* Prevent path from being written to log */
     proc printto log=log;
     run;
