@@ -306,24 +306,23 @@
 	ods proclabel = "Appendix A";
 
     proc report data = output.dpinfo nofs nowd
-		style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-		style(report)=[rules=none frame=box cellpadding =1.75pt];
+		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
 		columns (MaskedID dpmindate dpenddate);
-		define MaskedID / Display 'Masked DP ID^{super 1}' style(column)=[width=2in] style(header)=[background = lightgrey];
-		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = lightgrey];
-		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = lightgrey];
+		define MaskedID / Display 'Masked DP ID^{super 1}' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
+		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
+		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
 
         compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";
         endcomp;
 
-        compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off font_size=&footfontsize.];
+        compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black cellheight=1.15in nobreakspace=off font_size=&footfontsize.];
         line "^{super 1}Participating Data Partners include &dpnamelist.";
         line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
     run;
-	
 
 ***************************************************************************************************;
 * Geographic Appendices and Code List Appendices (Index defining codes, Exposure incidence defining 

@@ -1514,7 +1514,9 @@
 			run;
         %end;
 
-        *Add unique psestimategrp flag to the l2comparisonfile;                     
+        *Add unique psestimategrp flag to the l2comparisonfile;     
+        %isdata(dataset=l2comparisonfile);
+        %if %eval(&nobs.>0) %then %do;
     	 proc sql noprint;
     	   create table _l2comparisonfile_ps as
     	     select base.*
@@ -1534,6 +1536,7 @@
     	   unique_psestimate +1;
            if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
     	 run;
+         %end;
     
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;
