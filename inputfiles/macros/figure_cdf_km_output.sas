@@ -309,8 +309,8 @@
 		%let tableletter =a;
 
 		/* Determine font for KM/CDF plot */
-        %if &sysscp = WIN %then %let fontfamily=Calibri;
-        %else %let fontfamily=Albany AMT;
+        %if &sysscp = WIN %then %let fontfamily="Calibri";
+        %else %let fontfamily="Albany AMT";
 
 		/***************************************************************************************/
         /* L1 Figures                                                                          */
