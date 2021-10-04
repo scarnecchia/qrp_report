@@ -591,10 +591,12 @@
         %end;   
     %end; 
 
+
+
     ************************************************;
-    * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
+    * Type 5 Figures                                                
     ************************************************;
-    options orientation = landscape;
+	options orientation = landscape;
 
 	%if %sysfunc(prxmatch(m/T5/i,&reporttype.)) %then %do;
 	  /* Figures F1, F2, and F3 */
@@ -636,8 +638,13 @@
             from figure123;
         quit;
 		%do t = 1 %to &max_order;
+
+		 %let figuretitle = "";
+		 data _null_;
+           set figurefile(where=(figuresub = "&current_figuresub" and order = &t));
+             call symputx('figuretitle', figuretitle);
+         run;
 		 
-		
 		  %tableletter();
 		  %if "&current_figuresub" = "overall" %then %do; 
 		    %let tableletter = ;
@@ -646,7 +653,7 @@
 		  %let current_y1label = %scan(&y1label, &t, ' ');
 	      %let current_y2label = %scan(&y2label, &t, ' ');
 		  %figure_t5_output(figure=&current_figurelist, figurenum=&figure_list, figureletter=&tableletter., 
-                          title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.),
+                          title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.),
                           where= figuresub = "&current_figuresub" and order = &t, figuresub=&current_figuresub, 
                           yaxislabel1= &current_y1label, yaxislabel2= &current_y2label, yvar=&yvarF123.);
 		%end;
@@ -655,8 +662,12 @@
 	%end;
 
 	%end;
+
+	 ************************************************;
+    * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
+    ************************************************;
+	%figure_cdf_km_output;
 	
-      %figure_cdf_km_output;
      options orientation = portrait;
     
 ***************************************************************************************************;

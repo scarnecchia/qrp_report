@@ -1175,10 +1175,7 @@
     /*********************************************************************************************/  
 
     %isdata(dataset=figurefile);
-    %if %eval(&nobs.>0) %then %do;
-data repdata.figurefile;
-set figurefile;
-run; /*jolene */
+    %if %eval(&nobs.>0) %then %do; 
 
         %let figurenum = 1; /* Add +1 for additional figure types that are requested */
         %let tablecount = 1;
@@ -1190,7 +1187,7 @@ run; /*jolene */
 
             /*utility macro to loop through groups*/
             %macro figuretoc(figure=, title =, dataset_name =);
-			  -
+			  
                 %isdata(dataset=&dataset_name.);
                 %if %eval(&nobs.>0) %then %do;
 

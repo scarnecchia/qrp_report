@@ -613,8 +613,8 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
-            /*set reporttitle if specified*/
-            if labeltype = 'reporttitle' then call symputx('reporttitle', label);
+            /*set reporttile if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', reporttitle);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
@@ -827,7 +827,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&study');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&covar');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;
@@ -1049,7 +1049,6 @@
 
     /*Read in FigureFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&figurefile.);
-
     %if %eval(&nobs.>0) %then %do;
 
         /*macro variable to cross checkout Type 6 treatmentpathways file to ensure an analysisgrp has been requested*/
@@ -1067,7 +1066,6 @@
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
             includeatrisktable = upcase(includeatrisktable);
-	
 
             *if censordisplay is missing, replace with default list of censoring reasons;
             length censordisplay1 $80;
@@ -1272,7 +1270,7 @@
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
-                    data output.levelid_check; 
+                    data output.levelid_check;
                         set levelid_check;
                     run;
                    %put ERROR: (Sentinel) Unable to generate all requested report figures and stratifications.;
@@ -1293,7 +1291,6 @@
         %else %if %eval(&nobs.<1) %then %do;
             %put WARNING: (Sentinel) FigureFile specified, but all rows have INCLUDEINREPORT set to N.;
         %end;
-
     %end; /*FigureFile specified*/
 
     /*TableFile and FigureFile are optional, but if neither are specified for the following report types then write warning to the log:
