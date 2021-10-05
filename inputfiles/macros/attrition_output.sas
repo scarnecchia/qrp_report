@@ -83,7 +83,7 @@
             define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
-            define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
+            define grouplabel / nozero across order=data ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
             define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
@@ -148,7 +148,7 @@
             end;				
 			%end;
             else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) %then %do;
+                %if %index(&reporttype,T4L1) or %index(&reporttype,T4L2) %then %do;
                 text='Pregnancy episodes with required pre-index history'; 
                 %end;
                 %else %do;
@@ -157,7 +157,7 @@
                 num=100;
             end;
             else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) %then %do;
+                %if %index(&reporttype,T4L1) or %index(&reporttype,T4L2) %then %do;
                 text='Pregnancy episodes with required post-index follow-up'; 
                 %end;
                 %else %do;
