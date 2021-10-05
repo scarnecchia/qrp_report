@@ -120,7 +120,7 @@
 				%end;
 			%end;
 			
-			compute before header / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			compute before header / style=[background=LIBGR just=c font_weight=bold bordertopcolor=black borderbottomcolor=black];
 			length text $100;
 				text = header;
 				num = 100;
