@@ -606,60 +606,62 @@
         %do figure_list = 1 %to %sysfunc(countw(&F123_figurelist.)); 
 		  
         %let current_figurelist = %scan(&F123_figurelist, &figure_list, ' ');
-
-		/*set up titles for F123 figures */
-        %if "&current_figurelist" = "F1" %then %do;
-          %let title_f123 =  Patient Entry into Study by Month;
-		  %let y1label = Monthly number of patients;
-		  %let y2label = Cumulative number of patients in study;
-		  %let yvarF123 = npts;
-		%end;
-		%if "&current_figurelist" = "F2" %then %do;
-          %let title_f123 =  Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study;
-		  %let y1label = Monthly number of prescription dispensings;
-		  %let y2label = Cumulative number of prescription dispensings;
-		  %let yvarF123 = adjustedcodecount;
-		%end;
-		%if "&current_figurelist" = "F3" %then %do;
-          %let title_f123 =  Total Days Supply in Patients First Episodes by Month Patient Entered into Study;
-		  %let y1label = Monthly total days supply;
-		  %let y2label = Cumulative days supply;
-          %let yvarF123 = daysupp;
-        %end;
-
-		/*loop through the figuresubs to create &current_figuresub*/ 
-	    proc sql noprint;
-          select distinct max(order) into: max_order separated by ' '
-            from figurefile(where=(figure = "&current_figurelist"));
-			select figuresub into: current_figuresub separated by ' '
-            from figurefile(where=(figure = "&current_figurelist"))
-            order by order;
-			select distinct grouplabel into: grouplabel separated by ' '
-            from figure123;
-        quit;
-		%do t = 1 %to &max_order;
-
-		 %let figuretitle = "";
-		 data _null_;
-           set figurefile(where=(figuresub = "&current_figuresub" and order = &t));
-             call symputx('figuretitle', figuretitle);
-         run;
-		 
-		  %tableletter();
-		  %if "&current_figuresub" = "overall" %then %do; 
-		    %let tableletter = ;
+        %if "&current_figurelist" ne "F4" and "&current_figurelist" ne  "F5"
+            %then %do;
+		  /*set up titles for F123 figures */
+          %if "&current_figurelist" = "F1" %then %do;
+            %let title_f123 =  Patient Entry into Study by Month;
+		    %let y1label = Monthly number of patients;
+		    %let y2label = Cumulative number of patients in study;
+		    %let yvarF123 = npts;
 		  %end;
-		  %let current_figuresub = %scan(&current_figuresub, &t, ' ');
-		  %let current_y1label = %scan(&y1label, &t, ' ');
-	      %let current_y2label = %scan(&y2label, &t, ' ');
-		  %figure_t5_output(figure=&current_figurelist, figurenum=&figure_list, figureletter=&tableletter., 
-                          title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.),
-                          where= figuresub = "&current_figuresub" and order = &t, figuresub=&current_figuresub, 
-                          yaxislabel1= &current_y1label, yaxislabel2= &current_y2label, yvar=&yvarF123.);
+		  %if "&current_figurelist" = "F2" %then %do;
+            %let title_f123 =  Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly number of prescription dispensings;
+		    %let y2label = Cumulative number of prescription dispensings;
+		    %let yvarF123 = adjustedcodecount;
+		  %end;
+		  %if "&current_figurelist" = "F3" %then %do;
+            %let title_f123 =  Total Days Supply in Patients First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly total days supply;
+		    %let y2label = Cumulative days supply;
+            %let yvarF123 = daysupp;
+          %end;
+
+		  /*loop through the figuresubs to create &current_figuresub*/ 
+	      proc sql noprint;
+            select distinct max(order) into: max_order separated by ' '
+              from figurefile(where=(figure = "&current_figurelist"));
+			select figuresub into: current_figuresub separated by ' '
+              from figurefile(where=(figure = "&current_figurelist"))
+              order by order;
+			select distinct grouplabel into: grouplabel separated by ' '
+              from figure123;
+          quit;
+		  %do t = 1 %to &max_order;
+
+		   %let figuretitle = "";
+		   data _null_;
+             set figurefile(where=(figuresub = "&current_figuresub" and order = &t));
+             call symputx('figuretitle', figuretitle);
+           run;
+		 
+		    %tableletter();
+		    %if "&current_figuresub" = "overall" %then %do; 
+		      %let tableletter = ;
+		    %end;
+		    %let current_fig = %scan(&current_figuresub, &t, ' ');
+		    
+		    %figure_t5_output(figure=&current_figurelist, figurenum=&figure_list, figureletter=&tableletter., 
+                            title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.),
+                            where= figuresub = "&current_fig" and order = &t, figuresub=&current_fig., 
+                            yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
+		%end;
 		%end;
 		%let tableorder = tableorder &t;
+
+	    %end;
 	  %end;
-	%end;
 
 	%end;
 

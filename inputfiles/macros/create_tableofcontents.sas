@@ -1222,7 +1222,7 @@
 
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.));
+            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.));
                 %end; /*loop through each figure*/
                 %let figurenum = %eval(&figurenum.+1); 
                 %end; /*figure dataset exists*/

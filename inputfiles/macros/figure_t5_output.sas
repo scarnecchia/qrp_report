@@ -41,20 +41,20 @@
 
     /*Save dataset to REPORTDATA folder*/
 	
-    %isdata(dataset=repdata.figure&figure.&figureletter.);
+    %isdata(dataset=repdata.figure&figurenum.&figureletter.);
     %if %eval(&nobs.<1) %then %do;
-        data repdata.figure&figure.&figureletter.;
+        data repdata.figure&figurenum.&figureletter.;
             set figure123(where=(&where.));
         run;
     %end;
 
     /*stratified plot - collapse strata to determine correct Y axis*/
-    %let axisdata = repdata.figure&figure.&figureletter.;
+    %let axisdata = repdata.figure&figurenum.&figureletter.;
     %if &figuresub. ne overall %then %do;
         proc sql noprint;
             create table _collaspseddata as
             select mntsfromstart, sum(&yvar.) as &yvar.
-            from repdata.figure&figure.&figureletter.
+            from repdata.figure&figurenum.&figureletter.
             group by mntsfromstart;
         quit;
         %let axisdata = _collaspseddata;
@@ -107,7 +107,7 @@
 	ODS PDF BOOKMARKGEN = OFF;   
 	%end;
 
-	proc sgplot data=repdata.figure&figure.&figureletter. noborder;
+	proc sgplot data=repdata.figure&figurenum.&figureletter. noborder;
 		styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
 									  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
 									  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
@@ -116,7 +116,7 @@
              / response=&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; nostatlabel name='raw' missing ;
 		vline mntsfromstart
             / response=cumulative_&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; name='cumulative' missing y2axis markers lineattrs=(pattern=solid thickness=2);
-        xaxis label = "Months after Study Start"/* values=(0 to &datamax. by 1)*/ valueattrs=(color=black size=&fontsize. family=&font.) 
+        xaxis label = "Months after Study Start" values=(1 to &datamax. by 1) fitpolicy=thin valueattrs=(color=black size=&fontsize. family=&font.) 
              labelattrs=(color=black size=&fontsize family=&font) ; 
 		yaxis label = "&yaxislabel1" values=(&t5ytickmarks.) valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
         y2axis label = "&yaxislabel2" valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
