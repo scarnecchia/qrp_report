@@ -613,7 +613,6 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
-            /*set reporttile if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', label);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
