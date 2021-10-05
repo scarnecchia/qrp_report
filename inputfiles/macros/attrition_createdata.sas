@@ -54,10 +54,6 @@
 	left join master_mil b 
 	on a.group = b.group and a.runid = b.runid
 	%end;
-	%if %sysfunc(exist(work.l2comparisonfile)) %then %do;
-	left join l2comparisonfile c
-	on a.group = c.analysisgrp and a.runid = c.runid 
-	%end;
 	;
 	quit;
 
