@@ -390,7 +390,7 @@
             ods proclabel = "Table &tablenum.&tableletter.";
 
             proc report data = repdata.table&tablenum.&tableletter nofs nowd headline headskip split="*" contents=''
-        		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+        		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
             %if %index(&reporttype,T4) or %index(&reporttype,T6) %then %do;
             columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
