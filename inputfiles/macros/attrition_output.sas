@@ -135,7 +135,6 @@
                 text='Cohort episodes with a valid index date'; 
                 num=100;
             end;
-			%if %index(&reporttype,T4) %then %do;
             else if report_descr = 'Total number of live birth deliveries during the query period' then do; 
                 text='Live birth deliveries with a valid index date'; 
                 num=100;
@@ -144,7 +143,6 @@
                 text='Members meeting mother-infant linkage requirements'; 
                 num=100;
             end;				
-			%end;
             else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
                 %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required pre-index history'; 
