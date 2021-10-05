@@ -126,8 +126,8 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' 
-				%if %index(&reporttype,T4) %then %do; or report_descr = 'Had a live birth delivery claim during the query period' %end; then do; 
+            else if report_descr = 'Had any cohort-defining claim during the query period' or
+                    report_descr = 'Had a live birth delivery claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
@@ -140,8 +140,6 @@
                 text='Live birth deliveries with a valid index date'; 
                 num=100;
             end;				
-			%end;
-			%if %index(&reporttype,T4) %then %do;
             else if report_descr = 'Pregnancy episodes met initial cohort eligibility requirements' then do; 
                 text='Members meeting mother-infant linkage requirements'; 
                 num=100;
