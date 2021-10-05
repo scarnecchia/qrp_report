@@ -127,7 +127,7 @@
                 num=100;
             end;
             else if report_descr = 'Had any cohort-defining claim during the query period' 
-				%if %index(&reporttype,T4L1) %then %do; or report_descr = 'Had a live birth delivery claim during the query period' %end; then do; 
+				%if %index(&reporttype,T4) %then %do; or report_descr = 'Had a live birth delivery claim during the query period' %end; then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
@@ -135,7 +135,7 @@
                 text='Cohort episodes with a valid index date'; 
                 num=100;
             end;
-			%if %index(&reporttype,T4L1) %then %do;
+			%if %index(&reporttype,T4) %then %do;
             else if report_descr = 'Total number of live birth deliveries during the query period' then do; 
                 text='Live birth deliveries with a valid index date'; 
                 num=100;
@@ -148,7 +148,7 @@
             end;				
 			%end;
             else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) or %index(&reporttype,T4L2) %then %do;
+                %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required pre-index history'; 
                 %end;
                 %else %do;
@@ -157,7 +157,7 @@
                 num=100;
             end;
             else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) or %index(&reporttype,T4L2) %then %do;
+                %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required post-index follow-up'; 
                 %end;
                 %else %do;
