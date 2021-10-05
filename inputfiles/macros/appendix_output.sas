@@ -45,19 +45,23 @@
 	%macro appendixGEOG(_data=, _rptlabel=, _tab=);
 		%if %index(&_rptlabel.,HHS) %then %do; %let geog = HHS; %end;
 		%else %do; %let geog = Census Bureau; %end;
-
+	
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		proc report data =  &_data nofs nowd spanrows missing headskip
-			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
 			columns (region staterri);
-			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = lightgrey];
-			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = lightgrey];
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
-			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off];
+			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
+
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
 	        line "&apptitle.";
 			endcomp;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
 		run;
 	%mend appendixGEOG;	
 	
@@ -96,36 +100,39 @@
 		%put optionalvars = &optionalvars.;
 	
 		proc report data =  _data_ndc nofs nowd spanrows missing headskip
-			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 			columns (header %if %varexist(_data_ndc,ndc) = 1 %then %do; ndc %end; genericname &optionalvars.);
 			define header /order noprint order=data ' ';
 			%if %varexist(_data_ndc,ndc) = 1 %then %do;
-			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = white]; 
+			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = bgr borderleftcolor = BGR];
 			%end;
-			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
+			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
 					define %scan(&optionalvars, &x)/ %if %lowcase("%scan(&optionalvars, &x)") = "brandname" %then %do;
-													  display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = white];
+													  display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
 													 %end;
 													 %else %do;
-													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = white];
+													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
 													 %end; 
 				%end;
 			%end;
 			
-			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			compute before header / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 			length text $100;
 				text = header;
 				num = 100;
 				line text $varying. num;
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
-			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
 			line "&apptitle.";
 			endcomp;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
 		run;
 	%mend appendixNDC;
 
@@ -156,23 +163,23 @@
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
 		proc report data =  _data_pxdx nofs nowd spanrows missing headskip
-			style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
 			
 			columns (codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
-			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = white];
-			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = white];
-			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = white];	
-			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = white];		
+			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];	
+			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];		
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
-					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = white];
+					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
 				%end;
 			%end;
 			define codeform/noprint;
 			
-			compute before header / style=[backgroundcolor=darkgray color = black just=C font_weight=bold bordertopcolor=black borderbottomcolor=black ];
+			compute before header / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 			length text $100;
 				text = header;
 				num = 100;
@@ -190,37 +197,44 @@
 			compute codecat1;
 				call define(_col_, "format", "$cc1fmt.");
 			endcomp;
-			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
-			                               borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-				line "&apptitle.";
+
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+			line "&apptitle.";
 			endcomp;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
 		run;
 	%mend appendixDXPX;
 	
 	/**********************************/
-	/* Geographic Location Appendices */
+	/* HDPS varinfo appendix          */
 	/**********************************/	
 	%macro appendixhdps(_data=, _rptlabel=, _tab=);
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
 		proc report data=repdata.&_data nofs nowd
-            style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=lightgrey] split='*'
-			style(report)=[rules=none frame=box cellpadding =1.75pt];
-			
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
+	
             column (dpidsiteid code codecat codetype frequency ranking);
 		    		
-		    define dpidsiteid    / display 'Data Partner'  style(column)=[width=1.2in just=C];
-            define code          / display 'Code'          style(column)=[width=1.2in just=C];
-            define codecat       / display 'Code Category' style(column)=[width=1.2in just=C]; 
-            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C]; 
-            define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C];
-            define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C]; 
-			
-		  compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+		    define dpidsiteid    / display 'Data Partner'  style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
+            define code          / display 'Code'          style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
+            define codecat       / display 'Code Category' style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+            define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
+            define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
             line "&apptitle.";
-          endcomp;
-		
+            endcomp;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
         run;
 		
 	%mend appendixhdps;	
@@ -230,46 +244,52 @@
 	/********************************************/	
 	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);
 
-		ods proclabel = "&_tab.";
+        ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
 		/* Create flag to see if convergence was met */
-		  %let convergence = 1;
-		  data _null_;
-		  	set repdata.&_data;
-		  	if missing(min) and missing(max) and missing(mean) and missing(sd) then call symputx('convergence',0);
-		  run;
+		%let convergence = 1;
+		data _null_;
+		  set repdata.&_data;
+		  if missing(min) and missing(max) and missing(mean) and missing(sd) then call symputx('convergence',0);
+		run;
 
-		  proc report data=repdata.&_data nofs nowd  
-                  style(header)=[rules=none foreground = black font_weight=bold vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-                  style(report)=[rules=none frame=box];
+		proc report data=repdata.&_data nofs nowd  
+            style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+        	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
-                  column (dpidsiteid N min max mean sd); 
+            column (dpidsiteid N min max mean sd); 
 
-                  define dpidsiteid / display 'Data Partner (Masked)' 
-                    style(column)=[width=1in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black];
-                  define N / display 'Number of Patients' 
-                    style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background=lightgrey borderbottomcolor=black];
-                  define min / display 'Minimum' 
-                    style(column)=[width=1.25in just=C]  style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.;
-                  define max / display 'Maximum' 
-                    style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
-                  define mean / display 'Mean' 
-                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
-                  define sd / display 'Standard^n Deviation' 
-                  style(column)=[width=1.25in just=C] style(header)=[just=C background=lightgrey borderbottomcolor=black] format=weightdist.; 
+            define dpidsiteid / display 'Data Partner (Masked)' 
+                style(column)=[width=1in just=C]  style(header)=[just=C background = bgr borderleftcolor = BGR];
+            define N / display 'Number of Patients' 
+                style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background = bgr borderleftcolor = BGR];
+            define min / display 'Minimum' 
+                style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.;
+            define max / display 'Maximum' 
+                style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
+            define mean / display 'Mean' 
+              style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
+            define sd / display 'Standard^n Deviation' 
+              style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
 
-                  compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black 
-			                    borderbottomcolor=black tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-				  line "&apptitle.";
-				  endcomp;
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+			line "&apptitle.";
+			endcomp;
 
+            %if &convergence. = 0 %then %do;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.];
+                line "Note: N/A represent PS models that did not reach convergence.";
+            endcomp;
+            %end;
+            %else %do;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
+            %end;
 
-                %if &convergence. = 0 %then %do;
-                  compute after / style=[just=L foreground=black bordertopcolor=black];
-                    line "Note: N/A represent PS models that did not reach convergence.";
-                  endcomp;
-                %end;
           run;
 
 	%mend appendixWeightDist;
@@ -314,7 +334,7 @@
 		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
 		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
 
-        compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black];
+        compute before _page_ / style=[background=white background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white borderbottomwidth = &bordersize];
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";
         endcomp;
 
