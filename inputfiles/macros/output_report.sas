@@ -650,7 +650,7 @@
 
     		   %let figuretitle = "";
     		   data _null_;
-                 set figurefile(where=(stratificationorder = &t));
+                 set figurefile(where=(figure = "&current_figurelist" and stratificationorder = &t));
                  call symputx('current_figuresub',figuresub);
                  call symputx('figuretitle', figuretitle);
                run;
