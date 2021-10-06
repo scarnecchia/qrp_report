@@ -91,7 +91,7 @@
 	%end;
 
     %if &destination. = excel %then %do;
-        ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum." tab_color="blue" flow='none') style = styles.blackLine;
+        ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&figureletter." tab_color="blue" flow='none') style = styles.blackLine;
     %end;
 
     %if &destination. = pdf %then %do;

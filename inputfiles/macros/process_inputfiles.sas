@@ -1248,13 +1248,17 @@
                          , strata2.levelid as levelid3
                     from figurefile as figure
                     left join userstrata as strata
-                    on strata.tableid = figurefile.dataset and strata.levelvars = figurefile.levelid1
+                    on strata.tableid = figure.dataset and strata.levelvars = figure.levelid1
                     left join userstrata as strata1
-                    on strata1.tableid = figurefile.dataset and strata1.levelvars = figurefile.levelid2
+                    on strata1.tableid = figure.dataset and strata1.levelvars = figure.levelid2
                     left join userstrata as strata2
-                    on strata2.tableid = figurefile.dataset and strata2.levelvars = figurefile.levelid3;
+                    on strata2.tableid = figure.dataset and strata2.levelvars = figure.levelid3;
                 quit;
-  	
+
+                proc sort data = figurefile;
+                    by levelid1 levelid2 levelid3;
+                run;
+                
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                     set figurefile;

@@ -599,13 +599,10 @@
         %end;   
     %end; 
 
-
-
     ************************************************;
     * Type 5 Figures                                                
     ************************************************;
 	options orientation = landscape;
-
 	%if %sysfunc(prxmatch(m/T5/i,&reporttype.)) %then %do;
 	  /* Figures F1, F2, and F3 */
       %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
@@ -638,33 +635,41 @@
 
 		  /*loop through the figuresubs to create &current_figuresub*/ 
 	      proc sql noprint;
-            select distinct max(order) into: max_order separated by ' '
+            select max(stratificationorder)
+              into: max_order
               from figurefile(where=(figure = "&current_figurelist"));
-			select figuresub into: current_figuresub separated by ' '
-              from figurefile(where=(figure = "&current_figurelist"))
-              order by order;
-			select distinct grouplabel into: grouplabel separated by ' '
-              from figure123;
+
+            select max(order)
+                into: t5grouporder 
+                from figure123
+                order by order;
           quit;
+
+          %do g = 1 %to &t5grouporder;
+
+            data _null_;
+                set figure123(where=(order=&t5grouporder));
+                call symputx('t5grouplabel',grouplabel);
+            run;
+
 		  %do t = 1 %to &max_order;
 
 		   %let figuretitle = "";
 		   data _null_;
-             set figurefile(where=(figuresub = "&current_figuresub" and order = &t));
+             set figurefile(where=(stratificationorder = &t));
+             call symputx('current_figuresub',figuresub);
              call symputx('figuretitle', figuretitle);
            run;
 		 
 		    %tableletter();
-		    %if "&current_figuresub" = "overall" %then %do; 
-		      %let tableletter = ;
-		    %end;
-		    %let current_fig = %scan(&current_figuresub, &t, ' ');
-		    
+		    %if "&current_figuresub" = "overall" %then %let tableletter = ;
+
 		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
-                            title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
-                            where= figuresub = "&current_fig" and order = &t, figuresub=&current_fig., 
+                            title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
+                            where=figuresub = "&current_figuresub", figuresub=&current_figuresub., 
                             yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
 		  %end;
+          %end;
 		  %let figurenum = %eval(&figurenum +1);
 		  %end;
 	    %end;
