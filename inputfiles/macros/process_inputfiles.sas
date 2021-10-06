@@ -1144,6 +1144,8 @@
         	if levelid2 = 'overall' then levelid2 = '';
         	if levelid3 = 'overall' then levelid3 = '';
 
+            n = _n_;
+
         	/*Add column to hold figure title stratification value - prior to reorder of variables*/
             format figuretitle $100.;
             if figuresub='overall' then do;
@@ -1246,19 +1248,17 @@
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+                         , figure.n
                     from figurefile as figure
                     left join userstrata as strata
                     on strata.tableid = figure.dataset and strata.levelvars = figure.levelid1
                     left join userstrata as strata1
                     on strata1.tableid = figure.dataset and strata1.levelvars = figure.levelid2
                     left join userstrata as strata2
-                    on strata2.tableid = figure.dataset and strata2.levelvars = figure.levelid3;
+                    on strata2.tableid = figure.dataset and strata2.levelvars = figure.levelid3
+                    order by figure.n;
                 quit;
 
-                proc sort data = figurefile;
-                    by levelid1 levelid2 levelid3;
-                run;
-                
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                     set figurefile;

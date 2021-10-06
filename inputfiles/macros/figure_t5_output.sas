@@ -95,6 +95,7 @@
     %end;
 
     %if &destination. = pdf %then %do;
+    ods pdf style = styles.blackline;
 	ODS PDF BOOKMARKGEN = ON; 
 	ods proclabel = "Figure &figurenum.&figureletter.";
 	%end;

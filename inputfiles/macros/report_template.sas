@@ -8,12 +8,14 @@
 * Last modified: 02/01/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This program is used to create a template for qrp reports using proc template
+* PURPOSE: This program is used to create a template for qrp reports and create a template
+*          for sgplot to change the axis color
 *  
 *  Program inputs:                                                                                   
 * 
 *  Program outputs:    
 *   -template named qrp_report_&outputtype.
+*   -template named styles.blackline
 * 
 *  PARAMETERS:
 *   - outputtype: The file type the template will be used for (ex: Excel)
@@ -166,6 +168,7 @@
         end;
     run;
 
+    /* change axis color to black */
     proc template;
 	 define style styles.blackLine;
 	 parent= styles.htmlblue;

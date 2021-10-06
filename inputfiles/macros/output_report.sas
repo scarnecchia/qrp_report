@@ -662,7 +662,7 @@
            run;
 		 
 		    %tableletter();
-		    %if "&current_figuresub" = "overall" %then %let tableletter = ;
+		    %if &max_order = 1 and &t5grouporder = 1 %then %let tableletter = ;
 
 		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
                             title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
