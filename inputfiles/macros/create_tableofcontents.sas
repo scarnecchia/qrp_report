@@ -1297,13 +1297,17 @@
 
                 /*F5: 1 figure per report*/
 			  %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
+			   %isdata(dataset= figuref5);
+			   %if %eval(&nobs.>0) %then %do;
                 data _null_;
                   set figurefile(where=(figure="F5"));
                   call symputx('censordisplay', censordisplay);
                 run;
-                %figuretoc(figure=F5, title =%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.),
-                           dataset_name = figureF5);
-              %end;  	
+                %addtotoc(tabnum=Figure &figurenum, 
+                          caption =%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
+                %let figurenum = %eval(&figurenum.+1);
+			  %end;
+             %end;  	
              
             %end; /*T5*/
 

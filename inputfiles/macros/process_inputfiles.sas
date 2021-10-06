@@ -1225,7 +1225,6 @@
                          , figure.ytick
                          , figure.includeatrisktable
                          , figure.censordisplay
-						 , figure.order
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
@@ -1237,13 +1236,35 @@
                     left join userstrata as strata2
                     on strata2.tableid = figurefile.dataset and strata2.levelvars = figurefile.levelid3;
                 quit;
-            	
+  	
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                     set figurefile;
                     where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
                 run;
 
+				/*Add strata order*/
+                
+				%do figure_loop = 1 %to %sysfunc(countw(&figurelist));
+				  %let flist_1 = %scan(&figurelist, &figure_loop, ' ');
+
+				  proc sql noprint;
+                    select distinct strip(lowcase(dataset)) into: fdatasetlist separated by ' '
+                    from figurefile(where=(missing(dataset)=0 and figure = "&flist_1"))
+                  quit;
+
+				  %do Fig = 1 %to %sysfunc(countw(&fdatasetlist));
+				    %let ds = %scan(&fdatasetlist, &fig, ' ');
+				    data figurefile_&fig.&flist_1.;
+				      set figurefile (where=(dataset = "&ds." and figure = "&flist_1"));
+					  order = _N_;
+				    run;
+				  %end;
+				%end;
+				data figurefile;
+				  set figurefile_:;
+				run;
+		
                 /*For L1 figures, assign list of GROUPS to include in figures*/
                 %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
                     %isdata(dataset=input.&groupsfile.);

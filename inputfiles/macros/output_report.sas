@@ -616,13 +616,13 @@
 		    %let yvarF123 = npts;
 		  %end;
 		  %if "&current_figurelist" = "F2" %then %do;
-            %let title_f123 =  Number of Prescription Dispensings in Patients First Episodes by Month Patient Entered into Study;
+            %let title_f123 =  Number of Prescription Dispensings in Patients%str(%') First Episodes by Month Patient Entered into Study;
 		    %let y1label = Monthly number of prescription dispensings;
 		    %let y2label = Cumulative number of prescription dispensings;
 		    %let yvarF123 = adjustedcodecount;
 		  %end;
 		  %if "&current_figurelist" = "F3" %then %do;
-            %let title_f123 =  Total Days Supply in Patients First Episodes by Month Patient Entered into Study;
+            %let title_f123 =  Total Days Supply in Patients%str(%') First Episodes by Month Patient Entered into Study;
 		    %let y1label = Monthly total days supply;
 		    %let y2label = Cumulative days supply;
             %let yvarF123 = daysupp;
@@ -652,14 +652,13 @@
 		    %end;
 		    %let current_fig = %scan(&current_figuresub, &t, ' ');
 		    
-		    %figure_t5_output(figure=&current_figurelist, figurenum=&figure_list, figureletter=&tableletter., 
+		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
                             title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.),
                             where= figuresub = "&current_fig" and order = &t, figuresub=&current_fig., 
                             yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
-		%end;
-		%end;
-		%let tableorder = tableorder &t;
-
+		  %end;
+		  %let figurenum = %eval(&figurenum +1);
+		  %end;
 	    %end;
 	  %end;
 
