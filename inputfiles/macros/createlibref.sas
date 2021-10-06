@@ -179,10 +179,18 @@
 				set dppath;
 				call symputx("PATH",lowcase(strip(path)));
 				where lowcase(DP) = "&DPSITEID.";
-			run;
-
+			run;		
+            
             %if %soc_dirExist(&path.) %then %do;
+			  /* Prevent library path from being written to log */
+			     proc printto log=log;
+			     run;
+			
 			     libname &DPSITEID "&PATH." access=readonly;
+				 
+			  /* Resume writing to log */
+				 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+				 run;
             %end;
             %else %do;
                 %put ERROR: (Sentinel) Path specified in DPINFOFILE for &DPSITEID. does not exist. Package will abort.;

@@ -132,8 +132,8 @@
     %global output_agg_data;
     %let output_agg_data = Y;
 	
-	/*zipfile*/
-	%global zipfile;
+	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
+    %if &leavebehindreport. = N %then %do; %global zipfile; %end;
 	%let zipfile = ;
 	
 	/* covariate codes formats */
@@ -145,7 +145,10 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-	
+
+	/* Leave behind report */
+	%global reportid dpfile;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

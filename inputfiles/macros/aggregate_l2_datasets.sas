@@ -149,7 +149,7 @@
     %end;*loop through DPs;
 	
 
-	%if &output_agg_data. = Y %then %do;
+	%if &output_agg_data. = Y and &leavebehindreport. = N %then %do;
 		%if %sysfunc(exist(msocdata.agg_%scan(&infile.,2,_)_&periodid.))=0 | &outfile = aggwd %then %do;
 			data msocdata.agg_%scan(&infile.,2,_)_&periodid.;
 			%if %index(&infile.,varinfo) > 0 %then %do;

@@ -39,7 +39,9 @@
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
         %abort;
     %end;
-
+	
+	/* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
+	   Create macro variable to identify if it is a leave behind report */
         proc sql noprint;
             select count(*) into: numparms
             from input.&createreportfile;
@@ -65,6 +67,20 @@
             run;
             %let &parameter. = &value.;
         %end;
+		
+		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+           dpfile is set to the work dpinfofile and reportdata is N. */
+        %if &leavebehindreport = Y %then %do;
+		  %let stratifybydp = N;
+		  %let report_destination = PDF;
+		  %let dpfile = dpinfofile;
+	    %end;
+		/* Set reportid suffix to missing when not a leave behind report */
+		%else %do;
+		  %let reportid = ;
+		  %let dpfile = input.&DPInfoFile.;
+		  %let reportdata = Y;
+		%end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
@@ -92,7 +108,8 @@
 ***************************************************************************************************/
 
     /*Check if DPINFOFILE exists and contains at least 1 DP to include in report*/
-    %isdata(dataset=input.&DPInfoFile.);
+	/* User specified dpinfofile */
+    %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
         %put ERROR: (Sentinel) DPINFOFILE is missing.;
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
@@ -102,7 +119,7 @@
         /*Number of DPs to include in report and list of DPs*/
         data dpinfofile;
             length database $250;
-            set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
+            set &dpfile. (where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
             dp=lowcase(dp);
             if missing(database) then database = 'Sentinel Distributed Database';

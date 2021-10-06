@@ -449,7 +449,7 @@
 			%if %sysfunc(fileexist(&INPUT.&eachCodeFile..xlsx)) & %str("&eachCodeFile") ne %str("") %then %do;
 				libname codes XLSX "&INPUT.&eachCodeFile..xlsx";	
 				/* Resume writing to log */
-				proc printto log="&OUTPUT.qrp_report_log.log";
+				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
 				run;
 				
 				%do k = 1 %to %sysfunc(countw(&eachCodelist));
@@ -530,7 +530,7 @@
 			%end; /*fileexist codesfile check*/
 			%else %do;				
 				/* Resume writing to log */
-				proc printto log="&reportroot.output/qrp_report_log.log";
+				proc printto log="&output.qrp_report_log&reportid..log";
 				run;
 				%put WARNING: (Sentinel) &eachCodeFile. CodesFile does not exist.;
 			%end;	
