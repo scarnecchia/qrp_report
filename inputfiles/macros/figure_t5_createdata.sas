@@ -63,10 +63,54 @@
     %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %let daysupp = daysupp;
 
     /*--------------------------------------------------------------------------------------------*/
+    /* Square table to mark months on plot with 0 npts/etc                                        */
+    /*--------------------------------------------------------------------------------------------*/
+
+    proc sql noprint;
+        create table _maxmonths as
+        select group,runid, max(mntsfromstart) as maxmonths length=3
+        from agg_t5first(where=(level in (&levellist.))) 
+        group by runid, group;
+    quit;
+
+    proc sort nodupkey data=agg_t5first(where=(level in (&levellist.))) out=_square(keep=runid group level &stratvars.);
+        by runid group level &stratvars.;
+    run;
+
+    data _fullsquare;
+        set _square;
+        by runid group ;
+        if first.group = 1 then do;
+            merge _maxmonths;
+            by runid group;
+        end;
+        length mntsfromstart 4;
+        do mntsfromstart = 1 to maxmonths;
+            output;
+        end;
+    run;
+
+    data agg_t5first;
+        set agg_t5first(where=(level in (&levellist.)))
+        _fullsquare(in=a);
+        if a then do;
+        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do;
+		npts = 0;
+        %end;
+        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do;
+		adjustedcodecount = 0;
+        %end;
+        %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do;
+		daysupp = 0;   
+        %end;
+        end;
+    run;      
+
+    /*--------------------------------------------------------------------------------------------*/
     /* Aggregate data across all DPs                                                              */
     /*--------------------------------------------------------------------------------------------*/
 
-	proc means data=agg_t5first(where=(level in (&levellist.))) noprint nway;
+	proc means data=agg_t5first noprint nway;
 		var &npts. &daysupp. &adjustedcodecount.;
 		class group runid level mntsfromstart &stratvars. / missing;
 		output out=agg_t5first_all(drop=_:) sum=;
@@ -100,7 +144,7 @@
                                              %if &figuresub. = agegroup %then %do; agegroup %end; );
 			by runid group &stratvars. mntsfromstart;
 		run;
-			
+		
 		data figure123_&strat.;
 			set _temp_figure123_&strat.;
 			by runid group &stratvars. mntsfromstart;
@@ -181,7 +225,6 @@
                 end;
             run;
         %end;
-
     %end; /*loop through stratifications*/
 
     /*--------------------------------------------------------------------------------------------*/
@@ -210,7 +253,7 @@
 	quit;
 
     proc datasets nowarn noprint lib=work;
-        delete agg_t5first_all _temp_figure123_: figure123_:;
+        delete agg_t5first_all _temp_figure123_: figure123_: _maxmonths _square _fullsquare;
     quit;
 
     %end; /*agg_first exists*/
