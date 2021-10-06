@@ -48,7 +48,7 @@
     ods noresults;
     options nodate nonumber orientation = landscape;
     %if &destination. = excel %then %do;
-    ods excel file="&REPORTROOT.output/qrp_report.xlsx" NOGTITLE style = qrp_report_excel
+    ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
@@ -56,7 +56,15 @@
             flow="tables");
     %end;
     %if &destination. = pdf %then %do;
-    ods pdf file="&REPORTROOT.output/qrp_report.pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
+	  /* Prevent path from being written to log */
+	     proc printto log=log;
+		 run;
+		
+		 ods pdf file="&output.qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;	
+				 
+	  /* Resume writing to log */
+		 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+		 run;
     %end;
 
     ods noproctitle;
@@ -607,8 +615,16 @@
 ***************************************************************************************************;
 * Clean up                                                                                
 ***************************************************************************************************;
+ /* Prevent path from being written to log */
+    proc printto log=log;
+    run;
 
-    ods _all_ close;
+    ods _all_ close;	
+		 
+ /* Resume writing to log */
+    proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+    run;
+   
     ods listing;
     ods results;
 

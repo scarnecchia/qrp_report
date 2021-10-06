@@ -156,6 +156,10 @@ options NODLCREATEDIR;
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
+/* Assign leavebehindreport macro variable to N */
+%global leavebehindreport;
+%let leavebehindreport = N;
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
