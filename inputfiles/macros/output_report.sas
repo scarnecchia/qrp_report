@@ -611,8 +611,7 @@
         %do figure_list = 1 %to %sysfunc(countw(&F123_figurelist.)); 
 		  
         %let current_figurelist = %scan(&F123_figurelist, &figure_list, ' ');
-        %if "&current_figurelist" ne "F4" and "&current_figurelist" ne  "F5"
-            %then %do;
+        %if &current_figurelist = F1 or &current_figurelist = F2 or &current_figurelist = F3 %then %do;
 		  /*set up titles for F123 figures */
           %if "&current_figurelist" = "F1" %then %do;
             %let title_f123 =  Patient Entry into Study by Month;
@@ -639,38 +638,39 @@
               into: max_order
               from figurefile(where=(figure = "&current_figurelist"));
 
-            select max(order)
-                into: t5grouporder 
-                from figure123
-                order by order;
+            select distinct order
+              into :t5grouporderlist separated by ' '
+              from figure123
+              order by order;
           quit;
 
-          %do g = 1 %to &t5grouporder;
+          %do g = 1 %to %sysfunc(countw(&t5grouporderlist));
 
-            data _null_;
-                set figure123(where=(order=&t5grouporder));
-                call symputx('t5grouplabel',grouplabel);
-            run;
+    		  %do t = 1 %to &max_order;
 
-		  %do t = 1 %to &max_order;
+    		   %let figuretitle = "";
+    		   data _null_;
+                 set figurefile(where=(stratificationorder = &t));
+                 call symputx('current_figuresub',figuresub);
+                 call symputx('figuretitle', figuretitle);
+               run;
 
-		   %let figuretitle = "";
-		   data _null_;
-             set figurefile(where=(stratificationorder = &t));
-             call symputx('current_figuresub',figuresub);
-             call symputx('figuretitle', figuretitle);
-           run;
-		 
-		    %tableletter();
-		    %if &max_order = 1 and &t5grouporder = 1 %then %let tableletter = ;
+                data _null_;
+                    set figure123(where=(order=&g));
+                    call symputx('t5grouplabel',grouplabel);
+                run;
+    		 
+    		    %tableletter();
+    		    %if %sysfunc(countw(&t5grouporderlist)) = 1 and &max_order = 1 %then %let tableletter = ;
 
-		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
-                            title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
-                            where=figuresub = "&current_figuresub", figuresub=&current_figuresub., 
-                            yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
-		  %end;
+    		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
+                                title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
+                                where=figuresub = "&current_figuresub" and order=&g, figuresub=&current_figuresub., 
+                                yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
+    		  %end;
+              %let figurenum = %eval(&figurenum +1);
+              %let tablecount = 1;
           %end;
-		  %let figurenum = %eval(&figurenum +1);
 		  %end;
 	    %end;
 	  %end;

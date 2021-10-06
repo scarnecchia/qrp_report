@@ -1085,7 +1085,7 @@
             includeatrisktable = upcase(includeatrisktable);
 
             *if censordisplay is missing, replace with default list of censoring reasons;
-            length censordisplay1 $80;
+            length censordisplay1 $80 n 3;
             censordisplay1 = lowcase(censordisplay);
             %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
@@ -1270,12 +1270,8 @@
 				%do figure_loop = 1 %to %sysfunc(countw(&figurelist));
 				  %let flist_1 = %scan(&figurelist, &figure_loop, ' ');
 
-				  proc sql noprint;
-                    select distinct strip(lowcase(dataset)) into: orderdatasetlist separated by ' '
-                    from figurefile(where=(missing(dataset)=0 and figure = "&flist_1"))
-                  quit;
-
 				    data _figurefile_&flist_1.;
+                      length stratificationorder 3;
 				      set figurefile (where=(figure = "&flist_1"));
 					  stratificationorder = _N_;
 				    run;
