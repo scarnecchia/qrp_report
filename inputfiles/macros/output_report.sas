@@ -661,7 +661,7 @@
 		    %let current_fig = %scan(&current_figuresub, &t, ' ');
 		    
 		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
-                            title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted. &figuretitle.),
+                            title=%quote(&title_f123. for &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
                             where= figuresub = "&current_fig" and order = &t, figuresub=&current_fig., 
                             yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
 		  %end;

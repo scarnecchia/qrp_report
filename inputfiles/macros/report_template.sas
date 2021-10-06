@@ -166,4 +166,13 @@
         end;
     run;
 
+    proc template;
+	 define style styles.blackLine;
+	 parent= styles.htmlblue;
+	 class GraphAxisLines/
+	   contrastcolor = black
+	   color = black;
+	 end; 
+	run;
+
 %mend report_template;

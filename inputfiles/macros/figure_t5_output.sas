@@ -79,14 +79,6 @@
   	ods startpage = no;
   	ods graphics / height=7in;
 
-	proc template;
-	 define style styles.blackLine;
-	 parent= styles.htmlblue;
-	 class GraphAxisLines/
-	   contrastcolor = black
-	   color = black
-	   ;end; run;
-
 	/* Trick Excel into making a new sheet */
 	%if &destination. = excel %then %do;
             ods excel options(sheet_interval="table");

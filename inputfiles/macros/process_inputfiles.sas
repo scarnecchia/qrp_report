@@ -630,6 +630,7 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
+            /*set reporttitle if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', label);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
@@ -1266,20 +1267,17 @@
 				  %let flist_1 = %scan(&figurelist, &figure_loop, ' ');
 
 				  proc sql noprint;
-                    select distinct strip(lowcase(dataset)) into: fdatasetlist separated by ' '
+                    select distinct strip(lowcase(dataset)) into: orderdatasetlist separated by ' '
                     from figurefile(where=(missing(dataset)=0 and figure = "&flist_1"))
                   quit;
 
-				  %do Fig = 1 %to %sysfunc(countw(&fdatasetlist));
-				    %let ds = %scan(&fdatasetlist, &fig, ' ');
-				    data figurefile_&fig.&flist_1.;
-				      set figurefile (where=(dataset = "&ds." and figure = "&flist_1"));
-					  order = _N_;
+				    data _figurefile_&flist_1.;
+				      set figurefile (where=(figure = "&flist_1"));
+					  stratificationorder = _N_;
 				    run;
-				  %end;
 				%end;
 				data figurefile;
-				  set figurefile_:;
+				  set _figurefile_:;
 				run;
 		
                 /*For L1 figures, assign list of GROUPS to include in figures*/
