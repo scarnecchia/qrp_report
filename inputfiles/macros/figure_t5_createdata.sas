@@ -137,27 +137,18 @@
                    %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) %then %do; cumulative_adjustedcodecount %end;
                    %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) %then %do; cumulative_daysupp %end; ;
 
-			*assign label and stratification order;
-            length label $40; 
+			*assign stratification order. Formats applied in proc sgplot in order to print unicode characters;
             sortorder=1;
-            label = '';
             %if &figuresub. ne overall %then %do;
-            %if &figuresub. = agegroup %then %do;
-                label = put(&figuresub., $agefmt.);
-                sortorder = agegroupnum;
-            %end;
-            %else %do;
-                label = put(&figuresub., $&figuresub.fmt.);
-                sortorder = input(put(&figuresub., &figuresub.sort.),1.);
-            %end;
-            %end;
-
-            %if %str(&stratvars.) ne %str() %then %do;
-                drop &stratvars. %if &figuresub. = agegroup %then %do; agegroup %end;;
+                %if &figuresub. = agegroup %then %do;
+                    sortorder = agegroupnum;
+                %end;
+                %else %do;
+                    sortorder = input(put(&figuresub., &figuresub.sort.),1.);
+                %end;
             %end;
 
             /*format for axis and legend labels*/
-             
             %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do; 
                 format cumulative_npts npts comma12.0;
                 label npts ='Monthly'

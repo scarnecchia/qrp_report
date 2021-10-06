@@ -111,11 +111,14 @@
 		styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
 									  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
 									  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
-
+        /*assign labels*/
+        %if &figuresub. ne overall %then %do;
+            format &figuresub. %if &figuresub.=agegroup %then %do; $agefmt. %end; %else %do; $&figuresub.fmt. %end; ;
+        %end;
         vbar mntsfromstart 
-             / response=&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; nostatlabel name='raw' missing ;
+             / response=&yvar. %if &figuresub. ne overall %then %do; group=&figuresub. stat = sum %end; nostatlabel name='raw' missing ;
 		vline mntsfromstart
-            / response=cumulative_&yvar. %if &figuresub. ne overall %then %do; group=label stat = sum %end; name='cumulative' missing y2axis markers lineattrs=(pattern=solid thickness=2);
+            / response=cumulative_&yvar. %if &figuresub. ne overall %then %do; group=&figuresub. stat = sum %end; name='cumulative' missing y2axis markers lineattrs=(pattern=solid thickness=2);
         xaxis label = "Months after Study Start" values=(1 to &datamax. by 1) fitpolicy=thin valueattrs=(color=black size=&fontsize. family=&font.) 
              labelattrs=(color=black size=&fontsize family=&font) ; 
 		yaxis label = "&yaxislabel1" values=(&t5ytickmarks.) valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
