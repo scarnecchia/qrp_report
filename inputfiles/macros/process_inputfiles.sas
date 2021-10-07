@@ -386,6 +386,15 @@
     			select max(order) into :numgroups 
     			from input.&groupsfile.;
 			quit;
+
+            /* obtain only groups that figures were requested for */
+            proc sql noprint;
+                select distinct order 
+                into :requestedfigs
+                from input.&groupsfile.
+                where includeinfigure = 'Y'
+                order by order;
+            quit;
 		 %end;
 	 %end;
  

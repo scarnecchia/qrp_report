@@ -1217,13 +1217,15 @@
 
 					%let figuretitle = "";
 		            data _null_;
-                      set figurefile(where=(stratificationorder = &f));
+                      set figurefile(where=(figure = "&figure" and stratificationorder = &f));
                       call symputx('figuretitle', figuretitle);
                     run;
 
                     data _null_;
                         set &dataset_name.(where=(order = &order.));
+                        if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
+                        end;
                     run;
 
                     %tableletter();	
@@ -1281,7 +1283,7 @@
 			
             %if &reporttype. = T5 %then %do;
 			  /* F1 */
-			  %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
+			  %if %sysfunc(prxmatch(m/\bF1\b/i,&figurelist.)) > 0 %then %do;
 			    %figuretoc(figure=F1, title =Patient Entry into Study by Month for, dataset_name = figure123);
 			  %end;
 
@@ -1303,6 +1305,7 @@
               %end; /*figuref4*/
 
                 /*F5: 1 figure per report*/
+                    /*Censor reason*/
 			  %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
 			   %isdata(dataset= figuref5);
 			   %if %eval(&nobs.>0) %then %do;

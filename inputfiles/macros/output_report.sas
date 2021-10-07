@@ -637,14 +637,10 @@
             select max(stratificationorder)
               into: max_order
               from figurefile(where=(figure = "&current_figurelist"));
-
-            select distinct order
-              into :t5grouporderlist separated by ' '
-              from figure123
-              order by order;
           quit;
 
-          %do g = 1 %to %sysfunc(countw(&t5grouporderlist));
+          %do g = 1 %to %sysfunc(countw(&requestedfigs));
+            %let figorder = %scan(&requestedfigs,&g);
 
     		  %do t = 1 %to &max_order;
 
@@ -656,16 +652,18 @@
                run;
 
                 data _null_;
-                    set figure123(where=(order=&g));
+                    set figure123(where=(order=&figorder));
+                    if _n_ = 1 then do;
                     call symputx('t5grouplabel',grouplabel);
+                    end;
                 run;
     		 
     		    %tableletter();
-    		    %if %sysfunc(countw(&t5grouporderlist)) = 1 and &max_order = 1 %then %let tableletter = ;
+    		    %if %sysfunc(countw(&requestedfigs)) = 1 and &max_order = 1 %then %let tableletter = ;
 
     		    %figure_t5_output(figure=&current_figurelist, figurenum=&figurenum, figureletter=&tableletter., 
                                 title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
-                                where=figuresub = "&current_figuresub" and order=&g, figuresub=&current_figuresub., 
+                                where=figuresub = "&current_figuresub" and order=&figorder, figuresub=&current_figuresub., 
                                 yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
     		  %end;
               %let figurenum = %eval(&figurenum +1);
