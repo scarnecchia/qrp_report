@@ -150,7 +150,7 @@
                     if upcase(ipweight)= 'ATE' then call symputx("weightlabel","Average Treatment Effect (ATE)");
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
-                    call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
+                    call symputx('truncationlabel',strip(put(truncweight, best.)));
                 end;
             run;
             %end;
@@ -226,7 +226,7 @@
                     %if &psfile. = psmatchfile %then %do;
                     %tableletter(); 
                     %addtotoc(tabnum=Table 1&tableletter., 
-                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Unweighted - IPTW and PS Stratum*/
@@ -238,12 +238,13 @@
 
                     /*Weighted - IPTW, PS Stratum, PS Stratification*/
                     %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                        %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed&dpcomma.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed&dpcomma.), Percentiles: &percentiles., Weight: &weightlabel.;
-                        %else %let stratumtitle =(Propensity Score Stratified&dpcomma.), Percentiles: &percentiles.;
+                        %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
+                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then 
+                         %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
+                        %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
                         %tableletter(); 
                         %addtotoc(tabnum=Table 1&tableletter., 
-                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
                 %end; /*Additional L2 tables*/
             %mend;
