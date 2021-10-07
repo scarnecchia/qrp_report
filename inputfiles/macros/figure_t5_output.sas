@@ -91,11 +91,10 @@
 	%end;
 
     %if &destination. = excel %then %do;
-        ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&figureletter." tab_color="blue" flow='none') style = styles.blackLine;
+        ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&figureletter." tab_color="blue" flow='none');
     %end;
 
     %if &destination. = pdf %then %do;
-    ods pdf style = styles.blackline;
 	ODS PDF BOOKMARKGEN = ON; 
 	ods proclabel = "Figure &figurenum.&figureletter.";
 	%end;
