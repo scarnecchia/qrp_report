@@ -1210,7 +1210,6 @@
                 %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
                     %let order = %scan(&fgrouporderlist., &g.);
                     %let grouplabel = ;
-                    %let switch2indicator = ;
 
                     %do f = 1 %to &fstrataorder;
 
