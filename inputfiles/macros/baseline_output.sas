@@ -155,7 +155,13 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-		   
+
+        /*Set first word for SDthreshold footnote*/
+		%if &sdthreshold. > 0 %then %do;
+             %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
+             %else %let covar_characteristic = Characteristics;
+        %end;
+
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
