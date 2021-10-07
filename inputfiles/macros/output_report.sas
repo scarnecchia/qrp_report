@@ -607,9 +607,9 @@
 	  /* Figures F1, F2, and F3 */
       %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
 	   
-        %do figure_list = 1 %to %sysfunc(countw(&figurelist.)); 
+        %do figure_count = 1 %to %sysfunc(countw(&figurelist.)); 
 		  
-        %let current_figure = %scan(&figurelist, &figure_list, ' ');
+        %let current_figure = %scan(&figurelist, &figure_count, ' ');
         %if &current_figure = F1 or &current_figure = F2 or &current_figure = F3 %then %do;
 		  /*set up titles for F123 figures */
           %if "&current_figure" = "F1" %then %do;
