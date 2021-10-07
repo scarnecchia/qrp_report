@@ -101,7 +101,7 @@
 	%end;
 
     proc odstext;
-		p "Figure &figurenum.&figureletter.. &title" / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
+		p "Figure &figurenum.&figureletter.. &title" / style=[just=L backgroundcolor=white font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
 	run;
 
 	%if &destination. = pdf %then %do;

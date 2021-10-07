@@ -390,8 +390,8 @@
             /* obtain only groups that figures were requested for */
             proc sql noprint;
                 select distinct order 
-                into :requestedfigs
-                from input.&groupsfile.
+                into :requestedfigs separated by ' '
+                from  groupsfile
                 where includeinfigure = 'Y'
                 order by order;
             quit;
