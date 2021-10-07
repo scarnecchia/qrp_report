@@ -666,10 +666,10 @@
                                 where=figuresub = "&current_figuresub" and order=&figorder, figuresub=&current_figuresub., 
                                 yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
     		  %end;
-              %let figurenum = %eval(&figurenum +1);
-              %let tablecount = 1;
           %end;
 		  %end;
+        %let figurenum = %eval(&figurenum +1);
+        %let tablecount = 1;
 	    %end;
 	  %end;
 

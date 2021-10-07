@@ -1203,16 +1203,15 @@
                     from figurefile
                     where figure="&figure";
                 quit;
-                   
+
+                %if %sysfunc(countw(&fgrouporderlist.)) = 1 and &fstrataorder = 1 %then %let tablecount = 0;
+                %else %let tablecount = 1;
 
                 %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
                     %let order = %scan(&fgrouporderlist., &g.);
                     %let grouplabel = ;
                     %let switch2indicator = ;
 
-                    %if %sysfunc(countw(&fgrouporderlist.)) = 1 and &fstrataorder = 1 %then %let tablecount = 0;
-                    %else %let tablecount = 1;
-                    
                     %do f = 1 %to &fstrataorder;
 
 					%let figuretitle = "";
@@ -1232,8 +1231,8 @@
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
             				  caption=%quote(&title. &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.));
                     %end;
-                    %let figurenum = %eval(&figurenum.+1); 
                 %end; /*loop through each figure*/
+                %let figurenum = %eval(&figurenum.+1); 
                 %end; /*figure dataset exists*/
             %mend;
 
