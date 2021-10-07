@@ -147,7 +147,7 @@
 	%let numstrata_t2conc = 0;
 
 	/* Leave behind report */
-	%global reportid dpfile;
+	%global reportid dpfile logofile;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
