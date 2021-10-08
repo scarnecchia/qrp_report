@@ -27,7 +27,6 @@
 ***************************************************************************************************;
 
 %macro create_tableofcontents();
-
     %put =====> MACRO CALLED: create_tableofcontents;
 
     /*********************************************************************************************/
@@ -298,6 +297,7 @@
                 grouplabel='';
                 if cohort = 'mi' then group2=scan(group,1,'_');
                 else group2=group;
+
                 if cohort = 'switch' then switchlabel = ' ';
                 call symputx('runid',runid);
             run;
@@ -1182,7 +1182,7 @@
     /*********************************************************************************************/  
 
     %isdata(dataset=figurefile);
-    %if %eval(&nobs.>0) %then %do;
+    %if %eval(&nobs.>0) %then %do; 
 
         %let figurenum = 1; /* Add +1 for additional figure types that are requested */
         %let tablecount = 1;
@@ -1190,32 +1190,44 @@
         /***************************************************************************************/
         /* L1 Figures                                                                          */
         /***************************************************************************************/
-
         %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) > 0 %then %do;
 
             /*utility macro to loop through groups*/
-            %macro l1kmtoc(figure=, title =);
-                %isdata(dataset=figure&figure.);
+            %macro figuretoc(figure=, title =, dataset_name =);
+			  
+                %isdata(dataset=&dataset_name.);
                 %if %eval(&nobs.>0) %then %do;
 
                 /*number of distinct groups in figure to loop through determine whether to add letter to figure #*/
                 proc sql noprint;
                     select distinct order
                     into :fgrouporderlist separated by ' '
-                    from figure&figure.
+                    from &dataset_name.
                     order by order;
+
+                    select max(stratificationorder)
+                    into :fstrataorder 
+                    from figurefile
+                    where figure="&figure";
                 quit;
-                   
-                %if %sysfunc(countw(&fgrouporderlist.)) = 1 %then %let tablecount = 0;
+
+                %if %sysfunc(countw(&fgrouporderlist.)) = 1 and &fstrataorder = 1 %then %let tablecount = 0;
                 %else %let tablecount = 1;
 
                 %do g = 1 %to %sysfunc(countw(&fgrouporderlist.));
                     %let order = %scan(&fgrouporderlist., &g.);
                     %let grouplabel = ;
-                    %let switch2indicator = ;
-                    
+
+                    %do f = 1 %to &fstrataorder;
+
+					%let figuretitle = "";
+		            data _null_;
+                      set figurefile(where=(figure = "&figure" and stratificationorder = &f));
+                      call symputx('figuretitle', figuretitle);
+                    run;
+
                     data _null_;
-                        set figure&figure.(where=(order = &order.));
+                        set &dataset_name.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
                         end;
@@ -1223,7 +1235,8 @@
 
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-            				  caption=%quote(&title. Among &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.));
+            				  caption=%quote(&title. &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.));
+                    %end;
                 %end; /*loop through each figure*/
                 %let figurenum = %eval(&figurenum.+1); 
                 %end; /*figure dataset exists*/
@@ -1234,7 +1247,7 @@
                 1) F1: t1censor = Reasons for End of Observable Data by Group (1-CDF) - 1 figure per group
             /**********************************************************************************************/
             %if &reporttype. = T1 %then %do;
-                %l1kmtoc(figure=F1, title =Reasons for End of Observable Data);
+                %figuretoc(figure=F1, title =Reasons for End of Observable Data Among, dataset_name = figureF1);
             %end; /*T1*/
 
             /**********************************************************************************************
@@ -1255,42 +1268,62 @@
 
                 /*F2: 1 figure per group*/
                 %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F2, title =Reasons for End of Follow-Up);
+                    %figuretoc(figure=F2, title =Reasons for End of Follow-Up Among, dataset_name = figureF2);
                 %end; /*figuref2*/
 
                 /*F3: 1 figure per group*/
                 %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F3, title =Reasons for End of Observable Data);
+                    %figuretoc(figure=F3, title =Reasons for End of Observable Data Among, dataset_name = figureF3);
                 %end; /*figuref3*/
             %end; /*T2L1*/
 
             /**********************************************************************************************
-             T5: 2 figures:
-                1) F1 (not yet implemented)
-                2) F2 (not yet implemented)
-                3) F3 (not yet implemented)
+             T5: 5 figures:
+                1) F1: Patient Entry into Study by Month
+                2) F2: Number of Prescription Dispensings in Patients First Episodes by Month
+                3) F3: Total Days Supply in Patients' First Episodes by Month
                 4) F4: t5censor = Reasons for End of First Treatment Episode by Group
                 5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
             /**********************************************************************************************/
+			
             %if &reporttype. = T5 %then %do;
-                /*F4: 1 figure per group*/
-                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F4, title =Reasons for End of First Treatment Episode);
-                %end; /*figuref4*/
+			  /* F1 */
+			  %if %sysfunc(prxmatch(m/\bF1\b/i,&figurelist.)) > 0 %then %do;
+			    %figuretoc(figure=F1, title =Patient Entry into Study by Month for, dataset_name = figure123);
+			  %end;
+
+			  /* F2 */
+		      %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+			    %figuretoc(figure=F2, title =Number of Prescription Dispensings in Patients%str(%') First Episodes by Month Patient Entered into Study for,
+                           dataset_name = figure123);
+		      %end;
+
+			  /* F3 */
+		      %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %do;
+			    %figuretoc(figure=F3, title =Total Days Supply in Patients%str(%') First Episodes by Month Patient Entered into Study for,
+                           dataset_name = figure123);
+		      %end;
+
+              /*F4: 1 figure per group*/
+              %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
+                %figuretoc(figure=F4, title =Reasons for End of First Treatment Episode Among, dataset_name = figureF4);
+              %end; /*figuref4*/
 
                 /*F5: 1 figure per report*/
-                %isdata(dataset=figuref5);
-                %if %eval(&nobs.>0) %then %do;
                     /*Censor reason*/
-                      data _null_;
-                        set figurefile(where=(figure="F5"));
-                        call symputx('censordisplay', censordisplay);
-                    run;
-
-                	%addtotoc(tabnum=Figure &figurenum.,
-                			  caption=%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
-                    %let figurenum = %eval(&figurenum.+1); 
-                %end;
+			  %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
+			   %isdata(dataset= figuref5);
+			   %if %eval(&nobs.>0) %then %do;
+                data _null_;
+                  set figurefile(where=(figure="F5"));
+                  call symputx('censordisplay', censordisplay);
+                run;
+                %addtotoc(tabnum=Figure &figurenum, 
+                          caption =%quote(End of First Treatment Episode due to &&&censordisplay._label in the &database. from &startdateformatted. to &enddateformatted.));
+                %let figurenum = %eval(&figurenum.+1);
+			  %end;
+             %end;  	
+             
             %end; /*T5*/
 
             /**********************************************************************************************
@@ -1306,16 +1339,16 @@
             %if &reporttype. = T6 %then %do;
                 /*F4 - F7: 1 figure per group*/
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F4, title =Kaplan-Meier Estimate of First Switch Not Occurring);
+                    %figuretoc(figure=F4, title =Kaplan-Meier Estimate of First Switch Not Occurring Among, dataset_name = figureF4);
                 %end; /*figuref4*/
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F5, title =Kaplan-Meier Estimate of Second Switch Not Occurring);
+                    %figuretoc(figure=F5, title =Kaplan-Meier Estimate of Second Switch Not Occurring Among, dataset_name = figureF5);
                 %end; /*figuref5*/
                 %if %sysfunc(prxmatch(m/F6/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F6, title =Reasons for Censoring at First Switch Evaluation);
+                    %figuretoc(figure=F6, title =Reasons for Censoring at First Switch Evaluation Among, dataset_name = figureF6);
                 %end; /*figuref6*/
                 %if %sysfunc(prxmatch(m/F7/i,&figurelist.)) > 0 %then %do;
-                    %l1kmtoc(figure=F7, title =Reasons for Censoring at Second Switch Evaluation);
+                    %figuretoc(figure=F7, title =Reasons for Censoring at Second Switch Evaluation Among, dataset_name = figureF7);
                 %end; /*figuref7*/
             %end; /*T6*/
 
