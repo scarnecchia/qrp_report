@@ -182,13 +182,13 @@
 	 data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
-	       input.&groupsfile. (keep = runid group)
+	       input.&groupsfile. (keep = runid group order)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
-		   input.&l2comparisonfile. (keep = runid analysisgrp rename=analysisgrp=group)
+		   input.&l2comparisonfile. (keep = runid analysisgrp order rename=analysisgrp=group)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid group)
+		   input.&baselinefile. (keep = runid group order)
 		 %end;
 		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
 		   input.&itsregressionfile. (keep = runid)
