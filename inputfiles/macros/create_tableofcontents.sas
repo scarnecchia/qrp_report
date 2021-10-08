@@ -212,11 +212,11 @@
             %end;         
 
             /*1 block of code for both aggregate and DP tables*/
-            %macro baselinetoc(table);
+            %macro baselinetoc(aggregated=, dpinparenthesis=, dpcomma=);
                 %if %eval(&unique_psestimate.) = 1 %then %do;
                  %tableletter(); 
                  %addtotoc(tabnum=Table 1&tableletter., 
-                 caption=%quote(&unadjusted.Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                 %end;
 
                 /*For L2 tables - up to 2 additional adjusted tables*/
@@ -225,24 +225,24 @@
                     %if &psfile. = psmatchfile %then %do;
                     %tableletter(); 
                     %addtotoc(tabnum=Table 1&tableletter., 
-                    caption=%quote(Adjusted Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Unweighted - IPTW and PS Stratum*/
                     %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                     %tableletter(); 
                     %addtotoc(tabnum=Table 1&tableletter., 
-                     caption=%quote(Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
 
                     /*Weighted - IPTW, PS Stratum, PS Stratification*/
                     %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                        %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
-                        %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
+                        %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed&dpcomma.), Weight: &weightlabel., Truncation: &truncationlabel.;
+                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed&dpcomma.), Percentiles: &percentiles., Weight: &weightlabel.;
+                        %else %let stratumtitle =(Propensity Score Stratified&dpcomma.), Percentiles: &percentiles.;
                         %tableletter(); 
                         %addtotoc(tabnum=Table 1&tableletter., 
-                        caption=%quote(Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
+                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
                     %end;
                 %end; /*Additional L2 tables*/
             %mend;
@@ -250,13 +250,19 @@
             /*loop through each periodid*/
             %do periodid = %eval(&look_start.) %to %eval(&look_end.);
                 /*Aggregated*/
-                %baselinetoc(Aggregated);
+                %baselinetoc(%if %eval(&num_dp.)=1 %then %do;
+                            aggregated=,
+                            %end;
+                            %else %do;
+                            aggregated=%str(Aggregated ),
+                            %end;
+                            dpinparenthesis=, dpcomma=);
        
                 /*Output separate table for each Data Partner - loop through each DP*/
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
         		        %let maskedID = %scan(&masked_dplist,&dps); 
-                        %baselinetoc(&maskedid.);
+                        %baselinetoc(aggregated = , dpinparenthesis=%str((&maskedid.) ), dpcomma=%str(, &maskedid.));
                     %end;
                 %end; /*DP stratification*/
             %end; /*loop through each periodid*/
