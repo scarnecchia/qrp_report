@@ -286,7 +286,7 @@
    		(drop=l2eoirefgroups)
    		%end;
    		a 
-   		left join 
+   		inner join 
    		agg_adj_attrition_&periodid b 
    		on a.analysisgrp = scan(b.group,-1,'@');
    		%end;
@@ -334,7 +334,6 @@
    			t4cohortdef='02';
    		end;
    		%end;
-   		if missing(group) then delete;
    	run;
    	%end;
 
@@ -588,6 +587,19 @@
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
+	  /* Join in order variable to sort groups based on input file ordering */
+	  proc sql noprint undo_policy=none;
+	  	create table all_attrition_agg as 
+	  	select a.*, c.attrorder
+	  	from all_attrition_agg a 
+	  	left join
+	  		(select b.runid, b.group, min(b.order) as attrorder
+	  			from inputfiles b 
+	  			group by b.runid, b.group
+	  		) c 
+	  	on scan(a.group,1,'@') = c.group;
+	  quit;
+
 	  %if %index(&reporttype,L2) %then %do;
 
 	  %let attrperiodid=_&periodid;
@@ -614,12 +626,12 @@
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
 	  proc sort data = all_attrition_agg out=agg_patient_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
-	  	by level report_descr %if %index(&reporttype,L2) %then %do; eoireforder %end; group;
+	  	by level report_descr attrorder %if %index(&reporttype,L2) %then %do; eoireforder %end; group;
 	  run;
 	  %end;
 
 	  proc sort data = all_attrition_agg out=agg_episode_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
-	  	by level report_descr %if %index(&reporttype,L2) %then %do; eoireforder %end; group ;
+	  	by level report_descr attrorder %if %index(&reporttype,L2) %then %do; eoireforder %end; group;
 	  run;
 
       proc datasets nowarn noprint lib=work;

@@ -80,7 +80,7 @@
             column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
             define report_descr / group order=data ' ' style(column)=[just=L] 
                                                        style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
-            define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
+            define headerlabel / nozero across order=data ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
             define grouplabel / nozero across order=data ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
