@@ -157,15 +157,15 @@
         %let cat = &var.=&cat.;
       %end;
     %end;
-    /*range of values inclusive of boundry (i.e. 25-50)*/
+    /*range of values inclusive of boundary (i.e. 25-50)*/
     %else %if %index(&cat., -) > 0 & %index(&cat., <) = 0 & %index(&cat., >) = 0 %then %do;
       %let cat = %sysfunc(tranwrd(&cat., -, <=&var.<=));
     %end;
-    /*range of values inclusive of upper boundry, (i.e. 25<-60)*/
+    /*range of values inclusive of upper boundary, (i.e. 25<-60)*/
     %else %if %index(&cat., -) > 0 & %index(%scan(&cat., 1, '-'), <) > 0 %then %do;
       %let cat = %scan(&cat., 1, '-')&var.<=%scan(&cat., 2, '-');
     %end;
-    /*range of values inclusive of lower bountry, (i.e. 50-<75)*/
+    /*range of values inclusive of lower boundary, (i.e. 50-<75)*/
     %else %if %index(&cat., -) > 0 & %index(%scan(&cat., 2, '-'), <) > 0 %then %do;
       %let cat = %scan(&cat., 1, '-')<=&var.%scan(&cat., 2, '-');
     %end;
@@ -179,7 +179,7 @@
 %mend convert_categories;
 
 %macro output_datasets (dataset=, inlib=work, outlib=, name=&infile.);
-	%if &output_agg_data. = Y %then %do;
+	%if &output_agg_data. = Y and &leavebehindreport = N %then %do;
 
 		proc datasets library = &inlib;
 	    copy out=&outlib. memtype=data;

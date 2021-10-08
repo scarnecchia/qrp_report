@@ -8,7 +8,7 @@
 * Last modified: 02/01/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This program is used to create a template for qrp reports using proc template
+* PURPOSE: This program is used to create a template for qrp report outputs
 *  
 *  Program inputs:                                                                                   
 * 
@@ -163,7 +163,11 @@
   	      just = L
 		  frame = void
      	  ;
-        end;
+
+        class GraphAxisLines/
+		   contrastcolor = black
+		   color = black;
+		end;
     run;
 
 %mend report_template;

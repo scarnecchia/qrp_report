@@ -35,9 +35,10 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid;
+    %global runidlist numrunid typenum;
     %let runidlist = ;
     %let numrunid = 0;
+    %let typenum = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -90,10 +91,11 @@
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
-    %global output_code_distribution numgroups discardnegativetimegroups;
+    %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
     %let numgroups = 0;
     %let output_code_distribution = N;
     %let discardnegativetimegroups = ;
+    %let requestedfigs = ;
 
     /*L2 report variables*/
     %global numl2comparisons attrperiodid;
@@ -101,8 +103,9 @@
     %let attrperiodid=;
 
     /*label file variables */
-    %global labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
-            cens_event_label cens_switch1_label cens_switch2_label;
+    %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
+            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow;
+    %let reporttitle = Exposures of Interest;
 	%let labelfileexists = N;		
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
@@ -114,6 +117,11 @@
     %let cens_event_label =Occurence of event;
     %let cens_switch1_label =First switch; 
     %let cens_switch2_label =Second switch; 
+    %let includeheaderrow = N;
+
+    /*censor reasons*/
+    %global defaultcensororder;
+    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend;
 
     /*Age stratification format */
     %global agefmt;
@@ -125,8 +133,8 @@
     %global output_agg_data;
     %let output_agg_data = Y;
 	
-	/*zipfile*/
-	%global zipfile;
+	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
+    %if &leavebehindreport. = N %then %do; %global zipfile; %end;
 	%let zipfile = ;
 	
 	/* covariate codes formats */
@@ -138,6 +146,9 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
+
+	/* Leave behind report */
+	%global reportid dpfile logofile;
 
     %put =====> MACRO ENDED: initialize_macro_variables ;
 

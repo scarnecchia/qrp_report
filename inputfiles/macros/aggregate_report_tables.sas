@@ -247,7 +247,7 @@
 			  %agg_report(infile=followuptime_cida, outfile=agg_t2followuptime, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2conc) > 0 %then %do;
-			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
+			  %agg_report(infile=t2_concomitance, outfile=agg_t2conc, name=analysisgrp, stratification = Y, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 
 			%end;
 			%if %index(&datasetlist.,t2multevent) > 0 %then %do;
 			  %agg_report(infile=t2_multevent, outfile=agg_t2multevent, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..))); 

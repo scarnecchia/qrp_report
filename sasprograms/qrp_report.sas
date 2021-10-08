@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 06/14/2021
-* VERSION: 0.1.0
+* LAST MODIFIED: 09/30/2021
+* VERSION: 1.0.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -109,7 +109,7 @@ options validvarname = v7;
   %put The parameter dir must be non-missing.; %abort cancel; %end;
   %local rc fileref return; %let rc=%qsysfunc(filename(fileref,&dir.)); 
   %let return=%qsysfunc(fexist(&fileref.));  
-  &return  /* returns value to calling enivornment, like a function */
+  &return  /* returns value to calling environment, like a function */
   %let rc=%qsysfunc(filename(fileref));  
 %mend soc_dirExist;
 %macro soc_quotepath(list);
@@ -119,7 +119,7 @@ options validvarname = v7;
   %if &d_exist eq 0 %then %do; %put Path &subpath does not exist; %abort cancel; %end;
   %let subpath="&subpath."; %let temppath=&temppath. &subpath.; %end;
   %let list=%qleft(&temppath);
-  &list /* returns value to calling enivornment, like a function */
+  &list /* returns value to calling environment, like a function */
 %mend soc_quotepath;
 %macro soc_lib(ref, paths, options=) ;
   %local libpaths; %if %length(&ref) eq 0 %then %do; %put libref is blank; %abort cancel; %end;
@@ -156,6 +156,10 @@ options NODLCREATEDIR;
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
+/* Assign leavebehindreport macro variable to N */
+%global leavebehindreport;
+%let leavebehindreport = N;
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
@@ -166,6 +170,7 @@ ods path(prepend) work.templat(update);
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
 %include "&reportroot.inputfiles/macros/addstatetozip3.sas";
+%include "&reportroot.inputfiles/macros/figure_axes.sas";
 
 /*report template*/
 %include "&reportroot.inputfiles/macros/report_template.sas";
@@ -212,6 +217,13 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/t5tables_createdata.sas";
 %include "&reportroot.inputfiles/macros/t5tables_driver.sas";
 
+/*L1 table output macros*/
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
+%include "&reportroot.inputfiles/macros/t1t2conc_output.sas";
+%include "&reportroot.inputfiles/macros/censortable_output_table13.sas";
+%include "&reportroot.inputfiles/macros/censortable_output_table2.sas";
+%include "&reportroot.inputfiles/macros/t5tables_output.sas";
+
 /*Code distribution macros*/
 %include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
 %include "&reportroot.inputfiles/macros/codedistribution_output.sas"; 
@@ -225,6 +237,9 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/figure_l1_driver.sas";
 %include "&reportroot.inputfiles/macros/figure_cdf_km_createdata.sas";
 %include "&reportroot.inputfiles/macros/figure_cdf_km_output.sas";
+
+%include "&reportroot.inputfiles/macros/figure_t5_createdata.sas";
+%include "&reportroot.inputfiles/macros/figure_t5_output.sas";
 
 /*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";

@@ -24,7 +24,9 @@
 *   - cattableid: category table ID from TABLEFILE
 *   - disttableid: distribution table ID from TABLEFILE
 *   - catvarsort: variable on the input dataset containing category indicators
-*
+*   - createfootnote: Y/N indicator to create group-specific footnote table (for dose tables)
+*   - dosevar: name of variable containing statistic names for dosing tables continuous metrics
+*   - totalcountdosevar: name of variable containing counts for dosing tables continuous metrics
 * 
 *  Programming Notes:                                                                                
 *  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
@@ -45,7 +47,10 @@
                            countvar=,
                            cattableid=,
                            disttableid=,
-                           catvarsort=);
+                           catvarsort=,
+                           createfootnote=,
+						   dosevar=,
+						   totalcountdosevar=);
 
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
@@ -163,6 +168,7 @@
             if _n_ = 1 then do; /*levelid1 and levelid2 same for both tables*/
             	call symputx('levelid1', levelid1);
             	call symputx('levelid2', levelid2);
+				call symputx('levelid3', levelid3);
             end;
             if table = "&cattableid" then do;
                 call symputx('categories', categories);
@@ -313,7 +319,7 @@
                     %end; 
     			%end;        
 
-    			*Add labels - label for _&c. variables will be used for proc report;
+    			*Add labels - label for _&c.;
     			%do c =1 %to &num_categories.;
     				label _&c. = "&&&lbl&c.";
     			%end;
@@ -322,6 +328,74 @@
             proc datasets nowarn noprint lib=work;
                 delete _totalbydp _catdata_trans _catdata _total_bystrat _distribution_cat:;
 		    quit;
+
+            /*Compute dose distribution metrics*/
+	        %if %sysfunc(prxmatch(m/T18\b|T19\b|T20\b|T21\b|T22\b/i,&&cattableid.)) > 0 %then %do;				
+				%if %eval(&s. eq 1) and %str("&levelid3.") ne %str("") %then %do;	
+						
+		    		proc sort data=&dataset.(where=(&whereclause. and level in ("&levelid3.")))
+							  out=_t5data_dose_stats(keep=runid group dpidsiteid &dosevar. metricvalue);	
+					by runid group dpidsiteid;					 	
+					run;
+
+					proc transpose data=_t5data_dose_stats out=_t5data_dose_stats_trans;
+					by runid group dpidsiteid;
+					var metricvalue;
+					id &dosevar.;
+					run;
+
+					data _t5data_dose_stats;
+					set _t5data_dose_stats_trans;
+					count_std=0;
+					weighted_std=0;
+					if missing(mean) = 0 then weighted_mean = mean * &totalcountdosevar.;
+					if missing(stddev) = 0 then do;
+						weighted_std = (stddev**2)*(&totalcountdosevar. - 1);
+						count_std=1;
+					end;
+					run;
+
+					proc means data=_t5data_dose_stats nway missing noprint;
+					var minimum maximum count_std weighted_std &totalcountdosevar. weighted_mean;
+					class runid group;					
+					output out=_t5data_dose_stats(drop=_:) min(minimum)=minimum
+														   max(maximum)=maximum
+														   sum(count_std)=count_std
+														   sum(weighted_std)=weighted_std
+														   sum(&totalcountdosevar.)=&totalcountdosevar.
+														   sum(weighted_mean)=weighted_mean;
+					run;
+
+					data _t5data_dose_stats;
+					length dpidsiteid $6.;
+					set _t5data_dose_stats(in=a)
+					%if &stratifybydp. = Y %then %do;
+		            	_t5data_dose_stats_trans
+		            %end; ;
+					format mean_char stddev_char minimum_char maximum_char $15.;
+					if a then do;
+						dpidsiteid = 'all';
+						mean = weighted_mean / &totalcountdosevar.;
+						if missing(weighted_std) = 0 then stddev = sqrt(weighted_std /(&totalcountdosevar. - count_std));
+					end;
+					mean_char = strip(put(mean, comma12.1));
+					stddev_char = strip(put(stddev, comma12.1));
+					minimum_char = strip(put(minimum, comma12.0));
+					maximum_char = strip(put(maximum, comma12.0));
+					keep runid group dpidsiteid mean_char stddev_char minimum_char maximum_char;
+					run;
+			
+					proc sort data=_t5data_dose_stats;
+					by dpidsiteid runid group;
+					run;
+
+					data &cattableid._&cattablestratorder.;
+	    			merge &cattableid._&cattablestratorder.
+						  _t5data_dose_stats;
+	    			by dpidsiteid runid group;
+					run;						
+				%end;						
+			%end;
 
             /*compute stratification percents and merge in total row*/
             %if %eval(&s.>1) %then %do;
@@ -540,8 +614,8 @@
     /*----------------------------------------------------------------------------------------------*/
 
     /*Increase length of label if < longest stratification label*/
-    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(40, &label_length.));
-    %else %let t5tablelabellength = 40;
+    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(50, &label_length.+50));
+    %else %let t5tablelabellength = 50;
 
     /*utility macro*/
     %macro assignlabelvars(format=, sortorder1 = , sortorder2=);
@@ -560,9 +634,10 @@
                    case when not missing(lbla.label) then lbla.label  
                     else y.group 
                     end as grouplabel length=&t5tablelabellength.,
-                   case when not missing(lblb.label) then lblb.label  
-                    else ' ' 
-                    end as header length=&t5tablelabellength.,
+				    case when not missing(lblb.label) then lblb.label 
+                         when not missing(lbla.label) then lbla.label  
+                     else ' '  
+					end as header length=&t5tablelabellength.,
                    %end;
                    %else %do;
    				   y.group as grouplabel length=&t5tablelabellength.,
@@ -581,7 +656,7 @@
             on x.group = lblb.group and x.runid = lblb.runid
             %end; ;
 		quit;
-
+		
         /*Number of stratifications*/
         %let stratnum = %sysfunc(countw(&tablesub.));
 
@@ -597,6 +672,7 @@
 								order, 
 								sortorder1, 
 								sortorder2,
+								header,	
 								&firststrat.
                                 %if &firststrat. = agegroup %then %do;
 								, agegroupnum
@@ -651,6 +727,13 @@
                     end;
                 %end;
             %end;
+
+            /*Add footnote superscrip*/
+            %if &createfootnote. = Y %then %do;
+                if sortorder1 = 0 and sortorder2 = 0 then do;
+                    grouplabel=cat(strip(grouplabel), "^{super", " ", order, "}");
+                end;
+            %end;
         run;
         
 		proc sort data=&data. sortseq=linguistic(numeric_collation=on);;
@@ -688,9 +771,59 @@
     	%end;
     %end;
 
+    /*Create footnote lookup table - used for dose tables*/
+    %if &createfootnote. = Y %then %do;
+
+        /*Identify unit and categories for each group*/
+        proc sql noprint;
+            create table _temp_unit as
+            select a.group
+                 , a.order        
+                 , b.unit
+                 , c.&catvar.
+                   %if &labelfileexists = Y %then %do;
+                 ,  case when not missing(lbl.label) then lbl.label  
+                    else a.group 
+                    end as grouplabel length=&t5tablelabellength.
+                   %end;
+				   %else %do;
+				 , 	a.group as grouplabel length=&t5tablelabellength.
+				   %end;
+            from groupsfile(keep=group runid order) as a
+            inner join
+                (select distinct group, runid, unit
+                from master_cohortcodes(keep=group runid unit indexcriteria)
+                where indexcriteria = 'DEF' and missing(unit)=0) as b
+            on a.group = b.group and a.runid = b.runid
+            inner join
+                (select group, runid, &catvar.
+                from master_typefile(keep=group runid &catvar.)) as c
+            on a.group=c.group and a.runid=c.runid
+            %if &labelfileexists = Y %then %do;
+            left join labelfile(where=(labeltype='grouplabel')) as lbl
+            on a.group = lbl.group and a.runid = lbl.runid
+            %end;
+            order by a.order;
+        quit;
+
+        /*Create footnote*/
+        data &cattableid._lookup_footnotes_dose;
+            set _temp_unit;
+            length description $575 ;
+            %do c =1 %to &num_categories.;
+            length label&c $200;
+            label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '), ' ', unit);
+            %end;
+
+            description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
+            keep order description;
+        run;
+
+    %end;
+
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _t5data_summed:;
+        delete _t5data_summed: _temp_unit;
     quit;
 
     %put =====> END MACRO: t5tables_createdata ;

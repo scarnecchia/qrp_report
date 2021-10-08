@@ -36,10 +36,10 @@
         1) F1: t2followuptime = Kaplan-Meier Estimate of Event of Interest Not Occurring
         2) F2: t2followuptime = Reasons for End of Follow-Up by Group (1-CDF)
         3) F3: t2censor = Reasons for End of Observable Data by Group (1-CDF)
-     T5: 2 figures:
-        1) F1 (not yet implemented)
-        2) F2 (not yet implemented)
-        3) F3 (not yet implemented)
+     T5: 5 figures:
+        1) F1: Patient Entry into Study by Month
+        2) F2: Number of Prescription Dispensings in Patients First Episodes by Month
+        3) F3: Total Days Supply in Patients First Episodes by Month
         4) F4: t5censor = Reasons for End of First Treatment Episode by Group
         5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
      T6: 7 figures:
@@ -54,14 +54,6 @@
 
     %isdata(dataset=figurefile);
     %if %eval(&nobs>0) %then %do;
-
-    /*Assign user censoring criteria labels*/
-    %if &labelfileexists. = Y %then %do;
-        data _null_;
-            set labelfile(where=(labeltype='censorlabel'));
-            call symputx(cats(labelvar,'_label'), label);
-        run;
-    %end;
 
     /*Square groups*/
     proc sql noprint;
@@ -87,9 +79,8 @@
             else if dataset = 't2censor' then call symputx('dataset', 'agg_t2censor');
             else if dataset = 't2followuptime' then call symputx('dataset', 'agg_t2followuptime');
             else if dataset = 't5censor' then call symputx('dataset', 'agg_t5censor');
-
-            if dataset = 't6plota' then call symputx('dataset', 'agg_t6plota');
-            if dataset = 't6plotb' then call symputx('dataset', 'agg_t6plotb');
+            else if dataset = 't6plota' then call symputx('dataset', 'agg_t6plota');
+            else if dataset = 't6plotb' then call symputx('dataset', 'agg_t6plotb');
 
             /*Assign figure to produce*/
             if (dataset='t2followuptime' and figure = 'F1') |
@@ -115,38 +106,47 @@
                                   figure = &figure.);
         %end;
         %else %if &reporttype. = T5 %then %do;
-            /*Figure F5 selects 1 censoring reason from F4, so if figuref4 exists and 
-              censoring reason selected in F4 then can subset that dataset, else need to execute %figure_cdf_km_createdata()*/
-            %isdata(dataset=figuref4); /*will only exist if F4 has been created*/
-            %if %eval(&nobs.>0) %then %do;
-                %let censordisplayf4 = ;
-                data _null_;
-                    set figurefile(where=(figure="F4"));
-                    call symputx('censordisplayf4', censordisplay);
-                run;
-
-                %if %index(&censordisplayf4., &censordisplay.)>0 %then %do;
-                    data figure&figure.;
-                        set figuref4;
-                        keep day group: order episodes_atrisk: cdf_&censordisplay.;
-                    run;
-                    %let transposedata = T;
+            /*Figures 1, 2, and 3 - will call 1x*/
+            %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figure.)) %then %do;
+                %isdata(dataset=figuref123);
+                %if %eval(&nobs.<1) %then %do;
+                    %figure_t5_createdata();
                 %end;
-
-                %goto createfigure;
             %end;
-            %else %do;
-                %createfigure:
-                %figure_cdf_km_createdata(dataset=&dataset., 
-                                          rename=,
-                                          curve=&curve., 
-                                          whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
-                                          dayvar=episodelength,
-                                          includegroups=&includegroupinfigure.,
-                                          includevars=&censordisplay.,
-                                          transposedata=&transposedata.,
-                                          discardnegativetimegroups=,
-                                          figure = &figure.);
+            %else %if %sysfunc(prxmatch(m/F4|F5/i,&figure.)) %then %do;
+                /*Figure F5 selects 1 censoring reason from F4, so if figuref4 exists and 
+                  censoring reason selected in F4 then can subset that dataset, else need to execute %figure_cdf_km_createdata()*/
+                %isdata(dataset=figuref4); /*will only exist if F4 has been created*/
+                %if %eval(&nobs.>0) %then %do;
+                    %let censordisplayf4 = ;
+                    data _null_;
+                        set figurefile(where=(figure="F4"));
+                        call symputx('censordisplayf4', censordisplay);
+                    run;
+
+                    %if %index(&censordisplayf4., &censordisplay.)>0 %then %do;
+                        data figure&figure.;
+                            set figuref4;
+                            keep day group: order episodes_atrisk: cdf_&censordisplay.;
+                        run;
+                        %let transposedata = T;
+                    %end;
+
+                    %goto createfigure;
+                %end;
+                %else %do;
+                    %createfigure:
+                    %figure_cdf_km_createdata(dataset=&dataset., 
+                                              rename=,
+                                              curve=&curve., 
+                                              whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
+                                              dayvar=episodelength,
+                                              includegroups=&includegroupinfigure.,
+                                              includevars=&censordisplay.,
+                                              transposedata=&transposedata.,
+                                              discardnegativetimegroups=,
+                                              figure = &figure.);
+                %end;
             %end;
         %end; /*T5*/
         %else %if &reporttype. = T6 %then %do;

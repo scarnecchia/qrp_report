@@ -30,17 +30,26 @@
 ***************************************************************************************************;
 * Initialize global macro variables and read in input files                                  
 ***************************************************************************************************;
-
+    /* If leave behind report runs then use reportid for log suffix */
+    %if &leavebehindreport = Y %then %do;
     /* Start log */
-    proc printto log="&reportroot.output/qrp_report_log.log" new;
-    run;
-
+       proc printto log="&output.qrp_report_log&reportid..log" new;
+       run;
+    %end;
+	%else %do;
+       proc printto log="&output.qrp_report_log.log" new;
+	%end;
+	
     %put =====> MACRO CALLED: create_report;
-
-    /*clear work and output*/
-    proc datasets nowarn nolist lib=work kill; quit;
-    proc datasets nowarn nolist lib=repdata kill; quit;
-    proc datasets nowarn nolist lib=msocdata kill; quit;    
+	
+	/* Need to retain work datasets from qrp for leave behind report.
+       Repdata is set to work directory when leave behind report is run,
+	   and data for qrp report is in the msocdata folder	*/
+	%if &leavebehindreport = N %then %do;
+	   proc datasets nowarn nolist lib=work kill; quit;
+	   proc datasets nowarn nolist lib=repdata kill; quit;
+	   proc datasets nowarn nolist lib=msocdata kill; quit; 
+	%end;
 
     /*Initialize global macro variables*/
     %initialize_macro_variables();
@@ -49,7 +58,7 @@
     %process_inputfiles();
 
 ***************************************************************************************************;
-* Create concactenated libname for each DP and output DP metadata                                                      
+* Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
 
     %createlibref(dplist = &random_dplist.,
@@ -204,7 +213,7 @@
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
-    /*loop agggregate tree processing by periodid*/
+    /*loop aggregate tree processing by periodid*/
     %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %aggregate_tree();
@@ -217,6 +226,7 @@
 
     proc datasets nowarn nolist lib=work kill; quit;
 
+	
     /* End log */
     proc printto;
     run;

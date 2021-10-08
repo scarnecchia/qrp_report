@@ -54,10 +54,6 @@
 	left join master_mil b 
 	on a.group = b.group and a.runid = b.runid
 	%end;
-	%if %sysfunc(exist(work.l2comparisonfile)) %then %do;
-	left join l2comparisonfile c
-	on a.group = c.analysisgrp and a.runid = c.runid 
-	%end;
 	;
 	quit;
 
@@ -285,8 +281,12 @@
    		%if %index(&reporttype,T4L2) %then %do;
    		create table agg_mil_attrition as 
    		select a.*, b.group as l2eoirefgroups
-   		from agg_mil_attrition a 
-   		left join 
+   		from agg_mil_attrition 
+   		%if %varexist(agg_mil_attrition,l2eoirefgroups) = 1 %then %do; 
+   		(drop=l2eoirefgroups)
+   		%end;
+   		a 
+   		inner join 
    		agg_adj_attrition_&periodid b 
    		on a.analysisgrp = scan(b.group,-1,'@');
    		%end;
@@ -388,7 +388,7 @@
         group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
-    /* Set in condlevel value and delete un-needed rows */
+    /* Set in condlevel value and delete unneeded rows */
 	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel
 					      %if %length(&milgrps) > 0 %then %do; millabel %end;
 						  t%substr(&reporttype,2,1)cohortdef);
@@ -587,17 +587,51 @@
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
-	  %if %index(&reporttype,L2) %then %let attrperiodid=_&periodid;
+	  /* Join in order variable to sort groups based on input file ordering */
+	  proc sql noprint undo_policy=none;
+	  	create table all_attrition_agg as 
+	  	select a.*, c.attrorder
+	  	from all_attrition_agg a 
+	  	left join
+	  		(select b.runid, b.group, min(b.order) as attrorder
+	  			from inputfiles b 
+	  			group by b.runid, b.group
+	  		) c 
+	  	on scan(a.group,1,'@') = c.group;
+	  quit;
+
+	  %if %index(&reporttype,L2) %then %do;
+
+	  %let attrperiodid=_&periodid;
+	    proc sql noprint undo_policy=none;
+		/* Create ordering variable based off eoi/ref values */
+		create table all_attrition_agg as 
+		select a.*, case when scan(a.group,-1,'@') = d.eoi then 1
+						 when scan(a.group,-1,'@') = d.ref then 2
+						 else 2 
+						 end as eoireforder
+		from all_attrition_agg a 
+		left join
+		(select distinct a.runid, a.analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
+		from l2comparisonfile a 
+		left join pscs_masterinputs b 
+		on a.analysisgrp = b.analysisgrp
+		left join psest_masterinputs c 
+		on b.psestimategrp = c.psestimategrp) d
+		on scan(a.group,1,'@') = d.analysisgrp and scan(a.group,-1,'@') = coalescec(d.eoi,d.ref);
+	    quit;
+	  %end; 
+
 
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;
 	  proc sort data = all_attrition_agg out=agg_patient_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('01','04'))) sortseq=linguistic(numeric_collation=on);
-	  	by level report_descr group;
+	  	by level report_descr attrorder %if %index(&reporttype,L2) %then %do; eoireforder %end; group;
 	  run;
 	  %end;
 
 	  proc sort data = all_attrition_agg out=agg_episode_attrition&attrperiodid(where=(t%substr(&reporttype,2,1)cohortdef in ('02','03'))) sortseq=linguistic(numeric_collation=on);
-	  	by level report_descr group;
+	  	by level report_descr attrorder %if %index(&reporttype,L2) %then %do; eoireforder %end; group;
 	  run;
 
       proc datasets nowarn noprint lib=work;

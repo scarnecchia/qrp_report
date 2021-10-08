@@ -99,7 +99,7 @@
                 call symputx('computebalance', upcase(computebalance));
                 %end;
 
-                /*inialize to dummy value if missing*/
+                /*initialize to dummy value if missing*/
                 if missing(healthchar) then call symputx('healthchar', 'missing');
                 else call symputx('healthchar', upcase(healthchar));
                 if missing(medproduse) then call symputx('medproduse', 'missing');
@@ -1227,7 +1227,6 @@
             /***************************/
             /* Patient Characteristics */
             /***************************/
-
             %if %index(&reporttype,T4) %then %let grouperlabel = Mother;
             %else %let grouperlabel = Patient;
             if MetVar = 'PATIENT' %if %index(&reporttype,L2) %then %do; or (Metvar = 'N_EPISODES' and &cohortdef=01) %end; then do;
@@ -1242,7 +1241,9 @@
             %assignbaselinevars(label="Weighted patients", grouper="&grouperlabel Characteristics", sortorder1 = 1, sortorder2=3);
             end;
 
-            /*infant characteristics*/
+            /**************************/
+            /* Infant Characteristics */
+            /**************************/
             %if "&outputinfantchar" = "Y" %then %do;
                 else if MetVar = 'BIRTH_ENROLL' then do;
                 %assignbaselinevars(label="Enrollment time after birth (days)", grouper="Infant Characteristics", sortorder1 = 1, sortorder2=4);

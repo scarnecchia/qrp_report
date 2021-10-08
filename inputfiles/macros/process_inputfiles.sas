@@ -39,7 +39,9 @@
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
         %abort;
     %end;
-
+	
+	/* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
+	   Create macro variable to identify if it is a leave behind report */
         proc sql noprint;
             select count(*) into: numparms
             from input.&createreportfile;
@@ -57,12 +59,28 @@
                     if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
+                    /*default stratifybydp*/
+                    if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
                     if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
                 end;
             run;
             %let &parameter. = &value.;
         %end;
+		
+		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+           dpfile is set to the work dpinfofile and reportdata is N. */
+        %if &leavebehindreport = Y %then %do;
+		  %let stratifybydp = N;
+		  %let report_destination = PDF;
+		  %let dpfile = dpinfofile;
+	    %end;
+		/* Set reportid suffix to missing when not a leave behind report */
+		%else %do;
+		  %let reportid = ;
+		  %let dpfile = input.&DPInfoFile.;
+		  %let reportdata = Y;
+		%end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
@@ -78,7 +96,7 @@
         - T5: Type 5 report
         - T6: Type 6 report
         - TREE2: tree aggregation for Type 2
-        - TREE3: tree aggregration for Type 3
+        - TREE3: tree aggregation for Type 3
         - TREE4: tree aggregation for Type 4 */
     %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
@@ -90,7 +108,8 @@
 ***************************************************************************************************/
 
     /*Check if DPINFOFILE exists and contains at least 1 DP to include in report*/
-    %isdata(dataset=input.&DPInfoFile.);
+	/* User specified dpinfofile */
+    %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
         %put ERROR: (Sentinel) DPINFOFILE is missing.;
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
@@ -100,7 +119,7 @@
         /*Number of DPs to include in report and list of DPs*/
         data dpinfofile;
             length database $250;
-            set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
+            set &dpfile. (where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
             dp=lowcase(dp);
             if missing(database) then database = 'Sentinel Distributed Database';
@@ -180,13 +199,13 @@
 	 data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
-	       input.&groupsfile. (keep = runid group)
+	       input.&groupsfile. (keep = runid group order)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
-		   input.&l2comparisonfile. (keep = runid analysisgrp rename=analysisgrp=group)
+		   input.&l2comparisonfile. (keep = runid analysisgrp order rename=analysisgrp=group)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid group)
+		   input.&baselinefile. (keep = runid group order)
 		 %end;
 		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
 		   input.&itsregressionfile. (keep = runid)
@@ -367,6 +386,15 @@
     			select max(order) into :numgroups 
     			from input.&groupsfile.;
 			quit;
+
+            /* obtain only groups that figures were requested for */
+            proc sql noprint;
+                select distinct order 
+                into :requestedfigs separated by ' '
+                from  groupsfile
+                where includeinfigure = 'Y'
+                order by order;
+            quit;
 		 %end;
 	 %end;
  
@@ -378,6 +406,24 @@
 	 set %do n = 1 %to &numrunid.;
 	 		%let runid=&&id&n..;
 			infolder.&&&runid._cohortfile(in=n&n.)
+		%end;
+	 ;
+     format runid $6.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+	 		runid = "&&id&n.";
+            end;
+        %end;
+	 run;
+
+/***************************************************************************************************
+*   Create a combined cohortcodes for all runs                                                
+***************************************************************************************************/
+
+	 data master_cohortcodes;
+	 set %do n = 1 %to &numrunid.;
+	 		%let runid=&&id&n..;
+			infolder.&&&runid._cohortcodes(in=n&n.)
 		%end;
 	 ;
      format runid $6.;
@@ -593,6 +639,9 @@
     		group = lowcase(group);
             labeltype = lowcase(labeltype);
             labelvar = lowcase(labelvar);
+            /*set reporttitle if specified*/
+            if labeltype = 'reporttitle' then call symputx('reporttitle', label);
+            if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
@@ -604,8 +653,13 @@
             call symputx('label_length',length);
         run;
 		
-		%let labelfileexists = Y;
-		
+		%let labelfileexists = Y;		
+
+        /*Assign user censoring criteria labels*/
+        data _null_;
+            set labelfile(where=(labeltype='censorlabel'));
+            call symputx(cats(labelvar,'_label'), label);
+        run;
     %end;
 
 /***************************************************************************************************
@@ -799,7 +853,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&covar');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&study');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;
@@ -836,7 +890,7 @@
                 		 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
-						 ,table.n
+						 , table.n
                 	from tablefile as table
                 	left join userstrata as strata
                 	on strata.tableid = table.dataset and strata.levelvars = table.levelid1
@@ -1040,7 +1094,7 @@
             includeatrisktable = upcase(includeatrisktable);
 
             *if censordisplay is missing, replace with default list of censoring reasons;
-            length censordisplay1 $80;
+            length censordisplay1 $80 n 3;
             censordisplay1 = lowcase(censordisplay);
             %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
@@ -1098,6 +1152,8 @@
         	if levelid1 = 'overall' then levelid1 = '';
         	if levelid2 = 'overall' then levelid2 = '';
         	if levelid3 = 'overall' then levelid3 = '';
+
+            n = _n_;
 
         	/*Add column to hold figure title stratification value - prior to reorder of variables*/
             format figuretitle $100.;
@@ -1201,21 +1257,38 @@
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+                         , figure.n
                     from figurefile as figure
                     left join userstrata as strata
-                    on strata.tableid = figurefile.dataset and strata.levelvars = figurefile.levelid1
+                    on strata.tableid = figure.dataset and strata.levelvars = figure.levelid1
                     left join userstrata as strata1
-                    on strata1.tableid = figurefile.dataset and strata1.levelvars = figurefile.levelid2
+                    on strata1.tableid = figure.dataset and strata1.levelvars = figure.levelid2
                     left join userstrata as strata2
-                    on strata2.tableid = figurefile.dataset and strata2.levelvars = figurefile.levelid3;
+                    on strata2.tableid = figure.dataset and strata2.levelvars = figure.levelid3
+                    order by figure.n;
                 quit;
-            	
+
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                     set figurefile;
                     where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
                 run;
 
+				/*Add strata order*/
+                
+				%do figure_loop = 1 %to %sysfunc(countw(&figurelist));
+				  %let flist_1 = %scan(&figurelist, &figure_loop, ' ');
+
+				    data _figurefile_&flist_1.;
+                      length stratificationorder 3;
+				      set figurefile (where=(figure = "&flist_1"));
+					  stratificationorder = _N_;
+				    run;
+				%end;
+				data figurefile;
+				  set _figurefile_:;
+				run;
+		
                 /*For L1 figures, assign list of GROUPS to include in figures*/
                 %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
                     %isdata(dataset=input.&groupsfile.);
