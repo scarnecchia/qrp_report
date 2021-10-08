@@ -39,7 +39,9 @@
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
         %abort;
     %end;
-
+	
+	/* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
+	   Create macro variable to identify if it is a leave behind report */
         proc sql noprint;
             select count(*) into: numparms
             from input.&createreportfile;
@@ -65,6 +67,20 @@
             run;
             %let &parameter. = &value.;
         %end;
+		
+		/* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+           dpfile is set to the work dpinfofile and reportdata is N. */
+        %if &leavebehindreport = Y %then %do;
+		  %let stratifybydp = N;
+		  %let report_destination = PDF;
+		  %let dpfile = dpinfofile;
+	    %end;
+		/* Set reportid suffix to missing when not a leave behind report */
+		%else %do;
+		  %let reportid = ;
+		  %let dpfile = input.&DPInfoFile.;
+		  %let reportdata = Y;
+		%end;
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
@@ -92,7 +108,8 @@
 ***************************************************************************************************/
 
     /*Check if DPINFOFILE exists and contains at least 1 DP to include in report*/
-    %isdata(dataset=input.&DPInfoFile.);
+	/* User specified dpinfofile */
+    %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
         %put ERROR: (Sentinel) DPINFOFILE is missing.;
         %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
@@ -102,7 +119,7 @@
         /*Number of DPs to include in report and list of DPs*/
         data dpinfofile;
             length database $250;
-            set input.&DPInfoFile.(where=(upcase(includeDP)='Y'));
+            set &dpfile. (where=(upcase(includeDP)='Y'));
             call symputx('num_dp', _n_);
             dp=lowcase(dp);
             if missing(database) then database = 'Sentinel Distributed Database';
@@ -369,6 +386,15 @@
     			select max(order) into :numgroups 
     			from input.&groupsfile.;
 			quit;
+
+            /* obtain only groups that figures were requested for */
+            proc sql noprint;
+                select distinct order 
+                into :requestedfigs separated by ' '
+                from  groupsfile
+                where includeinfigure = 'Y'
+                order by order;
+            quit;
 		 %end;
 	 %end;
  
@@ -1068,7 +1094,7 @@
             includeatrisktable = upcase(includeatrisktable);
 
             *if censordisplay is missing, replace with default list of censoring reasons;
-            length censordisplay1 $80;
+            length censordisplay1 $80 n 3;
             censordisplay1 = lowcase(censordisplay);
             %if &reporttype. = T1 | &reporttype. = T2L1 %then %do; 
             if index(dataset, 'censor') and missing(censordisplay) then censordisplay1 = 'cens_elig cens_dth cens_dpend cens_qryend';
@@ -1126,6 +1152,8 @@
         	if levelid1 = 'overall' then levelid1 = '';
         	if levelid2 = 'overall' then levelid2 = '';
         	if levelid3 = 'overall' then levelid3 = '';
+
+            n = _n_;
 
         	/*Add column to hold figure title stratification value - prior to reorder of variables*/
             format figuretitle $100.;
@@ -1229,21 +1257,38 @@
                     	 , strata.levelid as levelid1
                          , strata1.levelid as levelid2
                          , strata2.levelid as levelid3
+                         , figure.n
                     from figurefile as figure
                     left join userstrata as strata
-                    on strata.tableid = figurefile.dataset and strata.levelvars = figurefile.levelid1
+                    on strata.tableid = figure.dataset and strata.levelvars = figure.levelid1
                     left join userstrata as strata1
-                    on strata1.tableid = figurefile.dataset and strata1.levelvars = figurefile.levelid2
+                    on strata1.tableid = figure.dataset and strata1.levelvars = figure.levelid2
                     left join userstrata as strata2
-                    on strata2.tableid = figurefile.dataset and strata2.levelvars = figurefile.levelid3;
+                    on strata2.tableid = figure.dataset and strata2.levelvars = figure.levelid3
+                    order by figure.n;
                 quit;
-            	
+
                 *Defensive check - if levels missing for required stratifications, write warning to the log and abort;
                 data levelid_check;
                     set figurefile;
                     where levelid1 is missing | (levelnum = 2 and levelid2 is missing) | (levelnum = 3 and levelid3 is missing);
                 run;
 
+				/*Add strata order*/
+                
+				%do figure_loop = 1 %to %sysfunc(countw(&figurelist));
+				  %let flist_1 = %scan(&figurelist, &figure_loop, ' ');
+
+				    data _figurefile_&flist_1.;
+                      length stratificationorder 3;
+				      set figurefile (where=(figure = "&flist_1"));
+					  stratificationorder = _N_;
+				    run;
+				%end;
+				data figurefile;
+				  set _figurefile_:;
+				run;
+		
                 /*For L1 figures, assign list of GROUPS to include in figures*/
                 %if %sysfunc(prxmatch(m/T1|T2L1|T5|T6/i,&reporttype.)) %then %do;
                     %isdata(dataset=input.&groupsfile.);

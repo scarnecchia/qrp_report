@@ -156,6 +156,10 @@ options NODLCREATEDIR;
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
+/* Assign leavebehindreport macro variable to N */
+%global leavebehindreport;
+%let leavebehindreport = N;
+
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
@@ -166,6 +170,7 @@ ods path(prepend) work.templat(update);
 /*utility macros*/
 %include "&reportroot.inputfiles/macros/utility_macros.sas";
 %include "&reportroot.inputfiles/macros/addstatetozip3.sas";
+%include "&reportroot.inputfiles/macros/figure_axes.sas";
 
 /*report template*/
 %include "&reportroot.inputfiles/macros/report_template.sas";
@@ -232,6 +237,9 @@ ods path(prepend) work.templat(update);
 %include "&reportroot.inputfiles/macros/figure_l1_driver.sas";
 %include "&reportroot.inputfiles/macros/figure_cdf_km_createdata.sas";
 %include "&reportroot.inputfiles/macros/figure_cdf_km_output.sas";
+
+%include "&reportroot.inputfiles/macros/figure_t5_createdata.sas";
+%include "&reportroot.inputfiles/macros/figure_t5_output.sas";
 
 /*Appendices macros*/
 %include "&reportroot.inputfiles/macros/appendix_driver.sas";
