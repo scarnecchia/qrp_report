@@ -45,113 +45,17 @@
 						 kmrefpop=);
 
 		/* Obtain x and y axis values */
-		%let xmin = ;
-		%let xmax = ;
-		%let xtick = ;
-		%let ymin = ;
-		%let ymax = ;
-		%let ytick = ;
-		%let atrisktable = ;
 		%let num_fn = 0;
-        %let xtickmarks = ;
-        %let ytickmarks = ;
-        %let datamin= ;
-        %let datamax = ;
-
-        /*select min and max day from input dataset*/
-        proc sql noprint;
-            select min(day), max(day) into :datamin, :datamax
-            from &dataset(where=(&where.));
-        quit;
+        %let kmxtickmarks = ;
+        %let kmytickmarks = ;
 
         data _null_;
             set figurefile(where=(figure="&figure."));
-
-            /*set min/max defaults if missing*/
-            if missing(xmin) then xmin = &datamin.;
-            if missing(xmax) then xmax = &datamax.;
-
-            if missing(ymin) then ymin = 0;
-            if missing(ymax) then ymax = 1;
-
-            /*set default tick if missing:
-                - 6 total tick marks (min, max, and 4 interim)
-                - for x axis - round to the nearest divisor of 1, 5, or 30
-                               depending on length of axis                */
-            if missing(xtick) then do;
-                xmaxminusmin = xmax-xmin;
-                if xmaxminusmin <=10 then xtick = round(xmaxminusmin/5, 1);
-                else if xmaxminusmin <=120 then xtick = round(xmaxminusmin/5, 5);
-                else xtick = round(xmaxminusmin/5, 30);
-                if xtick = 0 then xtick = 1;
-            end;
-            xloopcount=round(divide(xmax-xmin,xtick))+1;
-
-            if missing(ytick) then do;
-                ymaxminusmin = ymax-ymin;
-                if ymaxminusmin >.04 then ytick = round(ymaxminusmin/5, .01);
-                else ytick = round(ymaxminusmin/5, .001);
-                if ytick = 0 then ytick = .001;
-            end;
-            yloopcount=round(divide(ymax-ymin,ytick))+1;
-
-            call symputx('xmin', xmin);
-            call symputx('xmax', xmax);
-            call symputx('xtick', xtick);
-            call symputx('ymin', ymin);
-            call symputx('ymax', ymax);
-            call symputx('ytick', ytick);
-            call symputx('xloopcount', xloopcount);
-            call symputx('yloopcount', yloopcount);
             call symputx('atrisktable', includeatrisktable);
         run;
 
-        %put &xmin &xmax &xtick &ymin &ymax &ytick;
-
-        %let xloop = &xmin.;
-        %let yloop = &ymin.;
-
-        /*xaxis*/
-        %let axisloopcount = 1;
-        %do %while(%sysevalf(&axisloopcount. <=&xloopcount.));
-        %if %eval(&axisloopcount. ne &xloopcount.) %then %do;
-        %let xtickmarks = &xtickmarks%str( )&xloop.;
-        %end;
-        %else %do;
-        %let xtickmarks = &xtickmarks%str( )%sysfunc(min(&xmax.,&xloop.));
-            /*Add max value if gap between last tick mark and max value is >tick/2*/
-            %if %scan(&xtickmarks., -1) ne &xmax. %then %do;
-                %let diff = %sysevalf(&xmax.-%scan(&xtickmarks., -1));
-                %let div2 = %sysfunc(divide(&xtick.,2));
-                %if %sysevalf(&diff.>&div2.) %then %do;
-                    %let xtickmarks = &xtickmarks%str( )&xmax.;
-                %end;
-            %end;
-        %end;
-        %let xloop=%sysevalf(&xloop + &xtick);
-        %let axisloopcount = %eval(&axisloopcount+1);
-        %end;
-        
-        /*yaxis*/
-        %let axisloopcount = 1;
-        %do %while(%sysevalf(&axisloopcount. <=&yloopcount.));
-        %if %eval(&axisloopcount. ne &yloopcount.) %then %do;
-        %let ytickmarks = &ytickmarks%str( )&yloop.;
-        %end;
-        %else %do;
-        %let ytickmarks = &ytickmarks%str( )%sysfunc(min(&ymax.,&yloop.));
-            /*Add max value if gap between last tick mark and max value is >tick/2*/
-            %if %scan(&ytickmarks., -1) ne &ymax. %then %do;
-                %let diff = %sysevalf(&ymax.-%scan(&ytickmarks., -1));
-                %let div2 = %sysfunc(divide(&ytick.,2));
-                %if %sysevalf(&diff.>&div2.) %then %do;
-                    %let ytickmarks = &ytickmarks%str( )&ymax.;
-                %end;
-            %end;
-        %end;
-        %let yloop=%sysfunc(round(%sysevalf(&yloop + &ytick),.001));
-        %let axisloopcount = %eval(&axisloopcount+1);
-        %end;
+        /*assign axes*/
+        %figure_axes(data=&dataset., figure=&figure., figuresub=overall, where=&where., xtickmarks=kmxtickmarks, xvar=day, ytickmarks=kmytickmarks, yvar=);
 
         %tableletter();	
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
@@ -160,7 +64,7 @@
 		set &dataset(where=(&where));
 		/* Only selects days for corresponding tickmarks */
 		%if &atrisktable = Y %then %do;
-		if day in (&xtickmarks) then xaxisatrisk=day;
+		if day in (&kmxtickmarks) then xaxisatrisk=day;
 		%end;
 		run;
 		%end;
@@ -275,8 +179,8 @@
 				%let kmcol = %scan(&kmcols,&km);
 			step x=day y=&kmcol / lineattrs=(thickness=2 pattern=solid);
 			%end;
-			xaxis label = "&xaxislabel" values=(&xtickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font); 
-			yaxis label = "&yaxislabel" values=(&ytickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font);
+			xaxis label = "&xaxislabel" values=(&kmxtickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font); 
+			yaxis label = "&yaxislabel" values=(&kmytickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font);
 			%if &atrisktable = Y %then %do;
 				xaxistable &atriskcols / %if %sysfunc(prxmatch(m/T1|T6/i,&reporttype.)) or (&reporttype=T2L1 and &figure ^= F1) or (&reporttype=T5 and &figure = F4) %then %do; 
 										class=grouplabel /* Only one group per plot, but class statement applies label to xaxis table columns */
@@ -303,7 +207,6 @@
 	%end; 
 
 	%mend output_cdf_km;
-
 		*reset tablecount; 
 		%let tablecount = 1;
 		%let tableletter =a;
@@ -321,8 +224,8 @@
 			/*Loop through each figure */
 			%if %length(&figurelist) > 0 %then %do;
 			%do f = 1 %to %sysfunc(countw(&figurelist));
-			%let figure = %scan(&figurelist,&f);
-
+			  %let figure = %scan(&figurelist,&f);
+			    %let figurenum = &f;
 		 		%isdata(dataset=figure&figure.);
 		 		%let fignobs = &nobs;
                 %if %eval(&fignobs.>0) %then %do;
@@ -334,7 +237,7 @@
                     from figure&figure.
                     order by order;
                 quit;
-
+         
                 %if %sysfunc(countw(&fgrouporderlist.)) = 1 %then %let tablecount = 0;
                 %else %let tablecount = 1;
 
@@ -429,6 +332,7 @@
 						%let title = Reasons for Censoring at Second Switch Evaluation Among &grouplabel.;
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
+                      
 
 						%output_cdf_km(dataset=figure&figure,
 									 where=%str(order=&order.),
@@ -440,14 +344,13 @@
 									 font=&fontfamily,
 									 kmrefpop=);
 				%end;
-
+     
 				%end; /* order loop */
 				%let figurenum=%eval(&figurenum+1);
 
 				%end; /* fignobs */
 
 			%end; /* f */
-
 		%end; /* figurelist */
 
 		%end; /* reporttype */

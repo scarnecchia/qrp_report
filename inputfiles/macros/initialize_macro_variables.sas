@@ -91,10 +91,11 @@
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
-    %global output_code_distribution numgroups discardnegativetimegroups;
+    %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
     %let numgroups = 0;
     %let output_code_distribution = N;
     %let discardnegativetimegroups = ;
+    %let requestedfigs = ;
 
     /*L2 report variables*/
     %global numl2comparisons attrperiodid;

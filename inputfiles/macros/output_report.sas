@@ -596,15 +596,90 @@
         %end;
         %if %index(&figurelist,F2) %then %do;
         %l2_forestplot_driver;
-        %end;
+        %end;   
     %end; 
 
     ************************************************;
+    * Type 5 Figures                                                
+    ************************************************;
+	options orientation = landscape;
+	%if %sysfunc(prxmatch(m/T5/i,&reporttype.)) %then %do;
+	  /* Figures F1, F2, and F3 */
+      %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
+	   
+        %do figure_count = 1 %to %sysfunc(countw(&figurelist.)); 
+		  
+        %let current_figure = %scan(&figurelist, &figure_count, ' ');
+        %if &current_figure = F1 or &current_figure = F2 or &current_figure = F3 %then %do;
+		  /*set up titles for F123 figures */
+          %if "&current_figure" = "F1" %then %do;
+            %let title_f123 =  Patient Entry into Study by Month;
+		    %let y1label = Monthly number of patients;
+		    %let y2label = Cumulative number of patients in study;
+		    %let yvarF123 = npts;
+		  %end;
+		  %if "&current_figure" = "F2" %then %do;
+            %let title_f123 =  Number of Prescription Dispensings in Patients%str(%') First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly number of prescription dispensings;
+		    %let y2label = Cumulative number of prescription dispensings;
+		    %let yvarF123 = adjustedcodecount;
+		  %end;
+		  %if "&current_figure" = "F3" %then %do;
+            %let title_f123 =  Total Days Supply in Patients%str(%') First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly total days supply;
+		    %let y2label = Cumulative days supply;
+            %let yvarF123 = daysupp;
+          %end;
+
+		  /*loop through the figuresubs to create &current_figuresub*/ 
+	      proc sql noprint;
+            select max(stratificationorder)
+              into: max_order
+              from figurefile(where=(figure = "&current_figure"));
+          quit;
+
+          %do g = 1 %to %sysfunc(countw(&requestedfigs));
+            %let figorder = %scan(&requestedfigs,&g);
+
+    		  %do t = 1 %to &max_order;
+
+    		   %let figuretitle = "";
+    		   data _null_;
+                 set figurefile(where=(figure = "&current_figure" and stratificationorder = &t));
+                 call symputx('current_figuresub',figuresub);
+                 call symputx('figuretitle', figuretitle);
+               run;
+
+                data _null_;
+                    set figure123(where=(order=&figorder));
+                    if _n_ = 1 then do;
+                    call symputx('t5grouplabel',grouplabel);
+                    end;
+                run;
+    		 
+    		    %tableletter();
+    		    %if %sysfunc(countw(&requestedfigs)) = 1 and &max_order = 1 %then %let tableletter = ;
+
+    		    %figure_t5_output(figure=&current_figure, figurenum=&figurenum, figureletter=&tableletter., 
+                                title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
+                                where=figuresub = "&current_figuresub" and order=&figorder, figuresub=&current_figuresub., 
+                                yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
+    		  %end;
+          %end;
+		  %end;
+        %let figurenum = %eval(&figurenum +1);
+        %let tablecount = 1;
+       %end;
+	  %end;
+
+	%end;
+
+	 ************************************************;
     * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
     ************************************************;
-    options orientation = landscape;
-    %figure_cdf_km_output;
-    options orientation = portrait;
+	%figure_cdf_km_output;
+	
+     options orientation = portrait;
     
 ***************************************************************************************************;
 * Appendices                                                                                
