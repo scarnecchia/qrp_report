@@ -80,10 +80,10 @@
             column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
             define report_descr / group order=data ' ' style(column)=[just=L] 
                                                        style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
-            define headerlabel / nozero across ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
+            define headerlabel / nozero across order=data ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
-            define grouplabel / nozero across ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
+            define grouplabel / nozero across order=data ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
             define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
@@ -126,8 +126,8 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' 
-				%if %index(&reporttype,T4L1) %then %do; or report_descr = 'Had a live birth delivery claim during the query period' %end; then do; 
+            else if report_descr = 'Had any cohort-defining claim during the query period' or
+                    report_descr = 'Had a live birth delivery claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
@@ -135,20 +135,16 @@
                 text='Cohort episodes with a valid index date'; 
                 num=100;
             end;
-			%if %index(&reporttype,T4L1) %then %do;
             else if report_descr = 'Total number of live birth deliveries during the query period' then do; 
                 text='Live birth deliveries with a valid index date'; 
                 num=100;
             end;				
-			%end;
-			%if %index(&reporttype,T4) %then %do;
             else if report_descr = 'Pregnancy episodes met initial cohort eligibility requirements' then do; 
                 text='Members meeting mother-infant linkage requirements'; 
                 num=100;
             end;				
-			%end;
             else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) %then %do;
+                %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required pre-index history'; 
                 %end;
                 %else %do;
@@ -157,7 +153,7 @@
                 num=100;
             end;
             else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
-                %if %index(&reporttype,T4L1) %then %do;
+                %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required post-index follow-up'; 
                 %end;
                 %else %do;

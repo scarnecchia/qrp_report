@@ -338,9 +338,9 @@
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";
         endcomp;
 
-        compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black cellheight=1.15in nobreakspace=off font_size=&footfontsize.];
-        line "^{super 1}Participating Data Partners include &dpnamelist.";
-        line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) most recent year-month of data for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
+        compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black cellheight=1.15in nobreakspace=off font_size=&footfontsize.];
+        line "^{super 1}Participating Data Partner(s) include(s) &dpnamelist..";
+        line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) last day of the most recent month for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
     run;
 

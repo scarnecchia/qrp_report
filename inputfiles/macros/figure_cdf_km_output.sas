@@ -120,7 +120,7 @@
 
 		ods startpage = now;
   		ods startpage = no;
-  		ods graphics / height=7.5in;
+  		ods graphics / height=7in;
 
 		/* Trick Excel into making a new sheet */
 		%if &destination. = excel %then %do;
@@ -212,8 +212,8 @@
 		%let tableletter =a;
 
 		/* Determine font for KM/CDF plot */
-        %if &sysscp = WIN %then %let fontfamily=Calibri;
-        %else %let fontfamily=Albany AMT;
+        %if &sysscp = WIN %then %let fontfamily="Calibri";
+        %else %let fontfamily="Albany AMT";
 
 		/***************************************************************************************/
         /* L1 Figures                                                                          */

@@ -155,7 +155,13 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-		   
+
+        /*Set first word for SDthreshold footnote*/
+		%if %str(&sdthreshold.) ne %str() %then %do;
+             %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
+             %else %let covar_characteristic = Characteristics;
+        %end;
+
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
@@ -435,7 +441,7 @@
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
 					call symputx('weightscheme', upcase(ipweight));
-                    call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
+                    call symputx('truncationlabel',strip(put(truncweight, best.)));
                 end;
             run;
 
@@ -667,11 +673,11 @@
         %end;
 
         /*1 block of code for both aggregate and DP tables*/
-        %macro baselinereport(table=, dpnum=);
+        %macro baselinereport(dpnum=, aggregated=, dpinparenthesis=, dpcomma=);
             %if %eval(&unique_psestimate.) = 1 %then %do;
              %tableletter(); 
              %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
-              title =%quote(Table 1&tableletter.. &unadjusted.Characteristics of &captionlabel. (&table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
               characteristiclabel =&characteristiclabel.,
               dpnum = &dpnum.,
               numcolumns =&numcolumns.,
@@ -687,7 +693,7 @@
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-                  title =%quote(Table 1&tableletter.. Adjusted Characteristics of &grouplabel. (Propensity Score Matched, &table.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -701,7 +707,7 @@
                 %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-                  title=%quote(Table 1&tableletter.. Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed, &table.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -713,12 +719,12 @@
 					
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
                 %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                    %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed, &table.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                    %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed, &table.), Percentiles: &percentiles., Weight: &weightlabel.;
-                    %else %let stratumtitle =(Propensity Score Stratified, &table.), Percentiles: &percentiles.;
+                    %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
+                    %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
+                    %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-                      title=%quote(Table 1&tableletter.. Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                       characteristiclabel =&characteristiclabel.,
                       dpnum = &dpnum.,
                       numcolumns =&numcolumns.,
@@ -733,13 +739,20 @@
         /*loop through each periodid*/
         %do periodid = %eval(&look_start.) %to %eval(&look_end.);
             /*Aggregated*/
-            %baselinereport(table=Aggregated,dpnum=0);
+            %baselinereport(dpnum=0, 
+                            %if %eval(&num_dp.)=1 %then %do;
+                            aggregated=,
+                            %end;
+                            %else %do;
+                            aggregated=%str(Aggregated ),
+                            %end;
+                            dpinparenthesis=, dpcomma=);
    
             /*Output seperate table for each Data Partner - loop through each DP*/
             %if &stratifybydp. = Y %then %do;    
                 %do dps = 1 %to %eval(&num_dp.);
         	        %let maskedID = %scan(&masked_dplist,&dps); 
-                    %baselinereport(table=&maskedid.,dpnum=&dps.);
+                    %baselinereport(dpnum=&dps., aggregated = , dpinparenthesis=%str((&maskedid.) ), dpcomma=%str(, &maskedid.));
                 %end;
             %end; /*DP stratification*/
         %end; /*loop through each periodid*/

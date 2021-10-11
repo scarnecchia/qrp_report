@@ -62,7 +62,15 @@
                     /*default stratifybydp*/
                     if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
-                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
+                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then do;
+                        tempvalue = input(value,ANYDTDTE32.); /*convert to SAS date*/
+                        if missing(tempvalue) = 0 then do;
+                            call symputx("value",cats('(', strip(put(tempvalue, worddate20.)), ')'));
+                        end;
+                        else do;
+                            call symputx("value",cats('(', strip(value), ')'));
+                        end;
+                    end;
                 end;
             run;
             %let &parameter. = &value.;
@@ -199,13 +207,13 @@
 	 data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
-	       input.&groupsfile. (keep = runid group)
+	       input.&groupsfile. (keep = runid group order)
 		 %end;
 	     %if %sysfunc(exist(input.&l2comparisonfile.)) %then %do;
-		   input.&l2comparisonfile. (keep = runid analysisgrp rename=analysisgrp=group)
+		   input.&l2comparisonfile. (keep = runid analysisgrp order rename=analysisgrp=group)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid group)
+		   input.&baselinefile. (keep = runid group order)
 		 %end;
 		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
 		   input.&itsregressionfile. (keep = runid)
