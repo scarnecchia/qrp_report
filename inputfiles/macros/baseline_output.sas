@@ -693,7 +693,7 @@
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -724,7 +724,7 @@
                     %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                       characteristiclabel =&characteristiclabel.,
                       dpnum = &dpnum.,
                       numcolumns =&numcolumns.,
