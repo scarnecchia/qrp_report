@@ -62,7 +62,15 @@
                     /*default stratifybydp*/
                     if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
-                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
+                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then do;
+                        tempvalue = input(value,ANYDTDTE32.); /*convert to SAS date*/
+                        if missing(tempvalue) = 0 then do;
+                            call symputx("value",cats('(', strip(put(tempvalue, worddate20.)), ')'));
+                        end;
+                        else do;
+                            call symputx("value",cats('(', strip(value), ')'));
+                        end;
+                    end;
                 end;
             run;
             %let &parameter. = &value.;
