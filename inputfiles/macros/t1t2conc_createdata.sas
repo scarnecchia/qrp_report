@@ -185,6 +185,23 @@
 	   	on a.&t2group =b.&t2group %if %length(&dpvar) > 0 %then %do; and a.dpidsiteid = b.dpidsiteid %end; ;
 	   quit;
 
+	   %if %index(&dsin.,t2conc) %then %do;
+			proc sql noprint undo_policy=none;
+			create table &dsin as
+			select a.*, 'N' as outputdenom
+			from &dsin a;
+			quit;
+		%end;
+		%else %do;
+			proc sql noprint undo_policy=none;
+			create table &dsin as
+			select a.*, b.outputdenom
+			from &dsin a
+			left join master_typefile b
+			on a.group =b.group;
+			quit;
+		%end;
+
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
 	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
          set &dsin.;
@@ -306,6 +323,10 @@
 		  %end;
 		  %else %do;
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
+		  %end;
+
+		  %if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+		  	if upcase(outputdenom) = "N" then &&var&vv.._char='N/A';
 		  %end;
 	    %end;
 		
