@@ -571,7 +571,7 @@
     quit;
 
     /*list of variables*/
-    %let stat_char = min q1 median q3 max mean std;
+    %let statcharlist = min q1 median q3 max mean std;
 
     data &censordataset.&dset_suffix.(drop= overall_tot:);
         set &censordataset.&dset_suffix.;
@@ -588,14 +588,14 @@
                %scan(&pctvarlist., &pct, ' ')_char = strip(put(%scan(&pctvarlist., &pct, ' '), percent10.1));	   
             %end;
             /*continuous metrics*/
-            %do cr = 1 %to %sysfunc(countw(&stat_char));
+            %do cr = 1 %to %sysfunc(countw(&statcharlist));
                /*set mean and standard deviation to 1 decimal*/
-               %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &cr, ' '))) %then %do;
-                 %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma10.1));
+               %if %sysfunc(prxmatch(m/mean|std/i,%scan(&statcharlist, &cr, ' '))) %then %do;
+                 %scan(&statcharlist, &cr, ' ')_char = strip(put(%scan(&statcharlist, &cr, ' '), comma10.1));
                %end;
                /*set min, q1, median, q3, and max to 0 decimals*/
                %else %do;
-                 %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma10.0));
+                 %scan(&statcharlist, &cr, ' ')_char = strip(put(%scan(&statcharlist, &cr, ' '), comma10.0));
                %end; 
             %end;
 
@@ -603,8 +603,8 @@
 
         /*all variables - if 0 patients in cohort, set to '.'*/
         if overall_tot = 0 then do;
-            %do dot = 1 %to %sysfunc(countw(episodes &censorreason. &totvarlist. &pctvarlist. &stat_char.));
-		    %scan(episodes &censorreason. &totvarlist. &pctvarlist. &stat_char., &dot, ' ')_char = "."; 
+            %do dot = 1 %to %sysfunc(countw(episodes &censorreason. &totvarlist. &pctvarlist. &statcharlist.));
+		    %scan(episodes &censorreason. &totvarlist. &pctvarlist. &statcharlist., &dot, ' ')_char = "."; 
             %end;
         end;
         else do;
@@ -640,8 +640,8 @@
                 %do sl = 1 %to %sysfunc(countw(&censorreason_t3., %str( )));
                     if table_name = "%scan(&censorreason_t3., &sl.)" and %scan(&censorreason_t3., &sl.) = 1 then std_char = 'NaN';
                     if table_name = "%scan(&censorreason_t3., &sl.)" and %scan(&censorreason_t3., &sl.) = 0 then do;
-                        %do cr = 1 %to %sysfunc(countw(&stat_char));
-                        %scan(&stat_char, &cr, ' ')_char = 'NaN';
+                        %do cr = 1 %to %sysfunc(countw(&statcharlist));
+                        %scan(&statcharlist., &cr, ' ')_char = 'NaN';
                         %end;
                     end;
                 %end;
