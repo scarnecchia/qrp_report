@@ -305,6 +305,9 @@
 
 		  %if %index(%lowcase(&&formula&vv.),dennum) %then %do;
 		  	if upcase(outputdenom) = "N" then &&var&vv.._char='N/A';
+			%if %index(%lowcase(&&formula&vv.),dennummemdays) %then %do;
+				if upcase(outputdenom) = "M" then &&var&vv.._char='N/A';
+			%end;
 		  %end;
 
 		  %if %index(%lowcase(&&formula&vv.),npts) or %index(%lowcase(&&formula&vv.),episodes) %then %do;
