@@ -178,29 +178,23 @@
 	   proc sql noprint undo_policy=none;
 	   	create table &dsin as 
 	   	select a.*, b.totalnpts, b.totalepisodes
+		%if %index(&dsin.,t2conc) %then %do;
+			,'N' as outputdenom
+		%end;
+		%else %do;
+			,c.outputdenom
+		%end;
 	   	from &dsin a 
 	   	left join (select &t2group, %if %length(&dpvar) > 0 %then %do; dpidsiteid, %end; sum(npts) as totalnpts, sum(episodes) as totalepisodes
 	   			   from &dsin.
 	   			   group by &t2group %if %length(&dpvar) >0 %then %do; ,dpidsiteid %end;) b
-	   	on a.&t2group =b.&t2group %if %length(&dpvar) > 0 %then %do; and a.dpidsiteid = b.dpidsiteid %end; ;
+	   	on a.&t2group =b.&t2group %if %length(&dpvar) > 0 %then %do; and a.dpidsiteid = b.dpidsiteid %end;
+		%if ^%index(&dsin.,t2conc) %then %do; 
+		left join master_typefile c
+		on a.group=c.group;
+		%end;
+		;
 	   quit;
-
-	   %if %index(&dsin.,t2conc) %then %do;
-			proc sql noprint undo_policy=none;
-			create table &dsin as
-			select a.*, 'N' as outputdenom
-			from &dsin a;
-			quit;
-		%end;
-		%else %do;
-			proc sql noprint undo_policy=none;
-			create table &dsin as
-			select a.*, b.outputdenom
-			from &dsin a
-			left join master_typefile b
-			on a.group =b.group;
-			quit;
-		%end;
 
        data _&dsout. (keep = level &grpvar. sortorder: &&&table._stratification &dpvar.
 	                  %do vv = 1 %to &numcolumns; &&var&vv. &&var&vv.._char %end; );
