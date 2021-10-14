@@ -567,7 +567,7 @@
 
         select distinct name into :totvarlist separated by ' '
         from &censordataset._vars 
-        where lowcase(substr(name, length(name) - 3,4)) = "_tot" and name ne "epi_tot";
+        where lowcase(substr(name, length(name) - 3,4)) = "_tot" and name not in ("epi_tot", "overall_tot");
     quit;
 
     /*list of variables*/
