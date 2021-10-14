@@ -551,110 +551,113 @@
 		 if missing(epi_tot_pct) then epi_tot_pct = 0;
    	   run;
 	   
-	   /*Assign missing values indicators*/
-	   %let pct = '';
-	   %let tot = '';
+    /*--------------------------------------------------------------------------------------------
+ 	  Assign missing value indicators                                                  
+    --------------------------------------------------------------------------------------------*/  
+	%let pctvarlist = ;
+	%let totvarlist = ;
 
-       proc contents data=&censordataset.&dset_suffix. out=&censordataset._vars noprint;
-	   quit;
+    proc contents data=&censordataset.&dset_suffix. out=&censordataset._vars noprint;
+    quit;
 
-	   proc sql noprint;
-	     select distinct name into :pct 
-           separated by ' '
-           from &censordataset._vars 
-           where lowcase(substr(name, length(name) - 3,4)) = "_pct";
+    proc sql noprint;
+        select distinct name into :pctvarlist separated by ' '
+        from &censordataset._vars 
+        where lowcase(substr(name, length(name) - 3,4)) = "_pct";
 
-           select distinct name into :cen_tot 
-           separated by ' '
-           from &censordataset._vars 
-           where lowcase(substr(name, length(name) - 3,4)) = "_tot";
-	   quit;
+        select distinct name into :totvarlist separated by ' '
+        from &censordataset._vars 
+        where lowcase(substr(name, length(name) - 3,4)) = "_tot" and name not in ("epi_tot", "overall_tot");
+    quit;
 
-       %let stat_char = min q1 median q3 max mean std;
-	   %let cen_tot = &cen_tot &censorreason;
+    /*list of variables*/
+    %let statcharlist = min q1 median q3 max mean std;
 
-       data &censordataset.&dset_suffix.(drop= overall_tot:);
-         set &censordataset.&dset_suffix.;
-	      /*_tot variable char and missing creation */
-	     episodes_char = strip(put(episodes, comma8.0));
-         %do  cr = 1 %to %sysfunc(countw(&cen_tot));
-           %scan(&cen_tot, &cr, ' ')_char = strip(put(%scan(&cen_tot, &cr, ' '), comma8.0));
-         %end;
-	     /*stat variables*/
-	     %do  cr = 1 %to %sysfunc(countw(&stat_char));
-           %if %sysfunc(prxmatch(m/mean|std/i,%scan(&stat_char, &cr, ' '))) %then %do;
-             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), 10.1));
-           %end;
-           %else %do;
-             %scan(&stat_char, &cr, ' ')_char = strip(put(%scan(&stat_char, &cr, ' '), comma8.0));
-           %end; 
-	     %end;
+    data &censordataset.&dset_suffix.(drop= overall_tot:);
+        set &censordataset.&dset_suffix.;
 
-	     /*_pct variables*/
-	     %do  cr = 1 %to %sysfunc(countw(&pct));    
-           %scan(&pct, &cr, ' ')_char = strip(put(%scan(&pct, &cr, ' '), percent10.1));	   
-         %end;
+        /*create character variables*/
+            /*episodes_char*/
+    	    episodes_char = strip(put(episodes, comma12.0));
+            /*censor reason and _tot variables*/
+    	    %do cr = 1 %to %sysfunc(countw(&censorreason. &totvarlist. epi_tot));
+               %scan(&censorreason. &totvarlist. epi_tot, &cr, ' ')_char = strip(put(%scan(&censorreason. &totvarlist. epi_tot, &cr, ' '), comma12.0));
+            %end;
+            /*percent variables*/
+    	    %do pct = 1 %to %sysfunc(countw(&pctvarlist));    
+               %scan(&pctvarlist., &pct, ' ')_char = strip(put(%scan(&pctvarlist., &pct, ' '), percent10.1));	   
+            %end;
+            /*continuous metrics*/
+            %do cr = 1 %to %sysfunc(countw(&statcharlist));
+               /*set mean and standard deviation to 1 decimal*/
+               %if %sysfunc(prxmatch(m/mean|std/i,%scan(&statcharlist, &cr, ' '))) %then %do;
+                 %scan(&statcharlist, &cr, ' ')_char = strip(put(%scan(&statcharlist, &cr, ' '), comma10.1));
+               %end;
+               /*set min, q1, median, q3, and max to 0 decimals*/
+               %else %do;
+                 %scan(&statcharlist, &cr, ' ')_char = strip(put(%scan(&statcharlist, &cr, ' '), comma10.0));
+               %end; 
+            %end;
 
-		 %do cr1 = 1 %to %sysfunc(countw(&cen_tot));
-         /* pct and stat variables */ 
+        /*assign missing value indicators*/
 
-		 	%let step1 = %scan(&cen_tot, &cr1, ' ');
-			%let pctVar = &step1._pct;  
-		 
-		   if overall_tot = 0 then do;
-		     &pctVar._char = "."; 
-		   end;
-		   if ((%scan(&cen_tot, &cr1, ' ') = 0) or missing(%scan(&cen_tot, &cr1, ' ')) = 1)and overall_tot > 0  
-		       and episodes = 0
-             then do;
-		     &pctVar._char = "0.0%";
-		   end;
-		   if table_name ne "overall" then do;
-		   	   if  table_name = "%scan(&cen_tot, &cr1, ' ')" and (%scan(&cen_tot, &cr1, ' ')) = 0
-			   and overall_tot > 0  then epi_tot_pct_char = "NaN";
-		   end;
+        /*all variables - if 0 patients in cohort, set to '.'*/
+        if overall_tot = 0 then do;
+            %do dot = 1 %to %sysfunc(countw(episodes &censorreason. &totvarlist. &pctvarlist. &statcharlist.));
+		    %scan(episodes &censorreason. &totvarlist. &pctvarlist. &statcharlist., &dot, ' ')_char = "."; 
+            %end;
+        end;
+        else do;
+            /*patients in cohort, but variable cannot be computed - % computation set to NaN*/
+            if table_name = "overall" then do;
+                /*Table T1 - epi_tot_pct / Table T2, T14, T16 - cens_***_tot_pct variables*/
+                if epi_tot = 0 then do;
+                    %do cr = 1 %to %sysfunc(countw(&totvarlist. epi_tot));
+                        %scan(&totvarlist. epi_tot, &cr, ' ')_pct_char = 'NaN';
+                    %end;
+                end;
+            end;
+            else do;
+                /*Table T3, T15, T17 - epi_tot_pct*/
+                %if &cens_num_t3. > 0 %then %do;
+                %do sl = 1 %to %sysfunc(countw(&censorreason_t3., %str( )));
+                    if table_name = "%scan(&censorreason_t3., &sl.)" and %scan(&censorreason_t3., &sl.) = 0 then epi_tot_pct_char = 'NaN';
+                %end;
+                %end;
+            end;
 
-		 %do  cr = 1 %to %sysfunc(countw(&stat_char));
-		 if overall_tot = 0 then do;
-		     %scan(&stat_char, &cr, ' ')_char = "."; 
-		   end;
-		   else if (episodes = 0)and overall_tot > 0 
-             and strat ne "overall" 
-             then do;
-		     %scan(&stat_char, &cr, ' ')_char = "NaN"; 
-		   end;
-         if "%scan(&stat_char, &cr, ' ')" = "std" and episodes = 1 
-           and strat ne "overall"
-		   then do;
-		   %scan(&stat_char, &cr, ' ')_char = "NaN";
-		 end;
-		 if strat ne "overall" and %scan(&stat_char, &cr, ' ')_char = "NaN" 
-		   then do;
-		    %scan(&stat_char, &cr, ' ')_char = ".";
-         end; 
-         %end;
-         
-		 if overall_tot = 0
-           then do;
-             %scan(&cen_tot, &cr1, ' ')_char = ".";		  
-         end;
-         else if (%scan(&cen_tot, &cr1, ' ') = 0 and overall_tot > 0)
-           then do;
-             %scan(&cen_tot, &cr1, ' ')_char = "0"; 	   
-         end;
-         
-	     %end;
+            /*continuous metrics - only relevant for overall stratification*/
+            if strat = "overall" then do;
+               /*standard deviation - 1 episode set to NaN*/
+               if table_name = "overall" and epi_tot = 1 then do; 
+                std_char = 'NaN'; 
+               end;
+               else do;
+                /*Table T3, T15, T17 - loop through each censor reason table:
+                    - assign NaN if 0 episodes due to censor reason
+                    - assign std to NaN if 1 episode */
+                %if &cens_num_t3. > 0 %then %do;
+                %do sl = 1 %to %sysfunc(countw(&censorreason_t3., %str( )));
+                    if table_name = "%scan(&censorreason_t3., &sl.)" and %scan(&censorreason_t3., &sl.) = 1 then std_char = 'NaN';
+                    if table_name = "%scan(&censorreason_t3., &sl.)" and %scan(&censorreason_t3., &sl.) = 0 then do;
+                        %do cr = 1 %to %sysfunc(countw(&statcharlist));
+                        %scan(&statcharlist., &cr, ' ')_char = 'NaN';
+                        %end;
+                    end;
+                %end;
+                %end;
+               end;
+            end;
+        end; /*overall_tot >0*/
      run;
 
-
-
-        /*final sort of data*/
-        proc sort data=&censordataset.&dset_suffix. ;
-   	      by order censorcat_sort table_name dpidsiteid
-	  	%if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
-	  	%if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
-	  	%if %index(&censor_strat.,year) > 0 %then %do; year %end;;
-   	   run;
+    /*final sort of data*/
+    proc sort data=&censordataset.&dset_suffix. ;
+         by order censorcat_sort table_name dpidsiteid
+  	    %if %index(&censor_strat.,sex) > 0 %then %do; sex_sort %end; 
+  	    %if %index(&censor_strat.,agegroup) > 0 %then %do; agegroupnum %end;
+  	    %if %index(&censor_strat.,year) > 0 %then %do; year %end;;
+    run;
  
    %mend censor_summary;
 
