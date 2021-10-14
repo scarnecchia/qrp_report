@@ -160,24 +160,32 @@
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
     	/* Check to see if POINT was specified in T2 queries */
-    	%let pointflag = N;
+		%if %index(&reporttype,T2) %then %let pointflag = Y;
+    	%else %let pointflag = N;
     	%if %index(&dsin.,t2conc) %then %let t2group=analysisgrp;
     	%else %let t2group=group;
-	    %if %index(&reporttype,T2) %then %do;
-	    	%let pointflag = Y;
-	     	proc sql noprint undo_policy=none;
-	     		create table &dsin as 
-	     		select a.*, upper(b.point) as point 
-	     		from &dsin a 
-	     		left join master_typefile b 
-	     		on a.&t2group = b.group;
-	     	quit;
-	   %end;
+	    	    	
+     	proc sql noprint undo_policy=none;
+     		create table &dsin as 
+     		select a.*
+			%if %index(&dsin.,t2conc) %then %do;
+				,'N' as outputdenom
+			%end;
+			%else %do;
+				,b.outputdenom
+			%end; 
+			%if %index(&reporttype,T2) %then %do;
+				, upper(b.point) as point
+			%end;
+     		from &dsin a 
+     		left join master_typefile b 
+     		on a.&t2group = b.group;
+     	quit;
 
 	   /* Check to see if there are 0 total patients per cohort */
 	   proc sql noprint undo_policy=none;
 	   	create table &dsin as 
-	   	select a.*, b.totalnpts, b.totalepisodes
+	   	select a.*, b.totalnpts, b.totalepisodes		
 	   	from &dsin a 
 	   	left join (select &t2group, %if %length(&dpvar) > 0 %then %do; dpidsiteid, %end; sum(npts) as totalnpts, sum(episodes) as totalepisodes
 	   			   from &dsin.
@@ -296,6 +304,14 @@
 			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
 			 %end;
 		  %end;
+
+		  %if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+		  	if upcase(outputdenom) = "N" then &&var&vv.._char='N/A';
+			%if %index(%lowcase(&&formula&vv.),dennummemdays) %then %do;
+				if upcase(outputdenom) = "M" then &&var&vv.._char='N/A';
+			%end;
+		  %end;
+
 		  %if %index(%lowcase(&&formula&vv.),npts) or %index(%lowcase(&&formula&vv.),episodes) %then %do;
 		  	%if ^%index(%lowcase(&&formula&vv.),/) and ^%index(%lowcase(&&formula&vv.),episodes)  %then %do;
 		  	if totalnpts = 0 then &&var&vv.._char='0';
@@ -306,7 +322,7 @@
 		  %end;
 		  %else %do;
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
-		  %end;
+		  %end;		  
 	    %end;
 		
         /*labels for stratification variables*/
