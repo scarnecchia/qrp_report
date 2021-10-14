@@ -160,25 +160,27 @@
     /*Macro to finalize tables*/
     %macro prept1t2data(dsin=, dsout=, dpvar=);
     	/* Check to see if POINT was specified in T2 queries */
-    	%let pointflag = N;
+		%if %index(&reporttype,T2) %then %let pointflag = Y;
+    	%else %let pointflag = N;
     	%if %index(&dsin.,t2conc) %then %let t2group=analysisgrp;
     	%else %let t2group=group;
-	    %if %index(&reporttype,T2) %then %do;
-	    	%let pointflag = Y;
-	     	proc sql noprint undo_policy=none;
-	     		create table &dsin as 
-	     		select a.*, upper(b.point) as point
-				%if %index(&dsin.,t2conc) %then %do;
-					,'N' as outputdenom
-				%end;
-				%else %do;
-					,b.outputdenom
-				%end; 
-	     		from &dsin a 
-	     		left join master_typefile b 
-	     		on a.&t2group = b.group;
-	     	quit;
-	   %end;
+	    	    	
+     	proc sql noprint undo_policy=none;
+     		create table &dsin as 
+     		select a.*
+			%if %index(&dsin.,t2conc) %then %do;
+				,'N' as outputdenom
+			%end;
+			%else %do;
+				,b.outputdenom
+			%end; 
+			%if %index(&reporttype,T2) %then %do;
+				, upper(b.point) as point
+			%end;
+     		from &dsin a 
+     		left join master_typefile b 
+     		on a.&t2group = b.group;
+     	quit;
 
 	   /* Check to see if there are 0 total patients per cohort */
 	   proc sql noprint undo_policy=none;
