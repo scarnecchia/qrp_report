@@ -126,14 +126,17 @@
                 select distinct order
                 into :profileorders separated by ' '
                 from stacked_dps;
-
-                select distinct baselinegroupnum 
-                into :profileblgroupnum separated by ' '
-                from stacked_dps;
             quit;
 
             %do c = 1 %to %sysfunc(countw(&profileorders));
                 %let profileorder = %scan(&profileorders,&c);
+
+                proc sql noprint;   
+                    select distinct baselinegroupnum 
+                    into :profileblgroupnum separated by ' '
+                    from stacked_dps
+                    where order=&profileorder;
+                quit;
 
                 /* If baselinegroupnum not specified, only loop once */
                 %if &profileblgroupnum = . %then %let profileblgroupnum = 1;
