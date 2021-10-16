@@ -40,9 +40,10 @@
 %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
     proc sql noprint ;
-        select 'order='||strip(put(order,8.))||' and runid='||quote(strip(runid))||' and group='||quote(strip(group))||' and cohort='||quote(strip(cohort))
+        select 'order='||strip(put(order,8.))||' and runid='||quote(strip(runid))||' and group='||quote(strip(group))||' and cohort='||quote(strip(cohort))||' and baselinegroupnum='||put(baselinegroupnum,8.)
         into :whereexpr separated by '@'
-        from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort
+        from (select order, runid, group, case when(cohort is missing) then 'all' else cohort end as cohort, 
+                     case when(baselinegroupnum is missing) then . else baselinegroupnum end as baselinegroupnum
               from baselinefile
               where not missing(profilecovarstoinclude))
         order by order;
