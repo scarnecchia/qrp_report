@@ -158,12 +158,14 @@
         style(header)=[rules=none vjust=b] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
-        columns %if &includeheaderrow = Y %then %do; header %end; order grouplabel newcategory level &stratavar. &varlist.;
+        columns %if &includeheaderrow = Y %then %do; header %end; order grouplabel 
+                %if %sysfunc(countw(&stratavar.)) >= 2 %then %do; newcategory %end; 
+                %if &stratavar. ne overall %then %do;&stratavar. %end;  &varlist.;
 
         %if &includeheaderrow = Y %then %do; 
         define header / group noprint order=data ' ';
         %end;
-		define order / group "" order=data noprint;
+		define order / group order=data noprint;
         
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &stratavar. = overall %then %do;
@@ -173,13 +175,15 @@
         define grouplabel /group noprint;
         %end;
 
+        %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
         define newcategory / order noprint order=data ' ';
-        define level / noprint;
+        %end;
 
+        /*stratifications*/
+        %if &stratavar. ne overall %then %do;
         %do c = 1 %to %sysfunc(countw(&stratavar.));         
             %let cat = %scan(&stratavar., &c.);
              %if %sysfunc(countw(&stratavar.)) = 1 or &c. = %sysfunc(countw(&stratavar.)) %then %do;
-
                 define &cat. / id ' ' 
                     style(column)=[just=L
                         %if "%lowcase(&cat.)" = "race" or "%lowcase(&cat.)" = "hispanic" %then width= 2.3in;
@@ -192,8 +196,10 @@
              %else %do;
                 define &cat. / noprint;
              %end;
+        %end; 
+        %end; 
 
-        %end;  
+        /*columns*/
         %do v = 1 %to %sysfunc(countw(&varlist.));
             %let varname = %lowcase(%scan(&varlist., &v.,%str( )));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
@@ -222,17 +228,13 @@
         
         /*add grouplabel*/
         %if &stratavar. ne overall %then %do; 
-        compute before grouplabel / %if &includeheaderrow ^= Y %then %do;
-                                    style=[%if &stratavar ^= overall %then %do;
-                                                backgroundcolor=libgr font_weight=bold bordertopcolor=black borderbottomcolor=black
-                                           %end; 
-                                           %else %do; 
-                                           fontstyle=italic bordertopcolor=white borderbottomcolor=white
-                                           %end; just=L];
-                                %end;
-                                %else %do;
-                                style=[fontstyle=italic just=L bordertopcolor=white borderbottomcolor=white];
-                                %end;
+        compute before grouplabel / 
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
             length text $100;
             text = grouplabel;
             num = 100;
