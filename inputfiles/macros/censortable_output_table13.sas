@@ -110,16 +110,16 @@
         style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
-    	columns order %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
+    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; order grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
                 %if %str("&censorreason") ne %str("") %then %do; &censorreason._char %end;
                 ("^S={background=BGR cellheight=0.75in}Number of &episodesorpatients. &cattableheader." censdays_value_cat_format, (episodes_char epi_tot_pct_char) ) 
-                %if &continuousmetrics. = Y %then %do; (dummy, (min_char q1_char median_char q3_char max_char mean_char std_char) ) %end;);
-
-		define order / group "" order=data noprint;
+                %if &continuousmetrics. = Y %then %do; (dummy, (min_char q1_char median_char q3_char max_char mean_char std_char) ) %end;);		
 
         %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
         %end;
+
+		define order / group "" order=data noprint;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;

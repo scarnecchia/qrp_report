@@ -102,7 +102,7 @@
     	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
-    	columns order %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel 
+    	columns %if &includeheaderrow = Y %then %do; headerlabel %end; order grouplabel 
              (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
                 ("^S={background=BGR} Censoring Reason" %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
@@ -110,11 +110,11 @@
                 %end;
                 ));        
 
-		define order / group "" order=data noprint;
-
 	    %if &includeheaderrow = Y %then %do; 
         define headerlabel / group noprint order=data ' ';
         %end;
+
+		define order / group "" order=data noprint;
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
