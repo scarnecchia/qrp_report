@@ -91,13 +91,13 @@
         		output out=sum_censor(drop=_:) sum=;
         	run;
 
-   
-
-/*            data &data.1;*/
-/*                set &data.*/
-/*                    _allsites(in=a);*/
-/*                    if a then dpidsiteID = 'ALL';*/
-/*                run;*/
+            %if &stratifybydp. = Y %then %do;
+                data sum_censor;
+                    set &censordataset.(where=(levelid="&levelid" keep=&censorreason. &groupvar. &dayvar. dpidsiteid))
+                        sum_censor(in=a);
+                        if a then dpidsiteid = 'ALL';
+                run;
+            %end;
 
             /*--------------------------------------------------------------------------------------------*/
             /* Statistics for each censor reason                                                          */
