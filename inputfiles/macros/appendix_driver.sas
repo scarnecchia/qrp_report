@@ -140,6 +140,9 @@
 				   %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
                      data repdata.appendix&look. (drop = hdpsnum);
 		  	           set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+                       /*round ranking to 3 decimals*/
+                       format ranking 8.3;
+                       ranking = round(ranking, .001);
 		  	         run;		
 				  
 		  	         %addtotoc(tabnum = Appendix &looktab., 
