@@ -134,6 +134,10 @@
         %include "&PROGRAM_DIR./&MACROFILE";
     %end;
 
+	proc datasets nowarn noprint lib=work;
+    delete _PROGRAM_DIR_listing _programs;
+    quit;
+
     %put NOTE: ********END OF MACRO: include_macros******** ;
 
 %mend include_macros;
