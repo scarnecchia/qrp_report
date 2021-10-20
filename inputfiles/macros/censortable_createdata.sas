@@ -125,7 +125,7 @@
 		 into: levels_t3 separated by ' '
 		 from tablefile (where = (dataset = "t5censor" and table in ("T15", "T17")));
 
-         %if %index(&tables.,T15) > 0 %then %do;  
+     %if %index(&tables.,T15) > 0 %then %do;  
 		   select "'"||strip(levelid1)||"'"
 		   into: levels_t15 separated by ' '
 		   from tablefile (where = (dataset = "t5censor" and table in ("T15")));
@@ -157,7 +157,7 @@
 	  run;
 	  
 	  proc sort data = agg_&censordataset.;
-	    by dpidsiteid group runid level censorcat_sort;
+	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 	  run;
 	  
 	  data agg_&censordataset (drop = _:);
@@ -166,7 +166,7 @@
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 		if square and not censor and not missing(censdays_value_cat) then do;
 		  %if %index(&tables.,T15) > 0 %then %do;
-            if level in (&levels_t15.) then do;  
+      if level in (&levels_t15.) then do;  
 		      episodenum = 1;
 			end;
 		  %end;
@@ -206,6 +206,22 @@
       output out = censor_dps (drop = _:) sum=;
      run;
    %end;
+
+   %let levels_t14=;
+   %let levels_t16=;
+
+   proc sql noprint;
+   	 %if %index(&tables.,T14) %then %do;
+		 select quote(strip(levelid1))
+		 into :levels_t14 separated by ' '
+		 from tablefile (where = (dataset = "t5censor" and table = "T14"));
+		 %end;
+		 %if %index(&tables.,T16) %then %do;
+		 select quote(strip(levelid1))
+		 into :levels_t16 separated by ' '
+		 from tablefile (where = (dataset = "t5censor" and table = "T16"));
+		 %end;
+	 quit;
  
    /* Stack together*/
    data %if %str(&distribution_var.) ne %str() %then %do;
@@ -227,6 +243,18 @@
 		 /* Data used for stratification statistics */
 	     %if %str(&distribution_var.) = %str(censdays_value) %then %do; else output censor_data; %end; 
 		 %else %do; if not missing(&distribution_var.) then output censor_data; %end; /* Data used for T5Censor stratifications when episodelength requested */
+	   %end;
+	   %if %length(&levels_t14) > 0 %then %do;
+	   if level in (&levels_t14) then do;
+	   	episodelength=1;
+	   	output censor_data;
+	   end;
+	   %end;
+	   %if %length(&levels_t16) > 0 %then %do;
+	   if level in (&levels_t16) then do;
+	   	episodelength=1;
+	   	output censor_data;
+	   end;
 	   %end;
    run;
  
@@ -296,7 +324,7 @@
  	    	     from censor_data_overall &whereclause.;
  	    	   quit;
  	    	   
- 	    	 %if &checksum ^= 0 %then %do;
+ 	    	 %if &checksum ^= 0 and &checksum ^= . %then %do;
            
  	    	   proc means data= censor_data_overall &whereclause. nway missing noprint classdata=censor_data_overall &whereclause.;
  	    	    	var &distribution_var.;
