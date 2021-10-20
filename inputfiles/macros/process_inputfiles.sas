@@ -1036,7 +1036,7 @@
                             %end;
                         %end;
 						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
-						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						%if %index(&tablelist,T15) | %index(&tablelist,T17) %then %do;
 						   data _null_;    
                                 set tablefile(where=(table in ('T15' 'T17')));
 								retain categoryfortable;
