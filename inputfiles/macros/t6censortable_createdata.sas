@@ -45,12 +45,15 @@
     %if %eval(&nobs.>0) %then %do;
         %let censortableloop = &nobs.;
 
+        /*loop through each table*/
         %do cl = 1 %to %eval(&censortableloop.);
 
             %let table=
             %let censordataset=;
             %let censorreason=;
             %let levelid=;
+            %let groupvar=;
+            %let dayvar=;
 
             data _null_;
                 set _censor_tablefile;
@@ -58,15 +61,19 @@
                     call symputx('tableid', strip(table));
                     call symputx('censordataset', strip(dataset));
                     call symputx('levelid', levelid1);
-                    /*convert censorreason to type 6 variables*/
-
+                    call symputx('censorreason', censorreason)
+                    
+                    /*assign group and day variables*/
+                    if censordataset = 't6censor' then do;
+                        call symputx('groupvar', group);
+                        call symputx('dayvar', episodelength);
+                    end;
+                    else do;
+                        call symputx('groupvar', analysisgrp);
+                        call symputx('dayvar', ttswitch);
+                    end;
                 end;
             run;
-
-        
-    
-
-
 
             /*--------------------------------------------------------------------------------------------*/
             /* Dataset exists                                                                             */
@@ -81,10 +88,7 @@
         	proc means data=&censordataset.(where=(levelid="&levelid")) noprint nway;
                 var &censorreason.;
                 class &groupvar. &dayvar. / missing;
-
-        		var &npts. &daysupp. &adjustedcodecount.;
-        		class group runid level mntsfromstart &stratvars. / missing;
-        		output out=agg_t5first_all(drop=_:) sum=;
+        		output out=sum_censor(drop=_:) sum=;
         	run;
 
    
@@ -133,9 +137,10 @@
             /*--------------------------------------------------------------------------------------------*/
             /* Clean up                                                                                   */
             /*--------------------------------------------------------------------------------------------*/
-        /*    proc datasets lib=work nowarn nolist noprint;*/
-        /*       delete ;*/
-        /*    quit;*/
+
+            proc datasets lib=work nowarn nolist noprint;
+               delete sum_censor;
+            quit;
 
       
         

@@ -795,10 +795,23 @@
 			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
-                else if dataset = "t6censor" then censorreason = "cens_elig cens_dth cens_dpend cens_qryend cens_episend";
-                else if dataset in ("t6plota", "t6plotb") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_switch";
+                else if dataset = "t6censor" then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
+                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount switchedcount";
 			  end;
-			  else censorreason = lowcase(censorreason);
+			  else do;
+                %if &reporttype. = T6 %then %do;
+                    /*convert to type 6 variables*/
+                   censorreason = tranwrd(censorreason,'cens_elig','endenrollmentcount');
+                   censorreason = tranwrd(censorreason,'cens_dth','deathcount');
+                   censorreason = tranwrd(censorreason,'cens_dpend','endavaildatacount');
+                   censorreason = tranwrd(censorreason,'cens_qryend','endquerycount');
+                   censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
+                   censorreason = tranwrd(censorreason,'cens_switch','switchedcount');
+                %end
+                %else %do;
+                censorreason = lowcase(censorreason);
+                %end;
+              end;
 			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
