@@ -795,6 +795,8 @@
 			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t6censor" then censorreason = "cens_elig cens_dth cens_dpend cens_qryend cens_episend";
+                else if dataset in ("t6plota", "t6plotb") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_switch";
 			  end;
 			  else censorreason = lowcase(censorreason);
 			%end;
