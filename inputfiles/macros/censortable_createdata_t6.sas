@@ -2,7 +2,7 @@
 *                                           PROGRAM OVERVIEW
 ****************************************************************************************************
 *
-* PROGRAM: censortable_t6_createdata.sas  
+* PROGRAM: censortable_createdata_t6.sas  
 * Created (mm/dd/yyyy): 10/20/2021
 *
 *--------------------------------------------------------------------------------------------------
@@ -29,9 +29,9 @@
 *
 ***************************************************************************************************;
 
-%macro censortable_t6_createdata() ;
+%macro censortable_createdata_t6() ;
 
-    %put =====> MACRO CALLED: censortable_t6_createdata;
+    %put =====> MACRO CALLED: censortable_createdata_t6;
 
     /*--------------------------------------------------------------------------------------------*/
     /* Table specific parameters                                                                  */
@@ -152,6 +152,6 @@
        delete _censor_tablefile ;
     quit;
 
-   %put =====> END MACRO: censortable_t6_createdata;
+   %put =====> END MACRO: censortable_createdata_t6;
 
-%mend censortable_t6_createdata;
+%mend censortable_createdata_t6;
