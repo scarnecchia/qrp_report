@@ -50,7 +50,7 @@
 
     proc means data=&censordataset.(where=(level="&levelid")) noprint nway;
         var &censorreason.;
-        class &groupvar. &dayvar. / missing;
+        class runid &groupvar. &dayvar. / missing;
         output out=sum_censor(drop=_:) sum=;
     run;
 
@@ -71,7 +71,7 @@
 
         proc means data=sum_censor nway missing noprint ;
             var &dayvar.;
-            class &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
+            class runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
             freq &reason.;
             output out=_censor&cr.(drop = _:) N = n
                                               mean = mean 
@@ -120,13 +120,72 @@
     /*--------------------------------------------------------------------------------------------*/
 
     /*total count in cohort*/
+    proc sql noprint;
+        create table _totals as 
+        select runid, &groupvar., dpidsiteid, sum(n) as overall_tot
+        from _stacked
+        group by runid, &groupvar., dpidsiteid;
+    quit;
 
-    data output._stacked&table.; set _stacked; run;
+    proc sort data=_stacked;
+        by runid &groupvar. dpidsiteid;
+    run;
+
+    data _stacked1 output._stacked&table.(drop=overall_tot);
+        merge _stacked _totals;
+        by runid &groupvar. dpidsiteid; 
+
+        /*convert censorreason back to standard variable names and assign censororder*/
+        censorreason = tranwrd(censorreason,'endenrollmentcount','cens_elig');
+        censorreason = tranwrd(censorreason,'deathcount','cens_dth');
+        censorreason = tranwrd(censorreason,'endavaildatacount','cens_dpend');
+        censorreason = tranwrd(censorreason,'endquerycount','cens_qryend');
+        censorreason = tranwrd(censorreason,'endproductdiscontinuationcount','cens_episend');
+        censorreason = tranwrd(censorreason,'productdiscontinuationcount','cens_episend');
+        censorreason = tranwrd(censorreason,'switchedcount','cens_switch');
+
+        censororder = indexw("&defaultcensororder", censorreason);
+    run;
+
 
 
     /*--------------------------------------------------------------------------------------------*/
     /* Apply labels and sort                                                                      */
     /*--------------------------------------------------------------------------------------------*/
+
+    proc sql noprint;
+  	     create table table&table. as
+  	     select a.*
+                , b.order
+	  		   %if &labelfileexists. = Y %then %do;
+  	     	   ,case when not missing(c.label) then c.label 
+                else a.&groupvar. end as grouplabel
+  	     	   ,case when not missing(d.label) then d.label 
+                 when not missing(c.label) then c.label 
+				 else a.&groupvar.  end as headerlabel
+          	   %end;
+          	   %else %do;
+          	   ,a.&groupvar. as grouplabel
+        	   ,'' as headerlabel
+          	   %end;
+  	     from _stacked1 a 
+	     left join groupsfile b
+  	     on a.runid = b.runid and a.&groupvar. = b.group 
+	     %if &labelfileexists. = Y %then %do;
+  	       left join labelfile(where=(labeltype='grouplabel')) c
+  	       on a.&groupvar. = c.group and a.runid = c.runid
+  	       left join labelfile(where=(labeltype='header')) d
+  	       on a.&groupvar. = d.group and a.runid = d.runid
+  	    %end;
+        ;
+    quit;
+
+    proc sort data=table&table. out=output.table&table. sortseq=linguistic (numeric_collation=on);;
+        by order dpidsiteid censororder;
+    run;
+
+
+
 
 
     /*--------------------------------------------------------------------------------------------*/
@@ -142,7 +201,7 @@
     %end; /*dataset exists*/
 
     proc datasets lib=work nowarn nolist noprint;
-       delete _censor_tablefile ;
+       delete _censor_tablefile _stacked _totals _censor: sum_censor;
     quit;
 
    %put =====> END MACRO: censortable_createdata_t6;
