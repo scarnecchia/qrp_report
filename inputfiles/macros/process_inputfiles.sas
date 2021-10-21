@@ -783,10 +783,9 @@
     /*Read in TableFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
-        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                       /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
+        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat);
+			length censorreason $125;
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
-			length censorreason $85;
 			%if &typenum. = 4 | &typenum. = 3 %then %do;
 			  call missing(censorreason);
 			%end;
@@ -796,7 +795,7 @@
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
                 else if dataset = "t6censor" then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
-                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount switchedcount";
+                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
 			  end;
 			  else do;
                 %if &reporttype. = T6 %then %do;
@@ -805,9 +804,10 @@
                    censorreason = tranwrd(censorreason,'cens_dth','deathcount');
                    censorreason = tranwrd(censorreason,'cens_dpend','endavaildatacount');
                    censorreason = tranwrd(censorreason,'cens_qryend','endquerycount');
-                   censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
+                   if dataset = "t6censor" then censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
+                    else censorreason = tranwrd(censorreason,'cens_episend','productdiscontinuationcount');
                    censorreason = tranwrd(censorreason,'cens_switch','switchedcount');
-                %end
+                %end;
                 %else %do;
                 censorreason = lowcase(censorreason);
                 %end;

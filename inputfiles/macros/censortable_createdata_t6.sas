@@ -14,10 +14,15 @@
 *   - agg_switchplotb.sas7bdat  
 *   
 *  Program outputs:             
-*   - 
+*   - [table].sas7bdat
 *
 *  PARAMETERS:
-*   -TableID: tableID from tablefile
+*   - table: table ID from tablefile
+*   - censordataset: input dataset
+*   - censorreason: list of censor reasons from tablefile
+*   - levelid: levelid1 from tablefile
+*   - groupvar: variable used to differentiate groups (group or analysisgrp)
+*   - dayvar: variable used to indicate each day
 * 
 *  Programming Notes:                                                                                
 *                                                                           
@@ -29,124 +34,112 @@
 *
 ***************************************************************************************************;
 
-%macro censortable_createdata_t6() ;
+%macro censortable_createdata_t6(table=, censordataset=, censorreason=, levelid=, groupvar=, dayvar=);
 
     %put =====> MACRO CALLED: censortable_createdata_t6;
 
     /*--------------------------------------------------------------------------------------------*/
-    /* Table specific parameters                                                                  */
+    /* Dataset exists                                                                             */
+    /*--------------------------------------------------------------------------------------------*/
+    %isdata(dataset=&censordataset.);
+    %if %eval(&nobs.>0) %then %do;
+    
+    /*--------------------------------------------------------------------------------------------*/
+    /* Aggregate data across all DPs and stack DP data                                            */
     /*--------------------------------------------------------------------------------------------*/
 
-    data _censor_tablefile;
-        set tablefile(where=(table in ('T8', 'T9', 'T10');
+    proc means data=&censordataset.(where=(level="&levelid")) noprint nway;
+        var &censorreason.;
+        class &groupvar. &dayvar. / missing;
+        output out=sum_censor(drop=_:) sum=;
     run;
 
-    %isdata(dataset=_censor_tablefile);
-    %if %eval(&nobs.>0) %then %do;
-        %let censortableloop = &nobs.;
+    %if &stratifybydp. = Y %then %do;
+        data sum_censor;
+            set &censordataset.(where=(level="&levelid") keep=&censorreason. &groupvar. &dayvar. dpidsiteid)
+                sum_censor(in=a);
+                if a then dpidsiteid = 'ALL';
+        run;
+    %end;
 
-        /*loop through each table*/
-        %do cl = 1 %to %eval(&censortableloop.);
+    /*--------------------------------------------------------------------------------------------*/
+    /* Statistics for each censor reason                                                          */
+    /*--------------------------------------------------------------------------------------------*/
 
-            %let table=
-            %let censordataset=;
-            %let censorreason=;
-            %let levelid=;
-            %let groupvar=;
-            %let dayvar=;
+    %do cr =1 %to %sysfunc(countw(&censorreason.));
+        %let reason = %scan(&censorreason., &cr.);
 
-            data _null_;
-                set _censor_tablefile;
-                if _n_ = &cl. then do;
-                    call symputx('tableid', strip(table));
-                    call symputx('censordataset', strip(dataset));
-                    call symputx('levelid', levelid1);
-                    call symputx('censorreason', censorreason)
-                    
-                    /*assign group and day variables*/
-                    if censordataset = 't6censor' then do;
-                        call symputx('groupvar', group);
-                        call symputx('dayvar', episodelength);
-                    end;
-                    else do;
-                        call symputx('groupvar', analysisgrp);
-                        call symputx('dayvar', ttswitch);
-                    end;
+        proc means data=sum_censor nway missing noprint ;
+            var &dayvar.;
+            class &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
+            freq &reason.;
+            output out=_censor&cr.(drop = _:) N = n
+                                              mean = mean 
+                                              std = std
+                                              min = min
+                                              p1  = p1
+                                              p5  = p5
+                                              p10 = p10
+                                              p25 = p25
+                                              median = median 
+                                              q3 = p75
+                                              p90 = p90
+                                              p95 = p95
+                                              p99 = p99
+                                              max = max;
+        run;
+
+        %if %eval(&cr.=1) %then %do;
+            data _stacked;
+                set _censor&cr.;
+                %if &stratifybydp. = N %then %do;
+                length dpidsiteid $6;
+                dpidsiteid = 'ALL';
+                %end;
+                length censorreason $32.;
+                censorreason = "&reason.";
+            run;
+        %end;
+        %else %do;
+            data _stacked;
+                set _stacked _censor&cr.(in=a);
+                if a then do;
+                %if &stratifybydp. = N %then %do;
+                length dpidsiteid $6;
+                dpidsiteid = 'ALL';
+                %end;
+                length censorreason $32.;
+                censorreason = "&reason.";
                 end;
             run;
+         %end;
+    %end; /*loop through each censor reason*/
 
-            /*--------------------------------------------------------------------------------------------*/
-            /* Dataset exists                                                                             */
-            /*--------------------------------------------------------------------------------------------*/
-            %isdata(dataset=&censordataset.);
-            %if %eval(&nobs.>0) %then %do;
-            
-            /*--------------------------------------------------------------------------------------------*/
-            /* Aggregate data across all DPs and stack DP data                                            */
-            /*--------------------------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------------------------*/
+    /* Missing value indicators and format variables                                              */
+    /*--------------------------------------------------------------------------------------------*/
 
-        	proc means data=&censordataset.(where=(levelid="&levelid")) noprint nway;
-                var &censorreason.;
-                class &groupvar. &dayvar. / missing;
-        		output out=sum_censor(drop=_:) sum=;
-        	run;
+    /*total count in cohort*/
 
-            %if &stratifybydp. = Y %then %do;
-                data sum_censor;
-                    set &censordataset.(where=(levelid="&levelid" keep=&censorreason. &groupvar. &dayvar. dpidsiteid))
-                        sum_censor(in=a);
-                        if a then dpidsiteid = 'ALL';
-                run;
-            %end;
+    data output._stacked&table.; set _stacked; run;
 
-            /*--------------------------------------------------------------------------------------------*/
-            /* Statistics for each censor reason                                                          */
-            /*--------------------------------------------------------------------------------------------*/
-  
-/*            proc means data= &data.1 (where = (level = "&lvl.")) nway missing noprint ;*/
-/*                var &catvar.;*/
-/*                class &grp. dpidsiteid level;*/
-/*                freq &&endvar.;*/
-/*                output out=_censor (drop = _type_)      */
-/*                                        N = _N*/
-/*                                        mean = _mean */
-/*                                        std = _std*/
-/*                                        min = _min*/
-/*                                        p1  = _p1*/
-/*                                        p5  = _p5*/
-/*                                        p10 = _p10*/
-/*                                        p25 = _p25*/
-/*                                        median = _median */
-/*                                        q3 = _p75*/
-/*                                        p90 = _p90*/
-/*                                        p95 = _p95*/
-/*                                        p99 = _p99*/
-/*                                        max = _max;*/
-/*         run;*/
 
-            /*--------------------------------------------------------------------------------------------*/
-            /* Missing value indicators                                                                   */
-            /*--------------------------------------------------------------------------------------------*/
-       
+    /*--------------------------------------------------------------------------------------------*/
+    /* Apply labels and sort                                                                      */
+    /*--------------------------------------------------------------------------------------------*/
 
-            /*--------------------------------------------------------------------------------------------*/
-            /* Apply labels                                                                               */
-            /*--------------------------------------------------------------------------------------------*/
 
-   
-            /*--------------------------------------------------------------------------------------------*/
-            /* Clean up                                                                                   */
-            /*--------------------------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------------------------*/
+    /* Clean up                                                                                   */
+    /*--------------------------------------------------------------------------------------------*/
 
-            proc datasets lib=work nowarn nolist noprint;
-               delete sum_censor;
-            quit;
+    proc datasets lib=work nowarn nolist noprint;
+       delete sum_censor;
+    quit;
 
-      
-        
-            %end; /*dataset exists*/
-        %end; /*loop through table*/
-    %end; /*censor tables requested*/
+
+
+    %end; /*dataset exists*/
 
     proc datasets lib=work nowarn nolist noprint;
        delete _censor_tablefile ;
