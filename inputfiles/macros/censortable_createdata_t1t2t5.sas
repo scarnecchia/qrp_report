@@ -145,15 +145,10 @@
 		by dpidsiteid group runid level;
 		length censdays_value_cat $50. censorcat_sort 3;
 		%do c =1 %to &num_categories.;
-           censdays_value_cat = "%scan(&catvar., &c., ' ')";
-           censorcat_sort = &c.;
-		   episodes = 0;
-		   npts = 0;
-		   %do cn= 1 %to &cens_num_t3.;
-  	      	 %scan(&censorreason, &cn) = 0;
-  	       %end;
-		   output;
-        %end; 
+	        censdays_value_cat = "%scan(&catvar., &c., ' ')";
+	        censorcat_sort = &c.;
+	        output;
+	        %end; 
 	  run;
 	  
 	  proc sort data = agg_&censordataset.;
