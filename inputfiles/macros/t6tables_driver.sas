@@ -67,8 +67,6 @@
 
     %end; /*loop through each table*/
 
-%abort;
-
 	%put =====> END MACRO: t6tables_driver ;
 
 %mend t6tables_driver;

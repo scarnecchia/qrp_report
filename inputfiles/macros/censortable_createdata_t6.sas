@@ -39,109 +39,204 @@
     %put =====> MACRO CALLED: censortable_createdata_t6;
 
     /*--------------------------------------------------------------------------------------------*/
+    /* Create squared table                                                                       */
+    /*--------------------------------------------------------------------------------------------*/
+
+    /*needed to:
+      - merge with data because freq statement drops rows where nobody censored due to a reason
+      - if no switches, QRP will not produce table */
+    proc sql noprint;
+ 	   	 create table _square as
+ 	   	 select distinct group as &groupvar., runid, 'ALL' as dpidsiteid length=4 
+ 	   	 from groupsfile
+         where
+         %if &table.=T8 %then %do; switchanalysis ='N' %end;
+         %if &table.=T9 %then %do; switchanalysis = 'Y' %end;
+         %if &table.=T10 %then %do; switchanalysis = 'Y' and switch2indicator='Y' %end; 
+         order by runid, &groupvar.;
+ 	quit;
+
+    %if &stratifybydp. = Y %then %do; 
+        proc sql noprint undo_policy=none;
+            create table _squarewithdp as
+            select x.*
+                  , y.maskedid as dpidsiteid
+            from _square(drop=dpidsiteid) x,
+                 output.dpinfo y;
+        quit;
+
+        data _square;
+            set _square _squarewithdp;
+        run;
+
+        proc sort data=_square;
+            by runid &groupvar. dpidsiteid;
+        run;
+    %end;
+
+    /*--------------------------------------------------------------------------------------------*/
     /* Dataset exists                                                                             */
     /*--------------------------------------------------------------------------------------------*/
     %isdata(dataset=&censordataset.);
     %if %eval(&nobs.>0) %then %do;
     
-    /*--------------------------------------------------------------------------------------------*/
-    /* Aggregate data across all DPs and stack DP data                                            */
-    /*--------------------------------------------------------------------------------------------*/
+        /*--------------------------------------------------------------------------------------------*/
+        /* Aggregate data across all DPs and stack DP data                                            */
+        /*--------------------------------------------------------------------------------------------*/
 
-    proc means data=&censordataset.(where=(level="&levelid")) noprint nway;
-        var &censorreason.;
-        class runid &groupvar. &dayvar. / missing;
-        output out=sum_censor(drop=_:) sum=;
-    run;
+        proc means data=&censordataset.(where=(level="&levelid")) noprint nway;
+            var &censorreason.;
+            class runid &groupvar. &dayvar. / missing;
+            output out=sum_censor(drop=_:) sum=;
+        run;
 
-    %if &stratifybydp. = Y %then %do;
-        data sum_censor(drop=level);
-            set &censordataset.(where=(level="&levelid") keep=&censorreason. &groupvar. &dayvar. dpidsiteid runid level)
-                sum_censor(in=a);
+        %if &stratifybydp. = Y %then %do;
+            data sum_censor(drop=level);
+                set &censordataset.(where=(level="&levelid") keep=&censorreason. &groupvar. &dayvar. dpidsiteid runid level)
+                    sum_censor(in=a);
                 if a then dpidsiteid = 'ALL';
-        run;
-    %end;
-
-    /*--------------------------------------------------------------------------------------------*/
-    /* Statistics for each censor reason                                                          */
-    /*--------------------------------------------------------------------------------------------*/
-
-    /*create squared table - needed to merge because freq statement drops rows where &reason.=0*/
-    proc sort data=sum_censor nodupkey out=_square(keep=runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; );
-		by runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
-	run;
-
-    %do cr =1 %to %sysfunc(countw(&censorreason.));
-        %let reason = %scan(&censorreason., &cr.);
-
-        proc means data=sum_censor nway missing noprint ;
-            var &dayvar.;
-            class runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
-            freq &reason.;
-            output out=_censor&cr.(drop = _:) N = n
-                                              mean = mean 
-                                              std = std
-                                              min = min
-                                              p1  = p1
-                                              p5  = p5
-                                              p10 = p10
-                                              q1 = p25
-                                              median = median 
-                                              q3 = p75
-                                              p90 = p90
-                                              p95 = p95
-                                              p99 = p99
-                                              max = max;
-        run;
-
-        /*convert censor reason back to standard variable names*/
-        %let reason = %sysfunc(tranwrd(&reason.,endenrollmentcount,cens_elig));
-        %let reason = %sysfunc(tranwrd(&reason.,deathcount,cens_dth));
-        %let reason = %sysfunc(tranwrd(&reason.,endavaildatacount,cens_dpend));
-        %let reason = %sysfunc(tranwrd(&reason.,endquerycount,cens_qryend));
-        %let reason = %sysfunc(tranwrd(&reason.,endproductdiscontinuationcount,cens_episend));
-        %let reason = %sysfunc(tranwrd(&reason.,productdiscontinuationcount,cens_episend));
-        %let reason = %sysfunc(tranwrd(&reason.,switchedcount,cens_switch));
-
-        /*Merge in squared dataset, add back censorreason and assign censor reason label*/
-        data _censor&cr.;
-            merge _censor&cr.
-                  _square;
-            by runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
-
-            if n = . then n = 0;
-
-            %if &stratifybydp. = N %then %do;
-                length dpidsiteid $6;
-                dpidsiteid = 'ALL';
-            %end;
-
-            length censorreason $32. censorlabel $&label_length.;
-            censorreason = "&reason.";
-            %if &reason ne cens_switch %then %do;
-            censorlabel = "&&&reason._label";
-            %end;
-            %else %do;
-                %if &table=T9 %then %do;
-                censorlabel = "&&&reason.1_label";
+                %if %str(&discardnegativetimegroups.) ne %str() %then %do;
+                if &groupvar. in (&discardnegativetimegroups.) and &dayvar. <0 then delete;
                 %end;
-                %else %do;
-                censorlabel = "&&&reason.2_label";
-                %end;
-            %end;
-        run;
-
-        %if %eval(&cr.=1) %then %do;
-            data _stacked;
-                set _censor&cr.;
             run;
         %end;
         %else %do;
-            data _stacked;
-                set _stacked _censor&cr.;
+            %if %str(&discardnegativetimegroups.) ne %str() %then %do;
+            data sum_censor;
+                set sum_censor;
+                if &groupvar. in (&discardnegativetimegroups.) and &dayvar. <0 then delete;
             run;
-         %end;
-    %end; /*loop through each censor reason*/
+            %end;
+        %end;
+
+        /*--------------------------------------------------------------------------------------------*/
+        /* Statistics for each censor reason                                                          */
+        /*--------------------------------------------------------------------------------------------*/
+
+        %do cr =1 %to %sysfunc(countw(&censorreason.));
+            %let reason = %scan(&censorreason., &cr.);
+
+            /*check n>0*/
+            %let sumcheck = 0;
+            proc sql noprint;
+                select sum(&reason.) into: sumcheck
+                from sum_censor;
+            quit;
+
+            %if %eval(&sumcheck.>0) %then %do;
+            proc means data=sum_censor nway missing noprint ;
+                var &dayvar.;
+                class runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; / missing;
+                freq &reason.;
+                output out=_censor&cr.(drop = _:) N = n
+                                                  mean = mean 
+                                                  std = std
+                                                  min = min
+                                                  p1  = p1
+                                                  p5  = p5
+                                                  p10 = p10
+                                                  q1 = p25
+                                                  median = median 
+                                                  q3 = p75
+                                                  p90 = p90
+                                                  p95 = p95
+                                                  p99 = p99
+                                                  max = max;
+            run;
+            %end;
+            %else %do;
+                data _censor&cr.;
+                    set _square;
+                    n=0; std=.; mean=.; min=.; p1=.; p5=.; p10=.; p25=.; median=.; 
+                    p75=.; p90=.; p95=.; p99=.; max=.;
+                run;
+            %end;
+
+            /*convert censor reason back to standard variable names*/
+            %let reason = %sysfunc(tranwrd(&reason.,endenrollmentcount,cens_elig));
+            %let reason = %sysfunc(tranwrd(&reason.,deathcount,cens_dth));
+            %let reason = %sysfunc(tranwrd(&reason.,endavaildatacount,cens_dpend));
+            %let reason = %sysfunc(tranwrd(&reason.,endquerycount,cens_qryend));
+            %let reason = %sysfunc(tranwrd(&reason.,endproductdiscontinuationcount,cens_episend));
+            %let reason = %sysfunc(tranwrd(&reason.,productdiscontinuationcount,cens_episend));
+            %let reason = %sysfunc(tranwrd(&reason.,switchedcount,cens_switch));
+
+            /*Merge in squared dataset, add back censorreason and assign censor reason label*/
+            data _censor&cr.;
+                merge _censor&cr.
+                      _square;
+                by runid &groupvar. %if &stratifybydp. = Y %then %do; dpidsiteid %end; ;
+
+                if n = . then n = 0;
+
+                length censorreason $32. censorlabel $&label_length.;
+                censorreason = "&reason.";
+                %if &reason ne cens_switch %then %do;
+                censorlabel = "&&&reason._label";
+                %end;
+                %else %do;
+                    %if &table=T9 %then %do;
+                    censorlabel = "&&&reason.1_label";
+                    %end;
+                    %else %do;
+                    censorlabel = "&&&reason.2_label";
+                    %end;
+                %end;
+            run;
+
+            %if %eval(&cr.=1) %then %do;
+                data _stacked;
+                    set _censor&cr.;
+                run;
+            %end;
+            %else %do;
+                data _stacked;
+                    set _stacked _censor&cr.;
+                run;
+             %end;
+        %end; /*loop through each censor reason*/
+
+    %end; /*input dataset exists*/
+    %else %do;
+
+        /*--------------------------------------------------------------------------------------------*/
+        /* Create empty table                                                                         */
+        /*--------------------------------------------------------------------------------------------*/
+
+        data _stacked;
+            set _square;
+            n=0; mean=.; std=.; min=.; p1=.; p5=.; p10=.; p25=.; median=.; 
+            p75=.; p90=.; p95=.; p99=.; max=.;
+
+            length censorreason $32. censorlabel $&label_length.;
+            %do cr =1 %to %sysfunc(countw(&censorreason.));
+                %let reason = %scan(&censorreason., &cr.);
+                /*convert censor reason back to standard variable names*/
+                %let reason = %sysfunc(tranwrd(&reason.,endenrollmentcount,cens_elig));
+                %let reason = %sysfunc(tranwrd(&reason.,deathcount,cens_dth));
+                %let reason = %sysfunc(tranwrd(&reason.,endavaildatacount,cens_dpend));
+                %let reason = %sysfunc(tranwrd(&reason.,endquerycount,cens_qryend));
+                %let reason = %sysfunc(tranwrd(&reason.,endproductdiscontinuationcount,cens_episend));
+                %let reason = %sysfunc(tranwrd(&reason.,productdiscontinuationcount,cens_episend));
+                %let reason = %sysfunc(tranwrd(&reason.,switchedcount,cens_switch));
+
+                censorreason = "&reason.";
+                %if &reason ne cens_switch %then %do;
+                censorlabel = "&&&reason._label";
+                %end;
+                %else %do;
+                    %if &table=T9 %then %do;
+                    censorlabel = "&&&reason.1_label";
+                    %end;
+                    %else %do;
+                    censorlabel = "&&&reason.2_label";
+                    %end;
+                %end;
+            output;
+            %end;
+        run;
+
+    %end; /*input dataset doesn't exist*/
 
     /*--------------------------------------------------------------------------------------------*/
     /* Missing value indicators and format variables                                              */
@@ -213,7 +308,6 @@
           	   %end;
           	   %else %do;
           	   ,a.&groupvar. as grouplabel
-        	   ,'' as headerlabel
           	   %end;
   	     from _stacked1 a 
 	     inner join groupsfile b
@@ -223,12 +317,11 @@
   	       on a.&groupvar. = c.group and a.runid = c.runid
   	       left join labelfile(where=(labeltype='header')) d
   	       on a.&groupvar. = d.group and a.runid = d.runid
-
   	    %end;
         ;
     quit;
 
-    proc sort data=table&table. out=output.table&table. sortseq=linguistic (numeric_collation=on);;
+    proc sort data=table&table. sortseq=linguistic (numeric_collation=on);;
         by order dpidsiteid censororder;
     run;
 
@@ -237,10 +330,8 @@
     /*--------------------------------------------------------------------------------------------*/
 
     proc datasets lib=work nowarn nolist noprint;
-       delete _censor_tablefile _stacked: _totals _censor: sum_censor _square;
+       delete _censor_tablefile _stacked: _totals _censor: sum_censor _square:;
     quit;
-
-    %end; /*dataset exists*/
 
    %put =====> END MACRO: censortable_createdata_t6;
 
