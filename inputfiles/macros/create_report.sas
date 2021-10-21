@@ -123,7 +123,7 @@
                 select distinct quote(strip(table)) into: censortablelist separated by ' '
                 from tablefile(where=(dataset="&reporttable."));
             quit;
-            %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
+            %censortable_createdata_t1t2t5(tables=&censortablelist., censordataset = &reporttable.);
             %end;
           %end;
 
