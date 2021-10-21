@@ -507,7 +507,7 @@
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
                          title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"),
+                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
                          cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by Episode Length),

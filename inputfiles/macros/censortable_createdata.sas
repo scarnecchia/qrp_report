@@ -160,11 +160,11 @@
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 	  run;
 	  
-	  data agg_&censordataset (drop = _:);
-	    merge _square_censdays (in = square)
+	  data agg_&censordataset;
+	    set _square_censdays (in = square)
 		      agg_&censordataset (in = censor);
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
-		if square and not censor and not missing(censdays_value_cat) then do;
+		  if square and not censor and not missing(censdays_value_cat) then do;
 		  %if %index(&tables.,T15) > 0 %then %do;
       if level in (&levels_t15.) then do;  
 		      episodenum = 1;
@@ -173,12 +173,12 @@
 		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
 		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
 		  else episodelength = input(censdays_value_cat,8.);
-		  episodes = _episodes;
-		  npts = _npts;
+		  episodes = 0;
+		  npts = 0;
 		  %do cn= 1 %to &cens_num_t3.;
-  	      	 %scan(&censorreason, &cn) = _%scan(&censorreason, &cn);
+  	      	 %scan(&censorreason, &cn) = 0;
   	      %end;
-		end;
+		  end;
 	  run;
 	  
 	  /* Clean up work files */
@@ -244,6 +244,8 @@
 	     %if %str(&distribution_var.) = %str(censdays_value) %then %do; else output censor_data; %end; 
 		 %else %do; if not missing(&distribution_var.) then output censor_data; %end; /* Data used for T5Censor stratifications when episodelength requested */
 	   %end;
+	   /* Set episodelength to 1 for T14 and T16 and output rows separately to avoid dropping them in the above statement when episodelength is missing.
+	      This is output in 2 separate blocks to treat each table independently */
 	   %if %length(&levels_t14) > 0 %then %do;
 	   if level in (&levels_t14) then do;
 	   	episodelength=1;
