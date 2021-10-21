@@ -229,14 +229,7 @@
                  
                     %let DPSITEID = %scan(&random_dplist,&dps);
                     %let maskeddpid = %scan(&masked_dplist,&dps);
-                     
-                    /*Assign C-Statistic*/
-                    proc sql noprint;
-                      select c_stat into: cstat
-                      from &DPSITEID..&RUNID._estimates_&i.
-                      where lowcase(psestimategrp)="&psestimategrp."; 
-                    quit;
-				  
+                 
                     /*output histogram*/
                     %let hisanalysis = Unadjusted;
                     %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
@@ -249,7 +242,6 @@
 				    %end;
 					proc odstext ;
 						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-						p "C-Stat for &hisanalysis. Cohort: &cstat" / style=[just=L color=black];
                     %output_histogram(type=Unadjusted, weight=Unweighted);
 
                     %if "&matchtype" = "F" %then %do;
@@ -258,7 +250,6 @@
 						p " ";
 						p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
 						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-						p "C-Stat for &hisanalysis. Cohort: &cstat" / style=[just=L color=black];
                       %output_histogram(type=Adjusted, weight=Unweighted);
                     %end;
 					

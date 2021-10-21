@@ -39,57 +39,57 @@
 
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
-	data repdata.table&tablenum.&tableletter;
-		set &dataset;
-        length newcategory $80;
-        newcategory = "";
-        %if &includeheaderrow = Y %then %do;
-        if missing(header) then header=grouplabel;
+    	data repdata.table&tablenum.&tableletter;
+    		set &dataset;
+            length newcategory $80;
+            newcategory = "";
+            %if &includeheaderrow = Y %then %do;
+            if missing(header) then header=grouplabel;
+            %end;
+         %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
+          %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
+            %if &cat. = 1 %then %do;
+              newcategory = strip(%scan(&stratavar., &cat.));;
+            %end;
+            %else %do;
+              newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
+            %end;
+          %end;        
         %end;
-     %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
-      %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
-        %if &cat. = 1 %then %do;
-          newcategory = strip(%scan(&stratavar., &cat.));;
-        %end;
-        %else %do;
-          newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
-        %end;
-      %end;        
-    %end;
-	run;
+    	run;
     %end;
 
+    /*Need to reassign eligible member/member day footnote # from 1 to 2 when a race footnote exists*/
 	%if %index(&stratavar,race) %then %do;
-    proc contents data = repdata.table&tablenum.&tableletter out=t noprint;
-	run; 
-	
-    %let label_change_var=;
-    %let label_change=;
+        proc contents data = repdata.table&tablenum.&tableletter out=t noprint;
+    	run; 
+    	
+        %let label_change_var=;
+        %let label_change=;
 
-	proc sql noprint;
-	  select name, label
-      into: Label_change_var separated by ' ', :Label_change separated by ','
-	  from t
-      where label contains ("super 1");
-	quit;
+    	proc sql noprint;
+    	  select name, label
+          into: Label_change_var separated by ' ', :Label_change separated by ','
+    	  from t
+          where label contains ("super 1");
+    	quit;
 
+        %if %length(&label_change_var) > 0 %then %do;
 
-    %if %length(&label_change_var) > 0 %then %do;
+          %let label_change2 = %sysfunc(tranwrd(%bquote(&label_change),%str(super 1),%str(super 2)));
+    	
+    	  proc datasets lib=repdata nolist;
+            modify  table&tablenum.&tableletter;
+            %let val = %sysfunc(countw(&label_change_var));
+    	    %do lab = 1 %to &val;
+    	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
+            %end;
+          quit;
 
-      %let label_change2 = %sysfunc(tranwrd(%bquote(&label_change),%str(super 1),%str(super 2)));
-	
-	  proc datasets lib=repdata nolist;
-        modify  table&tablenum.&tableletter;
-        %let val = %sysfunc(countw(&label_change_var));
-	    %do lab = 1 %to &val;
-	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
-        %end;
-      quit;
-
-      proc datasets lib=work noprint nowarn;
-        delete t;
-      quit;
-	%end;
+          proc datasets lib=work noprint nowarn;
+            delete t;
+          quit;
+    	%end;
     %end;
 
     proc sql noprint;
@@ -102,55 +102,53 @@
     quit;
 
      /* Select Footnotes */  
-         data _footnotes;
-           length footnote_order 3; 
-           /* Always displayed across all types */
-           set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
-              %if %index(&stratavar.,race) %then %do;
-              1
-              %end;
-              %if %str("&outfootnotes.") = %str("1") %then %do;
-              2
-              %end;
-              %if %str("&outfootnotes.") = %str("2") %then %do;
-              3
-              %end;
-              %if %str("&outfootnotes.") = %str("3") %then %do;
-              4
-              %end;
-              %if %str("&outfootnotes.") = %str("2|3") %then %do;
-              5
-              %end;
-              %if %str("&outfootnotes.") = %str("1|3") %then %do;
-              6
-              %end;
-              %if %str("&outfootnotes.") = %str("1|2") %then %do;
-              7
-              %end;
-              %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
-              8
-              %end;
-            )));
-           by order;
-           footnote_order = _n_;
-        run;
-		 
-        proc sql noprint;
-          select count(order) into: num_fn trimmed
-          from _footnotes;
-          
-          %if &num_fn > 0 %then %do;
-          select description into: fn1 - :fn&num_fn.
-          from _footnotes
-            order by order;
-		   %end;
-        quit;
-
+     data _footnotes;
+       length footnote_order 3; 
+       /* Always displayed across all types */
+       set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
+          %if %index(&stratavar.,race) %then %do;
+          1
+          %end;
+          %if %str("&outfootnotes.") = %str("1") %then %do;
+          2
+          %end;
+          %if %str("&outfootnotes.") = %str("2") %then %do;
+          3
+          %end;
+          %if %str("&outfootnotes.") = %str("3") %then %do;
+          4
+          %end;
+          %if %str("&outfootnotes.") = %str("2|3") %then %do;
+          5
+          %end;
+          %if %str("&outfootnotes.") = %str("1|3") %then %do;
+          6
+          %end;
+          %if %str("&outfootnotes.") = %str("1|2") %then %do;
+          7
+          %end;
+          %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
+          8
+          %end;
+        )));
+       by order;
+       footnote_order = _n_;
+    run;
+	 
+    proc sql noprint;
+      select count(order) into: num_fn trimmed
+      from _footnotes;
       
-		%assign_superscripts(type=title, order = 1);
-        %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
-		
+      %if &num_fn > 0 %then %do;
+      select description into: fn1 - :fn&num_fn.
+      from _footnotes
+        order by order;
+	   %end;
+    quit;
 
+	%assign_superscripts(type=title, order = 1);
+    %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
+		
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table &tablenum.&tableletter" tab_color='green');
     %end;
@@ -159,20 +157,33 @@
      proc report data = repdata.table&tablenum.&tableletter nofs nowd spanrows missing headskip split="*"
         style(header)=[rules=none vjust=b] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
-            
-        columns (%if &reporttable = t2conc %then %do; analysisgrp %end; %else %do; group %end; level &stratavar. &varlist. header grouplabel newcategory);
+ 
+        columns %if &includeheaderrow = Y %then %do; header %end; order grouplabel 
+                %if %sysfunc(countw(&stratavar.)) >= 2 %then %do; newcategory %end; 
+                %if &stratavar. ne overall %then %do;&stratavar. %end;  &varlist.;
 
-        define header / order noprint order=data ' ';
-        define grouplabel / order noprint order=data ' ';
+        %if &includeheaderrow = Y %then %do; 
+        define header / group noprint order=data ' ';
+        %end;
+		define order / group order=data noprint;
+        
+        /*if overall - print grouplabel, if stratified - group label will be in compute block*/
+        %if &stratavar. = overall %then %do;
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
+        %end;
+        %else %do;
+        define grouplabel /group noprint;
+        %end;
+
+        %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
         define newcategory / order noprint order=data ' ';
-            
-        define level / noprint;
-            
+        %end;
 
+        /*stratifications*/
+        %if &stratavar. ne overall %then %do;
         %do c = 1 %to %sysfunc(countw(&stratavar.));         
             %let cat = %scan(&stratavar., &c.);
              %if %sysfunc(countw(&stratavar.)) = 1 or &c. = %sysfunc(countw(&stratavar.)) %then %do;
-
                 define &cat. / id ' ' 
                     style(column)=[just=L
                         %if "%lowcase(&cat.)" = "race" or "%lowcase(&cat.)" = "hispanic" %then width= 2.3in;
@@ -185,8 +196,10 @@
              %else %do;
                 define &cat. / noprint;
              %end;
+        %end; 
+        %end; 
 
-        %end;  
+        /*columns*/
         %do v = 1 %to %sysfunc(countw(&varlist.));
             %let varname = %lowcase(%scan(&varlist., &v.,%str( )));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
@@ -195,13 +208,6 @@
 			   define &varname. / display 
                      style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
 					 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
-        %end;
-
-        %if &reporttable = t2conc %then %do;
-        define analysisgrp / noprint;
-        %end;
-        %else %do;
-        define group / noprint;
         %end;
 
 		/* Add title */
@@ -221,23 +227,20 @@
         %end;
         
         /*add grouplabel*/
-        compute before grouplabel / %if &includeheaderrow ^= Y %then %do;
-                                        style=[%if &stratavar ^= overall %then %do;
-                                                    backgroundcolor=libgr font_weight=bold bordertopcolor=black borderbottomcolor=black
-                                               %end; 
-                                               %else %do; 
-                                               fontstyle=italic bordertopcolor=white borderbottomcolor=white
-                                               %end; just=L];
-                                    %end;
-                                    %else %do;
-                                    style=[fontstyle=italic just=L bordertopcolor=white borderbottomcolor=white];
-                                    %end;
-
+        %if &stratavar. ne overall %then %do; 
+        compute before grouplabel / 
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
             length text $100;
             text = grouplabel;
             num = 100;
             line text $varying. num;    
         endcomp;
+        %end;
 
         %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
         /*add grouplabel*/
@@ -253,10 +256,9 @@
         %if %str("&outfootnotes.") ne %str("") %then %do;
             %if &num_fn > 0 %then %do;
             compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize];
-             line '';
-              %do f = 1 %to &num_fn.;
+            %do f = 1 %to &num_fn.;
                 line "^{super &f}&&fn&f.";
-              %end;
+            %end;
             endcomp;
             %end;
         %end;
