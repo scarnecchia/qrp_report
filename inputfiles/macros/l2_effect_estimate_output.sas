@@ -240,7 +240,7 @@
            /* Always displayed across all types */
            set lookup.lookup_footnotes_effectest (where=(order in ( 0
               
-              %if "&conditional" = "Y" and %length(&weightscheme) = 0 %then %do;
+              %if "&conditional" = "Y" and %length(&weightscheme) = 0 and &pscsfile. ne stratificationfile and %index(&&Ratio&corder., Variable) = 0 %then %do;
               4
               %end;
 			  %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
