@@ -147,10 +147,10 @@
 		%do c =1 %to &num_categories.;
            censdays_value_cat = "%scan(&catvar., &c., ' ')";
            censorcat_sort = &c.;
-		   _episodes = 0;
-		   _npts = 0;
+		   episodes = 0;
+		   npts = 0;
 		   %do cn= 1 %to &cens_num_t3.;
-  	      	 _%scan(&censorreason, &cn) = 0;
+  	      	 %scan(&censorreason, &cn) = 0;
   	       %end;
 		   output;
         %end; 
@@ -166,9 +166,9 @@
 	    by dpidsiteid group runid level censorcat_sort censdays_value_cat;
 		  if square and not censor and not missing(censdays_value_cat) then do;
 		  %if %index(&tables.,T15) > 0 %then %do;
-      if level in (&levels_t15.) then do;  
+		  if level in (&levels_t15.) then do;  
 		      episodenum = 1;
-			end;
+		  end;
 		  %end;
 		  if index(censdays_value_cat,'-') > 0 then episodelength = input(scan(censdays_value_cat,1,'-'),8.);
 		  else if index(censdays_value_cat,'+') > 0 then episodelength = input(scan(censdays_value_cat,1,'+'),8.);
