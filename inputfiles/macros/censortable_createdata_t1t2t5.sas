@@ -221,7 +221,7 @@
    /* Stack together*/
    data %if %str(&distribution_var.) ne %str() %then %do;
           censor_data (drop = &distribution_var.)
-          censor_data_overall (drop = level)
+          censor_data_overall
 		%end;
 		%else %do;
 		  censor_data
@@ -319,7 +319,10 @@
            
  	    	   proc means data= censor_data_overall &whereclause. nway missing noprint classdata=censor_data_overall &whereclause.;
  	    	    	var &distribution_var.;
- 	    	    	class runid dpidsiteid group;
+ 	    	    	class runid dpidsiteid group
+ 	    	    	%if &censordataset=t5censor and %length(&whereclause) = 0 and %index(&tables,T15) and %index(&tables,T17) %then %do;
+ 	    	    	level
+ 	    	    	%end;;
  	    	    	freq &cen_stat.;
  	    	    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
  	    	    								mean = Mean 
@@ -329,6 +332,10 @@
  	    	    								median = median 
  	    	    								q3 = q3
  	    	    								max = max;
+ 	    	    	/* When T15 and T17 are requested, only keep T17 rows when reporting continuous statistics */
+ 	    	    	%if &censordataset=t5censor and %length(&whereclause) = 0 and %index(&tables,T15) and %index(&tables,T17) %then %do;
+ 	    	    	where level not in (&levels_t15);
+ 	    	    	%end;
  	    	   run;
  	    	    
  	    	   /* Create indicator variable to show which statistics are associated with which censor reason */ 
