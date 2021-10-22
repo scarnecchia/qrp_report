@@ -783,6 +783,19 @@
     /*Read in TableFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
+    
+        /*Type 6 tables - cross check that relevant analysisgrps requested in GROUPSFILE*/
+        %let switchobs = 0;
+        %let switch2obs = 0;
+        %if &reporttype.=T6 & %eval(&numgroups.>0) %then %do;
+            proc sql noprint;
+                select count(*) into: switchobs
+                from groupsfile(where=(switchanalysis='Y'));
+                select count(*) into: switch2obs
+                from groupsfile(where=(switchanalysis='Y' & switch2indicator='Y'));
+            quit;           
+        %end;
+
         data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat);
 			length censorreason $125;
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
@@ -821,6 +834,20 @@
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
 			n = _n_;
+
+            /*defensive - abort if switchplots requested but no switch analysisgrps*/
+            %if &reporttype.=T6 & %eval(&switchobs <1) %then %do;
+                if dataset = 't6plota' then do;
+                    put 'ERROR: (Sentinel) 1st switch requested in the TABLEFILE, however no 1st switch analyses were requested in the GROUPSFILE';
+                    abort;
+                end;
+            %end;
+            %if &reporttype.=T6 & %eval(&switch2obs <1) %then %do;
+                if dataset = 't6plotb' then do;
+                    put 'ERROR: (Sentinel) 2nd switch requested in the TABLEFILE, however no 2nd switch analyses were requested in the GROUPSFILE';
+                    abort;
+                end;
+            %end;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -895,7 +922,7 @@
                 %abort;
             %end;
             %else %do;
-			
+
                 *Merge in levelids - need to do three times, 1 for each levelid;
                 proc sql noprint undo_policy=none;
                 	create table tablefile as
