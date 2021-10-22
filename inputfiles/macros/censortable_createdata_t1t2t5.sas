@@ -221,7 +221,7 @@
    /* Stack together*/
    data %if %str(&distribution_var.) ne %str() %then %do;
           censor_data (drop = &distribution_var.)
-          censor_data_overall
+          censor_data_overall %if %sysfunc(prxmatch(m/t1censor|t2censor|t2followuptime/i,&censordataset.)) %then %do; (drop=level) %end;
 		%end;
 		%else %do;
 		  censor_data
@@ -319,10 +319,7 @@
            
  	    	   proc means data= censor_data_overall &whereclause. nway missing noprint classdata=censor_data_overall &whereclause.;
  	    	    	var &distribution_var.;
- 	    	    	class runid dpidsiteid group
- 	    	    	%if &censordataset=t5censor and %length(&whereclause) = 0 and %index(&tables,T15) and %index(&tables,T17) %then %do;
- 	    	    	level
- 	    	    	%end;;
+ 	    	    	class runid dpidsiteid group;
  	    	    	freq &cen_stat.;
  	    	    	output out=_stats_&cen_stat. (drop=_type_ _freq_)     
  	    	    								mean = Mean 
