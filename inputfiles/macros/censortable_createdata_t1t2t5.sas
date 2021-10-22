@@ -239,19 +239,13 @@
 	     %if %str(&distribution_var.) = %str(censdays_value) %then %do; else output censor_data; %end; 
 		 %else %do; if not missing(&distribution_var.) then output censor_data; %end; /* Data used for T5Censor stratifications when episodelength requested */
 	   %end;
-	   /* Set episodelength to 1 for T14 and T16 and output rows separately to avoid dropping them in the above statement when episodelength is missing.
+	   /* Episodelength for T14 and T16 are set to missing - output all rows to avoid dropping them in the above statement.
 	      This is output in 2 separate blocks to treat each table independently */
 	   %if %length(&levels_t14) > 0 %then %do;
-	   if level in (&levels_t14) then do;
-	   	episodelength=1;
-	   	output censor_data;
-	   end;
+	   if level in (&levels_t14) then output censor_data;
 	   %end;
 	   %if %length(&levels_t16) > 0 %then %do;
-	   if level in (&levels_t16) then do;
-	   	episodelength=1;
-	   	output censor_data;
-	   end;
+	   if level in (&levels_t16) then output censor_data;
 	   %end;
    run;
  
