@@ -53,10 +53,6 @@ Version 1.1.0 of the QRP reporting tool is designed to be compatible with QRP 11
     <td>11.0.0-current</td>
     <td>1.1.0</td>
   </tr>
-  <tr>
-    <td>11.0.0</td>
-    <td>1.0.0</td>
-  </tr>
 
 </table> 
 
