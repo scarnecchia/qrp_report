@@ -1049,6 +1049,65 @@
         %end;
 			
     %end; /*type 5 tables*/
+
+	/*********************************************************************************************/
+    /* Type 6 censor tables                                                                      */
+    /*********************************************************************************************/	
+	%if %sysfunc(prxmatch(m/t6censor|t6plota|t6plotb/i,&tdatasetlist.)) > 0 %then %do;
+
+        %macro t6censortoc(tableid=, title=);
+
+            %let tableidlist=;
+            proc sql noprint;
+                select distinct table into: tableidlist separated by ' '
+                from tablefile(where=(table in ("&tableid.")));
+            quit;
+
+            %if %str("&tableidlist") ne %str("") %then %do;
+
+            %isdata(dataset=table&tableid.);
+            %if %eval(&nobs.>0) %then %do;
+
+            %do t = 1 %to %sysfunc(countw(&tableidlist.));
+                %let tableid = %scan(&tableidlist., &t.);
+                %let stratificationorder = 0;
+                proc sql noprint;
+                    select max(stratificationorder) into: stratificationorder
+                    from tablefile(where=(table = "&tableid"));
+                quit;
+
+               	/*counter for determining table letter*/
+               	%if %eval(&stratificationorder. = 1) & &stratifybydp. ne Y %then %let tablecount = 0;
+               	%else %let tablecount = 1;
+
+            	%do st = 1 %to &stratificationorder.;
+                    data _null_;
+                        set tablefile(where=(table = "&tableid" and stratificationorder = &st.));
+                        call symputx('tabletitle', tabletitle);
+                    run;
+                 
+                    %tableletter();
+                    
+                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    caption=%quote(Summary of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                    %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
+                        %tableletter();
+                        %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                        caption=%quote(Summary of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner));
+                    %end;                    			
+                %end; /*loop through stratifications*/
+                
+                %let tablenum = %eval(&tablenum + 1);                
+            %end; /*underlying data exists*/
+            %end; /*loop through each table*/
+            %end; /*table requested*/
+        %mend;
+ 
+        %t6censortoc(tableid=T8, title=Episode Duration by Reason Episodes Ended);
+        %t6censortoc(tableid=T9, title=Time to First Switch or Episode End);
+		%t6censortoc(tableid=T10, title=Time to Second Switch or Episode End);
+    %end; /*type 6 censor tables*/
      
     /*********************************************************************************************/
     /*   Code Distribution Tables                                                                */
