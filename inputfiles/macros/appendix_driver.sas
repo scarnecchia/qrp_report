@@ -140,6 +140,9 @@
 				   %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
                      data repdata.appendix&look. (drop = hdpsnum);
 		  	           set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+                       /*round ranking to 3 decimals*/
+                       format ranking 8.3;
+                       ranking = round(ranking, .001);
 		  	         run;		
 				  
 		  	         %addtotoc(tabnum = Appendix &looktab., 
@@ -449,7 +452,7 @@
 			%if %sysfunc(fileexist(&INPUT.&eachCodeFile..xlsx)) & %str("&eachCodeFile") ne %str("") %then %do;
 				libname codes XLSX "&INPUT.&eachCodeFile..xlsx";	
 				/* Resume writing to log */
-				proc printto log="&OUTPUT.qrp_report_log.log";
+				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
 				run;
 				
 				%do k = 1 %to %sysfunc(countw(&eachCodelist));
@@ -530,7 +533,7 @@
 			%end; /*fileexist codesfile check*/
 			%else %do;				
 				/* Resume writing to log */
-				proc printto log="&reportroot.output/qrp_report_log.log";
+				proc printto log="&output.qrp_report_log&reportid..log";
 				run;
 				%put WARNING: (Sentinel) &eachCodeFile. CodesFile does not exist.;
 			%end;	

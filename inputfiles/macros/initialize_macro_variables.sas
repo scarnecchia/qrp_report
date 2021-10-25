@@ -91,10 +91,11 @@
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
-    %global output_code_distribution numgroups discardnegativetimegroups;
+    %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
     %let numgroups = 0;
     %let output_code_distribution = N;
     %let discardnegativetimegroups = ;
+    %let requestedfigs = ;
 
     /*L2 report variables*/
     %global numl2comparisons attrperiodid;
@@ -132,8 +133,8 @@
     %global output_agg_data;
     %let output_agg_data = Y;
 	
-	/*zipfile*/
-	%global zipfile;
+	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
+    %if &leavebehindreport. = N %then %do; %global zipfile; %end;
 	%let zipfile = ;
 	
 	/* covariate codes formats */
@@ -145,7 +146,10 @@
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
-	
+
+	/* Leave behind report */
+	%global reportid dpfile logofile;
+
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

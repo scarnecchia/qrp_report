@@ -337,8 +337,8 @@
         %else %let user_label = Number of^n Pregnant Patients; 
 
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.5pt];
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
             columns (
                 %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
@@ -365,66 +365,66 @@
             %end;
             define analysis / order order=data noprint  ;
             define &medicalproduct / display 'Medical Product'
-                style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=white borderbottomcolor=black];
+                style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=bgr borderleftcolor=bgr];
             &MPDefine. ;
             define n / display "&user_label"
-               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
+               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %if &reporttype = T2L2 %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
             define EVchar / display 'Number of Events'
-                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
-                style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %if &reporttype = T2L2 %then %do;
             define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define RD_1000NUchar / order 'Risk Difference per 1,000^n New Users'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define HR_pvalue / order 'Wald P-Value'
-                style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %else %do;
             define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define rrchar / order 'Risk Ratio'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
 
             %if %length(&s11) > 0 %then %do;
             define ADJOR_95CI / order 'Odds Ratio Adjusted for Selection Bias^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=white borderbottomcolor=black];   
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];  
             %end;
 
             %end;
 
             /*Add title*/
-            compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                           tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "Table &tablenum.&tableletter.. Effect Estimates for &analysisgrpfmt. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.&super_title.";
             endcomp;
 
             /*Add spanning description of analysis*/
             %if &covarnum = 0 %then %do;
-            compute before analysis / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before analysis / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             %end;
             %else %do;
             compute before analysis / style=[background=white foreground=black just=L font_style=italic bordertopcolor=black borderbottomcolor=black];
@@ -504,7 +504,7 @@
 
             %if &covarnum ne 0 %then %do;
             /*Add spanning label for subgroup category*/
-                compute before title / style=[background=lightgrey foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                compute before title / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     length text $100;
                     %if &covarnum ne 9000 %then %do;
                         %if %eval(&covarnum. >=1000) %then %do;
@@ -552,14 +552,19 @@
 
             /* Add Footnotes */
             %if &num_fn > 0 %then %do;
-            compute after / style=[just=L nobreakspace=off];
-             line '';
-              %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
-              %end;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.];
+            line '';
+            %do f = 1 %to &num_fn.;
+            line "^{super &f.}&&fn&f.";
+            %end;
             endcomp;
             %end;
-
+            %else %do;
+            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+            line ' ';
+            endcomp;
+            %end;
         run;
 
         %end;

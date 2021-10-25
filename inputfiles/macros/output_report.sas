@@ -48,7 +48,7 @@
     ods noresults;
     options nodate nonumber orientation = landscape;
     %if &destination. = excel %then %do;
-    ods excel file="&REPORTROOT.output/qrp_report.xlsx" NOGTITLE style = qrp_report_excel
+    ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
@@ -56,7 +56,15 @@
             flow="tables");
     %end;
     %if &destination. = pdf %then %do;
-    ods pdf file="&REPORTROOT.output/qrp_report.pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;
+	  /* Prevent path from being written to log */
+	     proc printto log=log;
+		 run;
+		
+		 ods pdf file="&output.qrp_report&reportid..pdf" NOGTITLE dpi=300 pdftoc=1 style = qrp_report_pdf;	
+				 
+	  /* Resume writing to log */
+		 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+		 run;
     %end;
 
     ods noproctitle;
@@ -69,6 +77,13 @@
 
     /* Counter for table number */
     %let tablenum=1;
+
+    /*leavebehindreport logo*/
+    %if &leavebehindreport. = Y %then %do;
+        %if %str("&logofile") ne %str("") & &destination. = pdf %then %do;
+            title j=L "^{style[preimage='&input./&logofile.']}" ' ';
+        %end;
+    %end;
 
 ***************************************************************************************************;
 * Table of Contents                                            
@@ -116,6 +131,71 @@
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
 
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+              /* Set options to missing to prevent dot from printing in row */
+              options orientation = landscape;
+              options missing = ' ';
+          %do td = 1 %to &tdatasetlistnum.; 
+            %let reporttable = %scan(&tdatasetlist, &td.);
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+                %let tablecount=1;
+                proc sql noprint;
+                    select cats(columnname,'_char') 
+                          ,cats(columnwidth,'in')
+                          ,smallcellyn
+                    into :outvarlist separated by ' ',
+                         :outwidths separated by ' ',
+                         :outsmallcells separated by ' '
+                    from tablecolumns
+                    where table="&reporttable"
+                    order by order;
+
+                    %let tableobs = 0;
+                    select max(stratificationorder)
+                    into :tableobs trimmed 
+                    from tablefile
+                    where dataset="&reporttable";
+                quit; 
+                
+                %do z = 1 %to &tableobs;
+
+                    %if &stratifybydp = Y %then %let tablecount=1;
+                    %else %let tablecount=0;
+
+                    data _null_;
+                        set tablefile(where=(dataset="&reporttable" and stratificationorder=&z));
+                        call symputx('tabletitle', tabletitle);
+                        call symputx('strataid',levelid1);
+                        call symputx('strataname',tablesub);
+                    run;
+
+                    %tableletter();
+                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
+                                     varlist = &outvarlist,
+                                     stratavar = %quote(&strataname),
+                                     varwidths = %bquote(&outwidths.),
+                                     varsmallcells = &outsmallcells,
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+
+                %if &stratifybydp = Y %then %do;
+                    %do dps = 1 %to %eval(&num_dp.);
+                        %let maskedID = %scan(&masked_dplist,&dps); 
+                        %tableletter();
+                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
+                                         varlist = &outvarlist,
+                                         stratavar = %quote(&strataname),
+                                         varwidths = %bquote(&outwidths.),
+                                         varsmallcells = &outsmallcells,
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
+                    %end;
+                %end;
+                %let tablenum = %eval(&tablenum + 1);
+                %end; /* z */
+          %leavet1t2conc:
+          %end; /* td */
+          options missing = '.';
+          options orientation = portrait;
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
 
     /*****************************************************************************************/
     /* Type 1 and 2 censor tables                                                            */
@@ -427,7 +507,7 @@
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
                          title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"),
+                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
                          cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by Episode Length),
@@ -465,6 +545,7 @@
         options orientation = portrait;
 
     %end; /*type 5 tables*/ 
+
 
 ***************************************************************************************************;
 * Code distribution tables                                                     
@@ -522,15 +603,90 @@
         %end;
         %if %index(&figurelist,F2) %then %do;
         %l2_forestplot_driver;
-        %end;
+        %end;   
     %end; 
 
     ************************************************;
+    * Type 5 Figures                                                
+    ************************************************;
+	options orientation = landscape;
+	%if %sysfunc(prxmatch(m/T5/i,&reporttype.)) %then %do;
+	  /* Figures F1, F2, and F3 */
+      %if %sysfunc(prxmatch(m/F1|F2|F3/i,&figurelist.)) > 0 %then %do;
+	   
+        %do figure_count = 1 %to %sysfunc(countw(&figurelist.)); 
+		  
+        %let current_figure = %scan(&figurelist, &figure_count, ' ');
+        %if &current_figure = F1 or &current_figure = F2 or &current_figure = F3 %then %do;
+		  /*set up titles for F123 figures */
+          %if "&current_figure" = "F1" %then %do;
+            %let title_f123 =  Patient Entry into Study by Month;
+		    %let y1label = Monthly number of patients;
+		    %let y2label = Cumulative number of patients in study;
+		    %let yvarF123 = npts;
+		  %end;
+		  %if "&current_figure" = "F2" %then %do;
+            %let title_f123 =  Number of Prescription Dispensings in Patients%str(%') First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly number of prescription dispensings;
+		    %let y2label = Cumulative number of prescription dispensings;
+		    %let yvarF123 = adjustedcodecount;
+		  %end;
+		  %if "&current_figure" = "F3" %then %do;
+            %let title_f123 =  Total Days Supply in Patients%str(%') First Episodes by Month Patient Entered into Study;
+		    %let y1label = Monthly total days supply;
+		    %let y2label = Cumulative days supply;
+            %let yvarF123 = daysupp;
+          %end;
+
+		  /*loop through the figuresubs to create &current_figuresub*/ 
+	      proc sql noprint;
+            select max(stratificationorder)
+              into: max_order
+              from figurefile(where=(figure = "&current_figure"));
+          quit;
+
+          %do g = 1 %to %sysfunc(countw(&requestedfigs));
+            %let figorder = %scan(&requestedfigs,&g);
+
+    		  %do t = 1 %to &max_order;
+
+    		   %let figuretitle = "";
+    		   data _null_;
+                 set figurefile(where=(figure = "&current_figure" and stratificationorder = &t));
+                 call symputx('current_figuresub',figuresub);
+                 call symputx('figuretitle', figuretitle);
+               run;
+
+                data _null_;
+                    set figure123(where=(order=&figorder));
+                    if _n_ = 1 then do;
+                    call symputx('t5grouplabel',grouplabel);
+                    end;
+                run;
+    		 
+    		    %tableletter();
+    		    %if %sysfunc(countw(&requestedfigs)) = 1 and &max_order = 1 %then %let tableletter = ;
+
+    		    %figure_t5_output(figure=&current_figure, figurenum=&figurenum, figureletter=&tableletter., 
+                                title=%quote(&title_f123. for &t5grouplabel. in the &database. from &startdateformatted. to &enddateformatted.&figuretitle.),
+                                where=figuresub = "&current_figuresub" and order=&figorder, figuresub=&current_figuresub., 
+                                yaxislabel1= &y1label, yaxislabel2= &y2label, yvar=&yvarF123.);
+    		  %end;
+          %end;
+		  %end;
+        %let figurenum = %eval(&figurenum +1);
+        %let tablecount = 1;
+       %end;
+	  %end;
+
+	%end;
+
+	 ************************************************;
     * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
     ************************************************;
-    options orientation = landscape;
-    %figure_cdf_km_output;
-    options orientation = portrait;
+	%figure_cdf_km_output;
+	
+     options orientation = portrait;
     
 ***************************************************************************************************;
 * Appendices                                                                                
@@ -542,7 +698,19 @@
 * Clean up                                                                                
 ***************************************************************************************************;
 
-    ods _all_ close;
+    /*reset title*/
+    %let title = ;
+
+ /* Prevent path from being written to log */
+    proc printto log=log;
+    run;
+
+    ods _all_ close;	
+		 
+ /* Resume writing to log */
+    proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+    run;
+   
     ods listing;
     ods results;
 

@@ -154,41 +154,45 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
-		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.5pt];
+		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing split='*'
+        		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
+        		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 		column distindexlist code description codecat codetype totalN caresetting row_separator;
         define distindexlist / noprint;
 		define row_separator / analysis noprint;
         define code / display 'Code'  
         	style(column)=[just=L tagattr="type:String" width=20%] 
-          	style(header)=[just=L background=white borderbottomcolor=black];
+            style(header)=[just=L background = bgr borderleftcolor = BGR];
         define description / display 'Code Description'  
           	style(column)=[just=c tagattr="type:String" width=30%] 
-          	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
         define codecat / display 'Code Category'  
           	style(column)=[width=.7in just=c tagattr="type:String"] 
-          	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
         define codetype / display 'Code Type' 
           	style(column)=[width=.7in just=c tagattr="type:String"] 
-          	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
         define totalN / display 'Overall Counts' format=comma10.0
           	style(column)=[width=.7in just=c vjust=c] 
-          	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
         define caresetting / display 'Encounter Care Setting'  
           	style(column)=[width=.7in just=c] 
-          	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
 
 		/* Add title */
-        compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                       tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+		                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
         line "&title.";
         endcomp;
 
 		compute row_separator;
 		call define (_row_,'style','style=[borderbottomcolor=lightgrey borderbottomwidth=.5pt] ' );
 		endcomp;
+
+        compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+        line ' ';
+        endcomp;
 
       	run;
 	    
@@ -209,31 +213,34 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
-		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
-                style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black] split='*'
-                style(report)=[rules=none frame=box cellpadding=1.5pt];
+		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing split='*'
+        	style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
+        	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 		column code description codecat codetype N  ;
 	    define code / display 'Code' group  order order= data 
 	      	style(column)=[just=L tagattr="type:String" width=20%] 
-	      	style(header)=[just=L background=white borderbottomcolor=black];
+            style(header)=[just=L background = bgr borderleftcolor = BGR];
 	    define description / display 'Code Description'  group  order order= data 
 	      	style(column)=[just=c tagattr="type:String" width=30%] 
-	      	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
 	    define codecat / display 'Code Category'  group  order order= data 
 	      	style(column)=[width=.7in just=c tagattr="type:String"] 
-	      	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
 	    define codetype / display 'Code Type' group  order order= data 
 	      	style(column)=[width=.7in just=c tagattr="type:String"] 
-	      	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
 	    define N / display 'Overall Counts' group order order= data format=comma10.0
 	      	style(column)=[width=.7in just=c] 
-	      	style(header)=[just=C background=white borderbottomcolor=black];
+            style(header)=[just=c background = bgr borderleftcolor = BGR];
 
 		/* Add title */
-        compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
-                                       tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
+		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
+		                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
         line "&title.";
+        endcomp;
+        compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+        line ' ';
         endcomp;
 
       	run;
