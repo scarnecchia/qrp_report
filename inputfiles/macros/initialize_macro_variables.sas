@@ -121,7 +121,7 @@
 
     /*censor reasons*/
     %global defaultcensororder;
-    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend;
+    %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend cens_switch;
 
     /*Age stratification format */
     %global agefmt;

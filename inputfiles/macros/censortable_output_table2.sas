@@ -144,7 +144,7 @@
         /*Add title*/
         compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
     	                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-        line "&title.&super_title";
+        line "Table &tablenum.. &title.&super_title";
         endcomp;
 
         /*Add header if requested*/

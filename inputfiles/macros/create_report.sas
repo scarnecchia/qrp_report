@@ -99,6 +99,8 @@
 ***************************************************************************************************;
 *   Calculate L1 summary tables                                             
 ***************************************************************************************************;
+    %isdata(dataset=tablefile);
+    %if %eval(&nobs.>0) %then %do;
 
     /*ReportType T1 and T2L1*/
     %if %sysfunc(prxmatch(m/T1|T2L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
@@ -123,7 +125,7 @@
                 select distinct quote(strip(table)) into: censortablelist separated by ' '
                 from tablefile(where=(dataset="&reporttable."));
             quit;
-            %censortable_createdata(tables=&censortablelist., censordataset = &reporttable.);
+            %censortable_createdata_t1t2t5(tables=&censortablelist., censordataset = &reporttable.);
             %end;
           %end;
 
@@ -134,6 +136,13 @@
 	%if %str("&reporttype") = %str("T5") %then %do;
 	   %t5tables_driver();
 	%end;
+
+    /*ReportType T6*/
+	%if %str("&reporttype") = %str("T6") %then %do;
+	   %t6tables_driver();
+	%end;
+
+    %end; /*tablefile exists*/
 
 ***************************************************************************************************;
 *   Compute L1 figures                                            

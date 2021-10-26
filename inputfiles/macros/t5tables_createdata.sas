@@ -29,7 +29,7 @@
 *   - totalcountdosevar: name of variable containing counts for dosing tables continuous metrics
 * 
 *  Programming Notes:                                                                                
-*  - Censor tables are computed in a separate macro (censortable_createdata.sas)   
+*  - Censor tables are computed in a separate macro (censortable_createdata_t1t2t5.sas)   
 *  - 'overall' stratification is required for any additional stratification 
 *  - if CATVARSORT is specified, categories have already been computed in QRP, otherwise categories
 *    must be specified in the TABLEFILE for category tables
