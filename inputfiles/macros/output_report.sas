@@ -409,10 +409,10 @@
         					call symputx('numtables', numtables);
         					call symputx('tableorder', tableorder);               
         					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
-        						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,1.)));
+        						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,best.)));
         					%end;
         					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
-        						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,1.)));
+        						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,best.)));
         					%end;
         				end;
         			run;
