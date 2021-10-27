@@ -907,7 +907,7 @@ libname tempfl "";
 
 	data lookup_t6tablefigurefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $125.;
 
         includeinreport = 'N';
 		categories = '';
