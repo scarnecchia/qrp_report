@@ -37,7 +37,7 @@
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
-       set lookup.lookup_footnotes_censortables(where = (order in (999 1/*dummy to prevent e r r o r*/
+       set lookup.lookup_footnotes_censortables(where = (order in (1
         %if %index(&reasonlist.,cens_episend) %then %do; 4 %end;
         %if %index(&reasonlist.,cens_event) %then %do; 5 %end;
         %if %index(&reasonlist.,cens_spec) %then %do; 6 %end;

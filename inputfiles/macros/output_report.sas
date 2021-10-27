@@ -507,7 +507,7 @@
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
                          title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall"),
+                         where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
                          cattableheader=%quote(Censored due to %sysfunc(propcase(&&&reason._label)) by Episode Length),
@@ -554,25 +554,17 @@
         %macro t6censor(tableid=);
         %isdata(dataset=table&tableid.);
             %if %eval(&nobs.>0) %then %do;                        
-                %let stratificationorder = 0;
-                proc sql noprint;
-                    select max(stratificationorder) into: stratificationorder
-                    from tablefile(where=(table = "&tableid"));
-                quit;
-
 
                 /*counter for determining table letter*/
-                %if %eval(&stratificationorder. = 1) & &stratifybydp. ne Y %then %let tablecount = 0;
+                %if &stratifybydp. ne Y %then %let tablecount = 0;
                 %else %let tablecount = 1;
 
                  %if &tableid = T8 %then %let t6reporttitle=Summary of Episode Duration by Reason Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
                  %if &tableid = T9 %then %let t6reporttitle=Summary of Time to First Switch or Episode End for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
                  %if &tableid = T10 %then %let t6reporttitle=Summary of Time to Second Switch or Episode End for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
 
-                %do st = 1 %to &stratificationorder.;
-
                     data _null_;
-                        set tablefile(where=(table = "&tableid" and stratificationorder = &st.));
+                        set tablefile(where=(table = "&tableid"));
                         censorreason=tranwrd(censorreason,"endenrollmentcount","cens_elig");
                         censorreason=tranwrd(censorreason,"deathcount","cens_dth");
                         censorreason=tranwrd(censorreason,"endavaildatacount","cens_dpend");
@@ -580,7 +572,6 @@
                         censorreason=tranwrd(censorreason,"endproductdiscontinuationcount","cens_episend");
                         censorreason=tranwrd(censorreason,"productdiscontinuationcount","cens_episend");
                         censorreason=tranwrd(censorreason,"switchedcount","cens_switch");
-                        call symputx('tabletitle', tabletitle);
                         call symputx('t6censorreasons', censorreason);
                     run;
 
@@ -591,7 +582,7 @@
                                      reasonlist=&t6censorreasons,
                                      where=%str(dpidsiteid = 'ALL'));
 
-                    %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
+                    %if &stratifybydp. = Y %then %do;
                         %tableletter();
                         %t6censor_output(tablenum=&tablenum.&tableletter,
                                      dataset=table&tableid,
@@ -600,8 +591,6 @@
                                      where=%str(dpidsiteid ^= 'ALL'),
                                      dptable=Y);
                     %end;                               
-                %end; /*loop through stratifications*/
-                
                 %let tablenum = %eval(&tablenum + 1);                
             %end; /*underlying data exists*/
 
