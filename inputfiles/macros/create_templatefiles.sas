@@ -85,7 +85,7 @@ libname tempfl "";
 	            output;
 
 	            /*Stratified tables*/
-	            %do i =1 %to 94;
+	            %do i =1 %to %sysfunc(countw(&stratcida., %str(|)));
 	            %let sub = %scan(%str(&stratcida.), &i, '|');
 	                tablesub = "&sub";
 	                tablesubstrat = '';
@@ -95,7 +95,7 @@ libname tempfl "";
 	                output;
 	            %end;
 
-	            %do i =1 %to 93;
+	            %do i =1 %to %sysfunc(countw(&stratnoCovar., %str(|)));
 	            %let sub = %scan(%str(&stratnoCovar.), &i, '|');
 	                tablesub = "&sub covar#";
 	                tablesubstrat = '';
@@ -205,7 +205,7 @@ libname tempfl "";
             output;
 
             /*Stratified tables*/
-            %do i =1 %to 11;
+            %do i =1 %to %sysfunc(countw(&stratalist., %str(|)));
             %let sub = %scan(%str(&stratalist.), &i, '|');
                 tablesub = "&sub";
                 tablesubstrat = '';
@@ -268,7 +268,7 @@ libname tempfl "";
             output;
 
             /*Stratified tables*/
-            %do i =1 %to 10;
+            %do i =1 %to %to %sysfunc(countw(&stratalist., %str(|))) - 1;
             %let sub = %scan(%str(&stratalist.), &i, '|');
                 tablesub = "&sub";
                 tablesubstrat = '';
@@ -376,7 +376,7 @@ libname tempfl "";
         output; 
 
         /*Stratified tables*/
-        %do i =1 %to 10;
+        %do i =1 %to %sysfunc(countw(&stratalist., %str(|)));
         %let sub = %scan(%str(&stratalist.), &i, '|');
             tablesub = "&sub";
             tablesubstrat = '';
