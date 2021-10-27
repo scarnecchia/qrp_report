@@ -165,7 +165,7 @@
                    set &outfile.(rename = (
                      %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
-                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
@@ -194,6 +194,12 @@
                        month = put(_month, mn_name.);
 					   sortorder&s. = _month;
                        drop _month;
+                     %end;
+					 %else %if &&strata&s. = quarter %then %do;
+                       length quarter $10;
+                       quarter = put(_quarter, qtr_name.);
+					   sortorder&s. = _quarter;
+                       drop _quarter;
                      %end;
 				     %else %if &&strata&s. = year %then %do;
 					   sortorder&s. = year;
