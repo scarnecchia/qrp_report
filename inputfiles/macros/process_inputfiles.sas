@@ -62,7 +62,15 @@
                     /*default stratifybydp*/
                     if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
-                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then call symputx("value",cats('(', strip(value), ')'));
+                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then do;
+                        tempvalue = input(value,ANYDTDTE32.); /*convert to SAS date*/
+                        if missing(tempvalue) = 0 then do;
+                            call symputx("value",cats('(', strip(put(tempvalue, worddate20.)), ')'));
+                        end;
+                        else do;
+                            call symputx("value",cats('(', strip(value), ')'));
+                        end;
+                    end;
                 end;
             run;
             %let &parameter. = &value.;
@@ -775,10 +783,22 @@
     /*Read in TableFile, alphabetize variables, and assign title*/
     %isdata(dataset=input.&tablefile.);
     %if %eval(&nobs.>0) %then %do;
-        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
-                       /*rename=tablesub_out=tablesub*/ rename=tablesubstrat_out=tablesubstrat);
+    
+        /*Type 6 tables - cross check that relevant analysisgrps requested in GROUPSFILE*/
+        %let switchobs = 0;
+        %let switch2obs = 0;
+        %if &reporttype.=T6 & %eval(&numgroups.>0) %then %do;
+            proc sql noprint;
+                select count(*) into: switchobs
+                from groupsfile(where=(switchanalysis='Y'));
+                select count(*) into: switch2obs
+                from groupsfile(where=(switchanalysis='Y' & switch2indicator='Y'));
+            quit;           
+        %end;
+
+        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat);
+			length censorreason $125;
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
-			length censorreason $85;
 			%if &typenum. = 4 | &typenum. = 3 %then %do;
 			  call missing(censorreason);
 			%end;
@@ -787,8 +807,24 @@
 			    if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
 				else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
 				else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t6censor" then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
+                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
 			  end;
-			  else censorreason = lowcase(censorreason);
+			  else do;
+                %if &reporttype. = T6 %then %do;
+                    /*convert to type 6 variables*/
+                   censorreason = tranwrd(censorreason,'cens_elig','endenrollmentcount');
+                   censorreason = tranwrd(censorreason,'cens_dth','deathcount');
+                   censorreason = tranwrd(censorreason,'cens_dpend','endavaildatacount');
+                   censorreason = tranwrd(censorreason,'cens_qryend','endquerycount');
+                   if dataset = "t6censor" then censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
+                    else censorreason = tranwrd(censorreason,'cens_episend','productdiscontinuationcount');
+                   censorreason = tranwrd(censorreason,'cens_switch','switchedcount');
+                %end;
+                %else %do;
+                censorreason = lowcase(censorreason);
+                %end;
+              end;
 			%end;
         	table=upcase(table);
         	tablesub=lowcase(tablesub);
@@ -798,6 +834,20 @@
         	levelid3 = lowcase(levelid3);
         	dataset = lowcase(dataset);
 			n = _n_;
+
+            /*defensive - abort if switchplots requested but no switch analysisgrps*/
+            %if &reporttype.=T6 & %eval(&switchobs <1) %then %do;
+                if dataset = 't6plota' then do;
+                    put 'ERROR: (Sentinel) 1st switch requested in the TABLEFILE, however no 1st switch analyses were requested in the GROUPSFILE';
+                    abort;
+                end;
+            %end;
+            %if &reporttype.=T6 & %eval(&switch2obs <1) %then %do;
+                if dataset = 't6plotb' then do;
+                    put 'ERROR: (Sentinel) 2nd switch requested in the TABLEFILE, however no 2nd switch analyses were requested in the GROUPSFILE';
+                    abort;
+                end;
+            %end;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';
@@ -872,7 +922,7 @@
                 %abort;
             %end;
             %else %do;
-			
+
                 *Merge in levelids - need to do three times, 1 for each levelid;
                 proc sql noprint undo_policy=none;
                 	create table tablefile as
@@ -1013,7 +1063,7 @@
                             %end;
                         %end;
 						/* If censor tables T15 and T17 are requested confirm categories are the same across both tables */ 
-						%if %index(&tablelist,T15) | %index(&tablelist,T15) %then %do;
+						%if %index(&tablelist,T15) | %index(&tablelist,T17) %then %do;
 						   data _null_;    
                                 set tablefile(where=(table in ('T15' 'T17')));
 								retain categoryfortable;
@@ -1559,7 +1609,9 @@
 			run;
         %end;
 
-        *Add unique psestimategrp flag to the l2comparisonfile;                     
+        *Add unique psestimategrp flag to the l2comparisonfile;     
+        %isdata(dataset=l2comparisonfile);
+        %if %eval(&nobs.>0) %then %do;
     	 proc sql noprint;
     	   create table _l2comparisonfile_ps as
     	     select base.*
@@ -1579,6 +1631,7 @@
     	   unique_psestimate +1;
            if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
     	 run;
+         %end;
     
         proc sort data=pscs_masterinputs nodupkey;
             by runid covarnum analysisgrp;

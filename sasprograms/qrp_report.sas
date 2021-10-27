@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 09/30/2021
-* VERSION: 1.0.0
+* LAST MODIFIED: 10/25/2021
+* VERSION: 1.1.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -31,7 +31,7 @@
 ***************************************************************************************************;
 
 /*-----------------------------------------------------------------------------------------------*/
-/* Section 1: User inputs 															                                         */
+/* Section 1: User inputs 															             */
 /*-----------------------------------------------------------------------------------------------*/
 
 /* Location of QRP request inputfiles folder */
@@ -164,91 +164,8 @@ ods path(prepend) work.templat(update);
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
 
-/*driver macros*/
-%include "&reportroot.inputfiles/macros/create_report.sas";
-
-/*utility macros*/
-%include "&reportroot.inputfiles/macros/utility_macros.sas";
-%include "&reportroot.inputfiles/macros/addstatetozip3.sas";
-%include "&reportroot.inputfiles/macros/figure_axes.sas";
-
-/*report template*/
-%include "&reportroot.inputfiles/macros/report_template.sas";
-%include "&reportroot.inputfiles/macros/l2_forestplot_template.sas";
-
-/*set up*/
-%include "&reportroot.inputfiles/macros/initialize_macro_variables.sas";
-%include "&reportroot.inputfiles/macros/process_inputfiles.sas";
-%include "&reportroot.inputfiles/macros/createlibref.sas";
-%include "&reportroot.inputfiles/macros/report_formats_labels.sas";
-
-/*baseline macros*/
-%include "&reportroot.inputfiles/macros/baseline_driver.sas";
-%include "&reportroot.inputfiles/macros/baseline_aggregate.sas";
-%include "&reportroot.inputfiles/macros/baseline_expand_parameters.sas";
-%include "&reportroot.inputfiles/macros/baseline_compute.sas";
-%include "&reportroot.inputfiles/macros/baseline_output.sas";
-%include "&reportroot.inputfiles/macros/baseline_profile_createdata.sas";
-%include "&reportroot.inputfiles/macros/baseline_profile_output.sas";
-
-/*attrition macros*/
-%include "&reportroot.inputfiles/macros/attrition_createdata.sas";
-%include "&reportroot.inputfiles/macros/attrition_output.sas";
-
-/*Aggregation macros*/
-%include "&reportroot.inputfiles/macros/aggregate_report_tables.sas";
-%include "&reportroot.inputfiles/macros/aggregate_l2_datasets.sas";
-%include "&reportroot.inputfiles/macros/aggregate_tree.sas";
-
-/*L2 report macros*/
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_driver.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_km_createdata.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_subgroups.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runcox.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogithr.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runlogitor.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrd_rs.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_runrobusthr.sas";
-%include "&reportroot.inputfiles/macros/l2_effect_estimate_output.sas";
-
-/*L1 table creation macros*/
-%include "&reportroot.inputfiles/macros/t1t2conc_createdata.sas";
-%include "&reportroot.inputfiles/macros/censortable_createdata.sas";
-%include "&reportroot.inputfiles/macros/t5tables_createdata.sas";
-%include "&reportroot.inputfiles/macros/t5tables_driver.sas";
-
-/*L1 table output macros*/
-%include "&reportroot.inputfiles/macros/t5tables_output.sas";
-%include "&reportroot.inputfiles/macros/t1t2conc_output.sas";
-%include "&reportroot.inputfiles/macros/censortable_output_table13.sas";
-%include "&reportroot.inputfiles/macros/censortable_output_table2.sas";
-%include "&reportroot.inputfiles/macros/t5tables_output.sas";
-
-/*Code distribution macros*/
-%include "&reportroot.inputfiles/macros/codedistribution_createdata.sas";
-%include "&reportroot.inputfiles/macros/codedistribution_output.sas"; 
-
-/*Figure macros */
-%include "&reportroot.inputfiles/macros/l2_forestplot_createdata.sas";
-%include "&reportroot.inputfiles/macros/l2_psdistribution_createdata.sas";
-%include "&reportroot.inputfiles/macros/l2_psdistribution_output.sas";
-%include "&reportroot.inputfiles/macros/l2_forestplot_driver.sas";
-
-%include "&reportroot.inputfiles/macros/figure_l1_driver.sas";
-%include "&reportroot.inputfiles/macros/figure_cdf_km_createdata.sas";
-%include "&reportroot.inputfiles/macros/figure_cdf_km_output.sas";
-
-%include "&reportroot.inputfiles/macros/figure_t5_createdata.sas";
-%include "&reportroot.inputfiles/macros/figure_t5_output.sas";
-
-/*Appendices macros*/
-%include "&reportroot.inputfiles/macros/appendix_driver.sas";
-%include "&reportroot.inputfiles/macros/appendix_output.sas";
-
-/*report formatting and output macros*/
-%include "&reportroot.inputfiles/macros/output_report.sas";
-%include "&reportroot.inputfiles/macros/output_report_dates.sas";
-%include "&reportroot.inputfiles/macros/create_tableofcontents.sas";
+%include "&reportroot.inputfiles/macros/include_macros.sas";
+%include_macros(PROGRAM_DIR=%str(&reportroot.inputfiles/macros));
 
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 4 - Call create_report.sas 															 */

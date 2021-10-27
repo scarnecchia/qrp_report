@@ -66,8 +66,8 @@
             if missing(cohort) then profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_&periodid"));
             else if cohort = 'switch' then profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_", cohort, "_", switchstep, "_&periodid"));
             else profiletablename = lowcase(cats("&dpsiteid..",runid, "_profile_", cohort, "_&periodid"));
-        run;
-            
+        run;     
+
         proc sql noprint;
             select distinct profiletablename into: profiletables separated by ' '
             from _temp_profile_tablenames;
@@ -97,6 +97,7 @@
                      , y.order
                      , y.cohort
                      , y.profilecovarstoinclude
+                     , y.baselinegroupnum
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;
@@ -122,7 +123,7 @@
         run;
 
             proc sql noprint;
-                select distinct order 
+                select distinct order
                 into :profileorders separated by ' '
                 from stacked_dps;
             quit;
@@ -130,27 +131,44 @@
             %do c = 1 %to %sysfunc(countw(&profileorders));
                 %let profileorder = %scan(&profileorders,&c);
 
-                data _temp_profilegroup_&c;
-                    set stacked_dps(where=(order=&profileorder));
+                proc sql noprint;   
+                    select distinct baselinegroupnum 
+                    into :profileblgroupnum separated by ' '
+                    from stacked_dps
+                    where order=&profileorder;
+                quit;
+
+                /* If baselinegroupnum not specified, only loop once */
+                %if &profileblgroupnum = . %then %let profileblgroupnum = 1;
+
+                /* Count to see if baselinegroupnum was specified */
+                %let baselinegroupnumcount = %sysfunc(countw(&profileblgroupnum));
+
+                %do d = 1 %to &baselinegroupnumcount;
+                    %let blgroupnumorder = %scan(&profileblgroupnum,&d);
+
+                data _temp_profilegroup_&c._&d;
+                    set stacked_dps(where=(order=&profileorder %if &baselinegroupnumcount > 1 %then %do; and baselinegroupnum=&blgroupnumorder %end;));
                     if lowcase(strip(profilecovarstoinclude)) = 'all' then profilecovarstoinclude = 'covar:';
                     call symputx('profilecovarsnocomma', compress(compbl(tranwrd(profilecovarstoinclude,',',', ')),','));
                 run;
 
-                proc means data=_temp_profilegroup_&c. nway missing noprint;
+                proc means data=_temp_profilegroup_&c._&d nway missing noprint;
                     var npts n_episodes;
                     class periodid runid group order cohort %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
-                    output out=sum_agg_profile_&c(drop=_:)   
+                    output out=sum_agg_profile_&c._&d.(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
 
                 /* Stratified by DP */
-                proc means data=_temp_profilegroup_&c. nway missing noprint;
+                proc means data=_temp_profilegroup_&c._&d nway missing noprint;
                     var npts n_episodes;
                     class periodid runid dpidsiteid group order cohort %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
-                    output out=sum_dp_agg_profile_&c(drop=_:)   
+                    output out=sum_dp_agg_profile_&c._&d.(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
-            %end;
+                %end; /* d */
+            %end; /* c */
 
         /*Stack profile tables within periodid*/
         data agg_profile_&periodid.;
@@ -166,7 +184,7 @@
         /* Rejoin profilecovarstoinclude to use in output macro */
         proc sql noprint undo_policy=none;
             create table agg_profile_&periodid as
-            select a.*, b.profilecovarstoinclude, b.covarsort
+            select a.*, b.profilecovarstoinclude, b.covarsort, b.baselinegroupnum
             from agg_profile_&periodid a
             left join baselinefile b
             on a.group = b.group and a.runid = b.runid;

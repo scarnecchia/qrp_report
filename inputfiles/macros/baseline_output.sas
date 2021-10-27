@@ -158,7 +158,13 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-		   
+
+        /*Set first word for SDthreshold footnote*/
+		%if %str(&sdthreshold.) ne %str() %then %do;
+             %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
+             %else %let covar_characteristic = Characteristics;
+        %end;
+
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
@@ -319,6 +325,7 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=1.75in bordertopwidth = &bordersize];
+			  line ''; /*added to match other tables spacing */
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
@@ -438,7 +445,7 @@
                     else if upcase(ipweight)= 'ATES' then call symputx("weightlabel","Average Treatment Effect, Stabilized (ATES)");
                     else if upcase(ipweight)= 'ATT' then call symputx("weightlabel","Average Treatment Effect in the Treated (ATT)");
 					call symputx('weightscheme', upcase(ipweight));
-                    call symputx('truncationlabel',strip(put(truncweight, best.))||'%');
+                    call symputx('truncationlabel',strip(put(truncweight, best.)));
                 end;
             run;
 
@@ -690,7 +697,7 @@
                 %if &psfile. = psmatchfile %then %do;
                 %tableletter(); 
                 %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma.), &ratiolabel.&caliperlabel., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                   characteristiclabel =&characteristiclabel.,
                   dpnum = &dpnum.,
                   numcolumns =&numcolumns.,
@@ -716,12 +723,12 @@
 					
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
                 %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                    %if &psfile. = iptwfile %then %let stratumtitle = (Inverse Probability of Treatment Weighted, Trimmed&dpcomma.), Weight: &weightlabel., Truncation: &truncationlabel.;
-                    %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = (Propensity Score Stratum Weighted, Trimmed&dpcomma.), Percentiles: &percentiles., Weight: &weightlabel.;
-                    %else %let stratumtitle =(Propensity Score Stratified&dpcomma.), Percentiles: &percentiles.;
+                    %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
+                    %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
+                    %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
                     %tableletter(); 
                     %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. &stratumtitle., in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
+                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.),
                       characteristiclabel =&characteristiclabel.,
                       dpnum = &dpnum.,
                       numcolumns =&numcolumns.,
