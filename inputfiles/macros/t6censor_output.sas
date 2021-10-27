@@ -105,36 +105,40 @@
         style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
-    	columns order (grouplabel %if &dptable=Y %then %do; dpidsiteid %end; censorlabel) (n_char mean_char std_char min_char p1_char p5_char p10_char 
-    							  p25_char median_char p75_char p90_char p95_char p99_char max_char);		
+    	columns order %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel %if &dptable=Y %then %do; dpidsiteid %end; censorlabel (n_char mean_char std_char min_char p1_char p5_char p10_char 
+    							  p25_char median_char p75_char p90_char p95_char p99_char max_char);	
 
 		define order / "" order=data noprint;
 
-        define grouplabel / order noprint order=data style(header)=[background = BGR borderleftcolor = BGR]; 
+		%if &includeheaderrow = Y %then %do; 
+        define headerlabel / order noprint order=data "";
+        %end;	
+
+        define grouplabel / order noprint order=data ""; 
 
         %if &dptable=Y %then %do;
-        define dpidsiteid / order noprint "" order=data style(column)=[fontstyle=italic]; 
+        define dpidsiteid / order noprint order=data ""; 
         %end;
 
-        define censorlabel / order "" order=data style(column)=[just=L];
+        define censorlabel / order order=data style(column)=[just=L] "";
 
         define n_char / "Total Number of Episodes"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
-        define mean_char / display 'Mean' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define mean_char / display 'Mean' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
         define std_char / display 'Standard^n Deviation'  style(column)=[just=C width=44pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define min_char / display 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p1_char / display '1%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p5_char / display '5%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p10_char / display '10%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p25_char / display '25%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define median_char / display 'Median' style(column)=[just=C width=30pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p75_char / display '75%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p90_char / display '90%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p95_char / display '95%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p99_char / display '99%' style(column)=[just=C width=57 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define max_char / display 'Maximum' style(column)=[just=C width=40pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define min_char / display 'Minimum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p1_char / display '1%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p5_char / display '5%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p10_char / display '10%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p25_char / display '25%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define median_char / display 'Median' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p75_char / display '75%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p90_char / display '90%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p95_char / display '95%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define p99_char / display '99%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define max_char / display 'Maximum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
        
         /*Add title*/
         compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
@@ -142,25 +146,52 @@
         line "Table &tablenum.. &title.&super_title";
         endcomp;
 
+        /*Add header if requested*/
+        %if &includeheaderrow = Y %then %do; 
+            compute before headerlabel / %if &dptable =Y %then %do;
+            							 style=[background=white just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            							 %end;
+            							 %else %do;
+            							 style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            							 %end;
+
+            length text $100;
+                text = headerlabel;
+                num = 100;
+                line text $varying. num;
+            endcomp;
+        %end;
+        %else %do;
         /*Add group label spanning header if stratified table and indent labels*/
             compute before grouplabel /
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+                    %end;
+                    %else %do;
                     style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
                 length text2 $150;
                 text2= grouplabel; 
                 num= 150;
             	line text2 $varying. num; 
             endcomp;
+        %end;
 
-            /* And DP stratifications if requested */
-            %if &dptable = Y %then %do;
+        /* Add DP stratifications if requested */
+        %if &dptable = Y %then %do;
             compute before dpidsiteid /
+                    %if &includeheaderrow = Y %then %do; 
+                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    %end;
+                    %else %do;
                     style=[just=L fontstyle=italic];
+                    %end;
                 length text3 $150;
                 text3= dpidsiteid; 
                 num= 150;
             	line text3 $varying. num; 
             endcomp;
-            %end;
+        %end;
 
         /*Footnotes*/
         %if %eval(&num_fn.>0) %then %do;
