@@ -239,15 +239,12 @@
            length footnote_order 3; 
            /* Always displayed across all types */
            set lookup.lookup_footnotes_effectest (where=(order in ( 0
-              
-              %if "&conditional" = "Y" and %length(&weightscheme) = 0 %then %do;
-              4
-              %end;
+                            
 			  %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
 			  1
 			  %end;
               %if %length(&weightscheme) > 0 %then %do;
-              5
+              4
               %end;
               %if &covarnum = 1012 %then %do;
               2
@@ -274,7 +271,7 @@
         /* Assign macro variables for superscripts */
 		%assign_superscripts(type =title, order = 2 3);
 		%assign_superscripts(type =weight, order =1);
-		%assign_superscripts(type =line, order =4 5);
+		%assign_superscripts(type =line, order =4);
 
         /* Determine what text to append to title based on covarnum */
         %if &covarnum = 0 %then %do;
@@ -461,7 +458,7 @@
                 /*Covariate Stratified*/
                 %if &pscsfile. = covstratfile %then %do;
                 else if analysis = 'Conditional' then do; 
-                    text="&formattedstratvars. Adjusted Analysis^{super 1}"; 
+                    text="&formattedstratvars. Adjusted Analysis"; 
                     num=100; 
                 end;
                 %end;
