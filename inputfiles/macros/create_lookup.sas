@@ -61,10 +61,11 @@
      data lookup.lookup_footnotes_effectest;
 	   attrib order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
-	   order = 1;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-	   order = 2;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
-	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
-	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
+	   order = 1;  description = "All values in this section are weighted."; output;
+	   order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	   order = 3;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
+	   order = 4;  description = "Conditionally matched analyses censor all patients in a matched set at the time the first patient within the set is censored."; output;
+	   order = 5;  description = "&weightscheme. = &weightschemelong.."; output;
 	 run;  
 
      data lookup.lookup_footnotes_attrition;
