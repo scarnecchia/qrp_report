@@ -268,7 +268,7 @@ libname tempfl "";
             output;
 
             /*Stratified tables*/
-            %do i =1 %to %to %sysfunc(countw(&stratalist., %str(|))) - 1;
+            %do i =1 %to %sysfunc(countw(&stratalist., %str(|))) - 1;
             %let sub = %scan(%str(&stratalist.), &i, '|');
                 tablesub = "&sub";
                 tablesubstrat = '';
