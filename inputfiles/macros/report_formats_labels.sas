@@ -33,6 +33,7 @@
 *   -hhs_regfmt
 *   -cb_regfmt
 *   -mn_name
+*   -qtr_name
 *   -nafmt
 *
 *
