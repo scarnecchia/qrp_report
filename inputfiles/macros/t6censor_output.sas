@@ -120,7 +120,7 @@
         define dpidsiteid / order noprint order=data ""; 
         %end;
 
-        define censorlabel / order order=data style(column)=[just=L] "";
+        define censorlabel / order order=data style(column)=[just=L %if &dptable = Y %then %do; indent=.25in %end; %else %do; indent=.15in %end; width=2in] "";
 
         define n_char / "Number of Episodes"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
@@ -148,20 +148,14 @@
 
         /*Add header if requested*/
         %if &includeheaderrow = Y %then %do; 
-            compute before headerlabel / %if &dptable =Y %then %do;
-            							 style=[background=white just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-            							 %end;
-            							 %else %do;
-            							 style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-            							 %end;
-
+            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             length text $100;
                 text = headerlabel;
                 num = 100;
                 line text $varying. num;
             endcomp;
         %end;
-        %else %do;
+
         /*Add group label spanning header if stratified table and indent labels*/
             compute before grouplabel /
                     %if &includeheaderrow = Y %then %do; 
@@ -175,17 +169,11 @@
                 num= 150;
             	line text2 $varying. num; 
             endcomp;
-        %end;
+
 
         /* Add DP stratifications if requested */
         %if &dptable = Y %then %do;
-            compute before dpidsiteid /
-                    %if &includeheaderrow = Y %then %do; 
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-                    %end;
-                    %else %do;
-                    style=[just=L fontstyle=italic];
-                    %end;
+            compute before dpidsiteid / style=[just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                 length text3 $150;
                 text3= dpidsiteid; 
                 num= 150;
