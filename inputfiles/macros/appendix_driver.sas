@@ -349,6 +349,61 @@
 		quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
+
+    /*********************************************************************************************/
+    /* Type 6 Computed Start Marketing Date                                                      */
+    /*********************************************************************************************/		
+    %if &reporttype. = T6 %then %do;
+
+        /*Format Computed Start Marketing Date and apply group labels/sort order*/
+        data appendixb;
+            set agg_t6_productsdates(keep=runid dpidsiteid group computedstartmarketingdate);
+                format cdate $10.;
+                if missing(computedstartmarketingdate) then cdate = 'N/A';
+                else cdate = put(computedstartmarketingdate, mmddyy10.);
+                drop computedstartmarketingdate;
+        run;
+
+        proc sql noprint undo_policy=none;
+      	     create table appendixb as
+      	     select a.dpidsiteid
+                  , a.cdate
+                  , b.order
+	  		     %if &labelfileexists. = Y %then %do;
+  	     	      , case when not missing(c.label) then c.label 
+                    else a.group end as grouplabel
+                 %end;
+  	     	     %else %do;
+          	     ,a.group as grouplabel
+          	     %end;
+  	         from appendixb a 
+    	     inner join groupsfile b
+      	     on a.runid = b.runid and a.group = b.group 
+    	     %if &labelfileexists. = Y %then %do;
+      	       left join labelfile(where=(labeltype='grouplabel')) c
+      	       on a.group = c.group and a.runid = c.runid
+      	    %end;
+            ;
+        quit;
+
+        /*Check observations exist - if no product groups are requested in report, the appendix will not be produced*/
+        %isdata(dataset=appendixb);
+        %if %eval(&nobs.>0) %then %do;
+    		%tableletter(); 	
+            %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+    				  caption = %bquote(Computed Start Marketing Dates for Each Cohort at Each Data Partner),
+    				  appendixtype = appendixT6Dates);
+
+            proc sort data=appendixb sortseq=linguistic (numeric_collation=on) out=repdata.appendix&tableletter.;
+                by order dpidsiteid;
+            run;
+
+            proc datasets nowarn noprint lib=work;
+                delete appendixb;
+            quit;
+        %end;
+    %end;
+
     /*********************************************************************************************/
     /* Create geographic location appendices if requested                                        */
     /*********************************************************************************************/		

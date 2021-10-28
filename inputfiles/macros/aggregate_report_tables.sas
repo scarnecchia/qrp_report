@@ -44,6 +44,7 @@
 *			-[runid]_t6_switchepisdurstats
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
+*           -[runid]_t6_productsdates
 *
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
@@ -344,6 +345,8 @@
 			%if %index(&datasetlist.,t6plotb) > 0 %then %do;
 			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
+
+			  %agg_report(infile=t6_productsdates, outfile=agg_t6_productsdates, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end; *T6;
 
 		/* Code distribution */
