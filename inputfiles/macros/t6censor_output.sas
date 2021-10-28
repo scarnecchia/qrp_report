@@ -173,7 +173,7 @@
 
         /* Add DP stratifications if requested */
         %if &dptable = Y %then %do;
-            compute before dpidsiteid / style=[just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
+            compute before dpidsiteid / style=[just=L width=1.5in indent=.15in bordertopcolor=white borderbottomcolor=white];
                 length text3 $150;
                 text3= dpidsiteid; 
                 num= 150;
