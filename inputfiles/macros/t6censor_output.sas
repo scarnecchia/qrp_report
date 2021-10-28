@@ -122,7 +122,7 @@
 
         define censorlabel / order order=data style(column)=[just=L] "";
 
-        define n_char / "Total Number of Episodes"
+        define n_char / "Number of Episodes"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
