@@ -124,7 +124,7 @@
 	                %end;
 	                %else %do; /* end aggregate do statement */
 	                    %let dpsiteid = %scan(&masked_dplist,&dps);
-	                %end; /* end dp assignment for non-agg do statement */
+	                %end; /* end DP assignment for non-agg do statement */
 
 	                data raw_histogram;
 	                   set %if &dps=0 %then %do; hist_&dps.; %end;
@@ -170,7 +170,7 @@
 	                            , "&dpsiteid." as dp length=6
 								, "&runid." as runid length=3
 								, "&loopcount." as order length=3
-								, &periodid as monitoringperiod
+								, &periodid as monitoringperiod length=3
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 

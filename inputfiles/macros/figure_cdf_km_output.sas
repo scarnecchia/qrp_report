@@ -437,8 +437,9 @@
                         %else %if &figure = F4 %then %let titlestart=Conditional;
                         %else %let titlestart=Unconditional;
 
-                        /* Necessary columns for transformation program */
+                        /* Add columns for Sentinel Views */
                         data figure&figure._analysis&loopcount._&j;
+                        	length monitoringperiod 3;
                         	set figure&figure._analysis&loopcount._&j;
                         	analysis="&titlestart";
                         	analysisgrp="&analysisgrp";

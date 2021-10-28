@@ -97,6 +97,7 @@
             %end;
 
             data repdata.table1&tableletter.;
+            %if &reporttype=T2L2 %then %do; length monitoringperiod 3 %end;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
