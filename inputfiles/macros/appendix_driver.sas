@@ -366,7 +366,7 @@
 
         proc sql noprint undo_policy=none;
       	     create table appendixb as
-      	     select a.dpidsiteid
+      	     select distinct a.dpidsiteid
                   , a.cdate
                   , b.order
 	  		     %if &labelfileexists. = Y %then %do;
@@ -377,7 +377,7 @@
           	     ,a.group as grouplabel
           	     %end;
   	         from appendixb a 
-    	     inner join groupsfile b
+    	     inner join inputfiles b
       	     on a.runid = b.runid and a.group = b.group 
     	     %if &labelfileexists. = Y %then %do;
       	       left join labelfile(where=(labeltype='grouplabel')) c
@@ -392,7 +392,7 @@
     		%tableletter(); 	
             %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
     				  caption = %bquote(Computed Start Marketing Dates for Each Cohort at Each Data Partner),
-    				  appendixtype = appendixT6Dates);
+    				  appendixtype = APPENDIXT6DATES);
 
             proc sort data=appendixb sortseq=linguistic (numeric_collation=on) out=repdata.appendix&tableletter.;
                 by order dpidsiteid;
