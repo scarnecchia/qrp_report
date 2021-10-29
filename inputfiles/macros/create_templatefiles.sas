@@ -41,11 +41,12 @@ libname tempfl "";
 
     /*t1cida, t2cida, and t2concomitantuse tables*/
 
-	%let stratOneLevel = sex| agegroup| year| year month| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
+	%let stratOneLevel = sex| agegroup| year| year month| year quarter| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
 	%let stratCovar = &stratOneLevel.| covar#;
     %let stratTwoLevel = 
-					 sex agegroup| sex agegroup year| sex agegroup year month| agegroup year| agegroup year month| sex year| sex year month| 
-					 year month agegroup race| year month agegroup Hispanic| year month sex Hispanic| year month sex race| year month Hispanic race|
+					 sex agegroup| sex agegroup year| sex agegroup year month| sex agegroup year quarter| agegroup year| agegroup year month| agegroup year quarter| sex year| sex year month| 
+					 sex year quarter| year month agegroup race| year quarter agegroup race| year month agegroup Hispanic| year quarter agegroup Hispanic| year month sex Hispanic|
+					 year quarter sex Hispanic| year month sex race| year quarter sex race| year month Hispanic race| year quarter Hispanic race|
 					 zip3 zip_uncertain| zip3 sex| zip3 sex zip_uncertain| zip3 agegroup| zip3 agegroup zip_uncertain| zip3 year| zip3 year zip_uncertain|
 					 zip3 race| zip3 race zip_uncertain| zip3 hispanic| zip3 hispanic zip_uncertain| 
 					 state zip_uncertain| state sex| state sex zip_uncertain| state agegroup| state agegroup zip_uncertain| state year| 
@@ -55,8 +56,8 @@ libname tempfl "";
 					 hhs_reg year| hhs_reg year zip_uncertain| hhs_reg race| hhs_reg race zip_uncertain| hhs_reg hispanic| hhs_reg hispanic zip_uncertain|
 					 cb_reg zip_uncertain| cb_reg sex| cb_reg sex zip_uncertain| cb_reg agegroup| cb_reg agegroup zip_uncertain| cb_reg year| 
 					 cb_reg year zip_uncertain| cb_reg race| cb_reg race zip_uncertain| cb_reg hispanic| cb_reg hispanic zip_uncertain| 
-					 race sex| race agegroup| race year| race year month| 
-					 hispanic sex| hispanic agegroup| hispanic year| hispanic year month| year agegroup race| year sex race|
+					 race sex| race agegroup| race year| race year month| race year quarter| 
+					 hispanic sex| hispanic agegroup| hispanic year| hispanic year month| hispanic year quarter| year agegroup race| year sex race|
 					 year agegroup hispanic| year sex hispanic| year race hispanic;
 
     %let stratcida = &stratCovar. | &stratTwoLevel.;
@@ -84,7 +85,7 @@ libname tempfl "";
 	            output;
 
 	            /*Stratified tables*/
-	            %do i =1 %to 84;
+	            %do i =1 %to %sysfunc(countw(&stratcida., %str(|)));
 	            %let sub = %scan(%str(&stratcida.), &i, '|');
 	                tablesub = "&sub";
 	                tablesubstrat = '';
@@ -94,7 +95,7 @@ libname tempfl "";
 	                output;
 	            %end;
 
-	            %do i =1 %to 83;
+	            %do i =1 %to %sysfunc(countw(&stratnoCovar., %str(|)));
 	            %let sub = %scan(%str(&stratnoCovar.), &i, '|');
 	                tablesub = "&sub covar#";
 	                tablesubstrat = '';
@@ -170,7 +171,7 @@ libname tempfl "";
 	%templatecensortablefigures(2,t2censor,3,3);
 
     /*Multiple Events Tables*/
-    %let stratalist = sex| agegroup| year| year month| race| hispanic| zip3| state| cb_reg| hhs_reg| adherence;
+    %let stratalist = sex| agegroup| year| year month| year quarter| race| hispanic| zip3| state| cb_reg| hhs_reg| adherence;
     data lookup_t2multevent;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
@@ -204,7 +205,7 @@ libname tempfl "";
             output;
 
             /*Stratified tables*/
-            %do i =1 %to 11;
+            %do i =1 %to %sysfunc(countw(&stratalist., %str(|)));
             %let sub = %scan(%str(&stratalist.), &i, '|');
                 tablesub = "&sub";
                 tablesubstrat = '';
@@ -267,7 +268,7 @@ libname tempfl "";
             output;
 
             /*Stratified tables*/
-            %do i =1 %to 10;
+            %do i =1 %to %sysfunc(countw(&stratalist., %str(|))) - 1;
             %let sub = %scan(%str(&stratalist.), &i, '|');
                 tablesub = "&sub";
                 tablesubstrat = '';
@@ -329,7 +330,7 @@ libname tempfl "";
     run;
 
 	/*Overlap Tables*/
-    %let stratalist = sex| agegroup| year|  year month| race| hispanic| zip3| state| cb_reg| hhs_reg;
+    %let stratalist = sex| agegroup| year|  year month| year quarter| race| hispanic| zip3| state| cb_reg| hhs_reg;
     data lookup_t2overlap;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
         format table $5. dataset $15. tablesubstrat tablesub $25. levelid1 levelid2 levelid3 $55. categories $100.;
@@ -375,7 +376,7 @@ libname tempfl "";
         output; 
 
         /*Stratified tables*/
-        %do i =1 %to 10;
+        %do i =1 %to %sysfunc(countw(&stratalist., %str(|)));
         %let sub = %scan(%str(&stratalist.), &i, '|');
             tablesub = "&sub";
             tablesubstrat = '';

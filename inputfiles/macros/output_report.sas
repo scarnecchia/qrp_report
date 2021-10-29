@@ -130,11 +130,13 @@
 /*********************************************************************************************/
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) <= 0 %then %do;
 
         %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
-              /* Set options to missing to prevent dot from printing in row */
-              options orientation = landscape;
-              options missing = ' ';
+          /* Set options to missing to prevent dot from printing in row */
+          options orientation = landscape;
+          options missing = ' ';
+
           %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
             %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
@@ -371,8 +373,11 @@
                           tablenametitle=Observable Data,
                           cattableheader=Observable Time,
                           conttableheader=Observable Time);
-    options orientation = portrait;
-    %end;
+
+        options orientation = portrait;
+        %end;
+
+    %end; /*ReportType = T1 and T2L1 summary tables*/
 
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
