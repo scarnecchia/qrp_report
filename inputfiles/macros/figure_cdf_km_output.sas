@@ -42,6 +42,13 @@
 						 yaxislabel=,
 						 figure=,
 						 font=,
+						 analysis=,
+						 analysisgrp=,
+						 monitoringperiod=,
+						 eoi=,
+						 ref=,
+						 eoilabel=,
+						 reflabel=,
 						 kmrefpop=);
 
 		/* Obtain x and y axis values */
@@ -66,6 +73,17 @@
 		%if &atrisktable = Y %then %do;
 		if day in (&kmxtickmarks) then xaxisatrisk=day;
 		%end;
+		/* Add columns for Sentinel Views */
+		%if &reporttype = T2L2 and (&figure=F3 or &figure=F4 or &figure=F5) %then %do;
+		length monitoringperiod 3;
+	    analysis="&analysis";
+        analysisgrp="&analysisgrp";
+        monitoringperiod=&monitoringperiod;
+        eoi="&eoi";
+        ref="&ref";
+        eoilabel="&eoilabel";
+        reflabel="&reflabel";
+        %end;
 		run;
 		%end;
 
@@ -437,19 +455,6 @@
                         %else %if &figure = F4 %then %let titlestart=Conditional;
                         %else %let titlestart=Unconditional;
 
-                        /* Add columns for Sentinel Views */
-                        data figure&figure._analysis&loopcount._&j;
-                        	length monitoringperiod 3;
-                        	set figure&figure._analysis&loopcount._&j;
-                        	analysis="&titlestart";
-                        	analysisgrp="&analysisgrp";
-                        	monitoringperiod=&j;
-                        	eoi="&GRP1";
-                        	ref="&GRP0";
-                        	eoilabel="&eoilabel";
-                        	reflabel="&reflabel";
-                        run;
-
                         %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
 									 where=1,
 									 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
@@ -458,6 +463,13 @@
 									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
 									 figure=&figure,
 									 font=&fontfamily,
+									 analysis=&titlestart,
+									 analysisgrp=&analysisgrp,
+									 monitoringperiod=&j,
+									 eoi=&GRP1,
+									 ref=&GRP0,
+									 eoilabel=&eoilabel,
+									 reflabel=&reflabel,
 									 %if &figure ^= F4 %then %do; 
 									 kmrefpop=unweighted 
 									 %end;
