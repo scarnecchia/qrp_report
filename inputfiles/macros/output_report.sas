@@ -552,6 +552,75 @@
     %end; /*type 5 tables*/ 
 
 
+/*********************************************************************************************/
+/* Type 6 summary tables                                                                     */
+/*********************************************************************************************/
+	%if %str("&reporttype") = %str("T6") %then %do;
+
+        /*****************************************************************************************/
+        /* Type 6 censor tables                                                                  */
+        /*****************************************************************************************/
+        %if %sysfunc(prxmatch(m/t6censor|t6plota|t6plotb/i,&tdatasetlist.)) > 0 %then %do; 
+            options orientation = landscape;
+            %macro t6censor(tableid=);
+            %isdata(dataset=table&tableid.);
+                %if %eval(&nobs.>0) %then %do;                        
+
+                    /*counter for determining table letter*/
+                    %if &stratifybydp. ne Y %then %let tablecount = 0;
+                    %else %let tablecount = 1;
+
+                     %if &tableid = T8 %then %let t6reporttitle=Summary of Episode Duration by Reason Episodes Ended for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
+                     %if &tableid = T9 %then %let t6reporttitle=Summary of Time to First Switch or Episode End for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
+                     %if &tableid = T10 %then %let t6reporttitle=Summary of Time to Second Switch or Episode End for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.;
+
+                        data _null_;
+                            set tablefile(where=(table = "&tableid"));
+                            censorreason=tranwrd(censorreason,"endenrollmentcount","cens_elig");
+                            censorreason=tranwrd(censorreason,"deathcount","cens_dth");
+                            censorreason=tranwrd(censorreason,"endavaildatacount","cens_dpend");
+                            censorreason=tranwrd(censorreason,"endquerycount","cens_qryend");
+                            censorreason=tranwrd(censorreason,"endproductdiscontinuationcount","cens_episend");
+                            censorreason=tranwrd(censorreason,"productdiscontinuationcount","cens_episend");
+                            censorreason=tranwrd(censorreason,"switchedcount","cens_switch");
+                            call symputx('t6censorreasons', censorreason);
+                        run;
+
+                        %tableletter();
+                        %t6censor_output(tablenum=&tablenum.&tableletter,
+                                         dataset=table&tableid,
+                                         title=%quote(&t6reporttitle),
+                                         reasonlist=&t6censorreasons,
+                                         where=%str(dpidsiteid = 'ALL'));
+
+                        %if &stratifybydp. = Y %then %do;
+                            %tableletter();
+                            %t6censor_output(tablenum=&tablenum.&tableletter,
+                                         dataset=table&tableid,
+                                         title=%quote(&t6reporttitle., by Data Partner),
+                                         reasonlist=&t6censorreasons,
+                                         where=%str(dpidsiteid ^= 'ALL'),
+                                         dptable=Y);
+                        %end;                               
+                    %let tablenum = %eval(&tablenum + 1);                
+                %end; /*underlying data exists*/
+            %mend t6censor;
+
+        %if %sysfunc(prxmatch(m/\bT8\b/i,&tablelist.)) > 0 %then %do;
+            %t6censor(tableid=T8);
+        %end;
+        %if %sysfunc(prxmatch(m/\bT9\b/i,&tablelist.)) > 0 %then %do;
+            %t6censor(tableid=T9);
+        %end;
+        %if %sysfunc(prxmatch(m/\bT10\b/i,&tablelist.)) > 0 %then %do;
+            %t6censor(tableid=T10);
+        %end;
+
+        options orientation = portrait;
+        %end;
+
+    %end; /*type 6*/
+
 ***************************************************************************************************;
 * Code distribution tables                                                     
 ***************************************************************************************************;
