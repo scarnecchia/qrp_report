@@ -75,7 +75,7 @@
 		%end;
 		/* Add columns for Sentinel Views */
 		%if &reporttype = T2L2 and (&figure=F3 or &figure=F4 or &figure=F5) %then %do;
-		length monitoringperiod 3;
+		length monitoringperiod 3 analysis $13 analysisgrp eoi ref $40;
 	    analysis="&analysis";
         analysisgrp="&analysisgrp";
         monitoringperiod=&monitoringperiod;
