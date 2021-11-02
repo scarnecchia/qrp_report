@@ -238,7 +238,7 @@
          data _footnotes;
            length footnote_order 3; 
            /* Always displayed across all types */
-           set lookup.lookup_footnotes_effectest (where=(order in ( 0
+           set lookup.lookup_footnotes(where=(type = "effectest" and order in ( 0
                             
 			  %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
 			  1
