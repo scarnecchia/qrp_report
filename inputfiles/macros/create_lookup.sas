@@ -61,9 +61,9 @@
      data lookup.lookup_footnotes_effectest;
 	   attrib order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
-	   order = 1;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-	   order = 2;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
-	   order = 3;  description = "Conditional analysis accounts for informative events and person-time."; output;
+	   order = 1;  description = "All values in this section are weighted."; output;
+	   order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+	   order = 3;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
 	   order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 	 run;  
 
@@ -104,7 +104,9 @@
 	   order = 7;  description = "Represents episodes censored due to evidence of death. Death data source and completeness varies by Data Partner."; output;
 	   order = 8;  description = 'Represents episodes censored due to disenrollment from health plan. Data Partners often artificially assign a ""disenrollment"" date equal to data end date for members still enrolled on that date. Therefore, a patient may have dual reasons for censoring as ""disenrollment"" and ""end of data"" on the same day - this can be interpreted as right-censoring in most cases.'; output;
 	   order = 9;  description = "Represents episodes censored due to Data Partner data end date. This end date represents the last day of the most recent year-month in which all of a Data Partner's data tables in the Sentinel Common Data Model have at least 80% of the record count relative to the prior month."; output;
-	   order = 10;  description = "Represents episodes censored due to user-specified study end date."; output;
+	   order = 10; description = "Represents episodes censored due to user-specified study end date."; output;
+	   order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
+	   order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 	 run; 
 
      data lookup.lookup_attrition;

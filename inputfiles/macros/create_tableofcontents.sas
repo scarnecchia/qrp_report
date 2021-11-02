@@ -1049,6 +1049,56 @@
         %end;
 			
     %end; /*type 5 tables*/
+
+	/*********************************************************************************************/
+    /* Type 6 tables                                                                      		 */
+    /*********************************************************************************************/	
+	%if %sysfunc(prxmatch(m/t6censor|t6plota|t6plotb/i,&tdatasetlist.)) > 0 %then %do;
+
+        %macro t6toc(tableid=, title=);            
+            %isdata(dataset=table&tableid.);
+            %if %eval(&nobs.>0) %then %do;                        
+                %let stratificationorder = 0;
+                proc sql noprint;
+                    select max(stratificationorder) into: stratificationorder
+                    from tablefile(where=(table = "&tableid"));
+                quit;
+
+               	/*counter for determining table letter*/
+               	%if %eval(&stratificationorder. = 1) & &stratifybydp. ne Y %then %let tablecount = 0;
+               	%else %let tablecount = 1;
+
+            	%do st = 1 %to &stratificationorder.;
+                    data _null_;
+                        set tablefile(where=(table = "&tableid" and stratificationorder = &st.));
+                        call symputx('tabletitle', tabletitle);
+                    run;
+                 
+                    %tableletter();                    
+                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+
+					%if &tableid. eq T8 or &tableid. eq T9 or &tableid. eq T10 %then %do;
+                    	caption=%quote(Summary of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+					%end;
+                    %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
+                        %tableletter();
+                        %addtotoc(tabnum=Table &tablenum.&tableletter.,
+
+						%if &tableid. eq T8 or &tableid. eq T9 or &tableid. eq T10 %then %do;
+                        	caption=%quote(Summary of &title. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner));
+						%end;
+                    %end;                    			
+                %end; /*loop through stratifications*/
+                
+                %let tablenum = %eval(&tablenum + 1);                
+            %end; /*underlying data exists*/
+           
+        %mend t6toc;
+ 
+        %t6toc(tableid=T8, title=Episode Duration by Reason Episodes Ended);
+        %t6toc(tableid=T9, title=Time to First Switch or Episode End);
+		%t6toc(tableid=T10, title=Time to Second Switch or Episode End);
+    %end; /*type 6 tables*/
      
     /*********************************************************************************************/
     /*   Code Distribution Tables                                                                */

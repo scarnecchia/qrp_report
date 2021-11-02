@@ -33,6 +33,7 @@
 *   -hhs_regfmt
 *   -cb_regfmt
 *   -mn_name
+*   -qtr_name
 *   -nafmt
 *
 *
@@ -344,6 +345,13 @@
           10='October'
           11='November'
           12='December'
+       other='';
+
+	   value qtr_name 
+           1='Quarter 1'
+           2='Quarter 2'
+           3='Quarter 3'
+           4='Quarter 4'           
        other='';
     run;
 

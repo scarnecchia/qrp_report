@@ -346,6 +346,9 @@
               %if %index(&&&table._stratification,month) %then %do;
               month = "Month"
               %end;
+			  %if %index(&&&table._stratification,quarter) %then %do;
+              quarter = "Quarter"
+              %end;
               %if %index(&&&table._stratification,race) %then %do;
               race = "Race"
               %end;

@@ -44,6 +44,7 @@
 *			-[runid]_t6_switchepisdurstats
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
+*           -[runid]_t6_productsdates
 *
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
@@ -165,7 +166,7 @@
                    set &outfile.(rename = (
                      %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
-                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
@@ -194,6 +195,12 @@
                        month = put(_month, mn_name.);
 					   sortorder&s. = _month;
                        drop _month;
+                     %end;
+					 %else %if &&strata&s. = quarter %then %do;
+                       length quarter $10;
+                       quarter = put(_quarter, qtr_name.);
+					   sortorder&s. = _quarter;
+                       drop _quarter;
                      %end;
 				     %else %if &&strata&s. = year %then %do;
 					   sortorder&s. = year;
@@ -344,6 +351,8 @@
 			%if %index(&datasetlist.,t6plotb) > 0 %then %do;
 			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
+
+			  %agg_report(infile=t6_productsdates, outfile=agg_t6_productsdates, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 		%end; *T6;
 
 		/* Code distribution */
