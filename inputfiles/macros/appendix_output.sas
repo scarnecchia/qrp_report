@@ -294,6 +294,53 @@
 
 	%mend appendixWeightDist;
 
+	/********************************************/
+	/* Types 6 Product Dates                    */
+	/********************************************/	
+	%macro appendixt6dates(_data=, _rptlabel=, _tab=);
+
+        ods proclabel = "&_tab.";
+		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
+		
+		proc report data=repdata.&_data nofs nowd
+    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(report)=[rules=none frame=void cellpadding =1.75pt];
+	
+            column order grouplabel dpidsiteid  cdate;
+
+		    define order / group "" order=data noprint;
+            define grouplabel / group noprint order=data;
+            define dpidsiteid / group  "" order=data style(column)=[just=L width=2.5in];
+            define cdate  / display 'Computed Start Marketing Date'  style(column)=[width=5in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+
+			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
+            line "&apptitle.^{super 1}";
+            endcomp;
+
+            compute before grouplabel /
+                style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                length text $150;
+                text= grouplabel; 
+                num= 150;
+            	line text $varying. num; 
+            endcomp;
+
+            /*indent*/
+            compute dpidsiteid;
+                call define(_col_,'style','style={indent=20}');
+            endcomp;
+
+            /*footnote*/
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white
+                                   nobreakspace=off tagattr="wrap:yes" font_size=&footfontsize.];
+            line "^{super 1}Computed Start Marketing Date represents the first observed dispensing date among all valid users within each cohort within each Data Partner site.";
+            endcomp;
+        run;
+		
+    %mend;
+
+
 ***************************************************************************************************;
 * Appendix A: list of DPs                                            
 ***************************************************************************************************;
@@ -378,6 +425,9 @@
                 %if &destination. = excel %then %do;
 		        ods excel options(sheet_name= "&_apxname." tab_color='purple' sheet_interval="table" flow="tables");
                 %end;
+				%if "%upcase(&_apxtype.)" = "APPENDIXT6DATES" %then %do;	
+					%appendixt6dates(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%end;
 				%if "%upcase(&_apxtype.)" = "APPENDIXGEOG" %then %do;	
 					%appendixGEOG(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
 				%end;
