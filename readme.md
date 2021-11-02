@@ -13,22 +13,31 @@ The Sentinel QRP Reporting Tool is a SAS® program that is designed to run again
 * <b>sasprograms:</b> contains the file(s) to be executed
 * <b>templatefiles:</b> contains the template lookup files
 
-
 ### Requirements
-
-* To execute your own customized analysis with the QRP Reporting Tool, you must properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse/files/atoc-inputfiles.md)</b></u> for details)
-* Output tables from the msoc folder of the Sentinel routine querying tools. The output tables can be found in their relevant tables of contents below:
-	* Type 1: <b><u> [Extract information to calculate background rates](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type1.md)</b></u>
-	* Type 2: <b><u>[Extract information on exposures and follow-up time](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type2.md)</b></u>
-	* Type 3: <b><u>[Extract information for a self-controlled risk interval design](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type3.md)</b></u>
-	* Type 4: <b><u>[Extract information for medical product use during pregnancy](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type4.md)</b></u>
-	* Type 5: <b><u>[Extract information for medical product utilization](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type5.md)</b></u>
-	* Type 6: <b><u>[Extract information on manufacturer-level product utilization and switching patterns](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type6.md)</b></u>
+* To execute your own customized analysis with the QRP Reporting Tool, you must
+properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse/files/atoc-inputfiles.md)</b></u>
+for details)
+* Output tables from the msoc folder of the Sentinel routine querying tools. The
+output tables can be found in their relevant tables of contents below:
+    * Type 1: <u><b>[Extract information to calculate background
+        rates](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type1.md)</b></u>
+    * Type 2: <u><b>[Extract information on exposures and follow-up
+        time](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type2.md)</b></u>
+    * Type 3: <u><b>[Extract information for a self-controlled risk interval
+        design](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type3.md)</b></u>
+    * Type 4: <u><b>[Extract information for medical product use during
+        pregnancy](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type4.md)</b></u>
+    * Type 5: <u><b>[Extract information for medical product
+        utilization](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type5.md)</b></u>
+    * Type 6: <u><b>[Extract information on manufacturer-level product utilization
+        and switching
+        patterns](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type6.md)
+    </b></u>
 * SAS version 9.4 or higher
 
 ### Getting Started
 * Create each input file as SAS datasets (file types are sas.7bdat).
-	* For more information on the input file structure in the most recent version of the QRP Reporting Tool, please refer to the <b><u>[documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse)</b></u>.
+	* For more information on the input file structure in the most recent version of the QRP Reporting Tool, please refer to the <u><b>[documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse)</b></u>.
 * Open sasprograms\qrp_report.sas
 	* Follow the instructions in section 1 in the SAS program and provide:
 		* The file path for the location of your QRP request inputfiles folder
@@ -59,4 +68,4 @@ Version 1.2.0 of the QRP reporting tool is designed to be compatible with QRP 11
 
 ### Additional Information
 
-The Sentinel Operations Center has limited capacity to support use of our tools. However, we welcome feedback, comments, and suggestions pertaining to our documentation or tools. Email us <b><u>[here](mailto:info@sentinelsystem.org?subject=Git)</u></b>.
+The Sentinel Operations Center has limited capacity to support use of our tools. However, we welcome feedback, comments, and suggestions pertaining to our documentation or tools. Email us <u><b>[here](mailto:info@sentinelsystem.org?subject=Git)</u></b>.
