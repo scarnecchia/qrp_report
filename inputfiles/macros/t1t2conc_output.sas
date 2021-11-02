@@ -105,7 +105,7 @@
      data _footnotes;
        length footnote_order 3; 
        /* Always displayed across all types */
-       set lookup.lookup_footnotes_t1t2conc (where=(order in ( 0
+       set lookup.lookup_footnotes(where=(type = "t1t2conc" and order in ( 0
           %if %index(&stratavar.,race) %then %do;
           1
           %end;
