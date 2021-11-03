@@ -673,7 +673,7 @@
                                     %if &censorreasontable. = Y %then %do;
                                     %tableletter();
                                     %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                                    caption=%quote(Summary of Time to End of &title. due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                    caption=%quote(Summary of Time to End of &title. due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
                                     %end; /*censor reason requested*/
                                 %end; /*loop through stratification*/
 
@@ -959,7 +959,7 @@
                     %if %eval(&nobs.>0) %then %do;
                         /*note - table is not stratified by DP*/
                         %addtotoc(tabnum=Table &tablenum.,
-                                  caption=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %sysfunc(propcase(&&&reason._label)) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                                  caption=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
                         %let tablenum = %eval(&tablenum + 1);
                     %end;
                     proc datasets nowarn noprint lib=work;
