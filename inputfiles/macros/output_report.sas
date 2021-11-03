@@ -130,7 +130,7 @@
 /*********************************************************************************************/
 /* Type 1 and 2 summary tables                                                               */
 /*********************************************************************************************/
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) <= 0 %then %do;
+    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;
 
         %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
           /* Set options to missing to prevent dot from printing in row */
