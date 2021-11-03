@@ -11,7 +11,7 @@
 *  Program inputs:                                                                                   
 * 
 *  Program outputs: The following lookuptables files are created:
-*   -lookup_footnotes = Footnotes for baseline, effect estimates,  KM/CDF, concomitant use, and censor tables
+*   -lookup_footnotes = Footnotes for baseline, effect estimates, KM/CDF, concomitant use, and censor tables
 *   -lookup_attrition = Mapping QRP attrition descriptions to report descriptions
 *
 *  PARAMETERS:                                                                       
@@ -77,7 +77,7 @@
 	   type = "t1t2conc";  order = 7;  description = 'Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	   type = "t1t2conc";  order = 8;  description = 'Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	 
-	   /* Footnotes for types 1, 2, and 5 censor tables */
+	   /* Footnotes for types 1, 2, 5, and 6 censor tables */
 	   type = "censor";    order = 1;  description = "An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes."; output;
 	   type = "censor";    order = 2;  description = "A patient's episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of patients."; output;
 	   type = "censor";    order = 3;  description = "Time to end of observable data is for characterization purposes only. It does not necessarily represent at-risk time, and does not consider episode end, outcome occurrence, blackout period, or delay risk period start."; output;
