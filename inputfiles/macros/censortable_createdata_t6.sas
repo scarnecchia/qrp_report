@@ -172,14 +172,14 @@
                 length censorreason $32. censorlabel $&label_length.;
                 censorreason = "&reason.";
                 %if &reason ne cens_switch %then %do;
-                censorlabel = "&&&reason._label";
+                censorlabel = "%bquote(&&&reason._label)";
                 %end;
                 %else %do;
                     %if &table=T9 %then %do;
-                    censorlabel = "&&&reason.1_label";
+                    censorlabel = "%bquote(&&&reason.1_label)";
                     %end;
                     %else %do;
-                    censorlabel = "&&&reason.2_label";
+                    censorlabel = "%bquote(&&&reason.2_label)";
                     %end;
                 %end;
             run;
@@ -222,14 +222,14 @@
 
                 censorreason = "&reason.";
                 %if &reason ne cens_switch %then %do;
-                censorlabel = "&&&reason._label";
+                censorlabel = "%bquote(&&&reason._label)";
                 %end;
                 %else %do;
                     %if &table=T9 %then %do;
-                    censorlabel = "&&&reason.1_label";
+                    censorlabel = "%bquote(&&&reason.1_label)";
                     %end;
                     %else %do;
-                    censorlabel = "&&&reason.2_label";
+                    censorlabel = "%bquote(&&&reason.2_label)";
                     %end;
                 %end;
             output;
