@@ -53,7 +53,7 @@
                       RENAME = (HRLOWERCL=LCL) 
                       RENAME = (HRUPPERCL=UCL));
             where lowcase(parameter) = "exposure";
-            FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL 5.2 MonitoringPeriod 2.0;
+            FORMAT analysisgrp $40. COVARNUM catnum best. MonitoringPeriod 2.0;
             length analysisgrp $40 HR_95CI $30 analysis $13. subgroupcat $10 HR_pvalue $6;
 
             analysisgrp = "&analysisgrp.";
@@ -91,7 +91,7 @@
     %end;
     %else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
      data coxPHest;
-            FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            FORMAT analysisgrp $40. COVARNUM catnum best. HR_se 8.4; 
             length subgroupcat $10. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
@@ -115,7 +115,7 @@
     %end;
     %else %do;  *create empty dataset;
         data coxPHest;
-            FORMAT analysisgrp $40. COVARNUM catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            FORMAT analysisgrp $40. COVARNUM catnum best. HR_se 8.4; 
             length subgroupcat $10. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";

@@ -148,7 +148,7 @@
                 retain analysisgrp covarnum catnum MonitoringPeriod HR_95CI HR_pvalue;
                 set pest(obs=1);
 
-                format analysisgrp $40. covarnum catnum best. HR LCL UCL 5.2 MonitoringPeriod 2.0;
+                format analysisgrp $40. covarnum catnum best. MonitoringPeriod 2.0;
                 length analysisgrp $40 HR_95CI $30 Analysis $13 subgroupcat $10 HR_pvalue $6 covarnum 8;
 
                 analysisgrp = "&analysisgrp.";
@@ -181,7 +181,7 @@
         %end;
         %else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
         data est;
-            format analysisgrp $40. covarnum catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+            format analysisgrp $40. covarnum catnum best.; 
             length subgroupcat $10. analysisgrp $40. analysis $13. covarnum 8;
 
             analysisgrp = "&analysisgrp.";
@@ -210,7 +210,7 @@
     %else %do;  *create empty dataset;
         %emptyds:
      	data est;
-	  		format analysisgrp $40. covarnum catnum best. HR LCL UCL HR_coef 5.2 HR_se 8.4; 
+	  		format analysisgrp $40. covarnum catnum best.; 
 			length subgroupcat $10. analysisgrp $40. analysis $13. covarnum 8;
 
 		    analysisgrp = "&analysisgrp.";
