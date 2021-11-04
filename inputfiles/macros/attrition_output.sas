@@ -59,7 +59,7 @@
         %if %eval(&num_fn.>0) %then %do;
             data _footnotes;
                length footnote_order 3; 
-               set lookup.lookup_footnotes_attrition;
+               set lookup.lookup_footnotes (where = (type = "attrition"));
                by order;
                footnote_order = _n_;
             run;

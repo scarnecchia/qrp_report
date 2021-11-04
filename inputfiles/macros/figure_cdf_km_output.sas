@@ -163,7 +163,7 @@
 		%if &figfn = Y %then %do;
 		data _footnotes;
             length footnote_order 3; 
-            set lookup.lookup_footnotes_kmcdf;
+            set lookup.lookup_footnotes(where = (type = "kmcdf"));
             by order;
             footnote_order = _n_;
             call symputx('num_fn', 1);

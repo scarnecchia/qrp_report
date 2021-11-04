@@ -67,7 +67,7 @@
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
-       set lookup.lookup_footnotes_censortables(where = (order in (999 /*dummy to prevent e r r o r*/
+       set lookup.lookup_footnotes(where = (type = "censor" and order in (999 /*dummy to prevent e r r o r*/
         %if %str("&conttableheader.") = %str("Observable Time") %then %do; 3 %end;
         %if &censorreason. = cens_episend %then %do; 4 %end;
         %if &censorreason. = cens_event %then %do; 5 %end;
