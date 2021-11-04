@@ -135,7 +135,7 @@
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if %str("&censorreason") ne %str("") %then %do; 
-        define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %sysfunc(propcase(&&&censorreason._label))&super_reason."
+        define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %bquote(%sysfunc(propcase(&&&censorreason._label)))&super_reason."
             style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.  borderleftcolor=black] 
             style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
