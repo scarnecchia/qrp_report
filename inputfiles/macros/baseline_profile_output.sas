@@ -243,10 +243,10 @@
                 set covarcontents(keep=name length nobs where=(upcase(name)="_LABEL_"));
                 alllabellength = (length+5)*nobs;
                 call symputx('alllabellength', alllabellength);
-                call symputx('numcovars', nobs);
+                call symputx('numprofilecovars', nobs);
                 call symputx('labellength', length);
             run;
-            %put &numcovars. &alllabellength &labellength;
+            %put &numprofilecovars. &alllabellength &labellength;
 
             *list of covariates in order;
             proc sql noprint;
@@ -256,7 +256,7 @@
             %put &covarlist.;
 
             *put covarlabel into macro variable;
-            %do f=1 %to %eval(&numcovars.);
+            %do f=1 %to %eval(&numprofilecovars.);
                 %let covar = %scan(&covarlist., &f.);
                 data _null_;
                     set covarlabel1(where=(upcase(_name_)=upcase("&covar.")));
@@ -268,7 +268,7 @@
             data covarswithlabel;
                 set final_agg_profile_&wherenum._&periodid. end=eof;
                 /* set missing covariate values to 0 */
-                %do f=1 %to %eval(&numcovars.);
+                %do f=1 %to %eval(&numprofilecovars.);
                     %let covar = %scan(&covarlist., &f.);
                     if missing(&covar) then &covar = 0;
                 %end;
@@ -280,27 +280,27 @@
                 totalcov=sum(of covar:);
 
                 *all;
-                if totalcov = &numcovars. then do;
+                if totalcov = &numprofilecovars. then do;
                     label = 'All Characteristics Present';
-                    sortorder = &numcovars.+1;
+                    sortorder = &numprofilecovars.+1;
                 end;
                 *none;
                 else if totalcov = 0 then do;
                     label = 'No Characteristics Present';
-                    sortorder = &numcovars.+2;
+                    sortorder = &numprofilecovars.+2;
                 end;
 
-                %if %eval(&numcovars.>1) %then %do;
+                %if %eval(&numprofilecovars.>1) %then %do;
                 *create a label for each covariate, then append for final label;
                 else do;
-                    %do i = 1 %to %eval(&numcovars.);
+                    %do i = 1 %to %eval(&numprofilecovars.);
                         length label&i. $&labellength.;
                         if %scan(&covarlist., &i.) = 1 then label&i. = "&&%scan(&covarlist., &i.)";
                         else label&i.='';
                     %end;
 
-                    label = catx(' and ', %do i =1 %to %eval(&numcovars.); 
-                                %if %eval(&i.) = %eval(&numcovars.) %then %do; label&i. %end;
+                    label = catx(' and ', %do i =1 %to %eval(&numprofilecovars.); 
+                                %if %eval(&i.) = %eval(&numprofilecovars.) %then %do; label&i. %end;
                                 %else %do; label&i., %end; %end;);
 
                     sortorder = totalcov;
@@ -334,22 +334,22 @@
                     sum_nepisodes = 0;
                     percent_npts=0;
                     percent_episodes=0;
-                    %do i = 1 %to %eval(&numcovars.);
+                    %do i = 1 %to %eval(&numprofilecovars.);
                         %scan(&covarlist., &i.) = 1;
                     %end;
                     label = 'All Characteristics Present';
-                    sortorder = &numcovars.+1;
+                    sortorder = &numprofilecovars.+1;
                     output;
 
                     sum_npts = 0;
                     sum_nepisodes = 0;
                     percent_npts=0;
                     percent_episodes=0;
-                    %do i = 1 %to %eval(&numcovars.);
+                    %do i = 1 %to %eval(&numprofilecovars.);
                         %scan(&covarlist., &i.) = 0;
                     %end;
                     label = 'No Characteristics Present';
-                    sortorder = &numcovars.+2;
+                    sortorder = &numprofilecovars.+2;
                     output;
                 end;
 
@@ -374,7 +374,7 @@
 
             proc sort data=covarswithlabel out=repdata.table&tablenum.&tableletter(drop=covar:);
                 by sortorder 
-                %do i = 1 %to %eval(&numcovars.);
+                %do i = 1 %to %eval(&numprofilecovars.);
                 descending  %scan(&covarlist., &i.) 
                 %end;
                 ;

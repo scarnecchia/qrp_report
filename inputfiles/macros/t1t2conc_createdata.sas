@@ -106,53 +106,6 @@
 			,:footnote1 - :footnote&numcolumns.
 	  from tablecolumns where table = "&table.";
     quit;
-	
-   /************************************************************************************************
-      Create covariatelist             
-    ************************************************************************************************/
-	 data _covars (keep = covarnum);
-	   length covarnum 8;
-	   set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0 and dataset = "&table."));
-	   call missing(covarnum);
-	   if index(tablesub,'covar') > 0 then do;
-	     numstrat = countw(tablesub,' ');
-		 do ns = 1 to numstrat;
-		   if index(scan(tablesub,ns,' '),'covar') > 0 then do;
-		     covarstrat = scan(tablesub,ns,' ');
-		     covarnum = input(substr(covarstrat,6),8.); output;
-		   end;
-		 end;
-	   end;
-	   if missing(covarnum) then delete;
-     run;
-	 
-	 proc sort nodupkey data = _covars;
-	   by covarnum;
-	 run;
-	 
-	 %let numcovars = 0;
-	 %ISDATA(dataset=_covars); 
-     %if &nobs > 0 %then %do;
-	   proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
-	     by covarnum;
-	   run;
-       
-       proc sql noprint;
-	     select count(covarnum) into: numcovars trimmed
-	     from _covars;
-	     %do cc = 1 %to &numcovars;
-	     %global covar&cc study&cc;
-	     %end;
-	   
-	     select cats('covar',a.covarnum),
-                b.studyname
-         into :covar1 - :covar&numcovars.,
-              :study1 - :study&numcovars.
-	     from _covars a
-         left join _covarnames b
-	     on a.covarnum = b.covarnum;
-       quit;
-     %end;
 
    /************************************************************************************************
        Prepare final summary datasets           

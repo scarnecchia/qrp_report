@@ -1695,6 +1695,94 @@
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
 
 /***************************************************************************************************
+*  Create stacked dataset containing covariate labels for all runs                                              
+***************************************************************************************************/
+    /*loop through each runID, create datasets &runid._covarname*/
+    %do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
+
+            /* Get studyname length per runid */
+            proc contents data = infolder.&&&runid._covariatecodes. out=studylen(keep=name length) noprint;
+            run;
+
+            proc sql noprint;    
+                create table covarname_&runid. as 
+                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
+                from infolder.&&&runid._covariatecodes.;
+
+                select length
+                into: MAXLEN_STUDYNAME_&r
+                from studylen
+                where lower(name)='studyname';
+            quit;
+
+            /* Need to set maximum studyname length across all runs */
+            %if &MAXLEN_STUDYNAME < &&MAXLEN_STUDYNAME_&r %then %let MAXLEN_STUDYNAME = &&MAXLEN_STUDYNAME_&r;
+        %end;
+    %end;
+
+    %if %eval(&MAXLEN_STUDYNAME) > 0 %then %do;
+     data covarname;
+        length studyname $&MAXLEN_STUDYNAME;
+        set covarname:;
+     run;
+    %end;
+
+    /*Delete temporary dataset*/
+   proc datasets nowarn noprint nolist lib=work; 
+        delete studylen covarname_:; 
+   quit;  
+
+/************************************************************************************************
+    Create covariatelist             
+************************************************************************************************/
+     data _covars (keep = covarnum);
+       length covarnum 8;
+       set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0));
+       call missing(covarnum);
+       if index(tablesub,'covar') > 0 then do;
+         numstrat = countw(tablesub,' ');
+         do ns = 1 to numstrat;
+           if index(scan(tablesub,ns,' '),'covar') > 0 then do;
+             covarstrat = scan(tablesub,ns,' ');
+             covarnum = input(substr(covarstrat,6),8.); output;
+           end;
+         end;
+       end;
+       if missing(covarnum) then delete;
+     run;
+     
+     proc sort nodupkey data = _covars;
+       by covarnum;
+     run;
+     
+     %global numcovars;
+     %let numcovars = 0;
+     %ISDATA(dataset=_covars); 
+     %if &nobs > 0 %then %do;
+       proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
+         by covarnum;
+       run;
+       
+       proc sql noprint;
+         select count(covarnum) into: numcovars trimmed
+         from _covars;
+         %do cc = 1 %to &numcovars;
+         %global covar&cc study&cc;
+         %end;
+       
+         select cats('covar',a.covarnum),
+                b.studyname
+         into :covar1 - :covar&numcovars.,
+              :study1 - :study&numcovars.
+         from _covars a
+         left join _covarnames b
+         on a.covarnum = b.covarnum;
+       quit;
+     %end;
+
+/***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
 
