@@ -68,10 +68,11 @@
         %let label_change=;
 
     	proc sql noprint;
-    	  select name, label
-          into: Label_change_var separated by ' ', :Label_change separated by ','
+    	  select name, label, varnum
+          into: Label_change_var separated by ' ', :Label_change separated by '@', :dummyordervar
     	  from t
-          where label contains ("super 1");
+          where label contains ("super 1")
+          order by varnum;
     	quit;
 
         %if %length(&label_change_var) > 0 %then %do;
@@ -82,7 +83,7 @@
             modify  table&tablenum.&tableletter;
             %let val = %sysfunc(countw(&label_change_var));
     	    %do lab = 1 %to &val;
-    	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(,))";
+    	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(@))";
             %end;
           quit;
 
