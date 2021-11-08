@@ -1158,6 +1158,7 @@
 
         %isdata(dataset=covarname);
         %if %eval(&nobs.>0) %then %do;
+			%let includecovars = Y;
 
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;
