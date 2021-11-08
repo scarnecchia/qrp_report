@@ -1712,22 +1712,20 @@
                 from infolder.&&&runid._covariatecodes.;
 
                 select length
-                into: MAXLEN_STUDYNAME_&r
+                into: MAXLEN_STUDYNAME
                 from studylen
                 where lower(name)='studyname';
             quit;
 
             /* Need to set maximum studyname length across all runs */
-            %if &MAXLEN_STUDYNAME < &&MAXLEN_STUDYNAME_&r %then %let MAXLEN_STUDYNAME = &&MAXLEN_STUDYNAME_&r;
-
-            %let baselinelabellength = &MAXLEN_STUDYNAME;
+            %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
             %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
         %end;
     %end;
 
-    %if %eval(&MAXLEN_STUDYNAME) > 0 %then %do;
+    %if %eval(&baselinelabellength) > 0 %then %do;
      data covarname;
-        length studyname $&MAXLEN_STUDYNAME;
+        length studyname $&baselinelabellength;
         set covarname:;
      run;	 
     %end;
