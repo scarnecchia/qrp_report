@@ -1155,20 +1155,9 @@
         ***********************************************************************************************;
         * Derive labels for covariates              
         ***********************************************************************************************;
-        %let includecovars = N;
-        %let baselinelabellength = 70;
 
-        %isdata(dataset=infolder.&&&runid._covariatecodes.);
+        %isdata(dataset=covarname);
         %if %eval(&nobs.>0) %then %do;
-            %let includecovars = Y;
-
-            proc sql noprint;
-                select max(length(studyname)) into :baselinelabellength
-                from covarname
-                where runid="&runid.";
-            quit;
-
-            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
 
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;

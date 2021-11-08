@@ -140,6 +140,16 @@
 	/* covariate codes formats */
 	%global maxlen_studyname;
     %let maxlen_studyname = 0;
+
+    /* covariate stratifications */
+    %global numcovars;
+    %let numcovars = 0;
+
+    /* baseline label covariate stratifications */
+    %global includecovars baselinelabellength;
+    %let includecovars = N;
+    %let baselinelabellength = 70;
+
 	
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;

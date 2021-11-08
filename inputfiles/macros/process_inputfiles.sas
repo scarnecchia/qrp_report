@@ -1719,6 +1719,9 @@
 
             /* Need to set maximum studyname length across all runs */
             %if &MAXLEN_STUDYNAME < &&MAXLEN_STUDYNAME_&r %then %let MAXLEN_STUDYNAME = &&MAXLEN_STUDYNAME_&r;
+
+            %let baselinelabellength = &MAXLEN_STUDYNAME;
+            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
         %end;
     %end;
 
