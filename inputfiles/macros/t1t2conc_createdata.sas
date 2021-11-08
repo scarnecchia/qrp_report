@@ -322,7 +322,7 @@
              %if &numsummarystratcovars. > 0 %then %do;
                %do c = 1 %to &numsummarystratcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
-				    length _&&covar&c. $%eval(&maxlen_studyname + 15);
+				    length _&&covar&c. $%eval(&baselinelabellength + 15);
                     label _&&covar&c. = "&&covar&c.";
                     if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&&&study&&covar&c..";
                     if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&&&study&&covar&c.."; 

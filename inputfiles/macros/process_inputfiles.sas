@@ -1753,14 +1753,13 @@
        end;
        if missing(covarnum) then delete;
      run;
-     
-     proc sort nodupkey data = _covars;
-       by covarnum;
-     run;
-         
+              
      %ISDATA(dataset=_covars); 
-     %if &nobs > 0 %then %do;
-	
+     %if &nobs > 0 %then %do;	
+	   proc sort nodupkey data = _covars;
+       by covarnum;
+       run;
+
 	   /* When covariates are requested in the tablefile, each of them must have the same studyname across selected runs */	
 	   proc sort nodupkey data=covarname out=_covardup;
 	   by covarnum studyname;
@@ -1768,11 +1767,13 @@
 
 	   proc sql noprint undo_policy=none;
 		 create table _covardup as
-		 select distinct studyname,
-		 		covarnum
-		 from _covardup
-		 group by covarnum
-		 having freq(covarnum) > 1;
+		 select distinct a.studyname,
+		 		a.covarnum
+		 from _covardup a 
+		 	  inner join _covars b
+		 on a.covarnum=b.covarnum
+		 group by a.covarnum
+		 having freq(a.covarnum) > 1;
 	   quit;
 
 	   %ISDATA(dataset=_covardup); 
@@ -1805,14 +1806,9 @@
 		 /* Covariate names (i.e. covar1) and corresponding study names requested in tablefile */
          %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
 
+		 %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
 		 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
-         %end;
-       
-         select cats('covar',covarnum),
-                studyname
-         into :covar1 - :covar&numsummarystratcovars.,
-              :study1 - :study&numsummarystratcovars.
-         from _covarnames;		 
+         %end;              
        quit;
      %end;
 
