@@ -1759,9 +1759,7 @@
      proc sort nodupkey data = _covars;
        by covarnum;
      run;
-     
-     %global numcovars;
-     %let numcovars = 0;
+         
      %ISDATA(dataset=_covars); 
      %if &nobs > 0 %then %do;
 	
@@ -1792,7 +1790,7 @@
        run;
        
        proc sql noprint undo_policy=none;
-         select count(covarnum) into: numcovars trimmed
+         select count(covarnum) into: numsummarystratcovars trimmed
          from _covars;
 
 		 create table _covarnames as 
@@ -1805,7 +1803,7 @@
 		 select covarnum into :tmpcovars separated by '|' from _covarnames;
 		 select studyname into :tmpStudy separated by '|' from _covarnames;
 
-         %do cc = 1 %to &numcovars;
+         %do cc = 1 %to &numsummarystratcovars;
 		 /* Covariate names (i.e. covar1), corresponding study names (for columns label in datasets) and
 		 	corresponding study name (for table titles and toc) requested in tablefile */
          %global covar&cc study&cc studytitle%scan(&tmpcovars., &cc., %str(|));
@@ -1815,8 +1813,8 @@
        
          select cats('covar',covarnum),
                 studyname
-         into :covar1 - :covar&numcovars.,
-              :study1 - :study&numcovars.
+         into :covar1 - :covar&numsummarystratcovars.,
+              :study1 - :study&numsummarystratcovars.
          from _covarnames;		 
        quit;
      %end;

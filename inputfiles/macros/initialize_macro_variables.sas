@@ -141,9 +141,9 @@
 	%global maxlen_studyname;
     %let maxlen_studyname = 0;
 
-    /* covariate stratifications */
-    %global numcovars;
-    %let numcovars = 0;
+    /* covariate stratifications in summary tables */
+    %global numsummarystratcovars;
+    %let numsummarystratcovars = 0;
 
     /* baseline label covariate stratifications */
     %global includecovars baselinelabellength;

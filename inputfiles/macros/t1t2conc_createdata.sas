@@ -319,8 +319,8 @@
               %end;;
 
              /*covariate*/
-             %if &numcovars. > 0 %then %do;
-               %do c = 1 %to &numcovars.;
+             %if &numsummarystratcovars. > 0 %then %do;
+               %do c = 1 %to &numsummarystratcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
 				    length _&&covar&c. $%eval(&maxlen_studyname + 15);
                     label _&&covar&c. = "&&covar&c.";
