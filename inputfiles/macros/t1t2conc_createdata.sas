@@ -324,8 +324,8 @@
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
 				    length _&&covar&c. $%eval(&maxlen_studyname + 15);
                     label _&&covar&c. = "&&covar&c.";
-                    if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&study&c..";
-                    if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&study&c.."; 
+                    if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&&&study&&covar&c..";
+                    if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&&&study&&covar&c.."; 
 					drop &&covar&c.;
                     rename _&&covar&c. = &&covar&c.;
                   %end;
@@ -333,7 +333,7 @@
              %end;
             ;                
         run;
-		
+
 		/* Apply labels */
 		%isdata(dataset=labelfile);
 		

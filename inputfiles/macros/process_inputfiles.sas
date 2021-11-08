@@ -903,7 +903,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&studytitle');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;
@@ -1729,7 +1729,7 @@
      data covarname;
         length studyname $&MAXLEN_STUDYNAME;
         set covarname:;
-     run;
+     run;	 
     %end;
 
     /*Delete temporary dataset*/
@@ -1804,11 +1804,10 @@
 		 select studyname into :tmpStudy separated by '|' from _covarnames;
 
          %do cc = 1 %to &numsummarystratcovars;
-		 /* Covariate names (i.e. covar1), corresponding study names (for columns label in datasets) and
-		 	corresponding study name (for table titles and toc) requested in tablefile */
-         %global covar&cc study&cc studytitle%scan(&tmpcovars., &cc., %str(|));
+		 /* Covariate names (i.e. covar1) and corresponding study names requested in tablefile */
+         %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
 
-		 %let studytitle%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
+		 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
          %end;
        
          select cats('covar',covarnum),
