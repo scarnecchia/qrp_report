@@ -903,7 +903,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&study');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&studytitle');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;
@@ -1738,7 +1738,7 @@
    quit;  
 
 /************************************************************************************************
-    Create covariatelist             
+     Create list of covariates specified in requested tables in tablefile
 ************************************************************************************************/
      data _covars (keep = covarnum);
        length covarnum 8;
@@ -1768,20 +1768,33 @@
          by covarnum;
        run;
        
-       proc sql noprint;
+       proc sql noprint undo_policy=none;
          select count(covarnum) into: numcovars trimmed
          from _covars;
-         %do cc = 1 %to &numcovars;
-         %global covar&cc study&cc;
-         %end;
-       
-         select cats('covar',a.covarnum),
-                b.studyname
-         into :covar1 - :covar&numcovars.,
-              :study1 - :study&numcovars.
-         from _covars a
+
+		 create table _covarnames as 
+		 select a.covarnum,
+		 		b.studyname
+		 from _covars a
          left join _covarnames b
          on a.covarnum = b.covarnum;
+
+		 select covarnum into :tmpcovars separated by ' ' from _covarnames;
+		 select studyname into :tmpStudy separated by ' ' from _covarnames;
+
+         %do cc = 1 %to &numcovars;
+		 /* Covariate names (i.e. covar1), corresponding study names (for columns label in datasets) and
+		 	corresponding study name (for table titles and toc) requested in tablefile */
+         %global covar&cc study&cc studytitle%scan(&tmpcovars., &cc., ' ');
+
+		 %let studytitle%scan(&tmpcovars., &cc., ' ') = %scan(&tmpStudy., &cc., ' ');
+         %end;
+       
+         select cats('covar',covarnum),
+                studyname
+         into :covar1 - :covar&numcovars.,
+              :study1 - :study&numcovars.
+         from _covarnames;		 
        quit;
      %end;
 
