@@ -230,9 +230,6 @@
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 				 %end;	
-			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
-			   	%end;
 			   end;
 			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
 			     	if point = 'Y' then &&var&vv.._char='N/A';
@@ -261,9 +258,6 @@
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 				 %end;			
-			   	%if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
-			   	%end;
 			   end;
 			   %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
 			     	if point = 'Y' then &&var&vv.._char='N/A';
@@ -300,9 +294,6 @@
 			 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 				if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 			 %end;
-			 %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-			   	if missing(dennumpts) or missing(dennummemdays) then &&var&vv.._char='N/A';
-			 %end;
 		  %end;
 
 		  %if %index(%lowcase(&&formula&vv.),dennum) %then %do;
@@ -322,7 +313,10 @@
 		  %end;
 		  %else %do;
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
-		  %end;		  
+		  %end;	
+		  %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
+		  if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
+	      %end;	  
 	    %end;
 		
         /*labels for stratification variables*/

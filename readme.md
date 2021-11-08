@@ -52,7 +52,7 @@ output tables can be found in their relevant tables of contents below:
 * The underlying aggregated report datasets are saved in a folder called "reportdata" within the "output" folder.
 
 ### Compatability
-Version 1.2.1 of the QRP reporting tool is designed to be compatible with QRP 11.0.0 and later. To determine which version of the tool is compatible with older versions of QRP, use the table below:
+Version 1.2.2 of the QRP reporting tool is designed to be compatible with QRP 11.0.0 and later. To determine which version of the tool is compatible with older versions of QRP, use the table below:
 
  <table style="width:100%">
   <tr>
@@ -61,7 +61,7 @@ Version 1.2.1 of the QRP reporting tool is designed to be compatible with QRP 11
   </tr>
   <tr>
     <td>11.0.0-current</td>
-    <td>1.2.1</td>
+    <td>1.2.2</td>
   </tr>
 
 </table>

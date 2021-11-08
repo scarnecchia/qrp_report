@@ -53,7 +53,7 @@
   			retain analysisgrp COVARNUM catnum MonitoringPeriod HR_95CI HR_pvalue;
   			set pest (obs=1 RENAME = (estimate = HR_coef) RENAME = (stderr = HR_se));
 
-  			format analysisgrp $40. COVARNUM catnum best. HR_coef LowerWaldCL UpperWaldCL HR LCL UCL 5.2 MonitoringPeriod 2.0;
+  			format analysisgrp $40. COVARNUM catnum best. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
   			length analysisgrp $40 HR_95CI $30 Analysis $13 subgroupcat $10 HR_pvalue $6;
 
 	        analysisgrp = "&analysisgrp.";
@@ -71,9 +71,9 @@
 			end;
 
   			HR_95CI = strip(put(exp(HR_coef), 5.2))|| " ("||strip(put(exp(LowerWaldCL), 5.2))||", "|| strip(put(exp(UpperWaldCL), 5.2))||")";
-            HR =  put(exp(HR_coef), 5.2);
-            LCL =  put(exp(LowerWaldCL), 5.2);
-            UCL =  put(exp(UpperWaldCL), 5.2);
+            HR =  exp(HR_coef);
+            LCL =  exp(LowerWaldCL);
+            UCL =  exp(UpperWaldCL);
 
             /* set HR_95CI to NaN if not computed */
             if nmiss(HR, LCL, UCL)=3 then do;
@@ -108,7 +108,6 @@
 		  		MonitoringPeriod = &periodid.;
 
 				HR_95CI = "N/A";
-			    format HR_coef HR LCL UCL 5.2 HR_se 8.4; 
 			    HR_coef = .;
 			    HR_se = .;
 				HR_pvalue = "N/A";
@@ -133,7 +132,6 @@
 	  		MonitoringPeriod = &periodid.;
 
 			HR_95CI = "NaN";
-		    format HR_coef HR LCL UCL 5.2 HR_se 8.4; 
 		    HR_coef = .;
 		    HR_se = .;
 			HR_pvalue = "N/A";

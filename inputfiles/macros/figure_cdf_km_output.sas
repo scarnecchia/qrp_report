@@ -42,6 +42,13 @@
 						 yaxislabel=,
 						 figure=,
 						 font=,
+						 analysis=,
+						 analysisgrp=,
+						 monitoringperiod=,
+						 eoi=,
+						 ref=,
+						 eoilabel=,
+						 reflabel=,
 						 kmrefpop=);
 
 		/* Obtain x and y axis values */
@@ -66,6 +73,17 @@
 		%if &atrisktable = Y %then %do;
 		if day in (&kmxtickmarks) then xaxisatrisk=day;
 		%end;
+		/* Add columns for Sentinel Views */
+		%if &reporttype = T2L2 and (&figure=F3 or &figure=F4 or &figure=F5) %then %do;
+		length monitoringperiod 3 analysis $13 analysisgrp eoi ref $40;
+	    analysis="&analysis";
+        analysisgrp="&analysisgrp";
+        monitoringperiod=&monitoringperiod;
+        eoi="&eoi";
+        ref="&ref";
+        eoilabel="&eoilabel";
+        reflabel="&reflabel";
+        %end;
 		run;
 		%end;
 
@@ -145,7 +163,7 @@
 		%if &figfn = Y %then %do;
 		data _footnotes;
             length footnote_order 3; 
-            set lookup.lookup_footnotes_kmcdf;
+            set lookup.lookup_footnotes(where = (type = "kmcdf"));
             by order;
             footnote_order = _n_;
             call symputx('num_fn', 1);
@@ -445,6 +463,13 @@
 									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
 									 figure=&figure,
 									 font=&fontfamily,
+									 analysis=&titlestart,
+									 analysisgrp=&analysisgrp,
+									 monitoringperiod=&j,
+									 eoi=&GRP1,
+									 ref=&GRP0,
+									 eoilabel=&eoilabel,
+									 reflabel=&reflabel,
 									 %if &figure ^= F4 %then %do; 
 									 kmrefpop=unweighted 
 									 %end;

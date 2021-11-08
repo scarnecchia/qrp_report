@@ -1044,6 +1044,9 @@
                         %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                       %end;
                     %end; 
+                    %if &reporttype=T2L2 %then %do;
+                    monitoringperiod
+                    %end;
                     ;
 
                 /*Removing unweighted total row for IPTW and PS stratum weighted table 1. Will use TOTAL_WEIGHTED row*/
@@ -1435,7 +1438,7 @@
             
             if missing(label) then delete;
 
-            keep analysisgrp order table weight metvar label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1445,6 +1448,9 @@
                     %if "&computebalance." = "Y" %then %do; ad0: sd0: %end;
                   %end;
                 %end; 
+                %if &reporttype=T2L2 %then %do;
+                monitoringperiod
+                %end;
                 ;
         run;
 

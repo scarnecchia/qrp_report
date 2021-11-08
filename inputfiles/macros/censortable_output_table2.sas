@@ -36,7 +36,7 @@
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
-       set lookup.lookup_footnotes_censortables(where = (order in (999
+       set lookup.lookup_footnotes(where = (table = "censor" and order in (999
        %if %str("&episodesorpatients.") = %str("Episodes") %then %do; 1 %end;
        %if %str("&episodesorpatients.") = %str("Patients") %then %do; 2 %end;
        %if &tablename. = t1censor | &tablename. = t2censor %then %do; 3 %end;

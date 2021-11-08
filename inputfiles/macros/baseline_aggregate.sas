@@ -201,6 +201,7 @@
                 select x.*
                      , y.runid
                      , y.order
+                     , &periodid as monitoringperiod length=3
                 from &dpsiteid..&runid._adjusted_baseline_&periodid. as x,
                      &GROUPTABLE.(where=(runid="&runid.")) as y
                 where x.analysisgrp = y.group;
@@ -260,8 +261,9 @@
 												   comp_w1_&dpnumber.=comp_w
 												   comp_w2_&dpnumber.=comp_w2));
                 set _temp_baseline_stacked;
-				length dpidsiteid $6;
+				length dpidsiteid $6 monitoringperiod 3;
                 dpidsiteid = "&maskedid."; 
+                monitoringperiod=&periodid;
             run;
         %end;
         %else %do;
@@ -284,7 +286,10 @@
 													     exp_w2_&dpnumber.=exp_w2
 													     comp_w1_&dpnumber.=comp_w
 													     comp_w2_&dpnumber.=comp_w2));
-                if b then dpidsiteid = "&maskedid.";  
+                if b then do;
+                dpidsiteid = "&maskedid.";
+                monitoringperiod=&periodid;
+                end;  
             run;
         %end;
 		

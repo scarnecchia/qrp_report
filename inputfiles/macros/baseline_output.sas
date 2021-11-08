@@ -98,10 +98,13 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
-                keep label grouper metvar analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
+                keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
                 %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
                 %if &computebalance. = Y %then %do; ad&dpnum.: sd&dpnum.: %end;
+                %if &reporttype = T2L2 %then %do;
+                monitoringperiod
+                %end;
                 ;
             run;
         %end;
@@ -110,7 +113,7 @@
 	     data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-	       set lookup.lookup_footnotes_baseline (where = (order in (14 15
+	       set lookup.lookup_footnotes (where = (type = "baseline" and order in (14 15
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.))) > 0 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
