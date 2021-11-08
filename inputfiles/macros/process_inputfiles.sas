@@ -1764,6 +1764,29 @@
      %let numcovars = 0;
      %ISDATA(dataset=_covars); 
      %if &nobs > 0 %then %do;
+	
+	   /* When covariates are requested in the tablefile, each of them must have the same studyname across selected runs */	
+	   proc sort nodupkey data=covarname out=_covardup;
+	   by covarnum studyname;
+	   run;
+
+	   proc sql noprint undo_policy=none;
+		 create table _covardup as
+		 select distinct studyname,
+		 		covarnum
+		 from _covardup
+		 group by covarnum
+		 having freq(covarnum) > 1;
+	   quit;
+
+	   %ISDATA(dataset=_covardup); 
+       %if &nobs > 0 %then %do;
+		   %put ERROR: (SENTINEL) Multiple covariatecodes file exist with different covarnum studynames for requested stratification.;
+	       %put ERROR: (SENTINEL) Remove covariate stratification or update QRP;
+		   %put The reporting code will abort;
+	       %abort;
+	   %end;
+
        proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
          by covarnum;
        run;
@@ -1779,15 +1802,15 @@
          left join _covarnames b
          on a.covarnum = b.covarnum;
 
-		 select covarnum into :tmpcovars separated by ' ' from _covarnames;
-		 select studyname into :tmpStudy separated by ' ' from _covarnames;
+		 select covarnum into :tmpcovars separated by '|' from _covarnames;
+		 select studyname into :tmpStudy separated by '|' from _covarnames;
 
          %do cc = 1 %to &numcovars;
 		 /* Covariate names (i.e. covar1), corresponding study names (for columns label in datasets) and
 		 	corresponding study name (for table titles and toc) requested in tablefile */
-         %global covar&cc study&cc studytitle%scan(&tmpcovars., &cc., ' ');
+         %global covar&cc study&cc studytitle%scan(&tmpcovars., &cc., %str(|));
 
-		 %let studytitle%scan(&tmpcovars., &cc., ' ') = %scan(&tmpStudy., &cc., ' ');
+		 %let studytitle%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
          %end;
        
          select cats('covar',covarnum),
