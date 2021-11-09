@@ -614,7 +614,7 @@ libname tempfl "";
         - T5TableFile
         - T5FigureFile
     *************************************;
-	%let stratLevel = overall|sex|agegroup|race|hispanic|sex agegroup|sex race|sex hispanic|agegroup race|agegroup hispanic;
+	%let stratLevel = overall|sex|agegroup|year|year month|year quarter|race|hispanic|sex agegroup|sex race|sex hispanic|agegroup race|agegroup hispanic;
 	%let stratfirst = overall|sex|agegroup|race|hispanic;
     
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
@@ -631,6 +631,7 @@ libname tempfl "";
 		dataset = "t5disp";
 		%do t = 1 %to 2;
             %do s = 1 %to &stratlevels.;
+                %if %eval(&s.<=3) | %eval(&s.>=7) %then %do;
                 table = "T&t.";
 			    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
 			    levelnum =2;
@@ -643,6 +644,7 @@ libname tempfl "";
 			      levelid2 = "daysupp %sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
 			    %end;
                 output;
+                %end;
 		     %end;
 		%end;
 
@@ -760,6 +762,7 @@ libname tempfl "";
         /*Dose tables*/
 		dataset = "t5disp";
 		%do s = 1 %to &stratlevels.;
+            %if %eval(&s.<=3) | %eval(&s.>=7) %then %do;
             table = "T18";
 		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
 		    levelnum =2;
@@ -774,6 +777,7 @@ libname tempfl "";
               levelid3 = "";
 		    %end;
             output;
+            %end;
 		%end;
 		dataset = "t5dose";
 		%do s = 1 %to &stratlevels.;
