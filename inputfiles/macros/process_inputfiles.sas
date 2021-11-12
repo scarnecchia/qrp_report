@@ -903,7 +903,7 @@
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
-                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&study');
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
             end;
 
         	*alphabetize levelid, tablesub and tablesubstrat vars;
@@ -1693,6 +1693,124 @@
           %end; /* treelookup exists */
 		%end; /* runid loop */
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
+
+/***************************************************************************************************
+*  Create stacked dataset containing covariate labels for all runs                                              
+***************************************************************************************************/
+    /*loop through each runID, create datasets &runid._covarname*/
+    %do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
+
+            /* Get studyname length per runid */
+            proc contents data = infolder.&&&runid._covariatecodes. out=studylen(keep=name length) noprint;
+            run;
+
+            proc sql noprint;    
+                create table covarname_&runid. as 
+                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
+                from infolder.&&&runid._covariatecodes.;
+
+                select length
+                into: MAXLEN_STUDYNAME
+                from studylen
+                where lower(name)='studyname';
+            quit;
+
+            /* Need to set maximum studyname length across all runs */
+            %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
+            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
+        %end;
+    %end;
+
+    %if %eval(&baselinelabellength) > 0 %then %do;
+     data covarname;
+        length studyname $&baselinelabellength;
+        set covarname:;
+     run;	 
+    %end;
+
+    /*Delete temporary dataset*/
+   proc datasets nowarn noprint nolist lib=work; 
+        delete studylen covarname_:; 
+   quit;  
+
+/************************************************************************************************
+     Create list of covariates specified in requested tables in tablefile
+************************************************************************************************/
+     data _covars (keep = covarnum);
+       length covarnum 8;
+       set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0));
+       call missing(covarnum);
+       if index(tablesub,'covar') > 0 then do;
+         numstrat = countw(tablesub,' ');
+         do ns = 1 to numstrat;
+           if index(scan(tablesub,ns,' '),'covar') > 0 then do;
+             covarstrat = scan(tablesub,ns,' ');
+             covarnum = input(substr(covarstrat,6),8.); output;
+           end;
+         end;
+       end;
+       if missing(covarnum) then delete;
+     run;
+              
+     %ISDATA(dataset=_covars); 
+     %if &nobs > 0 %then %do;	
+	   proc sort nodupkey data = _covars;
+       by covarnum;
+       run;
+
+	   /* When covariates are requested in the tablefile, each of them must have the same studyname across selected runs */	
+	   proc sort nodupkey data=covarname out=_covardup;
+	   by covarnum studyname;
+	   run;
+
+	   proc sql noprint undo_policy=none;
+		 create table _covardup as
+		 select distinct a.studyname,
+		 		a.covarnum
+		 from _covardup a 
+		 	  inner join _covars b
+		 on a.covarnum=b.covarnum
+		 group by a.covarnum
+		 having freq(a.covarnum) > 1;
+	   quit;
+
+	   %ISDATA(dataset=_covardup); 
+       %if &nobs > 0 %then %do;
+		   %put ERROR: (SENTINEL) Multiple covariatecodes file exist with different covarnum studynames for requested stratification.;
+	       %put ERROR: (SENTINEL) Remove covariate stratification or update QRP;
+		   %put The reporting code will abort;
+	       %abort;
+	   %end;
+
+       proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
+         by covarnum;
+       run;
+       
+       proc sql noprint undo_policy=none;
+         select count(covarnum) into: numsummarystratcovars trimmed
+         from _covars;
+
+		 create table _covarnames as 
+		 select a.covarnum,
+		 		b.studyname
+		 from _covars a
+         left join _covarnames b
+         on a.covarnum = b.covarnum;
+
+		 select covarnum into :tmpcovars separated by '|' from _covarnames;
+		 select studyname into :tmpStudy separated by '|' from _covarnames;
+
+         %do cc = 1 %to &numsummarystratcovars;
+		 /* Covariate names (i.e. covar1) and corresponding study names requested in tablefile */
+         %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
+
+		 %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
+		 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
+         %end;              
+       quit;
+     %end;
 
 /***************************************************************************************************
 *   Clean up                                                

@@ -136,10 +136,16 @@
 	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
     %if &leavebehindreport. = N %then %do; %global zipfile; %end;
 	%let zipfile = ;
-	
-	/* covariate codes formats */
-	%global maxlen_studyname;
-    %let maxlen_studyname = 0;
+
+    /* covariate stratifications in summary tables */
+    %global numsummarystratcovars;
+    %let numsummarystratcovars = 0;
+
+    /* baseline label covariate stratifications */
+    %global includecovars baselinelabellength;
+    %let includecovars = N;
+    %let baselinelabellength = 70;
+
 	
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
