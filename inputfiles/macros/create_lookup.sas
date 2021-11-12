@@ -114,9 +114,6 @@
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one episode defining index claim during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Episode-defining index claims must be during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be during the query period"; report_descr = "Pregnancy episode recorded during the query period"; output;
-		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode incident with respect to other criteria"; report_descr = "Met exposure incidence criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must be incident with respect to other criteria"; report_descr = "Met exposure incidence criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be incident with respect to other criteria"; report_descr = "Met pregnancy episode incidence criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have only one exposure RX on index date"; report_descr = "Had single National Drug Code on index date"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have only one exposure RX on index date"; report_descr = "Had single National Drug Code on index date"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
