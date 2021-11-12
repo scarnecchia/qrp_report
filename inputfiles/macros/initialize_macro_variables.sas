@@ -85,9 +85,8 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;
+    %global numbaselinetablegrp numprofilecovarstoinclude;
     %let numbaselinetablegrp =0;
-	%let baselinerowitalics =;
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
