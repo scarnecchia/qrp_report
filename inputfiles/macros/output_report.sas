@@ -385,62 +385,58 @@
 	%if %str("&reporttype") = %str("T5") %then %do;
         options orientation = landscape;
 
-        /*Macro to produce Tables T1-T13, T18-T22*/
-        %macro loopt5tablesoutput();
-        	/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
-    		%isdata(dataset=t5_tempmap);
-            %if %eval(&nobs.>0) %then %do;
-        		%let t5tableobs = &nobs.;
-        		%do st = 1 %to %eval(&t5tableobs.);
-
-        			%let cattabledataset = ;
-        			%let distabledataset = ;
-        			%let tableorder=0;
-
-        			data _null_;
-        			 set t5_tempmap;
-        				if _n_ = &st. then do;
-        					call symputx('numtables', numtables);
-        					call symputx('tableorder', tableorder);               
-        					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
-        						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,best.)));
-        					%end;
-        					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
-        						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,best.)));
-        					%end;
-        				end;
-        			run;
-                        
-        			/*Increment the table number and reset the table letter counter*/
-        			%if %eval(&tableorder.=1) %then %do;
-        				%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
-        				%let tablecount=1;
-        			%end;
-        			
-        			/*reset table letter counter if only 1 table*/
-        			%if %eval(&numtables.=1) %then %let tablecount=0;
-
-        			%if %str("&cattabledataset.") ne %str("") %then %do;
-        				%tableletter();
-        				%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
-        			%end;
-        			%if %str("&distabledataset.") ne %str("") %then %do;
-        				%tableletter();
-        				%t5tables_output(dataset=&distabledataset.,reporttype=dist);
-        			%end;		
-                %end;		
-        		%let tablenum = %eval(&tablenum + 1);
-
-                proc datasets nowarn noprint lib=work;
-                    delete _temp_t5_tempmap; 
-                quit;
-            %end;
-        %mend;
-
         /*****************************************************************************************/
         /* Type 5 Tables T1-T13, T18-T22                                                         */
         /*****************************************************************************************/
-        %loopt5tablesoutput();
+
+        /*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
+    	%isdata(dataset=t5_tempmap);
+        %if %eval(&nobs.>0) %then %do;
+        	%let t5tableobs = &nobs.;
+        	%do st = 1 %to %eval(&t5tableobs.);
+
+        		%let cattabledataset = ;
+        		%let distabledataset = ;
+        		%let tableorder=0;
+
+        		data _null_;
+        		 set t5_tempmap;
+        			if _n_ = &st. then do;
+        				call symputx('numtables', numtables);
+        				call symputx('tableorder', tableorder);               
+        				%if %varexist(t5_tempmap,cattable) = 1 %then %do;
+        					if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,best.)));
+        				%end;
+        				%if %varexist(t5_tempmap,disttable) = 1 %then %do;
+        					if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,best.)));
+        				%end;
+        			end;
+        		run;
+                    
+        		/*Increment the table number and reset the table letter counter*/
+        		%if %eval(&tableorder.=1) %then %do;
+        			%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
+        			%let tablecount=1;
+        		%end;
+        		
+        		/*reset table letter counter if only 1 table*/
+        		%if %eval(&numtables.=1) %then %let tablecount=0;
+
+        		%if %str("&cattabledataset.") ne %str("") %then %do;
+        			%tableletter();
+        			%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
+        		%end;
+        		%if %str("&distabledataset.") ne %str("") %then %do;
+        			%tableletter();
+        			%t5tables_output(dataset=&distabledataset.,reporttype=dist);
+        		%end;		
+            %end;		
+        	%let tablenum = %eval(&tablenum + 1);
+
+            proc datasets nowarn noprint lib=work;
+                delete _temp_t5_tempmap; 
+            quit;
+        %end;
 	
         /*****************************************************************************************/
         /* Type 5 censor tables                                                                  */
