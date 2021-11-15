@@ -147,11 +147,11 @@
         %let t5distributiontitle = Distribution of Days Supplied by Dispensing;
     %end;
     %else %if %sysfunc(prxmatch(m/T3_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Categorical Summary of Patients%str(%') Cumulative Exposure Duration;
+        %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Exposure Durations;
         %let t5head = Number of Patients by Cumulative Treatment Episode Duration;
     %end;
     %else %if %sysfunc(prxmatch(m/T4_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Continuous Summary of Patients%str(%') Cumulative Exposure Duration; 
+        %let t5title = Continuous Summary of Patients%str(%') Cumulative Treatment Exposure Durations; 
         %let t5distributiontitle = Distribution of Cumulative Treatment Episode Duration, days;
     %end;
     %else %if %sysfunc(prxmatch(m/T5_/i,&dataset.)) > 0 %then %do;
