@@ -385,22 +385,11 @@
 	%if %str("&reporttype") = %str("T5") %then %do;
         options orientation = landscape;
 
-        /*Split table order map file to T1-T13 and T18-T22*/
-		%isdata(dataset=t5_tempmap);
-        %if %eval(&nobs.>0) %then %do;
-            data _temp_t5_tempmap1 _temp_t5_tempmap2;
-                set t5_tempmap;
-                if table in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','T13') then output _temp_t5_tempmap1;
-                if table in ('T18','T19','T20','T21','T22') then output _temp_t5_tempmap2;
-            run;
-	    %end;
-
         /*Macro to produce Tables T1-T13, T18-T22*/
-        %macro loopt5tablesoutput(dataset=);
+        %macro loopt5tablesoutput();
         	/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
-    		%isdata(dataset=&dataset.);
+    		%isdata(dataset=t5_tempmap);
             %if %eval(&nobs.>0) %then %do;
-
         		%let t5tableobs = &nobs.;
         		%do st = 1 %to %eval(&t5tableobs.);
 
@@ -409,7 +398,7 @@
         			%let tableorder=0;
 
         			data _null_;
-        			 set &dataset.;
+        			 set t5_tempmap;
         				if _n_ = &st. then do;
         					call symputx('numtables', numtables);
         					call symputx('tableorder', tableorder);               
@@ -443,15 +432,15 @@
         		%let tablenum = %eval(&tablenum + 1);
 
                 proc datasets nowarn noprint lib=work;
-                    delete _temp_t5_tempmap1; 
+                    delete _temp_t5_tempmap; 
                 quit;
             %end;
         %mend;
 
         /*****************************************************************************************/
-        /* Type 5 Tables T1-T13                                                                  */
+        /* Type 5 Tables T1-T13, T18-T22                                                         */
         /*****************************************************************************************/
-        %loopt5tablesoutput(dataset=_temp_t5_tempmap1);
+        %loopt5tablesoutput();
 	
         /*****************************************************************************************/
         /* Type 5 censor tables                                                                  */
@@ -541,11 +530,6 @@
         %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
             %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
         %end;
-
-        /*****************************************************************************************/
-        /* Type 5 Tables T1-T13                                                                  */
-        /*****************************************************************************************/
-        %loopt5tablesoutput(dataset=_temp_t5_tempmap2);
 
         options orientation = portrait;
 
