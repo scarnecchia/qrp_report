@@ -346,6 +346,7 @@
         %let includecomp = N;
         %let computebalance =N;
         %let maxswitch = 0;
+        %let baselinerowitalics = ;
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
@@ -383,9 +384,9 @@
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
-                else call symputx('sdthreshold', sdthreshold);				
-                call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
-                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;
+                else call symputx('sdthreshold', sdthreshold);	
+                %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
+                if missing(baselinerowitalics)=0 then call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
@@ -528,7 +529,8 @@
         %end;
 
 		%if %length(&baselinerowitalics.) > 0 %then %do;
-			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics);
+			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics1);
+            %let baselinerowitalics = &baselinerowitalics1.;
 		%end;
 
         /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
