@@ -56,7 +56,7 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
-                    if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
+                    if lowcase(parameter) in ('customizecolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*default stratifybydp*/
@@ -1267,13 +1267,19 @@
             quit;
 
             /*T2L2: if KM curves requested, ensure events are not being redacted*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
-                %if %index(&redactcolumns.,events) > 0 %then %do;
+            /* Ensure columns that are requested to be displayed are also being redacted together */
+            %if &reporttype. = T2L2 %then %do;
+                %if %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and %index(&customizecolumns.,events) > 0 %then %do;
                     %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
                     data _null_;
                         call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
                     run;
                 %end;
+                %if %index(&customizecolumns.,redact) > 0 and (%index(&customizecolumns.,include) > 0 or %index(&customizecolumns.,sumevents) > 0) %then %do;
+                    %put WARNING: (Sentinel) The following values for CUSTOMIZECOLUMNS have been specified: &customizecolumns..;
+                    %put WARNING: (Sentinel) Columns that have been included for display also may be redacted. Results may not appear as expected.;
+                %end;
+
             %end;
 
         %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;

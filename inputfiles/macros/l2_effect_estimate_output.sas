@@ -340,14 +340,21 @@
             columns (
                 %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
 				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
-                %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
+                %if %index(%lowcase(&customizecolumns.),sumevents) = 0 %then %do;
                     EVchar
                 %end;
-                %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
+                %if %index(%lowcase(&customizecolumns.),sumevents) > 0 %then %do;
                     totalevents
                 %end;
                 %if &reporttype = T2L2 %then %do;
-                IR_1000PYchar Risk_1000NUchar IRDiff_1000PYchar RD_1000NUchar HR_95CI HR_pvalue
+                IR_1000PYchar Risk_1000NUchar 
+                    %if %index(%lowcase(&customizecolumns.),includeird) > 0 %then %do;
+                    IRDiff_1000PYchar
+                    %end;
+                    %if %index(%lowcase(&customizecolumns.),includerd) > 0 %then %do; 
+                    RD_1000NUchar 
+                    %end;
+                HR_95CI HR_pvalue
                 %end;
                 %else %do;
                 Risk_1000NUchar RD_1000NUchar rrchar OR_95CI
@@ -374,27 +381,31 @@
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
-            %if %index(%lowcase(&redactcolumns.),sumevents) = 0 %then %do;
+            %if %index(%lowcase(&customizecolumns.),sumevents) = 0 %then %do;
             define EVchar / display 'Number of Events'
                 style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
-            %if %index(%lowcase(&redactcolumns.),sumevents) > 0 %then %do;
+            %if %index(%lowcase(&customizecolumns.),sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
                 style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %if &reporttype = T2L2 %then %do;
-            define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define RD_1000NUchar / order 'Risk Difference per 1,000^n New Users'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define HR_pvalue / order 'Wald P-Value'
-                style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
+                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
+                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                %if %index(%lowcase(&customizecolumns.),includeird) > 0 %then %do;
+                define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
+                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                %end;
+                %if %index(%lowcase(&customizecolumns.),includerd) > 0 %then %do;
+                define RD_1000NUchar / order 'Risk Difference per 1,000^n New Users'
+                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                %end;
+                define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
+                    style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                define HR_pvalue / order 'Wald P-Value'
+                    style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
             %else %do;
             define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
