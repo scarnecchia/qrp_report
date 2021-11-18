@@ -41,7 +41,7 @@
 	run;
 
     %isdata(dataset=forest_exp); 	
-    %if %eval(&NOBS.>=2) & %index(%lowcase(&customizecolumns.),redactevents) = 0 %then %do;
+    %if %eval(&NOBS.>=2) & %index(&customizecolumns.,redactevents) = 0 %then %do;
 
         ods output parameterestimates=pest;
         proc genmod  data = forest descending;
@@ -92,7 +92,7 @@
   			keep analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR LCL UCL HR_pvalue HR_coef HR_se;
   		run;
 	%end;
-	%else %if %index(%lowcase(&customizecolumns.),redactevents) > 0 %then %do;
+	%else %if %index(&customizecolumns.,redactevents) > 0 %then %do;
 		data est;
 		  		format analysisgrp $40. COVARNUM catnum best.;
 				length subgroupcat $10. analysisgrp $40. analysis $13.;
