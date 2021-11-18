@@ -707,7 +707,7 @@
 	%if %str("&reporttype") = %str("T5") %then %do;
 
         /*****************************************************************************************/
-        /* Type 5 Tables T1-T13                                                                  */
+        /* Type 5 Tables T1-T13, T18-T22                                                                  */
         /*****************************************************************************************/
 
         /*Example order of tables:
@@ -869,8 +869,8 @@
     	%if %sysfunc(prxmatch(m/T3\b|T4\b/i,&tablelist.)) > 0 %then %do;
         %t5toc(cattableid=%if %sysfunc(prxmatch(m/T3\b/i,&tablelist.)) > 0 %then %do; T3 %end;,
                disttableid=%if %sysfunc(prxmatch(m/T4\b/i,&tablelist.)) > 0 %then %do; T4 %end;,
-               cattitle=Categorical Summary of Patients%str(%') Cumulative Exposure Duration,
-               disttitle=Continuous Summary of Patients%str(%') Cumulative Exposure Duration); 
+               cattitle=Categorical Summary of Patients%str(%') Cumulative Treatment Exposure Durations,
+               disttitle=Continuous Summary of Patients%str(%') Cumulative Treatment Exposure Durations); 
     	%end;
 
     	/*T5/T6 - Episode duration - all episodes*/
@@ -918,6 +918,72 @@
                cattitle=,
                disttitle=Continuous Summary of Second and Subsequent Treatment Episode Gaps); 
     	%end;
+    	/*T18 - Filled daily dose in each dispensing*/
+        %if %sysfunc(prxmatch(m/T18\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T18,
+               disttableid=,
+               cattitle=Summary of Filled Daily Dose in Each Dispensing,
+               disttitle=); 
+    	%end;
+    	/*T19 - Average filled daily dose in each episode*/
+        %if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T19,
+               disttableid=,
+               cattitle=Summary of Average Filled Daily Dose in Each Treatment Episode,
+               disttitle=); 
+    	%end;
+    	/*T20 - Average filled daily dose in first episode*/
+        %if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T20,
+               disttableid=,
+               cattitle=Summary of Average Filled Daily Dose in Each Patient%str(%')s First Valid Episode,
+               disttitle=); 
+    	%end;
+    	/*T21 - Cumulative filled dose in each episode*/
+        %if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T21,
+               disttableid=,
+               cattitle=Summary of Cumulative Filled Dose in All Treatment Episodes,
+               disttitle=); 
+    	%end;
+    	/*T22 - Cumulative filled dose in first episode*/
+        %if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
+        %t5toc(cattableid=T22,
+               disttableid=,
+               cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
+               disttitle=); 
+    	%end;
+	
+        /*Additional variables for ordering Type 5 table report output*/		
+        %isdata(dataset=t5_tempmap);
+        %if %eval(&nobs.>0) %then %do;
+    		data t5_tempmap;
+    		 set t5_tempmap;
+    		 length t5order 3;
+    		 t5order=_n_;
+    		run; 
+    			
+    		proc sort data = t5_tempmap;
+    		by table t5order;
+    		run;
+    		
+    		data t5_tempmap;
+    		 set t5_tempmap;
+    		 by table;
+    		 length numtables tableorder 3;
+    		 if first.table and last.table
+    			%if %varexist(t5_tempmap,cattable) = 1 & %varexist(t5_tempmap,disttable) = 1 %then %do; and (cattable = '' or disttable = '') %end;
+    		  then numtables=1;
+    		 else numtables=2;
+    		 retain tableorder;
+    		 if first.table then tableorder=0;
+    		 tableorder+1;
+    		run; 
+    			
+    		proc sort data = t5_tempmap;
+    		by t5order table;
+    		run;
+        %end;
 
         /*****************************************************************************************/
         /* Type 5 censor tables (T14-T17)                                                        */
@@ -982,72 +1048,7 @@
         %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
             %t5censortoc(tableid=T17, first=, dataset=t5censor);
         %end;
-
-        /*****************************************************************************************/
-        /* Type 5 Dose Tables T18-T22                                                            */
-        /*****************************************************************************************/
-        %if %sysfunc(prxmatch(m/T18\b/i,&tablelist.)) > 0 %then %do;
-        %t5toc(cattableid=T18,
-               disttableid=,
-               cattitle=Summary of Filled Daily Dose in Each Dispensing,
-               disttitle=); 
-    	%end;
-        %if %sysfunc(prxmatch(m/T19\b/i,&tablelist.)) > 0 %then %do;
-        %t5toc(cattableid=T19,
-               disttableid=,
-               cattitle=Summary of Average Filled Daily Dose in Each Treatment Episode,
-               disttitle=); 
-    	%end;
-        %if %sysfunc(prxmatch(m/T20\b/i,&tablelist.)) > 0 %then %do;
-        %t5toc(cattableid=T20,
-               disttableid=,
-               cattitle=Summary of Average Filled Daily Dose in Each Patient%str(%')s First Valid Episode,
-               disttitle=); 
-    	%end;
-        %if %sysfunc(prxmatch(m/T21\b/i,&tablelist.)) > 0 %then %do;
-        %t5toc(cattableid=T21,
-               disttableid=,
-               cattitle=Summary of Cumulative Filled Dose in All Treatment Episodes,
-               disttitle=); 
-    	%end;
-        %if %sysfunc(prxmatch(m/T22\b/i,&tablelist.)) > 0 %then %do;
-        %t5toc(cattableid=T22,
-               disttableid=,
-               cattitle=Summary of Cumulative Filled Dose in Each Patient%str(%')s First Treatment Episode,
-               disttitle=); 
-    	%end;
-	
-        /*Additional variables for ordering Type 5 table report output*/		
-        %isdata(dataset=t5_tempmap);
-        %if %eval(&nobs.>0) %then %do;
-    		data t5_tempmap;
-    		 set t5_tempmap;
-    		 length t5order 3;
-    		 t5order=_n_;
-    		run; 
-    			
-    		proc sort data = t5_tempmap;
-    		by table t5order;
-    		run;
-    		
-    		data t5_tempmap;
-    		 set t5_tempmap;
-    		 by table;
-    		 length numtables tableorder 3;
-    		 if first.table and last.table
-    			%if %varexist(t5_tempmap,cattable) = 1 & %varexist(t5_tempmap,disttable) = 1 %then %do; and (cattable = '' or disttable = '') %end;
-    		  then numtables=1;
-    		 else numtables=2;
-    		 retain tableorder;
-    		 if first.table then tableorder=0;
-    		 tableorder+1;
-    		run; 
-    			
-    		proc sort data = t5_tempmap;
-    		by t5order table;
-    		run;
-        %end;
-			
+     
     %end; /*type 5 tables*/
 
 	/*********************************************************************************************/

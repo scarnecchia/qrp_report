@@ -91,11 +91,11 @@
         quit;
 
         %if %eval(&num_fn.>0) %then %do;
-        proc sql noprint;
-          select description into: fn1 - :fn&num_fn.
-          from %substr(&dataset.,1,3)_lookup_footnotes_dose
-          order by order;
-        quit;
+            proc sql noprint;
+              select description into: fn1 - :fn&num_fn.
+              from %substr(&dataset.,1,3)_lookup_footnotes_dose
+              order by order;
+            quit;
         %end;      
 
         /*Assign dose group labels*/ 
@@ -147,11 +147,11 @@
         %let t5distributiontitle = Distribution of Days Supplied by Dispensing;
     %end;
     %else %if %sysfunc(prxmatch(m/T3_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Categorical Summary of Patients%str(%') Cumulative Exposure Duration;
+        %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Exposure Durations;
         %let t5head = Number of Patients by Cumulative Treatment Episode Duration;
     %end;
     %else %if %sysfunc(prxmatch(m/T4_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Continuous Summary of Patients%str(%') Cumulative Exposure Duration; 
+        %let t5title = Continuous Summary of Patients%str(%') Cumulative Treatment Exposure Durations; 
         %let t5distributiontitle = Distribution of Cumulative Treatment Episode Duration, days;
     %end;
     %else %if %sysfunc(prxmatch(m/T5_/i,&dataset.)) > 0 %then %do;
@@ -234,7 +234,7 @@
 		%end;
         
 		%if &destination = excel %then %do;
-			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
+			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green" flow="1:400"); /*flow=to prevent line break, 400 arbitrarily chosen to ensure long tables are covered*/
 		%end;
 		ods proclabel = "Table &tablenum.&tableletter.";		
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
@@ -331,7 +331,8 @@
 
             /* Add Footnotes */
             %if %eval(&num_fn > 0) %then %do;
-                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize];
+                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize
+                                       nobreakspace=off];
     		    %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
     		    %end;
