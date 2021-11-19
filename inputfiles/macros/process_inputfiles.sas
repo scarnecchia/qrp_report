@@ -1278,7 +1278,7 @@
 
             /* T2L2/T4L2: Check for obscure combinations of including columns and simultaneous redaction */
             %if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
-                %if %index(&customizecolumns.,redact) > 0 and (%index(&customizecolumns.,include) > 0 or %index(&customizecolumns.,sumevents) > 0) %then %do;
+                %if %index(&customizecolumns.,redactevents) > 0 and (%index(&customizecolumns.,include) > 0 or %index(&customizecolumns.,sumevents) > 0) %then %do;
                     %put WARNING: (Sentinel) The following values for CUSTOMIZECOLUMNS have been specified: &customizecolumns..;
                     %put WARNING: (Sentinel) Columns that have been included for display also may be redacted. Results may not appear as expected.;
                 %end;

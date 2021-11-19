@@ -273,7 +273,7 @@
             AvgFUTime_Dchar = 'NaN';
             AvgFUTime_Ychar = 'NaN';  
             end;
-            %if %index(&customizecolumns.,redactevents) > 0  %then %do;
+            %if %index(&customizecolumns.,events) > 0  %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
                 IR_1000PYchar = 'N/A';
@@ -390,7 +390,7 @@
                 AvgFUTime_Dchar = 'NaN';
                 AvgFUTime_Ychar = 'NaN';  
                 end;
-                %if %index(&customizecolumns.,redactevents) > 0 %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
                     EVchar = 'N/A';
                     rrchar = 'N/A';
                     IR_1000PYchar = 'N/A';
