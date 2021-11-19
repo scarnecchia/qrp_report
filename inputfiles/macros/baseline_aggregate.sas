@@ -127,11 +127,16 @@
         proc sort data=_temp_baseline_stacked;
             by analysisgrp group1 runid order cohort &switch_s;
         run;
+		
+		/*Determine the total number of episodes on the stacked dataset. A value of 0 indicates a default baseline table*/
+		proc sql noprint;
+		  select sum(n_episodes) into: total_episodes 
+		  from _temp_baseline_stacked;
+		quit;
 
         proc transpose data=_temp_baseline_stacked out=_temp_baseline_transposed;
             by analysisgrp group1 runid order cohort &switch_s; 
 		run;
-
 
         proc datasets library=WORK nowarn nolist;
             modify _temp_baseline_transposed;  
@@ -142,6 +147,14 @@
         proc sort data=_temp_baseline_transposed;
             by analysisgrp group1 runid order cohort metvar &switch_s;
         run;
+		
+		/* Change case of metvar from n_episodes to N_episodes for baseline datasets that have 0 total N_episodes */
+		%if &total_episodes. = 0 %then %do;
+		   data _temp_baseline_transposed;
+		     set _temp_baseline_transposed;
+			 if metvar = 'n_episodes' then metvar = 'N_episodes';
+		   run;
+		%end;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
