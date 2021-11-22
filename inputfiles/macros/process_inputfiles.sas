@@ -56,7 +56,7 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
-                    if lowcase(parameter) in ('redactcolumns') then call symputx("value",lowcase(value));
+                    if lowcase(parameter) in ('customizecolumns') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*default stratifybydp*/
@@ -1268,7 +1268,7 @@
 
             /*T2L2: if KM curves requested, ensure events are not being redacted*/
             %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
-                %if %index(&redactcolumns.,events) > 0 %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
                     %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
                     data _null_;
                         call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
@@ -1523,6 +1523,13 @@
         %end;
         %else %do;
             %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
+        %end;
+
+        /* T2L2/T4L2: Check for obscure combinations of including columns and simultaneous redaction */
+        %if (%index(&customizecolumns.,redactevents) > 0 and (%index(&customizecolumns.,include) > 0 or %index(&customizecolumns.,sumevents) > 0)) or 
+             (%index(&customizecolumns.,sumevents) > 0 and %index(&customizecolumns.,include) > 0) %then %do;
+            %put WARNING: (Sentinel) The following values for CUSTOMIZECOLUMNS have been specified: &customizecolumns..;
+            %put WARNING: (Sentinel) Columns that have been included for display also may be redacted. Results may not appear as expected.;
         %end;
 
         /****************************/

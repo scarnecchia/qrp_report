@@ -273,7 +273,7 @@
             AvgFUTime_Dchar = 'NaN';
             AvgFUTime_Ychar = 'NaN';  
             end;
-            %if %index(%lowcase(&redactcolumns.),events) > 0  %then %do;
+            %if %index(&customizecolumns.,events) > 0  %then %do;
                 EVchar = 'N/A';
                 rrchar = 'N/A';
                 IR_1000PYchar = 'N/A';
@@ -281,7 +281,7 @@
                 RD_1000NUchar = 'N/A';
                 risk_1000NUchar = 'N/A';
             %end;
-            %if %index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
+            %if %index(&customizecolumns.,redactpt) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
                 FUTime_Ychar = 'N/A';
                 AvgFUTime_Dchar = 'N/A';
                 AvgFUTime_Ychar = 'N/A';
@@ -390,7 +390,7 @@
                 AvgFUTime_Dchar = 'NaN';
                 AvgFUTime_Ychar = 'NaN';  
                 end;
-                %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
                     EVchar = 'N/A';
                     rrchar = 'N/A';
                     IR_1000PYchar = 'N/A';
@@ -398,7 +398,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if %index(%lowcase(&redactcolumns.),persontime) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
+                %if %index(&customizecolumns.,redactpt) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';
