@@ -221,7 +221,7 @@
 		    or = .;
             lcl = .;
             ucl = .;
-            %if %index(&customizecolumns.,redactevents) > 0 %then %do;
+            %if %index(&customizecolumns.,events) > 0 %then %do;
             or_95ci = 'N/A';
             %end;
             %else %do;
@@ -233,7 +233,7 @@
             adjor = .;
             adjor_lcl = .;
             adjor_ucl = .;
-            %if %index(&customizecolumns.,redactevents) > 0 %then %do;
+            %if %index(&customizecolumns.,events) > 0 %then %do;
             adjor_95ci = 'N/A';
             %end;
             %else %do;
