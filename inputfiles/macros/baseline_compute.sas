@@ -1034,7 +1034,7 @@
                 /*update race rows*/
                 /*set to '.' race if information if not returned at a DP
                    - if at least 1 DP returns race, no need to reassign to '.' */
-                if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 and metvar not in ('RACE_0', 'RACE_UNKNOWN') then do;
+                if prxmatch('/RACE*|HISPANIC*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 and metvar not in ('RACE_0', 'HISPANIC_U', 'RACE_UNKNOWN', 'HISPANIC_UNKNOWN') then do;
                    if %do r = 1 %to &num_dp.; "&&returnrace&r." = "N" %if &r. ne &num_dp. %then %do; and %end; %end; then do;
                         exp_mean0_char = '.';
                         exp_std0_char = '.';

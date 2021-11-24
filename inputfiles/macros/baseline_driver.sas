@@ -583,8 +583,9 @@
         %end;
 
         %let compvars = N;
-        data _temp_race;
-            set alldptable1_&periodid.(where=(substr(upcase(metvar),1,4)='RACE' | upcase(metvar) in ('AMERICANINDIAN', 'ASIAN', 'BLACK', 'PACIFICISLANDER', 'WHITE')));
+        data _temp_racehispanic;
+            set alldptable1_&periodid.(where=(substr(upcase(metvar),1,4)='RACE' | substr(upcase(metvar),1,8)='HISPANIC' | 
+                                         upcase(metvar) in ('AMERICANINDIAN', 'ASIAN', 'BLACK', 'PACIFICISLANDER', 'WHITE')));
             if _n_ = 1 then do;
             dsid = open("alldptable1_&periodid.");
                 if varnum(dsid,"comp_mean1") ne 0 then call symputx('compvars', 'Y');
@@ -593,12 +594,12 @@
             drop rc dsid;
         run;
 
-        %isdata(dataset=_temp_race);
+        %isdata(dataset=_temp_racehispanic);
         %if %eval(&nobs.>0) %then %do;
             data _null_;
-                set _temp_race(keep=metvar exp_: %if "&compvars" = "Y" %then %do; comp_: %end;);
+                set _temp_racehispanic(keep=metvar exp_: %if "&compvars" = "Y" %then %do; comp_: %end;);
                 %do r = 1 %to &num_dp.;
-                    if upcase(metvar) not in ('RACE_0', 'RACE_UNKNOWN') then do;
+                    if upcase(metvar) not in ('RACE_0', 'RACE_UNKNOWN', 'HISPANIC_U', 'HISPANIC_UNKNOWN') then do;
                         if exp_mean&r.>0 %if "&compvars" = "Y" %then %do; | comp_mean&r.>0 %end; then do;
                             call symputx("returnrace&r.", 'Y');
                         end;
