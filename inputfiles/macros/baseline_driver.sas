@@ -574,10 +574,10 @@
         %end; /*reformat table*/
 
         ***********************************************************************************************;
-        * Determine if DP returns race information                       
+        * Determine if DP returns race and hispanic information                       
         ***********************************************************************************************;
 
-        /*total sum of race categories across DPs and if stratifybyDP = Y, within DP*/
+        /*total sum of race/hispanic categories across DPs and if stratifybyDP = Y, within DP*/
         %do r = 1 %to &num_dp.;
             %let returnrace&r. = N;
         %end;
