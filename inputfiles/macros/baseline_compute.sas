@@ -76,7 +76,6 @@
         output;
     run;
 
-
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
@@ -248,8 +247,7 @@
         %end;
 
         /*Extract agegroup, sex, race, and hispanic requirements*/
-
-       data _tempcohort;
+        data _tempcohort;
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
             if missing(agestrat) then call symputx("agestrat", "00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+");
             else call symputx("agestrat", upcase(agestrat));
@@ -325,33 +323,32 @@
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
         **********************************************************************************************;
-        
-           data _null_; 
-              set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table ne 'Adjusted' and order=&b.
+        data _null_; 
+            set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table ne 'Adjusted' and order=&b.
                            %if %str("&reporttype") = %str("T6") %then %do; and switchstep = 0 %end;));
         
-              total_exp_episodes = 0;
-              total_exp_patients = 0;
-              %if "&includecomp" = "Y" %then %do;
-                total_comp_episodes = 0;
-                total_comp_patients = 0;
-              %end;
+            total_exp_episodes = 0;
+            total_exp_patients = 0;
+            %if "&includecomp" = "Y" %then %do;
+            total_comp_episodes = 0;
+            total_comp_patients = 0;
+            %end;
 
-              /*Number of Episodes*/
-              if metvar = 'N_EPISODES' then do;
-    	          total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
-                  call symputx("total_unadjusted_exp_episodes", total_exp_episodes);
-				  %if %str("&reporttype") = %str("T6") %then %do;
-			        call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
-                  %end;
+            /*Number of Episodes*/
+            if metvar = 'N_EPISODES' then do;
+                total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
+                call symputx("total_unadjusted_exp_episodes", total_exp_episodes);
+			    %if %str("&reporttype") = %str("T6") %then %do;
+		        call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
+                %end;
 
-                  %if "&includecomp" = "Y" %then %do;
-        	        total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
-                    call symputx("total_unadjusted_comp_episodes", total_comp_episodes); 
-                  %end;
+                %if "&includecomp" = "Y" %then %do;
+                total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
+                call symputx("total_unadjusted_comp_episodes", total_comp_episodes); 
+                %end;
 
-                  %do a = 1 %to &num_dp.;
-				    %if %str("&reporttype") = %str("T6") %then %do;
+                %do a = 1 %to &num_dp.;
+    			    %if %str("&reporttype") = %str("T6") %then %do;
                       call symputx("n_switchstep_0_episodes_exp&a", exp_mean&a);
                     %end;
                     %else %do;
@@ -360,43 +357,43 @@
                     %if "&includecomp" = "Y" %then %do;
                       call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); 
                     %end;
-                  %end;
-              end;
+                %end;
+            end;
 
-              /*Number of Patients*/
-              else if metvar = 'PATIENT' then do;
-    	          total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
-                  call symputx("total_unadjusted_exp_patients", total_exp_patients); 
-				  %if %str("&reporttype") = %str("T6") %then %do;
-				    call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
-                  %end;
+            /*Number of Patients*/
+            else if metvar = 'PATIENT' then do;
+                total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
+                call symputx("total_unadjusted_exp_patients", total_exp_patients); 
+			    %if %str("&reporttype") = %str("T6") %then %do;
+			    call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
+                %end;
 
+                %if "&includecomp" = "Y" %then %do;
+                  total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
+                  call symputx("total_unadjusted_comp_patients", total_comp_patients);
+                %end;
+
+                %do a = 1 %to &num_dp.;
+                  call symputx("n_unadjusted_patients_exp&a", exp_mean&a); 
                   %if "&includecomp" = "Y" %then %do;
-        	          total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
-                      call symputx("total_unadjusted_comp_patients", total_comp_patients);
+                    call symputx("n_unadjusted_patients_comp&a", comp_mean&a);
                   %end;
+                %end;
+            end;
 
-                  %do a = 1 %to &num_dp.;
-                      call symputx("n_unadjusted_patients_exp&a", exp_mean&a); 
-                      %if "&includecomp" = "Y" %then %do;
-                        call symputx("n_unadjusted_patients_comp&a", comp_mean&a);
-                      %end;
-                  %end;
-              end;
+            /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
+            %if "&includecomp" = "Y" %then %do;
+            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
+            %end;
+        run;
 
-              /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
-              if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
-              %if "&includecomp" = "Y" %then %do;
-                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
-              %end;
-          run;
-
-          %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
-          %put total number of unadjusted group1 patients for order=&b.:  &total_unadjusted_exp_patients.;
-          %if "&includecomp" = "Y" %then %do;
+        %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
+        %put total number of unadjusted group1 patients for order=&b.:  &total_unadjusted_exp_patients.;
+        %if "&includecomp" = "Y" %then %do;
             %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
             %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
-          %end;
+        %end;
 
 	    ***********************************************************************************************;
         * Macro computes pooled metrics                         
@@ -1034,6 +1031,41 @@
                     %end;
                 %end;
 
+                /*update race and hispanic rows*/
+                /*set to '.' race/hispanic if information if not returned at a DP
+                   - if at least 1 DP returns race or hispanic, no need to reassign to '.' */
+                if prxmatch('/RACE*|HISPANIC*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 and metvar not in ('RACE_0', 'HISPANIC_U', 'RACE_UNKNOWN', 'HISPANIC_UNKNOWN') then do;
+                   if %do r = 1 %to &num_dp.; "&&returnrace&r." = "N" %if &r. ne &num_dp. %then %do; and %end; %end; then do;
+                        exp_mean0_char = '.';
+                        exp_std0_char = '.';
+                        %if "&includecomp" = "Y" %then %do;
+                        comp_mean0_char = '.';
+                        comp_std0_char = '.';
+                        %end;
+                        %if "&computebalance." = "Y" %then %do;
+                        ad0_char = '.';
+                        sd0_char = '.';
+                        %end;
+                    end;
+                    /*reassign for each DP*/
+                    %if "&stratifybydp" = "Y" %then %do;
+                    %do i =1 %to &num_dp.;
+                        %if &&returnrace&i. = N %then %do;
+                            exp_mean&i._char = '.';
+                            exp_std&i._char = '.';
+                            %if "&includecomp" = "Y" %then %do;
+                            comp_mean&i._char = '.';
+                            comp_std&i._char = '.';
+                            %end;
+                            %if "&computebalance." = "Y" %then %do;
+                            ad&i._char = '.';
+                            sd&i._char = '.';
+                            %end;
+                        %end;
+                    %end;
+                    %end;
+                end;
+
                 keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
@@ -1069,8 +1101,9 @@
                         end;
                     end;
                 %end;
+
 				/*Removing FOLLOWUPTIME/EVENT rows*/
-                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
+                if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
 
