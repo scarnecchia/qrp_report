@@ -180,6 +180,29 @@
             run;
         %end;
 
+		/*collapse of the race vars for baseline stratifybydp = Y*/
+		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" %then %do;
+		  proc contents noprint data = _baseline_agg_&periodid. 
+                                out = outdata;
+		  run;
+
+		  proc sql noprint;
+		    select count(name) into :race_cats 
+		    from outdata
+		    where lowcase(name) like 'race_%';
+          quit; 
+
+          data _baseline_agg_&periodid.;
+		    set _baseline_agg_&periodid.;
+		    %do c_r = 1 %to %eval(&race_cats -1);
+		      if 1 < race_&c_r < 10 then do;
+                race_0 = race_0 + race_&c_r.;
+                race_&c_r. = .;
+              end;
+            %end;
+           run; 
+		  %end;
+
     %end; /*level 1 baseline tables*/
 
 
