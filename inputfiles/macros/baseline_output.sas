@@ -182,7 +182,8 @@
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =race, order =15 16);
+		%assign_superscripts(type =race, order =15);
+		%assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18);
 		
@@ -289,6 +290,11 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+
+              /*assign unknown race footnote*/
+              %if &collapse_vars. = race %then %do;
+                 if metvar = 'RACE_0' then label = catt(label,"&super_unknownrace.");
+              %end;
 
 			  /*Italicize covariates*/
 	          %if %length(&baselinerowitalics.) > 0 %then %do;             
