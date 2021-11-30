@@ -90,6 +90,11 @@
 		  %let reportdata = Y;
 		%end;
 
+        /* Check if user specified COLLAPSE_VARS if report type is L2/Tree. Parameter only applicable for L1 reports */
+        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE3|TREE4/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
+            %put WARNING: (Sentinel) COLLAPSE_VARS is not applicable for REPORTTYPE = &reporttype.. Rows will not be collapsed in the final report;
+        %end;
+
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
 ***************************************************************************************************/
