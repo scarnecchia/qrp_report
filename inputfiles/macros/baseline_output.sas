@@ -114,6 +114,8 @@
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 	       set lookup.lookup_footnotes (where = (type = "baseline" and order in (14 15
+           /* if race is collapsed in table*/
+            %if &collapse_vars. = race %then %do; 16 %end;
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.))) > 0 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
@@ -151,9 +153,9 @@
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
 		   /* T4 L1 or L2 gestational age specified*/
-		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 16 %end;
+		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
 		   /* Comorbidscore is specified */
-		   %if &comorbidscore = Y %then %do; 17 %end;
+		   %if &comorbidscore = Y %then %do; 18 %end;
 		   )));
 		  by order;
 		  footnote_order = _n_;
@@ -176,13 +178,13 @@
         
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 17);
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =race, order =15);
-		%assign_superscripts(type =gestage, order =16);
-		%assign_superscripts(type =comorbidscore, order =17);
+		%assign_superscripts(type =race, order =15 16);
+		%assign_superscripts(type =gestage, order =17);
+		%assign_superscripts(type =comorbidscore, order =18);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
