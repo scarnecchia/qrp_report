@@ -239,12 +239,9 @@
            length footnote_order 3; 
            /* Always displayed across all types */
            set lookup.lookup_footnotes(where=(type = "effectest" and order in ( 0
-                            
-			  %if &pscsfile. = iptwfile or %length(&weightscheme) > 0 %then %do;
-			  1
-			  %end;
+                            			  
               %if %length(&weightscheme) > 0 %then %do;
-              4
+              1 4
               %end;
               %if &covarnum = 1012 %then %do;
               2
