@@ -240,7 +240,7 @@
            /* Always displayed across all types */
            set lookup.lookup_footnotes(where=(type = "effectest" and order in ( 0
                             
-			  %if &pscsfile. = iptwfile and %length(&weightscheme) > 0 %then %do;
+			  %if &pscsfile. = iptwfile or %length(&weightscheme) > 0 %then %do;
 			  1
 			  %end;
               %if %length(&weightscheme) > 0 %then %do;
