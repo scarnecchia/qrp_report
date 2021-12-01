@@ -1109,17 +1109,6 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-			data &dataout.;
-			 set &dataout.;
-			    if lowcase(vartype) = 'dichotomous' then do;
-                    if exp_mean1 = .R 
-                     %do c_num = 1 %to &num_dp.; 
-					    or exp_mean&c_num. = .R 
-					 %end;
-					   then exp_mean0 = .R; 
-			    end;
-			run;
-
             /* Assign necessary variables for labeling */
             data &labelout;
                 set init_labels;
