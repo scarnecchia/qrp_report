@@ -118,10 +118,40 @@
             quit;
         %end;
 
+
+
         /*Stack baseline tables and transpose*/
         data _temp_baseline_stacked;
             set _temp_baseline_tablenum:;
         run;
+
+		/*collapse of the race vars for baseline stratifybydp = Y*/
+		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" and "&reporttype." ne "T6" %then %do;
+		  proc contents noprint data = _temp_baseline_stacked 
+                                out = content_out;
+		  run;
+
+		  proc sql noprint;
+		    select count(name) into :race_cats 
+		    from content_out
+		    where lowcase(name) like 'race_%';
+          quit; 
+
+		  proc datasets nowarn noprint lib=work;
+          delete content_out;
+          quit;
+
+          data _temp_baseline_stacked;
+		   missing R;
+		    set _temp_baseline_stacked;
+		    %do c_r = 1 %to %eval(&race_cats -1);
+		      if 1 <= race_&c_r <= 10 then do;
+                race_0 = race_0 + race_&c_r.;
+                race_&c_r. = .R;
+              end;
+            %end;
+           run; 
+		  %end;
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
@@ -180,33 +210,7 @@
             run;
         %end;
 
-		/*collapse of the race vars for baseline stratifybydp = Y*/
-		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" and "&reporttype." ne "T6" %then %do;
-		  proc contents noprint data = _baseline_agg_&periodid. 
-                                out = content_out;
-		  run;
-
-		  proc sql noprint;
-		    select count(name) into :race_cats 
-		    from content_out
-		    where lowcase(name) like 'race_%';
-          quit; 
-
-		  proc datasets nowarn noprint lib=work;
-          delete content_out;
-          quit;
-
-          data _baseline_agg_&periodid.;
-		    set _baseline_agg_&periodid.;
-		    %do c_r = 1 %to %eval(&race_cats -1);
-		      if 1 <= race_&c_r <= 10 then do;
-                race_0 = race_0 + race_&c_r.;
-                race_&c_r. = .;
-              end;
-            %end;
-           run; 
-		  %end;
-
+		
     %end; /*level 1 baseline tables*/
 
 

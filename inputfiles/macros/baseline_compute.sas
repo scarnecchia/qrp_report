@@ -469,6 +469,7 @@
             %end;
 
             data &dataout.; 
+			    missing R;
                 length metvar $30;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
@@ -530,7 +531,7 @@
                 if lowcase(vartype) = 'dichotomous' then do;
 
                     /*if 0 patients in a category, set to 0*/
-                    if exp_mean&i. = . then exp_mean&i. = 0;
+                    if exp_mean&i. = .  and exp_mean&i. ne .R then exp_mean&i. = 0;
                     if exp_std&i. = . then exp_std&i. = 0;
 
                     /*format as character*/
@@ -652,7 +653,7 @@
 
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/ 
+                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/
                     exp_mean0_char=compress(put(exp_mean0,comma12.)); /* Character copy of exposed group */
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
@@ -876,8 +877,10 @@
                     %end;
                     %if "&stratifybydp" = "Y" %then %do;
                         %do i =1 %to &num_dp.;
+						    if exp_mean&i. ne .R then do;
                             exp_mean&i. = round(exp_mean&i., 1);
                             comp_mean&i. = round(comp_mean&i., 1);
+							end;
                         %end;
                     %end;
                 end;
@@ -1065,7 +1068,7 @@
                     %end;
                     %end;
                 end;
-
+               
                 keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
@@ -1106,6 +1109,16 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
+			data &dataout.;
+			 set &dataout.;
+			    if lowcase(vartype) = 'dichotomous' then do;
+                    if exp_mean1 = .R 
+                     %do c_num = 1 %to &num_dp.; 
+					    or exp_mean&c_num. = .R 
+					 %end;
+					   then exp_mean0 = .R; 
+			    end;
+			run;
 
             /* Assign necessary variables for labeling */
             data &labelout;
