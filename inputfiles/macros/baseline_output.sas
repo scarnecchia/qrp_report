@@ -203,7 +203,8 @@
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =race, order =15 16);
+		%assign_superscripts(type =race, order =15);
+        %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18);
 		
@@ -235,7 +236,7 @@
         %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
-        proc report data=table1&tableletter. nofs nowd spanrows split='*'
+        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
             style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
@@ -311,6 +312,11 @@
                 call define(_col_,'style','style={indent=25}');
               end;
 
+              /*assign unknown race footnote*/
+              %if &collapse_vars. = race %then %do;
+                 if metvar = 'RACE_0' then label = catt(label,"&super_unknownrace.");
+              %end;
+
 			  /*Italicize covariates*/
 	          %if %length(&baselinerowitalics.) > 0 %then %do;             
               if upcase(metvar) in (&baselinerowitalics.) then do;
@@ -353,6 +359,12 @@
                 line "^{super &f.}&&fn&f.";
 			  %end;
             endcomp;
+
+            *Remove collapsed rows;
+            %if &collapse_vars. = race %then %do;
+                where exp_mean&dpnum. ne .R %if &includecomp. = Y %then %do; | comp_mean&dpnum. ne .R %end; 
+                %if %eval(&maxswitch.=2) %then %do; | switch2_mean&dpnum. ne .R %end; ;
+            %end;
         run;   
     %mend;
 
