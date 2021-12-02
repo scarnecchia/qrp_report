@@ -109,14 +109,6 @@
             run;
         %end;
 
-		data table1&tableletter.;
-		  set repdata.table1&tableletter.;
-		  if exp_mean1 = .R 
-                     %do c_num = 1 %to &num_dp.; 
-					    or exp_mean&c_num. = .R 
-					 %end; then delete;
-		run;
-
 		/* Select Footnotes */  
 	     data _footnotes;
 		   length footnote_order 3; 
@@ -222,7 +214,7 @@
         %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
-        proc report data=table1&tableletter. nofs nowd spanrows split='*'
+        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
             style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
@@ -340,6 +332,12 @@
                 line "^{super &f.}&&fn&f.";
 			  %end;
             endcomp;
+
+            *Remove collapsed rows;
+            %if &collapse_vars. = race %then %do;
+                where exp_mean&dpnum. ne .R %if &includecomp. = Y %then %do; | comp_mean&dpnum. ne .R %end; 
+                %if %eval(&maxswitch.=2) %then %do; | switch2_mean&dpnum. ne .R %end; ;
+            %end;
         run;   
     %mend;
 

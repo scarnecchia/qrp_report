@@ -118,40 +118,64 @@
             quit;
         %end;
 
-
-
-        /*Stack baseline tables and transpose*/
-        data _temp_baseline_stacked;
+        /*Stack baseline tables*/
+        data _temp_baseline_stacked output._temp_baseline_stacked;
             set _temp_baseline_tablenum:;
         run;
 
-		/*collapse of the race vars for baseline stratifybydp = Y*/
-		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" and "&reporttype." ne "T6" %then %do;
-		  proc contents noprint data = _temp_baseline_stacked 
-                                out = content_out;
-		  run;
+		/*if stratifying by data partner and collapse_vars = race, recode values 1-10 to Unknown*/
+		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" %then %do;
+            /*confirm race vars exist on dataset*/
+            proc contents noprint data = _temp_baseline_stacked 
+                                   out = content_out;
+            run;
 
-		  proc sql noprint;
-		    select count(name) into :race_cats 
-		    from content_out
-		    where lowcase(name) like 'race_%';
-          quit; 
+            proc sql noprint;
+    		    select count(name) into :race_cats 
+    		    from content_out
+    		    where lowcase(name) like 'race_%';
+            quit; 
 
-		  proc datasets nowarn noprint lib=work;
-          delete content_out;
-          quit;
+            proc datasets nowarn noprint lib=work;
+                delete content_out;
+            quit;
 
-          data _temp_baseline_stacked;
-		   missing R;
-		    set _temp_baseline_stacked;
-		    %do c_r = 1 %to %eval(&race_cats -1);
-		      if 1 <= race_&c_r <= 10 then do;
-                race_0 = race_0 + race_&c_r.;
-                race_&c_r. = .R;
-              end;
-            %end;
-           run; 
-		  %end;
+            /*type 6 - if any switch is collapsed, collapse all switches*/
+            proc sort data=_temp_baseline_stacked;
+                by &mergevar. %if &reporttype.=T6 %then %do; descending switchstep %end;;
+            run;
+
+            data _temp_baseline_stacked(drop=recode_:);
+                missing R;
+                set _temp_baseline_stacked;
+                by &mergevar.;
+
+                /*Recode*/
+                if first.&mergevar. then do;
+                    %do c_r = 1 %to %eval(&race_cats -1);
+                    recode_&c_r. = 'N'; /*to track if another anchor switch collapsed*/
+    		        if 1 <= race_&c_r <= 10 then do;
+                        race_0 = sum(race_0, race_&c_r.);
+                        /*set recoded value to special missing value to track in code and final table*/
+                        race_&c_r. = .R;
+                        recode_&c_r. = 'Y';
+                    end;
+                    retain recode_&c_r.;
+                    %end;             
+                end;
+                else do;
+                    %do c_r = 1 %to %eval(&race_cats -1);
+    		        if 1 <= race_&c_r <= 10 | recode_&c_r. = 'Y' then do;
+                        race_0 = sum(race_0, race_&c_r.);
+                        /*set recoded value to special missing value to track in code and final table*/
+                        race_&c_r. = .R;
+                        recode_&c_r. = 'Y';
+                        retain recode_&c_r.;
+                    end;
+                    %end;
+                end;
+            run; 
+        %end; /*collapse race categories*/
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
