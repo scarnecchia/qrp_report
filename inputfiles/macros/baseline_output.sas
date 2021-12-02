@@ -65,6 +65,7 @@
                            x.sortorder1, 
                            x.sortorder2,
                            x.metvar,
+                           x.vartype,
                            x.analysisgrp,
                            'Unadjusted' as table,
                            'Unweighted' as weight,
