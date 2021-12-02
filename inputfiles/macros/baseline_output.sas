@@ -109,27 +109,6 @@
             run;
         %end;
 
-		 proc contents noprint data = repdata.table1&tableletter. 
-                                out = content_out;
-		 run;
-
-		 proc sql noprint;
-		   select name into :expmean_cats separated by " "
-		   from content_out
-		   where lowcase(name) like 'exp_mean%';
-         quit; 
-
-		 proc datasets nowarn noprint lib=work;
-          delete content_out;
-         quit;
-
-	     data table1&tableletter.;
-		   set repdata.table1&tableletter.;
-		   %do c_num = 1 %to %sysfunc(countw(&expmean_cats.)); 
-			 if %scan(&expmean_cats.,&c_num)  = .R then delete;
-		   %end; 
-		 run;
-
 		/* Select Footnotes */  
 	     data _footnotes;
 		   length footnote_order 3; 
