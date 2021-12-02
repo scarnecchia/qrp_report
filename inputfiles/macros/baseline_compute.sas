@@ -531,7 +531,7 @@
                 if lowcase(vartype) = 'dichotomous' then do;
 
                     /*if 0 patients in a category, set to 0*/
-                    if exp_mean&i. = .  and exp_mean&i. ne .R then exp_mean&i. = 0;
+                    if exp_mean&i. = . and exp_mean&i. ne .R then exp_mean&i. = 0;
                     if exp_std&i. = . then exp_std&i. = 0;
 
                     /*format as character*/
@@ -564,7 +564,7 @@
 
                     %if "&includecomp" = "Y" %then %do;
                     /*if 0 patients in a category, set to 0*/
-                    if comp_mean&i. = . then comp_mean&i. = 0;
+                    if comp_mean&i. = . and comp_mean&i. ne .R then comp_mean&i. = 0;
                     if comp_std&i. = . then comp_std&i. = 0;
 
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
@@ -654,10 +654,30 @@
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
                     exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/
+                    /*if every DP collapses a race category, mark in aggregate table*/
+                    %if &stratifybydp.=Y & &collapse_vars = race %then %do;
+                        if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
+                            if %do r = 1 %to &num_dp.; exp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
+                                exp_mean0 = .R;
+                            end;
+                        end;
+                    %end;
+
                     exp_mean0_char=compress(put(exp_mean0,comma12.)); /* Character copy of exposed group */
+
                     %if "&includecomp" = "Y" %then %do;
-                    comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
-                    comp_mean0_char=compress(put(comp_mean0,comma12.)); /* Character copy of reference group */
+                        comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
+
+                        /*if every DP collapses a race category, mark in aggregate table*/
+                        %if &stratifybydp.=Y & &collapse_vars = race %then %do;
+                            if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
+                                if %do r = 1 %to &num_dp.; comp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
+                                    comp_mean0 = .R;
+                                end;
+                            end;
+                        %end;
+
+                        comp_mean0_char=compress(put(comp_mean0,comma12.)); /* Character copy of reference group */
                     %end;
 
                     %if "&weight" = "Weighted" %then %do;
@@ -864,23 +884,21 @@
                         sd0_char='N/A';
                         end;
                         %if "&stratifybydp" = "Y" %then %do;
-                                %do i =1 %to &num_dp.;
-                                if missing(ad&i.)=0 then ad&i. = ad&i.*100;
-                                %end;
+                            %do i =1 %to &num_dp.;
+                            if missing(ad&i.)=0 then ad&i. = ad&i.*100;
+                            %end;
                         %end;
                     %end;
 
                     /*round exp_mean0 and exp_std0 - will be a decimal for weighted tables*/
-                    exp_mean0 = round(exp_mean0, 1);
+                    if exp_mean0 ne .R then exp_mean0 = round(exp_mean0, 1);
                     %if "&includecomp" = "Y" %then %do;
-                    comp_mean0 = round(comp_mean0, 1);
+                    if comp_mean0 ne .R then comp_mean0 = round(comp_mean0, 1);
                     %end;
                     %if "&stratifybydp" = "Y" %then %do;
                         %do i =1 %to &num_dp.;
-						    if exp_mean&i. ne .R then do;
-                            exp_mean&i. = round(exp_mean&i., 1);
-                            comp_mean&i. = round(comp_mean&i., 1);
-							end;
+						    if exp_mean&i. ne .R then exp_mean&i. = round(exp_mean&i., 1);
+                            if comp_mean&i. ne .R then comp_mean&i. = round(comp_mean&i., 1);
                         %end;
                     %end;
                 end;
