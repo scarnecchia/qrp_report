@@ -1716,7 +1716,7 @@
 /***************************************************************************************************
 *  Create stacked dataset containing covariate labels for all runs                                              
 ***************************************************************************************************/
-    /*loop through each runID, create datasets &runid._covarname*/
+    /*loop through each runID, create datasets covarname_&runid.*/
     %do r = 1 %to %eval(&numrunid.);
         %let runid = %scan(&runidlist., &r.);
         %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
@@ -1736,18 +1736,24 @@
                 where lower(name)='studyname';
             quit;
 
+			%if %sysfunc(exist(covarname))=0 %then %do;
+                data covarname;
+                    length studyname $&baselinelabellength;
+                    set covarname_&runid.;
+                run;	 
+            %end;
+            %else %do;
+                data covarname;
+                    length studyname $&baselinelabellength;
+                    set covarname covarname_&runid.;
+                run;	 
+            %end;
+
             /* Need to set maximum studyname length across all runs */
             %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
             %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
         %end;
-    %end;
-
-    %if %eval(&baselinelabellength) > 0 %then %do;
-     data covarname;
-        length studyname $&baselinelabellength;
-        set covarname:;
-     run;	 
-    %end;
+    %end;    
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
