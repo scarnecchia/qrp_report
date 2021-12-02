@@ -119,7 +119,7 @@
         %end;
 
         /*Stack baseline tables*/
-        data _temp_baseline_stacked _temp_baseline_stacked;
+        data _temp_baseline_stacked;
             set _temp_baseline_tablenum:;
         run;
 
