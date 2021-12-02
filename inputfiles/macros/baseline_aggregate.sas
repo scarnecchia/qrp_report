@@ -119,7 +119,7 @@
         %end;
 
         /*Stack baseline tables*/
-        data _temp_baseline_stacked output._temp_baseline_stacked;
+        data _temp_baseline_stacked _temp_baseline_stacked;
             set _temp_baseline_tablenum:;
         run;
 
@@ -141,7 +141,7 @@
             quit;
 
             /*type 6 - if any switch is collapsed, collapse all switches*/
-            proc sort data=_temp_baseline_stacked out=_temp_baseline_stacked;
+            proc sort data=_temp_baseline_stacked;
                 by order %if &reporttype.=T6 %then %do; descending switchstep %end;;
             run;
 
