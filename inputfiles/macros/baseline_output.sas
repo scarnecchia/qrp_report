@@ -109,13 +109,26 @@
             run;
         %end;
 
-		data table1&tableletter.;
-		  set repdata.table1&tableletter.;
-		  if exp_mean1 = .R 
-                     %do c_num = 1 %to &num_dp.; 
-					    or exp_mean&c_num. = .R 
-					 %end; then delete;
-		run;
+		 proc contents noprint data = repdata.table1&tableletter. 
+                                out = content_out;
+		 run;
+
+		 proc sql noprint;
+		   select name into :expmean_cats separated by " "
+		   from content_out
+		   where lowcase(name) like 'exp_mean%';
+         quit; 
+
+		 proc datasets nowarn noprint lib=work;
+          delete content_out;
+         quit;
+
+	     data table1&tableletter.;
+		   set repdata.table1&tableletter.;
+		   %do c_num = 1 %to %sysfunc(countw(&expmean_cats.)); 
+			 if %scan(&expmean_cats.,&c_num)  = .R then delete;
+		   %end; 
+		 run;
 
 		/* Select Footnotes */  
 	     data _footnotes;
