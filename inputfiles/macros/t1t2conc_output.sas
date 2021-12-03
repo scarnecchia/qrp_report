@@ -123,9 +123,9 @@
 
             /*if collapse_vars = race, add superscript to 'Unknown' category*/
             %if %index(&stratavar,race) & &collapse_vars. = race %then %do;
-                if index(race,'Unknown')>0 then race= cats(race,"^{super &super_raceunknown.}"); 
+                if index(race,'Unknown')>0 then race= cats(race,"&super_raceunknown."); 
                 %if %sysfunc(countw(&stratavar.)) >=2 and %lowcase(%scan(&stratavar., %eval(%sysfunc(countw(&stratavar.))))) ne race %then %do;
-                    if index(race,'Unknown')>0 then newcategory= cats(newcategory,"^{super &super_raceunknown.}"); 
+                    if index(race,'Unknown')>0 then newcategory= cats(newcategory,"&super_raceunknown."); 
                 %end;
             %end;
     	run;
