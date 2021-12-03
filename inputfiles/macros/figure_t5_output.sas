@@ -61,7 +61,7 @@
             order by order;
         quit;
 
-        %assign_superscripts(type=raceunknown, order = 1);
+        %assign_superscripts(type=raceunknown, order = 2);
         %let unicode_forplot = %scan(&unicode_list., 1);
 
         /*modify format*/

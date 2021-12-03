@@ -80,7 +80,8 @@
 	   type = "t1t2conc";  order = 9;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
 
 	   /* Footnotes for type 5 tables and figures (note - dose table footnotes query specific and are generated in t5tables_createdata */
-       type = "t5tablefig";  order = 1;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+       /* order = 1 reserved for dose footnotes*/
+       type = "t5tablefig";  order = 2;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
 
 	   /* Footnotes for types 1, 2, 5, and 6 censor tables */
 	   type = "censor";    order = 1;  description = "An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes."; output;
