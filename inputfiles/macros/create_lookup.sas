@@ -32,7 +32,7 @@
   
   %macro create_lookup();
      data lookup.lookup_footnotes;
-	   attrib type         length = $10  format = $10.
+	   attrib type         length = $10  format = $10. 
 	          order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
 			  
@@ -77,7 +77,11 @@
 	   type = "t1t2conc";  order = 6;  description = 'Eligible Members and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	   type = "t1t2conc";  order = 7;  description = 'Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	   type = "t1t2conc";  order = 8;  description = 'Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
-	 
+	   type = "t1t2conc";  order = 9;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+
+	   /* Footnotes for type 5 tables and figures (note - dose table footnotes query specific and are generated in t5tables_createdata */
+       type = "t5tablefig";  order = 1;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+
 	   /* Footnotes for types 1, 2, 5, and 6 censor tables */
 	   type = "censor";    order = 1;  description = "An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes."; output;
 	   type = "censor";    order = 2;  description = "A patient's episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of patients."; output;
