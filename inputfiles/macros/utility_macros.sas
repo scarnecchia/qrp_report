@@ -17,6 +17,7 @@
 *   - %convert_categories() macro converts categories to mathematical expression
 *	- %output_datasets() macro output SAS datasets  
 *   - %nonrep() macro removes repeated words in macro variable
+*	- %collapse_vars() macro collapses variables categories
 *
 *  Program inputs:                                                                                   
 *   -
@@ -206,3 +207,55 @@
     %end;
     %let &outvar = &long.;
 %mend;
+
+*Collapse var categories;
+%macro collapse_vars(dataset=, var=, level=);
+
+	proc summary data = &dataset. (where = (level in ("&level."))) nway missing;
+        class runid dpidsiteid level &grpvar. &var.;
+		var npts;
+        output out = nb_pts_&var. (drop = _:) sum=;
+    run;
+
+*assess categories to collapse;
+	data nb_pts_&var.;
+	set nb_pts_&var.;
+	if 0 <= npts <= 10 then collapse=1; else collapse=0;
+	run;
+	proc sort data=&dataset.;
+	by runid dpidsiteid &grpvar. &var.;
+	run;
+
+	data &var._renamed;
+	merge &dataset. (in=a) nb_pts_&var. (in=b);
+	by runid dpidsiteid &grpvar. &var.;
+	if collapse = 1 then &var. = "Unknown"; /*TODO*/
+	sortorder3=5; /*TODO*/
+	drop collapse;
+	run;
+
+*collapse rows;
+	proc means data=&var._renamed nway noprint missing;
+	var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+          %if %index(&table,conc) = 0 %then %do;
+             dennumpts dennummemdays timetocensor
+		  %end;
+		  %if %substr(&table,2,1) ne 1 %then %do;
+		     eps_wevents all_events followuptime
+		  %end;
+		;
+	class runid dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
+	output out=&dataset._var (drop=_:) sum=;
+	run;
+
+	proc sort data=&dataset.;
+	by runid dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
+	run;
+
+	data &dataset.;
+	merge &dataset. (in=a) &dataset._var (in=b);
+	by runid dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
+	if b;
+	run;
+
+%mend collapse_vars;
