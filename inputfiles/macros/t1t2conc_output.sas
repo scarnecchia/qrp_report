@@ -35,64 +35,8 @@
 
 %macro t1t2conc_output(dataset=,varlist=,stratavar=,varwidths=,varsmallcells=,title=);
 
+    /*Create footnotes*/
     %let outfootnotes=;
-
-    %isdata(dataset=repdata.table&tablenum.&tableletter.);
-    %if %eval(&nobs.<1) %then %do;
-    	data repdata.table&tablenum.&tableletter;
-    		set &dataset;
-            length newcategory $80;
-            newcategory = "";
-            %if &includeheaderrow = Y %then %do;
-            if missing(header) then header=grouplabel;
-            %end;
-         %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
-          %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
-            %if &cat. = 1 %then %do;
-              newcategory = strip(%scan(&stratavar., &cat.));;
-            %end;
-            %else %do;
-              newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
-            %end;
-          %end;        
-        %end;
-    	run;
-    %end;
-
-    /*Need to reassign eligible member/member day footnote # from 1 to 2 when a race footnote exists*/
-	%if %index(&stratavar,race) %then %do;
-        proc contents data = repdata.table&tablenum.&tableletter out=t noprint;
-    	run; 
-    	
-        %let label_change_var=;
-        %let label_change=;
-
-    	proc sql noprint;
-    	  select name, label, varnum
-          into: Label_change_var separated by ' ', :Label_change separated by '@', :dummyordervar
-    	  from t
-          where label contains ("super 1")
-          order by varnum;
-    	quit;
-
-        %if %length(&label_change_var) > 0 %then %do;
-
-          %let label_change2 = %sysfunc(tranwrd(%bquote(&label_change),%str(super 1),%str(super 2)));
-    	
-    	  proc datasets lib=repdata nolist;
-            modify  table&tablenum.&tableletter;
-            %let val = %sysfunc(countw(&label_change_var));
-    	    %do lab = 1 %to &val;
-    	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(@))";
-            %end;
-          quit;
-
-          proc datasets lib=work noprint nowarn;
-            delete t;
-          quit;
-    	%end;
-    %end;
-
     proc sql noprint;
         select distinct footnote 
         into :outfootnotes 
@@ -102,10 +46,8 @@
         order by footnote;
     quit;
 
-     /* Select Footnotes */  
-     data _footnotes;
+    data _footnotes;
        length footnote_order 3; 
-       /* Always displayed across all types */
        set lookup.lookup_footnotes(where=(type = "t1t2conc" and order in ( 0
           %if %index(&stratavar.,race) %then %do;
           1
@@ -131,25 +73,98 @@
           %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
           8
           %end;
+          %if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
+          9
+          %end;
         )));
        by order;
        footnote_order = _n_;
     run;
 	 
     proc sql noprint;
-      select count(order) into: num_fn trimmed
-      from _footnotes;
+        select count(order) into: num_fn trimmed
+        from _footnotes;
       
-      %if &num_fn > 0 %then %do;
-      select description into: fn1 - :fn&num_fn.
-      from _footnotes
-        order by order;
-	   %end;
+        %if &num_fn > 0 %then %do;
+          select description into: fn1 - :fn&num_fn.
+          from _footnotes
+          order by order;
+        %end;
     quit;
 
 	%assign_superscripts(type=title, order = 1);
     %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
-		
+	%assign_superscripts(type=raceunknown, order = 9);
+
+    /*Save dataset to repdata folder and create newcategory variable if >=2 stratification variables. 
+      this variable is used as a computed header in the proc report*/
+
+    %isdata(dataset=repdata.table&tablenum.&tableletter.);
+    %if %eval(&nobs.<1) %then %do;
+    	data repdata.table&tablenum.&tableletter;
+    		set &dataset;
+            %if &includeheaderrow = Y %then %do;
+                if missing(header) then header=grouplabel;
+            %end;
+
+            %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
+                length newcategory $90;
+                newcategory = "";
+
+                %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
+                    %if &cat. = 1 %then %do;
+                    newcategory = strip(%scan(&stratavar., &cat.));;
+                    %end;
+                    %else %do;
+                    newcategory = cat(strip(newcategory),", ", strip(%scan(&stratavar., &cat.)));;
+                    %end;
+                %end;        
+            %end;
+
+            /*if collapse_vars = race, add superscript to 'Unknown' category*/
+            %if %index(&stratavar,race) & &collapse_vars. = race %then %do;
+                if index(race,'Unknown')>0 then race= cats(race,"^{super &super_raceunknown.}"); 
+                %if %sysfunc(countw(&stratavar.)) >=2 and %lowcase(%scan(&stratavar., %eval(%sysfunc(countw(&stratavar.))))) ne race %then %do;
+                    if index(race,'Unknown')>0 then newcategory= cats(newcategory,"^{super &super_raceunknown.}"); 
+                %end;
+            %end;
+    	run;
+
+        /*Modify footnotes # to reassign eligible member/member day footnote # from 1 to 2 if table stratified by race*/
+    	%if %index(&stratavar,race) %then %do;
+            proc contents data = repdata.table&tablenum.&tableletter out=t noprint;
+        	run; 
+        	
+            %let label_change_var=;
+            %let label_change=;
+
+        	proc sql noprint;
+        	  select name, label, varnum
+              into: Label_change_var separated by ' ', :Label_change separated by '@', :dummyordervar
+        	  from t
+              where label contains ("super 1")
+              order by varnum;
+        	quit;
+
+            %if %length(&label_change_var) > 0 %then %do;
+                %let label_change2 = %sysfunc(tranwrd(%bquote(&label_change),%str(super 1),%str(super 2)));
+        	
+            	proc datasets lib=repdata nolist;
+                    modify table&tablenum.&tableletter;
+                    %let val = %sysfunc(countw(&label_change_var));
+            	    %do lab = 1 %to &val;
+            	      label %scan(&label_change_var, &lab, ' ') = "%scan(%bquote(&label_change2.), &lab., %str(@))";
+                    %end;
+                quit;
+
+                proc datasets lib=work noprint nowarn;
+                    delete t;
+                quit;
+        	%end;
+        %end;
+    %end; /*save data to repdata folder*/
+
+    /*Write to report*/
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table &tablenum.&tableletter" tab_color='green');
     %end;

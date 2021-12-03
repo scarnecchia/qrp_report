@@ -175,7 +175,7 @@
 				     length sortorder&s. 3;
 				     
                      %if &&strata&s. = sex      %then length sex $15;;
-                     %if &&strata&s. = race     %then length race $45;;
+                     %if &&strata&s. = race     %then length race $55;;
 					 %if &&strata&s. = hispanic %then length hispanic $20;;
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
