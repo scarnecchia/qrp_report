@@ -46,7 +46,7 @@
     %end;
 
     /*footnotes*/
-    %if &collapse_vars = race & &figuresub. = race & &figure. = F1 %then %do;
+    %if &collapse_vars = race & &figuresub. = race %then %do;
 		data _footnotes;
             length footnote_order 3; 
             set lookup.lookup_footnotes(where = (type = "t5tablefig"));
@@ -170,7 +170,7 @@
     run;
 
     /*Footnotes*/
-    %if &collapse_vars = race & &figuresub. = race & &figure=F1 %then %do;
+    %if &collapse_vars = race & &figuresub. = race %then %do;
 	   proc odstext;
 		%do fnote = 1 %to &num_fn.;
         p "^{super &fnote.}&&fn&fnote." / style=[just=L font_size=&footfontsize];
