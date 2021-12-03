@@ -39,8 +39,45 @@
 
 	%put =====> MACRO CALLED: figure_t5_output;
 
+    /*figuresub format to display formatted values in figure*/
+    %if &figuresub. ne overall %then %do;
+        %if &figuresub.=agegroup %then %do; %let t5figureformat = $agefmt.; %end;
+        %else %do; %let t5figureformat = $&figuresub.fmt.; %end; 
+    %end;
+
+    /*footnotes*/
+    %if &collapse_vars = race & &figuresub. = race & &figure. = F1 %then %do;
+		data _footnotes;
+            length footnote_order 3; 
+            set lookup.lookup_footnotes(where = (type = "t5tablefig"));
+            by order;
+            footnote_order = _n_;
+            call symputx('num_fn', 1);
+        run;
+
+        proc sql noprint;
+            select description into: fn1 - :fn&num_fn.
+            from _footnotes
+            order by order;
+        quit;
+
+        %assign_superscripts(type=raceunknown, order = 1);
+        %let unicode_forplot = %scan(&unicode_list., 1);
+
+        /*modify format*/
+        proc format;
+        value $racefmtsuper
+        "0"   = "Unknown(*ESC*){unicode '&unicode_forplot'x}"
+        "1"   = "American Indian or Alaska Native"
+        "2"   = "Asian"
+        "3"   = "Black or African American"
+        "4"   = "Native Hawaiian or Other Pacific Islander"
+        "5"   = "White";
+        run;
+        %let t5figureformat = $racefmtsuper.;
+    %end;
+
     /*Save dataset to REPORTDATA folder*/
-	
     %isdata(dataset=repdata.figure&figurenum.&figureletter.);
     %if %eval(&nobs.<1) %then %do;
         data repdata.figure&figurenum.&figureletter.;
@@ -72,7 +109,7 @@
     quit;
 
     proc datasets nowarn noprint lib=work;
-        delete _collaspseddata;
+        delete _collaspseddata _footnotes;
     quit;
 
 	ods startpage = now;
@@ -117,7 +154,7 @@
 									  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
         /*assign labels*/
         %if &figuresub. ne overall %then %do;
-            format &figuresub. %if &figuresub.=agegroup %then %do; $agefmt. %end; %else %do; $&figuresub.fmt. %end; ;
+            format &figuresub. &t5figureformat. ;
         %end;
         vbar mntsfromstart / response=&yvar. %if &figuresub. ne overall %then %do; group=&figuresub. grouporder=data stat = sum %end; nostatlabel name='raw' missing 
              fillattrs=(transparency=.4 %if &figuresub. = overall %then %do; color=darkblue %end;)
@@ -131,12 +168,20 @@
         y2axis label = "&yaxislabel2" valueattrs=(color=black size=&fontsize. family=&font.) labelattrs=(color=black size=&fontsize family=&font);
 		keylegend 'raw' 'cumulative' / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in;
     run;
+
+    /*Footnotes*/
+    %if &collapse_vars = race & &figuresub. = race & &figure=F1 %then %do;
+	   proc odstext;
+		%do fnote = 1 %to &num_fn.;
+        p "^{super &fnote.}&&fn&fnote." / style=[just=L font_size=&footfontsize];
+		%end;
+		run; 
+    %end;
 	
 	%if &destination. = pdf %then %do;
-	 ODS PDF BOOKMARKGEN = ON;
+	ODS PDF BOOKMARKGEN = ON;
 	%end; 
 
 	%put =====> END MACRO: figure_t5_output;
 
 %mend figure_t5_output;
-
