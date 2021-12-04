@@ -468,10 +468,50 @@
                 %put total number of switch &switch_count. patients for order=&b.: &&total_switchstep_&switch_count._exp_patients.;
             %end;
 
+			data all_data;
+			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
+			run;
+
+            %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
+
+              proc sql noprint;
+    		    select count(metvar) into :race_cats 
+    		    from all_data
+    		    where lowcase(metvar) like 'race_%';
+              quit; 
+
+			  data null;
+               set all_data;
+               %do c_r = 1 %to %eval(&race_cats -1);
+                 if metvar = "RACE_&c_r"  then do;
+                   call symput("exp_mean1_&c_r", exp_mean1);
+	             end;   
+               %end;
+              run;
+
+              data &dataout.;
+                missing R;
+                set all_data;
+                  %do c_r = 1 %to %eval(&race_cats -1);
+                    if metvar = "RACE_&c_r" and 1 <= exp_mean1 <= 10 then do;			
+                      exp_mean1 = .R; 
+	                end;
+                  %end;
+                  if metvar = "RACE_0"  then do;
+                    exp_mean1 = sum(exp_mean1 
+                    %do c_r = 1 %to %eval(&race_cats -1);
+				      %if 1<= &&exp_mean1_&c_r <= 10 %then %do;
+				        ,&&exp_mean1_&c_r
+					  %end;
+				    %end;);
+	              end;
+                run;
+		    %end;
+
             data &dataout.; 
 			    missing R;
                 length metvar $30;
-                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
+                set all_data;
 
                 /*set up total count variables and arrays*/
                 total_exp_episodes = &&total_&table._exp_episodes.; /*Sum of episodes in group1*/ 
@@ -1539,7 +1579,8 @@
 
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
-            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel baseline_labels: covarname_baseline _tempcohort;
+            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel 
+                   baseline_labels: covarname_baseline _tempcohort all_data;
         quit;
 
         %symdel agestrat1;
