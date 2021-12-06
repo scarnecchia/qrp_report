@@ -468,10 +468,6 @@
                 %put total number of switch &switch_count. patients for order=&b.: &&total_switchstep_&switch_count._exp_patients.;
             %end;
 
-			data all_data;
-			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
-			run;
-
             %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
 
               proc sql noprint;
@@ -489,7 +485,7 @@
                %end;
               run;
 
-              data &dataout.;
+              data all_data;
                 missing R;
                 set all_data;
                   %do c_r = 1 %to %eval(&race_cats -1);
