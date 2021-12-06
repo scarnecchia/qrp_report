@@ -222,9 +222,16 @@
         from tablefile
         where dataset = "&table." and index(tablesub,"#") = 0;
 	quit;
-
 	%let list_pos=%sysfunc(countw(%substr(&list,1,%index(&list,&var.)+1)));  
 
+*assess unknown sortorder;
+	data _NULL_;
+	set &dataset. (where = (level in ("&levelToColl.")));
+	if &var. = "Unknown"; 
+	call symputx ("sortnb", sortorder&list_pos.);
+	run;
+
+*assess nb of pts by category;
 	proc summary data = &dataset. (where = (level in ("&levelToColl."))) nway missing;
         class runid dpidsiteid level &grpvar. &var.;
 		var npts;
@@ -245,7 +252,7 @@
 	by runid dpidsiteid &grpvar. &var.;
 	if collapse = 1 then do;
 		&var. = "Unknown"; 
-		sortorder&list_pos.=5; 
+		sortorder&list_pos.=&sortnb.; 
 	end;
 	drop collapse;
 	run;
