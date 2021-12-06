@@ -486,7 +486,7 @@
 			  data null;
                set all_data;
                %do c_r = 1 %to %eval(&race_cats -1);
-                 if metvar = "RACE_&c_r"  then do;
+                 if metvar = "RACE_&c_r" and 1 <= exp_mean1 <= 10 then do;
                    call symput("exp_mean1_&c_r", exp_mean1);
 	             end;   
                %end;
