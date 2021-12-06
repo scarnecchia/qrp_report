@@ -215,7 +215,7 @@
     proc sql noprint;
        select distinct strip(levelid1)  
 	   into :levelToColl 
-       from tablefile where tablesub = "&var.";
+       from tablefile where tablesub = "&var." and dataset = "&table.";
 	quit;
 
 	proc summary data = &dataset. (where = (level in ("&levelToColl."))) nway missing;
@@ -244,8 +244,10 @@
 	data &var._renamed;
 	merge &dataset. (in=a) nb_pts_&var. (in=b);
 	by runid dpidsiteid &grpvar. &var.;
-	if collapse = 1 then &var. = "Unknown"; 
-	sortorder&count.=5; 
+	if collapse = 1 then do;
+		&var. = "Unknown"; 
+		sortorder&count.=5; 
+	end;
 	drop collapse;
 	run;
 
