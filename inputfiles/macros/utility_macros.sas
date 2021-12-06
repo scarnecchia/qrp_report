@@ -3,9 +3,7 @@
 ****************************************************************************************************
 *
 * PROGRAM: utility_macros.sas  
-*
-* Created (mm/dd/yyyy): 12/20/2015
-* Last modified: 12/1/2020
+* Created (mm/dd/yyyy): 12/20/2020
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE: This program includes the following macros:
@@ -209,59 +207,63 @@
 %mend;
 
 *Collapse var categories;
-%macro collapse_vars(dataset=, var=);
+%macro collapse_vars(dataset=, groupvar=, where =, var=, list=, unknown=, sort=, varlist=, classlist=);
 
-*assess levelid;
-    proc sql noprint;
-       select distinct strip(levelid1)  
-	   into :levelToColl 
-       from tablefile 
-	   where tablesub = "&var." and dataset = "&table.";
-
-        select distinct(tablesub) into: list separated by ' ' 
-        from tablefile
-        where dataset = "&table." and index(tablesub,"#") = 0;
-	quit;
-
-	%let list_pos=%sysfunc(countw(%substr(&list,1,%index(&list,&var.)+1)));  
-
-	proc summary data = &dataset. (where = (level in ("&levelToColl."))) nway missing;
-        class runid dpidsiteid level &grpvar. &var.;
-		var npts;
-        output out = nb_pts_&var. (drop = _:) sum=;
+    /*collapse - first determine which rows require collapsing*/;
+    %let collapserows = N;
+    data &dataset.;
+        set &dataset.(where=(&where));
+        if &var. in (&list) then do;
+            if 1 <= npts <=10 then do;
+                collapse='Y';
+                call symputx('collapserows', 'Y');
+            end;
+        end;
     run;
 
-*assess categories to collapse;
-	data nb_pts_&var.;
-	set nb_pts_&var.;
-	if 1 <= npts <= 10 then collapse=1; else collapse=0;
-	run;
-	proc sort data=&dataset.;
-	by runid dpidsiteid &grpvar. &var.;
-	run;
+    %if &collapserows = Y %then %do;
 
-	data &var._renamed;
-	merge &dataset. (in=a) nb_pts_&var. (in=b);
-	by runid dpidsiteid &grpvar. &var.;
-	if collapse = 1 then do;
-		&var. = "Unknown"; 
-		sortorder&list_pos.=5; 
-	end;
-	drop collapse;
-	run;
+        /*if any rows are collapse - collapse that stratification in the table. 
+          For example, if collapsing race = 1 in a race*sex table for Males, 
+          need to also collapse for Females*/
+        proc sql noprint;
+            create table _collapselookup as
+            select distinct &groupvar.
+                           , &var.
+                           , level
+                           , collapse
+            from &dataset.(where=(collapse='Y'));
+        quit;
 
-*collapse rows;
-	proc means data=&var._renamed nway noprint missing;
-	var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-          %if %index(&table,conc) = 0 %then %do;
-             dennumpts dennummemdays timetocensor
-		  %end;
-		  %if %substr(&table,2,1) ne 1 %then %do;
-		     eps_wevents all_events followuptime
-		  %end;
-		;
-	class runid dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
-	output out=&dataset. (drop=_:) sum=;
-	run;
+        data &dataset.;
+            if 0 then set _collapselookup;
+            declare hash pt (hashexp:16, dataset:"_collapselookup");
+            pt.definekey("&groupvar", "&var", "level");
+            pt.definedone();
+
+            do until(eof1);
+                set &dataset.(drop=collapse) end=eof1;
+                if pt.find()=0 then do;
+                        &var. = &unknown.;
+                        %if %str("&sort.") ne %str("") %then %do;
+                        sortorder&sort. = 5;
+                        %end;
+                    output;
+                end;
+                else do;
+                    output;
+                end;
+            end;
+            stop;
+        run;
+
+        *reaggregate;
+    	proc means data=&dataset. nway noprint missing;
+        	var &varlist.;
+        	class &classlist.;
+        	output out=&dataset.(drop=_:) sum=;
+    	run;
+
+    %end;
 
 %mend collapse_vars;
