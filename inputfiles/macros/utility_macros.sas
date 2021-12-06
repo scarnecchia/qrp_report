@@ -215,8 +215,15 @@
     proc sql noprint;
        select distinct strip(levelid1)  
 	   into :levelToColl 
-       from tablefile where tablesub = "&var." and dataset = "&table.";
+       from tablefile 
+	   where tablesub = "&var." and dataset = "&table.";
+
+        select distinct(tablesub) into: list separated by ' ' 
+        from tablefile
+        where dataset = "&table." and index(tablesub,"#") = 0;
 	quit;
+
+	%let list_pos=%sysfunc(countw(%substr(&list,1,%index(&list,&var.)+1)));  
 
 	proc summary data = &dataset. (where = (level in ("&levelToColl."))) nway missing;
         class runid dpidsiteid level &grpvar. &var.;
@@ -233,20 +240,12 @@
 	by runid dpidsiteid &grpvar. &var.;
 	run;
 
-	data _null_;
-	set _stratavars;
-	count+1;
-	if strata = "&var." then do;
-		call symputx("count",count);
-	end;
-	run;
-
 	data &var._renamed;
 	merge &dataset. (in=a) nb_pts_&var. (in=b);
 	by runid dpidsiteid &grpvar. &var.;
 	if collapse = 1 then do;
 		&var. = "Unknown"; 
-		sortorder&count.=5; 
+		sortorder&list_pos.=5; 
 	end;
 	drop collapse;
 	run;
