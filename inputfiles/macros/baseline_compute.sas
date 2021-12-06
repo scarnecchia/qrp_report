@@ -696,7 +696,8 @@
 
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/
+                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); 
+					if 1<= exp_mean0 <= 10 then exp_mean0 = .R;/*Aggregated numerator in the exposed group*/
                     /*if every DP collapses a race category, mark in aggregate table*/
                     %if &stratifybydp.=Y & &collapse_vars = race %then %do;
                         if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
