@@ -469,7 +469,10 @@
             %end;
 
 			data all_data;
-			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
+			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+                  %if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
+                    and switchstep = &switch_count
+                  %end; ));
 			run;
 
             %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
@@ -483,7 +486,7 @@
 			  data null;
                set all_data;
                %do c_r = 1 %to %eval(&race_cats -1);
-                 if metvar = "RACE_&c_r"  then do;
+                 if metvar = "RACE_&c_r" and 1 <= exp_mean1 <= 10 then do;
                    call symput("exp_mean1_&c_r", exp_mean1);
 	             end;   
                %end;
