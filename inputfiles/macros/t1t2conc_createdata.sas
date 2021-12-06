@@ -189,7 +189,6 @@
 			   end;
 			   else do;
 			   	&&var&vv. = "NaN";
-				if missing(DenNumPts) = 1 then &&var&vv..="N/A";
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -218,7 +217,6 @@
                end;
 			   else do;
 			   	&&var&vv. = "NaN";
-				if missing(DenNumPts) = 1 then &&var&vv..="N/A";
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -240,7 +238,6 @@
 			   else do;
 			   	&&var&vv. =0;
 			   	&&var&vv.._char="NaN";
-				if missing(DenNumPts) = 1 then &&var&vv.._char="N/A";
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 				 %end;	
@@ -281,7 +278,7 @@
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
 		  %end;	
 		  %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-		  if (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
+		  if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
 	      %end;	  
 	    %end;
 		
