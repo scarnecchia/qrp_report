@@ -469,7 +469,10 @@
             %end;
 
 			data all_data;
-			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
+			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+                  %if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
+                    and switchstep = &switch_count
+                  %end; ));
 			run;
 
             %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
