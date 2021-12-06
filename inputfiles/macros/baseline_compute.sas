@@ -931,6 +931,9 @@
                     %end;
 
                     /*round exp_mean0 and exp_std0 - will be a decimal for weighted tables*/
+					%if "&stratifybydp" = "N" %then %do;
+					  if exp_mean1 = .R then exp_mean0 = .R;
+					%end;
                     if exp_mean0 ne .R then exp_mean0 = round(exp_mean0, 1);
                     %if "&includecomp" = "Y" %then %do;
                     if comp_mean0 ne .R then comp_mean0 = round(comp_mean0, 1);
@@ -1127,7 +1130,7 @@
                     %end;
                 end;
                
-                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char 
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
