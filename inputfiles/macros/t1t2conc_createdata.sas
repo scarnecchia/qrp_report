@@ -179,7 +179,9 @@
 			   end;
 			   else do;
 			   	&&var&vv. = "NaN";
-				if missing(DenNumPts) = 1 then &&var&vv..="N/A"; 
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end;
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -208,7 +210,9 @@
                end;
 			   else do;
 			   	&&var&vv. = "NaN";
-				if missing(DenNumPts) = 1 then &&var&vv..="N/A"; 
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end; 
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -230,7 +234,9 @@
 			   else do;
 			   	&&var&vv. =0;
 			   	&&var&vv.._char="NaN";
-				if missing(DenNumPts) = 1 then &&var&vv.._char="N/A"; 
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 				 %end;	
