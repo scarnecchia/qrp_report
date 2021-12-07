@@ -271,8 +271,9 @@
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
 		  %end;	
 		  %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-		  if (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
-	      %end;	  
+			if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
+			else if missing(dennumpts) then &&var&vv.._char='N/A';
+		  %end;	  
 	    %end;
 		
         /*labels for stratification variables*/
