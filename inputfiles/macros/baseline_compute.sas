@@ -483,12 +483,12 @@
     		    where lowcase(metvar) like 'race_%';
               quit; 
 
-			  data null;
+			  data _null_;
                set all_data;
                %do c_r = 1 %to %eval(&race_cats -1);
                  if metvar = "RACE_&c_r"  then do;
 				   if 1<= exp_mean1 <= 10 then do; 
-                     call symput("exp_mean1_&c_r", exp_mean0);
+                     call symput("exp_mean1_&c_r", exp_mean1);
 				   end;
 				   else do;
 				     call symput("exp_mean1_&c_r", 0);
@@ -501,6 +501,8 @@
                 missing R;
                 set all_data;
                   %do c_r = 1 %to %eval(&race_cats -1);
+					  exp_mean0 = sum( %do dp_l = 1 %to %eval(&num_dp- 1); exp_mean&dp_l, %end;
+                                       exp_mean&num_dp); 
                     if metvar = "RACE_&c_r" and 1 <= exp_mean0 <= 10 then do;			
                       exp_mean0 = .R;
 	                end;
@@ -700,7 +702,10 @@
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
                     exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); 
-					if 1<= exp_mean0 <= 10 then exp_mean0 = .R;/*Aggregated numerator in the exposed group*/
+				    %if &stratifybydp.=N & &collapse_vars = race %then %do;
+					  if 1<= exp_mean0 <= 10 then exp_mean0 = .R;
+					%end;
+					/*Aggregated numerator in the exposed group*/
                     /*if every DP collapses a race category, mark in aggregate table*/
                     %if &stratifybydp.=Y & &collapse_vars = race %then %do;
                         if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
