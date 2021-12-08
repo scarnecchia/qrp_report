@@ -207,7 +207,7 @@
 %mend;
 
 *Collapse var categories;
-%macro collapse_vars(dataset=, groupvar=, where =, var=, list=, unknown=, sort=, varlist=, classlist=);
+%macro collapse_vars(dataset=, dpstrat=N, groupvar=, where =1, var=race, list=, unknown=, sort=, varlist=, classlist=);
 
     /*collapse - first determine which rows require collapsing*/;
     %let collapserows = N;
@@ -232,13 +232,16 @@
                            , &var.
                            , level
                            , collapse
+                           %if &dpstrat = Y %then %do;
+                           , dpidsiteid
+                           %end;
             from &dataset.(where=(collapse='Y'));
         quit;
 
         data &dataset.;
             if 0 then set _collapselookup;
             declare hash pt (hashexp:16, dataset:"_collapselookup");
-            pt.definekey("&groupvar", "&var", "level");
+            pt.definekey("&groupvar", "&var", "level" %if &dpstrat = Y %then %do; ,"dpidsiteid" %end;);
             pt.definedone();
 
             do until(eof1);

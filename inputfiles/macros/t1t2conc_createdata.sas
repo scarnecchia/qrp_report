@@ -62,7 +62,6 @@
             where tablesub ne 'overall' and dataset = "&table.";
     quit;
 
-  
     /************************************************************************************************
       Collapse data - if stratifybyDP = Y, need to reclassify prior to aggregation
                       if stratifybyDP = N, collapse after aggregation 
@@ -77,8 +76,9 @@
 
 		%if &stratifybydp = Y %then %do;
         %collapse_vars(dataset=agg_&table., 
-                       where =1, 
-                       var=race, 
+                       dpstrat=Y,
+                       groupvar=&grpvar.,
+                       where =level in (&&&table._levelid), 
                        list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
@@ -89,11 +89,11 @@
                     		  %if %substr(&table,2,1) ne 1 %then %do;
                     		     eps_wevents all_events followuptime
                     		  %end;,
-                       classlist=runid dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
+                       classlist=dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
 		%end;
     %end;
 
-   /************************************************************************************************
+    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
@@ -112,8 +112,6 @@
 	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
         %collapse_vars(dataset=agg_&table._sum, 
                        groupvar=&grpvar.,
-                       where =1, 
-                       var=race, 
                        list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
