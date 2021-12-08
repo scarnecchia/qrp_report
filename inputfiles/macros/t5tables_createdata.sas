@@ -55,7 +55,8 @@
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
     /*--------------------------------------------------------------------------------------------*/
-    /* Determine all levelIDs and stratifications requested                                       */
+    /* Pre-processing steps:                                                                      */
+    /*   - Determine all levelIDs and stratifications requested                                   */
     /*--------------------------------------------------------------------------------------------*/
     %let tablesub = ;
     %let tablesublist = ;
@@ -130,10 +131,16 @@
     /*                if stratifybyDP = N, collapse after aggregation                             */
     /*--------------------------------------------------------------------------------------------*/
 
+    /*determine if need to keep npts variable in proc means*/
+    %let npts = ;
+    %if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do; 
+        %if &countvar. ne npts %then %let npts = npts;
+    %end;
+
     /*Summarize data*/
     %if &stratifybydp. = Y %then %do;
         proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
-    		var &countvar.;
+    		var &countvar. &npts.;
     		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
     		output out=_t5data_summed_dp(drop=_:) sum=;
     	run;
@@ -142,13 +149,14 @@
         %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
         %if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do;
 
+        %let npts =;
         %end;
         %end;
     %end;
 
     /*Summarize data*/
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
-		var &countvar.;
+		var &countvar. &npts.;
 		class runid group level &stratvars. &catvar. &catvarsort. / missing;
 		output out=_t5data_summed(drop=_:) sum=;
 	run;
@@ -156,13 +164,16 @@
     /*Collapse if stratifybydp =N*/
     %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
 	%if %index(&stratvars,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
-        data output._t5data_summed&cattableid.; set _t5data_summed; run;
-/*        %collapse_vars(dataset=agg_t5first_all, */
-/*                       sumcontinuousvars=mntsfromstart,*/
-/*                       list=%str('1','2','3','4','5'),*/
-/*                       unknown='0', */
-/*                       varlist=&npts. &daysupp. &adjustedcodecount.,*/
-/*                       classlist=group runid level mntsfromstart &stratvars.);*/
+        data output.before&cattableid.; set _t5data_summed; run;
+        %collapse_vars(dataset=_t5data_summed, 
+                       sumcontinuousvars=&catvar.,
+                       list=%str('1','2','3','4','5'),
+                       unknown='0', 
+                       varlist=&countvar.,
+                       classlist=runid group level &stratvars. &catvar. &catvarsort.);
+
+        data output.after&cattableid.; set _t5data_summed; run;
+
     %end;
     %end;
 
