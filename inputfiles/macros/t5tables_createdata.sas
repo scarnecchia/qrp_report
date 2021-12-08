@@ -164,16 +164,12 @@
     /*Collapse if stratifybydp =N*/
     %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
 	%if %index(&stratvars,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
-        data output.before&cattableid.; set _t5data_summed; run;
         %collapse_vars(dataset=_t5data_summed, 
                        sumcontinuousvars=&catvar.,
                        list=%str('1','2','3','4','5'),
                        unknown='0', 
                        varlist=&countvar.,
                        classlist=runid group level &stratvars. &catvar. &catvarsort.);
-
-        data output.after&cattableid.; set _t5data_summed; run;
-
     %end;
     %end;
 
