@@ -272,7 +272,6 @@
             run;
         %end;
 
-		
     %end; /*level 1 baseline tables*/
 
 

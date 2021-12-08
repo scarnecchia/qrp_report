@@ -485,15 +485,17 @@
 
 			  data _null_;
                set all_data;
-               %do c_r = 1 %to %eval(&race_cats -1);
-                 if metvar = "RACE_&c_r"  then do;
-				   if 1<= exp_mean1 <= 10 then do; 
-                     call symput("exp_mean1_&c_r", exp_mean1);
-				   end;
-				   else do;
-				     call symput("exp_mean1_&c_r", 0);
-				   end;
-	             end;   
+			   %do dp_l = 1 %to %eval(&num_dp);
+                 %do c_r = 1 %to %eval(&race_cats -1);
+                   if metvar = "RACE_&c_r"  then do;
+				     if 1<= exp_mean&dp_l <= 10 then do; 
+                       call symput("exp_mean_&c_r.&dp_l", exp_mean&dp_l);
+				     end;
+				     else do;
+				       call symput("exp_mean_&c_r.&dp_l", 0);
+				     end;
+	               end;
+                 %end; 
                %end;
               run;
 
@@ -501,7 +503,7 @@
                 missing R;
                 set all_data;
                   %do c_r = 1 %to %eval(&race_cats -1);
-					  exp_mean0 = sum( %do dp_l = 1 %to %eval(&num_dp- 1); exp_mean&dp_l, %end;
+					  exp_mean0 = sum( %do dp_l = 1 %to %eval(&num_dp- 1); exp_mean&dp_l., %end;
                                        exp_mean&num_dp); 
                     if metvar = "RACE_&c_r" and 1 <= exp_mean0 <= 10 then do;			
                       exp_mean0 = .R;
@@ -509,9 +511,11 @@
                   %end;
                   if metvar = "RACE_0"  then do;
                     exp_mean0 = sum(exp_mean0 
-                    %do c_r = 1 %to %eval(&race_cats -1);
-				        ,&&exp_mean1_&c_r
-				    %end;);
+					%do dp_l = 1 %to %eval(&num_dp);
+                      %do c_r = 1 %to %eval(&race_cats -1);
+				          ,&&exp_mean_&c_r.&dp_l
+				      %end;
+                    %end;);
 	              end;
                 run;
 		    %end;
@@ -701,9 +705,11 @@
 
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); 
-				    %if &stratifybydp.=N & &collapse_vars = race %then %do;
+					%if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
 					  if 1<= exp_mean0 <= 10 then exp_mean0 = .R;
+					%end;
+					%else %do;
+                      exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); 
 					%end;
 					/*Aggregated numerator in the exposed group*/
                     /*if every DP collapses a race category, mark in aggregate table*/
