@@ -15,7 +15,6 @@
 *   - %convert_categories() macro converts categories to mathematical expression
 *	- %output_datasets() macro output SAS datasets  
 *   - %nonrep() macro removes repeated words in macro variable
-*	- %collapse_vars() macro collapses variables categories
 *
 *  Program inputs:                                                                                   
 *   -
@@ -205,68 +204,3 @@
     %end;
     %let &outvar = &long.;
 %mend;
-
-*Collapse var categories;
-%macro collapse_vars(dataset=, dpstrat=N, groupvar=, where =1, var=race, list=, unknown=, sort=, varlist=, classlist=);
-
-    /*collapse - first determine which rows require collapsing*/;
-    %let collapserows = N;
-    data &dataset.;
-        set &dataset.(where=(&where));
-        if &var. in (&list) then do;
-            if 1 <= npts <=10 then do;
-                collapse='Y';
-                call symputx('collapserows', 'Y');
-            end;
-        end;
-    run;
-
-    %if &collapserows = Y %then %do;
-
-        /*if any rows are collapse - collapse that stratification in the table. 
-          For example, if collapsing race = 1 in a race*sex table for Males, 
-          need to also collapse for Females*/
-        proc sql noprint;
-            create table _collapselookup as
-            select distinct &groupvar.
-                           , &var.
-                           , level
-                           , collapse
-                           %if &dpstrat = Y %then %do;
-                           , dpidsiteid
-                           %end;
-            from &dataset.(where=(collapse='Y'));
-        quit;
-
-        data &dataset.;
-            if 0 then set _collapselookup;
-            declare hash pt (hashexp:16, dataset:"_collapselookup");
-            pt.definekey("&groupvar", "&var", "level" %if &dpstrat = Y %then %do; ,"dpidsiteid" %end;);
-            pt.definedone();
-
-            do until(eof1);
-                set &dataset.(drop=collapse) end=eof1;
-                if pt.find()=0 then do;
-                        &var. = &unknown.;
-                        %if %str("&sort.") ne %str("") %then %do;
-                        sortorder&sort. = 5;
-                        %end;
-                    output;
-                end;
-                else do;
-                    output;
-                end;
-            end;
-            stop;
-        run;
-
-        *reaggregate;
-    	proc means data=&dataset. nway noprint missing;
-        	var &varlist.;
-        	class &classlist.;
-        	output out=&dataset.(drop=_:) sum=;
-    	run;
-
-    %end;
-
-%mend collapse_vars;

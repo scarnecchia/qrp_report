@@ -92,7 +92,7 @@
 
     data agg_t5first;
         set agg_t5first(where=(level in (&levellist.)))
-        _fullsquare(in=a);
+        _fullsquare(drop=maxmonths in=a);
         if a then do;
         %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) %then %do;
 		npts = 0;
@@ -115,6 +115,18 @@
 		class group runid level mntsfromstart &stratvars. / missing;
 		output out=agg_t5first_all(drop=_:) sum=;
 	run;
+
+    /*--------------------------------------------------------------------------------------------*/
+    /* Collapse data - figures are not stratified by DP, so only need to collapse summarized data */
+    /*--------------------------------------------------------------------------------------------*/
+	%if %index(&stratvars.,race) & "&collapse_vars." = "race" %then %do;
+        %collapse_vars(dataset=agg_t5first_all, 
+                       sumcontinuousvars=mntsfromstart,
+                       list=%str('1','2','3','4','5'),
+                       unknown='0', 
+                       varlist=&npts. &daysupp. &adjustedcodecount.,
+                       classlist=group runid level mntsfromstart &stratvars.);
+    %end;
 
     /*--------------------------------------------------------------------------------------------*/
     /* Loop through each FigureSub                                                                */

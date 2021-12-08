@@ -125,21 +125,45 @@
     %end;
 
     /*--------------------------------------------------------------------------------------------*/
-    /* Aggregate data                                                                             */
+    /* Collapse and Aggregate data                                                                */
+    /*  if stratifybyDP = Y, need to reclassify prior to aggregation                              */
+    /*                if stratifybyDP = N, collapse after aggregation                             */
     /*--------------------------------------------------------------------------------------------*/
 
+    /*Summarize data*/
+    %if &stratifybydp. = Y %then %do;
+        proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
+    		var &countvar.;
+    		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
+    		output out=_t5data_summed_dp(drop=_:) sum=;
+    	run;
+
+        /*Collapse if stratifybydp =Y*/
+        %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
+        %if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do;
+
+        %end;
+        %end;
+    %end;
+
+    /*Summarize data*/
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
 		var &countvar.;
 		class runid group level &stratvars. &catvar. &catvarsort. / missing;
 		output out=_t5data_summed(drop=_:) sum=;
 	run;
 
-    %if &stratifybydp. = Y %then %do;
-    proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
-		var &countvar.;
-		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
-		output out=_t5data_summed_dp(drop=_:) sum=;
-	run;
+    /*Collapse if stratifybydp =N*/
+    %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
+	%if %index(&stratvars,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
+        data output._t5data_summed&cattableid.; set _t5data_summed; run;
+/*        %collapse_vars(dataset=agg_t5first_all, */
+/*                       sumcontinuousvars=mntsfromstart,*/
+/*                       list=%str('1','2','3','4','5'),*/
+/*                       unknown='0', */
+/*                       varlist=&npts. &daysupp. &adjustedcodecount.,*/
+/*                       classlist=group runid level mntsfromstart &stratvars.);*/
+    %end;
     %end;
 
     data _t5data_summed;
