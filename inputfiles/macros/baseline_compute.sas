@@ -468,73 +468,11 @@
                 %put total number of switch &switch_count. patients for order=&b.: &&total_switchstep_&switch_count._exp_patients.;
             %end;
 
-			data all_data;
-			  set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
-                  %if %str("&reporttype") = %str("T6") and &switch_count > 0 %then %do;
-                    and switchstep = &switch_count
-                  %end; ));
-				  exp_mean0 = sum(of exp_mean1-exp_mean&num_dp.);
-			run;
-
-            %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
-
-              proc sql noprint;
-    		    select count(metvar) into :race_cats 
-    		    from all_data
-    		    where lowcase(metvar) like 'race_%';
-              quit; 
- 
-			  data _null_;
-                set all_data;
-
-				 %do c_r = 1 %to %eval(&race_cats -1);
-				   %do dp_l = 1 %to %eval(&num_dp);
-				     if (metvar = "RACE_&c_r")   then do;
-			           if exp_mean&dp_l > 10 and exp_mean0 > 10 then do;
-					     exp_mean_r  = 0;
-						 %if "&includecomp" = "Y" %then %do; /* collapse race for comparison cohort*/
-                          comp_mean_r =0;
-						 %end;
-					   end;
-					   else do;
-                         exp_mean_r = exp_mean&dp_l;
-                           %if "&includecomp" = "Y" %then %do; /* collapse race for comparison cohort*/
-                            comp_mean_r = comp_mean&dp_l;
-						   %end;
-					   end;
-				       call symputx("exp_mean_&c_r.&dp_l", exp_mean_r);
-					   %if "&includecomp" = "Y" %then %do; /* collapse race for comparison cohort*/
-					     call symputx("comp_mean_&c_r.&dp_l", comp_mean_r);
-					   %end;
-                     end;
-				   %end; 
-				 %end;
-              run;
-
-	    %end;
-
             data &dataout.; 
-			  missing R;
-              length metvar $30;
-              set all_data;
+			    missing R;
+                length metvar $30;
+                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
 
-			  %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
-                if metvar = "RACE_0" then exp_mean0 = sum(exp_mean0
-				 	                                           %do dp_l = 1 %to %eval(&num_dp);
-                                                                 %do c_r = 1 %to %eval(&race_cats -1);
-				                                                   , &&exp_mean_&c_r.&dp_l.
-				                                                 %end;
-				                                               %end;);
-				%if "&includecomp" = "Y" %then %do; /* collapse race for comparison cohort*/
-			      if metvar = "RACE_0" then comp_mean0 = sum(comp_mean0
-				 	                                           %do dp_l = 1 %to %eval(&num_dp);
-                                                                 %do c_r = 1 %to %eval(&race_cats -1);
-				                                                   , &&comp_mean_&c_r.&dp_l.
-				                                                 %end;
-				                                               %end;);
-			    %end;
-
-              %end;
                 /*set up total count variables and arrays*/
                 total_exp_episodes = &&total_&table._exp_episodes.; /*Sum of episodes in group1*/ 
                 total_exp_patients = &&total_&table._exp_patients.; /*Sum of patients in group1*/ 
@@ -715,16 +653,7 @@
 
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
-				   
-					%if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
-					  if 1<= exp_mean0 <= 10 then exp_mean0 = .R;
-					%end;
-					%else %do;
-					 exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.));
-					%end;
-
-					
-					/*Aggregated numerator in the exposed group*/
+                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/
                     /*if every DP collapses a race category, mark in aggregate table*/
                     %if &stratifybydp.=Y & &collapse_vars = race %then %do;
                         if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
@@ -962,9 +891,6 @@
                     %end;
 
                     /*round exp_mean0 and exp_std0 - will be a decimal for weighted tables*/
-					%if "&stratifybydp" = "N" %then %do;
-					  if exp_mean1 = .R then exp_mean0 = .R;
-					%end;
                     if exp_mean0 ne .R then exp_mean0 = round(exp_mean0, 1);
                     %if "&includecomp" = "Y" %then %do;
                     if comp_mean0 ne .R then comp_mean0 = round(comp_mean0, 1);
@@ -1161,7 +1087,7 @@
                     %end;
                 end;
                
-                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char 
+                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1613,8 +1539,7 @@
 
         /*Clean up*/
         proc datasets nowarn noprint lib=work;
-            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel 
-                   baseline_labels: covarname_baseline _tempcohort all_data;
+            delete baseline_aggregatetab: baseline_aggregatelabels baseline_aggregatefinal baseline_aggregate_prelabel baseline_labels: covarname_baseline _tempcohort;
         quit;
 
         %symdel agestrat1;
