@@ -468,6 +468,43 @@
                 %put total number of switch &switch_count. patients for order=&b.: &&total_switchstep_&switch_count._exp_patients.;
             %end;
 
+            /*if requested, collapse race categories when stratifybydp = N*/
+            %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
+                data race_data;
+                    set &datain.(keep=table weight order metvar exp_mean: %if "&includecomp" = "Y" %then %do; comp_mean: %end;
+                        where=(table="&table" and weight = "&weight" and order=&b. and metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5')));
+                    /*compute aggregate sum*/
+                    exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.));
+    				%if "&includecomp" = "Y" %then %do; 
+                    comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));
+                    %end;
+                run;
+
+                /*Assign macro variable that will hold the count to add to and subtract from totals*/
+                %do c_r = 1 %to 5;
+                    %let race&c_r._exp = 0;
+                    %let race&c_r._comp = 0;
+                %end;
+
+                data _null_;
+                    set race_data(keep=metvar exp_mean0 %if "&includecomp" = "Y" %then %do; comp_mean0 %end;);
+                    %do c_r = 1 %to 5;
+                        if metvar = "RACE_&c_r." then do;
+                            if 1 <= exp_mean0 <= 10 %if "&includecomp" = "Y" %then %do; | 1 <= comp_mean0 <= 10 %end; then do;
+                            call symputx("race&c_r._exp", exp_mean0);
+    				        %if "&includecomp" = "Y" %then %do; 
+                            call symputx("race&c_r._comp", comp_mean0);
+                            %end;
+                            end;
+                        end;
+                    %end;
+                run;
+
+                proc datasets nowarn noprint lib=work;
+                    delete race_data;
+                quit;
+    	    %end; /*collapse_vars = race and stratifybydp = N*/
+
             data &dataout.; 
 			    missing R;
                 length metvar $30;
@@ -654,29 +691,48 @@
                 /*Aggregate dichotomous variables*/
                 if lowcase(vartype) = 'dichotomous' then do;
                     exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.)); /*Aggregated numerator in the exposed group*/
-                    /*if every DP collapses a race category, mark in aggregate table*/
-                    %if &stratifybydp.=Y & &collapse_vars = race %then %do;
+                    %if "&includecomp" = "Y" %then %do;
+                        comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
+                    %end;
+
+                    /*collapse race*/
+                    %if &collapse_vars = race %then %do;
                         if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
-                            if %do r = 1 %to &num_dp.; exp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
-                                exp_mean0 = .R;
-                            end;
+                            %if &stratifybydp.=N %then %do;
+                                %do c_r = 1 %to 5;
+                                    %if %eval(&&race&c_r._exp >0) | %eval(&&race&c_r._comp >0) %then %do;
+                                        if metvar = "RACE_&c_r." then do;
+                                            exp_mean0 = .R;
+                                            %if "&includecomp" = "Y" %then %do;
+                                            comp_mean0 = .R;
+                                            %end;
+                                        end;
+                                    %end;
+                                %end;
+                                if metvar = "RACE_0" then do;
+                                    exp_mean0 = sum(exp_mean0 %do c_r = 1 %to 5; ,&&race&c_r._exp %end;);
+                                    %if "&includecomp" = "Y" %then %do;
+                                    comp_mean0 = sum(comp_mean0 %do c_r = 1 %to 5; ,&&race&c_r._comp %end;);
+                                    %end;
+                                end;
+                            %end;
+
+                            /*if every DP collapses a race category, mark in aggregate table*/
+                            %else %if stratifybydp.=Y %then %do;
+                                if %do r = 1 %to &num_dp.; exp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
+                                    exp_mean0 = .R;
+                                end;
+                                %if "&includecomp" = "Y" %then %do;
+                                if %do r = 1 %to &num_dp.; comp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
+                                    comp_mean0 = .R;
+                                end;
+                               %end;
+                            %end;
                         end;
                     %end;
 
                     exp_mean0_char=compress(put(exp_mean0,comma12.)); /* Character copy of exposed group */
-
                     %if "&includecomp" = "Y" %then %do;
-                        comp_mean0=max(0,sum(of comp_mean1-comp_mean&num_dp.));/*Aggregated numerator in the comparison group*/ 
-
-                        /*if every DP collapses a race category, mark in aggregate table*/
-                        %if &stratifybydp.=Y & &collapse_vars = race %then %do;
-                            if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
-                                if %do r = 1 %to &num_dp.; comp_mean&r.= .R %if &r. ne &num_dp. %then %do; and %end; %end; then do;
-                                    comp_mean0 = .R;
-                                end;
-                            end;
-                        %end;
-
                         comp_mean0_char=compress(put(comp_mean0,comma12.)); /* Character copy of reference group */
                     %end;
 
