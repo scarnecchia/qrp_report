@@ -156,7 +156,7 @@
     %if &cattableid. ne T1 & &cattableid. ne T18 %then %do;
     	%if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do;
             %collapse_vars(dataset=_t5data_summed, 
-                           sumcontinuousvars=&catvar.,
+                           sumcontinuousvars=&catvarsort. &catvar.,
                            list=%str('1','2','3','4','5'),
                            unknown='0', 
                            varlist=&countvar.,
