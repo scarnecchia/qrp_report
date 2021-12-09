@@ -269,14 +269,12 @@
         %end;
 
         /* Add Footnotes */
-        %if %str("&outfootnotes.") ne %str("") %then %do;
-            %if &num_fn > 0 %then %do;
-            compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize];
+        %if &num_fn > 0 %then %do;
+            compute after / style=[just=L vjust=t nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize height=1in];
             %do f = 1 %to &num_fn.;
                 line "^{super &f}&&fn&f.";
             %end;
             endcomp;
-            %end;
         %end;
         %else %do;
         compute after / style=[bordertopwidth=&bordersize borderbottomcolor=white];
