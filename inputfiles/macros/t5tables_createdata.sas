@@ -55,7 +55,8 @@
     %put =====> MACRO CALLED: t5tables_createdata ;
 	
     /*--------------------------------------------------------------------------------------------*/
-    /* Determine all levelIDs and stratifications requested                                       */
+    /* Pre-processing steps:                                                                      */
+    /*   - Determine all levelIDs and stratifications requested                                   */
     /*--------------------------------------------------------------------------------------------*/
     %let tablesub = ;
     %let tablesublist = ;
@@ -125,21 +126,40 @@
     %end;
 
     /*--------------------------------------------------------------------------------------------*/
-    /* Aggregate data                                                                             */
+    /* Collapse and Aggregate data                                                                */
     /*--------------------------------------------------------------------------------------------*/
 
+    /*determine if need to keep npts variable in proc means*/
+    %let npts = ;
+    %if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do; 
+        %if &countvar. ne npts %then %let npts = npts;
+    %end;
+
+    /*Summarize data - DP specific tables. Note - DP specific tables do not further stratify by 
+      other variables, so do not need to additionally collapse before overall aggregation*/
+    %if &stratifybydp. = Y %then %do;
+        proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
+    		var &countvar. &npts.;
+    		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
+    		output out=_t5data_summed_dp(drop=_:) sum=;
+    	run;
+    %end;
+
+    /*Summarize data*/
     proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
-		var &countvar.;
+		var &countvar. &npts.;
 		class runid group level &stratvars. &catvar. &catvarsort. / missing;
 		output out=_t5data_summed(drop=_:) sum=;
 	run;
 
-    %if &stratifybydp. = Y %then %do;
-    proc means data=&dataset.(where=(&whereclause. and level in (&levellist1. &levellist2.))) noprint nway;
-		var &countvar.;
-		class runid group dpidsiteid level &stratvars. &catvar. &catvarsort. / missing;
-		output out=_t5data_summed_dp(drop=_:) sum=;
-	run;
+    /*Collapse data*/
+    %if %index(&stratvars,race) & "&collapse_vars." = "race" %then %do;
+        %collapse_vars(dataset=_t5data_summed, 
+                       sumcontinuousvars=&catvarsort. &catvar.,
+                       list=%str('1','2','3','4','5'),
+                       unknown='0', 
+                       varlist=&countvar.,
+                       classlist=runid group level &stratvars. &catvar. &catvarsort.);
     %end;
 
     data _t5data_summed;
@@ -614,8 +634,8 @@
     /*----------------------------------------------------------------------------------------------*/
 
     /*Increase length of label if < longest stratification label*/
-    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(50, &label_length.+50));
-    %else %let t5tablelabellength = 50;
+    %if &labelfileexists = Y %then %let t5tablelabellength = %sysfunc(max(60, &label_length.+60));
+    %else %let t5tablelabellength = 60;
 
     /*utility macro*/
     %macro assignlabelvars(format=, sortorder1 = , sortorder2=);
@@ -749,10 +769,17 @@
                 %end;
             %end;
 
-            /*Add footnote superscrip*/
+            /*Add footnote superscript*/
             %if &createfootnote. = Y %then %do;
                 if sortorder1 = 0 and sortorder2 = 0 then do;
+                    /*if collapse_vars is set, then adjust footnote number because #2 is the race footnote*/
+                    %if &collapse_vars = race & %index(&tablesub., race)>0 & &cattableid. ne T18 %then %do;
+                    if order = 1 then grouplabel=cat(strip(grouplabel), "^{super", " ", order, "}");
+                    else grouplabel=cat(strip(grouplabel), "^{super", " ", order+1, "}");
+                    %end;
+                    %else %do;
                     grouplabel=cat(strip(grouplabel), "^{super", " ", order, "}");
+                    %end;
                 end;
             %end;
         run;
@@ -824,22 +851,29 @@
             left join labelfile(where=(labeltype='grouplabel')) as lbl
             on a.group = lbl.group and a.runid = lbl.runid
             %end;
-            order by a.order;
+            ;
         quit;
 
         /*Create footnote*/
         data &cattableid._lookup_footnotes_dose;
-            set _temp_unit;
-            length description $575 ;
+            set _temp_unit(in=a)
+                lookup.lookup_footnotes(in=b where=(type = "t5tablefig"));
             %do c =1 %to &num_categories.;
             length label&c $200;
             label&c = catx(' ',"&&&lbl&c.", "=", scan(&catvar., &c., ' '), ' ', unit);
             %end;
 
-            description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
+            /*adjust footnote order b/c race collapse footnote is #2*/
+            if a then do;
+                if order >=2 then order = order+1;
+                description= cat(strip(grouplabel),': ', catx('; '%do c =1 %to &num_categories.; , label&c %end;));
+            end;
             keep order description;
         run;
 
+        proc sort data=&cattableid._lookup_footnotes_dose;
+            by order;
+        run;
     %end;
 
     /*Clean up*/
