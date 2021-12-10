@@ -118,6 +118,9 @@
                 call symputx('includenonpregnant', 'N');
                 %end;
 
+                /*initialize switch_count (used for type 6)*/
+                call symputx('switch_count',0);
+
                 /*if reporttype = T2L2, T4L2, or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
@@ -490,11 +493,19 @@
                     set race_data(keep=metvar exp_mean0 %if "&includecomp" = "Y" %then %do; comp_mean0 %end;);
                     %do c_r = 1 %to 5;
                         if metvar = "RACE_&c_r." then do;
-                            if 1 <= exp_mean0 <= 10 %if "&includecomp" = "Y" %then %do; | 1 <= comp_mean0 <= 10 %end; then do;
-                            call symputx("race&c_r._exp", exp_mean0);
-    				        %if "&includecomp" = "Y" %then %do; 
-                            call symputx("race&c_r._comp", comp_mean0);
-                            %end;
+                            if 1 <= exp_mean0 <= 10 %if "&includecomp" = "Y" %then %do; | 1 <= comp_mean0 <= 10 %end;
+                                /*collapse if other anchor date is collapsed*/
+                                %if &reporttype.=T6 %then %do;
+                                    | "&&t6base_collapse&c_r." ="Y"
+                                %end;
+                            then do;
+                                call symputx("race&c_r._exp", exp_mean0);
+        				        %if "&includecomp" = "Y" %then %do; 
+                                call symputx("race&c_r._comp", comp_mean0);
+                                %end;
+                                %if &reporttype.=T6 %then %do;
+                                call symputx("t6base_collapse&c_r.", "Y");
+                                %end;
                             end;
                         end;
                     %end;
@@ -1198,48 +1209,57 @@
         ***********************************************************************************************;
         * Compute aggregated tables                     
         ***********************************************************************************************;
-        %let switch_count = 0;
-        %if %str("&reporttype") = %str("T6") %then %do;
-		   %baselinecomputemetrics(table=Switchstep_0, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
-		%end;
-        /*All - unweighted*/
+
+        /*Types 1-5: unweighted*/
 		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
           %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
         %end;
-        /*PS Match - Fixed ratio matching is unweighted, variable ratio matching is weighted*/
-        %if &psfile. = psmatchfile %then %do;
-            %if "&ratio" = "F" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2);
+
+        /*L2 tables*/
+            /*PS Match: Fixed ratio matching is unweighted, variable ratio matching is weighted*/
+            %if &psfile. = psmatchfile %then %do;
+                %if "&ratio" = "F" %then %do;
+                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2);
+                %end;
+                %if "&ratio" = "V" %then %do;
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3);
+                %end;
             %end;
-            %if "&ratio" = "V" %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3);
+
+            /*PS Stratification: Unweighted for PS Stratum weighted analysis and Weighted table*/
+            %if &psfile. = stratificationfile %then %do;
+                %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
+    		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4);
+    		    %end;
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5);
             %end;
-        %end;
 
-        /*PS Stratification - Unweighted for PS Stratum weighted analysis and Weighted table*/
-        %if &psfile. = stratificationfile %then %do;
-            %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
-		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4);
-		    %end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5);
-        %end;
+            /*IPTW: Adjusted cohort - Unweighted and Weighted */
+            %if &psfile. = iptwfile %then %do;
+    		    %if %eval(&unique_psestimate.) = 1 %then %do;
+                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6);
+    			%end;
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7);
+            %end;
 
-        /*IPTW - Adjusted cohort - Unweighted and Weighted */
-        %if &psfile. = iptwfile %then %do;
-		    %if %eval(&unique_psestimate.) = 1 %then %do;
-            %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6);
-			%end;
-            %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7);
-        %end;
-
-        /*Type 6 switching tables - Switch 1 and Switch 2*/
-		%if %str("&reporttype") = %str("T6") %then %do; 
+        /*Type 6 switching tables*/
+        %if %str("&reporttype") = %str("T6") %then %do;
             proc sql noprint;
-		      select max(switchstep) into: switch_counter from &datain. where metvar = 'N_EPISODES' and order =&b.;
+		        select max(switchstep) into: switch_counter
+                from &datain.(keep=switchstep metvar order)
+                where metvar = 'N_EPISODES' and order =&b.;
             quit;
 
-            %do switch_count = 1 %to &switch_counter;
-		    %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab%eval(7+&switch_count.), labelout=baseline_labels%eval(7+&switch_count));
+            /*initialize race collapsing vars*/
+            %if &collapse_vars = race & &stratifybydp = N %then %do;
+                %do c_r = 1 %to 5;
+                %let t6base_collapse&c_r. = N;
+                %end;
+            %end;
+        
+            /*call macro for switch 2, switch 1, and then index date in order to record if race category in subseqent switches are collapsed*/
+            %do switch_count = &switch_counter %to 0 %by -1;
+                %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab&switch_count., labelout=baseline_labels&switch_count.);
             %end;
         %end;
 		
