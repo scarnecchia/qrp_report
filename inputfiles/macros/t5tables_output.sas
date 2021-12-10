@@ -66,14 +66,14 @@
        length footnote_order 3; 
        set %if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
                 %substr(&dataset.,1,3)_lookup_footnotes_dose(where=(order not in (0
-                %if &collapse_vars. ne race | %index(&tablesub., race)=0 | %sysfunc(prxmatch(m/T18_/i,&dataset.)) > 0 %then %do; /*temporary until can collapse disp tables*/
+                %if &collapse_vars. ne race | %index(&tablesub., race)=0 %then %do;
                 2
                 %end; 
                 )))
            %end;
            %else %do;
                 lookup.lookup_footnotes(where=(type = "t5tablefig" and order in (0 
-                %if &collapse_vars. = race & %index(&tablesub., race)>0 & %sysfunc(prxmatch(m/T1_|T2_/i,&dataset.)) = 0 %then %do; /*temporary until can collapse disp tables*/
+                %if &collapse_vars. = race & %index(&tablesub., race)>0 %then %do;
                 2    
                 %end;
                 )))
@@ -139,7 +139,7 @@
     %if %eval(&nobs.<1) %then %do;
 	data repdata.table&tablenum.&tableletter.;
 		set &dataset.;
-        %if &collapse_vars. = race & %index(&tablesub., race)>0 & %sysfunc(prxmatch(m/T1_|T2_|T18_/i,&dataset.)) = 0 %then %do;
+        %if &collapse_vars. = race & %index(&tablesub., race)>0 %then %do;
             if grouplabel = 'Unknown' then grouplabel= cats(grouplabel, "&super_raceunknown.");
         %end
 	run;
