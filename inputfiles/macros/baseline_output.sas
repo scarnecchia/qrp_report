@@ -342,8 +342,8 @@
 
             *Remove collapsed rows;
             %if &collapse_vars. = race %then %do;
-                where exp_mean&dpnum. ne .R %if &includecomp. = Y %then %do; | comp_mean&dpnum. ne .R %end; 
-                %if %eval(&maxswitch.=2) %then %do; | switch2_mean&dpnum. ne .R %end; ;
+                where exp_mean&dpnum. ne .R %if &includecomp. = Y %then %do; & comp_mean&dpnum. ne .R %end; 
+                %if %eval(&maxswitch.=2) %then %do; & switch2_mean&dpnum. ne .R %end; ;
             %end;
         run;   
     %mend;
