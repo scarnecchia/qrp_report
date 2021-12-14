@@ -523,7 +523,7 @@
                                 %let cat = %scan(%bquote(&subcategorization.), &x., @);
                                 if title = "&cat" then do;
                                     /* Apply format for age categories */
-                                    %if &covarnum = 1001 %then %let cat = %sysfunc(putc(&cat,$agefmt.));
+                                    %if &covarnum = 1001 %then %let cat = %sysfunc(putc(&cat,$agegroupfmt.));
                                     text = "&subgrouplabel: &cat.";
                                     num=100;
                                 end;
