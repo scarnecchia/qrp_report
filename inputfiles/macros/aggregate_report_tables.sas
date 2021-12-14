@@ -140,26 +140,25 @@
 				 
 				 %let totalstrata = %sysfunc(countw(&allstrata));
 
-				 data _stratavars;
+				 data stratavars_&outfile.;
 				   length strata $15;
 				   %do a = 1 %to &totalstrata.;
 				     strata = "%scan(&allstrata.,&a.)"; output;
 				   %end;
 				 run;
 
-				 proc sort nodupkey data = _stratavars;
+				 proc sort nodupkey data = stratavars_&outfile.;
 				   by strata;
 				 run;
 				 
 				 proc sql noprint;
 				   select count(strata) into: numstrata_&dataset. trimmed
-				   from _stratavars;
+				   from stratavars_&outfile.;
 				   
 				   select strata
 				   into: strata1 -  :strata&&numstrata_&dataset.
-				   from _stratavars;
-				 quit;
-			  
+				   from stratavars_&outfile.;
+				 quit;			  
 			  
 			     /* Put stratification variables through formats to acquire full names */
                  data &outfile.;
@@ -175,7 +174,7 @@
 				     length sortorder&s. 3;
 				     
                      %if &&strata&s. = sex      %then length sex $15;;
-                     %if &&strata&s. = race     %then length race $45;;
+                     %if &&strata&s. = race     %then length race $55;;
 					 %if &&strata&s. = hispanic %then length hispanic $20;;
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;

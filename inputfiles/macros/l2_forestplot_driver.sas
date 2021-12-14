@@ -74,7 +74,7 @@
             %let forestnohrfootnote = N;
             %let nummaxforestfootnote = 9;
             %let forestnohrsuper = ;
-            %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079;
+            %let unicode_forplot = &unicode_list.;
 
             /* Adjust plot height for groups of 1 */
             %let plot_n = ;
@@ -108,7 +108,7 @@
               if &ForestCI95 in ('N/A','NaN','.') then do;
                 call symputx('forestnohrfootnote', 'Y');
                 call symputx('nummaxforestfootnote', 8);
-                call symputx('unicode_list', '00b2 00b3 2074 2075 2076 2077 2078 2079');
+                call symputx('unicode_forplot', substr("&unicode_list.",6)); /*unicode characters are 4 digits*/
                 call symputx('forestnohrsuper', "^{super 1}");
               end;
             run;
@@ -144,7 +144,7 @@
                     %let allfootnotes = ;
 
                     %do countgrp = 1 %to %eval(&number_forest_footnotes.);
-                        %let unicode = %scan(&unicode_list,&countgrp);
+                        %let unicode = %scan(&unicode_forplot,&countgrp);
 
                         /*build allfootnotes list*/
                         data _null_;

@@ -50,7 +50,7 @@
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination;
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -74,6 +74,7 @@
     %let look_end = 1;
     %let datedistributed = ;
     %let report_destination = ;
+	%let collapse_vars = ;
 
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
@@ -145,12 +146,15 @@
     %let includecovars = N;
     %let baselinelabellength = 70;
 
-	
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
+
+    /*figure specific variables*/
+    %global unicode_list;
+    %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
 
 	/* Leave behind report */
 	%global reportid dpfile logofile;

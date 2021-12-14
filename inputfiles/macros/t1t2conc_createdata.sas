@@ -62,7 +62,38 @@
             where tablesub ne 'overall' and dataset = "&table.";
     quit;
 
-   /************************************************************************************************
+    /************************************************************************************************
+      Collapse data - if stratifybyDP = Y, need to reclassify prior to aggregation
+                      if stratifybyDP = N, collapse after aggregation 
+    ************************************************************************************************/
+	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" %then %do;
+
+        /*identify sort order #*/
+        data _null_;
+            set stratavars_agg_&table.;
+            if strata = "race" then call symputx("sortnb",_n_);
+        run;
+
+		%if &stratifybydp = Y %then %do;
+        %collapse_vars(dataset=agg_&table., 
+                       dpstrat=Y,
+                       groupvar=&grpvar.,
+                       where =level in (&&&table._levelid), 
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       unknown="Unknown", 
+                       sort=&sortnb., 
+                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+                              %if %index(&table,conc) = 0 %then %do;
+                                 dennumpts dennummemdays timetocensor
+                    		  %end;
+                    		  %if %substr(&table,2,1) ne 1 %then %do;
+                    		     eps_wevents all_events followuptime
+                    		  %end;,
+                       classlist=dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
+		%end;
+    %end;
+
+    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
@@ -76,6 +107,19 @@
 		  %end;;
         output out = agg_&table._sum (drop = _:) sum=;
     run;
+
+    /*Collapse if stratifybyDP = N*/
+	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
+        %collapse_vars(dataset=agg_&table._sum, 
+                       groupvar=&grpvar.,
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       unknown="Unknown", 
+                       sort=&sortnb., 
+                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+                              %if %index(&table,conc) = 0 %then %do; dennumpts dennummemdays timetocensor %end;
+                    		  %if %substr(&table,2,1) ne 1 %then %do; eps_wevents all_events followuptime %end;,
+                       classlist= level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
+	%end;
 	
    /************************************************************************************************
       Determine total count of variables on table and put tablecolumns information into macro variables             
@@ -279,7 +323,7 @@
 		  %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
 			if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
 			else if missing(dennumpts) then &&var&vv.._char='N/A';
-		  %end;	  
+	      %end;	  
 	    %end;
 		
         /*labels for stratification variables*/
@@ -346,7 +390,7 @@
 
 		/* Apply labels */
 		%isdata(dataset=labelfile);
-		
+	
         proc sql noprint;
           create table &dsout. as
           select a.*, b.order
@@ -379,7 +423,7 @@
 
     /*Overall*/
     %prept1t2data(dsin=agg_&table._sum, dsout=final_&table.);
-
+	
 	%if &stratifybydp. = Y %then %do;
 	  %prept1t2data(dsin=%str(agg_&table. (where = (level in (&&&table._levelid)))), dsout=final_dps_&table., dpvar=dpidsiteid);
 	%end;

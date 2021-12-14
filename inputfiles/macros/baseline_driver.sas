@@ -452,7 +452,7 @@
 
                             /*percent*/
                             if vartype = 'dichotomous' then do;
-                                if missing(&var.mean(&var.)) then &var.mean(&var.) = 0;
+                                if missing(&var.mean(&var.)) and &var.mean(&var.) ne .R then &var.mean(&var.) = 0;
                                 if &var.var1(&var.)>0 then &var.std(&var.) = &var.mean(&var.) / &var.var1(&var.);
                                 else if &var.var1(&var.)=0 then &var.std(&var.) = 0;
                                 if &var.std(&var.)>0 then &var.s2(&var.)=&var.std(&var.)*(1-&var.std(&var.));
@@ -583,6 +583,7 @@
         %end;
 
         %let compvars = N;
+
         data _temp_racehispanic;
             set alldptable1_&periodid.(where=(substr(upcase(metvar),1,4)='RACE' | substr(upcase(metvar),1,8)='HISPANIC' | 
                                          upcase(metvar) in ('AMERICANINDIAN', 'ASIAN', 'BLACK', 'PACIFICISLANDER', 'WHITE')));
@@ -621,7 +622,7 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
-    
+  
      ***********************************************************************************************;
     * Aggregate covariate profile tables across DPs                               
     ***********************************************************************************************;
