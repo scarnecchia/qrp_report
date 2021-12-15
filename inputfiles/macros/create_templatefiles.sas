@@ -575,7 +575,7 @@ libname tempfl "";
 		    levelnum =1;
 		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 		      levelid1 = "";
-		      levelid2 = "";
+		      levelid2 = "moiname";
 		    %end;
 		    %else %do;
               levelid1 = "";

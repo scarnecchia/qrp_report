@@ -864,7 +864,6 @@
             %if %str("&reporttype") = %str("T4L1") %then %do;
                 if tablesubstrat = 't4nopreg' then do;
                     if dataset = 't4preg' then dataset = 't4nopreg';
-                    if dataset = 't4preggestwk' then dataset = 't4nopreggestwk';
                 end;
             %end;
 
