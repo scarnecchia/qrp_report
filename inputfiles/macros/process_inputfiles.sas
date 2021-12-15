@@ -1273,11 +1273,11 @@
             quit;
 
             /*T2L2: if KM curves requested, ensure events are not being redacted*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F2|F3|F4|F5/i,&figurelist.)) > 0 %then %do;
                 %if %index(&customizecolumns.,events) > 0 %then %do;
-                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
+                    %put WARNING: (Sentinel) KM curves and/or Forest Plots are requested, however events are redacted so KM curves and/or Forest Plots will not be produced;
                     data _null_;
-                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
+                        call symputx('figurelist', prxchange('s/F2|F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
                     run;
                 %end;
             %end;
