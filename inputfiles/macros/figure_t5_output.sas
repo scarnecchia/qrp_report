@@ -41,7 +41,7 @@
 
     /*figuresub format to display formatted values in figure*/
     %if &figuresub. ne overall %then %do;
-        %let t5figureformat = $&figuresub.fmt.; %end; 
+        %let t5figureformat = $&figuresub.fmt.; 
     %end;
 
     /*footnotes*/
