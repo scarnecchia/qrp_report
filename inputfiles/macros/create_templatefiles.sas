@@ -572,7 +572,7 @@ libname tempfl "";
         %do s = 1 %to &stratlevels.;
             table = "T&p";
 		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-		    levelnum =1;
+		    levelnum =2;
 		    %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
 		      levelid1 = "";
 		      levelid2 = "moiname";
