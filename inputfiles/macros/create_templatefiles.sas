@@ -1328,8 +1328,7 @@ libname tempfl "";
   %macro create_t4_tablecolumns();
 
     *************************************
-     TableColumnsFile for T4:
-        - T4MOI
+     TableColumnsFile for T4
     *************************************;
 	
      data tempfl.t4_tablecolumnsfile_default;
