@@ -1241,7 +1241,7 @@ libname tempfl "";
     quit;
 	
 	
-  %macro create_tablecolumns();
+  %macro create_t1t2_tablecolumns();
 
     *************************************
      TableColumnsFile for T1 and T2L1:
@@ -1307,7 +1307,7 @@ libname tempfl "";
 	 run;
 	 
 	  /* Re-assign order for default table */
-	 data tempfl.tablecolumnsfile_default (drop = order_in);
+	 data tempfl.t1t2_tablecolumnsfile_default (drop = order_in);
 	   set tablecolumnsfile (rename = (order=order_in) where = (includeinreport = "Y"));
 	   by table order_in;
 	   retain order;
@@ -1317,13 +1317,13 @@ libname tempfl "";
 	 run;
 	 
 	 /* Assign includeinreport to N for all variables on the tablecolumnsfile_all dataset */
-	 data tempfl.tablecolumnsfile_all;
+	 data tempfl.t1t2_tablecolumnsfile_all;
 	    set tablecolumnsfile;
 		includeinreport = "N";
 	 run;
 	 
-  %mend create_tablecolumns;
-  %create_tablecolumns();
+  %mend create_t1t2_tablecolumns;
+  %create_t1t2_tablecolumns();
   
   %macro create_t4_tablecolumns();
 
