@@ -1091,14 +1091,15 @@
 			  		    %abort;
                       %end;
 					  %else %do;
-                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))))
+                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and 
+						   table in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")) %sysfunc(tranwrd("&tablelist.",%str( )," ")))))
   						            out = tablecolumns;
                            by table order;
                          run;
       
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
-					        data tablecolumns;
+					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN);
 						      set tablecolumns (rename = (order = order_in column = column_in));
 						      length columnname $32 smallcellYN $1 footnote 3;
 	                          by table order_in;
@@ -1106,7 +1107,7 @@
 	                          order = _n_;
 			                  smallcellYN = "N";
 			                  call missing(footnote);
-			                  columnname = compress("column"||order);
+			                  columnname = compress("column"||put(order,3.));
 			                  if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
 			                  if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
 			                  else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
