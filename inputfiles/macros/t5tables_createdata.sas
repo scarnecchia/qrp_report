@@ -739,7 +739,10 @@
                         %else %if &firststrat. = year %then %do;
                         %assignlabelvars(format=strip(put(&firststrat., best.)), sortorder1 = year, sortorder2=);
                         %end;
-                        %else %do;
+                        %else %if &firststrat. = month or &firststrat. = quarter %then %do;
+                        %assignlabelvars(format=put(&firststrat., $&firststrat.fmt.), sortorder1 = &firststrat., sortorder2=);
+                        %end;
+						%else %do;
                         %assignlabelvars(format=put(&firststrat., $&firststrat.fmt.), sortorder1 = input(put(&firststrat., &firststrat.sort.),1.), sortorder2=);
                         %end;
                     end;
@@ -749,6 +752,9 @@
                         %end;
                         %else %if &secondstrat. = year %then %do;
                         %assignlabelvars(format=strip(put(&secondstrat., best.)), sortorder1 = , sortorder2=year);
+                        %end;
+                        %else %if &secondstrat. = month or &secondstrat. = quarter %then %do;
+                        %assignlabelvars(format=put(&secondstrat., $&secondstrat.fmt.), sortorder1 = , sortorder2=&secondstrat.);
                         %end;
                         %else %do;
                         %assignlabelvars(format=put(&secondstrat., $&secondstrat.fmt.), sortorder1 = , sortorder2=input(put(&secondstrat., &secondstrat.sort.),1.));
