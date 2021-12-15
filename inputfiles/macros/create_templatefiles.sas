@@ -1332,83 +1332,62 @@ libname tempfl "";
     *************************************;
 	
      data tempfl.t4_tablecolumnsfile_default;
-	   attrib Column       		length = $50	format = $50.
+	   attrib Table        		length = $10	format = $10.
+	          Column       		length = $50	format = $50.
 			  Order        		length = 3		format = 3.
 			  ColumnLabel       length = $100	format = $100.
 			  IncludeinReport  	length = $1		format = $1.
 			  ColumnFormat      length = $10	format = $10.
               ColumnWidth       length = 8;
-	   Column = "usepre";               ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "usepre_pcnt";          ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 2;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumusepre";            ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumusepre_pcnt";       ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 4;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntpre";         ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntpre_pcnt";    ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 6;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntpre";         ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntpre_pcnt";    ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 8;  IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
-	   Column = "anyt";                 ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "anyt_pcnt";            ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 10; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt1";             ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 11; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt1_pcnt";        ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 12; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntanyt1";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 13; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntanyt1_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 14; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt1";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 15; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt1_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 16; IncludeinReport = "Y"; columnwidth=.9; output;
+	   table = "T1"; Column = "usepre";          ColumnLabel = "Use in the Pre-Pregnancy Period";  ColumnFormat = "comma14.0"; order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "usepre_pcnt";     ColumnLabel = "Use in the Pre-Pregnancy Period";  ColumnFormat = "comma14.0"; order = 2;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt";            ColumnLabel = "Use During Any Trimester";         ColumnFormat = "comma14.0"; order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt_pcnt";       ColumnLabel = "Use During Any Trimester";         ColumnFormat = "comma14.0"; order = 4;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt1";           ColumnLabel = "Use in First Trimester";           ColumnFormat = "comma14.0"; order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt_pcnt1";      ColumnLabel = "Use in First Trimester";           ColumnFormat = "comma14.0"; order = 6;  IncludeinReport = "Y"; columnwidth=.9; output;    
+	   table = "T1"; Column = "anyt2";           ColumnLabel = "Use in Second Trimester";          ColumnFormat = "comma14.0"; order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt2_pcnt";      ColumnLabel = "Use in Second Trimester";          ColumnFormat = "comma14.0"; order = 8;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt3";           ColumnLabel = "Use in Third Trimester";           ColumnFormat = "comma14.0"; order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "anyt3_pcnt";      ColumnLabel = "Use in Third Trimester";           ColumnFormat = "comma14.0"; order = 10; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "allt";            ColumnLabel = "Use in All Trimesters";            ColumnFormat = "comma14.0"; order = 11; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "allt_pcnt";       ColumnLabel = "Use in All Trimesters";            ColumnFormat = "comma14.0"; order = 12; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt1";          ColumnLabel = "Use Only During First Trimester";  ColumnFormat = "comma14.0"; order = 13; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt1_pcnt";     ColumnLabel = "Use Only During First Trimester";  ColumnFormat = "comma14.0"; order = 14; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt2";          ColumnLabel = "Use Only During Second Trimester"; ColumnFormat = "comma14.0"; order = 15; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt2_pcnt";     ColumnLabel = "Use Only During Second Trimester"; ColumnFormat = "comma14.0"; order = 16; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt3";          ColumnLabel = "Use Only During Third Trimester";  ColumnFormat = "comma14.0"; order = 17; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T1"; Column = "onlyt3_pcnt";     ColumnLabel = "Use Only During Third Trimester";  ColumnFormat = "comma14.0"; order = 18; IncludeinReport = "Y"; columnwidth=.9; output; 
+											     
+	   table = "T2"; Column = "sumusepre";       ColumnLabel = "Use in the Pre-Pregnancy Period";  ColumnFormat = "comma14.0"; order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumanyt";         ColumnLabel = "Use During Any Trimester";         ColumnFormat = "comma14.0"; order = 2;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumanyt1";        ColumnLabel = "Use in First Trimester";           ColumnFormat = "comma14.0"; order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumanyt2";        ColumnLabel = "Use in Second Trimester";          ColumnFormat = "comma14.0"; order = 4;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumanyt3";        ColumnLabel = "Use in Third Trimester";           ColumnFormat = "comma14.0"; order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumallt";         ColumnLabel = "Use in All Trimesters";            ColumnFormat = "comma14.0"; order = 6;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumonlyt1";       ColumnLabel = "Use Only During First Trimester";  ColumnFormat = "comma14.0"; order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumonlyt2";       ColumnLabel = "Use Only During Second Trimester"; ColumnFormat = "comma14.0"; order = 8;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T2"; Column = "sumonlyt3";       ColumnLabel = "Use Only During Third Trimester";  ColumnFormat = "comma14.0"; order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
-	   Column = "anyt2";                ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 17; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "anyt2_pcnt";           ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 18; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt2";             ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 19; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt2_pcnt";        ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 20; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntanyt2";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 21; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntanyt2_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 22; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt2";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 23; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt2_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 24; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntpre";    ColumnLabel = "Use in the Pre-Pregnancy Period";  ColumnFormat = "comma14.0"; order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntanyt";   ColumnLabel = "Use During Any Trimester";         ColumnFormat = "comma14.0"; order = 2;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntanyt1";  ColumnLabel = "Use in First Trimester";           ColumnFormat = "comma14.0"; order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntanyt2";  ColumnLabel = "Use in Second Trimester";          ColumnFormat = "comma14.0"; order = 4;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntanyt3";  ColumnLabel = "Use in Third Trimester";           ColumnFormat = "comma14.0"; order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T3"; Column = "sumrawcntallt";   ColumnLabel = "Use in All Trimesters";            ColumnFormat = "comma14.0"; order = 6;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntonlyt1"; ColumnLabel = "Use Only During First Trimester";  ColumnFormat = "comma14.0"; order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntonlyt2"; ColumnLabel = "Use Only During Second Trimester"; ColumnFormat = "comma14.0"; order = 8;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T3"; Column = "sumrawcntonlyt3"; ColumnLabel = "Use Only During Third Trimester";  ColumnFormat = "comma14.0"; order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
-	   Column = "anyt3";                ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 25; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "anyt3_pcnt";           ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 26; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt3";             ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 27; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumanyt3_pcnt";        ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 28; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntanyt3";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 29; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntanyt3_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 30; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt3";       ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 31; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntanyt3_pcnt";  ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 32; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   
-	   Column = "allt";                 ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 33; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "allt_pcnt";            ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 34; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumallt";              ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 35; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumallt_pcnt";         ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 36; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntallt";        ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 37; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntallt_pcnt";   ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 38; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntallt";        ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 39; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntallt_pcnt";   ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 40; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   
-	   Column = "onlyt1";               ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 41; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "onlyt1_pcnt";          ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 42; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt1";            ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 43; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt1_pcnt";       ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntonlyt1";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntonlyt1_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 46; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt1";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 47; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt1_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 48; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   
-	   Column = "onlyt2";               ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 49; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "onlyt2_pcnt";          ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 50; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt2";            ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 51; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt2_pcnt";       ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 52; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntonlyt2";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 53; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntonlyt2_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 54; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt2";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 55; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt2_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 56; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   
-	   Column = "onlyt3";               ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 57; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "onlyt3_pcnt";          ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 58; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt3";            ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 59; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumonlyt3_pcnt";       ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 60; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   Column = "sumrawcntonlyt3";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 61; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumrawcntonlyt3_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 62; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt3";      ColumnLabel = "n"; ColumnFormat = "comma14.0"; order = 63; IncludeinReport = "Y"; columnwidth=.9; output; 
-	   Column = "sumadjcntonlyt3_pcnt"; ColumnLabel = "%"; ColumnFormat = "comma14.0"; order = 64; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T4"; Column = "sumadjcntpre";    ColumnLabel = "Use in the Pre-Pregnancy Period";  ColumnFormat = "comma14.0"; order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 	    
+	   table = "T4"; Column = "sumadjcntanyt";   ColumnLabel = "Use During Any Trimester";         ColumnFormat = "comma14.0"; order = 2;  IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T4"; Column = "sumadjcntanyt1";  ColumnLabel = "Use in First Trimester";           ColumnFormat = "comma14.0"; order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 	    
+	   table = "T4"; Column = "sumadjcntanyt2";  ColumnLabel = "Use in Second Trimester";          ColumnFormat = "comma14.0"; order = 4;  IncludeinReport = "Y"; columnwidth=.9; output; 	  
+	   table = "T4"; Column = "sumadjcntanyt3";  ColumnLabel = "Use in Third Trimester";           ColumnFormat = "comma14.0"; order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T4"; Column = "sumadjcntallt";   ColumnLabel = "Use in All Trimesters";            ColumnFormat = "comma14.0"; order = 6;  IncludeinReport = "Y"; columnwidth=.9; output; 	 
+	   table = "T4"; Column = "sumadjcntonlyt1"; ColumnLabel = "Use Only During First Trimester";  ColumnFormat = "comma14.0"; order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 	 
+	   table = "T4"; Column = "sumadjcntonlyt2"; ColumnLabel = "Use Only During Second Trimester"; ColumnFormat = "comma14.0"; order = 8;  IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T4"; Column = "sumadjcntonlyt3"; ColumnLabel = "Use Only During Third Trimester";  ColumnFormat = "comma14.0"; order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
 	 run; 
 	 
