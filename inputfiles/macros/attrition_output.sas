@@ -54,6 +54,10 @@
             length monitoringperiod 3;
             monitoringperiod=&j;
             %end;
+			%if %index(&customizecolumns., redactevents)>0 and 
+                %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            if index(lowcase(report_descr), 'event')>0 then delete;
+			%end;
         run;
 
         %if %eval(&num_fn.>0) %then %do;
@@ -130,7 +134,7 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' or
+			else if report_descr = 'Had any cohort-defining claim during the query period' or
                     report_descr = 'Had a live birth delivery claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
@@ -169,7 +173,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,L2) %then %do;
+            %if %index(&reporttype,T2L2) or %index(&reporttype,T4L2) %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
@@ -192,11 +196,11 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' then do; 
+		    else if report_descr = 'Had any cohort-defining claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
-            else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
+			else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
                 text='Members with required pre-index history'; 
                 num=100;
             end;
@@ -212,7 +216,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,L2) %then %do;
+            %if %index(&reporttype,T2L2) or %index(&reporttype,T4L2) %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
