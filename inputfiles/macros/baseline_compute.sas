@@ -1387,7 +1387,7 @@
                         if countc(MetVar, '_') = 0 then agegroup = compress(substr(MetVar, 4)) ||'+'; 
                         else agegroup =compress(translate(substr(MetVar, 4),'-','_')); 
                         if upcase(agegroup) in (&agestrat1.) then do;
-                        %assignbaselinevars(label=put(agegroup, $agefmt.), grouper="Demographic Characteristics", sortorder1 = 3, sortorder2=1);
+                        %assignbaselinevars(label=put(agegroup, $agegroupfmt.), grouper="Demographic Characteristics", sortorder1 = 3, sortorder2=1);
                         end;
                         else delete;
                     end;

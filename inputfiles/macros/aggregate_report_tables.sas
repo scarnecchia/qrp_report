@@ -191,13 +191,13 @@
                      %end;
 				     %else %if &&strata&s. = month %then %do;
                        length month $10;
-                       month = put(_month, mn_name.);
+                       month = put(_month, monthfmt.);
 					   sortorder&s. = _month;
                        drop _month;
                      %end;
 					 %else %if &&strata&s. = quarter %then %do;
                        length quarter $10;
-                       quarter = put(_quarter, qtr_name.);
+                       quarter = put(_quarter, quarterfmt.);
 					   sortorder&s. = _quarter;
                        drop _quarter;
                      %end;
@@ -206,7 +206,7 @@
                      %end;
 				     %else %if &&strata&s. = agegroup %then %do;
                        length agegroup $40;
-                       agegroup = put(_agegroup, $agefmt.);
+                       agegroup = put(_agegroup, $agegroupfmt.);
 					   sortorder&s. = agegroupnum;
                        drop _agegroup;
                      %end;
