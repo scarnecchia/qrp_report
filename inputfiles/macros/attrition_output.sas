@@ -54,10 +54,6 @@
             length monitoringperiod 3;
             monitoringperiod=&j;
             %end;
-			%if %index(&customizecolumns., redactevents)>0 and 
-                %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            if index(lowcase(report_descr), 'event')>0 then delete;
-			%end;
         run;
 
         %if %eval(&num_fn.>0) %then %do;

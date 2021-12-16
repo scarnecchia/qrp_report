@@ -559,6 +559,15 @@
 	  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
 	  	then agg_excluded_char = 'N/A';
 	  	%end;
+		%if %sysfunc(prxmatch(m/redactevents|sumevents/i,&customizecolumns.)) > 0 and 
+                %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            if index(lowcase(report_descr), 'event')>0 then do;
+			  agg_remaining = .;
+			  agg_remaining_char = 'N/A';
+			  agg_excluded = .;
+			  agg_excluded_char = 'N/A';
+			end;
+			%end;
 	  	output;
 	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
