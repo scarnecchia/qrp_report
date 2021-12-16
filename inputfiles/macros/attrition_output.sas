@@ -173,7 +173,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,T2L2) or %index(&reporttype,T4L2) %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
@@ -216,7 +216,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,T2L2) or %index(&reporttype,T4L2) %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
