@@ -286,7 +286,7 @@
 		%end; /*TREEAGGFILE exists*/
 	%end; *periodid;
 
-	    %if %str("&reporttype") = %str("T4L1") %then %do;
+	    %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
 			%if %index(&datasetlist.,t4preg) > 0 %then %do;
 			  %agg_report(infile=t4_cida_preg, outfile=agg_t4preg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
