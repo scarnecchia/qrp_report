@@ -163,7 +163,7 @@
          create table &dsout. as
          select a.*, b.order
 		 %if %eval(&nobs.>0) %then %do;
-		    /*,d.label as header */
+		    ,d.label as header 
 			,case when c.label = "" then a.group
 			 when lowcase(c.labelvar) = "npts" then left(c.label||" (N = "||put(a.npts,comma12.0)||" )") 
 			 when lowcase(c.labelvar) = "episodes" then left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") 
