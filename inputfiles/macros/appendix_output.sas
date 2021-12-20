@@ -221,7 +221,7 @@
 	
             column (dpidsiteid code codecat codetype frequency ranking);
 		    		
-		    define dpidsiteid    / display 'Data Partner'  style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
+		    define dpidsiteid    / display 'Masked Data Partner ID'  style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
             define code          / display 'Code'          style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
             define codecat       / display 'Code Category' style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
             define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
@@ -260,7 +260,7 @@
 
             column (dpidsiteid N min max mean sd); 
 
-            define dpidsiteid / display 'Data Partner (Masked)' 
+            define dpidsiteid / display 'Masked Data Partner ID' 
                 style(column)=[width=1in just=C]  style(header)=[just=C background = bgr borderleftcolor = BGR];
             define N / display 'Number of Patients' 
                 style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background = bgr borderleftcolor = BGR];
