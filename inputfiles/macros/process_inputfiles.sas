@@ -1272,15 +1272,25 @@
                 from figurefile;
             quit;
 
-            /*T2L2: if KM curves and/or Forest Plots requested, ensure events are not being redacted*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F2|F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+            /*T2L2: if KM curves requested, ensure events are not being redacted*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
                 %if %index(&customizecolumns.,events) > 0 %then %do;
-                    %put WARNING: (Sentinel) KM curves and/or Forest Plots are requested, however events are redacted so KM curves and/or Forest Plots will not be produced;
+                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
                     data _null_;
-                        call symputx('figurelist', prxchange('s/F2|F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves and Forest Plots*/
+                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
                     run;
                 %end;
             %end;
+
+			/*T2L2 and T4L2: if Forest Plots requested, ensure events are not being redacted*/
+	        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) Forest Plots are requested, however events are redacted so Forest Plots will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F2//', -1, "&figurelist.")); /*remove Forest Plots curves*/
+                    run;
+                %end;
+	        %end;
 
         %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
