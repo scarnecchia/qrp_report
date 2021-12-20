@@ -1132,6 +1132,11 @@
 	  	                 %end;
 					  %end;
 			        %end; 
+					%else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+					    /* A table columns file must be specified for T4L1 */
+	                    %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+	                    %abort;
+					%end;
                 %end;
             %end;
         %end; /*TableFile has rows with IncludeinReport=Y*/
