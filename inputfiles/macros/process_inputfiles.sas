@@ -1136,6 +1136,9 @@
         /*macro variable to cross checkout Type 6 treatmentpathways file to ensure an analysisgrp has been requested*/
         %let t6checktreatmentpathways = N;
 
+		/*macro variable to determine if a warn should be written to the log for Type 5 figures*/
+		%let t5figurewarn=N;
+
         /*read in figurefile*/
         data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                         rename=figuresub_out=figuresub rename=censordisplay1=censordisplay);
@@ -1175,6 +1178,9 @@
                     abort;
                 end;
             end;
+			else if figure in ("F1", "F2", "F3") then do;
+				if not missing(xmin) or not missing(xmax) or not missing(xtick) then call symputx('t5figurewarn', 'Y');
+			end;
             %end;
             %else %if &reporttype. = T6 %then %do;
                 /*Type 6 variable names in datasets t6plota/t6plotb do not match other censor variables. If specified, replace with cens_ variables*/
@@ -1248,6 +1254,8 @@
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
+
+		%if &t5figurewarn. eq Y %then %put WARNING: (Sentinel) XMIN, XMAX and XTICK parameters should be set to missing when type 5 figures F1, F2, F3 are requested. Values specified will be ignored.;
 
         %isdata(dataset=figurefile);
         %if %eval(&nobs.>0) %then %do; 
