@@ -165,9 +165,9 @@
 		 %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
 			,case when c.label = "" then a.group
-			 when lowcase(c.labelvar) = "npts" then left(c.label||" (N = "||put(a.npts,comma12.0)||" )") 
-			 when lowcase(c.labelvar) = "episodes" then left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") 
-			 when lowcase(c.labelvar) = "episodes_3trim" then left(c.label||" (N = "||put(a.episodes_3trim,comma12.0)||" )") 
+			 when c.labelvar = "npts" then left(c.label||" (N = "||put(a.npts,comma12.0)||" )") 
+			 when c.labelvar = "episodes" then left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") 
+			 when c.labelvar = "episodes_3trim" then left(c.label||" (N = "||put(a.episodes_3trim,comma12.0)||" )") 
              else c.label end as grouplabel 
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
