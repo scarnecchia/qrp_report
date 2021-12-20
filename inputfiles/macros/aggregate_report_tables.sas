@@ -351,7 +351,17 @@
 			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 
+			%isdata(dataset=groupsfile);
+        	%if %eval(&nobs.>0) %then %do;			
 			  %agg_report(infile=t6_productsdates, outfile=agg_t6_productsdates, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
+			%end;
+			%else %do; 
+				data agg_t6_productsdates;
+				format runid $5. dpidsiteid $6. group $40. productmarketingdate productapprovaldate Otherproductdate computedstartmarketingdate date9.;
+				call missing(of _ALL_);
+				stop;
+				run;
+			%end;			
 		%end; *T6;
 
 		/* Code distribution */
