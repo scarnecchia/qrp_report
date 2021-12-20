@@ -561,7 +561,7 @@
 	  	%end;
 		%if %sysfunc(prxmatch(m/redactevents|sumevents/i,&customizecolumns.)) > 0 and 
                 %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            if index(lowcase(report_descr), 'event')>0 then do;
+            if index(lowcase(report_descr), 'event')>0  and claim_level='L2' then do;
 			  agg_remaining = .;
 			  agg_remaining_char = 'N/A';
 			  agg_excluded = .;
