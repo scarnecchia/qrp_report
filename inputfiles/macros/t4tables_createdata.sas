@@ -17,12 +17,6 @@
 *   - final_dps_t4moi - levelid and moiname stratification by data partner
 * 
 *  PARAMETERS: 
-*   - dataset: aggregate dataset from %aggregate_report_tables
-*   - whereclause: where clause to restrict input dataset
-*   - catvar: variable that will be categorized
-*   - countvar: metric counting counts
-*   - cattableid: category table ID from TABLEFILE
-*   - createfootnote: Y/N indicator to create group-specific footnote table (for dose tables)
 * 
 *  Programming Notes:                                                                                 
 
@@ -59,6 +53,7 @@
      Set preg and nopreg data together when requested for desired levels            
      ************************************************************************************************/
 	 data agg_t4moi;
+	   length moiname $5;
 	   set %if %index(&datasetlist.,t4preg) > 0 %then %do;
 	         agg_t4preg (in = t4preg where = (level in (&t4preglevel1., &t4preglevel2.)))
 		   %end;
@@ -80,12 +75,15 @@
 	        ,column 
 			,columnlabel
 			,columnformat
+			,case when index(columnformat,'$') > 0 then columnformat
+			   else compress('$'||put(input(scan(compress(columnformat,'','a'),1,'.'),3.) +  input(scan(compress(columnformat,'','a'),2,'.'),3.),8.)||".") end as columnformatchar
 			,scan(compress(column,'()'),1,'/') as numerator
 			,scan(compress(scan(column,1,'*'),'()'),2,'/') as denominator
 	   into: var1 -:var&numcolumns.
 		    ,:formula1 - :formula&numcolumns.
 			,:label1 - :label&numcolumns.
 			,:format1 - :format&numcolumns.
+			,:formatchar1 - :formatchar&numcolumns.
 			,:num1 - :num&numcolumns.
 			,:denominator1 - :denominator&numcolumns.
 	  from tablecolumns;
@@ -124,10 +122,10 @@
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
-	   data &dsin.;
-	     set &dsin.;
+	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
+	     set &dsin. (drop = level);
 		 %do vv = 1 %to &numcolumns;
-		    format &&var&vv.. &&format&vv..;
+		    format &&var&vv.. &&format&vv.. &&var&vv.._char &&formatchar&vv..;
 		    label &&var&vv.. = "&&label&vv..";
 			label &&var&vv.._char = "&&label&vv..";
 			
@@ -166,15 +164,14 @@
 		 %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
 			,case when c.label = "" then a.group
-			 else left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") end as grouplabel 
+			 else left(c.label||" (N = "||put(a.den_episodes,comma12.0)||" )") end as grouplabel 
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
 			,case when f.label = "" then a.moiname
              else f.label end as moiheader 
 		 %end;
          %else %do;
-            ,"" as header 
-			,left(a.group||" (N = "||put(a.episodes,comma12.0)||" )") as grouplabel 
+			,left(strip(a.group)||" (N = "||strip(put(a.den_episodes,comma12.0))||" )") as grouplabel 
             ,a.moiname as moilabel
             ,"" as moiheader 
           %end;				   
@@ -195,9 +192,10 @@
 		  %end;;
        quit;
 		
-		proc sort data = &dsout.;
-		  by &dpvar. order moiname;
+		proc sort data = &dsout. sortseq=linguistic(numeric_collation=on);
+		  by pregflg order moiname;
 		run;
+		
     %mend;
 	/*Overall*/
     %prep_t4tables (dsin=agg_t4moi_summ, dsout=final_t4moi);
