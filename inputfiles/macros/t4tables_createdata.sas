@@ -13,7 +13,8 @@
 *   - agg_t4nopreg.sas7bdat 
 *
 *  Program outputs:                                                                                                                           
-*   - 1 dataset per table in the format [TableID]_[Tablesubstrat]
+*   - final_t4moi - levelid and moiname stratification across data partners
+*   - final_dps_t4moi - levelid and moiname stratification by data partner
 * 
 *  PARAMETERS: 
 *   - dataset: aggregate dataset from %aggregate_report_tables
@@ -173,7 +174,7 @@
 		 %end;
          %else %do;
             ,"" as header 
-			,left(a.group||" (N = "||put(a.episodes,comma12.0)||" )") end as grouplabel 
+			,left(a.group||" (N = "||put(a.episodes,comma12.0)||" )") as grouplabel 
             ,a.moiname as moilabel
             ,"" as moiheader 
           %end;				   
