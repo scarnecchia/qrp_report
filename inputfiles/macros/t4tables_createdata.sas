@@ -133,7 +133,7 @@
 			%if %index(&&formula&vv.,/) > 0 %then %do;
 			   if &&num&vv. = 0 or &&denominator&vv. = 0 then do;
 			     &&var&vv. = 0;
-				 &&var&vv.._char = strip(put(0, percent10.1));
+				 &&var&vv.._char = strip(put(0, &&format&vv..));
 			   end;
 			   else if &&num&vv. = . or &&denominator&vv. = . then do;
 			     &&var&vv. = 0;
@@ -141,7 +141,7 @@
 			   end;
 			   else do;
 			     &&var&vv. = &&formula&vv.;
-				 &&var&vv.._char = strip(put(&&var&vv., percent10.1));
+				 &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			   end;
 			%end;
 			%else %do;
@@ -150,7 +150,7 @@
 			   end;
 			   else do;
 			     &&var&vv. = &&formula&vv.;
-			     &&var&vv.._char = strip(put(&&var&vv., comma12.0));
+			     &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			   end;
 			%end;
 	     %end;
@@ -158,6 +158,12 @@
 	   
 	   /* Apply labels */
 	   %isdata(dataset=labelfile);
+	data output.&dsin.;
+	set &dsin.;
+	run;
+	data output.labelfile;
+	set labelfile;
+	run;
 	
        proc sql noprint;
          create table &dsout. as
@@ -165,10 +171,7 @@
 		 %if %eval(&nobs.>0) %then %do;
 		    ,d.label as header 
 			,case when c.label = "" then a.group
-			 when c.labelvar = "npts" then left(c.label||" (N = "||put(a.npts,comma12.0)||" )") 
-			 when c.labelvar = "episodes" then left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") 
-			 when c.labelvar = "episodes_3trim" then left(c.label||" (N = "||put(a.episodes_3trim,comma12.0)||" )") 
-             else c.label end as grouplabel 
+			 else left(c.label||" (N = "||put(a.episodes,comma12.0)||" )") end as grouplabel 
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
 			,case when f.label = "" then a.moiname
@@ -176,7 +179,7 @@
 		 %end;
          %else %do;
             ,"" as header 
-			,a.group as grouplabel
+			,left(a.group||" (N = "||put(a.episodes,comma12.0)||" )") end as grouplabel 
             ,a.moiname as moilabel
             ,"" as moiheader 
           %end;				   
