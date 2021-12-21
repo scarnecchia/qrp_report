@@ -158,12 +158,6 @@
 	   
 	   /* Apply labels */
 	   %isdata(dataset=labelfile);
-	data output.&dsin.;
-	set &dsin.;
-	run;
-	data output.labelfile;
-	set labelfile;
-	run;
 	
        proc sql noprint;
          create table &dsout. as
