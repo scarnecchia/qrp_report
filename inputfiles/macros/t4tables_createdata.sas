@@ -162,8 +162,10 @@
        proc sql noprint;
          create table &dsout. as
 		 select all.*
+		       %if &labelfileexists. = Y %then %do;
                ,case when d.label = "" then grouplabel 
                 else d.label end as header
+			   %end;
          from(select a.*, b.order
 		     %if &labelfileexists. = Y %then %do;
 		     	,case when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
@@ -191,12 +193,14 @@
 		     	on strip(a.group) = strip(f.group)
 		     	   and lowcase(a.moiname) = strip(f.labelvar)
 		      %end;) all
+		  %if &labelfileexists. = Y %then %do;
           left join labelfile (where = (labeltype = "header")) d
-		    on strip(all.group) = strip(d.group);
+		    on strip(all.group) = strip(d.group)
+		  %end;;
        quit;
 		
 		proc sort data = &dsout. sortseq=linguistic(numeric_collation=on);
-		  by pregflg descending order moiname;
+		  by descending pregflg order moiname;
 		run;
     %mend;
 	/*Overall*/
