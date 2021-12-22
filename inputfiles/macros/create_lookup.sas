@@ -96,7 +96,12 @@
 	   type = "censor";    order = 10; description = "Represents episodes censored due to user-specified study end date."; output;
 	   type = "censor";    order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
 	   type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
-	 run; 
+
+       /* Footnotes for t4l1 MOI tables */
+	   type = "t4l1moi";   order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
+	   type = "t4l1moi";   order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
+	   
+     run; 
 
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.
