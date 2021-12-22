@@ -75,21 +75,23 @@
 	        ,column 
 			,columnlabel
 			,columnformat
+			,scan(compress(column,'()'),1,'/') as numerator
+			,cats("den_",scan(compress(scan(column,1,'*'),'()'),2,'/')) as denominator
 			,case when index(columnformat,'$') > 0 then columnformat
 			   else compress('$'||put(input(scan(compress(columnformat,'','a'),1,'.'),3.) +  input(scan(compress(columnformat,'','a'),2,'.'),3.),8.)||".") end as columnformatchar
-			,scan(compress(column,'()'),1,'/') as numerator
-			,scan(compress(scan(column,1,'*'),'()'),2,'/') as denominator
 	   into: var1 -:var&numcolumns.
 		    ,:formula1 - :formula&numcolumns.
 			,:label1 - :label&numcolumns.
 			,:format1 - :format&numcolumns.
-			,:formatchar1 - :formatchar&numcolumns.
 			,:num1 - :num&numcolumns.
 			,:denominator1 - :denominator&numcolumns.
+			,:formatchar1 - :formatchar&numcolumns.
 	  from tablecolumns;
 	  
-	  select column into: sumcolumns separated by " "
-	  from tablecolumns where index(column,"/") = 0;
+	  select distinct(a.numerator)
+	         into: sumcolumns separated by " "
+	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
+                   else column end as numerator from tablecolumns) a;
     quit;
 	
    /************************************************************************************************
@@ -110,13 +112,14 @@
               select b.*
 	          ,a.episodes as den_episodes
 	          ,a.episodes_3trim as den_episodes_3trim
-              from &dsin (where=(level in (&t4preglevel1 &t4nopreglevel1.))) as a,
-                   &dsin (where=(level in (&t4preglevel2 &t4nopreglevel2.)))as b
+              from &dsin (keep = episodes episodes_3trim level group pregflg &dpvar. 
+			              where=(level in (&t4preglevel1 &t4nopreglevel1.))) as a,
+                   &dsin (where=(level in (&t4preglevel2 &t4nopreglevel2.))) as b
               where a.group=b.group 
 			        and a.pregflg=b.pregflg 
 	        %if %str("&dpvar.") ne %str("") %then %do;
-	       and a.dpidsiteid = b.dpidsiteid
-	     %end;;
+	          and a.dpidsiteid = b.dpidsiteid
+	        %end;;
        quit;
 	
    /************************************************************************************************
@@ -125,9 +128,9 @@
 	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
 	     set &dsin. (drop = level);
 		 %do vv = 1 %to &numcolumns;
-		    format &&var&vv.. &&format&vv.. &&var&vv.._char &&formatchar&vv..;
 		    label &&var&vv.. = "&&label&vv..";
 			label &&var&vv.._char = "&&label&vv..";
+			format &&var&vv.._char &&formatchar&vv..;
 			
 			%if %index(&&formula&vv.,/) > 0 %then %do;
 			   if &&num&vv. = 0 or &&denominator&vv. = 0 then do;
@@ -139,7 +142,7 @@
 				 &&var&vv.._char = "NaN";
 			   end;
 			   else do;
-			     &&var&vv. = &&formula&vv.;
+			     &&var&vv. = &&num&vv./&&denominator&vv.;
 				 &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			   end;
 			%end;
@@ -156,46 +159,45 @@
 	   run;
 	   
 	   /* Apply labels */
-	   %isdata(dataset=labelfile);
-	
        proc sql noprint;
          create table &dsout. as
-         select a.*, b.order
-		 %if %eval(&nobs.>0) %then %do;
-		    ,d.label as header 
-			,case when c.label = "" then a.group
-			 else left(c.label||" (N = "||put(a.den_episodes,comma12.0)||" )") end as grouplabel 
-            ,case when e.label = "" then a.moiname
-             else e.label end as moilabel 
-			,case when f.label = "" then a.moiname
-             else f.label end as moiheader 
-		 %end;
-         %else %do;
-			,left(strip(a.group)||" (N = "||strip(put(a.den_episodes,comma12.0))||" )") as grouplabel 
-            ,a.moiname as moilabel
-            ,"" as moiheader 
-          %end;				   
-         from &dsin. a 
-		  left join groupsfile b
-		  on strip(lowcase(a.group)) = strip(lowcase(b.group))
-		  %if %eval(&nobs.>0) %then %do;
-		    left join labelfile (where = (labeltype = "grouplabel")) c
-		    on strip(a.group) = strip(c.group)
-		    left join labelfile (where = (labeltype = "header")) d
-		    on strip(a.group) = strip(d.group)
-			left join labelfile (where = (labeltype = "moilabel")) e
-			on strip(a.group) = strip(e.group)
-			   and (a.moiname) = strip(e.labelvar)
-			left join labelfile (where = (labeltype = "moiheader")) f
-			on strip(a.group) = strip(f.group)
-			   and (a.moiname) = strip(e.labelvar)
-		  %end;;
+		 select all.*
+               ,case when d.label = "" then grouplabel 
+                else d.label end as header
+         from(select a.*, b.order
+		     %if &labelfileexists. = Y %then %do;
+		     	,case when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+		     	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
+                ,case when e.label = "" then a.moiname
+                 else e.label end as moilabel 
+		     	,case when f.label = "" then a.moiname
+                 else f.label end as moiheader 
+		     %end;
+             %else %do;
+		     	,left(strip(a.group)||" (N = "||strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
+                ,a.moiname as moilabel
+                ,"" as moiheader 
+              %end;				   
+             from &dsin. a 
+		      left join groupsfile b
+		      on strip(lowcase(a.group)) = strip(lowcase(b.group))
+		      %if &labelfileexists. = Y %then %do;
+		        left join labelfile (where = (labeltype = "grouplabel")) c
+		        on strip(a.group) = strip(c.group)
+		     	left join labelfile (where = (labeltype = "moilabel")) e
+		     	on strip(a.group) = strip(e.group)
+		     	   and lowcase(a.moiname) = strip(e.labelvar)
+		     	left join labelfile (where = (labeltype = "moiheader")) f
+		     	on strip(a.group) = strip(f.group)
+		     	   and lowcase(a.moiname) = strip(f.labelvar)
+		      %end;) all
+          left join labelfile (where = (labeltype = "header")) d
+		    on strip(all.group) = strip(d.group);
        quit;
 		
 		proc sort data = &dsout. sortseq=linguistic(numeric_collation=on);
-		  by pregflg order moiname;
+		  by pregflg descending order moiname;
 		run;
-		
     %mend;
 	/*Overall*/
     %prep_t4tables (dsin=agg_t4moi_summ, dsout=final_t4moi);
