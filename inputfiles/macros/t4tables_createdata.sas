@@ -166,7 +166,7 @@
 		 select all.*
          from(select a.*, b.order
 		     %if &labelfileexists. = Y %then %do;
-		     	,case when c.label = "" and d.label = "" then strip(a.group)
+		     	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
 		     	      when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
 		     	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
 		     	,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
