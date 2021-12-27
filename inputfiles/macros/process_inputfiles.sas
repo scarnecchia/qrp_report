@@ -1100,7 +1100,8 @@
       
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
-					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN);
+					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
+                                                  %if %sysfunc(prxmatch(m/T4L1|/i,&reporttype.)) > 0 %then %do; columnheader %end; );
 						      set tablecolumns (rename = (order = order_in column = column_in));
 						      length columnname $32 smallcellYN $1;
 	                          by table order_in;
@@ -1110,6 +1111,15 @@
 			                  /* Set small cell highlighting to Y for all n variables */
 			                  if index(column,'/') then smallcellYN = "N";
 							  else smallcellYN = "Y";
+
+                              /*Type 4 - assign column headers - table T1 assign Number or Percent. Other tables are assigned columnlabel*/
+                              %if %sysfunc(prxmatch(m/T4L1|/i,&reporttype.)) > 0 %then %do; 
+                              columnheader=columnlabel;
+                              if table = 'T1' then do;
+                                if index(column, '/')>0 then columnheader = 'Percent';
+                                else columnheader = 'Number';
+                              end;
+                              %end;
                             run;
 							
 							/* Add footnotes for T1 and T2L1 */

@@ -411,15 +411,18 @@
                 select cats(columnname,'_char') 
                       ,cats(columnwidth,'in')
                       ,smallcellyn
+                      ,columnlabel
+                      ,columnheader
                 into :outvarlist separated by ' ',
                      :outwidths separated by ' ',
-                     :outsmallcells separated by ' '
+                     :outsmallcells separated by ' ',
+                     :columnlabels separated by '|||',
+                     :columnheaders separated by '|||'
                 from tablecolumns
                 where table="&table"
                 order by order;
             quit; 
                 
-
             %do loop = 1 %to %eval(&loopcount.);
                 %if &loop = 1 %then %do;
                     %let tabletitle = ;
@@ -450,7 +453,9 @@
                                  %end;
                                  varlist = &outvarlist,
                                  varwidths = %bquote(&outwidths.),
-                                 varsmallcells = &outsmallcells);
+                                 varsmallcells = &outsmallcells,
+                                 columnstatementlabels = %quote(&columnlabels.),
+                                 definestatementlabels = %quote(&columnheaders.));
             %end;
 
             %let tablenum = %eval(&tablenum + 1);
