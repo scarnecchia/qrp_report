@@ -18,8 +18,10 @@
 *  PARAMETERS:               
 *   - table = table indicator from tablefile
 *   - dataset = input dataset
+*   - where = where clause to restrict &dataset
 *   - tabnum = table number and letter
-*   - title = table title                                               
+*   - title = table title              
+*   - nonpreg = Y/N indicator for inclusion of non-pregnant matched cohort 
 *   - varlist = List of column names
 *   - varwidths = list of variable widths
 *   - varsmallcells = List of small cell count highlighting indicators for each column
@@ -40,8 +42,10 @@
 
 %macro t4tables_output(table=, 
                        dataset=, 
+                       where=,
                        tabnum=,
                        title=, 
+                       nonpreg=,
                        varlist=, 
                        varwidths=, 
                        varsmallcells=,
@@ -53,7 +57,7 @@
        length footnote_order 3; 
        set lookup.lookup_footnotes(where=(type = "t4l1moi" and order in ( 0
           %if &table.=T1 %then %do;
-            %if %index(&title., "Non-Pregnant")=0 %then %do; 1 %end;
+           %if &nonpreg = N %then %do; 1 %end;
             %else %do; 2 %end;
            %end;
         )));
@@ -81,7 +85,7 @@
         %let varlistnochar = %sysfunc(tranwrd(&varlist., _char, %str()));
 
         data repdata.table&tabnum.;
-    		set &dataset(keep=group moiname pregflg den_episodes order grouplabel moilabel &varlist. &varlistnochar.
+    		set &dataset(where=(&where.) keep=group moiname pregflg den_episodes order grouplabel moilabel &varlist. &varlistnochar.
                          %if dataset = final_dps_t4moi %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
@@ -114,18 +118,29 @@
     ods proclabel = "Table &tabnum.";
 
      proc report data = repdata.table&tabnum. nofs nowd spanrows missing headskip split="*"
-        style(header)=[rules=none vjust=b] split='*'
+        style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
-        columns %if &includeheaderrow = Y %then %do; header %end;
+        columns %if &nonpreg. = Y %then %do; pregflg %end;
+                %if &includeheaderrow = Y %then %do; header %end;
                 %if &includemoiheaderrow = Y %then %do; moiheader %end;
-                order grouplabel &columnstatement.;
+                order grouplabel moilabel &columnstatement.;
 
-        %if &includeheaderrow = Y %then %do; 
-        define header / group noprint order=data ' ';
+        %if &nonpreg. = Y %then %do;
+        define pregflg / order order=data noprint;
         %end;
-		define order / group order=data noprint;
+        %if &includeheaderrow = Y %then %do; 
+        define header / order noprint order=data ' ';
+        %end;
+        %if &includemoiheaderrow = Y %then %do; 
+        define moilabel / order noprint order=data ' ';
+        %end;
 
+		define order / order order=data noprint;
+        define grouplabel / order order=data noprint; 
+        define moilabel / "Exposures of Interest&super_title."
+             style(column)= [just=l] 
+    		 style(header)=[just=l borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
 
         /*columns*/
         %do v = 1 %to %sysfunc(countw(&varlist.));
@@ -145,6 +160,18 @@
         line "Table &tabnum.. &title.";
 		endcomp;
 
+        
+        /*add pregnant/non-pregnant header*/
+        %if &nonpreg. = Y %then %do;
+        compute before pregflg / style=[backgroundcolor=gr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+            length text $100;
+            if pregflg = 'Y' then text = "Pregnant Cohort";
+            else text = "Matched Non-Pregnant Cohort";
+            num = 100;
+            line text $varying. num;
+        endcomp;
+        %end;
+
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
@@ -154,21 +181,19 @@
             line text $varying. num;
         endcomp;
         %end;
+        
+        /*add group label*/
+        compute before grouplabel / style=[backgroundcolor=white font_weight=bold just=L bordertopcolor=white borderbottomcolor=white];
+            length text $100;
+            text = grouplabel;
+            num = 100;
+            line text $varying. num;
+        endcomp;
+
+        /*indent MOI labels*/
 
 
-
-
-
-
-/*"&super_title.";*/
-
-
-
-
-
-
-
-        /* Add Footnotes */
+        /*add footnotes*/
         %if &num_fn > 0 %then %do;
             compute after / style=[just=L vjust=t nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize height=1in];
             %do f = 1 %to &num_fn.;

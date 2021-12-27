@@ -568,9 +568,9 @@
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
-                %tableletter();
-                %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
+                        %tableletter();
+                        %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                            caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
                     %end;
                 %end; 
 
@@ -720,40 +720,45 @@
                 end;
             run;
 
-            %if &stratifybydp = Y %then %do;
-                %let tablecount=1;
-                %let loopcount=2;
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+
+            /*Overall*/
+            %tableletter();
+            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    %if &table. = T1 %then %do;
+                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                    %end;
+                    %if &table. = T2 %then %do;
+                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
+                    %end;
+                    %if &table. = T3 %then %do;
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling));
+                    %end;
+                    %if &table. = T4 %then %do;
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
+                    %end;
+
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                        %if &table. = T1 %then %do;
+                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        %end;
+                        %if &table. = T2 %then %do;
+                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        %end;
+                        %if &table. = T3 %then %do;
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling));
+                        %end;
+                        %if &table. = T4 %then %do;
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
+                        %end;               
+                %end;
             %end;
-            %else %do;
-                %let tablecount=0;
-                %let loopcount=1;
-            %end;
-
-            %do loop = 1 %to %eval(&loopcount.);
-                %if &loop = 1 %then %let tabletitle = ;
-                %if &loop = 2 %then %let tabletitle =, by Data Partner ;
-
-                %tableletter();
-
-                /*Overall*/
-                %if &table. = T1 %then %do;
-                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
-                %end;
-                %if &table. = T2 %then %do;
-                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
-                %end;
-                %if &table. = T3 %then %do;
-                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling&tabletitle.));
-                %end;
-                %if &table. = T4 %then %do;
-                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling&tabletitle.));
-                %end;
-            %end;
-
             %let tablenum = %eval(&tablenum + 1);
         %end; /*loop through each table*/
     %end; /*type 4 summary tables*/

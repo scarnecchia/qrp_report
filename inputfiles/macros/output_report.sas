@@ -388,24 +388,17 @@
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
             /*determine if table includes non-pregnant section*/;
-            %let nonpreg = %str( );
+            %let nonpreglabel = %str( );
+            %let nonpreg = N;
             %let s=;
             data _null_;
                 set tablefile(where=(table="&table"));
                 if tablesubstrat = "t4nopreg" then do;
-                    call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
+                    call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
+                    call symputx('nonpreg', 'Y');
                 end;
             run;
-
-            %if &stratifybydp = Y %then %do;
-                %let tablecount=1;
-                %let loopcount=2;
-            %end;
-            %else %do;
-                %let tablecount=0;
-                %let loopcount=1;
-            %end;
 
              proc sql noprint;
                 select cats(columnname,'_char') 
@@ -423,39 +416,66 @@
                 order by order;
             quit; 
                 
-            %do loop = 1 %to %eval(&loopcount.);
-                %if &loop = 1 %then %do;
-                    %let tabletitle = ;
-                    %let dataset=final_t4moi;
-                %end;
-                %if &loop = 2 %then %do;
-                    %let tabletitle =, by Data Partner ;
-                    %let dataset=final_dps_t4moi;
-                %end;
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+            %tableletter();
 
-                %tableletter();
+            /*Overall*/
+            %t4tables_output(table=&table.,
+                             dataset=final_t4moi,
+                             %if &nonpreg. = N %then %do;
+                             where=pregflg = 'Y',
+                             %end;
+                             %else %do;
+                             where=1,
+                             %end;
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.));
 
-                /*Overall*/
-                %t4tables_output(table=&table.,
-                                 dataset=&dataset.,
-                                 tabnum=&tablenum.&tableletter.,
-                                 %if &table. = T1 %then %do;
-                                 title=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
-                                 %end;
-                                 %if &table. = T2 %then %do;
-                                 title=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
-                                 %end;
-                                 %if &table. = T3 %then %do;
-                                 title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling&tabletitle.),
-                                 %end;
-                                 %if &table. = T4 %then %do;
-                                 title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling&tabletitle.),
-                                 %end;
-                                 varlist = &outvarlist,
-                                 varwidths = %bquote(&outwidths.),
-                                 varsmallcells = &outsmallcells,
-                                 columnstatementlabels = %quote(&columnlabels.),
-                                 definestatementlabels = %quote(&columnheaders.));
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %t4tables_output(table=&table.,
+                             dataset=final_dps_t4moi,
+                             where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.));           
+                %end;
             %end;
 
             %let tablenum = %eval(&tablenum + 1);
