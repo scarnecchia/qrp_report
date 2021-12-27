@@ -97,7 +97,7 @@
 	   type = "censor";    order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
 	   type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
-       /* Footnotes for t4l1 MOI tables */
+       /* Footnotes for type 4 MOI tables */
 	   type = "t4l1moi";   order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
 	   type = "t4l1moi";   order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
 	   
