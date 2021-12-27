@@ -379,6 +379,84 @@
 
     %end; /*ReportType = T1 and T2L1 summary tables*/
 
+
+/*********************************************************************************************/
+/* Type 4 summary tables                                                                     */
+/*********************************************************************************************/
+	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
+     
+        %do tb = 1 %to %sysfunc(countw(&tablelist.));
+            %let table = %scan(&tablelist., &tb);
+            /*determine if table includes non-pregnant section*/;
+            %let nonpreg = %str( );
+            %let s=;
+            data _null_;
+                set tablefile(where=(table="&table"));
+                if tablesubstrat = "t4nopreg" then do;
+                    call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
+                    call symputx('s', "s");
+                end;
+            run;
+
+            %if &stratifybydp = Y %then %do;
+                %let tablecount=1;
+                %let loopcount=2;
+            %end;
+            %else %do;
+                %let tablecount=0;
+                %let loopcount=1;
+            %end;
+
+             proc sql noprint;
+                select cats(columnname,'_char') 
+                      ,cats(columnwidth,'in')
+                      ,smallcellyn
+                into :outvarlist separated by ' ',
+                     :outwidths separated by ' ',
+                     :outsmallcells separated by ' '
+                from tablecolumns
+                where table="&table"
+                order by order;
+            quit; 
+                
+
+            %do loop = 1 %to %eval(&loopcount.);
+                %if &loop = 1 %then %do;
+                    %let tabletitle = ;
+                    %let dataset=final_t4moi;
+                %end;
+                %if &loop = 2 %then %do;
+                    %let tabletitle =, by Data Partner ;
+                    %let dataset=final_dps_t4moi;
+                %end;
+
+                %tableletter();
+
+                /*Overall*/
+                %t4tables_output(table=&table.,
+                                 dataset=&dataset.,
+                                 tabnum=&tablenum.&tableletter.,
+                                 %if &table. = T1 %then %do;
+                                 title=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                 %end;
+                                 %if &table. = T2 %then %do;
+                                 title=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                 %end;
+                                 %if &table. = T3 %then %do;
+                                 title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling&tabletitle.),
+                                 %end;
+                                 %if &table. = T4 %then %do;
+                                 title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling&tabletitle.),
+                                 %end;
+                                 varlist = &outvarlist,
+                                 varwidths = %bquote(&outwidths.),
+                                 varsmallcells = &outsmallcells);
+            %end;
+
+            %let tablenum = %eval(&tablenum + 1);
+        %end; /*loop through each table*/
+    %end; /*ReportType = T4L1 summary tables*/
+
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
 /*********************************************************************************************/

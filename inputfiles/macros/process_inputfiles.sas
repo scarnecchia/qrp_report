@@ -656,6 +656,7 @@
             /*set reporttitle if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', label);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
+            if labeltype = 'moiheader' then call symputx('includemoiheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
