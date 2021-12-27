@@ -864,7 +864,6 @@
             %if %str("&reporttype") = %str("T4L1") %then %do;
                 if tablesubstrat = 't4nopreg' then do;
                     if dataset = 't4preg' then dataset = 't4nopreg';
-                    if dataset = 't4preggestwk' then dataset = 't4nopreggestwk';
                 end;
             %end;
 
@@ -1092,27 +1091,39 @@
 			  		    %abort;
                       %end;
 					  %else %do;
-                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and lowcase(table) in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")))))
+                         proc sort data = input.&tablecolumnsfile. (where = (includeinreport = "Y" and 
+						   table in (%sysfunc(tranwrd("&tdatasetlist.",%str( )," ")) %sysfunc(tranwrd("&tablelist.",%str( )," ")))))
   						            out = tablecolumns;
                            by table order;
                          run;
       
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
-					        data tablecolumns;
+					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN);
 						      set tablecolumns (rename = (order = order_in column = column_in));
-						      length columnname $32 smallcellYN $1 footnote 3;
+						      length columnname $32 smallcellYN $1;
 	                          by table order_in;
 			                  column = lowcase(compress(column_in));
 	                          order = _n_;
-			                  smallcellYN = "N";
-			                  call missing(footnote);
-			                  columnname = compress("column"||order);
-			                  if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
-			                  if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
-			                  else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
-			                  else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
+							  columnname = compress("column"||put(order,3.));
+			                  /* Set small cell highlighting to Y for all n variables */
+			                  if index(column,'/') then smallcellYN = "N";
+							  else smallcellYN = "Y";
                             run;
+							
+							/* Add footnotes for T1 and T2L1 */
+							%if %sysfunc(prxmatch(m/T1|T2L1|/i,&reporttype.)) > 0 %then %do;
+							  data tablecolumns;
+							    set tablecolumns;
+							    length footnote 3;
+							    by table order;
+							    call missing(footnote);
+							    if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+			                    if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
+			                    else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
+			                    else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
+                              run;
+							%end;
 						 %end;
 						 %else %do;
 		                    %put ERROR: (Sentinel) All rows on input.&tablecolumnsfile. are set to N.; 
@@ -1121,6 +1132,11 @@
 	  	                 %end;
 					  %end;
 			        %end; 
+					%else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+					    /* A table columns file must be specified for T4L1 */
+	                    %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+	                    %abort;
+					%end;
                 %end;
             %end;
         %end; /*TableFile has rows with IncludeinReport=Y*/

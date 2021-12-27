@@ -131,7 +131,12 @@
 
        %end;
     %end;
-
+    
+	/*ReportType T4*/
+	%if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+	   %t4tables_createdata();
+	%end;
+	
     /*ReportType T5*/
 	%if %str("&reporttype") = %str("T5") %then %do;
 	   %t5tables_driver();
