@@ -1152,6 +1152,9 @@
         /*macro variable to cross checkout Type 6 treatmentpathways file to ensure an analysisgrp has been requested*/
         %let t6checktreatmentpathways = N;
 
+		/*macro variable to determine if a warn should be written to the log for Type 5 figures*/
+		%let t5figurewarn=N;
+
         /*read in figurefile*/
         data figurefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 
                         rename=figuresub_out=figuresub rename=censordisplay1=censordisplay);
@@ -1191,6 +1194,9 @@
                     abort;
                 end;
             end;
+			else if figure in ("F1", "F2", "F3") then do;
+				if not missing(xmin) or not missing(xmax) or not missing(xtick) then call symputx('t5figurewarn', 'Y');
+			end;
             %end;
             %else %if &reporttype. = T6 %then %do;
                 /*Type 6 variable names in datasets t6plota/t6plotb do not match other censor variables. If specified, replace with cens_ variables*/
@@ -1265,6 +1271,8 @@
             %alphabetizevarutil(array=d, in=figuresub, out=figuresub_out);
         run;
 
+		%if &t5figurewarn. eq Y %then %put WARNING: (Sentinel) XMIN, XMAX and XTICK parameters should be set to missing when type 5 figures F1, F2, F3 are requested. Values specified will be ignored.;
+
         %isdata(dataset=figurefile);
         %if %eval(&nobs.>0) %then %do; 
 
@@ -1287,16 +1295,6 @@
                 select distinct figure into: figurelist separated by ' '
                 from figurefile;
             quit;
-
-            /*T2L2: if KM curves requested, ensure events are not being redacted*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
-                %if %index(&customizecolumns.,events) > 0 %then %do;
-                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
-                    data _null_;
-                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
-                    run;
-                %end;
-            %end;
 
         %if %sysfunc(prxmatch(m/T1|T2L1|ITS|T5|T6/i,&reporttype.)) %then %do;
             /*Figurefile requires USERSTRATA specified if reporttype=T1, T2L1, T5, T6, ITS*/
@@ -1542,7 +1540,25 @@
                     where figure ne 'F1';
                 quit;
             %end;
-        %end;
+            /*T2L2: if KM curves requested, ensure events are not being redacted*/
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) KM curves are requested, however events are redacted so KM curves will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F3|F4|F5//', -1, "&figurelist.")); /*remove KM curves*/
+                    run;
+                %end;
+            %end;
+			/*T2L2 and T4L2: if Forest Plots requested, ensure events are not being redacted*/
+	        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+                %if %index(&customizecolumns.,events) > 0 %then %do;
+                    %put WARNING: (Sentinel) Forest Plots are requested, however events are redacted so Forest Plots will not be produced;
+                    data _null_;
+                        call symputx('figurelist', prxchange('s/F2//', -1, "&figurelist.")); /*remove Forest Plots curves*/
+                    run;
+                %end;
+	        %end;
+		%end;
         %else %do;
             %put WARNING: (Sentinel) L2ComparisonFile is required when ReportType = T2L2 or T4L2 in order to produce effect estimates and PS histograms. Effect estimates and PS histograms will not be computed;
         %end;

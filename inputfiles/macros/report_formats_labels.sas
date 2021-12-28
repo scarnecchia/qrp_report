@@ -15,7 +15,7 @@
 *   -agefmtsort: one row per cohortgrp, agegroup, agegroupnum
 *
 *   formats;
-*   -agefmt
+*   -agegroupfmt
 *   -sexfmt
 *   -sexsort
 *   -racefmt
@@ -32,8 +32,8 @@
 *   -timesort
 *   -hhs_regfmt
 *   -cb_regfmt
-*   -mn_name
-*   -qtr_name
+*   -monthfmt
+*   -quarterfmt
 *   -nafmt
 *
 *
@@ -135,11 +135,11 @@
     run;
 
 	proc sql noprint;
-      select distinct label_fmt into: AGEFMT  separated by ' '    
+      select distinct label_fmt into: agegroupfmt  separated by ' '    
       from _agefmt;
     quit; 
 
-	%put &=AGEFMT;
+	%put &=agegroupfmt;
 
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
@@ -151,8 +151,8 @@
     proc format;  
 
         /*Age Format*/
-        value $agefmt
-        &AGEFMT.;
+        value $agegroupfmt
+        &agegroupfmt.;
 
         /*Sex Format*/
         value $sexfmt
@@ -332,7 +332,7 @@
         ' ' = 'N/A'
         other=[$50.];
 
-        value mn_name 
+        value monthfmt 
            1='January'
            2='February'
            3='March'
@@ -347,7 +347,7 @@
           12='December'
        other='';
 
-	   value qtr_name 
+	   value quarterfmt 
            1='Quarter 1'
            2='Quarter 2'
            3='Quarter 3'

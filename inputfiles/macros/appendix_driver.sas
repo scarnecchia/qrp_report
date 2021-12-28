@@ -146,7 +146,7 @@
 		  	         run;		
 				  
 		  	         %addtotoc(tabnum = Appendix &looktab., 
-		    	     	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner; &psestimategrplabel.),
+		    	     	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel.),
 		    	     	        appendixtype = appendixhdps);
 				   
 			       %end; /* Determine if appendix data already exists */
@@ -326,7 +326,7 @@
                 run;
 
 				%addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner, Weight: &weightschemelong.),
+					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner (DP), Weight: &weightschemelong.),
 					  appendixtype = appendixWeightDist);
                 %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
 
@@ -391,7 +391,7 @@
         %if %eval(&nobs.>0) %then %do;
     		%tableletter(); 	
             %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-    				  caption = %bquote(Computed Start Marketing Dates for Each Cohort at Each Data Partner),
+    				  caption = %bquote(Computed Start Marketing Dates for Each Cohort at Each Data Partner (DP)),
     				  appendixtype = APPENDIXT6DATES);
 
             proc sort data=appendixb sortseq=linguistic (numeric_collation=on) out=repdata.appendix&tableletter.;

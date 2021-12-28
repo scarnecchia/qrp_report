@@ -187,7 +187,7 @@
                     proc format;
                         value $ grpuni
                         &footnoteformat.
-                        &agefmt.
+                        &agegroupfmt.
                         other=[$200.];
                     run;
                 %end; /*Create footnote format*/
@@ -195,7 +195,7 @@
                 %if &forestfootnote = N %then %do;
                 proc format;
                     value $ grpuni
-                    &agefmt.
+                    &agegroupfmt.
                     other=[$200.];
                 run;
                 %end;
