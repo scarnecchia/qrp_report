@@ -86,7 +86,7 @@
 
         data repdata.table&tabnum.;
     		set &dataset(where=(&where.) keep=group moiname pregflg den_episodes order grouplabel moilabel &varlist. &varlistnochar.
-                         %if dataset = final_dps_t4moi %then %do; dpidsiteid %end;
+                         %if &dataset. = final_dps_t4moi %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
     	run;
@@ -122,24 +122,23 @@
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
         columns %if &nonpreg. = Y %then %do; pregflg %end;
-                %if &includeheaderrow = Y %then %do; header %end;
-                %if &includemoiheaderrow = Y %then %do; moiheader %end;
-                order grouplabel moilabel &columnstatement.;
+                %if &includeheaderrow. = Y %then %do; header %end;
+                order grouplabel %if &includemoiheaderrow = Y %then %do; moiheader %end; moilabel &columnstatement.;
 
         %if &nonpreg. = Y %then %do;
         define pregflg / order order=data noprint;
         %end;
-        %if &includeheaderrow = Y %then %do; 
+        %if &includeheaderrow. = Y %then %do; 
         define header / order noprint order=data ' ';
-        %end;
-        %if &includemoiheaderrow = Y %then %do; 
-        define moilabel / order noprint order=data ' ';
         %end;
 
 		define order / order order=data noprint;
         define grouplabel / order order=data noprint; 
-        define moilabel / "Exposures of Interest&super_title."
-             style(column)= [just=l] 
+        %if &includemoiheaderrow. = Y %then %do; 
+        define moiheader / order noprint order=data ' ';
+        %end;
+        define moilabel / "Exposure(s) of Interest&super_title."
+             style(column)= [just=l indent=%if &includemoiheaderrow = Y %then %do;.25in%end; %else %do;.15in%end;]
     		 style(header)=[just=l borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
 
         /*columns*/
@@ -159,11 +158,10 @@
                                        borderbottomwidth=&bordersize tagattr="wrap:yes" cellheight=.3in];
         line "Table &tabnum.. &title.";
 		endcomp;
-
         
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
-        compute before pregflg / style=[backgroundcolor=gr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+        compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             if pregflg = 'Y' then text = "Pregnant Cohort";
             else text = "Matched Non-Pregnant Cohort";
@@ -174,7 +172,7 @@
 
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
-        compute before header / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+        compute before header / style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             text = header;
             num = 100;
@@ -183,15 +181,28 @@
         %end;
         
         /*add group label*/
-        compute before grouplabel / style=[backgroundcolor=white font_weight=bold just=L bordertopcolor=white borderbottomcolor=white];
+        compute before grouplabel / 
+			 %if &includeheaderrow. = Y %then %do;
+                style=[backgroundcolor=white font_weight=bold just=L bordertopcolor=white borderbottomcolor=white];
+             %end;
+             %else %do;
+                style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+             %end;
             length text $100;
             text = grouplabel;
             num = 100;
             line text $varying. num;
         endcomp;
 
-        /*indent MOI labels*/
-
+        /*MOI header*/
+        %if &includemoiheaderrow. = Y %then %do;
+        compute before moiheader / style=[fontstyle=italic indent=.15in backgroundcolor=white just=L bordertopcolor=white borderbottomcolor=white];
+            length text $100;
+            text = moiheader;
+            num = 100;
+            line text $varying. num;
+        endcomp;
+        %end;
 
         /*add footnotes*/
         %if &num_fn > 0 %then %do;

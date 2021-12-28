@@ -459,17 +459,18 @@
                              where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
                              tabnum=&tablenum.&tableletter.,
                              %if &table. = T1 %then %do;
-                             title=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T2 %then %do;
-                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
                              %end;
                              %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
                              %end;
+                             nonpreg = &nonpreg., 
                              varlist = &outvarlist,
                              varwidths = %bquote(&outwidths.),
                              varsmallcells = &outsmallcells,

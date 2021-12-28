@@ -645,6 +645,10 @@
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
+    
+    /*reassign reporttitle default if Type 4 L1*/
+    %if &reporttype. = T4L1 %then %let reporttitle = Exposure(s) of interest;
+
 	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
         data labelfile;
             set input.&labelfile.;
