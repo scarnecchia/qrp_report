@@ -57,7 +57,7 @@
        length footnote_order 3; 
        set lookup.lookup_footnotes(where=(type = "t4l1moi" and order in ( 0
           %if &table.=T1 %then %do;
-           %if &nonpreg = N %then %do; 1 %end;
+           %if &nonpreg. = Y %then %do; 1 %end;
             %else %do; 2 %end;
            %end;
         )));
@@ -96,15 +96,23 @@
     %let columnstatement = ;
     %if &table. = T1 %then %do;
         %do v = 1 %to %sysfunc(countw(%str(&columnstatementlabels.),|||));
-            %let label = %scan(%str(&columnstatementlabels.),&v., ||||);
-            proc sql noprint;
-                select cats(columnname,'_char') 
-                into :tmpcolumns separated by ' '
-                from tablecolumns
-                where table="&table" and columnlabel = "&label."
-                order by order;
-            quit; 
-            %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
+            %let label = %scan(%str(&columnstatementlabels.),&v., |||);
+            %let skip = 0;
+            /*skip if columnlabel is same as prior variable label*/
+            %if %eval(&v.>1) %then %do;
+                %if "&label." = "%scan(%str(&columnstatementlabels.),%eval(&v.-1),|||)" %then %let skip = 1;
+            %end;
+
+            %if &v. = 1 | &skip. = 0 %then %do;
+                proc sql noprint;
+                    select cats(columnname,'_char') 
+                    into :tmpcolumns separated by ' '
+                    from tablecolumns
+                    where table="&table" and columnlabel = "&label."
+                    order by order;
+                quit; 
+                %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
+            %end;
         %end;
     %end;
     %else %do;
@@ -113,7 +121,7 @@
      
     /*Write to report*/
     %if &destination = excel %then %do;
-	ods excel options(sheet_name="Table &tabnum." tab_color='green');
+	ods excel options(sheet_name="Table &tabnum." tab_color='green' flow="1:400");
     %end;
     ods proclabel = "Table &tabnum.";
 
@@ -206,7 +214,8 @@
 
         /*add footnotes*/
         %if &num_fn > 0 %then %do;
-            compute after / style=[just=L vjust=t nobreakspace=off borderbottomcolor=white bordertopwidth=&bordersize height=1in];
+                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize
+                                       nobreakspace=off];
             %do f = 1 %to &num_fn.;
                 line "^{super &f}&&fn&f.";
             %end;
