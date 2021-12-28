@@ -334,7 +334,6 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=1.75in bordertopwidth = &bordersize];
-			  line ''; /*added to match other tables spacing */
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
