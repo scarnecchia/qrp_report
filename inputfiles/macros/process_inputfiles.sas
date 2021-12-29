@@ -1752,6 +1752,10 @@
                 where lower(name)='studyname';
             quit;
 
+            /* Need to set maximum studyname length across all runs */
+            %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
+            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
+
 			%if %sysfunc(exist(covarname))=0 %then %do;
                 data covarname;
                     length studyname $&baselinelabellength;
@@ -1765,9 +1769,6 @@
                 run;	 
             %end;
 
-            /* Need to set maximum studyname length across all runs */
-            %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
-            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
         %end;
     %end;    
 
