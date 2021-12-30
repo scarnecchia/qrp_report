@@ -78,19 +78,44 @@
 	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
                    else column end as numerator from tablecolumns) a;
     quit;
-
+	
+    /************************************************************************************************
+     Determine denominators for percent calculations          
+    ************************************************************************************************/
+    %macro t4_preg_nopreg (dsin = );	
+	   proc sql noprint undo_policy=none;
+	      create table _&dsin as 
+              select b.*
+	          ,a.episodes as den_episodes
+	          ,a.episodes_3trim as den_episodes_3trim
+              from agg_t4&dsin (keep = episodes episodes_3trim level group %if &stratifybydp. = Y %then %do; dpidsiteid %end; 
+			                   where=(level in (&&t4&dsin.level1))) as a,
+                   agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
+              where a.group=b.group 
+	        %if &stratifybydp. = Y %then %do; 
+	          and a.dpidsiteid = b.dpidsiteid
+	        %end;;
+       quit;
+    %mend t4_preg_nopreg;
+	%if %index(&datasetlist.,t4preg) > 0 %then %do;
+	  %t4_preg_nopreg(dsin = preg);
+	%end;
+	%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+	   %t4_preg_nopreg(dsin = nopreg);
+	%end;
+	
     /************************************************************************************************
      Set preg and nopreg data together when requested for desired levels            
     ************************************************************************************************/
-	 data agg_t4moi;
+	 data _agg_t4moi;
 	   length moiname $5;
 	   set %if %index(&datasetlist.,t4preg) > 0 %then %do;
-	         agg_t4preg (in = t4preg where = (level in (&t4preglevel1., &t4preglevel2.))
-	         	          keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim)
+	         _preg (in = t4preg where = (level in (&t4preglevel1., &t4preglevel2.))
+	         	          keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim den_:)
 		   %end;
 		   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-		     agg_t4nopreg (in = t4nopreg where = (level in (&t4nopreglevel1., &t4nopreglevel2.))
-		     	            keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim)
+		     _nopreg (in = t4nopreg where = (level in (&t4nopreglevel1., &t4nopreglevel2.))
+		     	            keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim den_:)
 		   %end;;
 	   if t4preg then pregflg = "Y";
 	   else pregflg = "N";
@@ -99,31 +124,13 @@
    /************************************************************************************************
      Summarize Data     
     ************************************************************************************************/	
-	proc summary data = agg_t4moi nway missing;
+	proc summary data = _agg_t4moi nway missing;
 	  class group level moiname pregflg;
-	  var &sumcolumns. npts episodes episodes_3trim;
-	  output out = agg_t4moi_summ (drop = _:) sum=;
+	  var &sumcolumns. npts episodes episodes_3trim den_episodes den_episodes_3trim;
+	  output out = _agg_t4moi_summ (drop = _:) sum=;
 	run;
-	 
-	%macro prep_t4tables (dsin =, dsout =, dpvar = );	
-	/************************************************************************************************
-      Determine denominators for percent calculations           
-    ************************************************************************************************/
-	   proc sql noprint undo_policy=none;
-	      create table &dsin. as 
-              select b.*
-	          ,a.episodes as den_episodes
-	          ,a.episodes_3trim as den_episodes_3trim
-              from &dsin (keep = episodes episodes_3trim level group pregflg &dpvar. 
-			              where=(level in (&t4preglevel1 &t4nopreglevel1.))) as a,
-                   &dsin (where=(level in (&t4preglevel2 &t4nopreglevel2.))) as b
-              where a.group=b.group 
-			        and a.pregflg=b.pregflg 
-	        %if %str("&dpvar.") ne %str("") %then %do;
-	          and a.dpidsiteid = b.dpidsiteid
-	        %end;;
-       quit;
 	
+    %macro prep_t4tables (dsin =, dsout =, dpvar = );	
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
@@ -165,21 +172,21 @@
          create table &dsout. as
 		 select all.*
          from(select a.*, b.order
-		     %if &labelfileexists. = Y %then %do;
-		     	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
-		     	      when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
-		     	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
-		     	,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
-           else d.label end as header
-          ,case when e.label = "" then a.moiname
-           else e.label end as moilabel 
-		     	,case when f.label = "" then a.moiname
-           else f.label end as moiheader 
-		     %end;
+		 %if &labelfileexists. = Y %then %do;
+		 	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
+		 	      when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+		 	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
+		 	,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+             else d.label end as header
+            ,case when e.label = "" then a.moiname
+             else e.label end as moilabel 
+		       	,case when f.label = "" then a.moiname
+             else f.label end as moiheader 
+		 %end;
          %else %do;
-		     	,catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
-                ,a.moiname as moilabel
-                ,"" as moiheader 
+		    ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
+            ,a.moiname as moilabel
+            ,"" as moiheader 
          %end;				   
              from &dsin. a 
 		      left join groupsfile b
@@ -189,29 +196,29 @@
 		        on strip(a.group) = strip(c.group)
 		        left join labelfile (where = (labeltype = "header")) d
 		        on strip(a.group) = strip(d.group)
-		     	  left join labelfile (where = (labeltype = "moilabel")) e
-		     	  on strip(a.group) = strip(e.group)
-		     	   and lowcase(a.moiname) = strip(e.labelvar)
-		     	  left join labelfile (where = (labeltype = "moiheader")) f
-		     	  on strip(a.group) = strip(f.group)
-		     	   and lowcase(a.moiname) = strip(f.labelvar)
+		     	left join labelfile (where = (labeltype = "moilabel")) e
+		     	on strip(a.group) = strip(e.group)
+		     	 and lowcase(a.moiname) = strip(e.labelvar)
+		     	left join labelfile (where = (labeltype = "moiheader")) f
+		     	on strip(a.group) = strip(f.group)
+		     	 and lowcase(a.moiname) = strip(f.labelvar)
 		      %end;) all;
-       quit;
+        quit;
 		
 		proc sort data = &dsout. sortseq=linguistic(numeric_collation=on);
 		  by descending pregflg order moiname;
 		run;
     %mend;
 	/*Overall*/
-    %prep_t4tables (dsin=agg_t4moi_summ, dsout=final_t4moi);
+    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_t4moi);
 	
 	%if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=agg_t4moi, dsout=final_dps_t4moi, dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_t4moi, dpvar=dpidsiteid);
 	%end;
-
+	
 	  /*Clean up*/
     proc datasets nowarn noprint lib=work;
-      delete agg_t4moi agg_t4moi_summ;
+      delete _:;
     quit;
 
     %put =====> END MACRO: t4tables_createdata ;
