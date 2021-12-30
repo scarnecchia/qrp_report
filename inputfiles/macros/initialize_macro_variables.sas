@@ -109,14 +109,14 @@
 	%let labelfileexists = N;		
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
-    %let cens_dth_label =Evidence of death;
-    %let cens_dpend_label =End of data partner data;
-    %let cens_qryend_label =End of query period;
-    %let cens_episend_label =End of exposure episode;
-    %let cens_spec_label =Occurence of request-defined censoring criteria;
-    %let cens_event_label =Occurence of event;
-    %let cens_switch1_label =First switch; 
-    %let cens_switch2_label =Second switch; 
+    %let cens_dth_label =Evidence of Death;
+    %let cens_dpend_label =End of Data;
+    %let cens_qryend_label =End of Study Period;
+    %let cens_episend_label =End of Exposure Episode;
+    %let cens_spec_label =Occurence of Request-Defined Censoring Criteria;
+    %let cens_event_label =Occurence of Event;
+    %let cens_switch1_label =First Switch; 
+    %let cens_switch2_label =Second Switch; 
     %let includeheaderrow = N;
 
     /*censor reasons*/

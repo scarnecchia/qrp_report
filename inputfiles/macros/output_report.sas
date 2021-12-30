@@ -273,7 +273,7 @@
 
                     %else %if &tableid. = T2 %then %do;
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=&strat.,
@@ -282,7 +282,7 @@
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=dpidsiteid,
@@ -334,11 +334,11 @@
                                 %tableletter();
                                 %censortable_output_table13(tablename=&tablename.,
                                 tablenum=&tablenum.&tableletter.,
-                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                 where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
                                 tablesub=&strat.,
                                 continuousmetrics=&continuousmetrics.,
-                                cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by &cattableheader.),
+                                cattableheader=%quote(Censored due to %bquote(&&&reason._label) by &cattableheader.),
                                 conttableheader=%str(&conttableheader. in Days, by Episode),
                                 episodesorpatients=Episodes,
                                 censorreason=&reason.);
@@ -496,11 +496,11 @@
                         /*note - table is not stratified by DP*/
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
-                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
                          where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
-                         cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by Episode Length),
+                         cattableheader=%quote(Censored due to %bquote(&&&reason._label) by Episode Length),
                          conttableheader=%str(Treatment Episode Length, in Days),
                          episodesorpatients=&episodesorpatients.,
                          censorreason=&reason.);

@@ -68,7 +68,7 @@
     data _footnotes;
 	   length footnote_order 3; 
        set lookup.lookup_footnotes(where = (type = "censor" and order in (999 /*dummy to prevent e r r o r*/
-        %if %str("&conttableheader.") = %str("Observable Time") %then %do; 3 %end;
+        %if %index(%str(&conttableheader.),%str(Observable Time))>0 %then %do; 3 %end;
         %if &censorreason. = cens_episend %then %do; 4 %end;
         %if &censorreason. = cens_event %then %do; 5 %end;
         %if &censorreason. = cens_spec %then %do; 6 %end;
@@ -135,7 +135,7 @@
             style(header)=[just=C background = BGR borderleftcolor = BGR];
 
         %if %str("&censorreason") ne %str("") %then %do; 
-        define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %bquote(%sysfunc(propcase(&&&censorreason._label)))&super_reason."
+        define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %bquote(&&&censorreason._label)&super_reason."
             style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.  borderleftcolor=black] 
             style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
         %end;
@@ -145,7 +145,7 @@
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
         define episodes_char / "Number of &episodesorpatients" group
            style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string" ] style(header)=[just=C background = BGR borderleftcolor = black borderrightcolor = BGR];
-        define Epi_Tot_Pct_char / "Percent of &episodesorpatients" group
+        define Epi_Tot_Pct_char / "Percent of Total &episodesorpatients" group
            style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
 
         %if &continuousmetrics. = Y %then %do;
