@@ -113,8 +113,8 @@
     %let cens_dpend_label =End of Data;
     %let cens_qryend_label =End of Study Period;
     %let cens_episend_label =End of Exposure Episode;
-    %let cens_spec_label =Occurence of Request-Defined Censoring Criteria;
-    %let cens_event_label =Occurence of Event;
+    %let cens_spec_label =Occurrence of Request-Defined Censoring Criteria;
+    %let cens_event_label =Occurrence of Event;
     %let cens_switch1_label =First Switch; 
     %let cens_switch2_label =Second Switch; 
     %let includeheaderrow = N;
