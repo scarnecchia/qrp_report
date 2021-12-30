@@ -569,6 +569,7 @@
 			end;
 			%end;
 	  	output;
+        %if &reporttype. ne T5 %then %do;
 	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
 	  		report_descr = "Number of pregnancy episodes";
@@ -587,12 +588,13 @@
 	  		agg_remaining_char = episodecountchar;
 	  		agg_excluded = .;
 	  		agg_excluded_char = 'N/A';
-	  		if t%substr(&reporttype,2,1)cohortdef in ('01','04') and level=99 then do;
+	  		if t%substr(&reporttype,2,1)cohortdef in ('01') and level=99 then do;
 	  		agg_remaining = lag_rem;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		end;
 	  		output;
 	  	end;
+        %end;
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
@@ -611,7 +613,7 @@
 
 	  %if %index(&reporttype,L2) %then %do;
 
-	  %let attrperiodid=_&periodid;
+	    %let attrperiodid=_&periodid;
 	    proc sql noprint undo_policy=none;
 		/* Create ordering variable based off eoi/ref values */
 		create table all_attrition_agg as 
