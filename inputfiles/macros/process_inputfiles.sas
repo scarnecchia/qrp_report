@@ -1107,9 +1107,10 @@
 	                          order = _n_;
 							  columnname = compress("column"||put(order,3.));
 			                  /* Set small cell highlighting to Y for all n variables */
-			                  if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") 
-							     or index(column,'/') = 0 then smallcellYN = "Y";
-							  else small_cellcounts = "N";
+							  %if %str("&reporttype.") = %str("T4L1") %then %do;
+			                    if index(column,'/') = 0 then smallcellYN = "Y";
+							    else 
+							  %end; smallcellYN = "N";
                             run;
 							
 							/* Add footnotes for T1 and T2L1 */
@@ -1119,6 +1120,8 @@
 							    length footnote 3;
 							    by table order;
 							    call missing(footnote);
+								if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+								else smallcellYN = "N";
 			                    if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
 			                    else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
 			                    else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
