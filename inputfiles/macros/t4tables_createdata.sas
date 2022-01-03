@@ -88,13 +88,11 @@
               select b.*
 	          ,a.episodes as den_episodes
 	          ,a.episodes_3trim as den_episodes_3trim
-              from agg_t4&dsin (keep = episodes episodes_3trim level group %if &stratifybydp. = Y %then %do; dpidsiteid %end; 
+              from agg_t4&dsin (keep = episodes episodes_3trim level group dpidsiteid 
 			                    where=(level in (&&t4&dsin.level1))) as a,
                    agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
               where a.group=b.group 
-	        %if &stratifybydp. = Y %then %do; 
-	          and a.dpidsiteid = b.dpidsiteid
-	        %end;;
+	          and a.dpidsiteid = b.dpidsiteid;
        quit;
     %mend t4_preg_nopreg;
 	%if %index(&datasetlist.,t4preg) > 0 %then %do;
