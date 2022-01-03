@@ -99,10 +99,10 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)));
-                keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum.: exp_std&dpnum.:
-                %if &includecomp. = Y %then %do; comp_mean&dpnum.: comp_std&dpnum.: %end;
-                %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum.: switch2_std&dpnum.: %end;
-                %if &computebalance. = Y %then %do; ad&dpnum.: sd&dpnum.: %end;
+                keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
+                %if &includecomp. = Y %then %do; comp_mean&dpnum. comp_std&dpnum. comp_mean&dpnum._char comp_std&dpnum._char %end;
+                %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum. switch2_std&dpnum. switch2_mean&dpnum._char switch2_std&dpnum._char %end;
+                %if &computebalance. = Y %then %do; ad&dpnum. sd&dpnum. ad&dpnum._char sd&dpnum._char %end;
                 %if &reporttype = T2L2 %then %do;
                 monitoringperiod
                 %end;
@@ -334,7 +334,6 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=1.75in bordertopwidth = &bordersize];
-			  line ''; /*added to match other tables spacing */
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
