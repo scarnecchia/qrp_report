@@ -1121,7 +1121,6 @@
 							    by table order;
 							    call missing(footnote);
 								if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
-								else smallcellYN = "N";
 			                    if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
 			                    else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
 			                    else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
