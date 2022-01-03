@@ -92,9 +92,7 @@
 			                    where=(level in (&&t4&dsin.level1))) as a,
                    agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
               where a.group=b.group 
-	        %if &stratifybydp. = Y %then %do; 
-	          and a.dpidsiteid = b.dpidsiteid
-	        %end;;
+	          and a.dpidsiteid = b.dpidsiteid;
        quit;
     %mend t4_preg_nopreg;
 	%if %index(&datasetlist.,t4preg) > 0 %then %do;
