@@ -89,7 +89,7 @@
 	          ,a.episodes as den_episodes
 	          ,a.episodes_3trim as den_episodes_3trim
               from agg_t4&dsin (keep = episodes episodes_3trim level group %if &stratifybydp. = Y %then %do; dpidsiteid %end; 
-			                   where=(level in (&&t4&dsin.level1))) as a,
+			                    where=(level in (&&t4&dsin.level1))) as a,
                    agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
               where a.group=b.group 
 	        %if &stratifybydp. = Y %then %do; 
@@ -110,12 +110,10 @@
 	 data _agg_t4moi;
 	   length moiname $5;
 	   set %if %index(&datasetlist.,t4preg) > 0 %then %do;
-	         _preg (in = t4preg where = (level in (&t4preglevel1., &t4preglevel2.))
-	         	          keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim den_:)
+	         _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
 		   %end;
 		   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-		     _nopreg (in = t4nopreg where = (level in (&t4nopreglevel1., &t4nopreglevel2.))
-		     	            keep= dpidsiteid group level moiname &sumcolumns npts episodes episodes_3trim den_:)
+		     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
 		   %end;;
 	   if t4preg then pregflg = "Y";
 	   else pregflg = "N";
@@ -125,8 +123,8 @@
      Summarize Data     
     ************************************************************************************************/	
 	proc summary data = _agg_t4moi nway missing;
-	  class group level moiname pregflg;
-	  var &sumcolumns. npts episodes episodes_3trim den_episodes den_episodes_3trim;
+	  class group moiname pregflg;
+	  var &sumcolumns. episodes episodes_3trim den_episodes den_episodes_3trim;
 	  output out = _agg_t4moi_summ (drop = _:) sum=;
 	run;
 	
@@ -135,7 +133,7 @@
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
 	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
-	     set &dsin. (drop = level);
+	     set &dsin.;
 		 %do vv = 1 %to &numcolumns;
 		    label &&var&vv.. = "&&label&vv..";
 			label &&var&vv.._char = "&&label&vv..";
