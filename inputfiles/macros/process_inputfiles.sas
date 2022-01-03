@@ -1113,8 +1113,10 @@
 	                          order = _n_;
 							  columnname = compress("column"||put(order,3.));
 			                  /* Set small cell highlighting to Y for all n variables */
-			                  if index(column,'/') then smallcellYN = "N";
-							  else smallcellYN = "Y";
+							  %if %str("&reporttype.") = %str("T4L1") %then %do;
+			                    if index(column,'/') = 0 then smallcellYN = "Y";
+							    else 
+							  %end; smallcellYN = "N";
 
                               /*Type 4 - assign column headers - table T1 assign Number or Percent. Other tables are assigned columnlabel*/
                               %if %sysfunc(prxmatch(m/T4L1|/i,&reporttype.)) > 0 %then %do; 
@@ -1133,7 +1135,7 @@
 							    length footnote 3;
 							    by table order;
 							    call missing(footnote);
-							    if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
+								if column in ("adjustedcodecount", "all_events", "dennumpts", "episodes", "eps_wevents", "npts", "rawcodecount") then smallcellYN = "Y";
 			                    if index(column,'dennumpts') > 0 and index(column,'dennummemdays') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0 then footnote = 1;
 			                    else if (index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') = 0 and index(column,'30.35') = 0) then footnote = 2;
 			                    else if index(column,'dennummemdays') > 0 and index(column,'dennumpts') = 0 and index(column,'365.25') > 0 then footnote = 3;
