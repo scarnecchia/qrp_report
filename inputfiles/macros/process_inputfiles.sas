@@ -1105,31 +1105,31 @@
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
 					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
-                                                  %if %sysfunc(prxmatch(m/T4L1|/i,&reporttype.)) > 0 %then %do; columnheader %end; );
+                                                  %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; columnheader %end;
+                                                  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
 						      set tablecolumns (rename = (order = order_in column = column_in));
 						      length columnname $32 smallcellYN $1;
 	                          by table order_in;
 			                  column = lowcase(compress(column_in));
 	                          order = _n_;
 							  columnname = compress("column"||put(order,3.));
-			                  /* Set small cell highlighting to Y for all n variables */
+                              smallcellYN = "N";
+
+                              /*Type 4:
+                                1. assign column headers - table T1 assign Number or Percent. Other tables are assigned columnlabel
+			                    2. Set small cell highlighting to Y for all n variables */
 							  %if %str("&reporttype.") = %str("T4L1") %then %do;
 			                    if index(column,'/') = 0 then smallcellYN = "Y";
-							    else 
-							  %end; smallcellYN = "N";
-
-                              /*Type 4 - assign column headers - table T1 assign Number or Percent. Other tables are assigned columnlabel*/
-                              %if %sysfunc(prxmatch(m/T4L1|/i,&reporttype.)) > 0 %then %do; 
-                              columnheader=columnlabel;
-                              if table = 'T1' then do;
-                                if index(column, '/')>0 then columnheader = 'Percent';
-                                else columnheader = 'Number';
-                              end;
+                                  columnheader=columnlabel;
+                                  if table = 'T1' then do;
+                                    if index(column, '/')>0 then columnheader = 'Percent';
+                                    else columnheader = 'Number';
+                                  end;
                               %end;
                             run;
 							
 							/* Add footnotes for T1 and T2L1 */
-							%if %sysfunc(prxmatch(m/T1|T2L1|/i,&reporttype.)) > 0 %then %do;
+							%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do;
 							  data tablecolumns;
 							    set tablecolumns;
 							    length footnote 3;
