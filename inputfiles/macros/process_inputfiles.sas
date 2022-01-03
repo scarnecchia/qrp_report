@@ -210,7 +210,7 @@
      run;
 
     /* Combine input files to identify all runids requested */
-	 data inputfiles;
+    data inputfiles;
 	   set 
 	     %if %sysfunc(exist(input.&groupsfile.)) %then %do;
 	       input.&groupsfile. (keep = runid group order)
@@ -219,14 +219,19 @@
 		   input.&l2comparisonfile. (keep = runid analysisgrp order rename=analysisgrp=group)
 		 %end;
 		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-		   input.&baselinefile. (keep = runid group order)
-		 %end;
-		 %if %sysfunc(exist(input.&itsregressionfile.)) %then %do;
-		   input.&itsregressionfile. (keep = runid)
+		   input.&baselinefile. (keep = runid group order in=b)
 		 %end;
 		 %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
-		   input.&treeaggfile. (keep = runid)
+		   input.&treeaggfile. (keep = runid treeanalysisGrp rename=treeanalysisGrp=group)
 		 %end;;
+
+        runid = lowcase(runid);
+        group = lowcase(group);
+
+		 %if %sysfunc(exist(input.&baselinefile.)) %then %do;
+		   if b then baseline = 'Y';
+           else baseline = 'N';
+		 %end;
      run;
 
      proc sql noprint;
@@ -236,7 +241,7 @@
         
 		%let numrunid = &numrunid.;
 
-		select distinct lowcase(runid)
+		select distinct runid
 	    into: runidlist separated by ' '
         from inputfiles;
 
@@ -333,18 +338,31 @@
 ************************************************************************************************************/
 
 	%if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
+		 %do n = 1 %to &numrunid.;
+			%global grouplist_&n.;
+	        %let runid = %scan(&runidlist., &n.);
+	     		proc sql noprint;
+	            /*RUNID specific list of groups*/
+	            select quote(strip(group), "'") into :grouplist_&n separated by ","
+	            from inputfiles
+	            where runid = "&runid." 
+                    %if %sysfunc(exist(input.&baselinefile.)) %then %do;
+                    and baseline = 'N';
+                    %end;
+                    ;
+				quit;
+				%put &&grouplist_&n..;
+	     %end;
+    %end;
+
+/***********************************************************************************************************
+*   GROUPSFILE processing                                            
+************************************************************************************************************/
+
+    %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+
 		data groupsfile;
-			set 
-			%if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
-				input.&groupsfile.
-			%end;
-			%if %sysfunc(exist(input.&l2comparisonfile.)) ne 0 %then %do;
-        		input.&l2comparisonfile. (rename=AnalysisGrp=group)
-			%end;
-            %if %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
-                input.&treeaggfile. (rename=treeanalysisGrp=group)
-            %end;
-			;
+			set input.&groupsfile.;
 			runid = lowcase(runid);
 			group = lowcase(group);
             if missing(includeinfigure) then includeinfigure = 'N';
@@ -354,63 +372,49 @@
             %end;
 		run;
 
-		 %do n = 1 %to &numrunid.;
-			%global grouplist_&n.;
-	        %let runid = %scan(&runidlist., &n.);
-	     		proc sql noprint;
-	            /*RUNID specific list of groups*/
-	            select quote(strip(group), "'") into :grouplist_&n separated by ","
-	            from groupsfile
-	            where runid = "&runid.";
-				quit;
-				%put &&grouplist_&n..;
-	     %end;
+        /*Set max(order) value into NUMGROUPS*/
+		proc sql noprint;
+    		select max(order) into :numgroups 
+    		from groupsfile;
+		quit;
 
-         /*Extract additional information from GROUPSFILE*/
-		 %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
+        /* Check if code distribution is required */
+		%let codedistcount = 0;
 
-            /* Check if code distribution is required */
-			%let codedistcount = 0;
+		proc sql noprint;
+    		select count(*) into :codedistcount 
+    		from groupsfile 
+            where strip(CodeDist) ne '';
+		quit;
 
-			proc sql noprint;
-			select count(*) into :codedistcount 
-			from input.&groupsfile. where strip(CodeDist) ne '';
-			quit;
+		%if %eval(&codedistcount. > 0) %then %do;
+			%let output_code_distribution = Y;
+			proc sort data=groupsfile(keep=group runid order codedist topncodedist) out=GroupsDist;
+			by order;
+			where strip(codedist) ne "";
+			run;
+		%end;
+		%put &=output_code_distribution;
 
-			%if %eval(&codedistcount. > 0) %then %do;
-				%let output_code_distribution = Y;
-				proc sort data=groupsfile(keep=group runid order codedist topncodedist) out=GroupsDist;
-				by order;
-				where strip(codedist) ne "";
-				run;
-			%end;
-			%put &=output_code_distribution;
-
-            /*Type 6 - assign to macro variable which groups to include negative time*/
-            %if &reporttype. = T6 %then %do;
-                proc sql noprint;
-    	            select quote(strip(group), "'") into :discardnegativetimegroups separated by ","
-    	            from groupsfile
-    	            where includenegativetime = "N";
-				quit;
-            %end;
-
-            /*Set max(order) value into NUMGROUPS*/
-			proc sql noprint;
-    			select max(order) into :numgroups 
-    			from input.&groupsfile.;
-			quit;
-
-            /* obtain only groups that figures were requested for */
+        /*Type 6 - assign to macro variable which groups to include negative time*/
+        %if &reporttype. = T6 %then %do;
             proc sql noprint;
-                select distinct order 
-                into :requestedfigs separated by ' '
-                from  groupsfile
-                where includeinfigure = 'Y'
-                order by order;
-            quit;
-		 %end;
-	 %end;
+                select quote(strip(group), "'") into :discardnegativetimegroups separated by ","
+                from groupsfile
+                where includenegativetime = "N";
+			quit;
+        %end;
+
+        /* obtain only groups that figures were requested for */
+        proc sql noprint;
+            select distinct order 
+            into :requestedfigs separated by ' '
+            from  groupsfile
+            where includeinfigure = 'Y'
+            order by order;
+        quit;
+
+    %end;
  
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
@@ -481,28 +485,6 @@
         %end;
     run;
 
-/***************************************************************************************************
-*   Create a combined type file for all runs                                        
-***************************************************************************************************/
-
-    %if ^%index(&reporttype,TREE) %then %do;
-     %let typenum = %substr(&reporttype,2,1);
-
-     data master_typefile;
-     set %do n = 1 %to &numrunid.;
-            %let runid=&&id&n..;
-            infolder.&&&runid._type&typenum.file(in=n&n.)
-        %end;
-     ;
-     format runid $5.;
-        %do n = 1 %to &numrunid.;
-            if n&n. then do;
-            runid = "&&id&n.";
-            end;
-        %end;
-     run;
-
-
 /*******************************************************************************************************
 *   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
 ********************************************************************************************************/
@@ -571,76 +553,101 @@
 ***************************************************************************************************/
 
     %if %index(&reporttype., T2L1) %then %do;
-    data _t2_addonshell;
-        length runid $5 group primary secondary $40;
-        call missing(runid, group, primary, secondary);
-        stop;
-    run;
+        data _t2_addonshell;
+            length runid $5 group primary secondary $40;
+            call missing(runid, group, primary, secondary);
+            stop;
+        run;
 
-    data master_t2addon(keep=runid group primary secondary);
-    set %do n = 1 %to &numrunid.;
-        %let runid=&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._multeventfile)) %then %do;
-        infolder.&&&runid._multeventfile(in=n&n.)
-        %end;
-        %else %if %sysfunc(exist(infolder.&&&runid._overlapfile)) %then %do;
-        infolder.&&&runid._overlapfile(in=n&n.)
-        %end;
-        %else %if %sysfunc(exist(infolder.&&&runid._concfile)) %then %do;
-        infolder.&&&runid._concfile(in=n&n.)
-        %end;
-        %else %do;
-        _t2_addonshell
-        %end;
-        %end;
-     ;
-     format runid $5.;
-        %do n = 1 %to &numrunid.;
-            %let runid=&&id&n..;
-            %if %sysfunc(exist(infolder.&&&runid._multeventfile)) or 
-                %sysfunc(exist(infolder.&&&runid._overlapfile)) or
-                %sysfunc(exist(infolder.&&&runid._concfile)) %then %do; 
-            if n&n. then do;
-            group=lowcase(analysisgrp);
-            runid = "&&id&n.";
-            end;
+        data master_t2addon(keep=runid group primary secondary);
+        set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._multeventfile)) %then %do;
+                infolder.&&&runid._multeventfile(in=n&n.)
+                %end;
+                %else %if %sysfunc(exist(infolder.&&&runid._overlapfile)) %then %do;
+                infolder.&&&runid._overlapfile(in=n&n.)
+                %end;
+                %else %if %sysfunc(exist(infolder.&&&runid._concfile)) %then %do;
+                infolder.&&&runid._concfile(in=n&n.)
+                %end;
+                %else %do;
+                _t2_addonshell
+                %end;
             %end;
-        %end;
-     run;
+         ;
+         format runid $5.;
+            %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._multeventfile)) or 
+                    %sysfunc(exist(infolder.&&&runid._overlapfile)) or
+                    %sysfunc(exist(infolder.&&&runid._concfile)) %then %do; 
+                if n&n. then do;
+                group=lowcase(analysisgrp);
+                runid = "&&id&n.";
+                end;
+                %end;
+            %end;
+         run;
     %end;
+
+/***************************************************************************************************
+*   Create a stacked type 4 MICOHORT files                                      
+***************************************************************************************************/
 
     %if %index(&reporttype.,T4) %then %do;
-    data _mil_shell;
-        length runid $5 group groupname $40;
-        call missing(runid, group, groupname);
-        stop;
-    run;
+        data _mil_shell;
+            length runid $5 group groupname $40;
+            call missing(runid, group, groupname);
+            stop;
+        run;
 
-   data master_mil(keep=runid group groupname);
-        set %do n = 1 %to &numrunid.;
-        %let runid=&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
-        infolder.&&&runid._micohortfile(in=n&n.)
-        %end;
-        %else %do;
-        _mil_shell
-        %end;
-        %end;
-        ;
-        format runid $5.;
-        %do n = 1 %to &numrunid.;
+       data master_mil(keep=runid group groupname);
+            set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
-            if n&n. then do;
-            group=lowcase(milgrp);
-            runid = "&&id&n.";
-            end;
+            infolder.&&&runid._micohortfile(in=n&n.)
             %end;
-        %end;
-    run;
-    %end;
+            %else %do;
+            _mil_shell
+            %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
+                if n&n. then do;
+                group=lowcase(milgrp);
+                runid = "&&id&n.";
+                end;
+                %end;
+            %end;
+        run;
     %end;
 
+
+/***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+    %if ^%index(&reporttype,TREE) %then %do;
+        %let typenum = %substr(&reporttype,2,1);
+
+         data master_typefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._type&typenum.file(in=n&n.)
+            %end;
+         ;
+         format runid $5.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+         run;
+    %end;
 
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               
