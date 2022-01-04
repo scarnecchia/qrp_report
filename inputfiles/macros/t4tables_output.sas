@@ -171,8 +171,8 @@
         %if &nonpreg. = Y %then %do;
         compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
-            if pregflg = 'Y' then text = "Pregnant Cohort";
-            else text = "Matched Non-Pregnant Cohort";
+            if pregflg = 'Y' then text = "Pregnancy Episodes Ending in Live-Birth Delivery";
+            else text = "All Matched Non-Pregnant Episodes";
             num = 100;
             line text $varying. num;
         endcomp;
