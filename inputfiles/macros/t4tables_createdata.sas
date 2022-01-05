@@ -116,6 +116,20 @@
 	   if t4preg then pregflg = "Y";
 	   else pregflg = "N";
 	 run;
+
+    /************************************************************************************************
+     List of groups with a defined pre-pregnancy period          
+    ************************************************************************************************/
+    %let prepreggrouplist = ;
+    %if %index(&sumcolumns., pre)>0 %then %do;
+    data output.master_typefile; set master_typefile; run;
+        proc sql noprint;
+            select distinct "'"||group||"'" into: prepreggrouplist separated by ','
+            from master_typefile
+            where prepregdays >0;
+        quit;
+        %if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
+    %end;
 	
    /************************************************************************************************
      Summarize Data     
@@ -126,10 +140,10 @@
 	  output out = _agg_t4moi_summ (drop = _:) sum=;
 	run;
 	
-    %macro prep_t4tables (dsin =, dsout =, dpvar = );	
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
+    %macro prep_t4tables (dsin =, dsout =, dpvar = );	
 	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
 	     set &dsin.;
 		 %do vv = 1 %to &numcolumns;
@@ -138,28 +152,40 @@
 			format &&var&vv.._char &&formatchar&vv..;
 			
 			%if %index(&&formula&vv.,/) > 0 %then %do;
-			   if &&num&vv. = 0 or &&denominator&vv. = 0 then do;
-			     &&var&vv. = 0;
-				 &&var&vv.._char = strip(put(0, &&format&vv..));
-			   end;
-			   else if &&num&vv. = . or &&denominator&vv. = . then do;
-			     &&var&vv. = 0;
-				 &&var&vv.._char = "NaN";
+               if &&num&vv. = . then &&num&vv. = 0;
+			   if &&denominator&vv. <=0 then do;
+			     &&var&vv. = .;
 			   end;
 			   else do;
 			     &&var&vv. = &&num&vv./&&denominator&vv.;
-				 &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			   end;
+               &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			%end;
 			%else %do;
-			   if &&num&vv. = . then do;
-			     &&var&vv.._char = "NaN";
-			   end;
-			   else do;
-			     &&var&vv. = &&formula&vv.;
-			     &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
-			   end;
+              if &&formula&vv. = . then &&formula&vv. = 0;
+		      &&var&vv. = &&formula&vv.;
+		      &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			%end;
+
+            /*standard missing value indicators*/
+            /*if 0 patients in cohort, set to '.'*/
+            if den_episodes <=0 then do;
+                &&var&vv. = .;
+                &&var&vv.._char = '.';
+            end;
+            else do;
+                /*if pre-pregnancy period not evaluated, set to 'N/A'*/
+                %if %index(&&formula&vv.,pre)>0 %then %do;
+                    if group not in (&prepreggrouplist) then do;
+                        &&var&vv.._char = 'N/A';
+                        &&var&vv. = .;
+                    end;
+                %end;
+                /*if 0 episodes in 3rd trimester, % cannot be computed*/
+                %if &&denominator&vv. = den_episodes_3trim %then %do;
+                     if den_episodes_3trim <=0 then &&var&vv.._char = 'NaN';
+                %end;
+            end;
 	     %end;
 	   run;
 	   
@@ -205,14 +231,16 @@
 		  by descending pregflg order moiname;
 		run;
     %mend;
+
 	/*Overall*/
     %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_t4moi);
-	
-	%if &stratifybydp. = Y %then %do;
+
+	/*By Data Partner*/
+    %if &stratifybydp. = Y %then %do;
 	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_t4moi, dpvar=dpidsiteid);
 	%end;
 	
-	  /*Clean up*/
+	/*Clean up*/
     proc datasets nowarn noprint lib=work;
       delete _:;
     quit;
