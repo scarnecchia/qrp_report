@@ -104,7 +104,7 @@
 
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
-            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow;
+            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow includemoiheaderrow;
     %let reporttitle = Exposures of Interest;
 	%let labelfileexists = N;		
     %let label_length = 250;
@@ -118,6 +118,7 @@
     %let cens_switch1_label =First Switch; 
     %let cens_switch2_label =Second Switch; 
     %let includeheaderrow = N;
+    %let includemoiheaderrow = N;
 
     /*censor reasons*/
     %global defaultcensororder;

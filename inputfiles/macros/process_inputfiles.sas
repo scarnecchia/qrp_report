@@ -645,6 +645,10 @@
 /***************************************************************************************************
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
+    
+    /*reassign reporttitle default if Type 4 L1*/
+    %if &reporttype. = T4L1 %then %let reporttitle = Exposure(s) of Interest;
+
 	%if %sysfunc(exist(input.&labelfile.)) ne 0 %then %do;
         data labelfile;
             set input.&labelfile.;
@@ -656,6 +660,7 @@
             /*set reporttitle if specified*/
             if labeltype = 'reporttitle' then call symputx('reporttitle', label);
             if labeltype = 'header' then call symputx('includeheaderrow', 'Y');
+            if labeltype = 'moiheader' then call symputx('includemoiheaderrow', 'Y');
         run;
 
         /* Determine length of label based off input file */
@@ -1099,22 +1104,50 @@
       
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
-					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN);
+                            %let checkt4l1_t1 = N;
+
+					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
+                                                  %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; columnheader numerator %end;
+                                                  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
 						      set tablecolumns (rename = (order = order_in column = column_in));
 						      length columnname $32 smallcellYN $1;
 	                          by table order_in;
 			                  column = lowcase(compress(column_in));
 	                          order = _n_;
 							  columnname = compress("column"||put(order,3.));
-			                  /* Set small cell highlighting to Y for all n variables */
+                              smallcellYN = "N";
+
+                              /*Type 4:
+                                1. assign column headers - table T1 assign Number or Percent. Other tables are assigned columnlabel
+			                    2. Set small cell highlighting to Y for all n variables */
 							  %if %str("&reporttype.") = %str("T4L1") %then %do;
 			                    if index(column,'/') = 0 then smallcellYN = "Y";
-							    else 
-							  %end; smallcellYN = "N";
+                                  columnheader=columnlabel;
+                                  numerator = scan(compress(column,'()'),1,'/');
+                                  if table = 'T1' then do;
+                                    if index(column, '/')>0 then columnheader = 'Percent';
+                                    else columnheader = 'Number';
+                                    call symputx('checkt4l1_t1', 'Y');
+                                  end;
+                              %end;
                             run;
+
+                            /*Type 4 - check to ensure N and % columns have the same label*/
+                            %if &checkt4l1_t1 = Y %then %do;
+                                %let count = 1;
+                                proc sql noprint;
+                                    select max(c) into: count
+                                    from (select count(distinct columnlabel) as c from tablecolumns(where=(table='T1')) group by numerator);
+                                quit;
+
+                                %if %eval(&count>1) %then %do;
+		                          %put ERROR: (Sentinel) Different labels specified for N and % columns in table T1.;
+                                  %abort;
+                                %end;
+                            %end; 
 							
 							/* Add footnotes for T1 and T2L1 */
-							%if %sysfunc(prxmatch(m/T1|T2L1|/i,&reporttype.)) > 0 %then %do;
+							%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do;
 							  data tablecolumns;
 							    set tablecolumns;
 							    length footnote 3;
