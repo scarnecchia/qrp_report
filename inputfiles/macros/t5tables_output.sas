@@ -327,7 +327,7 @@
             compute grouplabel;
                 if sortorder1=0 then do;
 					%if &includeheaderrow. = Y %then %do;
-						call define (_col_,"style","style=[fontstyle=italic]");
+						call define (%if &maxorder1.=0 %then %do; _col_ %end; %else %do; _row_ %end;,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
 						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");
@@ -424,7 +424,7 @@
             compute grouplabel;
                 if sortorder1=0 then do;
 					%if &includeheaderrow. = Y %then %do;
-						call define (_col_,"style","style=[fontstyle=italic]");
+						call define (%if &maxorder1.=0 %then %do; _col_ %end; %else %do; _row_ %end;,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
 						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");

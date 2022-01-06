@@ -93,7 +93,7 @@
     %end;
 
     %if &destination. = excel %then %do;
-    ods excel options(sheet_name="Table &tablenum." tab_color = "green");
+    ods excel options(sheet_name="Table &tablenum." tab_color = "green" flow="1:400");
     %end;
 
     ods proclabel = "Table &tablenum.";

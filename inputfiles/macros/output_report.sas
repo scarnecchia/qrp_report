@@ -46,7 +46,6 @@
     ods listing close;
     ods select all;
     ods noresults;
-    options nodate nonumber orientation = landscape;
     %if &destination. = excel %then %do;
     ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
@@ -273,7 +272,7 @@
 
                     %else %if &tableid. = T2 %then %do;
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=&strat.,
@@ -282,7 +281,7 @@
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=dpidsiteid,
@@ -334,11 +333,11 @@
                                 %tableletter();
                                 %censortable_output_table13(tablename=&tablename.,
                                 tablenum=&tablenum.&tableletter.,
-                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                 where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
                                 tablesub=&strat.,
                                 continuousmetrics=&continuousmetrics.,
-                                cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by &cattableheader.),
+                                cattableheader=%quote(Censored due to %bquote(&&&reason._label) by &cattableheader.),
                                 conttableheader=%str(&conttableheader. in Days, by Episode),
                                 episodesorpatients=Episodes,
                                 censorreason=&reason.);
@@ -378,6 +377,110 @@
         %end;
 
     %end; /*ReportType = T1 and T2L1 summary tables*/
+
+
+/*********************************************************************************************/
+/* Type 4 summary tables                                                                     */
+/*********************************************************************************************/
+	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
+     
+        %do tb = 1 %to %sysfunc(countw(&tablelist.));
+            %let table = %scan(&tablelist., &tb);
+            /*determine if table includes non-pregnant section*/;
+            %let nonpreglabel = %str( );
+            %let nonpreg = N;
+            %let s=;
+            data _null_;
+                set tablefile(where=(table="&table"));
+                if tablesubstrat = "t4nopreg" then do;
+                    call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
+                    call symputx('s', "s");
+                    call symputx('nonpreg', 'Y');
+                end;
+            run;
+
+             proc sql noprint;
+                select cats(columnname,'_char') 
+                      ,cats(columnwidth,'in')
+                      ,smallcellyn
+                      ,columnlabel
+                      ,columnheader
+                into :outvarlist separated by ' ',
+                     :outwidths separated by ' ',
+                     :outsmallcells separated by ' ',
+                     :columnlabels separated by '|||',
+                     :columnheaders separated by '|||'
+                from tablecolumns
+                where table="&table"
+                order by order;
+            quit; 
+                
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+            %tableletter();
+
+            /*Overall*/
+            %t4tables_output(table=&table.,
+                             dataset=final_t4moi,
+                             %if &nonpreg. = N %then %do;
+                             where=pregflg = 'Y',
+                             %end;
+                             %else %do;
+                             where=1,
+                             %end;
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.));
+
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %t4tables_output(table=&table.,
+                             dataset=final_dps_t4moi,
+                             where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.));           
+                %end;
+            %end;
+
+            %let tablenum = %eval(&tablenum + 1);
+        %end; /*loop through each table*/
+    %end; /*ReportType = T4L1 summary tables*/
 
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
@@ -496,11 +599,11 @@
                         /*note - table is not stratified by DP*/
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
-                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
                          where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
-                         cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by Episode Length),
+                         cattableheader=%quote(Censored due to %bquote(&&&reason._label) by Episode Length),
                          conttableheader=%str(Treatment Episode Length, in Days),
                          episodesorpatients=&episodesorpatients.,
                          censorreason=&reason.);
