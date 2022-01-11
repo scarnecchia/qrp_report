@@ -708,7 +708,7 @@
 
                     /*collapse race*/
                     %if &collapse_vars = race %then %do;
-                        if metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5') then do;
+                        if metvar in ('RACE_0', 'RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5') then do;
                             %if &stratifybydp.=N %then %do;
                                 %do c_r = 1 %to 5;
                                     %if %eval(&&race&c_r._exp >0) | %eval(&&race&c_r._comp >0) %then %do;
