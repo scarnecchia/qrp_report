@@ -708,7 +708,7 @@
 
                     /*collapse race*/
                     %if &collapse_vars = race %then %do;
-                        if prxmatch('/RACE*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 then do;
+                        if metvar in ('RACE_0', 'RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5') then do;
                             %if &stratifybydp.=N %then %do;
                                 %do c_r = 1 %to 5;
                                     %if %eval(&&race&c_r._exp >0) | %eval(&&race&c_r._comp >0) %then %do;
@@ -769,7 +769,7 @@
                             - L1: do not fill in %, 
                             - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
-                    if prxmatch('/RACE*|HISPANIC*|SEX*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MALE|FEMALE|OTHER/',metvar) > 0 then do;
+                    if prxmatch('/RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                         if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = divide(exp_mean0,total_exp_patients);
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
                         if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
@@ -1122,7 +1122,7 @@
                 /*update race and hispanic rows*/
                 /*set to '.' race/hispanic if information if not returned at a DP
                    - if at least 1 DP returns race or hispanic, no need to reassign to '.' */
-                if prxmatch('/RACE*|HISPANIC*|ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*/',metvar) > 0 and metvar not in ('RACE_0', 'HISPANIC_U', 'RACE_UNKNOWN', 'HISPANIC_UNKNOWN') then do;
+                if prxmatch('/RACE*|HISPANIC*/',metvar) > 0 and metvar not in ('RACE_0', 'HISPANIC_U') then do;
                    if %do r = 1 %to &num_dp.; "&&returnrace&r." = "N" %if &r. ne &num_dp. %then %do; and %end; %end; then do;
                         exp_mean0_char = '.';
                         exp_std0_char = '.';
@@ -1394,37 +1394,37 @@
                 end;
 
                 /*sex - only keep F if type 4 and remove rows not requested in cohortfile*/
-                else if MetVar in ('FEMALE', 'SEX_F') and 'F' in (&sex.) then do;
+                else if MetVar in ('SEX_F') and 'F' in (&sex.) then do;
                 %assignbaselinevars(label=put('F', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('F', sexsort.),1.));
                 end;
-                else if MetVar in ('MALE', 'SEX_M') and 'M' in (&sex.) then do; 
+                else if MetVar in ('SEX_M') and 'M' in (&sex.) then do; 
                     %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
                         %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('M', sexsort.),1.));
                     %end;
                 end;
-                else if MetVar in ('SEX_OTHER', 'SEX_O') and 'O' in (&sex.) then do;
+                else if MetVar in ('SEX_O') and 'O' in (&sex.) then do;
                     %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
                     %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('O', sexsort.),1.));
                     %end;
                 end;
 
                 /*race - remove rows not requested in cohortfile*/
-                else if MetVar in ('AMERICANINDIAN', 'RACE_1') and '1' in (&race.) then do; 
+                else if MetVar in ('RACE_1') and '1' in (&race.) then do; 
                 %assignbaselinevars(label=put('1', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('1', racesort.),1.));
                 end;
-                else if MetVar in ('ASIAN', 'RACE_2') and '2' in (&race.) then do; 
+                else if MetVar in ('RACE_2') and '2' in (&race.) then do; 
                 %assignbaselinevars(label=put('2', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('2', racesort.),1.));
                 end;
-                else if MetVar in ('BLACK', 'RACE_3') and '3' in (&race.) then do; 
+                else if MetVar in ('RACE_3') and '3' in (&race.) then do; 
                 %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('3', racesort.),1.));
                 end;
-                else if MetVar in ('PACIFICISLANDER', 'RACE_4') and '4' in (&race.) then do; 
+                else if MetVar in ('RACE_4') and '4' in (&race.) then do; 
                 %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('4', racesort.),1.));
                 end;
-                else if MetVar in ('RACE_UNKNOWN', 'RACE_0') and '0' in (&race.) then do; 
+                else if MetVar in ('RACE_0') and '0' in (&race.) then do; 
                 %assignbaselinevars(label=put('0', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('0', racesort.),1.));
                 end;
-                else if MetVar in ('WHITE', 'RACE_5') and '5' in (&race.) then do; 
+                else if MetVar in ('RACE_5') and '5' in (&race.) then do; 
                 %assignbaselinevars(label=put('5', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('5', racesort.),1.));
                 end;
 
