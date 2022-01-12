@@ -499,7 +499,10 @@
 	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or scan(a.group,-1,'@') = b.group %end;
 	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'header')) c
-	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group %end;
+	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; 
+                                 or (case when findc(a.group, '_') > 0 then substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group 
+                                    else a.group = c.group end) 
+                                 %end;
 	        					 %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = c.group or scan(a.group,-1,'@') = c.group) %end;
 	        ;
 	  quit;
