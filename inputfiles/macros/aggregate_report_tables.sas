@@ -143,12 +143,18 @@
 				 data _stratavars;
 				   length strata $15;
 				   %do a = 1 %to &totalstrata.;
-				     strata = "%scan(&allstrata.,&a.)"; output;
+				     strata = "%scan(&allstrata.,&a.)"; 
+				     strataorder = &a;
+				     output;
 				   %end;
 				 run;
 
 				 proc sort nodupkey data = _stratavars;
 				   by strata;
+				 run;
+
+				 proc sort data = stratavars_&outfile.;
+				   by strataorder;
 				 run;
 				 
 				 proc sql noprint;
