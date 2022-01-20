@@ -141,7 +141,7 @@
 				 %let totalstrata = %sysfunc(countw(&allstrata));
 
 				 data _stratavars;
-				   length strata $15;
+				   length strata $15 strataorder 3;
 				   %do a = 1 %to &totalstrata.;
 				     strata = "%scan(&allstrata.,&a.)"; 
 				     strataorder = &a;
