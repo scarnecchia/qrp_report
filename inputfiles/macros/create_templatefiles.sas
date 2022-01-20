@@ -1370,6 +1370,9 @@ libname tempfl "";
 	   table = "T4"; Column = "sumadjcntonlyt2";       ColumnLabel = "Codes Only During Second Trimester";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   table = "T4"; Column = "sumadjcntonlyt3";       ColumnLabel = "Codes Only During Third Trimester";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
+	   table = "T5"; Column = " ";       ColumnLabel = " ";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T6"; Column = " ";       ColumnLabel = " ";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   
 	 run; 
 	 
   %mend create_t4_tablecolumns;
