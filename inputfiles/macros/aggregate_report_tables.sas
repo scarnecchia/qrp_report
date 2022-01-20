@@ -153,7 +153,7 @@
 				   by strata;
 				 run;
 
-				 proc sort data = stratavars;
+				 proc sort data = _stratavars;
 				   by strataorder;
 				 run;
 				 
