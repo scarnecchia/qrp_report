@@ -568,7 +568,7 @@ libname tempfl "";
         call missing(levelid3);
 
         dataset = "t4preg";
-        %do p = 1 %to 4;
+        %do p = 1 %to 6;
         %do s = 1 %to &stratlevels.;
             table = "T&p";
 		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
