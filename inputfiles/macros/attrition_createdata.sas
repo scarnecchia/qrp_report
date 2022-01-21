@@ -381,11 +381,11 @@
 
         /* Sum again, but only to collapse rows 2, 3 and 4 together and 15 and 16 together for excluded */
         create table all_attrition_agg as 
-        select  runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
-        	   agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12.
+        select runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, max(input(level,best.)) as level,
+        	   min(agg_remaining) as agg_remaining format=comma12., sum(agg_excluded) as agg_excluded format=comma12.
         	   %if &inclnobs > 0 %then %do; ,condlevel %end;
         from all_attrition_agg
-        group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef, agg_remaining %if &inclnobs > 0 %then %do; ,condlevel %end;;
+        group by runid, group, report_descr, claim_level, t%substr(&reporttype,2,1)cohortdef %if &inclnobs > 0 %then %do; ,condlevel %end;;
     quit;
 
     /* Set in condlevel value and delete unneeded rows */
