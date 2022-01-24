@@ -27,6 +27,7 @@
 ***************************************************************************************************;
 
 %macro create_tableofcontents();
+
     %put =====> MACRO CALLED: create_tableofcontents;
 
     /*********************************************************************************************/
@@ -738,6 +739,12 @@
                     %if &table. = T4 %then %do;
                     caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
                     %end;
+                    %if &table. = T5 %then %do;
+                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
+                    %if &table. = T6 %then %do;
+                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
 
             /*By DP*/
             %if &stratifybydp. = Y %then %do;    
@@ -756,8 +763,14 @@
                         %end;
                         %if &table. = T4 %then %do;
                         caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
-                        %end;               
-                %end;
+                        %end;             
+                        %if &table. = T5 %then %do;
+                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                        %if &table. = T6 %then %do;
+                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                 %end;
             %end;
             %let tablenum = %eval(&tablenum + 1);
         %end; /*loop through each table*/
