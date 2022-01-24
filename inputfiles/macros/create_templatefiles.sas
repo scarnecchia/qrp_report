@@ -568,7 +568,7 @@ libname tempfl "";
         call missing(levelid3);
 
         dataset = "t4preg";
-        %do p = 1 %to 6;
+        %do p = 1 %to 4;
         %do s = 1 %to &stratlevels.;
             table = "T&p";
 		    tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
@@ -587,6 +587,16 @@ libname tempfl "";
             output;
 	     %end;
          %end;
+		 %do sp = 5 %to 6;
+		   table = "T&sp.";
+		   tablesub = "overall";
+		   levelid1 = "";
+		   levelid2 = "moiname gestwk";
+		   tablesubstrat = 't4preggestwk';
+		   output;
+		   tablesubstrat = 't4nopreggestwk';
+		   output;
+		 %end;
     run;
 
 
@@ -1370,8 +1380,8 @@ libname tempfl "";
 	   table = "T4"; Column = "sumadjcntonlyt2";       ColumnLabel = "Codes Only During Second Trimester";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   table = "T4"; Column = "sumadjcntonlyt3";       ColumnLabel = "Codes Only During Third Trimester";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
-	   table = "T5"; Column = " ";       ColumnLabel = " ";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   table = "T6"; Column = " ";       ColumnLabel = " ";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T5"; Column = "gestwk";                ColumnLabel = "Gestational Week";                               ColumnFormat = "3.0";        order = 46; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T6"; Column = "gestwk";                ColumnLabel = "Gestational Week ";                              ColumnFormat = "3.0";        order = 47; IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
 	 run; 
 	 
