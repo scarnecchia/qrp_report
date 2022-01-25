@@ -589,6 +589,7 @@ libname tempfl "";
          %end;
 		 %do sp = 5 %to 6;
 		   levelnum =1;
+		   dataset = "t4preggestwk";
 		   table = "T&sp.";
 		   tablesub = "overall";
 		   levelid1 = "moiname";
