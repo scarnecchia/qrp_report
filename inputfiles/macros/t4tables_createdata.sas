@@ -122,7 +122,6 @@
     ************************************************************************************************/
     %let prepreggrouplist = ;
     %if %index(&sumcolumns., pre)>0 %then %do;
-    data output.master_typefile; set master_typefile; run;
         proc sql noprint;
             select distinct "'"||group||"'" into: prepreggrouplist separated by ','
             from master_typefile
