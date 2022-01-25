@@ -49,7 +49,8 @@
                                grp1_label=,
                                grp2_label=,
                                grp3_label=, 
-                               computebalance = );
+                               computebalance = ,
+                               includenonpregnant = );
 
         /*save data to reportdata folder*/
         %isdata(dataset=repdata.table1&tableletter.);
@@ -114,7 +115,7 @@
 	     data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-	       set lookup.lookup_footnotes (where = (type = "baseline" and order in (14 15
+	       set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15
            /* if race is collapsed in table*/
             %if &collapse_vars. = race %then %do; 16 %end;
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
@@ -157,7 +158,12 @@
 		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
-		   )));
+		   ))
+            %if %index(&reporttype,T4) > 0 %then %do;
+            or (type='type4' and order in (-2 
+                %if &includenonpregnant = Y %then %do; -1 %end; ))
+            %end;
+                ));
 		  by order;
 		  footnote_order = _n_;
 	    run;
@@ -178,6 +184,7 @@
 		quit;
         
 		/* Assign macro variables for superscipts */
+		%assign_superscripts(type =title, order =-2 -1);
 		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
 		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18);
 		%assign_superscripts(type =switch1, order =12);
@@ -329,7 +336,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
 			                              borderbottomwidth = &bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "&title.";
+            line "&title.&super_title.";
             endcomp;
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
@@ -704,7 +711,8 @@
               grp1_label=&grp1_label.,
               grp2_label=&grp2_label., 
               grp3_label=&grp3_label.,
-              computebalance = &computebalance.);
+              computebalance = &computebalance.,
+              includenonpregnant=&includenonpregnant.);
             %end;
 
             /*For L2 tables - up to 2 additional adjusted tables*/
@@ -720,7 +728,8 @@
                   grp1_label=&grp1_label.,
                   grp2_label=&grp2_label., 
                   grp3_label=&grp3_label.,
-                  computebalance = &computebalance.);
+                  computebalance = &computebalance.,
+                  includenonpregnant=&includenonpregnant.);
                 %end;
 
                 /*Unweighted - IPTW and PS Stratum*/
@@ -734,7 +743,8 @@
                   grp1_label=&grp1_label.,
                   grp2_label=&grp2_label., 
                   grp3_label=&grp3_label.,
-                  computebalance = &computebalance.);
+                  computebalance = &computebalance.,
+                  includenonpregnant=&includenonpregnant.);
                 %end;
 					
                 /*Weighted - IPTW, PS Stratum, PS Stratification*/
@@ -751,7 +761,8 @@
                       grp1_label=&grp1_label.,
                       grp2_label=&grp2_label., 
                       grp3_label=&grp3_label.,
-                      computebalance = &computebalance.);
+                      computebalance = &computebalance.,
+                      includenonpregnant=&includenonpregnant.);
                 %end;
             %end; /*Additional L2 tables*/
         %mend;
