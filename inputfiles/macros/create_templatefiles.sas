@@ -1385,9 +1385,7 @@ libname tempfl "";
 	   table = "T5"; Column = "moipregepisodes_overlap";                   ColumnLabel = "Gestational Week";           ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";      ColumnLabel = "Gestational Week";           ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   
-	   table = "T6"; Column = "moipregepisodes_overlap";                   ColumnLabel = "Gestational Week";           ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   table = "T6"; Column = "moipregepisodes_overlap/pregepisodes";      ColumnLabel = "Gestational Week";           ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   
+	   table = "T6"; Column = "moipregepisodes_overlap";                   ColumnLabel = "Gestational Week";           ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	     
 	 run; 
 	 
   %mend create_t4_tablecolumns;
