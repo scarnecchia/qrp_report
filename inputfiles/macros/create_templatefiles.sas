@@ -588,10 +588,11 @@ libname tempfl "";
 	     %end;
          %end;
 		 %do sp = 5 %to 6;
+		   levelnum =1;
 		   table = "T&sp.";
 		   tablesub = "overall";
-		   levelid1 = "";
-		   levelid2 = "moiname gestwk";
+		   levelid1 = "moiname";
+		   levelid2 = "";
 		   tablesubstrat = 't4preggestwk';
 		   output;
 		   tablesubstrat = 't4nopreggestwk';
@@ -1380,8 +1381,11 @@ libname tempfl "";
 	   table = "T4"; Column = "sumadjcntonlyt2";       ColumnLabel = "Codes Only During Second Trimester";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   table = "T4"; Column = "sumadjcntonlyt3";       ColumnLabel = "Codes Only During Third Trimester";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
 	   
-	   table = "T5"; Column = "gestwk";                ColumnLabel = "Gestational Week";                               ColumnFormat = "3.0";        order = 46; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   table = "T6"; Column = "gestwk";                ColumnLabel = "Gestational Week ";                              ColumnFormat = "3.0";        order = 47; IncludeinReport = "Y"; columnwidth=.9; output; 
+	   table = "T5"; Column = "moipregepisodes_overlap";                   ColumnLabel = "Gestational Week";           ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";      ColumnLabel = "Gestational Week";           ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   
+	   table = "T6"; Column = "moipregepisodes_overlap";                   ColumnLabel = "Gestational Week";           ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T6"; Column = "moipregepisodes_overlap/pregepisodes";      ColumnLabel = "Gestational Week";           ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.9; output; 	   
 	   
 	 run; 
 	 
