@@ -390,8 +390,11 @@
             %let nonpreglabel = %str( );
             %let nonpreg = N;
             %let s=;
+            %let datasuffix=;
             data _null_;
                 set tablefile(where=(table="&table"));
+                if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
+                if table in ('T5', 'T6') then call symputx('datasuffix','gestwk');
                 if tablesubstrat = "t4nopreg" then do;
                     call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
@@ -421,7 +424,7 @@
 
             /*Overall*/
             %t4tables_output(table=&table.,
-                             dataset=final_t4moi,
+                             dataset=final_t4&datasuffix.,
                              %if &nonpreg. = N %then %do;
                              where=pregflg = 'Y',
                              %end;
@@ -441,6 +444,12 @@
                              %if &table. = T4 %then %do;
                              title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
                              %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
                              nonpreg = &nonpreg., 
                              varlist = &outvarlist,
                              varwidths = %bquote(&outwidths.),
@@ -454,7 +463,7 @@
                     %let maskedID = %scan(&masked_dplist,&dps); 
                     %tableletter();
                     %t4tables_output(table=&table.,
-                             dataset=final_dps_t4moi,
+                             dataset=final_dps_t4&datasuffix.,
                              where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
                              tabnum=&tablenum.&tableletter.,
                              %if &table. = T1 %then %do;
@@ -468,6 +477,12 @@
                              %end;
                              %if &table. = T4 %then %do;
                              title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
                              %end;
                              nonpreg = &nonpreg., 
                              varlist = &outvarlist,

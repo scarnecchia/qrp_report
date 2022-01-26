@@ -9,8 +9,8 @@
 * PURPOSE: This macro drives the creation of T4 summary table proc report output
 *                                        
 *  Program inputs:                                                                                   
-*   - final_t4moi
-*   - final_dps_t4moi
+*   - final_t4moi / final_t4gestwk
+*   - final_dps_t4moi / final_dps_t4gestwk
 * 
 *  Program outputs: 
 * 	- repdata.table&tablenum.&tableletter
@@ -92,9 +92,9 @@
     	run;
     %end;
 
-    /*Create columns statement with varlist headers. Necessary because T1 contains both N and % under one header*/
+    /*Create columns statement with varlist headers. Necessary because T1 and T5 contains both N and % under one header*/
     %let columnstatement = ;
-    %if &table. = T1 %then %do;
+    %if &table. = T1 | &table. = T5 %then %do;
         %do v = 1 %to %sysfunc(countw(%str(&columnstatementlabels.),|||));
             %let label = %scan(%str(&columnstatementlabels.),&v., |||);
             %let skip = 0;
