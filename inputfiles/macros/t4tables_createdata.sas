@@ -156,7 +156,7 @@
 	  run;
 	%end; /* T4preg and T4nopreg specific code */
 	%else %do;
-	  data _agg_t4moi;
+	  data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_pregepisodes &sumcolumns. pregflg gestwk_char);
 	    length pregflg $1 gestwk_char $10;
 	    set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
 		      agg_t4preggestwk (in = preg)
@@ -168,12 +168,13 @@
         else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
 		if preg then pregflg = "Y";
 	    else pregflg = "N";
+		den_pregepisodes = pregepisodes;
 	  run;	
 		
 	  proc summary data = _agg_t4moi;
         class group moiname pregflg gestwk_char;
-        var &sumcolumns.;
-        output out = _agg_t4moi_summ (where = (not missing(group) and not missing(moiname) and not missing(gestwk_char)) and not missing(pregflg) drop = _:) sum=;
+        var &sumcolumns. den_pregepisodes;
+        output out = _agg_t4moi_summ (where = (not missing(group) and not missing(moiname) and not missing(gestwk_char) and not missing(pregflg)) drop = _:) sum=;
       run;
 	%end;
 	
@@ -181,12 +182,7 @@
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
     %macro prep_t4tables (dsin =, dsout =, dpvar = );	
-	data output.&dsin._in;
-	   set &dsin.;
-	   run;
-	   
-	   
-	   data &dsin. (keep = &dpvar. group moiname column: pregflg %if &dataset. = preggestwk %then %do; gestwk_char %end;%else %do;  den_episodes %end;);
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg %if &dataset. = preggestwk %then %do; gestwk_char den_pregepisodes %end;%else %do;  den_episodes %end;);
 	     set &dsin.;
 		 %do vv = 1 %to &numcolumns;
 		    label &&var&vv.. = "&&label&vv..";
@@ -208,42 +204,46 @@
 		      &&var&vv. = &&formula&vv.;
 		      &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			%end;
-
-            /*standard missing value indicators*/
-            /*if 0 patients in cohort, set to '.'*/
-            if den_episodes <=0 then do;
-                &&var&vv. = .;
-                &&var&vv.._char = '.';
-            end;
-            else do;
-                /*if pre-pregnancy period not evaluated, set to 'N/A'*/
-                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist.") ne %str("") %then %do;
-                    if group not in (&prepreggrouplist) then do;
-                        &&var&vv.._char = 'N/A';
-                        &&var&vv. = .;
-                    end;
-                %end;
-                /*if 0 episodes in 3rd trimester, % cannot be computed*/
-                %if &&denominator&vv. = den_episodes_3trim %then %do;
-                     if den_episodes_3trim <=0 then &&var&vv.._char = 'NaN';
-                %end;
-            end;
+            
+			%if &dataset. = preg %then %do;
+              /*standard missing value indicators*/
+              /*if 0 patients in cohort, set to '.'*/
+              if den_episodes <=0 then do;
+                  &&var&vv. = .;
+                  &&var&vv.._char = '.';
+              end;
+              else do;
+                  /*if pre-pregnancy period not evaluated, set to 'N/A'*/
+                  %if %index(&&formula&vv.,pre)>0 ne %str("") %then %do;
+                      if group not in (&prepreggrouplist) then do;
+                          &&var&vv.._char = 'N/A';
+                          &&var&vv. = .;
+                      end;
+                  %end;
+                  /*if 0 episodes in 3rd trimester, % cannot be computed*/
+                  %if &&denominator&vv. = den_episodes_3trim %then %do;
+                       if den_episodes_3trim <=0 then &&var&vv.._char = 'NaN';
+                  %end;
+              end;
+			%end;
 	     %end;
-	   run;
-	   
-	   data output.&dsin.;
-	   set &dsin.;
 	   run;
 	   
      /************************************************************************************************
        Transpose Data for gestwk        
       ************************************************************************************************/
        %if &dataset. = preggestwk %then %do;
-          proc transpose data = _agg_&&substrat&dg. out = agg_agg_&&substrat&dg._tran (rename = (_name_ = column));
-            by dpidsiteid group moiname;
-            id gestwk_char;
-            var moiepisodes_overlap moipregepisodes_overlap pregepisodes;
-          run;
+		 %do va = 1 %to &numcolumns; 
+            proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
+               by &dpvar. group moiname pregflg;
+               id gestwk_char;
+               var &&var&va..;
+            run;
+		 %end;
+		 data &dsin.;
+		   merge &dsin._tran_:;
+		   by &dpvar. group moiname pregflg;
+		 run;
        %end;
 	   
 	   /* Apply labels */
