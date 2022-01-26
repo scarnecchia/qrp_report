@@ -386,11 +386,16 @@
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreglabel = %str( );
             %let nonpreg = N;
             %let s=;
+
+            /*table specific information*/
             %let datasuffix=;
+            %let spanningheader=;
+
             data _null_;
                 set tablefile(where=(table="&table"));
                 if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
@@ -455,7 +460,8 @@
                              varwidths = %bquote(&outwidths.),
                              varsmallcells = &outsmallcells,
                              columnstatementlabels = %quote(&columnlabels.),
-                             definestatementlabels = %quote(&columnheaders.));
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
 
             /*By DP*/
             %if &stratifybydp. = Y %then %do;    
@@ -489,7 +495,8 @@
                              varwidths = %bquote(&outwidths.),
                              varsmallcells = &outsmallcells,
                              columnstatementlabels = %quote(&columnlabels.),
-                             definestatementlabels = %quote(&columnheaders.));           
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
                 %end;
             %end;
 

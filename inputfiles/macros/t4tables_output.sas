@@ -27,9 +27,10 @@
 *   - varsmallcells = List of small cell count highlighting indicators for each column
 *   - columnstatementlabels = List of column headers to include in COLUMNS statement
 *   - definestatementlabels = List of column headers to include in DEFINE statement
-          
+*   - spanningheader = Header that spans the top of entire table
+*          
 *  Programming Notes:     
-*   Table T1 includes both N and # columns under a single column. For this reason, the parameter
+*   Tables T1 and T5 includes both N and # columns under a single column. For this reason, the parameter
 *    COLUMNLABELS contains a list of labels to include in the COLUMNS statement and COLUMNHEADERS
 *    contains a list of labels to include in the DEFINE statement
 *                                                                           
@@ -50,7 +51,8 @@
                        varwidths=, 
                        varsmallcells=,
                        columnstatementlabels=,
-                       definestatementlabels=);
+                       definestatementlabels=,
+                       spanningheader=);
 
     /*Assign footnotes*/
     data _footnotes;
@@ -129,9 +131,9 @@
         style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
-        columns %if &nonpreg. = Y %then %do; pregflg %end;
+        columns (%if %length(&spanningheader)>0 %then %do; "&spanningheader." %end; %if &nonpreg. = Y %then %do; pregflg %end;
                 %if &includeheaderrow. = Y %then %do; header %end;
-                order grouplabel %if &includemoiheaderrow = Y %then %do; moiheader %end; moilabel &columnstatement.;
+                order grouplabel %if &includemoiheaderrow = Y %then %do; moiheader %end; moilabel &columnstatement.);
 
         %if &nonpreg. = Y %then %do;
         define pregflg / order order=data noprint;
