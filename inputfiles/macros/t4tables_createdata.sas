@@ -28,34 +28,19 @@
 *
 ***************************************************************************************************;
 
-%macro t4tables_createdata();
+%macro t4tables_createdata(dataset = );
 
     %put =====> MACRO CALLED: t4tables_createdata ;
-	
-    /************************************************************************************************
-      Determine levels   	  
-     ************************************************************************************************/	
-	  %let t4preglevel1 =;
-	  %let t4preglevel2 =;
-	  %let t4nopreglevel1 =;
-	  %let t4nopreglevel2 =;
-	  %do ds = 1 %to  %sysfunc(countw(&datasetlist,' '));
-	    %let t4dset = %sysfunc(scan(&datasetlist,&ds.,' '));
-	    proc sql noprint;
-           select distinct quote(levelid1), quote(levelid2) 
-           into :&t4dset.level1,
-                :&t4dset.level2
-           from tablefile where dataset = "&t4dset.";
-	    quit;
-	  %end;
-	  
-	/************************************************************************************************
+   /************************************************************************************************
       Determine total count of variables on table and put tablecolumns information into macro variables             
     ************************************************************************************************/
 	proc sql noprint;
+	  select distinct(compress(table)) into: tables separated by '" "'
+      from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+	  
 	  select count(column) into: numcolumns trimmed
-	  from tablecolumns;
-		
+	  from tablecolumns where table in ("&tables.");
+	  
 	  select columnname 
 	        ,column 
 			,columnlabel
@@ -71,79 +56,137 @@
 			,:num1 - :num&numcolumns.
 			,:denominator1 - :denominator&numcolumns.
 			,:formatchar1 - :formatchar&numcolumns.
-	  from tablecolumns;
+	  from tablecolumns where table in ("&tables.");
 	  
 	  select distinct(a.numerator)
 	         into: sumcolumns separated by " "
 	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
-                   else column end as numerator from tablecolumns) a;
+                   else column end as numerator from tablecolumns where table in ("&tables.")) a;
     quit;
+	
+	%let prepreggrouplist = ;
+	
+   /************************************************************************************************
+     Identify substrat tables requested     
+    ************************************************************************************************/
+	 proc sql noprint;
+	    select count(distinct tablesubstrat) into: numdset trimmed
+		from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+		
+		select distinct tablesubstrat 
+		   into: substrat1 - :substrat&numdset.
+	    from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+	 quit;
+	
+	%if &dataset. = preg %then %do;
+    /************************************************************************************************
+      Determine levels
+     ************************************************************************************************/	
+	  %let t4preglevel1 =;
+	  %let t4preglevel2 =;
+	  %let t4nopreglevel1 =;
+	  %let t4nopreglevel2 =;
+	  
+	  %do ds = 1 %to &numdset.;
+	    proc sql noprint;
+           select distinct quote(levelid1), quote(levelid2) 
+           into :&&substrat&ds.level1,
+                :&&substrat&ds.level2
+           from tablefile where dataset = "&&substrat&ds.";
+	    quit;
+	  %end;
 	
     /************************************************************************************************
      Determine denominators for percent calculations          
     ************************************************************************************************/
-    %macro t4_preg_nopreg (dsin = );	
-	   proc sql noprint undo_policy=none;
-	      create table _&dsin as 
-              select b.*
-	          ,a.episodes as den_episodes
-	          ,a.episodes_3trim as den_episodes_3trim
-              from agg_t4&dsin (keep = episodes episodes_3trim level group dpidsiteid 
-			                    where=(level in (&&t4&dsin.level1))) as a,
-                   agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
-              where a.group=b.group 
-	          and a.dpidsiteid = b.dpidsiteid;
-       quit;
-    %mend t4_preg_nopreg;
-	%if %index(&datasetlist.,t4preg) > 0 %then %do;
-	  %t4_preg_nopreg(dsin = preg);
-	%end;
-	%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-	   %t4_preg_nopreg(dsin = nopreg);
-	%end;
+      %macro t4_preg_nopreg (dsin = );	
+	     proc sql noprint undo_policy=none;
+	        create table _&dsin as 
+                select b.*
+	            ,a.episodes as den_episodes
+	            ,a.episodes_3trim as den_episodes_3trim
+                from agg_t4&dsin (keep = episodes episodes_3trim level group dpidsiteid 
+	  		                    where=(level in (&&t4&dsin.level1))) as a,
+                     agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
+                where a.group=b.group 
+	            and a.dpidsiteid = b.dpidsiteid;
+         quit;
+      %mend t4_preg_nopreg;
+	  %if %index(&datasetlist.,t4preg) > 0 %then %do;
+	    %t4_preg_nopreg(dsin = preg);
+	  %end;
+	  %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+	     %t4_preg_nopreg(dsin = nopreg);
+	  %end;
 	
     /************************************************************************************************
      Set preg and nopreg data together when requested for desired levels            
     ************************************************************************************************/
-	 data _agg_t4moi;
-	   length moiname $5;
-	   set %if %index(&datasetlist.,t4preg) > 0 %then %do;
-	         _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
-		   %end;
-		   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-		     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
-		   %end;;
-	   if t4preg then pregflg = "Y";
-	   else pregflg = "N";
-	 run;
+	   data _agg_t4moi;
+	     length moiname $5;
+	     set %if %index(&datasetlist.,t4preg) > 0 %then %do;
+	           _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
+	  	   %end;
+	  	   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+	  	     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
+	  	   %end;;
+	     if t4preg then pregflg = "Y";
+	     else pregflg = "N";
+	   run;
 
     /************************************************************************************************
      List of groups with a defined pre-pregnancy period          
     ************************************************************************************************/
-    %let prepreggrouplist = ;
-    %if %index(&sumcolumns., pre)>0 %then %do;
-        proc sql noprint;
-            select distinct "'"||group||"'" into: prepreggrouplist separated by ','
-            from master_typefile
-            where prepregdays >0;
-        quit;
-        %if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
-    %end;
+      %if %index(&sumcolumns., pre)>0 %then %do;
+          proc sql noprint;
+              select distinct "'"||group||"'" into: prepreggrouplist separated by ','
+              from master_typefile
+              where prepregdays >0;
+          quit;
+          %if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
+      %end;
 	
    /************************************************************************************************
      Summarize Data     
     ************************************************************************************************/	
-	proc summary data = _agg_t4moi nway missing;
-	  class group moiname pregflg;
-	  var &sumcolumns. episodes episodes_3trim den_episodes den_episodes_3trim;
-	  output out = _agg_t4moi_summ (drop = _:) sum=;
-	run;
+	  proc summary data = _agg_t4moi nway missing;
+	    class group moiname pregflg;
+	    var &sumcolumns. episodes episodes_3trim den_episodes den_episodes_3trim;
+	    output out = _agg_t4moi_summ (drop = _:) sum=;
+	  run;
+	%end; /* T4preg and T4nopreg specific code */
+	%else %do;
+	  data _agg_t4moi;
+	    length pregflg $1 gestwk_char $10;
+	    set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
+		      agg_t4preggestwk (in = preg)
+			%end;
+			%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
+		      agg_t4preggestwk (in = nopreg)
+			%end;;
+		if gestwk < 0 then gestwk_char = left(cats("gestwkneg",put(abs(gestwk),3.)));
+        else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
+		if preg then pregflg = "Y";
+	    else pregflg = "N";
+	  run;	
+		
+	  proc summary data = _agg_t4moi;
+        class group moiname pregflg gestwk_char;
+        var &sumcolumns.;
+        output out = _agg_t4moi_summ (where = (not missing(group) and not missing(moiname) and not missing(gestwk_char)) and not missing(pregflg) drop = _:) sum=;
+      run;
+	%end;
 	
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
     %macro prep_t4tables (dsin =, dsout =, dpvar = );	
-	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
+	data output.&dsin._in;
+	   set &dsin.;
+	   run;
+	   
+	   
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg %if &dataset. = preggestwk %then %do; gestwk_char %end;%else %do;  den_episodes %end;);
 	     set &dsin.;
 		 %do vv = 1 %to &numcolumns;
 		    label &&var&vv.. = "&&label&vv..";
@@ -174,7 +217,7 @@
             end;
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
-                %if %index(&&formula&vv.,pre)>0 %then %do;
+                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist.") ne %str("") %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
@@ -187,6 +230,21 @@
             end;
 	     %end;
 	   run;
+	   
+	   data output.&dsin.;
+	   set &dsin.;
+	   run;
+	   
+     /************************************************************************************************
+       Transpose Data for gestwk        
+      ************************************************************************************************/
+       %if &dataset. = preggestwk %then %do;
+          proc transpose data = _agg_&&substrat&dg. out = agg_agg_&&substrat&dg._tran (rename = (_name_ = column));
+            by dpidsiteid group moiname;
+            id gestwk_char;
+            var moiepisodes_overlap moipregepisodes_overlap pregepisodes;
+          run;
+       %end;
 	   
 	   /* Apply labels */
        proc sql noprint;
