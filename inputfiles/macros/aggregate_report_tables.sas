@@ -141,14 +141,20 @@
 				 %let totalstrata = %sysfunc(countw(&allstrata));
 
 				 data stratavars_&outfile.;
-				   length strata $15;
+				   length strata $15 strataorder 3;
 				   %do a = 1 %to &totalstrata.;
-				     strata = "%scan(&allstrata.,&a.)"; output;
+				     strata = "%scan(&allstrata.,&a.)"; 
+				     strataorder = &a;
+				     output;
 				   %end;
 				 run;
 
 				 proc sort nodupkey data = stratavars_&outfile.;
 				   by strata;
+				 run;
+				 
+				 proc sort data = stratavars_&outfile.;
+				   by strataorder;
 				 run;
 				 
 				 proc sql noprint;
