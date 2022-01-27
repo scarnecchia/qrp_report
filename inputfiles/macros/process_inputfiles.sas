@@ -1121,7 +1121,8 @@
 	                          by table order_in;
 			                  column = lowcase(compress(column_in));
 	                          order = _n_;
-							  columnname = compress("column"||put(order,3.));
+							  if table in ("T5" "T6") then columnname = compress("column"||put(order_in,3.));
+							  else columnname = compress("column"||put(order,3.));
                               smallcellYN = "N";
 
                               /*Type 4:

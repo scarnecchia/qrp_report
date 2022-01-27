@@ -90,8 +90,8 @@
 	  %do ds = 1 %to &numdset.;
 	    proc sql noprint;
            select distinct quote(levelid1), quote(levelid2) 
-           into :&&substrat&ds.level1,
-                :&&substrat&ds.level2
+           into :&&&substrat&ds..level1,
+                :&&&substrat&ds..level2
            from tablefile where dataset = "&&substrat&ds.";
 	    quit;
 	  %end;
@@ -156,13 +156,13 @@
 	  run;
 	%end; /* T4preg and T4nopreg specific code */
 	%else %do;
-	  data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_pregepisodes &sumcolumns. pregflg gestwk_char);
-	    length pregflg $1 gestwk_char $10;
+	  data _agg_t4moi /*(keep = group moiname pregflg gestwk_char dpidsiteid den_pregepisodes &sumcolumns. pregflg gestwk_char)*/;
+	    length pregflg $1 gestwk_char $15;
 	    set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
 		      agg_t4preggestwk (in = preg)
 			%end;
 			%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
-		      agg_t4preggestwk (in = nopreg)
+		      agg_t4nopreggestwk (in = nopreg)
 			%end;;
 		if gestwk < 0 then gestwk_char = left(cats("gestwkneg",put(abs(gestwk),3.)));
         else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
@@ -229,9 +229,7 @@
 	     %end;
 	   run;
 	   
-     /************************************************************************************************
-       Transpose Data for gestwk        
-      ************************************************************************************************/
+     /* Transpose Data for gestwk */
        %if &dataset. = preggestwk %then %do;
 		 %do va = 1 %to &numcolumns; 
             proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
@@ -253,9 +251,16 @@
          from(select a.*, b.order
 		 %if &labelfileexists. = Y %then %do;
 		 	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
-		 	      when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
-		 	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
-		 	,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+			%if &dataset. = preg %then %do;
+		 	        when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+		 	   else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
+		 	  ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+			%end;
+			%else %do;
+			       when c.label = "" then strip(a.group)
+		 	   else strip(c.label) end as grouplabel 
+		 	  ,case when d.label = "" then coalescec(c.label, a.group)
+			%end;
              else d.label end as header
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
@@ -263,7 +268,12 @@
              else f.label end as moiheader 
 		 %end;
          %else %do;
-		    ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
+		    %if &dataset. = preg %then %do;
+		      ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
+			%end;
+			%else %do;
+			  ,strip(a.group) as grouplabel
+			%end;
             ,a.moiname as moilabel
             ,"" as moiheader 
          %end;				   
@@ -290,11 +300,11 @@
     %mend;
 
 	/*Overall*/
-    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_t4moi);
+    %prep_t4tables (dsin=_agg_t4moi_summ, %if &dataset. = preggestwk %then %do; dsout=final_t4gestwk %end; %else %do; dsout=final_t4moi %end;);
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_t4moi, dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi,  %if &dataset. = preggestwk %then %do; dsout=final_dps_t4gestwk %end; %else %do; dsout=final_dps_t4moi %end;, dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
