@@ -136,11 +136,11 @@
 	%if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
 	     /* Create data for T4Preg and T4NoPreg datasets */
 		 %if %sysfunc(findw(&datasetlist,t4preg)) | %sysfunc(findw(&datasetlist,t4nopreg)) %then %do;
-	       %t4tables_createdata(dataset = preg);
+	       %t4tables_createdata(dataset = preg, output_suffix = _t4moi);
 		 %end;
 	     /* Create data for T4Preggestwk and T4NoPreggestwk datasets */
 		 %if %sysfunc(findw(&datasetlist,t4preggestwk)) | %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
-	       %t4tables_createdata(dataset = preggestwk);
+	       %t4tables_createdata(dataset = preggestwk, output_suffix = _t4gestwk);
 		 %end;
 	%end;
 	

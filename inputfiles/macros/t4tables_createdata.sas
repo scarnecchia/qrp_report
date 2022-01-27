@@ -32,7 +32,7 @@
 *
 ***************************************************************************************************;
 
-%macro t4tables_createdata(dataset = );
+%macro t4tables_createdata(dataset = , output_suffix = );
 
     %put =====> MACRO CALLED: t4tables_createdata ;
    /************************************************************************************************
@@ -315,11 +315,11 @@
     %mend;
 
 	/*Overall*/
-    %prep_t4tables (dsin=_agg_t4moi_summ, %if &dataset. = preggestwk %then %do; dsout=final_t4gestwk %end; %else %do; dsout=final_t4moi %end;);
+    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_&output_suffix.);
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi,  %if &dataset. = preggestwk %then %do; dsout=final_dps_t4gestwk %end; %else %do; dsout=final_dps_t4moi %end;, dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
