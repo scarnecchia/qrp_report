@@ -11,10 +11,14 @@
 *  Program inputs:                                                                                   
 *   - agg_t4preg.sas7bdat   
 *   - agg_t4nopreg.sas7bdat 
+*   - agg_t4preggestwk.sas7bdat   
+*   - agg_t4nopreggestwk.sas7bdat 
 *
 *  Program outputs:                                                                                                                           
 *   - final_t4moi - levelid and moiname stratification across data partners
 *   - final_dps_t4moi - levelid and moiname stratification by data partner
+*   - final_t4gestwk - moiname and gestwk stratification across data partners
+*   - final_dps_t4gestwk - moiname and gestwk stratification by data partner
 * 
 *  PARAMETERS: 
 * 
