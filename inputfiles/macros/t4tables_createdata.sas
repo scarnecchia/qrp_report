@@ -274,6 +274,11 @@
                id gestwk_char;
                var &&var&va.. &&var&va.._char;
             run;
+			 
+		    data &dsin._tran_&va.;
+			  set &dsin._tran_&va.;
+			  if &&var&va.. = 0 then &&var&va.._char = "NaN";
+			run;
 		 %end;
 		 
 		 data &dsin.;
