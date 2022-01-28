@@ -265,30 +265,30 @@
 	     %end;
 	   run;
 	   
-     /* Transpose Data for gestwk */
-       %if &dataset. = preggestwk %then %do;
-	   
-	      proc sort data = &dsin.;
-		    by &dpvar. group moiname pregflg;
-		  run;
-		  
-		 %do va = 1 %to &numcolumns; 
-            proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
-               by &dpvar. group moiname pregflg;
-               id gestwk_char;
-               var &&var&va.. &&var&va.._char;
+        /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
+        %if &dataset. = preggestwk %then %do;
+            proc sort data = &dsin.;
+		      by &dpvar. group moiname pregflg;
             run;
 
-/*		    data &dsin._tran_&va.;*/
-/*			  set &dsin._tran_&va.;*/
-/*			  if &&var&va.. = 0 then &&var&va.._char = "NaN";*/
-/*			run;*/
-		 %end;
+            /*transposing both numeric and character vars*/
+    		%do va = 1 %to &numcolumns; 
+                proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
+                   by &dpvar. group moiname pregflg;
+                   id gestwk_char;
+                   var &&var&va..;
+                run;
+                proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
+                   by &dpvar. group moiname pregflg;
+                   id gestwk_char;
+                   var  &&var&va.._char;
+                run;
+           %end;
 		 
-		 data &dsin.;
-		   merge &dsin._tran_:;
-		   by &dpvar. group moiname pregflg;
-		 run;
+		  data &dsin.;
+		      merge &dsin._tran_:;
+		      by &dpvar. group moiname pregflg;
+		  run;
 
 		 /*missing values for the gestwk out of range defined for the group*/
 /*		 proc sql noprint undo_policy=none;*/
@@ -323,7 +323,7 @@
 /*         %end;*/
 /*       run;*/
 
-     %end;
+        %end; /*gestational week table transpose*/
 	   
 	   /* Apply labels */
        proc sql noprint;
