@@ -21,9 +21,12 @@
 *   - final_dps_t4gestwk - moiname and gestwk stratification by data partner
 * 
 *  PARAMETERS: 
+*   - dataset = suffix for input dataset indicator
+*   - output_suffix = suffix for output dataset name
+*   - episode_var: variable that holds # of pregnancy episodes
 * 
 *  Programming Notes:                                                                                 
-
+*
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -122,10 +125,10 @@
 	              and a.dpidsiteid = b.dpidsiteid;
            quit;
         %mend t4_preg_nopreg;
-	    %if %index(&datasetlist.,t4preg) > 0 %then %do;
+	    %if %sysfunc(findw(&datasetlist.,t4preg)) > 0 %then %do;
 	      %t4_preg_nopreg(dsin = preg);
 	    %end;
-	    %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+	    %if %sysfunc(findw(&datasetlist.,t4nopreg)) > 0 %then %do;
 	       %t4_preg_nopreg(dsin = nopreg);
 	    %end;
 	  
@@ -134,10 +137,10 @@
       ************************************************************************************************/
 	     data _agg_t4moi;
 	       length moiname $5;
-	       set %if %index(&datasetlist.,t4preg) > 0 %then %do;
+	       set %if %sysfunc(findw(&datasetlist.,t4preg)) > 0 %then %do;
 	             _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
 	    	   %end;
-	    	   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+	    	   %if %sysfunc(findw(&datasetlist.,t4nopreg)) > 0 %then %do;
 	    	     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
 	    	   %end;;
 	       if t4preg then pregflg = "Y";
@@ -172,12 +175,13 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    %let prepreggrouplist = ;/* Pre pregnancy periods not evaluated for gestwk */
+	    %let prepreggrouplist = ; /*Pre pregnancy periods will be evaluated separately for each gestational week */
 		
 		/* Identify min and max gestwk requested */
 		data master_typefile;
 		  set master_typefile;
-		    gestwk_min = int((-&prepregdays./7)-1);  
+            length gestwk_min gestwk_max 3;
+		    gestwk_min = int((-prepregdays/7)-1);  
 		    gestwk_max = 44;
 		run;
 
@@ -274,11 +278,11 @@
                id gestwk_char;
                var &&var&va.. &&var&va.._char;
             run;
-			 
-		    data &dsin._tran_&va.;
-			  set &dsin._tran_&va.;
-			  if &&var&va.. = 0 then &&var&va.._char = "NaN";
-			run;
+
+/*		    data &dsin._tran_&va.;*/
+/*			  set &dsin._tran_&va.;*/
+/*			  if &&var&va.. = 0 then &&var&va.._char = "NaN";*/
+/*			run;*/
 		 %end;
 		 
 		 data &dsin.;
@@ -287,37 +291,37 @@
 		 run;
 
 		 /*missing values for the gestwk out of range defined for the group*/
-		 proc sql noprint undo_policy=none;
-           select distinct group into: group_l
-             separated by ' '
-             from &dsin.;
-
-          create table &dsin as 
-            select a.*, b.gestwk_min, b.gestwk_max
-            from &dsin. as a left join master_typefile as b
-            on a.group = b.group;
-        quit;
-
-        %do group_1 = 1 %to %sysfunc(countw(&group_l));
-          proc sql noprint;  
-            select gestwk_min into: min&group_l
-	          from &dsin.;
-	        select gestwk_max into: max&group_l
-	          from &dsin.;
-       %end;
-
-       data &dsin.;
-         set &dsin.;
-         %do group_1 = 1 %to %sysfunc(countw(&group_l));
-           %if  "&&min&group_l" < "&min_min" %then %do;
-             %do min_loop = %sysfunc(abs(&min_min)) %to %sysfunc(abs(&&min&group_l));
-			   %do vv = 1 %to &numcolumns;
-	             gestwkneg&min_loop.&&var&vv. = 'N/A';
-		       %end;
-             %end;
-           %end; 
-         %end;
-       run;
+/*		 proc sql noprint undo_policy=none;*/
+/*           select distinct group into: group_l*/
+/*             separated by ' '*/
+/*             from &dsin.;*/
+/**/
+/*          create table &dsin as */
+/*            select a.*, b.gestwk_min, b.gestwk_max*/
+/*            from &dsin. as a left join master_typefile as b*/
+/*            on a.group = b.group;*/
+/*        quit;*/
+/**/
+/*        %do group_1 = 1 %to %sysfunc(countw(&group_l));*/
+/*          proc sql noprint;  */
+/*            select gestwk_min into: min&group_l*/
+/*	          from &dsin.;*/
+/*	        select gestwk_max into: max&group_l*/
+/*	          from &dsin.;*/
+/*       %end;*/
+/**/
+/*       data &dsin.;*/
+/*         set &dsin.;*/
+/*         %do group_1 = 1 %to %sysfunc(countw(&group_l));*/
+/*           %if  "&&min&group_l" < "&min_min" %then %do;*/
+/*             %do min_loop = %sysfunc(abs(&min_min)) %to %sysfunc(abs(&&min&group_l));*/
+/*			   %do vv = 1 %to &numcolumns;*/
+/*	             gestwkneg&min_loop.&&var&vv. = 'N/A';*/
+/*		       %end;*/
+/*             %end;*/
+/*           %end; */
+/*         %end;*/
+/*       run;*/
 
      %end;
 	   

@@ -709,6 +709,10 @@
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
+
+            /*proc report developed later*/
+            %if &table = T5 | &table = T6 %then %do; %end;
+            %else %do;
             /*determine if table includes non-pregnant section*/;
             %let nonpreg = %str( );
             %let s=;
@@ -758,6 +762,7 @@
                         caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
                         %end;               
                 %end;
+            %end;
             %end;
             %let tablenum = %eval(&tablenum + 1);
         %end; /*loop through each table*/

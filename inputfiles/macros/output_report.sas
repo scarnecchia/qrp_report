@@ -386,6 +386,11 @@
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
+
+            /*proc report developed later*/
+            %if &table = T5 | &table = T6 %then %do; %end;
+            %else %do;
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreglabel = %str( );
             %let nonpreg = N;
@@ -476,6 +481,7 @@
                              columnstatementlabels = %quote(&columnlabels.),
                              definestatementlabels = %quote(&columnheaders.));           
                 %end;
+            %end;
             %end;
 
             %let tablenum = %eval(&tablenum + 1);
