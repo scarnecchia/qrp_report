@@ -710,6 +710,7 @@
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreg = %str( );
             %let s=;
