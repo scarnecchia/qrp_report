@@ -877,6 +877,9 @@
                 if tablesubstrat = 't4nopreg' then do;
                     if dataset = 't4preg' then dataset = 't4nopreg';
                 end;
+				else if tablesubstrat = 't4nopreggestwk' then do;
+                    if dataset = 't4preggestwk' then dataset = 't4nopreggestwk';
+                end;
             %end;
 
         	/*Add column to hold table title stratification value - prior to reorder of variables*/
@@ -1120,9 +1123,9 @@
 						      length columnname $32 smallcellYN $1;
 	                          by table order_in;
 			                  column = lowcase(compress(column_in));
-	                          order = _n_;
-							  if table in ("T5" "T6") then columnname = compress("column"||put(order_in,3.));
-							  else columnname = compress("column"||put(order,3.));
+							  order + 1;
+							  if order_in = 1 then order = 1;
+							  columnname = compress("column"||put(order,3.));
                               smallcellYN = "N";
 
                               /*Type 4:
