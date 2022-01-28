@@ -78,11 +78,56 @@
     /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
+	    /* Identify min and max gestwk requested */
+		data master_typefile;
+		  set master_typefile;
+            length gestwk_min gestwk_max 3;
+            if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1);  
+            else gestwk_min = 0;
+		    gestwk_max = 44;
+		run;
+       
+		proc sql noprint;
+		  select min(gestwk_min),
+		         max(gestwk_max)
+  		    into: min_min
+			    ,:max_max
+             from master_typefile;
+	    quit;
 
+        data _temptablecolumns;
+            set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
+            /*negative weeks*/
+            %if %eval(&min_min<0) %then %do;
+            do i = %sysfunc(abs(&min_min.)) to 1 by -1;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwkneg', i, origcolumnname);
+                /*change columnlabel to gestational week*/
+                columnlabel = strip(cats('-',strip(put(i, best.))));
+                gestwkorder = i*-1;
+                output;
+            end;
+            drop i;
+            %end;
 
+            /*Positive weeks*/
+            do gestwkorder = 1 to &max_max.;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwk', gestwkorder, origcolumnname);
+                /*change columnlabel to gestational week*/
+                columnlabel = strip(put(gestwkorder, best.));
+                output;
+            end;
+        run;
+
+        data tablecolumns;
+            set tablecolumns(where=(table not in ('T5', 'T6')))
+                _temptablecolumns;
+        run;
     %end;
 
-	
    /************************************************************************************************
      Identify substrat tables requested     
     ************************************************************************************************/
@@ -188,23 +233,7 @@
      ************************************************************************************************/	
 	  %else %do;
 	    %let prepreggrouplist = ; /*Pre pregnancy periods will be evaluated separately for each gestational week */
-		
-		/* Identify min and max gestwk requested */
-		data master_typefile;
-		  set master_typefile;
-            length gestwk_min gestwk_max 3;
-		    gestwk_min = int((-prepregdays/7)-1);  
-		    gestwk_max = 44;
-		run;
 
-		proc sql noprint;
-		  select min(gestwk_min),
-		         max(gestwk_max)
-  		    into: min_min
-			    ,:max_max
-             from master_typefile;
-	    quit;
-		
 	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
