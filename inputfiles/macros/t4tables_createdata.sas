@@ -35,9 +35,13 @@
 %macro t4tables_createdata(dataset = , output_suffix = );
 
     %put =====> MACRO CALLED: t4tables_createdata ;
-   /************************************************************************************************
-      Determine total count of variables on table and put tablecolumns information into macro variables             
-    ************************************************************************************************/
+
+   /*********************************************************************************************************
+      Determine total count of variables on table and put tablecolumns information into macro variables
+        - For tables T1-T4, there is a 1:1 relationship between rows in TABLECOLUMNS and columns in the table 
+        - For tables T5-T6, TABLECOLUMNS only contains 3 possible columns, this table will be expanded for 
+          each gestational week after table information is assigned to macro variables
+    ********************************************************************************************************/
 	proc sql noprint;
 	  select distinct(compress(table)) into: tables separated by '" "'
       from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
@@ -67,6 +71,14 @@
 	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
                    else column end as numerator from tablecolumns where table in ("&tables.")) a;
     quit;
+
+    /*Expand table to 1 row per gestional week*/
+    %if &dataset. = preggestwk %then %do;
+
+
+
+    %end;
+
 	
    /************************************************************************************************
      Identify substrat tables requested     
@@ -247,6 +259,7 @@
      /* Transpose Data for gestwk */
        %if &dataset. = preggestwk %then %do;
 		 %do va = 1 %to &numcolumns; 
+
             proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
                by &dpvar. group moiname pregflg;
                id gestwk_char;
