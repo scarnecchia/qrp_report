@@ -87,8 +87,9 @@
         %let varlistnochar = %sysfunc(tranwrd(&varlist., _char, %str()));
 
         data repdata.table&tabnum.;
-    		set &dataset(where=(&where.) keep=group moiname pregflg den_episodes order grouplabel moilabel &varlist. &varlistnochar.
-                         %if &dataset. = final_dps_t4moi %then %do; dpidsiteid %end;
+    		set &dataset(where=(&where.) keep=group moiname pregflg order grouplabel moilabel &varlist. &varlistnochar.
+                         %if %index(&dataset., t4moi) %then %do; den_episodes %end;
+                         %if %index(&dataset., _dps_) %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
     	run;

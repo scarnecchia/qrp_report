@@ -383,6 +383,8 @@
 /* Type 4 summary tables                                                                     */
 /*********************************************************************************************/
 	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
+
+        options orientation = landscape;
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
@@ -396,10 +398,18 @@
             %let datasuffix=;
             %let spanningheader=;
 
+            /*column order*/
+            %let gestwkorder = ;
+
             data _null_;
                 set tablefile(where=(table="&table"));
+
                 if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
-                if table in ('T5', 'T6') then call symputx('datasuffix','gestwk');
+                if table in ('T5', 'T6') then do;
+                    call symputx('datasuffix','gestwk');
+                    call symputx('gestwkorder','gestwkorder,');
+                end;
+
                 if tablesubstrat = "t4nopreg" then do;
                     call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
@@ -420,7 +430,14 @@
                      :columnheaders separated by '|||'
                 from tablecolumns
                 where table="&table"
-                order by order;
+                order by &gestwkorder. order;
+
+                %if &table. = T5 | &table. = T6 %then %do;
+                select distinct spanningheader into: spanningheader
+                from tablecolumns
+                where table="&table";
+                %end;
+                quit;
             quit; 
                 
             %if &stratifybydp = Y %then %let tablecount=1;
@@ -502,6 +519,9 @@
 
             %let tablenum = %eval(&tablenum + 1);
         %end; /*loop through each table*/
+
+        options orientation = portrait;
+
     %end; /*ReportType = T4L1 summary tables*/
 
 /*********************************************************************************************/

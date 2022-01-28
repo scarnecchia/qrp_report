@@ -97,6 +97,7 @@
 
         data _temptablecolumns;
             set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
+            spanningheader = columnlabel;
             /*negative weeks*/
             %if %eval(&min_min<0) %then %do;
             do i = %sysfunc(abs(&min_min.)) to 1 by -1;
