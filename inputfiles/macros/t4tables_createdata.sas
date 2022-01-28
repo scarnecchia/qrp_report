@@ -187,6 +187,12 @@
 	    %let prepreggrouplist = ;/* Pre pregnancy periods not evaluated for gestwk */
 		
 		/* Identify min and max gestwk requested */
+		data master_typefile;
+		  set master_typefile;
+		    gestwk_min = int((-&prepregdays./7)-1);  
+		    gestwk_max = 44;
+		run;
+
 		proc sql noprint;
 		  select min(gestwk_min),
 		         max(gestwk_max)
@@ -316,13 +322,6 @@
 			   %do vv = 1 %to &numcolumns;
 	             gestwkneg&min_loop.&&var&vv. = 'N/A';
 		       %end;
-             %end;
-           %end; 
-           %if "&&max&group_l" < "&max_max" %then %do;
-             %do max_loop = &&max&group_l %to &max_max;
-			   %do vv = 1 %to &numcolumns;
-	             gestwk&max_loop.&&var&vv. = 'N/A';
-		       %end;;
              %end;
            %end; 
          %end;
