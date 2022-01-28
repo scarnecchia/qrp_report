@@ -255,7 +255,53 @@
 		   merge &dsin._tran_:;
 		   by &dpvar. group moiname pregflg;
 		 run;
+
+		 /*missing values for the gestwk out of range defined for the group*/
+		 proc sql noprint undo_policy=none;
+           select min(gestwk_min) into: min_min
+             from master_typefile;
+           select max(gestwk_max) into: max_max
+             from master_typefile;
+
+           select distinct group into: group_l
+             separated by ' '
+             from &dsin.;
+
+          create table &dsin as 
+            select a.*, b.gestwk_min, b.gestwk_max
+            from &dsin. as a left join master_typefile as b
+            on a.group = b.group;
+        quit;
+
+        %do group_1 = 1 %to %sysfunc(countw(&group_l));
+          proc sql noprint;  
+            select gestwk_min into: min&group_l
+	          from &dsin.;
+	        select gestwk_max into: max&group_l
+	          from &dsin.;
        %end;
+
+       data &dsin.;
+         set &dsin.;
+         %do group_1 = 1 %to %sysfunc(countw(&group_l));
+           %if  "&&min&group_l" < "&min_min" %then %do;
+             %do min_loop = %sysfunc(abs(&min_min)) %to %sysfunc(abs(&&min&group_l));
+	           gestwkneg&min_loop.column1 = 'N/A';
+	           gestwkneg&min_loop.column2 = 'N/A';
+	           gestwkneg&min_loop.column3 = 'N/A';
+             %end;
+           %end; 
+           %if "&&max&group_l" < "&max_max" %then %do;
+             %do max_loop = &&max&group_l %to &max_max;
+	           gestwk&max_loop.column1 = 'N/A';
+	           gestwk&max_loop.column2 = 'N/A';
+	           gestwk&max_loop.column3 = 'N/A';
+             %end;
+           %end; 
+         %end;
+       run;
+
+     %end;
 	   
 	   /* Apply labels */
        proc sql noprint;
