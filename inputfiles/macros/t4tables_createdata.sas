@@ -147,6 +147,7 @@
      /************************************************************************************************
        List of groups with a defined pre-pregnancy period          
       ************************************************************************************************/
+	    %let prepreggrouplist = ;
         %if %index(&sumcolumns., pre)>0 %then %do;
             proc sql noprint;
                 select distinct "'"||group||"'" into: prepreggrouplist separated by ','
@@ -171,6 +172,17 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
+	    %let prepreggrouplist = ;/* Pre pregnancy periods not evaluated for gestwk */
+		
+		/* Identify min and max gestwk requested */
+		proc sql noprint;
+		  select min(gestwk_min),
+		         max(gestwk_max)
+  		    into: min_min
+			    ,:max_max
+             from master_typefile;
+	    quit;
+		
 	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
@@ -184,12 +196,13 @@
 	  	if preg then pregflg = "Y";
 	      else pregflg = "N";
 	  	den_&episode_var. = &episode_var.;
+		if not (&min_min. <= gestwk <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
 	    run;	
 	  	
-	    proc summary data = _agg_t4moi;
+	    proc summary data = _agg_t4moi nway missing;
           class group moiname pregflg gestwk_char;
           var &sumcolumns. den_&episode_var.;
-          output out = _agg_t4moi_summ (where = (not missing(group) and not missing(moiname) and not missing(gestwk_char) and not missing(pregflg)) drop = _:) sum=;
+          output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
 	  %end;
 	
@@ -228,7 +241,7 @@
             end;
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
-                %if %index(&&formula&vv.,pre)>0 and %index(&&formula&vv.,pregepisodes )= 0 %then %do;
+                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("") %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
@@ -244,13 +257,19 @@
 	   
      /* Transpose Data for gestwk */
        %if &dataset. = preggestwk %then %do;
+	   
+	      proc sort data = &dsin.;
+		    by &dpvar. group moiname pregflg;
+		  run;
+		  
 		 %do va = 1 %to &numcolumns; 
             proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
                by &dpvar. group moiname pregflg;
                id gestwk_char;
-               var &&var&va..;
+               var &&var&va.. &&var&va.._char;
             run;
 		 %end;
+		 
 		 data &dsin.;
 		   merge &dsin._tran_:;
 		   by &dpvar. group moiname pregflg;
@@ -258,11 +277,6 @@
 
 		 /*missing values for the gestwk out of range defined for the group*/
 		 proc sql noprint undo_policy=none;
-           select min(gestwk_min) into: min_min
-             from master_typefile;
-           select max(gestwk_max) into: max_max
-             from master_typefile;
-
            select distinct group into: group_l
              separated by ' '
              from &dsin.;
@@ -359,11 +373,11 @@
     %mend;
 
 	/*Overall*/
-    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_&output_suffix.);
+    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final&output_suffix.);
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_&output_suffix., dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
