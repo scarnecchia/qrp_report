@@ -70,6 +70,27 @@
 	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
                    else column end as numerator from tablecolumns where table in ("&tables.")) a;
     quit;
+
+    %if &dataset. = preggestwk %then %do;
+
+	    /* Identify min gestwk requested. Max always 44 weeks */
+        data master_typefile;
+            set master_typefile;
+            length gestwk_min gestwk_max 3;
+            if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
+            else gestwk_min = 0; 
+		    gestwk_max = 44;
+        run;
+
+        proc sql noprint;
+		    select min(a.gestwk_min) into: min_min
+            from master_typefile a,
+                 groupsfile b
+            where a.group = b.group;
+        quit;
+
+        %let max_max = 44; 
+    %end;
 	
    /************************************************************************************************
      Identify substrat tables requested     
@@ -177,22 +198,6 @@
 	  %else %do;
 	    %let prepreggrouplist = ; /*Pre pregnancy periods will be evaluated separately for each gestational week */
 		
-		/* Identify min and max gestwk requested */
-		data master_typefile;
-		  set master_typefile;
-            length gestwk_min gestwk_max 3;
-		    gestwk_min = int((-prepregdays/7)-1);  
-		    gestwk_max = 44;
-		run;
-
-		proc sql noprint;
-		  select min(gestwk_min),
-		         max(gestwk_max)
-  		    into: min_min
-			    ,:max_max
-             from master_typefile;
-	    quit;
-		
 	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
@@ -251,6 +256,7 @@
             end;
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
+                /*for gestational week tables, N/A assigned after data is transposed below*/
                 %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("") %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
@@ -258,8 +264,8 @@
                     end;
                 %end;
                 /*if 0 episodes in 3rd trimester, % cannot be computed*/
-                %if &&denominator&vv. = den_&episode_var._3trim %then %do;
-                     if den_&episode_var._3trim <=0 then &&var&vv.._char = 'NaN';
+                %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = pregepisodes %then %do;
+                     if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
                 %end;
             end;
 	     %end;
@@ -285,43 +291,36 @@
                 run;
            %end;
 		 
-		  data &dsin.;
-		      merge &dsin._tran_:;
-		      by &dpvar. group moiname pregflg;
-		  run;
+           /*if pre-pregnancy gestational week not evaluated, set to 'N/A'*/
+                /*set into macro variable minimum gestional week for each group*/
+                proc sql noprint undo_policy=none;
+                    select distinct group into: group_list separated by ' '
+                    from &dsin.;
+                quit;
 
-		 /*missing values for the gestwk out of range defined for the group*/
-/*		 proc sql noprint undo_policy=none;*/
-/*           select distinct group into: group_l*/
-/*             separated by ' '*/
-/*             from &dsin.;*/
-/**/
-/*          create table &dsin as */
-/*            select a.*, b.gestwk_min, b.gestwk_max*/
-/*            from &dsin. as a left join master_typefile as b*/
-/*            on a.group = b.group;*/
-/*        quit;*/
-/**/
-/*        %do group_1 = 1 %to %sysfunc(countw(&group_l));*/
-/*          proc sql noprint;  */
-/*            select gestwk_min into: min&group_l*/
-/*	          from &dsin.;*/
-/*	        select gestwk_max into: max&group_l*/
-/*	          from &dsin.;*/
-/*       %end;*/
-/**/
-/*       data &dsin.;*/
-/*         set &dsin.;*/
-/*         %do group_1 = 1 %to %sysfunc(countw(&group_l));*/
-/*           %if  "&&min&group_l" < "&min_min" %then %do;*/
-/*             %do min_loop = %sysfunc(abs(&min_min)) %to %sysfunc(abs(&&min&group_l));*/
-/*			   %do vv = 1 %to &numcolumns;*/
-/*	             gestwkneg&min_loop.&&var&vv. = 'N/A';*/
-/*		       %end;*/
-/*             %end;*/
-/*           %end; */
-/*         %end;*/
-/*       run;*/
+                data _null_;
+                    set master_typefile;
+                    %do g = 1 %to %sysfunc(countw(&group_list));
+                        if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
+                    %end;
+                run;
+
+            /*stack transopsed data and assign N/A*/
+	        data &dsin.;
+		        merge &dsin._tran_:;
+		        by &dpvar. group moiname pregflg;
+                %do g = 1 %to %sysfunc(countw(&group_list));
+                    if &min_min. < &&&gestwk_group&g. then do; 
+                        if group = "%scan(&group_list., &g.)" then do;
+                            %do min_loop = &min_min. %to &&&gestwk_group&g.;
+                    		   %do vv = 1 %to &numcolumns;
+                                 gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
+                    	       %end;
+                            %end;
+                        end; 
+                    end;
+                %end;
+            run;
 
         %end; /*gestational week table transpose*/
 	   
