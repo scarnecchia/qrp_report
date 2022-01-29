@@ -78,22 +78,19 @@
     /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
-	    /* Identify min and max gestwk requested */
-		data master_typefile;
-		  set master_typefile;
-            length gestwk_min gestwk_max 3;
-            if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1);  
-            else gestwk_min = 0;
-		    gestwk_max = 44;
-		run;
-       
-		proc sql noprint;
-		  select min(gestwk_min),
-		         max(gestwk_max)
-  		    into: min_min
-			    ,:max_max
-             from master_typefile;
-	    quit;
+	    /* Identify min gestwk requested. Max always 44 weeks */
+        proc sql noprint;
+		  select min(gestwk_min) into: min_min
+          from (select a.group, 
+                        case when a.prepregdays >0 then int((-a.prepregdays/7)-1)
+                        else 0
+                        end as gestwk_min length=3
+                from master_typefile a,
+                     groupsfile b
+                where a.group = b.group);
+        quit;
+
+        %let max_max = 44; 
 
         data _temptablecolumns;
             set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
@@ -104,8 +101,9 @@
                 length columnname $32;
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwkneg', i, origcolumnname);
-                /*change columnlabel to gestational week*/
+                /*change columnlabel/columnheader (T6) to gestational week*/
                 columnlabel = strip(cats('-',strip(put(i, best.))));
+                if table = 'T6' then columnheader = strip(cats('-',strip(put(i, best.))));
                 gestwkorder = i*-1;
                 output;
             end;
@@ -117,8 +115,9 @@
                 length columnname $32;
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
-                /*change columnlabel to gestational week*/
+                /*change columnlabel/columnheader (T6) to gestational week*/
                 columnlabel = strip(put(gestwkorder, best.));
+                if table = 'T6' then columnheader = strip(put(gestwkorder, best.));
                 output;
             end;
         run;

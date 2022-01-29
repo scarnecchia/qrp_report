@@ -433,7 +433,7 @@
                 order by &gestwkorder. order;
 
                 %if &table. = T5 | &table. = T6 %then %do;
-                select distinct spanningheader into: spanningheader
+                select distinct spanningheader into: spanningheader trimmed
                 from tablecolumns
                 where table="&table";
                 %end;
