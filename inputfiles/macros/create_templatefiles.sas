@@ -1442,7 +1442,7 @@ libname tempfl "";
        table = "T4"; Column = "sumadjcntonlyt3";       ColumnLabel = "Codes Only During Third Trimester";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
        	    
 	   table = "T5"; Column = "moipregepisodes_overlap";               ColumnLabel = "Gestational Week";               ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
-	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";  ColumnLabel = "Gestational Week";               ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";  ColumnLabel = "Gestational Week";               ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.7; output; 	   
 	   
 	   table = "T6"; Column = "moiepisodes_overlap";                   ColumnLabel = "Gestational Week";               ColumnFormat = "comma14.0";  order = 3; IncludeinReport = "Y"; columnwidth=.9; output; 	     	
      run; 
