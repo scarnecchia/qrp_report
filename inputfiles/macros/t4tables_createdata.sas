@@ -172,13 +172,13 @@
        List of groups with a defined pre-pregnancy period          
       ************************************************************************************************/
         %if %index(&sumcolumns., pre)>0 %then %do;
-		    %let prepreggrouplist = '';
+		    %let prepreggrouplist = ;
             proc sql noprint;
                 select distinct "'"||group||"'" into: prepreggrouplist separated by ','
                 from master_typefile
                 where prepregdays >0;
             quit;
-			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
+			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = ;
         %end;
 	  
      /************************************************************************************************
@@ -196,7 +196,7 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    %let prepreggrouplist = ''; /*Pre pregnancy periods will be evaluated separately for each gestational week */
+	    %let prepreggrouplist = ; /*Pre pregnancy periods will be evaluated separately for each gestational week */
 		
 	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
