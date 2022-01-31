@@ -317,7 +317,7 @@
 					where b.gestwk_char = "gestwk1";
 				quit;
 
-            /*stack transopsed data and assign N/A*/
+            /*stack transposed data and assign N/A*/
 	        data &dsin.;
 		        merge &dsin._tran_:;
 		        by &dpvar. group moiname pregflg;
