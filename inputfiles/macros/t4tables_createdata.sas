@@ -178,6 +178,7 @@
                 from master_typefile
                 where prepregdays >0;
             quit;
+			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
         %end;
 	  
      /************************************************************************************************
