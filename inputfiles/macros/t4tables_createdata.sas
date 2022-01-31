@@ -271,7 +271,7 @@
             end;
 	     %end;
 	   run;
-	   
+
         /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
             proc sort data = &dsin.;
@@ -306,13 +306,28 @@
                     %end;
                 run;
 
+				proc sql noprint undo_policy=none;
+				  create table &dsin as 
+				    select a.*, b.den_pregepisodes as start_episodes 
+					from &dsin as a left join &dsin as b
+					on a.group = b.group and a.moiname = b.moiname
+					%if &dpvar = "dpidsiteid" %then %do;
+                      and a.dpidsiteid = b.dpidsiteid
+					%end;
+					where b.gestwk_char = "gestwk1";
+				quit;
+
             /*stack transopsed data and assign N/A*/
 	        data &dsin.;
 		        merge &dsin._tran_:;
 		        by &dpvar. group moiname pregflg;
                 %do g = 1 %to %sysfunc(countw(&group_list));
+				  if start_episodes <= 0 then do;
+                    column2 = .;
+                    column2_char = '.';
+                  end;         
                     if &min_min. < &&&gestwk_group&g. then do; 
-                        if group = "%scan(&group_list., &g.)" then do;
+                        if group = "%scan(&group_list., &g.)" and start_episodes > 0 then do;
                             %do min_loop = &min_min. %to &&&gestwk_group&g.;
                     		   %do vv = 1 %to &numcolumns;
                                  gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
