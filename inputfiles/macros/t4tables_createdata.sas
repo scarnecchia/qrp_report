@@ -53,7 +53,9 @@
 			,columnlabel
 			,columnformat
 			,scan(compress(column,'()'),1,'/') as numerator
-			,cats("den_",scan(compress(scan(column,1,'*'),'()'),2,'/')) as denominator
+			,case when index(column,'/') = 0 then ''
+			   when index(column,'*')  > 0 then cats("den_",scan(compress(scan(column,1,'*'),'()'),2,'/')) 
+			   else cats("den_",scan(column,2,'/')) end as denominator
 			,case when index(columnformat,'$') > 0 then columnformat
 			   else compress('$'||put(input(scan(compress(columnformat,'','a'),1,'.'),3.) +  input(scan(compress(columnformat,'','a'),2,'.'),3.),8.)||".") end as columnformatchar
 	   into: var1 -:var&numcolumns.
@@ -104,7 +106,9 @@
 	    from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
 	 quit;
 	 
-	
+	 /* Assign default value for list of groups that assign pre pregnancy periods */
+     %let prepreggrouplist =''; 
+	 
 	/************************************************************************************************
       Code specific for t4pregnancy and t4nopregnancy
 	  - Identify levels 1 and 2 for preg and nopreg
@@ -172,13 +176,12 @@
        List of groups with a defined pre-pregnancy period          
       ************************************************************************************************/
         %if %index(&sumcolumns., pre)>0 %then %do;
-		    %let prepreggrouplist = ;
             proc sql noprint;
                 select distinct "'"||group||"'" into: prepreggrouplist separated by ','
                 from master_typefile
                 where prepregdays >0;
             quit;
-			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = ;
+			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
         %end;
 	  
      /************************************************************************************************
@@ -196,8 +199,6 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    %let prepreggrouplist = ; /*Pre pregnancy periods will be evaluated separately for each gestational week */
-		
 	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
@@ -257,7 +258,7 @@
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
                 /*for gestational week tables, N/A assigned after data is transposed below*/
-                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("") %then %do;
+                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("''") %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
