@@ -334,6 +334,7 @@
 
             /*stack transposed data and assign N/A*/
 	        data &dsin. (drop = start_episodes);
+
 		        merge &dsin._tran_:;
 		        by &dpvar. group moiname pregflg;
                 %do g = 1 %to %sysfunc(countw(&group_list));      
