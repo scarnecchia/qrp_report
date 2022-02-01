@@ -274,19 +274,44 @@
 
         /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
-            proc sort data = &dsin.;
+
+		    /*missing values set to . when episodes at the start of the gestwk1 are <=0 */
+			proc sql noprint undo_policy=none;
+		      create table &dsin as 
+			    select a.*, b.den_pregepisodes as start_episodes 
+				from &dsin as a left join &dsin as b
+				on a.group = b.group and a.moiname = b.moiname
+				and a.pregflg = b.pregflg
+				%if &dpvar = "dpidsiteid" %then %do;
+                  and a.dpidsiteid = b.dpidsiteid
+				%end;
+				where b.gestwk_char = "gestwk1";
+		     quit;
+
+			 data &dsin.;
+			   set &dsin.;
+			   if start_episodes <= 0 then do;
+                    column2 = .;
+                    column2_char = '.';
+                  end;
+             run; 
+
+            proc sort data = &dsin. nodupkey;
 		      by &dpvar. group moiname pregflg;
             run;
 
+			
             /*transposing both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
                    by &dpvar. group moiname pregflg;
+				   copy start_episodes;
                    id gestwk_char;
                    var &&var&va..;
                 run;
                 proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
                    by &dpvar. group moiname pregflg;
+				   copy start_episodes;
                    id gestwk_char;
                    var  &&var&va.._char;
                 run;
@@ -306,26 +331,12 @@
                     %end;
                 run;
 
-				proc sql noprint undo_policy=none;
-				  create table &dsin as 
-				    select a.*, b.den_pregepisodes as start_episodes 
-					from &dsin as a left join &dsin as b
-					on a.group = b.group and a.moiname = b.moiname
-					%if &dpvar = "dpidsiteid" %then %do;
-                      and a.dpidsiteid = b.dpidsiteid
-					%end;
-					where b.gestwk_char = "gestwk1";
-				quit;
 
-            /*stack transopsed data and assign N/A*/
-	        data &dsin.;
+            /*stack transposed data and assign N/A*/
+	        data &dsin. (drop = start_episodes);
 		        merge &dsin._tran_:;
 		        by &dpvar. group moiname pregflg;
-                %do g = 1 %to %sysfunc(countw(&group_list));
-				  if start_episodes <= 0 then do;
-                    column2 = .;
-                    column2_char = '.';
-                  end;         
+                %do g = 1 %to %sysfunc(countw(&group_list));      
                     if &min_min. < &&&gestwk_group&g. then do; 
                         if group = "%scan(&group_list., &g.)" and start_episodes > 0 then do;
                             %do min_loop = &min_min. %to &&&gestwk_group&g.;
@@ -338,6 +349,7 @@
                 %end;
             run;
 
+			
         %end; /*gestational week table transpose*/
 	   
 	   /* Apply labels */
