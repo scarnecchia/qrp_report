@@ -716,7 +716,7 @@
             %let s=;
             data _null_;
                 set tablefile(where=(table="&table"));
-                if tablesubstrat = "t4nopreg" then do;
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
                     call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
                 end;

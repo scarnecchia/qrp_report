@@ -410,7 +410,7 @@
                     call symputx('gestwkorder','gestwkorder,');
                 end;
 
-                if tablesubstrat = "t4nopreg" then do;
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
                     call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
                     call symputx('nonpreg', 'Y');
