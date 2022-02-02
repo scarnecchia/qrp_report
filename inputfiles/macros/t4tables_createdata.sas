@@ -221,8 +221,9 @@
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
 		
-		/* Ensure there is only one row per dpid group moiname gestational week per preg/nopreg dataset */
-		proc sort nodupkey data = _agg_t4moi;
+		/* Sort by dpid group moiname gestational week per preg/nopreg dataset. 
+		   This is needed for retain statement in prep_t4tables */
+		proc sort data = _agg_t4moi;
 		  by dpidsiteid group moiname pregflg gestwk_char;
         run;
 		
