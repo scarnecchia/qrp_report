@@ -339,8 +339,8 @@
 		        by &dpvar. group moiname pregflg;
                 %do g = 1 %to %sysfunc(countw(&group_list));      
                     if &min_min. < &&&gestwk_group&g. then do; 
-                        if group = "%scan(&group_list., &g.)" and start_episodes > 0 then do;
-                            %do min_loop = &min_min. %to &&&gestwk_group&g.;
+                        if group = "%scan(&group_list., &g.)" or start_episodes > 0 then do;
+                            %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
                     		   %do vv = 1 %to &numcolumns;
                                  gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
                     	       %end;
@@ -349,7 +349,9 @@
                     end;
                 %end;
             run;
-
+data output.&dsin._jolenehere;
+set &dsin;
+run;
 			
         %end; /*gestational week table transpose*/
 	   
