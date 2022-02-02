@@ -296,11 +296,11 @@
                   end;
              run; 
 
-            proc sort data = &dsin. nodupkey;
-		      by &dpvar. group moiname pregflg;
+			 proc sort data = &dsin. nodupkey ;
+		      by &dpvar. group moiname pregflg gestwk_char;
             run;
 
-			
+	
             /*transposing both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
