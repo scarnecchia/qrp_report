@@ -349,9 +349,6 @@
                     end;
                 %end;
             run;
-data output.&dsin._jolenehere;
-set &dsin;
-run;
 			
         %end; /*gestational week table transpose*/
 	   
