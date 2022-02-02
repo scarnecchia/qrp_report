@@ -9,8 +9,8 @@
 * PURPOSE: This macro drives the creation of T4 summary table proc report output
 *                                        
 *  Program inputs:                                                                                   
-*   - final_t4moi
-*   - final_dps_t4moi
+*   - final_t4moi / final_t4gestwk
+*   - final_dps_t4moi / final_dps_t4gestwk
 * 
 *  Program outputs: 
 * 	- repdata.table&tablenum.&tableletter
@@ -27,9 +27,10 @@
 *   - varsmallcells = List of small cell count highlighting indicators for each column
 *   - columnstatementlabels = List of column headers to include in COLUMNS statement
 *   - definestatementlabels = List of column headers to include in DEFINE statement
-          
+*   - spanningheader = Header that spans the top of entire table
+*          
 *  Programming Notes:     
-*   Table T1 includes both N and # columns under a single column. For this reason, the parameter
+*   Tables T1 and T5 includes both N and # columns under a single column. For this reason, the parameter
 *    COLUMNLABELS contains a list of labels to include in the COLUMNS statement and COLUMNHEADERS
 *    contains a list of labels to include in the DEFINE statement
 *                                                                           
@@ -50,7 +51,8 @@
                        varwidths=, 
                        varsmallcells=,
                        columnstatementlabels=,
-                       definestatementlabels=);
+                       definestatementlabels=,
+                       spanningheader=);
 
     /*Assign footnotes*/
     data _footnotes;
@@ -85,16 +87,17 @@
         %let varlistnochar = %sysfunc(tranwrd(&varlist., _char, %str()));
 
         data repdata.table&tabnum.;
-    		set &dataset(where=(&where.) keep=group moiname pregflg den_episodes order grouplabel moilabel &varlist. &varlistnochar.
-                         %if &dataset. = final_dps_t4moi %then %do; dpidsiteid %end;
+    		set &dataset(where=(&where.) keep=group moiname pregflg order grouplabel moilabel &varlist. &varlistnochar.
+                         %if %index(&dataset., t4moi) %then %do; den_episodes %end;
+                         %if %index(&dataset., _dps_) %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
     	run;
     %end;
 
-    /*Create columns statement with varlist headers. Necessary because T1 contains both N and % under one header*/
+    /*Create columns statement with varlist headers. Necessary because T1 and T5 contains both N and % under one header*/
     %let columnstatement = ;
-    %if &table. = T1 %then %do;
+    %if &table. = T1 | &table. = T5 %then %do;
         %do v = 1 %to %sysfunc(countw(%str(&columnstatementlabels.),|||));
             %let label = %scan(%str(&columnstatementlabels.),&v., |||);
             %let skip = 0;
@@ -129,9 +132,9 @@
         style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
-        columns %if &nonpreg. = Y %then %do; pregflg %end;
+        columns (%if %length(&spanningheader)>0 %then %do; "&spanningheader." %end; %if &nonpreg. = Y %then %do; pregflg %end;
                 %if &includeheaderrow. = Y %then %do; header %end;
-                order grouplabel %if &includemoiheaderrow = Y %then %do; moiheader %end; moilabel &columnstatement.;
+                order grouplabel %if &includemoiheaderrow = Y %then %do; moiheader %end; moilabel &columnstatement.);
 
         %if &nonpreg. = Y %then %do;
         define pregflg / order order=data noprint;
