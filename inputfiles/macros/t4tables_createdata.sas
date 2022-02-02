@@ -241,7 +241,7 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    data _agg_t4moi (keep = group moiname pregflg gestwk_char dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
+	    data _agg_t4moi (keep = group moiname pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
 	  	      agg_t4preggestwk (in = preg)
@@ -262,6 +262,25 @@
           var &sumcolumns. den_&episode_var.;
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
+		
+		/* Sort by dpid group moiname gestational week per preg/nopreg dataset. 
+		   This is needed for retain statement in prep_t4tables */
+		proc sort data = _agg_t4moi;
+		  by dpidsiteid group moiname pregflg gestwk_char;
+        run;
+		
+		/*Determine the minimum gestional week for each group and assign to a macro variable*/
+        proc sql noprint undo_policy=none;
+           select distinct group into: group_list separated by ' '
+           from _agg_t4moi;
+        quit;
+
+        data _null_;
+          set master_typefile;
+          %do g = 1 %to %sysfunc(countw(&group_list));
+              if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
+          %end;
+        run;
 	  %end;
 	
    /************************************************************************************************
@@ -270,6 +289,14 @@
     %macro prep_t4tables (dsin =, dsout =, dpvar = );	
 	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char  %end;);
 	     set &dsin.;
+		 
+		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
+		 %if &dataset. = preggestwk %then %do;
+		   by &dpvar. group moiname pregflg gestwk_char;
+		   retain den_episodes_wk1;
+		   if first.pregflg and gestwk_char = "gestwk1" then den_episodes_wk1 = den_pregepisodes;
+		 %end;
+		 
 		 %do vv = 1 %to &numcolumns;
 		    label &&var&vv.. = "&&label&vv..";
 			label &&var&vv.._char = "&&label&vv..";
@@ -293,19 +320,28 @@
             
             /*standard missing value indicators*/
             /*if 0 patients in cohort, set to '.'*/
-            if den_&episode_var. <=0 then do;
+            if den_&episode_var. <=0 %if &dataset. = preggestwk %then or den_episodes_wk1 <=0; then do;
                 &&var&vv. = .;
                 &&var&vv.._char = '.';
             end;
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
-                /*for gestational week tables, N/A assigned after data is transposed below*/
                 %if %index(&&formula&vv.,pre)>0 and &dataset. = preg %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
                     end;
                 %end;
+				/* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
+				%if &dataset. = preggestwk %then %do;
+				  %do g = 1 %to %sysfunc(countw(&group_list));      
+				    %if &min_min. < &&&gestwk_group&g. %then %do;
+				      if group = "%scan(&group_list., &g.)" and den_episodes_wk1 > 0 then do;
+					    &&var&vv.._char = 'N/A';
+					  end;
+					%end;
+				  %end;
+				%end;
                 /*if 0 episodes in 3rd trimester, % cannot be computed*/
                 %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = pregepisodes %then %do;
                      if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
@@ -313,82 +349,28 @@
             end;
 	     %end;
 	   run;
+
         /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
 
-		    /*missing values set to . when episodes at the start of the gestwk1 are <=0 */
-			proc sql noprint undo_policy=none;
-		      create table &dsin as 
-			    select a.*, b.den_pregepisodes as start_episodes 
-				from &dsin as a left join &dsin as b
-				on a.group = b.group and a.moiname = b.moiname
-				and a.pregflg = b.pregflg
-				%if &dpvar = "dpidsiteid" %then %do;
-                  and a.dpidsiteid = b.dpidsiteid
-				%end;
-				where b.gestwk_char = "gestwk1";
-		     quit;
-
-			 data &dsin.;
-			   set &dsin.;
-			   if start_episodes <= 0 then do;
-                    column2 = .;
-                    column2_char = '.';
-                  end;
-             run; 
-
-			 proc sort data = &dsin. nodupkey ;
-		      by &dpvar. group moiname pregflg gestwk_char;
-            run;
-
-			
-            /*transposing both numeric and character vars*/
+            /*Transpose both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
                    by &dpvar. group moiname pregflg;
-				   copy start_episodes;
                    id gestwk_char;
                    var &&var&va..;
                 run;
                 proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
                    by &dpvar. group moiname pregflg;
-				   copy start_episodes;
                    id gestwk_char;
                    var  &&var&va.._char;
                 run;
            %end;
 		 
-           /*if pre-pregnancy gestational week not evaluated, set to 'N/A'*/
-                /*set into macro variable minimum gestional week for each group*/
-                proc sql noprint undo_policy=none;
-                    select distinct group into: group_list separated by ' '
-                    from &dsin.;
-                quit;
-
-                data _null_;
-                    set master_typefile;
-                    %do g = 1 %to %sysfunc(countw(&group_list));
-                        if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
-                    %end;
-                run;
-
-
-            /*stack transposed data and assign N/A*/
-	        data &dsin. (drop = start_episodes);
-
+		   /* Merge data for all columns */
+		   data &dsin.;
 		        merge &dsin._tran_:;
 		        by &dpvar. group moiname pregflg;
-                %do g = 1 %to %sysfunc(countw(&group_list));
-                    if &min_min. < &&&gestwk_group&g. then do; 
-                        if group = "%scan(&group_list., &g.)" or start_episodes > 0 then do;
-                            %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
-                    		   %do vv = 1 %to &numcolumns;
-                                 gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
-                    	       %end;
-                            %end;
-                        end; 
-                    end;
-                %end;
             run;
 
         %end; /*gestational week table transpose*/
