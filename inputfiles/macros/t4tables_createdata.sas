@@ -258,7 +258,7 @@
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
                 /*for gestational week tables, N/A assigned after data is transposed below*/
-                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("''") %then %do;
+                %if %index(&&formula&vv.,pre)>0 and &dataset. = preg %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
