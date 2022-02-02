@@ -300,7 +300,7 @@
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
                 /*for gestational week tables, N/A assigned after data is transposed below*/
-                %if %index(&&formula&vv.,pre)>0 and %str("&prepreggrouplist") ne %str("''") %then %do;
+                %if %index(&&formula&vv.,pre)>0 and &dataset. = preg %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
@@ -337,8 +337,8 @@
                   end;
              run; 
 
-            proc sort data = &dsin. nodupkey;
-		      by &dpvar. group moiname pregflg;
+			 proc sort data = &dsin. nodupkey ;
+		      by &dpvar. group moiname pregflg gestwk_char;
             run;
 
 			
@@ -380,8 +380,8 @@
 		        by &dpvar. group moiname pregflg;
                 %do g = 1 %to %sysfunc(countw(&group_list));
                     if &min_min. < &&&gestwk_group&g. then do; 
-                        if group = "%scan(&group_list., &g.)" and start_episodes > 0 then do;
-                            %do min_loop = &min_min. %to &&&gestwk_group&g.;
+                        if group = "%scan(&group_list., &g.)" or start_episodes > 0 then do;
+                            %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
                     		   %do vv = 1 %to &numcolumns;
                                  gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
                     	       %end;
@@ -391,7 +391,6 @@
                 %end;
             run;
 
-			
         %end; /*gestational week table transpose*/
 	   
 	   /* Apply labels */
