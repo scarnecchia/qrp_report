@@ -334,36 +334,34 @@
                 %end;
                 /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per weeek for gestational week data, % cannot be computed*/
                 %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
-                     if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
+                    if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
                 %end;
             end;
 	     %end;
 	   run;
-
+	   
+	   
         /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
-
             /*Transpose both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
-                   by &dpvar. group moiname pregflg;
+                   by &dpvar. group moiname pregflg den_episodes_wk1;
                    id gestwk_char;
-				   copy den_episodes_wk1;
                    var &&var&va..;
                 run;
 				
                 proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
-                   by &dpvar. group moiname pregflg;
+                   by &dpvar. group moiname pregflg den_episodes_wk1;
                    id gestwk_char;
-				   copy den_episodes_wk1;
                    var &&var&va.._char;
                 run;
-           %end;
+            %end;
 		 
 		   /* Merge data for all columns */
 		   data &dsin.;
              merge &dsin._tran_:;
-		     by &dpvar. group moiname pregflg;
+		     by &dpvar. group moiname pregflg den_episodes_wk1;
 			 /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
 			 %do g = 1 %to %sysfunc(countw(&group_list));      
 			   %if &min_min. < &&&gestwk_group&g. %then %do;
@@ -378,7 +376,7 @@
 			 %end;
            run;
         %end; /*gestational week table transpose*/
-	   
+	 
 	   /* Apply labels */
        proc sql noprint;
          create table &dsout. as
