@@ -11,15 +11,22 @@
 *  Program inputs:                                                                                   
 *   - agg_t4preg.sas7bdat   
 *   - agg_t4nopreg.sas7bdat 
+*   - agg_t4preggestwk.sas7bdat   
+*   - agg_t4nopreggestwk.sas7bdat 
 *
 *  Program outputs:                                                                                                                           
 *   - final_t4moi - levelid and moiname stratification across data partners
 *   - final_dps_t4moi - levelid and moiname stratification by data partner
+*   - final_t4gestwk - moiname and gestwk stratification across data partners
+*   - final_dps_t4gestwk - moiname and gestwk stratification by data partner
 * 
 *  PARAMETERS: 
+*   - dataset = suffix for input dataset indicator
+*   - output_suffix = suffix for output dataset name
+*   - episode_var: variable that holds # of pregnancy episodes
 * 
 *  Programming Notes:                                                                                 
-
+*
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -28,40 +35,31 @@
 *
 ***************************************************************************************************;
 
-%macro t4tables_createdata();
+%macro t4tables_createdata(dataset = , output_suffix = , episode_var = );
 
     %put =====> MACRO CALLED: t4tables_createdata ;
-	
-    /************************************************************************************************
-      Determine levels   	  
-     ************************************************************************************************/	
-	  %let t4preglevel1 =;
-	  %let t4preglevel2 =;
-	  %let t4nopreglevel1 =;
-	  %let t4nopreglevel2 =;
-	  %do ds = 1 %to  %sysfunc(countw(&datasetlist,' '));
-	    %let t4dset = %sysfunc(scan(&datasetlist,&ds.,' '));
-	    proc sql noprint;
-           select distinct quote(levelid1), quote(levelid2) 
-           into :&t4dset.level1,
-                :&t4dset.level2
-           from tablefile where dataset = "&t4dset.";
-	    quit;
-	  %end;
-	  
-	/************************************************************************************************
-      Determine total count of variables on table and put tablecolumns information into macro variables             
-    ************************************************************************************************/
+
+   /*********************************************************************************************************
+      Determine total count of variables on table and put tablecolumns information into macro variables
+        - For tables T1-T4, there is a 1:1 relationship between rows in TABLECOLUMNS and columns in the table 
+        - For tables T5-T6, TABLECOLUMNS only contains 3 possible columns, this table will be expanded for 
+          each gestational week after table information is assigned to macro variables
+    ********************************************************************************************************/
 	proc sql noprint;
+	  select distinct(compress(table)) into: tables separated by '" "'
+      from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+	  
 	  select count(column) into: numcolumns trimmed
-	  from tablecolumns;
-		
+	  from tablecolumns where table in ("&tables.");
+	  
 	  select columnname 
 	        ,column 
 			,columnlabel
 			,columnformat
 			,scan(compress(column,'()'),1,'/') as numerator
-			,cats("den_",scan(compress(scan(column,1,'*'),'()'),2,'/')) as denominator
+			,case when index(column,'/') = 0 then ''
+			   when index(column,'*')  > 0 then cats("den_",scan(compress(scan(column,1,'*'),'()'),2,'/')) 
+			   else cats("den_",scan(column,2,'/')) end as denominator
 			,case when index(columnformat,'$') > 0 then columnformat
 			   else compress('$'||put(input(scan(compress(columnformat,'','a'),1,'.'),3.) +  input(scan(compress(columnformat,'','a'),2,'.'),3.),8.)||".") end as columnformatchar
 	   into: var1 -:var&numcolumns.
@@ -71,81 +69,234 @@
 			,:num1 - :num&numcolumns.
 			,:denominator1 - :denominator&numcolumns.
 			,:formatchar1 - :formatchar&numcolumns.
-	  from tablecolumns;
+	  from tablecolumns where table in ("&tables.");
 	  
 	  select distinct(a.numerator)
 	         into: sumcolumns separated by " "
 	        from (select case when index(column,'/') > 0 then scan(compress(column,'()'),1,'/')
-                   else column end as numerator from tablecolumns) a;
+                   else column end as numerator from tablecolumns where table in ("&tables.")) a;
     quit;
-	
-    /************************************************************************************************
-     Determine denominators for percent calculations          
+
+    /*Expand table to 1 row per gestional week*/
+    %if &dataset. = preggestwk %then %do;
+
+	    /* Identify min gestwk requested. Max always 44 weeks */
+        data master_typefile;
+            set master_typefile;
+            length gestwk_min gestwk_max 3;
+            if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
+            else gestwk_min = 0; 
+		    gestwk_max = 44;
+        run;
+
+        proc sql noprint;
+		    select min(a.gestwk_min) into: min_min
+            from master_typefile a,
+                 groupsfile b
+            where a.group = b.group;
+        quit;
+
+        %let max_max = 44; 
+
+        data _temptablecolumns;
+            set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
+            spanningheader = columnlabel;
+            /*negative weeks*/
+            %if %eval(&min_min<0) %then %do;
+            do i = %sysfunc(abs(&min_min.)) to 1 by -1;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwkneg', i, origcolumnname);
+                /*change columnlabel/columnheader (T6) to gestational week*/
+                columnlabel = strip(cats('-',strip(put(i, best.))));
+                if table = 'T6' then columnheader = strip(cats('-',strip(put(i, best.))));
+                gestwkorder = i*-1;
+                output;
+            end;
+            drop i;
+            %end;
+
+            /*Positive weeks*/
+            do gestwkorder = 1 to &max_max.;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwk', gestwkorder, origcolumnname);
+                /*change columnlabel/columnheader (T6) to gestational week*/
+                columnlabel = strip(put(gestwkorder, best.));
+                if table = 'T6' then columnheader = strip(put(gestwkorder, best.));
+                output;
+            end;
+        run;
+
+        data tablecolumns;
+            set tablecolumns(where=(table not in ('T5', 'T6')))
+                _temptablecolumns;
+        run;
+    %end;
+
+   /************************************************************************************************
+     Identify substrat tables requested     
     ************************************************************************************************/
-    %macro t4_preg_nopreg (dsin = );	
-	   proc sql noprint undo_policy=none;
-	      create table _&dsin as 
-              select b.*
-	          ,a.episodes as den_episodes
-	          ,a.episodes_3trim as den_episodes_3trim
-              from agg_t4&dsin (keep = episodes episodes_3trim level group dpidsiteid 
-			                    where=(level in (&&t4&dsin.level1))) as a,
-                   agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
-              where a.group=b.group 
-	          and a.dpidsiteid = b.dpidsiteid;
-       quit;
-    %mend t4_preg_nopreg;
-	%if %index(&datasetlist.,t4preg) > 0 %then %do;
-	  %t4_preg_nopreg(dsin = preg);
-	%end;
-	%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-	   %t4_preg_nopreg(dsin = nopreg);
-	%end;
-	
-    /************************************************************************************************
-     Set preg and nopreg data together when requested for desired levels            
-    ************************************************************************************************/
-	 data _agg_t4moi;
-	   length moiname $5;
-	   set %if %index(&datasetlist.,t4preg) > 0 %then %do;
-	         _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
-		   %end;
-		   %if %index(&datasetlist.,t4nopreg) > 0 %then %do;
-		     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns episodes episodes_3trim den_:)
-		   %end;;
-	   if t4preg then pregflg = "Y";
-	   else pregflg = "N";
-	 run;
+	 proc sql noprint;
+	    select count(distinct tablesubstrat) into: numdset trimmed
+		from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+		
+		select distinct tablesubstrat 
+		   into: substrat1 - :substrat&numdset.
+	    from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
+	 quit;
 
     /************************************************************************************************
-     List of groups with a defined pre-pregnancy period          
+      Assign default value for list of groups that assign pre pregnancy periods   
     ************************************************************************************************/
-    %let prepreggrouplist = ;
-    %if %index(&sumcolumns., pre)>0 %then %do;
-    data output.master_typefile; set master_typefile; run;
-        proc sql noprint;
-            select distinct "'"||group||"'" into: prepreggrouplist separated by ','
-            from master_typefile
-            where prepregdays >0;
-        quit;
-        %if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
-    %end;
+     %let prepreggrouplist =''; 
+	 
+	/************************************************************************************************
+      Code specific for t4pregnancy and t4nopregnancy
+	  - Identify levels 1 and 2 for preg and nopreg
+	  - Calculate denominator episodes and denominator episodes in trimester 3
+	  - Summarize data by group moiname and pregnancy flag for the identified level ids
+     ************************************************************************************************/	
+	 %if &dataset. = preg %then %do;
 	
-   /************************************************************************************************
-     Summarize Data     
-    ************************************************************************************************/	
-	proc summary data = _agg_t4moi nway missing;
-	  class group moiname pregflg;
-	  var &sumcolumns. episodes episodes_3trim den_episodes den_episodes_3trim;
-	  output out = _agg_t4moi_summ (drop = _:) sum=;
-	run;
+      /************************************************************************************************
+        Determine levels
+       ************************************************************************************************/	 
+	    %let t4preglevel1 =;
+	    %let t4preglevel2 =;
+	    %let t4nopreglevel1 =;
+	    %let t4nopreglevel2 =;
+	    
+	    %do ds = 1 %to &numdset.;
+	      proc sql noprint;
+             select distinct quote(levelid1), quote(levelid2) 
+             into :&&&substrat&ds..level1,
+                  :&&&substrat&ds..level2
+             from tablefile where dataset = "&&substrat&ds.";
+	      quit;
+	    %end;
+	  
+     /************************************************************************************************
+       Determine denominators for percent calculations          
+      ************************************************************************************************/
+        %macro t4_preg_nopreg (dsin = );	
+	       proc sql noprint undo_policy=none;
+	          create table _&dsin as 
+                  select b.*
+	              ,a.&episode_var. as den_&episode_var.
+	              ,a.&episode_var._3trim as den_&episode_var._3trim
+                  from agg_t4&dsin (keep = &episode_var. &episode_var._3trim level group dpidsiteid 
+	    		                    where=(level in (&&t4&dsin.level1))) as a,
+                       agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
+                  where a.group=b.group 
+	              and a.dpidsiteid = b.dpidsiteid;
+           quit;
+        %mend t4_preg_nopreg;
+	    %if %sysfunc(findw(&datasetlist.,t4preg)) > 0 %then %do;
+	      %t4_preg_nopreg(dsin = preg);
+	    %end;
+	    %if %sysfunc(findw(&datasetlist.,t4nopreg)) > 0 %then %do;
+	       %t4_preg_nopreg(dsin = nopreg);
+	    %end;
+	  
+     /************************************************************************************************
+       Set preg and nopreg data together when requested for desired levels            
+      ************************************************************************************************/
+	     data _agg_t4moi;
+	       length moiname $5;
+	       set %if %sysfunc(findw(&datasetlist.,t4preg)) > 0 %then %do;
+	             _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
+	    	   %end;
+	    	   %if %sysfunc(findw(&datasetlist.,t4nopreg)) > 0 %then %do;
+	    	     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
+	    	   %end;;
+	       if t4preg then pregflg = "Y";
+	       else pregflg = "N";
+	     run;
+	  
+     /************************************************************************************************
+       List of groups with a defined pre-pregnancy period          
+      ************************************************************************************************/
+        %if %index(&sumcolumns., pre)>0 %then %do;
+            proc sql noprint;
+                select distinct "'"||group||"'" into: prepreggrouplist separated by ','
+                from master_typefile
+                where prepregdays >0;
+            quit;
+			%if %str("&prepreggrouplist") = %str("") %then %let prepreggrouplist = '';
+        %end;
+	  
+     /************************************************************************************************
+       Summarize Data     
+      ************************************************************************************************/	
+	    proc summary data = _agg_t4moi nway missing;
+	      class group moiname pregflg;
+	      var &sumcolumns. &episode_var. &episode_var._3trim den_&episode_var. den_&episode_var._3trim;
+	      output out = _agg_t4moi_summ (drop = _:) sum=;
+	    run;
+	  %end; /* T4preg and T4nopreg specific code */
+	  
+	/************************************************************************************************
+      Summarize preg and nopreg data by group moiname pregflg and gestational week
+	   - Gestational week data is in a different format than pregnancy data and requires separate processing
+     ************************************************************************************************/	
+	  %else %do;
+	    data _agg_t4moi (keep = group moiname gestwk pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
+	      length pregflg $1 gestwk_char $15;
+	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
+	  	      agg_t4preggestwk (in = preg)
+	  		%end;
+	  		%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
+	  	      agg_t4nopreggestwk (in = nopreg)
+	  		%end;;
+	  	if gestwk < 0 then gestwk_char = left(cats("gestwkneg",put(abs(gestwk),3.)));
+          else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
+	  	if preg then pregflg = "Y";
+	      else pregflg = "N";
+	  	den_&episode_var. = &episode_var.;
+		if not (&min_min. <= gestwk <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
+	    run;	
+	  	
+	    proc summary data = _agg_t4moi nway missing;
+          class group moiname pregflg gestwk_char gestwk;
+          var &sumcolumns. den_&episode_var.;
+          output out = _agg_t4moi_summ (drop = _:) sum=;
+        run;
+		
+		/* Sort by dpid group moiname gestational week per preg/nopreg dataset. 
+		   This is needed for retain statement in prep_t4tables */
+		proc sort data = _agg_t4moi;
+		  by dpidsiteid group moiname pregflg gestwk_char;
+        run;
+		
+		/*Determine the minimum gestional week for each group and assign to a macro variable*/
+        proc sql noprint undo_policy=none;
+           select distinct group into: group_list separated by ' '
+           from _agg_t4moi;
+        quit;
+
+        data _null_;
+          set master_typefile;
+          %do g = 1 %to %sysfunc(countw(&group_list));
+              if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
+          %end;
+        run;
+	  %end;
 	
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
     %macro prep_t4tables (dsin =, dsout =, dpvar = );	
-	   data &dsin. (keep = &dpvar. group moiname pregflg den_episodes column:);
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end;);
 	     set &dsin.;
+		 
+		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
+		 %if &dataset. = preggestwk %then %do;
+		   by &dpvar. group moiname pregflg gestwk_char;
+		   retain den_episodes_wk1;
+		   if first.pregflg and gestwk_char = "gestwk1" then den_episodes_wk1 = den_pregepisodes;
+		 %end;
+		 
 		 %do vv = 1 %to &numcolumns;
 		    label &&var&vv.. = "&&label&vv..";
 			label &&var&vv.._char = "&&label&vv..";
@@ -166,29 +317,71 @@
 		      &&var&vv. = &&formula&vv.;
 		      &&var&vv.._char = strip(put(&&var&vv., &&format&vv..));
 			%end;
-
+            
             /*standard missing value indicators*/
             /*if 0 patients in cohort, set to '.'*/
-            if den_episodes <=0 then do;
+            if %if &dataset. = preg %then %do; den_&episode_var. <=0 %end; %else %do; den_episodes_wk1 <=0 %end; then do;
                 &&var&vv. = .;
                 &&var&vv.._char = '.';
             end;
             else do;
                 /*if pre-pregnancy period not evaluated, set to 'N/A'*/
-                %if %index(&&formula&vv.,pre)>0 %then %do;
+                %if %index(&&formula&vv.,pre)>0 and &dataset. = preg %then %do;
                     if group not in (&prepreggrouplist) then do;
                         &&var&vv.._char = 'N/A';
                         &&var&vv. = .;
                     end;
                 %end;
-                /*if 0 episodes in 3rd trimester, % cannot be computed*/
-                %if &&denominator&vv. = den_episodes_3trim %then %do;
-                     if den_episodes_3trim <=0 then &&var&vv.._char = 'NaN';
+                /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per weeek for gestational week data, % cannot be computed*/
+                %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
+                    if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
                 %end;
             end;
 	     %end;
 	   run;
 	   
+	   
+        /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
+        %if &dataset. = preggestwk %then %do;
+            /*Transpose both numeric and character vars*/
+    		%do va = 1 %to &numcolumns; 
+                proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
+                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   id gestwk_char;
+                   var &&var&va..;
+                run;
+				
+                proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
+                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   id gestwk_char;
+                   var &&var&va.._char;
+                run;
+            %end;
+		 
+		   /* Merge data for all columns */
+		   data &dsin.;
+             merge &dsin._tran_:;
+		     by &dpvar. group moiname pregflg den_episodes_wk1;
+			 /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
+			 %do g = 1 %to %sysfunc(countw(&group_list));      
+			   %if &min_min. < &&&gestwk_group&g. %then %do;
+			     if group = "%scan(&group_list., &g.)" then do;
+			       %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
+                      %do vv = 1 %to &numcolumns; 
+				  	    if den_episodes_wk1 > 0 then do;
+                          gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
+                        end;
+                        else do;
+                          gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = '.';
+                        end;
+                      %end;
+                   %end;
+			     end;
+			   %end;
+			 %end;
+           run;
+        %end; /*gestational week table transpose*/
+		
 	   /* Apply labels */
        proc sql noprint;
          create table &dsout. as
@@ -196,9 +389,16 @@
          from(select a.*, b.order
 		 %if &labelfileexists. = Y %then %do;
 		 	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
-		 	      when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
-		 	 else catx(' ',strip(c.label),"(N = ",strip(put(a.den_episodes,comma12.0))||")") end as grouplabel 
-		 	,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")")
+			%if &dataset. = preg %then %do;
+		 	        when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")")
+		 	   else catx(' ',strip(c.label),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")") end as grouplabel 
+		 	  ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")")
+			%end;
+			%else %do;
+			       when c.label = "" then strip(a.group)
+		 	   else strip(c.label) end as grouplabel 
+		 	  ,case when d.label = "" then coalescec(c.label, a.group)
+			%end;
              else d.label end as header
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
@@ -206,7 +406,12 @@
              else f.label end as moiheader 
 		 %end;
          %else %do;
-		    ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_episodes,comma12.0))||")") as grouplabel 
+		    %if &dataset. = preg %then %do;
+		      ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")") as grouplabel 
+			%end;
+			%else %do;
+			  ,strip(a.group) as grouplabel
+			%end;
             ,a.moiname as moilabel
             ,"" as moiheader 
          %end;				   
@@ -233,11 +438,11 @@
     %mend;
 
 	/*Overall*/
-    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final_t4moi);
+    %prep_t4tables (dsin=_agg_t4moi_summ, dsout=final&output_suffix.);
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps_t4moi, dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/

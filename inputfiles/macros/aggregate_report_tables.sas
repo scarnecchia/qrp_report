@@ -293,18 +293,18 @@
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
-			%if %index(&datasetlist.,t4preg) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4preg))%then %do;
 			  %agg_report(infile=t4_cida_preg, outfile=agg_t4preg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
-			%if %index(&datasetlist.,t4preggestwk) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4preggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_preg_gestwk, outfile=agg_t4preggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
-			%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4nopreg))%then %do;
 			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
-			%if %index(&datasetlist.,t4nopreggestwk) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
-			%end;			
+			%end;	  
 		%end; *T4L1;
 
 	    %if %str("&reporttype") = %str("T5") %then %do;

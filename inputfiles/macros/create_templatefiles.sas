@@ -587,6 +587,18 @@ libname tempfl "";
             output;
          %end;
          %end;
+		 %do sp = 5 %to 6;
+		   levelnum =1;
+		   dataset = "t4preggestwk";
+		   table = "T&sp.";
+		   tablesub = "overall";
+		   levelid1 = "moiname";
+		   levelid2 = "";
+		   tablesubstrat = 't4preggestwk';
+		   output;
+		   tablesubstrat = 't4nopreggestwk';
+		   output;
+		 %end;
     run;
 
 
@@ -1428,9 +1440,12 @@ libname tempfl "";
        table = "T4"; Column = "sumadjcntonlyt1";       ColumnLabel = "Codes Only During First Trimester";              ColumnFormat = "comma14.0";  order = 43; IncludeinReport = "Y"; columnwidth=.9; output;   
        table = "T4"; Column = "sumadjcntonlyt2";       ColumnLabel = "Codes Only During Second Trimester";             ColumnFormat = "comma14.0";  order = 44; IncludeinReport = "Y"; columnwidth=.9; output;     
        table = "T4"; Column = "sumadjcntonlyt3";       ColumnLabel = "Codes Only During Third Trimester";              ColumnFormat = "comma14.0";  order = 45; IncludeinReport = "Y"; columnwidth=.9; output; 
-       
+       	    
+	   table = "T5"; Column = "moipregepisodes_overlap";               ColumnLabel = "Gestational Week";               ColumnFormat = "comma14.0";  order = 1; IncludeinReport = "Y"; columnwidth=.9; output; 	   
+	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";  ColumnLabel = "Gestational Week";               ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.7; output; 	   
+	   
+	   table = "T6"; Column = "moiepisodes_overlap";                   ColumnLabel = "Gestational Week";               ColumnFormat = "comma14.0";  order = 3; IncludeinReport = "Y"; columnwidth=.9; output; 	     	
      run; 
-     
   %mend create_t4_tablecolumns;
   %create_t4_tablecolumns();
 

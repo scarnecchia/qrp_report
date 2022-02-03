@@ -27,6 +27,7 @@
 ***************************************************************************************************;
 
 %macro create_tableofcontents();
+
     %put =====> MACRO CALLED: create_tableofcontents;
 
     /*********************************************************************************************/
@@ -709,12 +710,13 @@
      
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreg = %str( );
             %let s=;
             data _null_;
                 set tablefile(where=(table="&table"));
-                if tablesubstrat = "t4nopreg" then do;
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
                     call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
                     call symputx('s', "s");
                 end;
@@ -738,6 +740,12 @@
                     %if &table. = T4 %then %do;
                     caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
                     %end;
+                    %if &table. = T5 %then %do;
+                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
+                    %if &table. = T6 %then %do;
+                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
 
             /*By DP*/
             %if &stratifybydp. = Y %then %do;    
@@ -756,8 +764,14 @@
                         %end;
                         %if &table. = T4 %then %do;
                         caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
-                        %end;               
-                %end;
+                        %end;             
+                        %if &table. = T5 %then %do;
+                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                        %if &table. = T6 %then %do;
+                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                 %end;
             %end;
             %let tablenum = %eval(&tablenum + 1);
         %end; /*loop through each table*/
