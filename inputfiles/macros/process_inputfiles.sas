@@ -1114,7 +1114,7 @@
       
 	                     %isdata(dataset=tablecolumns);
 	                     %if %eval(&nobs.>0) %then %do;
-                            %let checkt4l1_t1 = N;
+                            %let checkt4l1_t1t5 = N;
 
 					        data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
                                                   %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; columnheader numerator %end;
@@ -1135,16 +1135,16 @@
 			                    if index(column,'/') = 0 then smallcellYN = "Y";
                                   columnheader=columnlabel;
                                   numerator = scan(compress(column,'()'),1,'/');
-                                  if table = 'T1' then do;
+                                  if table in ('T1', 'T5') then do;
                                     if index(column, '/')>0 then columnheader = 'Percent';
                                     else columnheader = 'Number';
-                                    call symputx('checkt4l1_t1', 'Y');
+                                    call symputx('checkt4l1_t1t5', 'Y');
                                   end;
                               %end;
                             run;
 
                             /*Type 4 - check to ensure N and % columns have the same label*/
-                            %if &checkt4l1_t1 = Y %then %do;
+                            %if &checkt4l1_t1t5 = Y %then %do;
                                 %let count = 1;
                                 proc sql noprint;
                                     select max(c) into: count
@@ -1155,7 +1155,7 @@
 		                          %put ERROR: (Sentinel) Different labels specified for N and % columns in table T1.;
                                   %abort;
                                 %end;
-                            %end; 
+                            %end;                         
 							
 							/* Add footnotes for T1 and T2L1 */
 							%if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do;

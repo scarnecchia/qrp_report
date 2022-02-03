@@ -38,9 +38,13 @@
 %macro t4tables_createdata(dataset = , output_suffix = , episode_var = );
 
     %put =====> MACRO CALLED: t4tables_createdata ;
-   /************************************************************************************************
-      Determine total count of variables on table and put tablecolumns information into macro variables             
-    ************************************************************************************************/
+
+   /*********************************************************************************************************
+      Determine total count of variables on table and put tablecolumns information into macro variables
+        - For tables T1-T4, there is a 1:1 relationship between rows in TABLECOLUMNS and columns in the table 
+        - For tables T5-T6, TABLECOLUMNS only contains 3 possible columns, this table will be expanded for 
+          each gestational week after table information is assigned to macro variables
+    ********************************************************************************************************/
 	proc sql noprint;
 	  select distinct(compress(table)) into: tables separated by '" "'
       from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
@@ -73,6 +77,7 @@
                    else column end as numerator from tablecolumns where table in ("&tables.")) a;
     quit;
 
+    /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
 	    /* Identify min gestwk requested. Max always 44 weeks */
@@ -92,8 +97,43 @@
         quit;
 
         %let max_max = 44; 
+
+        data _temptablecolumns;
+            set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
+            spanningheader = columnlabel;
+            /*negative weeks*/
+            %if %eval(&min_min<0) %then %do;
+            do i = %sysfunc(abs(&min_min.)) to 1 by -1;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwkneg', i, origcolumnname);
+                /*change columnlabel/columnheader (T6) to gestational week*/
+                columnlabel = strip(cats('-',strip(put(i, best.))));
+                if table = 'T6' then columnheader = strip(cats('-',strip(put(i, best.))));
+                gestwkorder = i*-1;
+                output;
+            end;
+            drop i;
+            %end;
+
+            /*Positive weeks*/
+            do gestwkorder = 1 to &max_max.;
+                length columnname $32;
+                /*change columnname to gestwk#column#*/
+                columnname = cats('gestwk', gestwkorder, origcolumnname);
+                /*change columnlabel/columnheader (T6) to gestational week*/
+                columnlabel = strip(put(gestwkorder, best.));
+                if table = 'T6' then columnheader = strip(put(gestwkorder, best.));
+                output;
+            end;
+        run;
+
+        data tablecolumns;
+            set tablecolumns(where=(table not in ('T5', 'T6')))
+                _temptablecolumns;
+        run;
     %end;
-	
+
    /************************************************************************************************
      Identify substrat tables requested     
     ************************************************************************************************/
@@ -105,8 +145,10 @@
 		   into: substrat1 - :substrat&numdset.
 	    from tablefile where dataset in ("t4&dataset." "t4no&dataset.");
 	 quit;
-	 
-	 /* Assign default value for list of groups that assign pre pregnancy periods */
+
+    /************************************************************************************************
+      Assign default value for list of groups that assign pre pregnancy periods   
+    ************************************************************************************************/
      %let prepreggrouplist =''; 
 	 
 	/************************************************************************************************
@@ -298,9 +340,9 @@
 	     %end;
 	   run;
 
-        /* Transpose data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
+        /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
-		
+
             /*Transpose both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
@@ -317,7 +359,7 @@
                    var &&var&va.._char;
                 run;
            %end;
-		   
+		 
 		   /* Merge data for all columns */
 		   data &dsin.;
              merge &dsin._tran_:;
@@ -335,7 +377,6 @@
 			   %end;
 			 %end;
            run;
-			
         %end; /*gestational week table transpose*/
 	   
 	   /* Apply labels */
