@@ -365,18 +365,23 @@
 			 /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
 			 %do g = 1 %to %sysfunc(countw(&group_list));      
 			   %if &min_min. < &&&gestwk_group&g. %then %do;
-			     if group = "%scan(&group_list., &g.)" and den_episodes_wk1 > 0 then do;
-			     %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
-                    %do vv = 1 %to &numcolumns;
-                       gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
-                    %end;
-                 %end;
+			     if group = "%scan(&group_list., &g.)" then do;
+			       %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
+                      %do vv = 1 %to &numcolumns; 
+				  	    if den_episodes_wk1 > 0 then do;
+                          gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
+                        end;
+                        else do;
+                          gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = '.';
+                        end;
+                      %end;
+                   %end;
 			     end;
 			   %end;
 			 %end;
            run;
         %end; /*gestational week table transpose*/
-	 
+		
 	   /* Apply labels */
        proc sql noprint;
          create table &dsout. as
