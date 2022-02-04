@@ -125,7 +125,8 @@
 	    %if %eval(&printMP. > 1) %then %do;
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
-	            order order=data 'Monitoring*Period' style(column)=[just=c vjust=middle] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
+	            order order=data 'Monitoring*Period' style(column)=[just=c background=background_n_fmt. width=2.3in vjust=middle] 
+				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$timefmt.;
 	    %end;
 
         /* Create output datasets based on covarnum */
