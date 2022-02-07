@@ -633,7 +633,6 @@
             /**********************************************************************************/
 
             %if &sub. ne 0 & &marginalweights. = N %then %do;
-                %l2_effect_estimate_subgroups(covarnum=&covarnum., computecategories=Y);
                 %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
                 *Assign generic dummies for automatic selection;
                 %if &individualreturn. = Y %then %do;
