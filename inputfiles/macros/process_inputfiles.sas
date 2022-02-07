@@ -271,7 +271,8 @@
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
-            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere; 
+            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
+			&&id&n.._pscssubgroupfile; 
 			      
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -322,6 +323,7 @@
         %let &&id&n.._multeventfile        = ;
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
+		%let &&id&n.._pscssubgroupfile     = ;
 
         data _null_;
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
@@ -1704,8 +1706,37 @@
                 eoi = lowcase(eoi);
                 ref = lowcase(ref);
 			run;
+			
+			/* If subgroups file exists then add subgroups to pscs_masterinputs */
+			%if %str("&&&runid._pscssubgroupfile") ne %str("") %then %do; 
+  			   %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
+			   %if %eval(&nobs. > 0) %then %do;
+			      proc sort nodupkey data = infolder.&&&runid._pscssubgroupfile out = subgroups;
+				    by analysisgrp subgroup;
+				  run;
+				  
+				  data subgroups (keep = analysisgrp pscs_subgroups);
+				    set subgroups;
+                    length pscs_subgroups $150;
+                    retain pscs_subgroups;
+                    by analysisgrp subgroup;
+                    if first.analysisgrp then pscs_subgroups = subgroup;
+                    else pscs_subgroups = catx(' ', pscs_subgroups, subgroup);
+					if last.analysisgrp then output;
+                  run;
+				  
+				  proc sql noprint undo_policy=none;
+				    create table pscs_masterinputs as
+					select pscs.*
+					      ,sub.pscs_subgroups
+				    from pscs_masterinputs as pscs
+					left join subgroups as sub
+					on pscs.analysisgrp = sub.analysisgrp;
+				  quit;
+			   %end;
+			%end;
         %end;
-
+		
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
         %if %eval(&nobs.>0) %then %do;
