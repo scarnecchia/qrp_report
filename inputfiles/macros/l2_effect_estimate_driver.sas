@@ -768,14 +768,14 @@
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, case when (r.subgroup) = 1000 then put(r.subgroupcat,$sexfmt.)
-                         when (r.subgroup) = 1012 then put(r.subgroupcat,$racefmt.)
-                         when (r.subgroup) = 1013 then put(r.subgroupcat,$hispanicfmt.)
-                         when (r.subgroup) = 1014 then put(r.subgroupcat,$deliveryfmt.)
-                         when (r.subgroup) = 2000 then put(r.subgroupcat,$matchfmt.)
-                         when (r.subgroup) = 2001 then put(r.subgroupcat,$birthtypefmt.)
-                         when (r.subgroup) = 1003 then put(r.subgroupcat,$timefmt.)
-                         when (r.subgroup) in (1001, 1002, 9000) then r.subgroupcat
+        select r.*, case when (r.subgroup) = 'sex' then put(r.subgroupcat,$sexfmt.)
+                         when (r.subgroup) = 'race' then put(r.subgroupcat,$racefmt.)
+                         when (r.subgroup) = 'hispanic' then put(r.subgroupcat,$hispanicfmt.)
+                         when (r.subgroup) = 'PrePostInd' then put(r.subgroupcat,$deliveryfmt.)
+                         when (r.subgroup) = 'MatchMethod' then put(r.subgroupcat,$matchfmt.)
+                         when (r.subgroup) = 'Birth_Type' then put(r.subgroupcat,$birthtypefmt.)
+                         when (r.subgroup) = 'periodid' then put(r.subgroupcat,$timefmt.)
+                         when (r.subgroup) in ('agegroup', 'year') then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;
