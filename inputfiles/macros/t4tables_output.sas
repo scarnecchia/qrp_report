@@ -57,12 +57,17 @@
     /*Assign footnotes*/
     data _footnotes;
        length footnote_order 3; 
-       set lookup.lookup_footnotes(where=(type = "t4l1moi" and order in ( 0
+       set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0
           %if &table.=T1 %then %do;
            %if &nonpreg. = Y %then %do; 1 %end;
             %else %do; 2 %end;
            %end;
-        )));
+          %if &table.=T5 %then %do;
+           %if &nonpreg. = Y %then %do; 3 %end;
+            %else %do; 4 %end;
+           %end; )
+          or (type='type4' and order in (-2 %if &nonpreg. = Y %then %do; -1 %end;))
+         )));
        by order;
        footnote_order = _n_;
     run;
@@ -78,7 +83,8 @@
         %end;
     quit;
 
-	%assign_superscripts(type=title, order = 1 2);
+	%assign_superscripts(type=title, order = -2 -1);
+	%assign_superscripts(type=exposure, order = 1 2 3 4);
 
     /*Save dataset to repdata folder*/
     %isdata(dataset=repdata.table&tabnum.);
@@ -148,7 +154,7 @@
         %if &includemoiheaderrow. = Y %then %do; 
         define moiheader / order noprint order=data ' ';
         %end;
-        define moilabel / "Exposure(s) of Interest&super_title."
+        define moilabel / "Exposure(s) of Interest&super_exposure."
              style(column)= [just=l indent=%if &includemoiheaderrow = Y %then %do;.25in%end; %else %do;.15in%end;]
     		 style(header)=[just=l borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
 
@@ -167,7 +173,7 @@
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                        borderbottomwidth=&bordersize tagattr="wrap:yes" cellheight=.3in];
-        line "Table &tabnum.. &title.";
+        line "Table &tabnum.. &title.&super_title.";
 		endcomp;
         
         /*add pregnant/non-pregnant header*/

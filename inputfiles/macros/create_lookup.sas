@@ -35,9 +35,13 @@
 	   attrib type         length = $10  format = $10. 
 	          order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
-			  
+
+	   /* Footnotes for in Type 4 tables - applied to multiple tables*/
+       type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
+       type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
+
 	   /* Footnotes for baseline table */
-	   type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
+       type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
 	   type = "baseline";  order = 2;  description = "&covar_characteristic. in blue show a standardized difference greater than &sdthreshold.."; output;
 	   type = "baseline";  order = 3;  description = "Covariates in italics were not included in the propensity score logistic regression model."; output;
 	   type = "baseline";  order = 4;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated/control patients are weighted by the proportion of the total patient population included in their PS stratum divided by the proportion of the total treated/control patient population included in their PS stratum."; output;
@@ -47,7 +51,7 @@
 	   type = "baseline";  order = 8;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are weighted by the proportion of treated patients in the trimmed population divided by the inverse of their propensity score (PS). Reference patients are weighted by 1 minus the proportion of treated patients in the trimmed population divided by 1 minus their PS."; output;
 	   type = "baseline";  order = 9;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1. Reference patients are weighted by their propensity score (PS) divided by 1 minus their PS."; output;
 	   type = "baseline";  order = 10; description = "With variable ratio matching, each exposed subject is matched to a variable number of comparator subjects. The weight for each treated subject equals 1. The weight for each control subject equals the inverse of the matching ratio for that specific matched set."; output;
-	   type = "baseline";  order = 11; description = "Baseline period in reference to user defined index date (pregnancy start, exposure date, or delivery date)."; output;
+	   type = "baseline";  order = 11; description = "Baseline period in reference to user-defined index date (start of first valid exposed pregnancy resulting in live birth delivery, exposure date, or delivery date)."; output;
 	   type = "baseline";  order = 12; description = "Value represents the proportion of episodes with first switch."; output;
 	   type = "baseline";  order = 13; description = "Value represents the proportion of first switch episodes with second switch."; output;
 	   type = "baseline";  order = 14; description = "Value represents standard deviation where no % follows the value."; output;
@@ -98,9 +102,11 @@
 	   type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
        /* Footnotes for type 4 MOI tables */
-	   type = "t4l1moi";   order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
-	   type = "t4l1moi";   order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
-	   
+       type = "t4l1moi"; order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
+	   type = "t4l1moi"; order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
+	   type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
+	   type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
+
      run; 
 
      data lookup.lookup_attrition;

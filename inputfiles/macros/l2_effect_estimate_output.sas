@@ -125,7 +125,8 @@
 	    %if %eval(&printMP. > 1) %then %do;
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
-	            order order=data 'Monitoring*Period' style(column)=[just=c vjust=middle] style(header)=[just=C background=white borderbottomcolor=black] format=$timefmt.;
+	            order order=data 'Monitoring*Period' style(column)=[just=c background=background_n_fmt. width=2.3in vjust=middle] 
+				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$timefmt.;
 	    %end;
 
         /* Create output datasets based on covarnum */
@@ -238,8 +239,7 @@
          data _footnotes;
            length footnote_order 3; 
            /* Always displayed across all types */
-           set lookup.lookup_footnotes(where=(type = "effectest" and order in ( 0
-                            			  
+           set lookup.lookup_footnotes(where=((type = "effectest" and order in ( 0
               %if %length(&weightscheme) > 0 %then %do;
               1 4
               %end;
@@ -248,8 +248,11 @@
               %end;
               %if &covarnum = 1014 %then %do;
               3
-              %end;
-            )));
+              %end; ))
+               %if %index(&reporttype,T4) > 0 %then %do;
+                or (type='type4' and order in (-2))
+            %end;
+            ));
            by order;
            footnote_order = _n_;
         run;
@@ -266,7 +269,7 @@
         quit;
 
         /* Assign macro variables for superscripts */
-		%assign_superscripts(type =title, order = 2 3);
+		%assign_superscripts(type =title, order = -2 2 3);
 		%assign_superscripts(type =weight, order =1);
 		%assign_superscripts(type =line, order =4);
 
@@ -323,7 +326,7 @@
 
         ods escapechar="^";
         %if &destination = excel %then %do;
-        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
+        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green" flow="1:400");
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
