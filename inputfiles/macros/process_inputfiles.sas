@@ -1711,26 +1711,14 @@
 			%if %str("&&&runid._pscssubgroupfile") ne %str("") %then %do; 
   			   %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
 			   %if %eval(&nobs. > 0) %then %do;
-			      proc sort nodupkey data = infolder.&&&runid._pscssubgroupfile out = subgroups;
-				    by analysisgrp subgroup;
-				  run;
-				  
-				  data subgroups (keep = analysisgrp pscs_subgroups);
-				    set subgroups;
-                    length pscs_subgroups $150;
-                    retain pscs_subgroups;
-                    by analysisgrp subgroup;
-                    if first.analysisgrp then pscs_subgroups = subgroup;
-                    else pscs_subgroups = catx(' ', pscs_subgroups, subgroup);
-					if last.analysisgrp then output;
-                  run;
-				  
 				  proc sql noprint undo_policy=none;
 				    create table pscs_masterinputs as
 					select pscs.*
-					      ,sub.pscs_subgroups
+					      ,sub.subgroup
+						  ,sub.subgroupcat
+						  ,sub.matchedinfullonly
 				    from pscs_masterinputs as pscs
-					left join subgroups as sub
+					left join infolder.&&&runid._pscssubgroupfile as sub
 					on pscs.analysisgrp = sub.analysisgrp;
 				  quit;
 			   %end;
