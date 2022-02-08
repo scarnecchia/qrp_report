@@ -1712,10 +1712,23 @@
 			   %if %eval(&nobs. > 0) %then %do;
 				  proc sql noprint undo_policy=none;
 				    create table _pscs_masterinputs_subgroups as
-					select pscs.*
+					select pscs.runid
+					      ,pscs.file
+						  ,pscs.analysisgrp
+						  ,pscs.psestimategrp
+						  ,pscs.ceiling
+						  ,pscs.caliper
+						  ,pscs.ratio
+						  ,pscs.strataweight
+						  ,pscs.truncweight
+						  ,pscs.ipweight
+						  ,pscs.percentiles
+						  ,pscs.eoi
+						  ,pscs.ref
+						  ,pscs.unconditional
+						  ,pscs.pstrim
 					      ,sub.subgroup
 						  ,sub.subgroupcat
-						  ,sub.matchedinfullonly
 				    from pscs_masterinputs as pscs
 					inner join infolder.&&&runid._pscssubgroupfile as sub
 					on pscs.analysisgrp = sub.analysisgrp;
