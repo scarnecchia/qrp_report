@@ -45,7 +45,7 @@
         /* only psmatchfile, stratificationfile, and iptwfile have histogram */
 	        proc sql noprint;
 	            select strip(file) into: psfile
-	            from pscs_masterinputs
+	            from pscs_masterinputs (where = (missing(subgroup)))
 	            where analysisgrp = "&analysisgrp.";
 	        quit;
 
@@ -53,7 +53,7 @@
 
 			%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				data _null_; 
-		          set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+		          set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp." and missing(subgroup)));
 		            call symputx("psestimategrp", lowcase(psestimategrp));
 		                 %if &psfile. = psmatchfile  %then %do;
 		                    call symputx('RATIO',upcase(ratio)) ;

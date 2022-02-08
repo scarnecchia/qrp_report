@@ -271,7 +271,8 @@
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
-            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere; 
+            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
+			&&id&n.._pscssubgroupfile; 
 			      
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -322,6 +323,7 @@
         %let &&id&n.._multeventfile        = ;
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
+		%let &&id&n.._pscssubgroupfile     = ;
 
         data _null_;
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
@@ -1639,8 +1641,8 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles covarnum truncweight pstrim 8 unconditional $1.;
-            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, covarnum, truncweight, ceiling, caliper, ratio, strataweight,
+                   caliper ceiling percentiles truncweight pstrim 8 unconditional $1. subgroup subgroupcat $11;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim);
             stop;
         run;
@@ -1686,8 +1688,7 @@
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
-                if missing(covarnum) then covarnum = 0;
-                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight truncweight
+                keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional pstrim;
             run;
 
@@ -1704,8 +1705,48 @@
                 eoi = lowcase(eoi);
                 ref = lowcase(ref);
 			run;
+			
+			/* If subgroups file exists then add subgroups to pscs_masterinputs */
+			%if %str("&&&runid._pscssubgroupfile") ne %str("") %then %do; 
+  			   %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
+			   %if %eval(&nobs. > 0) %then %do;
+				  proc sql noprint undo_policy=none;
+				    create table _pscs_masterinputs_subgroups as
+					select pscs.runid
+					      ,pscs.file
+						  ,pscs.analysisgrp
+						  ,pscs.psestimategrp
+						  ,pscs.ceiling
+						  ,pscs.caliper
+						  ,pscs.ratio
+						  ,pscs.strataweight
+						  ,pscs.truncweight
+						  ,pscs.ipweight
+						  ,pscs.percentiles
+						  ,pscs.eoi
+						  ,pscs.ref
+						  ,pscs.unconditional
+						  ,pscs.pstrim
+					      ,sub.subgroup
+						  ,sub.subgroupcat
+				    from pscs_masterinputs as pscs
+					inner join infolder.&&&runid._pscssubgroupfile as sub
+					on pscs.analysisgrp = sub.analysisgrp;
+				  quit;
+				  
+				  data pscs_masterinputs;
+				    set pscs_masterinputs
+					   _pscs_masterinputs_subgroups;
+				  run;
+				  
+				  /* Clean up work space */
+                  proc datasets lib = work;
+                   delete _pscs_masterinputs_subgroups;
+                  quit;
+			   %end;
+			%end;
         %end;
-
+		
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
         %if %eval(&nobs.>0) %then %do;
@@ -1714,7 +1755,7 @@
     	     select base.*
     	 	       ,pscs.psestimategrp
     	     from l2comparisonfile as base
-    	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+    	 	 left join pscs_masterinputs (where = (missing(subgroup))) as pscs
     	 	  on base.runid = pscs.runid
     	      and base.analysisgrp = pscs.analysisgrp
     	      order by runid, psestimategrp, order;
@@ -1731,7 +1772,7 @@
          %end;
     
         proc sort data=pscs_masterinputs nodupkey;
-            by runid covarnum analysisgrp;
+            by runid analysisgrp subgroup subgroupcat;
         run;
     %end;	
 	

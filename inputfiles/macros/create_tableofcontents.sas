@@ -128,7 +128,7 @@
          
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
                 call symputx('psfile', strip(file));
                 call symputx('psestimategrp', psestimategrp);
                 call symput('unadjusted', 'Unadjusted '); /*for unadjusted table label*/
@@ -1522,12 +1522,12 @@
 					proc sql noprint;
 		            select strip(file) into: psfile
 		            from pscs_masterinputs
-		            where analysisgrp = "&analysisgrp.";
+		            where analysisgrp = "&analysisgrp." and missing(subgroup);
 			        quit;
 
                     %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				      data _null_; 
-	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp." and missing(subgroup)));
 	                    call symputx("psestimategrp", lowcase(psestimategrp));
 	                        %if &psfile. = psmatchfile  %then %do;
 	                            if upcase(ratio) = "F" then do;
@@ -1603,14 +1603,14 @@
                     proc sql noprint;
                         select distinct strip(file) into: pscsfile trimmed
                         from pscs_masterinputs
-                        where analysisgrp = "&analysisgrp." and runid = "&runid";
+                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
                     quit;
 
                     %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
 
                         /*assign labels*/
                         data _null_; 
-                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
+                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
                             call symputx("psestimategrp", lowcase(psestimategrp));
                         run;
                         data _null_; 

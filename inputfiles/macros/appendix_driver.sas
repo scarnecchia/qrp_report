@@ -89,7 +89,7 @@
         	/*extract QRP input file associated with analysisgrp*/
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
+            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
           quit;
 		  
 		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
@@ -175,7 +175,7 @@
         	/*extract QRP input file associated with analysisgrp*/
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
+            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
         quit;
 
          %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;

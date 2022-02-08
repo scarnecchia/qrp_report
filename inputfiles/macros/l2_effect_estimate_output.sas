@@ -97,7 +97,7 @@
         	/*extract QRP input file associated with analysisgrp*/
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
+            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
 
             /*Get all values of covarnum for a given analysisgrp */
             select distinct covarnum 
