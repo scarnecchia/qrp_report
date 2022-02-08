@@ -33,7 +33,7 @@
        proc means data=cat_dp_rd nway noprint;
            var Exp UnExp EVExp EVUnexp FUTimeExp FUTimeUnexp weight weighted_diff;
            where &where.;
-           ID covarnum;
+           ID subgroup;
            output out=forRD    sum(Exp)=N1
                                sum(UnExp)=N0
                                sum(EVExp)=Ev1
@@ -53,7 +53,7 @@
        %isdata(dataset=forrd_exp); 
        %if %eval(&nobs.=0) %THEN %DO;
            data forRD;
-               set cat_dp_rd(obs=1 keep=covarnum) 
+               set cat_dp_rd(obs=1 keep=subgroup) 
                    forRD;
                N1=0;N0=0;Ev1=0;Ev0=0;FuTime0=0;FuTime0=0;
            run;
@@ -100,19 +100,19 @@
         %put N_1 = &N_1.;
         %put analysisgrp = &analysisgrp.;
         %put cat = &cat.;
-        %put covarnum = &covarnum.;
+        %put subgroup = &subgroup.;
 
         /*calculate metrics for exposure group and comparator group*/
         data est_wide;
             length medicalproduct0 medicalproduct1 $40 subgroupcat $10. analysisgrp $40. analysis $13.;
-            retain analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct:
+            retain analysisgrp subgroup catnum MonitoringPeriod analysis subgroupcat medicalproduct:
                 n0 n1 FUTime_Y: AvgFUTime_D: AvgFUTime_Y: EV0 EV1 IR_1000PY: risk_1000NU: IRDiff_1000PY RD_1000NU;
             set forRD (drop = _type_ _freq_);
 
-            format analysisgrp $40. COVARNUM catnum best. MonitoringPeriod 2.;
+            format analysisgrp $40. subgroup catnum best. MonitoringPeriod 2.;
     
             analysisgrp = "&analysisgrp.";
-            COVARNUM  = &covarnum.;
+            subgroup  = &subgroup.;
             catnum = &cat.;
             MonitoringPeriod = &periodid.;
             analysis= &analysis.;
@@ -212,7 +212,7 @@
             format n0 n1 ev0 ev1 comma10. FUTime_Y: AvgFUTime_D: AvgFUTime_Y: comma12.2 IR_1000PY: risk_1000NU: IRDiff_1000PY: RD_1000NU: nnt rr comma8.2
             ar par percentn12.2 poprisk best8.4;
 
-            keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct:
+            keep analysisgrp subgroup catnum MonitoringPeriod analysis subgroupcat medicalproduct:
                 n0 n1 FUTime_Y: AvgFUTime_D: AvgFUTime_Y: EV0 EV1 IR_1000PY: risk_1000NU: IRDiff_1000PY RD_1000NU poprisk rr nnt ar par RD_95CI totalevents;
         run;
 
@@ -220,7 +220,7 @@
         data est;
             set 
             %do exp = 1 %to 0 %by -1;
-            est_wide(keep= analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat totalevents
+            est_wide(keep= analysisgrp subgroup catnum MonitoringPeriod analysis subgroupcat totalevents
                     n&exp medicalproduct&exp FUTime_Y&exp AvgFUTime_D&exp AvgFUTime_Y&exp EV&exp IR_1000PY&exp risk_1000NU&exp 
                     IRDiff_1000PY RD_1000NU poprisk nnt ar par rr
                 rename=(n&exp = n)
@@ -301,7 +301,7 @@
             /*by analysisgrp*/
             analysisgrpsort = &loopcount.;
 
-            keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
+            keep analysisgrp subgroup catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
                  /*only include followup time variables for ReportType = T2L2 */
                  %if %str("&reporttype.") = %str("T2L2") %then %do;
@@ -318,7 +318,7 @@
             %do exp = 1 %to 0 %by -1;
 
                 analysisgrp = "&analysisgrp.";
-                COVARNUM  = &covarnum.;
+                subgroup  = &subgroup.;
                 catnum = &cat.;
                 MonitoringPeriod = &periodid.;
                 Analysis= &Analysis.;
@@ -418,7 +418,7 @@
                 /*by analysisgrp*/
                 analysisgrpsort = &loopcount.;
 
-                keep analysisgrp COVARNUM catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
+                keep analysisgrp subgroup catnum MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
                 /*only include followup time variables for ReportType = T2L2 */
                 %if %str("&reporttype.") = %str("T2L2") %then %do;

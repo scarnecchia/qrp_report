@@ -35,16 +35,16 @@
     ***********************************************************************************************;
     * Utility macros to subset data and assign category dummy vars                         
     ***********************************************************************************************;
-    %macro subsetdata(datain=, dataout=, covarnum=, cat=);
+    %macro subsetdata(datain=, dataout=, subgroup=, cat=);
         data &dataout.;
             set &datain.;
-            where covarnum=&covarnum. and Dum&cat.=1;
+            where subgroup=&subgroup. and Dum&cat.=1;
         run;
     %mend;
 
-    %macro subgroupdummyvar(datain=, dataout=, covarnum=, numcat=, categorization = );
+    %macro subgroupdummyvar(datain=, dataout=, subgroup=, numcat=, categorization = );
         data &dataout.;
-            set &datain.(where=(covarnum=&covarnum.) drop=dum:);
+            set &datain.(where=(subgroup=&subgroup.) drop=dum:);
             dum0=1;
             array dum{*} dum1-dum&NumCat.;
             do SubComp=1 to &NumCat.;
@@ -65,7 +65,7 @@
         %let classvars = ;
         %let noclassvars = ;
         %let stratavar = ; /*variable that indicates conditional groupings (matchID or percentile)*/
-        %let covarnumlist =;
+        %let subgrouplist =;
         %let numsubgroup = 0; /*number of subgroups*/
         %let convrule = ;
         %let kmrefpop = unweighted;
@@ -101,14 +101,14 @@
         %if &pscsfile. ne iptwfile %then %do;
             data _Subgrp;
                 set infolder.&&&runid._&pscsfile.;
-                where lowcase(analysisgrp) = "&analysisgrp" and covarnum ne 0;
+                where lowcase(analysisgrp) = "&analysisgrp" and subgroup ne 0;
             run;
 
             %isdata(dataset=_Subgrp);
             %if %eval(&nobs.>0) %then %do;
                 proc sql noprint;
-                    select covarnum 
-                    into :covarnumlist separated by ' '
+                    select subgroup 
+                    into :subgrouplist separated by ' '
                     from _Subgrp;
 
                     select count(*) into :numsubgroup
@@ -119,13 +119,13 @@
         %end;
 
         /******************************/
-        /* loop through each covarnum */
+        /* loop through each subgroup */
         /******************************/
         %do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-            %if &sub. = 0 %then %let covarnum = 0;
-            %else %let covarnum = %scan(&covarnumlist, &sub.);
+            %if &sub. = 0 %then %let subgroup = 0;
+            %else %let subgroup = %scan(&subgrouplist, &sub.);
 
-            /*Initialize macro variables for the covarnum loop*/
+            /*Initialize macro variables for the subgroup loop*/
             %let grp0 = ;
             %let grp1 = ;
             %let unconditional_distributed = N;
@@ -161,9 +161,9 @@
             %end;
 
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
-            %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and covarnum = &covarnum.;
+            %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = &subgroup.;
             data _null_; 
-                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = &covarnum.));
+                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = &subgroup.));
 
                 %if &pscsfile. = psmatchfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
@@ -261,7 +261,7 @@
             %end;
            
             /****************************************************************************************/
-            /* For overall analysis - subset data where covarnum = 0 and execute computation macros */
+            /* For overall analysis - subset data where subgroup = 0 and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
 				/*******************************************************/
@@ -296,7 +296,7 @@
 
 	                /*if individual-level data does not exist set individualreturn = N*/
 	                %if %sysfunc(exist(aggpl))=0 %then %do; 
-	                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid. for covarnum &covarnum.. Risk set data will be used;
+	                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid. for subgroup &subgroup.. Risk set data will be used;
 	                    %let individualreturn=N;
 	                %end;
 	            %end; /*aggregate individual level data*/
@@ -343,7 +343,7 @@
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
-                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and covarnum = 0 
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = 0 
                                                                 and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
@@ -365,16 +365,16 @@
 	                                      runidvar=&runid.);	
 				%end;
 
-                %subsetdata(datain=aggrd, dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
+                %subsetdata(datain=aggrd, dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
                 %if &individualreturn. = Y %then %do;
-                    %subsetdata(datain=aggpl, dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggpl, dataout=cat_dp_pl, subgroup=&subgroup., cat=&cat.);
                 %end;
                 %if &individualreturn. = N %then %do;
                     %if %str("&reporttype") = "T2L2" %then %do;
-                    %subsetdata(datain=aggrs, dataout=cat_dp_rs, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggrs, dataout=cat_dp_rs, subgroup=&subgroup., cat=&cat.);
                     %end;
                     %if &marginalweights. = Y %then %do;
-                    %subsetdata(datain=aggmw, dataout=cat_dp_mw, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggmw, dataout=cat_dp_mw, subgroup=&subgroup., cat=&cat.);
                     %end;
                 %end;
                 
@@ -383,7 +383,7 @@
                     %isdata(dataset=SelectionProbabilitiesFile);
                     %if %eval(&nobs.>0) %then %do;
                     data _null_;
-                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum.));
+                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
                         call symputx('s11', s11);
                         call symputx('s01', s01);
                         call symputx('s10', s10);
@@ -509,8 +509,7 @@
                 /* Stratify overall tables by DP                                                  */
                 /**********************************************************************************/
                 %if "&stratifybyDP" = "Y" %then %do;
-                    %let covarnum = 9000; /*set to 9000 for DP stratification*/
-
+                  
                     %do dps = 1 %to &num_dp;
                         %let dpname =%scan(&masked_dplist.,&dps.); 
                         %put &dpname.; 
@@ -633,13 +632,13 @@
             /**********************************************************************************/
 
             %if &sub. ne 0 & &marginalweights. = N %then %do;
-                %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
+                %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 *Assign generic dummies for automatic selection;
                 %if &individualreturn. = Y %then %do;
-                    %subgroupdummyvar(datain=aggpl, dataout=aggpl&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
+                    %subgroupdummyvar(datain=aggpl, dataout=aggpl&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 %end;
                 %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
-                    %subgroupdummyvar(datain=aggrs, dataout=aggrs&sub., covarnum=&covarnum., numcat=&numsubcat., categorization =&subcategorization.);
+                    %subgroupdummyvar(datain=aggrs, dataout=aggrs&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 %end;
 
                 /*Loop through each subgroup category*/
@@ -647,12 +646,12 @@
                     %let subgroupcat = %scan(&subcategorization., &cat., ' ');
 
                     /*Restrict data to subgroup category*/
-                    %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
                     %if &individualreturn. = Y %then %do;
-                    %subsetdata(datain=aggpl&sub., dataout=cat_dp_pl, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggpl&sub., dataout=cat_dp_pl, subgroup=&subgroup., cat=&cat.);
                     %end;
                     %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
-                    %subsetdata(datain=aggrs&sub., dataout=cat_dp_rs, covarnum=&covarnum., cat=&cat.);
+                    %subsetdata(datain=aggrs&sub., dataout=cat_dp_rs, subgroup=&subgroup., cat=&cat.);
                     %end;
 
                     /*Extract selectprobabilities parameters*/
@@ -664,7 +663,7 @@
                         %isdata(dataset=SelectionProbabilitiesFile);
                         %if %eval(&nobs.>0) %then %do;
                         data _null_;
-                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum. and value = "&subgroupcat"));
+                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup. and value = "&subgroupcat"));
                             call symputx('s11', s11);
                             call symputx('s01', s01);
                             call symputx('s10', s10);
@@ -756,7 +755,7 @@
 		        delete cat_:;
 		    quit;
 
-        %end; /*end loop through each covarnum*/
+        %end; /*end loop through each subgroup*/
 		
     %nextloop:
 
@@ -769,14 +768,14 @@
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, case when (r.covarnum) = 1000 then put(r.subgroupcat,$sexfmt.)
-                         when (r.covarnum) = 1012 then put(r.subgroupcat,$racefmt.)
-                         when (r.covarnum) = 1013 then put(r.subgroupcat,$hispanicfmt.)
-                         when (r.covarnum) = 1014 then put(r.subgroupcat,$deliveryfmt.)
-                         when (r.covarnum) = 2000 then put(r.subgroupcat,$matchfmt.)
-                         when (r.covarnum) = 2001 then put(r.subgroupcat,$birthtypefmt.)
-                         when (r.covarnum) = 1003 then put(r.subgroupcat,$timefmt.)
-                         when (r.covarnum) in (1001, 1002, 9000) then r.subgroupcat
+        select r.*, case when (r.subgroup) = 1000 then put(r.subgroupcat,$sexfmt.)
+                         when (r.subgroup) = 1012 then put(r.subgroupcat,$racefmt.)
+                         when (r.subgroup) = 1013 then put(r.subgroupcat,$hispanicfmt.)
+                         when (r.subgroup) = 1014 then put(r.subgroupcat,$deliveryfmt.)
+                         when (r.subgroup) = 2000 then put(r.subgroupcat,$matchfmt.)
+                         when (r.subgroup) = 2001 then put(r.subgroupcat,$birthtypefmt.)
+                         when (r.subgroup) = 1003 then put(r.subgroupcat,$timefmt.)
+                         when (r.subgroup) in (1001, 1002, 9000) then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;
@@ -790,14 +789,14 @@
         left join logitest as c
         on r.monitoringperiod = c.monitoringperiod
           and r.analysisgrp = c.analysisgrp
-          and r.covarnum = c.covarnum
+          and r.subgroup = c.subgroup
           and r.catnum = c.catnum
           and r.analysis=c.analysis
           and r.subgroupcat = c.subgroupcat;
     quit;
 
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
-        by analysisgrpsort covarnum catnum subgroupcat sort1 sort2;
+        by analysisgrpsort subgroup catnum subgroupcat sort1 sort2;
     run;
 
     proc datasets lib=work nolist nowarn; 
