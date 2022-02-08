@@ -35,7 +35,7 @@
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
-          from pscs_masterinputs c
+          from pscs_masterinputs (where = (missing(subgroup))) c
           inner join 
           l2comparisonfile d
           on c.analysisgrp = d.analysisgrp

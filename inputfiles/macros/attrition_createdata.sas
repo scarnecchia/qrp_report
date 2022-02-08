@@ -64,7 +64,7 @@
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
 							  case when missing(ref) then ref2 else ref end as ref
 		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2
-		      from pscs_masterinputs a 
+		      from pscs_masterinputs (where = (missing(subgroup))) a 
 			  left join 
 			  psest_masterinputs b 
 			  on a.psestimategrp = b.psestimategrp);
@@ -122,7 +122,7 @@
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
 							  case when missing(ref) then ref2 else ref end as ref, groupname 
 		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
-		      from pscs_masterinputs a 
+		      from pscs_masterinputs (where = (missing(subgroup))) a 
 			  left join 
 			  psest_masterinputs b 
 			  on a.psestimategrp = b.psestimategrp
@@ -628,7 +628,7 @@
 		left join
 		(select distinct a.runid, a.analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
 		from l2comparisonfile a 
-		left join pscs_masterinputs b 
+		left join pscs_masterinputs (where = (missing(subgroup))) b 
 		on a.analysisgrp = b.analysisgrp
 		left join psest_masterinputs c 
 		on b.psestimategrp = c.psestimategrp) d
