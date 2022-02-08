@@ -1712,15 +1712,25 @@
   			   %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
 			   %if %eval(&nobs. > 0) %then %do;
 				  proc sql noprint undo_policy=none;
-				    create table pscs_masterinputs as
+				    create table _pscs_masterinputs_subgroups as
 					select pscs.*
 					      ,sub.subgroup
 						  ,sub.subgroupcat
 						  ,sub.matchedinfullonly
 				    from pscs_masterinputs as pscs
-					left join infolder.&&&runid._pscssubgroupfile as sub
+					inner join infolder.&&&runid._pscssubgroupfile as sub
 					on pscs.analysisgrp = sub.analysisgrp;
 				  quit;
+				  
+				  data pscs_masterinputs;
+				    set pscs_masterinputs
+					   _pscs_masterinputs_subgroups;
+				  run;
+				  
+				  /* Clean up work space */
+                  proc datasets lib = work;
+                   delete _pscs_masterinputs_subgroups;
+                  quit;
 			   %end;
 			%end;
         %end;
