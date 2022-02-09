@@ -122,7 +122,7 @@
         /* loop through each subgroup */
         /******************************/
         %do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-            %if &sub. = 0 %then %let subgroup = 0;
+            %if &sub. = 0 %then %let subgroup = '';
             %else %let subgroup = %scan(&subgrouplist, &sub.);
 
             /*Initialize macro variables for the subgroup loop*/
@@ -261,7 +261,7 @@
             %end;
            
             /****************************************************************************************/
-            /* For overall analysis - subset data where subgroup = 0 and execute computation macros */
+            /* For overall analysis - subset data where subgroup = '' and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
 				/*******************************************************/
@@ -343,7 +343,7 @@
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
-                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = 0 
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = '' 
                                                                 and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
