@@ -96,7 +96,7 @@
           select distinct est.analysisgrp,
                  est.analysis, 
                  est.analysisgrpsort, 
-                 est.covarnum,
+                 est.subgroup,
                  est.catnum, 
                  est.subgroupcat, 
                  est.sort1, 
@@ -120,11 +120,11 @@
           from forest_l2_effectestimates_&periodid. as est
           %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.covarnum = cov.covarnum  and est.runid = cov.runid
+              on est.subgroup = cov.subgroup  and est.runid = cov.runid
           %end;
           where sort2 = 1 and 
                 analysis ne "Unweighted" 
-               order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
+               order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
 
           create table id_2 as 
           select est.analysisgrp, 
@@ -144,7 +144,7 @@
                  est.LCL,
                  est.UCL, 
                  est.analysisgrpsort, 
-                 est.covarnum, 
+                 est.subgroup, 
                  est.catnum, 
                  est.subgroupcat, 
                  est.sort1, 
@@ -168,11 +168,11 @@
            from forest_l2_effectestimates_&periodid. as est
            %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.covarnum = cov.covarnum and est.runid = cov.runid
+              on est.subgroup = cov.subgroup and est.runid = cov.runid
            %end;
            where sort2 = 1 and 
                  analysis ne "Unweighted" 
-           order by analysisgrpsort, est.covarnum, catnum, subgroupcat, sort1, sort2;
+           order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
       quit;
 
       %isdata(dataset=labelfile);
@@ -201,61 +201,61 @@
           /*Assign labels*/
           if id1 then do;
               id = 2;
-              /*covarnum 0 = Overall - apply analysisgrp label*/
-              if covarnum = 0 then do;
+              /*subgroup '' = Overall - apply analysisgrp label*/
+              if subgroup = '' then do;
                   id = 1;
                   if missing(label) then title=analysisgrp;
                   else title=label;
               end;
-              /*covarnum 1000 = Sex*/
-              else if covarnum = 1000 then do;
+              /*subgroup= Sex*/
+              else if subgroup = 'sex' then do;
                   title = 'Sex';
               end;
-              /*covarnum 1-999 = covariates*/
+              /*subgroup 1-999 = covariates*/
               else if covarnum >=1 and covarnum <=999 then do;
                   title = covarlabel;
               end;
-              /*covarnum 1001 = Age Group*/
-              else if covarnum = 1001 then do;
+              /*subgroup agegroup = Age Group*/
+              else if subgroup = 'agegroup' then do;
                   title = 'Age Group';
               end;
-              /*covarnum 1002 = Year*/
-              else if covarnum = 1002 then do;
+              /*subgroup yeawr = Year*/
+              else if subgroup = 'year' then do;
                   title = 'Year';
               end;
-              /*covarnum 1003 = Time*/
-              else if covarnum = 1003 then do;
+              /*subgroup preiodid = Time*/
+              else if subgroup = 'periodid' then do;
                   title = 'Monitoring Period';
               end;
-              /*covarnum 1012 = Race*/
-              else if covarnum = 1012 then do;
+              /*subgroup race = Race*/
+              else if subgroup = 'race' then do;
                   title = 'Race';
               end;
-              /*covarnum 1013 = Hispanic*/
-              else if covarnum = 1013 then do;
+              /*subgroup hispanic = Hispanic*/
+              else if subgroup = 'hispanic' then do;
                   title = 'Hispanic Origin';
               end;
-              /*covarnum 1014 = Pre-Post indicator*/
-              else if covarnum = 1014 then do;
+              /*subgroup prepostind = Pre-Post indicator*/
+              else if subgroup = 'prepostind' then do;
                   title = 'Delivery Status';
               end;
-              /*covarnum 2000 = Match Method*/
-              else if covarnum = 2000 then do;
+              /*subgroup matchmethod = Match Method*/
+              else if subgroup = 'matchmethod' then do;
                   title = 'Match Method';
               end;
-              /*covarnum 2001 = Birth Type*/
-              else if covarnum = 2001 then do;
+              /*subgroup birth_type = Birth Type*/
+              else if subgroup = 'birth_type' then do;
                   title = 'Birth Type';
               end;
-              /*covarnum 9000 = By Data Parnter*/
-              else if covarnum = 9000 then do;
+              /*subgroup = By Data Parnter*/
+              else if subgroup = '' then do;
                   title = 'Data Partner';
               end;
           end;
           if id2 then do;
               id = 3;
-              /*covarnum 0 = Overall*/
-              if covarnum = 0 then do;
+              /*subgroup  = Overall*/
+              if subgroup = '' then do;
                   id = 2;
                   title = "Overall";
               end;
@@ -272,7 +272,7 @@
       run;
 
       proc sort data = forest_&periodid. nodupkey;
-        by analysisgrpsort analysis id covarnum catnum subgroupcat sort1 sort2 runid;
+        by analysisgrpsort analysis id subgroup catnum subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
@@ -357,7 +357,7 @@
                                                                                  %end;
                                                                                  LCL UCL id file
                                                                                  );
-      by analysisgrpsort analysis COVARNUM catnum subgroupcat sort1 sort2;
+      by analysisgrpsort analysis subgroup catnum subgroupcat sort1 sort2;
       run;
       
       proc datasets nowarn noprint lib=work;
