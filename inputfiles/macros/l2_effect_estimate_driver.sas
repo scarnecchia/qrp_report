@@ -85,19 +85,19 @@
         run;
         %put now computing effect estimates for &analysisgrp.;
        
-        /*extract QRP input file associated with analysisgrp*/
+        /*extract QRP input file associated with analysisgrp from the subgroup file*/ /*jolene get subgroup file from here*/
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
             where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
         quit;
-        
+  
         %if %str("&pscsfile.") = %str("") %then %do;
             %put WARNING: (Sentinel) &analysisgrp. not found in QRP input files. Effect Estimates will not be computed;
             %goto nextloop;
         %end;
 
-        /*How many subgroup analyses for this analysisgrp*/
+        /*How many subgroup analyses for this analysisgrp use from subgroup file*/
         %if &pscsfile. ne iptwfile %then %do;
             proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
 			  by subgroup;
