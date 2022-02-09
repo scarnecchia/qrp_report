@@ -768,14 +768,14 @@
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, case when (r.subgroup) = "sex" then put(r.subgroupcat,$sexfmt.)
-                         when (r.subgroup) = "race" then put(r.subgroupcat,$racefmt.)
-                         when (r.subgroup) = "hispanic" then put(r.subgroupcat,$hispanicfmt.)
-                         when (r.subgroup) = "PrePostInd" then put(r.subgroupcat,$deliveryfmt.)
-                         when (r.subgroup) = "MatchMethod" then put(r.subgroupcat,$matchfmt.)
-                         when (r.subgroup) = "Birth_Type" then put(r.subgroupcat,$birthtypefmt.)
-                         when (r.subgroup) = "periodid" then put(r.subgroupcat,$timefmt.)
-                         when (r.subgroup) in ("agegroup", "year") then r.subgroupcat
+        select r.*, case when lowcase(r.subgroup) = "sex" then put(r.subgroupcat,$sexfmt.)
+                         when lowcase(r.subgroup) = "race" then put(r.subgroupcat,$racefmt.)
+                         when lowcase(r.subgroup) = "hispanic" then put(r.subgroupcat,$hispanicfmt.)
+                         when lowcase(r.subgroup) = "PrePostInd" then put(r.subgroupcat,$deliveryfmt.)
+                         when lowcase(r.subgroup) = "MatchMethod" then put(r.subgroupcat,$matchfmt.)
+                         when lowcase(r.subgroup) = "Birth_Type" then put(r.subgroupcat,$birthtypefmt.)
+                         when lowcase(r.subgroup) = "periodid" then put(r.subgroupcat,$timefmt.)
+                         when lowcase(r.subgroup) in ("agegroup", "year") then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;

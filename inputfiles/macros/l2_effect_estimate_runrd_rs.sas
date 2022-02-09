@@ -109,7 +109,7 @@
                 n0 n1 FUTime_Y: AvgFUTime_D: AvgFUTime_Y: EV0 EV1 IR_1000PY: risk_1000NU: IRDiff_1000PY RD_1000NU;
             set forRD (drop = _type_ _freq_);
 
-            format analysisgrp $40. subgroup catnum best. MonitoringPeriod 2.;
+            format analysisgrp subgroup $40.  catnum best. MonitoringPeriod 2.;
     
             analysisgrp = "&analysisgrp.";
             subgroup  = &subgroup.;
