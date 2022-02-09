@@ -1687,7 +1687,7 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 if missing(covarnum) then covarnum = 0;
-                keep runid file analysisgrp psestimategrp covarnum ceiling caliper ratio strataweight truncweight
+                keep runid file analysisgrp psestimategrp subgroup subgroupcat covarnum ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional pstrim;
             run;
 
