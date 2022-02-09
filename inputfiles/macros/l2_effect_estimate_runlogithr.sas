@@ -52,7 +52,6 @@
         data est; 
   			retain analysisgrp subgroup catnum MonitoringPeriod HR_95CI HR_pvalue;
   			set pest (obs=1 RENAME = (estimate = HR_coef) RENAME = (stderr = HR_se));
-
   			format analysisgrp $40. subgroup $11. catnum best. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
   			length analysisgrp $40 HR_95CI $30 Analysis $13 subgroupcat $10 HR_pvalue $6;
 

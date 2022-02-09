@@ -87,7 +87,12 @@
 
       /* Check to see if covariates file exists */
       %isdata(dataset=covarname);
-
+data output.forest_l2_effectestimates_&periodid.;
+ set forest_l2_effectestimates_&periodid.;
+ run;
+ data output.covarname;
+ set covarname;
+ run;
       /*dataset id_1 will be used to apply a label */
       /*dataset id_2 contains effect estimates*/
       /*both are restricted to sort2 =1, in order to deduplicate the file*/
@@ -208,7 +213,7 @@
                   else title=label;
               end;
               /*subgroup= Sex*/
-              else if subgroup = 'sex' then do;
+              else if lowcase(subgroup) = "sex" then do;
                   title = 'Sex';
               end;
               /*subgroup 1-999 = covariates*/
@@ -216,35 +221,35 @@
                   title = covarlabel;
               end;
               /*subgroup agegroup = Age Group*/
-              else if subgroup = 'agegroup' then do;
+              else if lowcase(subgroup) = "agegroup" then do;
                   title = 'Age Group';
               end;
               /*subgroup yeawr = Year*/
-              else if subgroup = 'year' then do;
+              else if lowcase(subgroup) = "year" then do;
                   title = 'Year';
               end;
               /*subgroup preiodid = Time*/
-              else if subgroup = 'periodid' then do;
+              else if lowcase(subgroup) = "periodid" then do;
                   title = 'Monitoring Period';
               end;
               /*subgroup race = Race*/
-              else if subgroup = 'race' then do;
+              else if lowcase(subgroup) = "race" then do;
                   title = 'Race';
               end;
               /*subgroup hispanic = Hispanic*/
-              else if subgroup = 'hispanic' then do;
+              else if lowcase(subgroup) = "hispanic" then do;
                   title = 'Hispanic Origin';
               end;
               /*subgroup prepostind = Pre-Post indicator*/
-              else if subgroup = 'prepostind' then do;
+              else if lowcase(subgroup) = "prepostind" then do;
                   title = 'Delivery Status';
               end;
               /*subgroup matchmethod = Match Method*/
-              else if subgroup = 'matchmethod' then do;
+              else if lowcase(subgroup) = "matchmethod" then do;
                   title = 'Match Method';
               end;
               /*subgroup birth_type = Birth Type*/
-              else if subgroup = 'birth_type' then do;
+              else if lowcase(subgroup) = "birth_type" then do;
                   title = 'Birth Type';
               end;
               /*subgroup = By Data Parnter*/
