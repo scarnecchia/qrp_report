@@ -483,22 +483,22 @@
             run;
             %end;
 
-            /* Store covarnums to determine covar labels */
+            /* Store subgroup to determine subgroup labels */
             proc sql noprint;
-                select distinct covarnum
-                into :covarlist
+                select distinct subgroup
+                into :subgrouplist
                 separated by ' '
                 from l2_effectestimates_&look_end.
                 where analysisgrp="&analysisgrp.";
             quit;
 
-            %if &covarlist = 0 %then %let tablecount = 0;
+            %if %str(&subgrouplist.) = %str() %then %let tablecount = 0;
 
-            /* loop covarnums and assign subgroup label */
-            %do covarcount = 1 %to %sysfunc(countw(&covarlist));
-                %let covarnum = %scan(&covarlist,&covarcount);
+            /* loop subgroup and assign subgroup label */
+            %do subgroupcount = 1 %to %sysfunc(countw(&subgrouplist));
+                %let subgroup= %scan(&subgrouplist,&subgroupcount);
 
-                %if &covarnum = 0 %then %do;
+                %if %str(&subgroup.) = %str() %then %do;
                 %let titleend = %str();
                 %end;
 
