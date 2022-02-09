@@ -64,7 +64,7 @@
 		       select base.*
 		   	      ,pscs.psestimategrp
 		       from &outdata. as base
-		   	left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+		   	left join pscs_masterinputs (where = (missing(subgroup))) as pscs
 		   	  on base.runid = pscs.runid
 			  and base.analysisgrp = pscs.analysisgrp
 		      order by runid, psestimategrp, order;
