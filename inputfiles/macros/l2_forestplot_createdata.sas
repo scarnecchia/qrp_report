@@ -120,7 +120,7 @@
           from forest_l2_effectestimates_&periodid. as est
           %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.covarnum = cov.covarnum  and est.runid = cov.runid
+              on est.covarnum  = cov.covarnum  and est.runid = cov.runid
           %end;
           where sort2 = 1 and 
                 analysis ne "Unweighted" 
