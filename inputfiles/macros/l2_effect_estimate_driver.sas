@@ -38,13 +38,13 @@
     %macro subsetdata(datain=, dataout=, subgroup=, cat=);
         data &dataout.;
             set &datain.;
-            where subgroup=&subgroup. and Dum&cat.=1;
+            where subgroup="&subgroup." and Dum&cat.=1;
         run;
     %mend;
 
     %macro subgroupdummyvar(datain=, dataout=, subgroup=, numcat=, categorization = );
         data &dataout.;
-            set &datain.(where=(subgroup=&subgroup.) drop=dum:);
+            set &datain.(where=(subgroup="&subgroup.") drop=dum:);
             dum0=1;
             array dum{*} dum1-dum&NumCat.;
             do SubComp=1 to &NumCat.;
@@ -85,23 +85,23 @@
         run;
         %put now computing effect estimates for &analysisgrp.;
        
-        /*extract QRP input file associated with analysisgrp*/
+        /*extract QRP input file associated with analysisgrp from the subgroup file*/ /*jolene get subgroup file from here*/
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
             where analysisgrp = "&analysisgrp." and runid = "&runid";
         quit;
-        
+  
         %if %str("&pscsfile.") = %str("") %then %do;
             %put WARNING: (Sentinel) &analysisgrp. not found in QRP input files. Effect Estimates will not be computed;
             %goto nextloop;
         %end;
 
-        /*How many subgroup analyses for this analysisgrp*/
+        /*How many subgroup analyses for this analysisgrp use from subgroup file*/
         %if &pscsfile. ne iptwfile %then %do;
             data _Subgrp;
-                set infolder.&&&runid._&pscsfile.;
-                where lowcase(analysisgrp) = "&analysisgrp" and subgroup ne 0;
+                set pscs_masterinputs;
+                where lowcase(analysisgrp) = "&analysisgrp" and subgroup ne '';
             run;
 
             %isdata(dataset=_Subgrp);
@@ -163,7 +163,7 @@
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
             %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = &subgroup.;
             data _null_; 
-                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = &subgroup.));
+                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = "&subgroup."));
 
                 %if &pscsfile. = psmatchfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
@@ -383,7 +383,7 @@
                     %isdata(dataset=SelectionProbabilitiesFile);
                     %if %eval(&nobs.>0) %then %do;
                     data _null_;
-                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
+                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup."));
                         call symputx('s11', s11);
                         call symputx('s01', s01);
                         call symputx('s10', s10);
@@ -663,7 +663,7 @@
                         %isdata(dataset=SelectionProbabilitiesFile);
                         %if %eval(&nobs.>0) %then %do;
                         data _null_;
-                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup. and value = "&subgroupcat"));
+                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup." and value = "&subgroupcat"));
                             call symputx('s11', s11);
                             call symputx('s01', s01);
                             call symputx('s10', s10);
@@ -768,14 +768,14 @@
     /*Merge together risk metrics and effect estimates*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, case when (r.subgroup) = 'sex' then put(r.subgroupcat,$sexfmt.)
-                         when (r.subgroup) = 'race' then put(r.subgroupcat,$racefmt.)
-                         when (r.subgroup) = 'hispanic' then put(r.subgroupcat,$hispanicfmt.)
-                         when (r.subgroup) = 'PrePostInd' then put(r.subgroupcat,$deliveryfmt.)
-                         when (r.subgroup) = 'MatchMethod' then put(r.subgroupcat,$matchfmt.)
-                         when (r.subgroup) = 'Birth_Type' then put(r.subgroupcat,$birthtypefmt.)
-                         when (r.subgroup) = 'periodid' then put(r.subgroupcat,$timefmt.)
-                         when (r.subgroup) in ('agegroup', 'year') then r.subgroupcat
+        select r.*, case when (r.subgroup) = "sex" then put(r.subgroupcat,$sexfmt.)
+                         when (r.subgroup) = "race" then put(r.subgroupcat,$racefmt.)
+                         when (r.subgroup) = "hispanic" then put(r.subgroupcat,$hispanicfmt.)
+                         when (r.subgroup) = "PrePostInd" then put(r.subgroupcat,$deliveryfmt.)
+                         when (r.subgroup) = "MatchMethod" then put(r.subgroupcat,$matchfmt.)
+                         when (r.subgroup) = "Birth_Type" then put(r.subgroupcat,$birthtypefmt.)
+                         when (r.subgroup) = "periodid" then put(r.subgroupcat,$timefmt.)
+                         when (r.subgroup) in ("agegroup", "year") then r.subgroupcat
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;
