@@ -771,9 +771,9 @@
         select r.*, case when lowcase(r.subgroup) = "sex" then put(r.subgroupcat,$sexfmt.)
                          when lowcase(r.subgroup) = "race" then put(r.subgroupcat,$racefmt.)
                          when lowcase(r.subgroup) = "hispanic" then put(r.subgroupcat,$hispanicfmt.)
-                         when lowcase(r.subgroup) = "PrePostInd" then put(r.subgroupcat,$deliveryfmt.)
-                         when lowcase(r.subgroup) = "MatchMethod" then put(r.subgroupcat,$matchfmt.)
-                         when lowcase(r.subgroup) = "Birth_Type" then put(r.subgroupcat,$birthtypefmt.)
+                         when lowcase(r.subgroup) = "prepostind" then put(r.subgroupcat,$deliveryfmt.)
+                         when lowcase(r.subgroup) = "matchmethod" then put(r.subgroupcat,$matchfmt.)
+                         when lowcase(r.subgroup) = "birth_type" then put(r.subgroupcat,$birthtypefmt.)
                          when lowcase(r.subgroup) = "periodid" then put(r.subgroupcat,$timefmt.)
                          when lowcase(r.subgroup) in ("agegroup", "year") then r.subgroupcat
                          else r.subgroupcat
