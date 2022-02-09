@@ -38,13 +38,13 @@
     %macro subsetdata(datain=, dataout=, subgroup=, cat=);
         data &dataout.;
             set &datain.;
-            where subgroup=&subgroup. and Dum&cat.=1;
+            where subgroup="&subgroup." and Dum&cat.=1;
         run;
     %mend;
 
     %macro subgroupdummyvar(datain=, dataout=, subgroup=, numcat=, categorization = );
         data &dataout.;
-            set &datain.(where=(subgroup=&subgroup.) drop=dum:);
+            set &datain.(where=(subgroup="&subgroup.") drop=dum:);
             dum0=1;
             array dum{*} dum1-dum&NumCat.;
             do SubComp=1 to &NumCat.;
@@ -89,7 +89,7 @@
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
+            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
         quit;
         
         %if %str("&pscsfile.") = %str("") %then %do;
@@ -99,30 +99,29 @@
 
         /*How many subgroup analyses for this analysisgrp*/
         %if &pscsfile. ne iptwfile %then %do;
-            data _Subgrp;
-                set infolder.&&&runid._&pscsfile.;
-                where lowcase(analysisgrp) = "&analysisgrp" and subgroup ne 0;
+            proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
+			  by subgroup;
             run;
 
-            %isdata(dataset=_Subgrp);
+            %isdata(dataset=_subgrp);
             %if %eval(&nobs.>0) %then %do;
                 proc sql noprint;
                     select subgroup 
                     into :subgrouplist separated by ' '
-                    from _Subgrp;
+                    from _subgrp;
 
-                    select count(*) into :numsubgroup
+                    select count(*) into :numsubgroup trimmed
                     from _subgrp;
                 quit;
                 %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
             %end;
         %end;
-
+	
         /******************************/
         /* loop through each subgroup */
         /******************************/
         %do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-            %if &sub. = 0 %then %let subgroup = 0;
+            %if &sub. = 0 %then %let subgroup =;
             %else %let subgroup = %scan(&subgrouplist, &sub.);
 
             /*Initialize macro variables for the subgroup loop*/
@@ -159,11 +158,28 @@
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
                 %let individualreturn = Y;
             %end;
+			
+			/* Identify subgroup categories */	
+		    proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup.")) out = _subgrp_cat;
+			  by subgroupcat;
+            run;
+
+            %isdata(dataset=_subgrp_cat);
+            %if %eval(&nobs.>0) and %str(&subgroup.) ne %str() %then %do;
+               proc sql noprint;
+                 select count(*)
+				       ,subgroupcat 
+                      into:numsubcat trimmed
+				      ,subcategorization separated by ' '
+                 from _subgrp_cat;
+               quit;
+               %put Number of Subgroup categories for &analysisgrp. subgroup &subgroup.: &numsubcat.;
+            %end;
 
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
-            %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = &subgroup.;
+            %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = "&subgroup.";
             data _null_; 
-                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = &subgroup.));
+                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = "&subgroup."));
 
                 %if &pscsfile. = psmatchfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
@@ -261,7 +277,7 @@
             %end;
            
             /****************************************************************************************/
-            /* For overall analysis - subset data where subgroup = 0 and execute computation macros */
+            /* For overall analysis - subset data where subgroup is missing and execute computation macros */
             /****************************************************************************************/
             %if &sub. = 0 %then %do;
 				/*******************************************************/
@@ -343,7 +359,7 @@
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
-                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = 0 
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and missing(subgroup) 
                                                                 and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
@@ -383,7 +399,7 @@
                     %isdata(dataset=SelectionProbabilitiesFile);
                     %if %eval(&nobs.>0) %then %do;
                     data _null_;
-                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
+                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup."));
                         call symputx('s11', s11);
                         call symputx('s01', s01);
                         call symputx('s10', s10);
@@ -644,6 +660,29 @@
                 /*Loop through each subgroup category*/
                 %do cat=1 %to &numsubcat.;
                     %let subgroupcat = %scan(&subcategorization., &cat., ' ');
+					
+				    /*aggregate hdps vars for unique psestimategrps*/
+				    %if &hdps. = Y and &unique_psestimate. = 1 %then %do;
+				       %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
+	                                          outfile=agghdps_&sub._&cat.,
+	                                          pscsfile=&pscsfile.,
+	                                          whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
+	                                          convrule=%quote(&convrule.),
+	                                          convdata=&runid._estimates_&periodid.,
+				    						  settomissvars=%str(codecat, codetype, frequency, ranking, code),
+				    						  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
+	                                          runidvar=&runid.);	
+				    %end;
+					%if &marginalweights. = Y %then %do;
+    			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                           outfile=aggwd_&sub._&cat.,
+                                           pscsfile=&pscsfile.,
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
+                                           convrule=%quote(&convrule.),
+                                           convdata=&runid._estimates_&periodid.,
+                                           settomissvars=%str(n, min, max, mean, sd),
+                                           runidvar=&runid.);					   
+                    %end; /* aggregate weighted*/	
 
                     /*Restrict data to subgroup category*/
                     %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
@@ -663,7 +702,7 @@
                         %isdata(dataset=SelectionProbabilitiesFile);
                         %if %eval(&nobs.>0) %then %do;
                         data _null_;
-                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup. and value = "&subgroupcat"));
+                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup." and value = "&subgroupcat"));
                             call symputx('s11', s11);
                             call symputx('s01', s01);
                             call symputx('s10', s10);

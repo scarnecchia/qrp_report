@@ -53,11 +53,11 @@
   			retain analysisgrp subgroup catnum MonitoringPeriod HR_95CI HR_pvalue;
   			set pest (obs=1 RENAME = (estimate = HR_coef) RENAME = (stderr = HR_se));
 
-  			format analysisgrp $40. subgroup catnum best. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
+  			format analysisgrp $40. subgroup $11. catnum best. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
   			length analysisgrp $40 HR_95CI $30 Analysis $13 subgroupcat $10 HR_pvalue $6;
 
 	        analysisgrp = "&analysisgrp.";
-	        subgroup  = &subgroup.;
+	        subgroup  = "&subgroup.";
 	        catnum = &cat.;
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
@@ -94,11 +94,11 @@
 	%end;
 	%else %if %index(&customizecolumns.,events) > 0 %then %do;
 		data est;
-		  		format analysisgrp $40. subgroup catnum best.;
+		  		format analysisgrp $40. subgroup $11. catnum best.;
 				length subgroupcat $10. analysisgrp $40. analysis $13.;
 
 			    analysisgrp = "&analysisgrp.";
-			    subgroup  = &subgroup.;
+			    subgroup  = "&subgroup.";
 			    catnum = &cat.;
 				Analysis= &analysis.;
 				subgroupcat = "&subgroupcat.";
@@ -118,11 +118,11 @@
     %end;
     %else %do;  *create empty dataset;
      	data est;
-	  		format analysisgrp $40. subgroup catnum best.;
+	  		format analysisgrp $40. subgroup $11. catnum best.;
 			length subgroupcat $10. analysisgrp $40. analysis $13.;
 
 		    analysisgrp = "&analysisgrp.";
-		    subgroup  = &subgroup.;
+		    subgroup  = "&subgroup.";
 		    catnum = &cat.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
