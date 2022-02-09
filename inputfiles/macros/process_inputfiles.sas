@@ -1687,7 +1687,7 @@
                 runid = "&runid.";
                 end;
                 analysisgrp = lowcase(analysisgrp);
-                psestimategrp = lowcase(psestimategrp);
+                psestimategrp = lowcase(psestimategrp)
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional pstrim;
             run;
@@ -1775,7 +1775,7 @@
             by runid analysisgrp subgroup subgroupcat;
         run;
     %end;	
-	
+
     /***************************************************************************
     Read in and Output TXT file for treelookup file per runid when it exists
     ***************************************************************************/
@@ -1881,85 +1881,90 @@
    quit;  
 
 /************************************************************************************************
-     Create list of covariates specified in requested tables in tablefile
+     Create list of covariates specified in requested tables and figures
 ************************************************************************************************/
     
-    %isdata(dataset=tablefile);
-    %if %eval(&nobs.>0) %then %do;
-        data _covars (keep = covarnum);
-           length covarnum 8;
-           set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0));
-           call missing(covarnum);
-           if index(tablesub,'covar') > 0 then do;
-             numstrat = countw(tablesub,' ');
-             do ns = 1 to numstrat;
-               if index(scan(tablesub,ns,' '),'covar') > 0 then do;
-                 covarstrat = scan(tablesub,ns,' ');
-                 covarnum = input(substr(covarstrat,6),8.); output;
+    %macro assigncovarlabels(dataset=, var=);
+
+        %isdata(dataset=&dataset.);
+        %if %eval(&nobs.>0) %then %do;
+            data _covars (keep = covarnum);
+               length covarnum 8;
+               set &dataset. (where = (index(&var.,'covar') > 0 and index(&var.,'#') = 0));
+               call missing(covarnum);
+               if index(&var.,'covar') > 0 then do;
+                 numstrat = countw(&var.,' ');
+                 do ns = 1 to numstrat;
+                   if index(scan(&var.,ns,' '),'covar') > 0 then do;
+                     covarstrat = scan(&var.,ns,' ');
+                     covarnum = input(substr(covarstrat,6),8.); output;
+                   end;
+                 end;
                end;
-             end;
-           end;
-           if missing(covarnum) then delete;
-        run;
-              
-        %ISDATA(dataset=_covars); 
-        %if &nobs > 0 %then %do;
-            proc sort nodupkey data = _covars;
-                by covarnum;
+               if missing(covarnum) then delete;
             run;
+                  
+            %ISDATA(dataset=_covars); 
+            %if &nobs > 0 %then %do;
+                proc sort nodupkey data = _covars;
+                    by covarnum;
+                run;
 
-	       /* When covariates are requested in the tablefile, each of them must have the same studyname across selected runs */	
-	       proc sort nodupkey data=covarname out=_covardup;
-    	   by covarnum studyname;
-    	   run;
+    	       /* When covariates are requested in the &dataset., each of them must have the same studyname across selected runs */	
+    	       proc sort nodupkey data=covarname out=_covardup;
+        	   by covarnum studyname;
+        	   run;
 
-    	   proc sql noprint undo_policy=none;
-    		 create table _covardup as
-    		 select distinct a.studyname,
-    		 		a.covarnum
-    		 from _covardup a 
-    		 	  inner join _covars b
-    		 on a.covarnum=b.covarnum
-    		 group by a.covarnum
-    		 having freq(a.covarnum) > 1;
-    	   quit;
+        	   proc sql noprint undo_policy=none;
+        		 create table _covardup as
+        		 select distinct a.studyname,
+        		 		a.covarnum
+        		 from _covardup a 
+        		 	  inner join _covars b
+        		 on a.covarnum=b.covarnum
+        		 group by a.covarnum
+        		 having freq(a.covarnum) > 1;
+        	   quit;
 
-    	   %ISDATA(dataset=_covardup); 
-           %if &nobs > 0 %then %do;
-    		   %put ERROR: (SENTINEL) Multiple covariatecodes file exist with different covarnum studynames for requested stratification.;
-    	       %put ERROR: (SENTINEL) Remove covariate stratification or update QRP;
-    		   %put The reporting code will abort;
-    	       %abort;
-    	   %end;
+        	   %ISDATA(dataset=_covardup); 
+               %if &nobs > 0 %then %do;
+        		   %put ERROR: (SENTINEL) Multiple covariatecodes file exist with different covarnum studynames for requested stratification.;
+        	       %put ERROR: (SENTINEL) Remove covariate stratification or update QRP;
+        		   %put The reporting code will abort;
+        	       %abort;
+        	   %end;
 
-           proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
-             by covarnum;
-           run;
-           
-           proc sql noprint undo_policy=none;
-             select count(covarnum) into: numsummarystratcovars trimmed
-             from _covars;
+               proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
+                 by covarnum;
+               run;
+               
+               proc sql noprint undo_policy=none;
+                 select count(covarnum) into: numsummarystratcovars trimmed
+                 from _covars;
 
-    		 create table _covarnames as 
-    		 select a.covarnum,
-    		 		b.studyname
-    		 from _covars a
-             left join _covarnames b
-             on a.covarnum = b.covarnum;
+        		 create table _covarnames as 
+        		 select a.covarnum,
+        		 		b.studyname
+        		 from _covars a
+                 left join _covarnames b
+                 on a.covarnum = b.covarnum;
 
-    		 select covarnum into :tmpcovars separated by '|' from _covarnames;
-    		 select studyname into :tmpStudy separated by '|' from _covarnames;
+        		 select covarnum into :tmpcovars separated by '|' from _covarnames;
+        		 select studyname into :tmpStudy separated by '|' from _covarnames;
 
-             %do cc = 1 %to &numsummarystratcovars;
-    		 /* Covariate names (i.e. covar1) and corresponding study names requested in tablefile */
-             %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
+                 %do cc = 1 %to &numsummarystratcovars;
+        		 /* Covariate names (i.e. covar1) and corresponding study names requested in &dataset. */
+                 %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
 
-    		 %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
-    		 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
-             %end;              
-           quit;
-         %end;
-    %end;
+        		 %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
+        		 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
+                 %end;              
+               quit;
+             %end;
+        %end;
+    %mend;
+    %assigncovarlabels(dataset=tablefile, var=tablesub);
+    %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
 
 /***************************************************************************************************
 *   Clean up                                                
