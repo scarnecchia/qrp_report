@@ -87,12 +87,7 @@
 
       /* Check to see if covariates file exists */
       %isdata(dataset=covarname);
-data output.forest_l2_effectestimates_&periodid.;
- set forest_l2_effectestimates_&periodid.;
- run;
- data output.covarname;
- set covarname;
- run;
+
       /*dataset id_1 will be used to apply a label */
       /*dataset id_2 contains effect estimates*/
       /*both are restricted to sort2 =1, in order to deduplicate the file*/
@@ -217,14 +212,14 @@ data output.forest_l2_effectestimates_&periodid.;
                   title = 'Sex';
               end;
               /*subgroup 1-999 = covariates*/
-              else if covarnum >=1 and covarnum <=999 then do;
+              else if index(subgroup,'covar')>0 then do;
                   title = covarlabel;
               end;
               /*subgroup agegroup = Age Group*/
               else if lowcase(subgroup) = "agegroup" then do;
                   title = 'Age Group';
               end;
-              /*subgroup yeawr = Year*/
+              /*subgroup year = Year*/
               else if lowcase(subgroup) = "year" then do;
                   title = 'Year';
               end;
@@ -253,7 +248,7 @@ data output.forest_l2_effectestimates_&periodid.;
                   title = 'Birth Type';
               end;
               /*subgroup = By Data Parnter*/
-              else if subgroup = '' then do;
+              else if subgroup = 'dpidsiteid' then do;
                   title = 'Data Partner';
               end;
           end;
@@ -265,7 +260,7 @@ data output.forest_l2_effectestimates_&periodid.;
                   title = "Overall";
               end;
               /*covarnum 1-999 = covariates*/
-              else if covarnum >=1 and covarnum <=999 then do;
+              else if index(subgroup,'covar')>0 then do;
                   if subgroupcat = '0' then do;
                   title = catx(' ','No', covarlabel);
                   end;
@@ -354,14 +349,14 @@ data output.forest_l2_effectestimates_&periodid.;
       run;
 
       proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis footnote forest_title plotorder
-                                                                                 %if "&reporttype." = "T2L2" %then %do;
-                                                                                 HR_95ci HR  
-                                                                                 %end;
-                                                                                 %else %if "&reporttype." = "T4L2" %then %do;
-                                                                                 or_95ci or
-                                                                                 %end;
-                                                                                 LCL UCL id file
-                                                                                 );
+                                                                   %if "&reporttype." = "T2L2" %then %do;
+                                                                   HR_95ci HR  
+                                                                   %end;
+                                                                   %else %if "&reporttype." = "T4L2" %then %do;
+                                                                   or_95ci or
+                                                                   %end;
+                                                                   LCL UCL id file
+                                                                   );
       by analysisgrpsort analysis subgroup catnum subgroupcat sort1 sort2;
       run;
       

@@ -140,11 +140,11 @@
 
             /*for both ORs - a character variable is computed in the form XX.XX (XX.XX-XX.XX) and 3 numeric variables are 
               output to use in the forest plot*/
-  	        format analysisgrp subgroup $40. catnum best. or adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
-  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat $10;
+  	        format analysisgrp $40. catnum best. or adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
+  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat subgroup $11;
 
             analysisgrp = "&analysisgrp.";
-	        subgroup  = &subgroup.;
+	        subgroup  = "&subgroup.";
 	        catnum = &cat.;
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
@@ -207,11 +207,11 @@
     /****************************************/
     %else %do; 
         data oddsratio;
-  	        format analysisgrp subgroup $40. catnum best. adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
-  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat $10;
+  	        format analysisgrp $40. catnum best. adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
+  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat subgroup $11;
 
             analysisgrp = "&analysisgrp.";
-	        subgroup  = &subgroup.;
+	        subgroup  = "&subgroup.";
 	        catnum = &cat.;
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
