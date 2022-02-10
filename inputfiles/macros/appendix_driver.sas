@@ -347,13 +347,13 @@
 					%end;
 					
                     data weightdistribution;
-                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
-                        keep analysisgrp dpidsiteid N min max mean sd time;
+                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
+                        keep analysisgrp subgroup subgroupcat dpidsiteid N min max mean sd periodid;
                     run;
 				    
-                    /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
+                    /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID  */
                     proc sort data = weightdistribution nodupkey;
-                    	by time dpidsiteid;
+                    	by periodid dpidsiteid;
                     run;
 				    
                     %isdata(dataset=weightdistribution);
@@ -440,7 +440,7 @@
                     run;
 
 				    %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &tablesuffix., by Data Partner (DP), Weight: &weightschemelong.),
+				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
 				    	  appendixtype = appendixWeightDist);
                     %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
                     %end; /* Nobs > 0 weightdistribution */
