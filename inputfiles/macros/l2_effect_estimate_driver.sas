@@ -98,25 +98,23 @@
         %end;
 
         /*How many subgroup analyses for this analysisgrp use from subgroup file*/
-        %if &pscsfile. ne iptwfile %then %do;
-            proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
-			  by subgroup;
-            run;
+        proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
+		  by subgroup;
+        run;
 
-            %isdata(dataset=_subgrp);
-            %if %eval(&nobs.>0) %then %do;
-                proc sql noprint;
-                    select subgroup 
-                    into :subgrouplist separated by ' '
-                    from _subgrp;
+        %isdata(dataset=_subgrp);
+        %if %eval(&nobs.>0) %then %do;
+            proc sql noprint;
+                select subgroup 
+                into :subgrouplist separated by ' '
+                from _subgrp;
 
-                    select count(*) into :numsubgroup trimmed
-                    from _subgrp;
-                quit;
-                %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
-            %end;
+                select count(*) into :numsubgroup trimmed
+                from _subgrp;
+            quit;
+            %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
         %end;
-	
+
         /******************************/
         /* loop through each subgroup */
         /******************************/
