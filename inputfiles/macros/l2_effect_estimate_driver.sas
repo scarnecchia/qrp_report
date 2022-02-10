@@ -345,7 +345,7 @@
     			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
                                            outfile=aggwd,
                                            pscsfile=&pscsfile.,
-                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and missing(subgroup)), 
                                            convrule=%quote(&convrule.),
                                            convdata=&runid._estimates_&periodid.,
                                            settomissvars=%str(n, min, max, mean, sd),
