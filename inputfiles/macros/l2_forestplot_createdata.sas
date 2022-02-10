@@ -87,12 +87,7 @@
 
       /* Check to see if covariates file exists */
       %isdata(dataset=covarname);
-data output.forest_l2_effectestimates_&periodid.;
- set forest_l2_effectestimates_&periodid.;
- run;
- data output.covarname;
- set covarname;
- run;
+
       /*dataset id_1 will be used to apply a label */
       /*dataset id_2 contains effect estimates*/
       /*both are restricted to sort2 =1, in order to deduplicate the file*/
