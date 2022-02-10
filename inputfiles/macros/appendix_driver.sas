@@ -58,12 +58,12 @@
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	  /* Rank hdps vars */
 	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp periodid subgroup subgroupcat descending ranking;
+		  by dpidsiteid psestimategrp subgroup subgroupcat periodid descending ranking;
 	   run;
 		
 	   data agghdps;
 	     set agghdps;
-	     by dpidsiteid psestimategrp periodid subgroup subgroupcat descending ranking;
+	     by dpidsiteid psestimategrp subgroup subgroupcat periodid descending ranking;
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
@@ -182,7 +182,7 @@
 				    
 				    %if &nobs. > 0 %then %do;
 				       /* Increment table letter when periodid equals look start */
-				       %if %eval(&periodid. = &look_start.) %then %tableletter(); 
+				       %if %eval(&periodid. = &look_start.) and &sub. > 0 %then %tableletter(); 
 				       
 			           /* Assign numeric suffix associated with table number*/
                        %let look = %upcase(&tableletter.);
@@ -195,7 +195,8 @@
 				       /* Do not re-create appendix data that already exists */
 				       %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
                          data repdata.appendix&look. (drop = hdpsnum);
-		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup."
+						     and subgroupcat = "&subgroupcat." and hdpsnum le &topnhdps.));
                            /*round ranking to 3 decimals*/
                            format ranking 8.3;
                            ranking = round(ranking, .001);
@@ -219,7 +220,6 @@
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
-
     /* Loop through all order values */
     %do corder = 1 %to &numl2comparisons;
 
@@ -415,12 +415,13 @@
 				    
                     options mergenoby = warn;
 
-                    %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
+                    %if %eval(&look_end - &look_start) = 0 or &periodid = 1 or &sub. > 0 %then %tableletter();
                     %isdata(dataset=repdata.appendix&tableletter.&look.)
                     %if &nobs < 1 %then %do;
                     data repdata.appendix&tableletter.&look.;
                     	length dpidsiteid $10 nchar $20;
-                        set aggdistribution(in=a) weightdistribution;
+                        set aggdistribution(in=a) 
+						    weightdistribution;
                         if a then dpidsiteid="Aggregated";
                         if missing(n) then Nchar='N/A';
                         else Nchar=strip(put(n,comma12.));
