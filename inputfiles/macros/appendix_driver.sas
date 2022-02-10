@@ -136,8 +136,14 @@
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-                  %if &sub. = 0 %then %do; %let subgroup = ; %end;
-                  %else %do; %let subgroup = %scan(&subgrouplist, &sub.); %end;
+                  %if &sub. = 0 %then %do; 
+				     %let subgroup = ; 
+					 %let titlesuffix = ;
+				  %end;
+                  %else %do; 
+				     %let subgroup = %scan(&subgrouplist, &sub.);
+                     %let titlesuffix = %str(, &subgroup.);					 
+				  %end;
 				  
                   %let subcategorization=; *the list of categorization;
 				  
@@ -159,8 +165,13 @@
 				  
 				  /*Loop through each subgroup category*/
                   %do cat=1 %to &numsubcat.; 
-                    %if %str(&subgroup.) = %str() %then %do; %let subgroupcat = ; %end;
-					%else %do; %let subgroupcat = %scan(&subcategorization., &cat., ' '); %end;
+                    %if %str(&subgroup.) = %str() %then %do; 
+					   %let subgroupcat = ; 
+					%end;
+					%else %do; 
+					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
+					   %let titlesuffix = %str(&titlesuffix.: &subgroupcat.);
+					%end;
 					
 			        /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid, subgroup, subgroupcat*/
 				    proc sql noprint;
@@ -191,7 +202,7 @@
 		  	             run;		
 				      
 		  	             %addtotoc(tabnum = Appendix &looktab., 
-		    	         	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel.),
+		    	         	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel. &titlesuffix.),
 		    	         	        appendixtype = appendixhdps);
 				       
 			           %end; /* Determine if appendix data already exists */
@@ -279,108 +290,162 @@
 		    	%end;
 
 		    	%if %length(&analysisgrplabel) = 0 %then %let analysisgrplabel = &analysisgrp;
-
-                data weightdistribution;
-                    set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid));
-                    keep analysisgrp dpidsiteid N min max mean sd time;
+				
+				 /* Loop for each subgroup subgroupcat combination */
+				proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
+			      by subgroup;
                 run;
+			    
+				%let subgrouplist =;
+                %isdata(dataset=_subgrp);
+                %if %eval(&nobs.>0) %then %do;
+                    proc sql noprint;
+                        select count(*)
+						      ,subgroup 
+                        into :numsubgroup
+						     ,:subgrouplist separated by ' '
+                        from _subgrp;
+                    quit;
+                %end;
+				
+				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
+				  %if &sub. = 0 %then %do; 
+				     %let subgroup = ; 
+					 %let titlesuffix = ;
+				  %end;
+                  %else %do; 
+				     %let subgroup = %scan(&subgrouplist, &sub.);
+                     %let titlesuffix = %str(, &subgroup.);					 
+				  %end;
+				  
+                  %let subcategorization=; *the list of categorization;
+				  
+				  /* Identify subgroup categories */	
+		          proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup.")) out = _subgrp_cat;
+			        by subgroupcat;
+                  run;
+			      
+                  %isdata(dataset=_subgrp_cat);
+                  %if %eval(&nobs.>0) %then %do;
+                      proc sql noprint;
+                        select count(*)
+						      ,subgroupcat 
+                        into :numsubcat
+						    ,:subcategorization separated by ' '
+					    from _subgrp_cat;
+                      quit;
+                  %end;
+				  
+				  /*Loop through each subgroup category*/
+                  %do cat=1 %to &numsubcat.; 
+				    %if %str(&subgroup.) = %str() %then %do; 
+					   %let subgroupcat = ; 
+					%end;
+					%else %do; 
+					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
+					   %let titlesuffix = %str(&titlesuffix.: &subgroupcat.);
+					%end;
+					
+                    data weightdistribution;
+                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
+                        keep analysisgrp dpidsiteid N min max mean sd time;
+                    run;
+				    
+                    /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
+                    proc sort data = weightdistribution nodupkey;
+                    	by time dpidsiteid;
+                    run;
+				    
+                    %isdata(dataset=weightdistribution);
+                    %if &nobs > 0 %then %do;
+                    /*N, min, max*/
+                    proc means data=weightdistribution nway noprint;
+                        var N min max;
+                        where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                        output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
+                    run;
+				    
+                    /*Mean*/
+                    proc means data=weightdistribution nway noprint;
+                        var mean;
+                        weight N;
+                        where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                        output out=part2(drop=_:) mean(mean)=mean;
+                    run;
 
-                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
-                proc sort data = weightdistribution nodupkey;
-                	by time dpidsiteid;
-                run;
+                    /*SD*/
+                    proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
+                        id dpidsiteid;
+                        var sd;
+                    run;
+                    proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
+                        id dpidsiteid;
+                        var n;
+                    run;
+				    
+                    options mergenoby = nowarn;
+                    data part3;
+                        merge sd n;
+				    
+                        array npts(*) _ncount_:;
+                        array stddev(*) _sd_:;
+                               
+                        weighted_std = 0;
+                        std = 0;
+                        count = 0;
+				    
+                        totpts = sum(of _ncount_:);
+				    
+                        do i = 1 to dim(npts);
+                        ** Calculate weighted standard deviation;
+                            if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
+                            if ^missing(stddev(i)) then count = count + 1 ;
+                        end;
+				    
+                        ** Calculate pooled standard deviation;
+                        if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
+                        else sd = .;
+                              
+                        keep sd;
+                    run;
+				    
+                    data aggdistribution;
+                        merge part1 part2 part3;
+                    run;
+				    
+                    options mergenoby = warn;
 
-                %isdata(dataset=weightdistribution);
-                %if &nobs > 0 %then %do;
-                /*N, min, max*/
-                proc means data=weightdistribution nway noprint;
-                    var N min max;
-                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                    output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
-                run;
+                    %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
+                    %isdata(dataset=repdata.appendix&tableletter.&look.)
+                    %if &nobs < 1 %then %do;
+                    data repdata.appendix&tableletter.&look.;
+                    	length dpidsiteid $10 nchar $20;
+                        set aggdistribution(in=a) weightdistribution;
+                        if a then dpidsiteid="Aggregated";
+                        if missing(n) then Nchar='N/A';
+                        else Nchar=strip(put(n,comma12.));
+                        if n = 0 then do;
+                        	min=.z;
+                        	max=.z;
+                        	mean=.z;
+                        	sd=.z;
+                        end;
+                        drop n;
+                        rename nchar=n;
+                    run;
+				    
+                    proc sort data=repdata.appendix&tableletter.&look.;
+                        by dpidsiteid;
+                    run;
 
-                /*Mean*/
-                proc means data=weightdistribution nway noprint;
-                    var mean;
-                    weight N;
-                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                    output out=part2(drop=_:) mean(mean)=mean;
-                run;
-
-                /*SD*/
-                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
-                    id dpidsiteid;
-                    var sd;
-                run;
-                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
-                    id dpidsiteid;
-                    var n;
-                run;
-
-                options mergenoby = nowarn;
-                data part3;
-                    merge sd n;
-
-                    array npts(*) _ncount_:;
-                    array stddev(*) _sd_:;
-                           
-                    weighted_std = 0;
-                    std = 0;
-                    count = 0;
-
-                    totpts = sum(of _ncount_:);
-
-                    do i = 1 to dim(npts);
-                    ** Calculate weighted standard deviation;
-                        if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
-                        if ^missing(stddev(i)) then count = count + 1 ;
-                    end;
-
-                    ** Calculate pooled standard deviation;
-                    if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
-                    else sd = .;
-                          
-                    keep sd;
-                run;
-
-                data aggdistribution;
-                    merge part1 part2 part3;
-                run;
-
-                options mergenoby = warn;
-
-                %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
-                %isdata(dataset=repdata.appendix&tableletter.&look.)
-                %if &nobs < 1 %then %do;
-                data repdata.appendix&tableletter.&look.;
-                	length dpidsiteid $10 nchar $20;
-                    set aggdistribution(in=a) weightdistribution;
-                    if a then dpidsiteid="Aggregated";
-                    if missing(n) then Nchar='N/A';
-                    else Nchar=strip(put(n,comma12.));
-                    if n = 0 then do;
-                    	min=.z;
-                    	max=.z;
-                    	mean=.z;
-                    	sd=.z;
-                    end;
-                    drop n;
-                    rename nchar=n;
-                run;
-
-                proc sort data=repdata.appendix&tableletter.&look.;
-                    by dpidsiteid;
-                run;
-
-				%addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner (DP), Weight: &weightschemelong.),
-					  appendixtype = appendixWeightDist);
-                %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
-
-                %end; /* Nobs > 0 weightdistribution */
-
-                %end; /* periodid */
-
+				    %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
+				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &tablesuffix., by Data Partner (DP), Weight: &weightschemelong.),
+				    	  appendixtype = appendixWeightDist);
+                    %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
+                    %end; /* Nobs > 0 weightdistribution */
+                    %end; /* periodid */
+				  %end; /* subgroup category */
+				%end; /* subgroup */
               %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
 
               proc datasets lib=work nolist;
