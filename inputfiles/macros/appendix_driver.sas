@@ -53,17 +53,17 @@
 	/*********************************************************************************************/
     /* Create HDPS Var Info appendices                                                           */
     /*********************************************************************************************/
-    /* Create appendix for each unique runid periodid combination */	
+    /* Create appendix for each unique runid periodid combination */
 	%isdata(dataset=agghdps);
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	  /* Rank hdps vars */
 	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp periodid descending ranking;
+		  by dpidsiteid psestimategrp periodid subgroup subgroupcat descending ranking;
 	   run;
 		
 	   data agghdps;
 	     set agghdps;
-	     by dpidsiteid psestimategrp periodid descending ranking;
+	     by dpidsiteid psestimategrp periodid subgroup subgroupcat descending ranking;
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
@@ -161,13 +161,12 @@
                   %do cat=1 %to &numsubcat.; 
                     %if %str(&subgroup.) = %str() %then %do; %let subgroupcat = ; %end;
 					%else %do; %let subgroupcat = %scan(&subcategorization., &cat., ' '); %end;
-				  
-				  
-			        /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid */
+					
+			        /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid, subgroup, subgroupcat*/
 				    proc sql noprint;
 				     select count(psestimategrp) into: nobs trimmed
                      from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. 
-					                    and subgroupid = &subgroupid. and subgroupcat = &subgroupcat.;
+					                    and subgroup = "&subgroup." and subgroupcat = "&subgroupcat.";
 				    quit;
 				    
 				    %if &nobs. > 0 %then %do;
@@ -185,12 +184,7 @@
 				       /* Do not re-create appendix data that already exists */
 				       %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
                          data repdata.appendix&look. (drop = hdpsnum);
-		  	               set %if %str(&subgroup.) = %str() %then %do;
-						         agghdps
-							   %end;
-							   %else %do;
-							     agghdps_&sub._&cat.
-							   %end;(where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
+		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
                            /*round ranking to 3 decimals*/
                            format ranking 8.3;
                            ranking = round(ranking, .001);

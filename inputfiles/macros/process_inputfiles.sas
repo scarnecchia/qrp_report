@@ -1687,7 +1687,7 @@
                 runid = "&runid.";
                 end;
                 analysisgrp = lowcase(analysisgrp);
-                psestimategrp = lowcase(psestimategrp)
+                psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
                      ipweight percentiles eoi ref unconditional pstrim;
             run;

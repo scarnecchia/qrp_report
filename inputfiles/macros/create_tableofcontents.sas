@@ -492,45 +492,10 @@
                 where analysisgrp="&analysisgrp.";
             quit;
 
-            %if %str(&subgrouplist.) = %str() %then %let tablecount = 0;
-
-            /* loop subgroup and assign subgroup label */
-            %do subgroupcount = 1 %to %sysfunc(countw(&subgrouplist));
-                %let subgroup= %scan(&subgrouplist,&subgroupcount);
-
-                %if %str(&subgroup.) = %str() %then %do;
-                %let titleend = %str();
-                %end;
-
-                %else %if &covarnum = 9000 %then %do; 
-                %let titleend = %str(and Data Partner);
-                %end;
-
-                %else %do;
-                %if &covarnum < 1000 %then %do;
-                proc sql noprint;
-                select distinct strip(studyname) into: subgrouplabel
-                from infolder.&&&runid._covariatecodes
-                where covarnum = &covarnum.;
-                quit;
-                %end;
-
-                %if &covarnum = 1000 %then %let subgrouplabel = Sex;
-                %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
-                %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
-                %else %if &covarnum = 1003 %then %let subgrouplabel = Monitoring Period;
-                %else %if &covarnum = 1012 %then %let subgrouplabel = Race;
-                %else %if &covarnum = 1013 %then %let subgrouplabel = Hispanic Origin;
-                %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
-                %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
-                %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
-
-                %let titleend = %str(and &subgrouplabel);
-                %end;
-                %tableletter();
-                %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.));
-            %end; /* covarcount */
+            %if %str(&subgrouplist.) = %str() %then %do;
+			   %let tablecount = 0;
+               %let titleend = %str();
+			%end;
             %let tablenum = %eval(&tablenum + 1);
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */

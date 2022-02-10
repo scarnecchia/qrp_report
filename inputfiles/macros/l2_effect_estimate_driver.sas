@@ -373,7 +373,7 @@
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
 	                                      outfile=agghdps,
 	                                      pscsfile=&pscsfile.,
-	                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true"), 
+	                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true" and missing(subgroup)), 
 	                                      convrule=%quote(&convrule.),
 	                                      convdata=&runid._estimates_&periodid.,
 										  settomissvars=%str(codecat, codetype, frequency, ranking, code),
@@ -664,7 +664,7 @@
 				    /*aggregate hdps vars for unique psestimategrps*/
 				    %if &hdps. = Y and &unique_psestimate. = 1 %then %do;
 				       %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
-	                                          outfile=agghdps_&sub._&cat.,
+	                                          outfile=agghdps,
 	                                          pscsfile=&pscsfile.,
 	                                          whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
 	                                          convrule=%quote(&convrule.),
@@ -675,7 +675,7 @@
 				    %end;
 					%if &marginalweights. = Y %then %do;
     			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                           outfile=aggwd_&sub._&cat.,
+                                           outfile=aggwd,
                                            pscsfile=&pscsfile.,
                                            whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
                                            convrule=%quote(&convrule.),
