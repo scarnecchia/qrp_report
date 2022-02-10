@@ -1727,8 +1727,8 @@
 						  ,pscs.ref
 						  ,pscs.unconditional
 						  ,pscs.pstrim
-					      ,sub.subgroup
-						  ,sub.subgroupcat
+					      ,lowcase(sub.subgroup) as subgroup
+						  ,upcase(sub.subgroupcat) as subgroupcat
 				    from pscs_masterinputs as pscs
 					inner join infolder.&&&runid._pscssubgroupfile as sub
 					on pscs.analysisgrp = sub.analysisgrp;
@@ -1846,7 +1846,10 @@
 
             proc sql noprint;    
                 create table covarname_&runid. as 
-                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
+                select distinct covarnum, 
+                                strip(studyname) as studyname, 
+                                "&runid" as runid length=5, 
+                                cats('covar',covarnum) as cov_varname length=8
                 from infolder.&&&runid._covariatecodes.;
 
                 select length

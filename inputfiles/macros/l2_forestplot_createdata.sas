@@ -110,21 +110,27 @@
                  est.caliper,
                  est.ratio,
                  est.agegroupnum,
-                 est.title,
+                 est.title
+                 %if &labelfileexists. = Y %then %do;
+                 , lbl.label
+                 %end;
                  %if %eval(&nobs.>0) %then %do;
-                 cov.studyname as covarlabel
+                 , cov.studyname as covarlabel
                  %end;
                  %else %do;
-                 '' as covarlabel
+                 , '' as covarlabel
                  %end;
           from forest_l2_effectestimates_&periodid. as est
+          %if &labelfileexists. = Y %then %do;
+          left join labelfile(where=(lowcase(labeltype)='grouplabel')) lbl on est.analysisgrp = lbl.group
+          %end;
           %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.subgroup = cov.subgroup  and est.runid = cov.runid
+              on est.subgroup = cov.cov_varname  and est.runid = cov.runid
           %end;
-          where sort2 = 1 and 
-                analysis ne "Unweighted" 
-               order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
+
+          where sort2 = 1 and analysis ne "Unweighted" 
+          order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
 
           create table id_2 as 
           select est.analysisgrp, 
@@ -168,23 +174,12 @@
            from forest_l2_effectestimates_&periodid. as est
            %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.subgroup = cov.subgroup and est.runid = cov.runid
+              on est.subgroup = cov.cov_varname and est.runid = cov.runid
            %end;
            where sort2 = 1 and 
                  analysis ne "Unweighted" 
            order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
       quit;
-
-      %isdata(dataset=labelfile);
-
-      %if %eval(&nobs>0) %then %do;
-        proc sql noprint undo_policy=none;
-          create table id_1 as
-          select a.*, b.label, b.labeltype
-          from id_1 a left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
-          on a.analysisgrp = b.group;
-        quit;
-      %end;
 
       /*Variable ID used for indentation:
           1 = Analysis group label
@@ -195,7 +190,7 @@
           set id_1(in=id1)
               id_2(in=id2);
           length title $200 label $&label_length;
-          %if %eval(&nobs = 0) %then %do;
+          %if &labelfileexists. = N %then %do;
           label='';
           %end;
           /*Assign labels*/
@@ -348,7 +343,7 @@
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis footnote forest_title plotorder
+      proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis subgroup subgroupcat footnote forest_title plotorder
                                                                    %if "&reporttype." = "T2L2" %then %do;
                                                                    HR_95ci HR  
                                                                    %end;
