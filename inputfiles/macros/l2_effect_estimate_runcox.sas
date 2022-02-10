@@ -53,11 +53,11 @@
                       RENAME = (HRLOWERCL=LCL) 
                       RENAME = (HRUPPERCL=UCL));
             where lowcase(parameter) = "exposure";
-            FORMAT analysisgrp $40. subgroup catnum best. MonitoringPeriod 2.0;
-            length analysisgrp $40 HR_95CI $30 analysis $13. subgroupcat $10 HR_pvalue $6;
+            FORMAT analysisgrp $40. catnum best. MonitoringPeriod 2.0;
+            length analysisgrp $40 HR_95CI $30 analysis $13. subgroup subgroupcat $11 HR_pvalue $6;
 
             analysisgrp = "&analysisgrp.";
-            subgroup  = &subgroup.;
+            subgroup  = "&subgroup.";
             catnum = &cat.;
             MonitoringPeriod = &periodid.;
             Analysis= &analysis.;
@@ -91,11 +91,11 @@
     %end;
     %else %if %index(&customizecolumns.,events) > 0 %then %do;
      data coxPHest;
-            FORMAT analysisgrp $40. subgroup catnum best. HR_se 8.4; 
-            length subgroupcat $10. analysis $13. analysisgrp $40;
+            FORMAT analysisgrp $40. catnum best. HR_se 8.4; 
+            length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
-            subgroup  = &subgroup.;
+            subgroup  = "&subgroup.";
             catnum = &cat.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
@@ -115,11 +115,11 @@
     %end;
     %else %do;  *create empty dataset;
         data coxPHest;
-            FORMAT analysisgrp $40. subgroup catnum best. HR_se 8.4; 
-            length subgroupcat $10. analysis $13. analysisgrp $40;
+            FORMAT analysisgrp $40. catnum best. HR_se 8.4; 
+            length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
-            subgroup  = &subgroup.;
+            subgroup  = "&subgroup.";
             catnum = &cat.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
