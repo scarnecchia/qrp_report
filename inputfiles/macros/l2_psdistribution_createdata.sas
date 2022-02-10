@@ -111,7 +111,6 @@
 
 	                /*Aggregate across DPs*/
 	                %if &dps = 0 %then %do;
-                        data output.agg_psdistribution_&periodid. ; set agg_psdistribution_&periodid. ; run;
 	                    proc means data=agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and runid="&runid.")) noprint nway missing;
 	                        var npts;
 	                        class group type weight ps_cat analysisgrp subgroup subgroupcat / missing;
@@ -186,7 +185,4 @@
 	delete raw: hist_: bins;
 	quit;
     
-
-    data output.histogram_&periodid. ; set histogram_&periodid. ; run;
-
 %mend l2_psdistribution_createdata;
