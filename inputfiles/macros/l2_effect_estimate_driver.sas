@@ -85,11 +85,11 @@
         run;
         %put now computing effect estimates for &analysisgrp.;
        
-        /*extract QRP input file associated with analysisgrp from the subgroup file*/ /*jolene get subgroup file from here*/
+        /*extract QRP input file associated with analysisgrp from the subgroup file*/ 
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+            where analysisgrp = "&analysisgrp." and runid = "&runid";
         quit;
   
         %if %str("&pscsfile.") = %str("") %then %do;
@@ -343,7 +343,7 @@
     			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
                                            outfile=aggwd,
                                            pscsfile=&pscsfile.,
-                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and missing(subgroup)), 
+                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
                                            convrule=%quote(&convrule.),
                                            convdata=&runid._estimates_&periodid.,
                                            settomissvars=%str(n, min, max, mean, sd),
@@ -366,12 +366,12 @@
                         %end;
                 %end;
 
-                /*aggregate hdps vars for unique psestimategrps*/
-				%if &hdps. = Y and &unique_psestimate. = 1 %then %do;
+                /*aggregate hdps vars */
+				%if &hdps. = Y %then %do;
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
 	                                      outfile=agghdps,
 	                                      pscsfile=&pscsfile.,
-	                                      whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true" and missing(subgroup)), 
+	                                      whereclause=%str((lowcase(psestimategrp)="&psestimategrp" or analysisgrp = "&analysisgrp.") and lowcase(selected_for_ps) = "true" ), 
 	                                      convrule=%quote(&convrule.),
 	                                      convdata=&runid._estimates_&periodid.,
 										  settomissvars=%str(codecat, codetype, frequency, ranking, code),
@@ -658,29 +658,6 @@
                 /*Loop through each subgroup category*/
                 %do cat=1 %to &numsubcat.;
                     %let subgroupcat = %scan(&subcategorization., &cat., ' ');
-					
-				    /*aggregate hdps vars for unique psestimategrps*/
-				    %if &hdps. = Y and &unique_psestimate. = 1 %then %do;
-				       %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
-	                                          outfile=agghdps,
-	                                          pscsfile=&pscsfile.,
-	                                          whereclause=%str(lowcase(psestimategrp)="&psestimategrp" and lowcase(selected_for_ps) = "true" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
-	                                          convrule=%quote(&convrule.),
-	                                          convdata=&runid._estimates_&periodid.,
-				    						  settomissvars=%str(codecat, codetype, frequency, ranking, code),
-				    						  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
-	                                          runidvar=&runid.);	
-				    %end;
-					%if &marginalweights. = Y %then %do;
-    			    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                           outfile=aggwd,
-                                           pscsfile=&pscsfile.,
-                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and subgroup = "&subgroup." and subgroupcat = "&subgroupcat."), 
-                                           convrule=%quote(&convrule.),
-                                           convdata=&runid._estimates_&periodid.,
-                                           settomissvars=%str(n, min, max, mean, sd),
-                                           runidvar=&runid.);					   
-                    %end; /* aggregate weighted*/	
 
                     /*Restrict data to subgroup category*/
                     %subsetdata(datain=aggrd&sub., dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);

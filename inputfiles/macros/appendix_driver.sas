@@ -58,12 +58,12 @@
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	  /* Rank hdps vars */
 	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp subgroup subgroupcat periodid descending ranking;
+		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
 	   run;
 		
 	   data agghdps;
 	     set agghdps;
-	     by dpidsiteid psestimategrp subgroup subgroupcat periodid descending ranking;
+	     by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
@@ -102,8 +102,9 @@
              run;
           %end;
 		  
-		  %if &hdps. = Y and %eval(&unique_psestimate. = 1) %then %do;
+		  %if &hdps. = Y %then %do;
 		     %let psestimategrplabel = &psestimategrp.;
+			 %let analysisgrplabel = &analysisgrp.
 		     
 		     %isdata(dataset=labelfile);
              %if &nobs > 0 %then %do;
@@ -114,6 +115,13 @@
 		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
 		             on a.psestimategrp = b.group
 		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
+					 
+			   select c.label 
+		         into :analysisgrplabel trimmed
+		       from (select a.*, b.label
+		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
+		             on a.analysisgrp = b.group
+		             where a.analysisgrp = "&analysisgrp." and b.runid = "&runid") as c;
 		       quit;
 		     %end;
 			 
@@ -173,10 +181,10 @@
 					   %let titlesuffix = %str(&titlesuffix.: &subgroupcat.);
 					%end;
 					
-			        /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid, subgroup, subgroupcat*/
+			        /* Confirm data exists on agghdps for desired psestimategrp or analysisgrp, runid, periodid, subgroup, subgroupcat*/
 				    proc sql noprint;
 				     select count(psestimategrp) into: nobs trimmed
-                     from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. 
+                     from agghdps where psestimategrp = "&psestimategrp." and analysisgrp = "&analysisgrp." and runid = "&runid." and periodid = &periodid. 
 					                    and subgroup = "&subgroup." and subgroupcat = "&subgroupcat.";
 				    quit;
 				    
@@ -195,7 +203,7 @@
 				       /* Do not re-create appendix data that already exists */
 				       %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
                          data repdata.appendix&look. (drop = hdpsnum);
-		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup."
+		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and analysisgrp = "&analysisgrp." and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup."
 						     and subgroupcat = "&subgroupcat." and hdpsnum le &topnhdps.));
                            /*round ranking to 3 decimals*/
                            format ranking 8.3;
@@ -203,15 +211,15 @@
 		  	             run;		
 				      
 		  	             %addtotoc(tabnum = Appendix &looktab., 
-		    	         	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel. &titlesuffix.),
+		    	         	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel., &analysisgrplabel. &titlesuffix.),
 		    	         	        appendixtype = appendixhdps);
 				       
 			           %end; /* Determine if appendix data already exists */
-				    %end; /* hdps data for runid and psestimategrp */
+				    %end; /* hdps data for runid and psestimategrp/analysisgrp */
 				  %end; /* subgroup category loop */
 				%end; /* subgroup loop */
 		     %end; /* periodid */
-		  %end; /* HDPS and unique psestimategrp */
+		  %end; /* HDPS */
 	    %end; /* comparison file order */
 	%end; /* aggregated hdps data exists */
 
@@ -335,30 +343,20 @@
 					    from _subgrp_cat;
                       quit;
                   %end;
-				  
-				  /*Loop through each subgroup category*/
-                  %do cat=1 %to &numsubcat.; 
-				    %if %str(&subgroup.) = %str() %then %do; 
-					   %let subgroupcat = ; 
-					%end;
-					%else %do; 
-					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
-					   %let titlesuffix = %str(&titlesuffix.: &subgroupcat.);
-					%end;
 					
                     data weightdistribution;
-                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
+                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup"));
                         keep analysisgrp subgroup subgroupcat dpidsiteid N min max mean sd periodid;
                     run;
 				    
                     /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID  */
                     proc sort data = weightdistribution nodupkey;
-                    	by periodid dpidsiteid;
+                    	by periodid dpidsiteid subgroup subgroupcat;
                     run;
-				    
+					
                     %isdata(dataset=weightdistribution);
                     %if &nobs > 0 %then %do;
-                    /*N, min, max*/
+                    /*N, min, max */
                     proc means data=weightdistribution nway noprint;
                         var N min max;
                         where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
@@ -372,16 +370,18 @@
                         where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
                         output out=part2(drop=_:) mean(mean)=mean;
                     run;
-
-                    /*SD*/
-                    proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
-                        id dpidsiteid;
-                        var sd;
-                    run;
-                    proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
-                        id dpidsiteid;
-                        var n;
-                    run;
+					
+					%if &sub. = 0 %then %do;
+                      /*SD*/
+                      proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
+                          id dpidsiteid;
+                          var sd;
+                      run;
+                      proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
+                          id dpidsiteid;
+                          var n;
+                      run;
+					%end;
 				    
                     options mergenoby = nowarn;
                     data part3;
@@ -438,6 +438,8 @@
                     proc sort data=repdata.appendix&tableletter.&look.;
                         by dpidsiteid;
                     run;
+					
+					/* If the sub is 0, save the overall table to be set in for other stratification tables */
 
 				    %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
 				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
@@ -445,7 +447,6 @@
                     %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
                     %end; /* Nobs > 0 weightdistribution */
                     %end; /* periodid */
-				  %end; /* subgroup category */
 				%end; /* subgroup */
               %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
 

@@ -103,7 +103,7 @@
 				   
 				   periodid = &periodid.;
 				   
-				   keep psestimategrp subgroup subgroupcat codecat codetype dpidsiteid frequency ranking code periodid runid;
+				   keep psestimategrp analysisgrp subgroup subgroupcat codecat codetype dpidsiteid frequency ranking code periodid runid;
 				%end;
                 
                 /*set variables to missing if convergence not met*/
