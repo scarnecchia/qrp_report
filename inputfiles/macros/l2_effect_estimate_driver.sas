@@ -66,7 +66,8 @@
         %let noclassvars = ;
         %let stratavar = ; /*variable that indicates conditional groupings (matchID or percentile)*/
         %let subgrouplist =;
-        %let numsubgroup = 0; /*number of subgroups*/
+        %let numsubgroup = 0; /*number of distinct subgroups*/
+        %let allsubgroupcount = 0; /*total number of subgroups+subgroup categories*/
         %let convrule = ;
         %let kmrefpop = unweighted;
 
@@ -95,25 +96,22 @@
         %if %str("&pscsfile.") = %str("") %then %do;
             %put WARNING: (Sentinel) &analysisgrp. not found in QRP input files. Effect Estimates will not be computed;
             %goto nextloop;
-        %end;f
+        %end;
 
         /*How many subgroup analyses for this analysisgrp*/
-        proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
-		  by subgroup;
-        run;
+        proc sql noprint;
+            select distinct subgroup 
+            into :subgrouplist separated by ' '
+            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
 
-        %isdata(dataset=_subgrp);
-        %if %eval(&nobs.>0) %then %do;
-            proc sql noprint;
-                select subgroup 
-                into :subgrouplist separated by ' '
-                from _subgrp;
+            select count(distinct subgroup) into :numsubgroup trimmed
+            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
 
-                select count(*) into :numsubgroup trimmed
-                from _subgrp;
-            quit;
-            %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
-        %end;
+            select count(*) into: allsubgroupcount trimmed
+            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
+        quit;
+
+        %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
 
         /******************************/
         /* loop through each subgroup */
@@ -155,23 +153,6 @@
             /*Use risk set or individual level return*/
             %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
                 %let individualreturn = Y;
-            %end;
-			
-			/* Identify subgroup categories */	
-		    proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup.")) out = _subgrp_cat;
-			  by subgroupcat;
-            run;
-
-            %isdata(dataset=_subgrp_cat);
-            %if %eval(&nobs.>0) and %str(&subgroup.) ne %str() %then %do;
-               proc sql noprint;
-                 select count(*)
-				       ,subgroupcat 
-                      into:numsubcat trimmed
-				      ,:subcategorization separated by ' '
-                 from _subgrp_cat;
-               quit;
-               %put Number of Subgroup categories for &analysisgrp. subgroup &subgroup.: &numsubcat.;
             %end;
 
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
@@ -648,6 +629,17 @@
             /**********************************************************************************/
 
             %if &sub. ne 0 %then %do;
+                
+    			/* Identify subgroup categories */	
+                proc sql noprint;
+                     select count(*)
+    				       ,subgroupcat 
+                      into  :numsubcat trimmed
+    				       ,:subcategorization separated by ' '
+                     from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup."));
+                quit;
+                %put Number of Subgroup categories for &analysisgrp. subgroup &subgroup.: &numsubcat.;
+
                 %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 *Assign generic dummies for automatic selection;
                 %if &individualreturn. = Y %then %do;
