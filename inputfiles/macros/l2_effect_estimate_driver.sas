@@ -85,19 +85,19 @@
         run;
         %put now computing effect estimates for &analysisgrp.;
        
-        /*extract QRP input file associated with analysisgrp from the subgroup file*/ 
+        /*extract QRP input file associated with analysisgrp*/ 
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
             from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
+            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
         quit;
   
         %if %str("&pscsfile.") = %str("") %then %do;
             %put WARNING: (Sentinel) &analysisgrp. not found in QRP input files. Effect Estimates will not be computed;
             %goto nextloop;
-        %end;
+        %end;f
 
-        /*How many subgroup analyses for this analysisgrp use from subgroup file*/
+        /*How many subgroup analyses for this analysisgrp*/
         proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
 		  by subgroup;
         run;
@@ -351,14 +351,13 @@
                     %end; /* aggregate weighted and marginalweights data */	
 	            %end; /*aggregate risk set data*/
 
-                /*if KM curves requested, aggregate survivaldata dataset - always overall*/
+                /*if KM curves requested, aggregate survivaldata dataset*/
                 %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
                         %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
-                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and missing(subgroup) 
-                                                                and analysis in (&kmplotlist.)), 
+                                               whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and analysis in (&kmplotlist.)), 
                                                convrule=%quote(&convrule.),
                                                convdata=&runid._estimates_&periodid.,
                                                settomissvars=%str(evexp,evunexp,nexp,nunexp),
@@ -520,6 +519,16 @@
                 %end;
 
                 /**********************************************************************************/
+                /* Compute KM cuves                                                               */
+                /**********************************************************************************/
+                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
+                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                    %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
+                                                      kmrefpop=&kmrefpop.);
+                    %end;
+                %end; /*KM plots*/
+
+                /**********************************************************************************/
                 /* Stratify overall tables by DP                                                  */
                 /**********************************************************************************/
                 %if "&stratifybyDP" = "Y" %then %do;
@@ -625,16 +634,6 @@
                         %end;
                     %end; *dp;  
                 %end; /*stratifybyDP = Y*/
-
-                /**********************************************************************************/
-                /* Compute KM cuves                                                               */
-                /**********************************************************************************/
-                %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
-                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
-                    %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
-                                                      kmrefpop=&kmrefpop.);
-                    %end;
-                %end; /*KM plots*/
 
                 /*Clean up*/
                 proc datasets library=work nowarn nolist;
