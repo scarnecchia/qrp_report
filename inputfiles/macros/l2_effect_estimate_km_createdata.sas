@@ -42,7 +42,7 @@
 
     %isdata(dataset=_tempaggsurvival);
     %if %eval(&nobs <1) %then %do;
-        %put WARNING: (Sentinel) No observations to produce KM curves for &analysisgrp., subgroup = &subgroup., subgroupcat = &subgroupcat.. Curves will not be produced;
+        %put WARNING: (Sentinel) No observations to produce KM curves for &analysisgrp.. Curves will not be produced;
     %end;
     %else %do;
 
