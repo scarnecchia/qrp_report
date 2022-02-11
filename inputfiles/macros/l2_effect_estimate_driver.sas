@@ -523,6 +523,9 @@
                 /* Stratify overall tables by DP                                                  */
                 /**********************************************************************************/
                 %if "&stratifybyDP" = "Y" %then %do;
+
+                    /*set subgroup to dpidsiteid to differentiate from overall analysis*/
+                    %let subgroup = dpidsiteid;
                   
                     %do dps = 1 %to &num_dp;
                         %let dpname =%scan(&masked_dplist.,&dps.); 
