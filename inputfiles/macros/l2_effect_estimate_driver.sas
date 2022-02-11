@@ -523,6 +523,9 @@
                 /* Stratify overall tables by DP                                                  */
                 /**********************************************************************************/
                 %if "&stratifybyDP" = "Y" %then %do;
+
+                    /*set subgroup to dpidsiteid to differentiate from overall analysis*/
+                    %let subgroup = dpidsiteid;
                   
                     %do dps = 1 %to &num_dp;
                         %let dpname =%scan(&masked_dplist.,&dps.); 
@@ -645,7 +648,7 @@
             /* For subgroup analyses - determine subgroup categories and number of categories */
             /**********************************************************************************/
 
-            %if &sub. ne 0 & &marginalweights. = N %then %do;
+            %if &sub. ne 0 %then %do;
                 %subgroupdummyvar(datain=aggrd, dataout=aggrd&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 *Assign generic dummies for automatic selection;
                 %if &individualreturn. = Y %then %do;
@@ -654,6 +657,10 @@
                 %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
                     %subgroupdummyvar(datain=aggrs, dataout=aggrs&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
                 %end;
+                %if &marginalweights. = Y %then %do;
+                    %subgroupdummyvar(datain=aggmw, dataout=aggmw&sub., subgroup=&subgroup., numcat=&numsubcat., categorization =&subcategorization.);
+                %end;
+
 
                 /*Loop through each subgroup category*/
                 %do cat=1 %to &numsubcat.;
@@ -666,6 +673,9 @@
                     %end;
                     %if &individualreturn. = N & %str("&reporttype") = "T2L2" %then %do;
                     %subsetdata(datain=aggrs&sub., dataout=cat_dp_rs, subgroup=&subgroup., cat=&cat.);
+                    %end;
+                    %if &marginalweights. = Y %then %do;
+                    %subsetdata(datain=aggmw&sub., dataout=cat_dp_mw, subgroup=&subgroup., cat=&cat.);
                     %end;
 
                     /*Extract selectprobabilities parameters*/
@@ -756,10 +766,20 @@
                             %end;
                         %end;
                     %end;
+                       
+                    /*PS IPTW/Weighted Stratification analysis:
+                        - Unweighted (risk metrics)
+                        - Weighted (Risk metrics and effect estimate)*/
+                    %if &marginalweights. = Y %then %do;
+                    %l2_effect_estimate_runrobusthr(where=analysis="Weighted", analysis="Weighted", subgroupcat=&subgroupcat.);
+                    %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="&subgroupcat.", analysis= "Unweighted", subgroupcat = &subgroupcat.);
+                    %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="&subgroupcat.", analysis= "Weighted", subgroupcat = &subgroupcat.);
+                    %end;
 
-                proc datasets library=work nowarn noprint;
-                    delete cat_:;
-                quit;
+                    /*Clean up*/
+                    proc datasets library=work nowarn noprint;
+                        delete cat_:;
+                    quit;
                 
                 %end; /*loop through each subgroup category*/
  
@@ -776,7 +796,7 @@
     %end; /*loop through each analysisgrp*/
 
 	proc datasets library=work nowarn nolist;
-        delete aggpl: aggrd: aggrs: aggsurvival;
+        delete aggpl: aggrd: aggrs: aggsurvival aggmw:;
     quit;
 
     /*Merge together risk metrics and effect estimates*/
