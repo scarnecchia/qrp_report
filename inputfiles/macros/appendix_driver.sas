@@ -104,7 +104,7 @@
 		  
 		  %if &hdps. = Y %then %do;
 		     %let psestimategrplabel = &psestimategrp.;
-			 %let analysisgrplabel = &analysisgrp.
+			 %let analysisgrplabel = &analysisgrp.;
 		     
 		     %isdata(dataset=labelfile);
              %if &nobs > 0 %then %do;
@@ -190,8 +190,8 @@
 				    quit;
 				    
 				    %if &nobs. > 0 %then %do;
-				       /* Increment table letter when periodid equals look start */
-				       %if %eval(&periodid. = &look_start.) and &sub. > 0 %then %tableletter(); 
+				       /* Increment table letter when periodid equals look start or subgroup is populated*/
+				       %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
 				       
 			           /* Assign numeric suffix associated with table number*/
                        %let look = %upcase(&tableletter.);
@@ -306,6 +306,7 @@
                 run;
 			    
 				%let subgrouplist =;
+				%let numsubgroup = 0;
                 %isdata(dataset=_subgrp);
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;
@@ -416,7 +417,9 @@
 				    
                     options mergenoby = warn;
 
-                    %if %eval(&look_end - &look_start) = 0 or &periodid = 1 or &sub. > 0 %then %tableletter();
+                    /* Increment table letter when periodid equals look start or subgroup is populated*/
+				    %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
+					   
                     %isdata(dataset=repdata.appendix&tableletter.&look.)
                     %if &nobs < 1 %then %do;
                     data repdata.appendix&tableletter.&look.;
@@ -439,8 +442,6 @@
                     proc sort data=repdata.appendix&tableletter.&look.;
                         by dpidsiteid;
                     run;
-					
-					/* If the sub is 0, save the overall table to be set in for other stratification tables */
 
 				    %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
 				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
