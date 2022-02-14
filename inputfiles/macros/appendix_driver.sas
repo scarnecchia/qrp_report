@@ -132,6 +132,7 @@
                 run;
 			    
 				%let subgrouplist =;
+				%let numsubgroup = 0;
                 %isdata(dataset=_subgrp);
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;

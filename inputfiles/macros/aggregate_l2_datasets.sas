@@ -118,7 +118,7 @@
 			/*If varinfo then append for msocdata output*/			
 			%if %index(&infile.,varinfo) > 0 %then %do;
 				data _temp_varinfo_&dps.; 
-					set &dpidsiteid..&infile.(where=(lowcase(psestimategrp)="&psestimategrp"));
+					set &dpidsiteid..&infile.(where=(&whereclause.));
 					length dpidsiteid $4.;
 					dpidsiteid = "&maskedID.";
 					%if %length(&runidvar) > 0 %then %do;
