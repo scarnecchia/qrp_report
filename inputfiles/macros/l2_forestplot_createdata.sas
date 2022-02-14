@@ -202,50 +202,40 @@
                   if missing(label) then title=analysisgrp;
                   else title=label;
               end;
-              /*subgroup= Sex*/
-              else if lowcase(subgroup) = "sex" then do;
-                  title = 'Sex';
-              end;
               /*subgroup 1-999 = covariates*/
               else if index(subgroup,'covar')>0 then do;
                   title = covarlabel;
               end;
               /*subgroup agegroup = Age Group*/
-              else if lowcase(subgroup) = "agegroup" then do;
+              else if subgroup = "agegroup" then do;
                   title = 'Age Group';
               end;
-              /*subgroup year = Year*/
-              else if lowcase(subgroup) = "year" then do;
-                  title = 'Year';
-              end;
-              /*subgroup preiodid = Time*/
-              else if lowcase(subgroup) = "periodid" then do;
+              /*subgroup periodid*/
+              else if subgroup = "periodid" then do;
                   title = 'Monitoring Period';
               end;
-              /*subgroup race = Race*/
-              else if lowcase(subgroup) = "race" then do;
-                  title = 'Race';
-              end;
               /*subgroup hispanic = Hispanic*/
-              else if lowcase(subgroup) = "hispanic" then do;
+              else if subgroup = "hispanic" then do;
                   title = 'Hispanic Origin';
               end;
               /*subgroup prepostind = Pre-Post indicator*/
-              else if lowcase(subgroup) = "prepostind" then do;
+              else if subgroup = "prepostind" then do;
                   title = 'Delivery Status';
               end;
               /*subgroup matchmethod = Match Method*/
-              else if lowcase(subgroup) = "matchmethod" then do;
+              else if subgroup = "matchmethod" then do;
                   title = 'Match Method';
               end;
               /*subgroup birth_type = Birth Type*/
-              else if lowcase(subgroup) = "birth_type" then do;
+              else if subgroup = "birth_type" then do;
                   title = 'Birth Type';
               end;
               /*subgroup = By Data Parnter*/
               else if subgroup = 'dpidsiteid' then do;
                   title = 'Data Partner';
               end;
+              /*all others*/
+              else title = propcase(subgroup);
           end;
           if id2 then do;
               id = 3;
@@ -254,7 +244,7 @@
                   id = 2;
                   title = "Overall";
               end;
-              /*covarnum 1-999 = covariates*/
+              /*subgroup = covariates*/
               else if index(subgroup,'covar')>0 then do;
                   if subgroupcat = '0' then do;
                   title = catx(' ','No', covarlabel);
