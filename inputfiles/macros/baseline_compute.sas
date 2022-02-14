@@ -326,88 +326,120 @@
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
         **********************************************************************************************;
-        data _null_; 
-            set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table ne 'Adjusted' and order=&b.
-                           %if %str("&reporttype") = %str("T6") %then %do; and switchstep = 0 %end;));
-        
-            total_exp_episodes = 0;
-            total_exp_patients = 0;
-            %if "&includecomp" = "Y" %then %do;
-            total_comp_episodes = 0;
-            total_comp_patients = 0;
-            %end;
+		* Initialize macro variables to make them available within the scope of this macro;
+		%let total_unadjusted_exp_episodes=0;
+		%let total_Switchstep_0_exp_episodes=0;
+		%let total_unadjusted_comp_episodes=0;
+		%let n_switchstep_0_episodes_exp=0;
+		%let n_unadjusted_episodes_exp=0;
+		%let total_unadjusted_exp_patients=0;
+		%let total_unadjusted_comp_patients=0;
+		%let total_unadjusted_exp_patients=0;
+		%let total_unadjusted_comp_patients=0;
 
-            /*Number of Episodes*/
-            if metvar = 'N_EPISODES' then do;
-                total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
-                call symputx("total_unadjusted_exp_episodes", total_exp_episodes);
-			    %if %str("&reporttype") = %str("T6") %then %do;
-		        call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
-                %end;
+		%do a = 1 %to &num_dp.;
+			%let n_switchstep_0_episodes_exp&a=0;
+			%let n_unadjusted_episodes_exp&a=0;
+			%let n_unadjusted_episodes_comp&a=0;
+			%let n_unadjusted_patients_exp&a=0;
+			%let n_unadjusted_patients_comp&a=0;
+		%end;
 
-                %if "&includecomp" = "Y" %then %do;
-                total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
-                call symputx("total_unadjusted_comp_episodes", total_comp_episodes); 
-                %end;
+		%macro baselinecomputetotals(subgroup=, subgroupcat=);
+	        data _null_; 
+	            set &datain.(where=(metvar in ('PATIENT', 'N_EPISODES') and table ne 'Adjusted' and order=&b.
+	                           %if %str("&reporttype") = %str("T6") %then %do; and switchstep = 0 %end;
+							   %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+							    and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+							   %end;));
+	        
+	            total_exp_episodes = 0;
+	            total_exp_patients = 0;
+	            %if "&includecomp" = "Y" %then %do;
+	            total_comp_episodes = 0;
+	            total_comp_patients = 0;
+	            %end;
 
-                %do a = 1 %to &num_dp.;
-    			    %if %str("&reporttype") = %str("T6") %then %do;
-                      call symputx("n_switchstep_0_episodes_exp&a", exp_mean&a);
-                    %end;
-                    %else %do;
-                      call symputx("n_unadjusted_episodes_exp&a", exp_mean&a); 
-                    %end; 
-                    %if "&includecomp" = "Y" %then %do;
-                      call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); 
-                    %end;
-                %end;
-            end;
+	            /*Number of Episodes*/
+	            if metvar = 'N_EPISODES' then do;
+	                total_exp_episodes = sum(of exp_mean1-exp_mean&num_dp.);
+	                call symputx("total_unadjusted_exp_episodes", total_exp_episodes);
+				    %if %str("&reporttype") = %str("T6") %then %do;
+			        call symputx("total_Switchstep_0_exp_episodes", total_exp_episodes);
+	                %end;
 
-            /*Number of Patients*/
-            else if metvar = 'PATIENT' then do;
-                total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
-                call symputx("total_unadjusted_exp_patients", total_exp_patients); 
-			    %if %str("&reporttype") = %str("T6") %then %do;
-			    call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
-                %end;
+	                %if "&includecomp" = "Y" %then %do;
+	                total_comp_episodes = sum(of comp_mean1-comp_mean&num_dp.);
+	                call symputx("total_unadjusted_comp_episodes", total_comp_episodes); 
+	                %end;
 
-                %if "&includecomp" = "Y" %then %do;
-                  total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
-                  call symputx("total_unadjusted_comp_patients", total_comp_patients);
-                %end;
+	                %do a = 1 %to &num_dp.;
+	    			    %if %str("&reporttype") = %str("T6") %then %do;
+	                      call symputx("n_switchstep_0_episodes_exp&a", exp_mean&a);
+	                    %end;
+	                    %else %do;
+	                      call symputx("n_unadjusted_episodes_exp&a", exp_mean&a); 
+	                    %end; 
+	                    %if "&includecomp" = "Y" %then %do;
+	                      call symputx("n_unadjusted_episodes_comp&a", comp_mean&a); 
+	                    %end;
+	                %end;
+	            end;
 
-                %do a = 1 %to &num_dp.;
-                  call symputx("n_unadjusted_patients_exp&a", exp_mean&a); 
-                  %if "&includecomp" = "Y" %then %do;
-                    call symputx("n_unadjusted_patients_comp&a", comp_mean&a);
-                  %end;
-                %end;
-            end;
+	            /*Number of Patients*/
+	            else if metvar = 'PATIENT' then do;
+	                total_exp_patients = sum(of exp_mean1-exp_mean&num_dp.);
+	                call symputx("total_unadjusted_exp_patients", total_exp_patients); 
+				    %if %str("&reporttype") = %str("T6") %then %do;
+				    call symputx("total_Switchstep_0_exp_patients", total_exp_patients);
+	                %end;
 
-            /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
-            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
-            %if "&includecomp" = "Y" %then %do;
-            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
-            %end;
-        run;
+	                %if "&includecomp" = "Y" %then %do;
+	                  total_comp_patients = sum(of comp_mean1-comp_mean&num_dp.);
+	                  call symputx("total_unadjusted_comp_patients", total_comp_patients);
+	                %end;
 
-        %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
-        %put total number of unadjusted group1 patients for order=&b.:  &total_unadjusted_exp_patients.;
-        %if "&includecomp" = "Y" %then %do;
-            %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
-            %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
-        %end;
+	                %do a = 1 %to &num_dp.;
+	                  call symputx("n_unadjusted_patients_exp&a", exp_mean&a); 
+	                  %if "&includecomp" = "Y" %then %do;
+	                    call symputx("n_unadjusted_patients_comp&a", comp_mean&a);
+	                  %end;
+	                %end;
+	            end;
+
+	            /*For L2 queries = number of patients is not computed since cohortdef = 01 (equal to number of episodes)*/
+	            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_exp_patients", total_exp_episodes);
+	            %if "&includecomp" = "Y" %then %do;
+	            if "&reporttype."="T2L2" | "&reporttype."="T4L2" then call symputx("total_unadjusted_comp_patients", total_comp_episodes);
+	            %end;
+	        run;
+
+	        %put total number of unadjusted group1 episodes for order=&b.:  &total_unadjusted_exp_episodes.;
+	        %put total number of unadjusted group1 patients for order=&b.:  &total_unadjusted_exp_patients.;
+	        %if "&includecomp" = "Y" %then %do;
+	            %put total number of unadjusted group2 episodes for order=&b.:  &total_unadjusted_comp_episodes.;
+	            %put total number of unadjusted group2 patients for order=&b.:  &total_unadjusted_comp_patients.;
+	        %end;
+		%mend baselinecomputetotals;
+		%baselinecomputetotals();
 
 	    ***********************************************************************************************;
         * Macro computes pooled metrics                         
         ***********************************************************************************************;
-        %macro baselinecomputemetrics(table=, weight=, dataout=, labelout=);  
+        %macro baselinecomputemetrics(table=, weight=, dataout=, labelout=, suffix=);  
          
+			* Recompute totals for subgroup. Overall already computed above;
+			%if (%str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2")) and %str("&subgroup") ne %str("") %then %do;
+				%baselinecomputetotals(subgroup=%str(&subgroup.) and subgroupcat=%str(&subgroupcat.));
+			%end;
+
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
                 data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." 
-                      and weight = "&weight" and order=&b.));
+                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." and weight = "&weight" and order=&b.
+								 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+							    	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+							   	 %end;));
                     %do a = 1 %to &num_dp.;
                         call symputx("n_adjusted_episodes_exp&a", exp_mean&a); 
                         call symputx("n_adjusted_episodes_comp&a", comp_mean&a); 
@@ -475,7 +507,10 @@
             %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
                 data race_data;
                     set &datain.(keep=table weight order metvar exp_mean: %if "&includecomp" = "Y" %then %do; comp_mean: %end;
-                        where=(table="&table" and weight = "&weight" and order=&b. and metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5')));
+                        where=(table="&table" and weight = "&weight" and order=&b. and metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5')
+						%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+					    	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+					    %end;));
                     /*compute aggregate sum*/
                     exp_mean0=max(0,sum(of exp_mean1-exp_mean&num_dp.));
     				%if "&includecomp" = "Y" %then %do; 
@@ -516,10 +551,19 @@
                 quit;
     	    %end; /*collapse_vars = race and stratifybydp = N*/
 
-            data &dataout.; 
+            data &dataout.&suffix.; 
 			    missing R;
                 length metvar $30;
-                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.));
+                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+							 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+							    and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+							 %end;));
+
+				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+					format subgroup subgroupcat $11.;
+					subgroup="&subgroup.";
+					subgroupcat="&subgroupcat.";
+				%end;
 
                 /*set up total count variables and arrays*/
                 total_exp_episodes = &&total_&table._exp_episodes.; /*Sum of episodes in group1*/ 
@@ -1167,6 +1211,9 @@
                     %if &reporttype=T2L2 %then %do;
                     monitoringperiod
                     %end;
+					%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
+					subgroup subgroupcat
+					%end;
                     ;
 
                 /*Removing unweighted total row for IPTW and PS stratum weighted table 1. Will use TOTAL_WEIGHTED row*/
@@ -1195,9 +1242,14 @@
             run;
 
             /* Assign necessary variables for labeling */
-            data &labelout;
+            data &labelout&suffix.;
                 set init_labels;
                 length analysisgrp $40 table weight $30;
+				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+					format subgroup subgroupcat $11.;
+					subgroup="&subgroup.";
+					subgroupcat="&subgroupcat.";
+				%end;
                 order=&b;
                 analysisgrp="&analysisgrp.";
                 table="&table";
@@ -1210,37 +1262,79 @@
         * Compute aggregated tables                     
         ***********************************************************************************************;
 
-        /*Types 1-5: unweighted*/
-		%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
-          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1);
-        %end;
+		* Process L2 subgroups;
+		%let numsubgroups=0;
+		%let subgroup=;
+		%let subgroupcat=;
+		%let suffix=;
 
-        /*L2 tables*/
+		%if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do;
+			proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+							   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat);
+			by runid analysisgrp subgroup subgroupcat;
+			run;
+
+			data _subgroups;
+			set _subgroups;
+			by runid analysisgrp subgroup subgroupcat;
+			if _N_=1 then subgroupnum=0;
+			if first.subgroup then do;
+				subgroupnum = subgroupnum + 1;
+				subgroupcatnum = 0;
+			end;			
+			subgroupcatnum = subgroupcatnum + 1;
+			retain subgroupnum subgroupcatnum;
+			run;
+
+			proc sql noprint;
+			select count(*) into :numsubgroups from _subgroups;
+			quit;
+		%end;
+		
+		%do sub=0 %to &numsubgroups.;
+
+			%if &sub. > 0 %then %do;
+				data _null_;
+				set _subgroups;
+				if _N_=&sub.;
+				call symputx("SubGroup",lowcase(strip(subgroup)));
+	            call symputx("SubgroupCat",upcase(strip(subgroupcat)));
+				call symputx("suffix", "_" || strip(put(subgroupnum,best.)) || "_" || strip(put(subgroupcatnum,best.)));
+				run;
+			%end;
+
+	        /*Types 1-5: unweighted*/
+			%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
+	          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1, suffix=&suffix.);
+	        %end;
+
+	        /*L2 tables*/
             /*PS Match: Fixed ratio matching is unweighted, variable ratio matching is weighted*/
             %if &psfile. = psmatchfile %then %do;
                 %if "&ratio" = "F" %then %do;
-                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2);
+                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab2, labelout=baseline_labels2, suffix=&suffix.);
                 %end;
                 %if "&ratio" = "V" %then %do;
-                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3);
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab3, labelout=baseline_labels3, suffix=&suffix.);
                 %end;
             %end;
 
             /*PS Stratification: Unweighted for PS Stratum weighted analysis and Weighted table*/
             %if &psfile. = stratificationfile %then %do;
                 %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
-    		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4);
+    		    %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4, suffix=&suffix.);
     		    %end;
-                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5);
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5, suffix=&suffix.);
             %end;
 
             /*IPTW: Adjusted cohort - Unweighted and Weighted */
             %if &psfile. = iptwfile %then %do;
     		    %if %eval(&unique_psestimate.) = 1 %then %do;
-                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6);
+                %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab6, labelout=baseline_labels6, suffix=&suffix.);
     			%end;
-                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7);
+                %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab7, labelout=baseline_labels7, suffix=&suffix.);
             %end;
+		%end;
 
         /*Type 6 switching tables*/
         %if %str("&reporttype") = %str("T6") %then %do;
@@ -1570,6 +1664,9 @@
                 %if &reporttype=T2L2 %then %do;
                 monitoringperiod
                 %end;
+				%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
+				subgroup subgroupcat
+				%end;
                 ;
         run;
 
@@ -1596,7 +1693,7 @@
 
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
-            by table weight sortorder1 sortorder2;
+            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end;  table weight sortorder1 sortorder2;
         run;
 
         ***********************************************************************************************;
