@@ -133,23 +133,21 @@
 			    
 				%let subgrouplist =;
 				%let numsubgroup = 0;
+				%let subgroup = ; 
+				%let titlesuffix = ;
+					 
                 %isdata(dataset=_subgrp);
+				%let numsubgroup = &nobs.;
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;
-                        select count(*)
-						      ,subgroup 
-                        into :numsubgroup
-						     ,:subgrouplist separated by ' '
+                        select subgroup 
+                        into :subgrouplist separated by ' '
                         from _subgrp;
                     quit;
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-                  %if &sub. = 0 %then %do; 
-				     %let subgroup = ; 
-					 %let titlesuffix = ;
-				  %end;
-                  %else %do; 
+                  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);
                      %let titlesuffix = %str(, &subgroup.);					 
 				  %end;
@@ -162,12 +160,11 @@
                   run;
 			      
                   %isdata(dataset=_subgrp_cat);
+				  %let numsubcat = &nobs.;
                   %if %eval(&nobs.>0) %then %do;
                       proc sql noprint;
-                        select count(*)
-						      ,subgroupcat 
-                        into :numsubcat
-						    ,:subcategorization separated by ' '
+                        select subgroupcat 
+                        into :subcategorization separated by ' '
 					    from _subgrp_cat;
                       quit;
                   %end;
@@ -307,23 +304,21 @@
 			    
 				%let subgrouplist =;
 				%let numsubgroup = 0;
+				%let subgroup = ; 
+				%let titlesuffix = ;
+				
                 %isdata(dataset=_subgrp);
+				%let numsubgroup = &nobs.;
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;
-                        select count(*)
-						      ,subgroup 
-                        into :numsubgroup
-						     ,:subgrouplist separated by ' '
+                        select subgroup 
+                        into :subgrouplist separated by ' '
                         from _subgrp;
                     quit;
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-				  %if &sub. = 0 %then %do; 
-				     %let subgroup = ; 
-					 %let titlesuffix = ;
-				  %end;
-                  %else %do; 
+				  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);
                      %let titlesuffix = %str(, &subgroup.);					 
 				  %end;
@@ -345,9 +340,17 @@
 					    from _subgrp_cat;
                       quit;
                   %end;
+				  
+				  %do cat=1 %to &numsubcat.; 
+                    %if %str(&subgroup.) = %str() %then %do; 
+					   %let subgroupcat = ; 
+					%end;
+					%else %do; 
+					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
+					%end;
 					
                     data weightdistribution;
-                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup"));
+                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
                         keep analysisgrp subgroup subgroupcat dpidsiteid N min max mean sd periodid;
                     run;
 				    
@@ -358,22 +361,21 @@
 					
                     %isdata(dataset=weightdistribution);
                     %if &nobs > 0 %then %do;
-                    /*N, min, max */
-                    proc means data=weightdistribution nway noprint;
-                        var N min max;
-                        where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                        output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
-                    run;
-				    
-                    /*Mean*/
-                    proc means data=weightdistribution nway noprint;
-                        var mean;
-                        weight N;
-                        where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                        output out=part2(drop=_:) mean(mean)=mean;
-                    run;
-					
-					%if &sub. = 0 %then %do;
+                      /*N, min, max */
+                      proc means data=weightdistribution nway noprint;
+                          var N min max;
+                          where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                          output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
+                      run;
+				      
+                      /*Mean*/
+                      proc means data=weightdistribution nway noprint;
+                          var mean;
+                          weight N;
+                          where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                          output out=part2(drop=_:) mean(mean)=mean;
+                      run;
+					  
                       /*SD*/
                       proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
                           id dpidsiteid;
@@ -383,77 +385,89 @@
                           id dpidsiteid;
                           var n;
                       run;
-					%end;
-				    
-                    options mergenoby = nowarn;
-                    data part3;
-                        merge sd n;
-				    
-                        array npts(*) _ncount_:;
-                        array stddev(*) _sd_:;
-                               
-                        weighted_std = 0;
-                        std = 0;
-                        count = 0;
-				    
-                        totpts = sum(of _ncount_:);
-				    
-                        do i = 1 to dim(npts);
-                        ** Calculate weighted standard deviation;
-                            if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
-                            if ^missing(stddev(i)) then count = count + 1 ;
-                        end;
-				    
-                        ** Calculate pooled standard deviation;
-                        if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
-                        else sd = .;
-                              
-                        keep sd;
-                    run;
-				    
-                    data aggdistribution;
-                        merge part1 part2 part3;
-                    run;
-				    
-                    options mergenoby = warn;
-
-                    /* Increment table letter when periodid equals look start or subgroup is populated*/
-				    %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
-					   
-                    %isdata(dataset=repdata.appendix&tableletter.&look.)
-                    %if &nobs < 1 %then %do;
-                    data repdata.appendix&tableletter.&look.;
-                    	length dpidsiteid $10 nchar $20;
+				      
+                      options mergenoby = nowarn;
+                      data part3;
+                          merge sd n;
+				      
+                          array npts(*) _ncount_:;
+                          array stddev(*) _sd_:;
+                                 
+                          weighted_std = 0;
+                          std = 0;
+                          count = 0;
+				      
+                          totpts = sum(of _ncount_:);
+				      
+                          do i = 1 to dim(npts);
+                          ** Calculate weighted standard deviation;
+                              if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
+                              if ^missing(stddev(i)) then count = count + 1 ;
+                          end;
+				      
+                          ** Calculate pooled standard deviation;
+                          if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
+                          else sd = .;
+                                
+                          keep sd;
+                      run;
+				      
+                      data aggdistribution;
+                          merge part1 part2 part3;
+                      run;
+				      
+                      options mergenoby = warn;
+					  
+					  data appendixsubgroup_&sub._&cat.;
+					    length dpidsiteid $10 nchar $20;
                         set aggdistribution(in=a) 
-						    weightdistribution;
-                        if a then dpidsiteid="Aggregated";
-                        if missing(n) then Nchar='N/A';
-                        else Nchar=strip(put(n,comma12.));
-                        if n = 0 then do;
-                        	min=.z;
-                        	max=.z;
-                        	mean=.z;
-                        	sd=.z;
-                        end;
-                        drop n;
-                        rename nchar=n;
-                    run;
-				    
-                    proc sort data=repdata.appendix&tableletter.&look.;
-                        by dpidsiteid;
-                    run;
-
-				    %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-				    	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
-				    	  appendixtype = appendixWeightDist);
-                    %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
-                    %end; /* Nobs > 0 weightdistribution */
-                    %end; /* periodid */
-				%end; /* subgroup */
+					   	    weightdistribution;
+                        if a then do;
+						  dpidsiteid="Aggregated";
+						  subgroup = "&subgroup.";
+						  subgroupcat = "&subgroupcat.";
+						  periodid = "&periodid";
+						  analysisgrp = "&analysisgrp.";
+						end;
+					  run;
+						
+					%end; /* Nobs > 0 weightdistribution */
+                  %end; /* Subgroup Categorization */
+	
+                  /* Increment table letter when periodid equals look start or subgroup is populated*/
+				  %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
+				  
+				  /* Stack appendix data by subgroup */
+                  %isdata(dataset=repdata.appendix&tableletter.&look.)
+                  %if &nobs < 1 %then %do;
+                     data repdata.appendix&tableletter.&look.;
+                         set appendixsubgroup_&sub._:;
+                         if missing(n) then Nchar='N/A';
+                         else Nchar=strip(put(n,comma12.));
+                         if n = 0 then do;
+                         	min=.z;
+                         	max=.z;
+                         	mean=.z;
+                         	sd=.z;
+                         end;
+                         drop n;
+                         rename nchar=n;
+                     run;
+				     
+                     proc sort data=repdata.appendix&tableletter.&look.;
+                         by dpidsiteid;
+                     run;
+				   
+				     %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
+				     	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
+				     	  appendixtype = appendixWeightDist);
+                  %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
+                  %end; /* subgroup */
+				%end;  /* periodid */
               %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
 
               proc datasets lib=work nolist;
-				delete part: aggdistribution sd n weightdistribution;
+				delete part: aggdistribution sd n weightdistribution appendixsubgroup:;
 			  quit;
 
             %end;/* Outputweightdist = Y */
