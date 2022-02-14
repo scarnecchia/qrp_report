@@ -133,23 +133,21 @@
 			    
 				%let subgrouplist =;
 				%let numsubgroup = 0;
+				%let subgroup = ; 
+				%let titlesuffix = ;
+					 
                 %isdata(dataset=_subgrp);
+				%let numsubgroup = &nobs.;
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;
-                        select count(*)
-						      ,subgroup 
-                        into :numsubgroup
-						     ,:subgrouplist separated by ' '
+                        select subgroup 
+                        into :subgrouplist separated by ' '
                         from _subgrp;
                     quit;
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-                  %if &sub. = 0 %then %do; 
-				     %let subgroup = ; 
-					 %let titlesuffix = ;
-				  %end;
-                  %else %do; 
+                  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);
                      %let titlesuffix = %str(, &subgroup.);					 
 				  %end;
@@ -162,12 +160,11 @@
                   run;
 			      
                   %isdata(dataset=_subgrp_cat);
+				  %let numsubcat = &nobs.;
                   %if %eval(&nobs.>0) %then %do;
                       proc sql noprint;
-                        select count(*)
-						      ,subgroupcat 
-                        into :numsubcat
-						    ,:subcategorization separated by ' '
+                        select subgroupcat 
+                        into :subcategorization separated by ' '
 					    from _subgrp_cat;
                       quit;
                   %end;
@@ -307,23 +304,21 @@
 			    
 				%let subgrouplist =;
 				%let numsubgroup = 0;
+				%let subgroup = ; 
+				%let titlesuffix = ;
+				
                 %isdata(dataset=_subgrp);
+				%let numsubgroup = &nobs.;
                 %if %eval(&nobs.>0) %then %do;
                     proc sql noprint;
-                        select count(*)
-						      ,subgroup 
-                        into :numsubgroup
-						     ,:subgrouplist separated by ' '
+                        select subgroup 
+                        into :subgrouplist separated by ' '
                         from _subgrp;
                     quit;
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-				  %if &sub. = 0 %then %do; 
-				     %let subgroup = ; 
-					 %let titlesuffix = ;
-				  %end;
-                  %else %do; 
+				  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);
                      %let titlesuffix = %str(, &subgroup.);					 
 				  %end;
