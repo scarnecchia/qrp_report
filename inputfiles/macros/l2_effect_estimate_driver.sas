@@ -67,7 +67,7 @@
         %let stratavar = ; /*variable that indicates conditional groupings (matchID or percentile)*/
         %let subgrouplist =;
         %let numsubgroup = 0; /*number of distinct subgroups*/
-        %let allsubgroupcount = 0; /*total number of subgroups+subgroup categories*/
+        %let allsubgroupcatcount = 0; /*total number of subgroups+subgroup categories*/
         %let convrule = ;
         %let kmrefpop = unweighted;
 
@@ -98,17 +98,21 @@
             %goto nextloop;
         %end;
 
-        /*How many subgroup analyses for this analysisgrp*/
+        /*Number of analyses for this analysisgrp*/
+        data _subgrp;
+            set pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp"));
+        run;
+ 
         proc sql noprint;
             select distinct subgroup 
             into :subgrouplist separated by ' '
-            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
+            from _subgrp (keep=subgroup where = (subgroup ne ''));
 
             select count(distinct subgroup) into :numsubgroup trimmed
-            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
+            from _subgrp (keep=subgroup where = (subgroup ne ''));
 
-            select count(*) into: allsubgroupcount trimmed
-            from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup ne ''));
+            select count(*) into: allsubgroupcatcount trimmed
+            from _subgrp (keep=subgroup subgroupcat where = (subgroup ne ''));
         quit;
 
         %put Number of Subgroups for &analysisgrp.: &numsubgroup.;
@@ -158,7 +162,7 @@
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
             %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = "&subgroup.";
             data _null_; 
-                set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and subgroup = "&subgroup."));
+                set _subgrp(where=(subgroup = "&subgroup."));
 
                 %if &pscsfile. = psmatchfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
@@ -291,7 +295,7 @@
 
 	                /*if individual-level data does not exist set individualreturn = N*/
 	                %if %sysfunc(exist(aggpl))=0 %then %do; 
-	                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid. for subgroup &subgroup.. Risk set data will be used;
+	                    %put WARNING: (Sentinel) &analysisgrp. does not exist on &runid._adjusted_&periodid.. Risk set data will be used;
 	                    %let individualreturn=N;
 	                %end;
 	            %end; /*aggregate individual level data*/
@@ -500,7 +504,7 @@
                 %end;
 
                 /**********************************************************************************/
-                /* Compute KM cuves                                                               */
+                /* Compute KM cuves - all KM curves computed when &sub = 0 for efficiency         */
                 /**********************************************************************************/
                 %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
@@ -636,7 +640,7 @@
     				       ,subgroupcat 
                       into  :numsubcat trimmed
     				       ,:subcategorization separated by ' '
-                     from pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup."));
+                     from _subgrp (where = (subgroup = "&subgroup."));
                 quit;
                 %put Number of Subgroup categories for &analysisgrp. subgroup &subgroup.: &numsubcat.;
 
@@ -781,6 +785,10 @@
 		    quit;
 
         %end; /*end loop through each subgroup*/
+
+        proc datasets library=work nowarn nolist;
+	        delete _subgrp;
+	    quit;
 		
     %nextloop:
 

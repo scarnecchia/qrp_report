@@ -12,10 +12,11 @@
 *   - Either a patient level or risk set level dataset
 * 
 *  Program outputs: 
-*   - One dataset per plot
+*   - One dataset per plot. This dataset contains the KM curve for the overall and all 
+*     requested subgroups
 * 
 *  PARAMETERS:  
-*   - plotstocreate: list of plots (F3 F4 F5)
+*   - plotstocreate: list of plots (Unadjusted Conditional Unconditional)
 *   - kmrefpop: determines whether to produce weighted curves for VRM analysis
 *            
 *  Programming Notes: 
@@ -115,20 +116,24 @@
         /*--------------------------------------------------------------------------------------------*/
         %let weightedpop = N;
         %if &kmrefpop = both | &kmrefpop = weighted & %index(&plotstocreate,'Conditional') %then %do;
-            %do kmcount = 0 %to %eval(&allsubgroupcount.);
+            %do kmcount = 0 %to %eval(&allsubgroupcatcount.);
+                %let kmloopsubgroup = ;
+                %let kmloopsubgroupcat = ;
 
+                %if &kmcount. > 0 %then %do;
                 data _null_;
-                    set  pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp");
+                    set _subgrp(where=(subgroup ne ''));
                     if _n_ = &kmcount. then do;
                         call symputx('kmloopsubgroup', subgroup);
                         call symputx('kmloopsubgroupcat', subgroupcat);
                     end;
                 run;
+                %end;
 
                 /* Reset matchID as a concactenation of matchid-dpidsiteid to ensure unique matchIDs across DPs */
                 data _tempaggpl(drop=subgroup subgroupcat);
                     length matchid $12;
-                    set cat_dp_pl(where=(subgroup = "&kmloopsubgroup" and subgroupcat = "&kmloopsubgroupcat" and missing(tempmatchid)=0)
+                    set aggpl(where=(subgroup = "&kmloopsubgroup" and subgroupcat = "&kmloopsubgroupcat" and missing(tempmatchid)=0)
                                   keep=matchid event followuptime exposure dpidsiteid subgroup subgroupcat
                                   rename=matchid=tempmatchid rename=followuptime=day);
                     matchid=catt(tempmatchid,dpidsiteid);
@@ -268,33 +273,34 @@
                     data step5;
                         set step4;
                         by descending day;
-                        length analysis $13 subgroup subgroupcat $11;
+                        length analysis $13;
                         analysis = 'Conditional';
-                        subgroup = "&kmloopsubgroup";
-                        subgroupcat = "&kmloopsubgroupcat";
                         %aggsurvivaldatastep(unexp_wght, %str(day=0));
                     run;
 
                     /*merge in _kmdata*/
                     proc sql noprint undo_policy=none;
-                        create table _tempkmloop as
+                        create table _tempkmloop&kmcount. as
                         select x.*,
                                y.evunexp_wght,
                                y.nunexp_wght,
                                y.censorunexp_wght
-                        from _kmdata as x
+                        from _kmdata(where=(analysis='Conditional' and subgroup="&kmloopsubgroup." and subgroupcat="&kmloopsubgroupcat.")) as x
                         left join step5 as y
-                        on x.day = y.day and x.analysis = y.analysis and x.subgroup = y.subgroup and x.subgroupcat = y.subgroupcat
+                        on x.day = y.day
                         order by analysis, day;
                     quit;
-
-                    proc append base=_kmdata data=_tempkmloop; run;
-
                 %end; /*data exists*/
-            %end;/ /*loop through each subgroup*/
+            %end; /*loop through each subgroup*/
+
+            /*stack each subgroup and sort data*/
+            data _kmdata;
+                set _kmdata(where=(analysis ne 'Conditional'))
+                    _tempkmloop:;
+            run;
 
             proc sort data=_kmdata;
-                by  subgroup subgroupcat analysis followupday;
+                by subgroup subgroupcat analysis day;
             run;
 
         %end; /*compute weighted metrics*/
@@ -444,43 +450,45 @@
             %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount._&periodid.; %end;
         run;
 
-        /*if xmax specified and xmax > max followup time add a final row with 0 patients at risk*/
-        %macro addmaxvalue(plotdata, figure);
+        /*Final data processing:
+            - if xmax specified and xmax > max followup time add a final row with 0 patients at risk
+            - if subgroup is dropped, add a dummy row for final plot */
+        %macro addrows(plotdata, figure);
             %isdata(dataset=&plotdata.);
             %if %eval(&nobs.>0) %then %do;
             data _null_;
                 set figurefile(where=(figure="&figure."));
                 call symputx('xmax', xmax);
             run;
-            %if %eval(&xmax. > .) %then %do;
-                proc sql noprint;
-                    select max(day) into :maxday
-                    from &plotdata.;
-                quit;
-                %if %eval(&xmax. > &maxday.) %then %do;
-                    data &plotdata.;
-                        set &plotdata. end=eof;
-                        output;
-                        if eof then do;
-                            day = &xmax.;
-                            episodes_atriskexp = 0;
-                            episodes_atriskunexp = 0;
-                            km_evexp = .;
-                            km_evunexp = .;
-                            %if &weightedpop. = Y %then %do; 
-                            episodes_atriskunexp_wght = 0;
-                            km_evunexp_wght = .;
-                            %end;
-                            output;
-                        end;
-                    run;
+
+            *Create dataset with xmax;
+            data _tempxmax;
+                set _subgrp(keep=subgroup subgroupcat);
+                day = 0; output;
+                %if %eval(&xmax. > .) %then %do;
+                day = &xmax.; output;
                 %end;
-            %end;
+            run;
+
+            data output.&plotdata.;
+                merge &plotdata.(in=a) _tempxmax(in=b);
+                by subgroup subgroupcat day;
+                if b and not a then do;
+                    episodes_atriskexp = 0;
+                    episodes_atriskunexp = 0;
+                    km_evexp = .;
+                    km_evunexp = .;
+                    %if &weightedpop. = Y %then %do; 
+                    episodes_atriskunexp_wght = 0;
+                    km_evunexp_wght = .;
+                    %end;
+                end;
+            run;
             %end;
         %mend;
-        %addmaxvalue(figureF3_analysis&loopcount._&periodid., F3);
-        %addmaxvalue(figureF4_analysis&loopcount._&periodid., F4);
-        %addmaxvalue(figureF5_analysis&loopcount._&periodid., F5);
+        %addrows(figureF3_analysis&loopcount._&periodid., F3);
+        %addrows(figureF4_analysis&loopcount._&periodid., F4);
+        %addrows(figureF5_analysis&loopcount._&periodid., F5);
 
     %end; /*data exists*/
 
