@@ -808,7 +808,7 @@
                          when lowcase(r.subgroup) = 'matchmethod' then put(r.subgroupcat,$matchfmt.)
                          when lowcase(r.subgroup) = 'birth_type' then put(r.subgroupcat,$birthtypefmt.)
                          when lowcase(r.subgroup) = 'periodid' then put(r.subgroupcat,$timefmt.)
-                         when lowcase(r.subgroup) in ('agegroup' 'year') then r.subgroupcat
+                         when lowcase(r.subgroup) = 'agegroup' then put(r.subgroupcat,$agegroupfmt.)
                          else r.subgroupcat
                          end as title length=200,
             %if "&reporttype." = "T2L2" %then %do;
