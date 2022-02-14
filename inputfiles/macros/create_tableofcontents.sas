@@ -69,6 +69,10 @@
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define the Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
 
+
+    /*temporary - L2 reporting code out of date*/
+    %if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
+
     /*********************************************************************************************/
     /* Baseline Table                                                                            */
     /*********************************************************************************************/
@@ -1689,6 +1693,7 @@
 
     %end; /* Figure file */
 	
+    %end; /*to be removed*/
 
     /*****************/
     /* Appendices    */
