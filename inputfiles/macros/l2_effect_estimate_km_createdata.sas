@@ -470,7 +470,7 @@
                 %end;
             run;
 
-            data output.&plotdata.;
+            data &plotdata.;
                 merge &plotdata.(in=a) _tempxmax(in=b);
                 by subgroup subgroupcat day;
                 if b and not a then do;
