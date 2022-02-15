@@ -88,7 +88,7 @@
 	          			left join labelfile_est b
 	          			on coalescec(a.medicalproduct, a.analysisgrp) = b.group
                         where b.runid = "&runid.") c
-            order by c.analysisgrpsort, c.covarnum, c.catnum, c.subgroupcat, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
+            order by c.analysisgrpsort, c.covarnum, c.subgroupcat, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
 	    quit;
 	    %end;
 
@@ -126,7 +126,7 @@
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
 	            order order=data 'Monitoring*Period' style(column)=[just=c background=background_n_fmt. width=2.3in vjust=middle] 
-				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$timefmt.;
+				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$periodidfmt.;
 	    %end;
 
         /* Create output datasets based on covarnum */

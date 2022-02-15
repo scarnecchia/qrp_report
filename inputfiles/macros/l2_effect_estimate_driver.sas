@@ -798,19 +798,115 @@
         delete aggpl: aggrd: aggrs: aggsurvival aggmw:;
     quit;
 
-    /*Merge together risk metrics and effect estimates*/
+
+    ***********************************************************************************************;
+    * Assign subgroup title, order, and labels                      
+    ***********************************************************************************************;
+
+    %macro assignsubgroupvalue(subgroup, format, sort);
+        if index(subgroup,"&subgroup.")>0 then do;
+            subgroupcatlabel = &format.;
+            subgroupcatorder = &sort.;
+        end;
+    %mend;
+
+    /*Merge in agegroupnum*/
+    proc sql noprint;
+        create table _pscs_masterinputs_age as
+        select x.*,
+               y.agegroupnum
+        from pscs_masterinputs(where=(subgroup="agegroup")) as x
+        left join agefmtsort as y
+        on %if &reporttype.=T2L2 %then %do; x.eoi %end;
+           %if &reporttype.=T4L2 %then %do; x.groupname %end;
+           = y.cohortgrp
+        and x.subgroupcat = y.agegroup;
+    quit;
+
+    data pscs_masterinputs;
+        set pscs_masterinputs(where=(subgroup ne 'agegroup')) _pscs_masterinputs_age; 
+        format tabletitle $100. subgroupcatlabel $50.;
+        length subgroupcatorder 3;
+        if subgroup='' then do;
+            tabletitle = '';
+            subgrouporder = 1;
+            subgroupcatorder = 1;
+        end;
+        else do;
+            /*assign subgroup order*/
+            if index(subgroup, 'covar')=0 then do;
+                subgrouporder = put(subgroup, subgrouporderfmt.);
+            end;
+            else do;
+                covar = substr(subgroup, 6);
+                subgrouporder = 10+covar;
+            end;
+
+            /*assign subgroup category labels and order*/
+            %assignsubgroupvalue(sex, put(subgroupcat,$sexfmt.),put(subgroupcat,sexsort.));
+            %assignsubgroupvalue(agegroup, put(subgroupcat,$agegroupfmt.), agegroupnum);
+            %assignsubgroupvalue(year,subgroupcat,input(compress(subgroupcat),? $11.));
+            %assignsubgroupvalue(race, put(subgroupcat,$racefmt.),put(subgroupcat,racesort.));
+            %assignsubgroupvalue(hispanic, put(subgroupcat,$hispanicfmt.),put(subgroupcat,hispanicsort.));
+            %assignsubgroupvalue(prepostind, put(subgroupcat,$prepostindfmt.),put(subgroupcat,prepostindsort.));
+            %assignsubgroupvalue(matchmethod, put(subgroupcat,$matchmethodfmt.),put(subgroupcat,matchmethodsort.));
+            %assignsubgroupvalue(birth_type, put(subgroupcat,$birth_typefmt.),put(subgroupcat,birth_typesort.));
+            %assignsubgroupvalue(periodid, put(subgroupcat,$periodidfmt.),put(subgroupcat,periodidsort.));
+            if index(subgroup,"covar")>0 then do;
+                subgroupcatorder = input(compress(subgroupcat),? $11.);
+                if subgroupcat = '0' then subgroupcatlabel = catx(' ','No',tranwrd(subgroup, 'covar', '&StudyCovar'));
+                if subgroupcat = '1' then subgroupcatlabel = tranwrd(subgroup, 'covar', '&StudyCovar');
+            end;    
+
+            /*Assign description for title*/
+            tabletitle = strip(propcase(subgroup));
+               
+            /*change the following tablesub values:
+             - Agegroup => Age Group
+             - Hispanic => Hispanic Origin
+             - Periodid => Monitoring Period
+             - Prepostind => Delivery Status
+             - Matchmethod => Match Method
+             - Birthtype => Birth Type
+
+            /*note - geographic strata not currently available in QRP
+             - Zip3 => 3-Digit Zip/State
+             - Zip_uncertain => Zip Uncertain
+             - Hhs_reg => Health and Human Services (HHS) Region
+             - Cb_reg => Census Bureau Region
+            */
+            if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
+            if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
+            if index(tabletitle, 'Periodid')>0 then tabletitle =tranwrd(tabletitle, 'Periodid', 'Monitoring Period');
+            if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Delivery Status');
+            if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Match Method');
+            if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Birth Type');
+            if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
+            if index(tabletitle, 'Zip_uncertain')>0 then tabletitle =tranwrd(tabletitle, 'Zip_uncertain', 'Zip Uncertain');
+            if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
+            if index(tabletitle, 'Cb_reg')>0 then tabletitle =tranwrd(tabletitle, 'Cb_reg', 'Census Bureau Region');
+
+            /*Add ampersand to covariate. Will be resovled when title prints*/
+            if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
+        end;
+    run;
+
+    /*Merge together risk metrics, effect estimates and label/order info*/
     proc sql noprint;
         create table l2_effectestimates_&periodid. as
-        select r.*, case when lowcase(r.subgroup) = 'sex' then put(r.subgroupcat,$sexfmt.)
-                         when lowcase(r.subgroup) = 'race' then put(r.subgroupcat,$racefmt.)
-                         when lowcase(r.subgroup) = 'hispanic' then put(r.subgroupcat,$hispanicfmt.)
-                         when lowcase(r.subgroup) = 'prepostind' then put(r.subgroupcat,$deliveryfmt.)
-                         when lowcase(r.subgroup) = 'matchmethod' then put(r.subgroupcat,$matchfmt.)
-                         when lowcase(r.subgroup) = 'birth_type' then put(r.subgroupcat,$birthtypefmt.)
-                         when lowcase(r.subgroup) = 'periodid' then put(r.subgroupcat,$timefmt.)
-                         when lowcase(r.subgroup) = 'agegroup' then put(r.subgroupcat,$agegroupfmt.)
-                         else r.subgroupcat
-                         end as title length=200,
+        select r.*, 
+              case when r.subgroup = 'dpidsiteid' then 1 /*also sorting by subgroupcat below*/ 
+              else pscs.subgroupcatorder
+              end as subgroupcatorder,
+              case when r.subgroup = 'dpidsiteid' then 1.5 /*to come after overall*/
+              else pscs.subgrouporder
+              end as subgrouporder,
+              case when r.subgroup = 'dpidsiteid' then 'Data Partner'
+              else pscs.tabletitle
+              end as tabletitle,
+              case when r.subgroup = 'dpidsiteid' then r.subgroupcat
+              else pscs.subgroupcatlabel
+              end as subgroupcatlabel,
             %if "&reporttype." = "T2L2" %then %do;
             HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
             %end;
@@ -823,17 +919,18 @@
         on r.monitoringperiod = c.monitoringperiod
           and r.analysisgrp = c.analysisgrp
           and r.subgroup = c.subgroup
-          and r.catnum = c.catnum
           and r.analysis=c.analysis
-          and r.subgroupcat = c.subgroupcat;
+          and r.subgroupcat = c.subgroupcat
+        left join pscs_masterinputs as pscs
+        on r.analysisgrp = pscs.analysisgrp and r.subgroup = pscs.subgroup and r.subgroupcat = pscs.subgroupcat;
     quit;
 
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
-        by analysisgrpsort subgroup catnum subgroupcat sort1 sort2;
+        by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
     run;
 
     proc datasets lib=work nolist nowarn; 
-        delete rdest logitest; 
+        delete rdest logitest _:; 
     quit;
 
     %end; /*L2ComparisonFile input file exists*/

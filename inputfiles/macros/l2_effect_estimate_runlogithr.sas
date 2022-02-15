@@ -50,14 +50,13 @@
 
         *format output dataset;
         data est; 
-  			retain analysisgrp subgroup catnum MonitoringPeriod HR_95CI HR_pvalue;
+  			retain analysisgrp subgroup MonitoringPeriod HR_95CI HR_pvalue;
   			set pest (obs=1 RENAME = (estimate = HR_coef) RENAME = (stderr = HR_se));
-  			format analysisgrp $40. subgroup subgroupcat $11. catnum best. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
+  			format analysisgrp $40. subgroup subgroupcat $11. HR_coef LowerWaldCL UpperWaldCL MonitoringPeriod 2.0;
   			length analysisgrp $40 HR_95CI $30 Analysis $13 subgroup subgroupcat $11 HR_pvalue $6;
 
 	        analysisgrp = "&analysisgrp.";
 	        subgroup  = "&subgroup.";
-	        catnum = &cat.;
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
@@ -88,17 +87,16 @@
             label LCL = "95% LCL";
             label UCL = "95% UCL";
 
-  			keep analysisgrp subgroup catnum analysis subgroupcat MonitoringPeriod HR_95CI HR LCL UCL HR_pvalue HR_coef HR_se;
+  			keep analysisgrp subgroup analysis subgroupcat MonitoringPeriod HR_95CI HR LCL UCL HR_pvalue HR_coef HR_se;
   		run;
 	%end;
 	%else %if %index(&customizecolumns.,events) > 0 %then %do;
 		data est;
-		  		format analysisgrp $40. subgroup subgroupcat $11. catnum best.;
+		  		format analysisgrp $40. subgroup subgroupcat $11.;
 				length analysisgrp $40. analysis $13.;
 
 			    analysisgrp = "&analysisgrp.";
 			    subgroup  = "&subgroup.";
-			    catnum = &cat.;
 				Analysis= &analysis.;
 				subgroupcat = "&subgroupcat.";
 
@@ -117,12 +115,11 @@
     %end;
     %else %do;  *create empty dataset;
      	data est;
-	  		format analysisgrp $40. subgroupcat subgroup $11. catnum best.;
+	  		format analysisgrp $40. subgroupcat subgroup $11.;
 			length analysisgrp $40. analysis $13.;
 
 		    analysisgrp = "&analysisgrp.";
 		    subgroup  = "&subgroup.";
-		    catnum = &cat.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
 

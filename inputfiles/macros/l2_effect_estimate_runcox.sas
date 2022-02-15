@@ -46,19 +46,18 @@
         run;
 
         DATA coxPHest; 
-            RETAIN analysisgrp subgroup catnum MonitoringPeriod HR_95CI HR_pvalue;
+            RETAIN analysisgrp subgroup MonitoringPeriod HR_95CI HR_pvalue;
             SET pest (RENAME = (hazardratio = HR)
                       RENAME = (estimate = HR_coef)
                       RENAME = (stderr = HR_se)
                       RENAME = (HRLOWERCL=LCL) 
                       RENAME = (HRUPPERCL=UCL));
             where lowcase(parameter) = "exposure";
-            FORMAT analysisgrp $40. catnum best. MonitoringPeriod 2.0;
+            FORMAT analysisgrp $40. MonitoringPeriod 2.0;
             length analysisgrp $40 HR_95CI $30 analysis $13. subgroup subgroupcat $11 HR_pvalue $6;
 
             analysisgrp = "&analysisgrp.";
             subgroup  = "&subgroup.";
-            catnum = &cat.;
             MonitoringPeriod = &periodid.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
@@ -86,17 +85,16 @@
             label LCL = "95% LCL";
             label UCL = "95% UCL";
 
-            KEEP analysisgrp subgroup catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
+            KEEP analysisgrp subgroup analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
         RUN;
     %end;
     %else %if %index(&customizecolumns.,events) > 0 %then %do;
      data coxPHest;
-            FORMAT analysisgrp $40. catnum best. HR_se 8.4; 
+            FORMAT analysisgrp $40. HR_se 8.4; 
             length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
             subgroup  = "&subgroup.";
-            catnum = &cat.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
 
@@ -115,12 +113,11 @@
     %end;
     %else %do;  *create empty dataset;
         data coxPHest;
-            FORMAT analysisgrp $40. catnum best. HR_se 8.4; 
+            FORMAT analysisgrp $40. HR_se 8.4; 
             length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
             subgroup  = "&subgroup.";
-            catnum = &cat.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
 

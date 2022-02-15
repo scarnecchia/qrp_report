@@ -42,50 +42,10 @@
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
         where b.outputforestplot = 'Y';
-
-        select distinct runid
-        into :micohort_runid separated by ' '
-        from forest_l2_effectestimates_&periodid.;
       quit;
 
-      /* Stack all potential micohort files to join onto effect estimates table */
-      %if &reporttype = T4L2 %then %do;
-          data stack_micohort;
-            length runid $5;
-            set 
-            %do n = 1 %to %sysfunc(countw(&micohort_runid));
-              %let runid = %scan(&micohort_runid.,&n);
-              %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
-              infolder.&&&runid._micohortfile(in=&runid)
-              %end;
-            %end;
-            ;
-            %do n = 1 %to %sysfunc(countw(&micohort_runid));
-              %let runid = %scan(&micohort_runid.,&n);
-              if &runid then runid = "&runid";
-            %end;
-          run;
-      %end;
-
-      /* Link agegroupnum for T2/T4 */
-      proc sql noprint undo_policy=none;
-        create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.agegroupnum
-        from forest_l2_effectestimates_&periodid. a
-        %if &reporttype = T2L2 %then %do;
-        left join agefmtsort b
-        on a.medicalproduct = b.cohortgrp and a.runid = b.runid and a.subgroupcat = b.agegroup
-        %end;
-        %else %do;
-        left join stack_micohort c
-        on scan(a.medicalproduct,1,'_') = c.milgrp
-        left join agefmtsort b 
-        on b.cohortgrp = c.groupname and a.runid = b.runid and a.subgroupcat = b.agegroup
-        %end;
-        ;
-      quit;
-
-      /* Check to see if covariates file exists */
+      /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
+         do not resolve in sgrender */
       %isdata(dataset=covarname);
 
       /*dataset id_1 will be used to apply a label */
@@ -97,8 +57,11 @@
                  est.analysis, 
                  est.analysisgrpsort, 
                  est.subgroup,
-                 est.catnum, 
+                 est.subgroupcatorder, 
+                 est.subgroupcatlabel,
                  est.subgroupcat, 
+                 est.subgrouporder,
+                 est.tabletitle,
                  est.sort1, 
                  est.sort2,
                  est.runid,
@@ -108,9 +71,7 @@
                  est.percentiles,
                  est.ceiling,
                  est.caliper,
-                 est.ratio,
-                 est.agegroupnum,
-                 est.title
+                 est.ratio
                  %if &labelfileexists. = Y %then %do;
                  , lbl.label
                  %end;
@@ -126,11 +87,11 @@
           %end;
           %if %eval(&nobs.>0) %then %do;
               left join covarname as cov
-              on est.subgroup = cov.cov_varname  and est.runid = cov.runid
+              on est.subgroup = cov.cov_varname and est.runid = cov.runid
           %end;
 
           where sort2 = 1 and analysis ne "Unweighted" 
-          order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
+          order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
 
           create table id_2 as 
           select est.analysisgrp, 
@@ -151,8 +112,10 @@
                  est.UCL, 
                  est.analysisgrpsort, 
                  est.subgroup, 
-                 est.catnum, 
+                 est.subgroupcatorder, 
+                 est.subgroupcatlabel,
                  est.subgroupcat, 
+                 est.subgrouporder,
                  est.sort1, 
                  est.sort2,
                  est.file,
@@ -163,8 +126,6 @@
                  est.ceiling,
                  est.caliper,
                  est.ratio,
-                 est.agegroupnum,
-                 est.title,
                  %if %eval(&nobs.>0) %then %do;
                  cov.studyname as covarlabel
                  %end;
@@ -178,7 +139,7 @@
            %end;
            where sort2 = 1 and 
                  analysis ne "Unweighted" 
-           order by analysisgrpsort, est.subgroup, catnum, subgroupcat, sort1, sort2;
+           order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
       quit;
 
       /*Variable ID used for indentation:
@@ -206,36 +167,9 @@
               else if index(subgroup,'covar')>0 then do;
                   title = covarlabel;
               end;
-              /*subgroup agegroup = Age Group*/
-              else if subgroup = "agegroup" then do;
-                  title = 'Age Group';
+              else do;
+                title = tabletitle;
               end;
-              /*subgroup periodid*/
-              else if subgroup = "periodid" then do;
-                  title = 'Monitoring Period';
-              end;
-              /*subgroup hispanic = Hispanic*/
-              else if subgroup = "hispanic" then do;
-                  title = 'Hispanic Origin';
-              end;
-              /*subgroup prepostind = Pre-Post indicator*/
-              else if subgroup = "prepostind" then do;
-                  title = 'Delivery Status';
-              end;
-              /*subgroup matchmethod = Match Method*/
-              else if subgroup = "matchmethod" then do;
-                  title = 'Match Method';
-              end;
-              /*subgroup birth_type = Birth Type*/
-              else if subgroup = "birth_type" then do;
-                  title = 'Birth Type';
-              end;
-              /*subgroup = By Data Parnter*/
-              else if subgroup = 'dpidsiteid' then do;
-                  title = 'Data Partner';
-              end;
-              /*all others*/
-              else title = propcase(subgroup);
           end;
           if id2 then do;
               id = 3;
@@ -257,7 +191,7 @@
       run;
 
       proc sort data = forest_&periodid. nodupkey;
-        by analysisgrpsort analysis id subgroup catnum subgroupcat sort1 sort2 runid;
+        by analysisgrpsort analysis id subgroup subgroupcatorder subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
@@ -333,7 +267,7 @@
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid out=forest_&periodid(keep = title analysisgrp analysisgrpsort analysis subgroup subgroupcat footnote forest_title plotorder
+      proc sort data =forest_&periodid (keep = title analysisgrp analysisgrpsort analysis subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder
                                                                    %if "&reporttype." = "T2L2" %then %do;
                                                                    HR_95ci HR  
                                                                    %end;
@@ -342,7 +276,7 @@
                                                                    %end;
                                                                    LCL UCL id file
                                                                    );
-      by analysisgrpsort analysis subgroup catnum subgroupcat sort1 sort2;
+      by analysisgrpsort analysis subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
       run;
       
       proc datasets nowarn noprint lib=work;

@@ -1706,47 +1706,89 @@
                 ref = lowcase(ref);
 			run;
 			
-			/* If subgroups file exists then add subgroups to pscs_masterinputs */
-			%if %str("&&&runid._pscssubgroupfile") ne %str("") %then %do; 
-  			   %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
-			   %if %eval(&nobs. > 0) %then %do;
-				  proc sql noprint undo_policy=none;
-				    create table _pscs_masterinputs_subgroups as
-					select pscs.runid
-					      ,pscs.file
-						  ,pscs.analysisgrp
-						  ,pscs.psestimategrp
-						  ,pscs.ceiling
-						  ,pscs.caliper
-						  ,pscs.ratio
-						  ,pscs.strataweight
-						  ,pscs.truncweight
-						  ,pscs.ipweight
-						  ,pscs.percentiles
-						  ,pscs.eoi
-						  ,pscs.ref
-						  ,pscs.unconditional
-						  ,pscs.pstrim
-					      ,lowcase(sub.subgroup) as subgroup
-						  ,upcase(sub.subgroupcat) as subgroupcat
-				    from pscs_masterinputs as pscs
-					inner join infolder.&&&runid._pscssubgroupfile as sub
-					on pscs.analysisgrp = sub.analysisgrp;
-				  quit;
-				  
-				  data pscs_masterinputs;
-				    set pscs_masterinputs
-					   _pscs_masterinputs_subgroups;
-				  run;
-				  
-				  /* Clean up work space */
-                  proc datasets lib = work;
-                   delete _pscs_masterinputs_subgroups;
-                  quit;
-			   %end;
-			%end;
+            /* If subgroups file exists then add subgroups to pscs_masterinputs */
+  		    %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
+		    %if %eval(&nobs. > 0) %then %do;
+			  proc sql noprint undo_policy=none;
+			    create table _pscs_masterinputs_subgroups as
+				select pscs.runid
+				      ,pscs.file
+					  ,pscs.analysisgrp
+					  ,pscs.psestimategrp
+					  ,pscs.ceiling
+					  ,pscs.caliper
+					  ,pscs.ratio
+					  ,pscs.strataweight
+					  ,pscs.truncweight
+					  ,pscs.ipweight
+					  ,pscs.percentiles
+					  ,pscs.eoi
+					  ,pscs.ref
+					  ,pscs.unconditional
+					  ,pscs.pstrim
+				      ,lowcase(sub.subgroup) as subgroup
+					  ,upcase(sub.subgroupcat) as subgroupcat
+			    from pscs_masterinputs as pscs
+				inner join infolder.&&&runid._pscssubgroupfile as sub
+				on pscs.analysisgrp = sub.analysisgrp;
+			  quit;
+			  
+			  data pscs_masterinputs;
+			    set pscs_masterinputs
+				   _pscs_masterinputs_subgroups;
+			  run;
+			  
+			  /* Clean up work space */
+              proc datasets lib = work;
+               delete _pscs_masterinputs_subgroups;
+              quit;
+		   %end;
+
+            /*Type 4 - add GROUPNAME (base cohort)*/
+            %if &reporttype. = T4L2 %then %do;
+            proc sql noprint undo_policy=none;
+                create table pscs_masterinputs as 
+                select x.*,
+                       y.groupname
+                from pscs_masterinputs as x
+                     left join infolder.&&&runid._micohortfile
+                on x.substr(eoi,1,length(eoi)-4) = y.groupname
+            quit;
+            %end;
         %end;
-		
+
+        /*Merge in EOI/REF group name*/
+        proc sql noprint undo_policy=none;
+            create table pscs_masterinputs as 
+            select pscs.runid
+			      ,pscs.file
+				  ,pscs.analysisgrp
+				  ,pscs.psestimategrp
+				  ,pscs.ceiling
+				  ,pscs.caliper
+				  ,pscs.ratio
+				  ,pscs.strataweight
+				  ,pscs.truncweight
+				  ,pscs.ipweight
+				  ,pscs.percentiles
+                  ,case when missing(pscs.eoi) then est.eoi
+                  else pscs.eoi
+                  end as eoi
+                  ,case when missing(pscs.ref) then est.ref
+                  else pscs.ref
+                  end as ref
+                  %if &reporttype. = T4L2 %then %do;
+                  ,pscs.groupname
+                  %end;
+				  ,pscs.unconditional
+				  ,pscs.pstrim
+			      ,pscs.subgroup
+				  ,pscs.subgroupcat
+            from pscs_masterinputs as pscs
+                 left join psest_masterinputs est
+            on pscs.psestimategrp = est.psestimategrp; 
+        quit;
+
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
         %if %eval(&nobs.>0) %then %do;
