@@ -879,9 +879,9 @@
                 if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
                 if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
                 if index(tabletitle, 'Periodid')>0 then tabletitle =tranwrd(tabletitle, 'Periodid', 'Monitoring Period');
-                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Delivery Status');
-                if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Match Method');
-                if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Birth Type');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Delivery Status');
+                if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Matchmethod', 'Match Method');
+                if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Birthtype', 'Birth Type');
                 if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
                 if index(tabletitle, 'Zip_uncertain')>0 then tabletitle =tranwrd(tabletitle, 'Zip_uncertain', 'Zip Uncertain');
                 if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
