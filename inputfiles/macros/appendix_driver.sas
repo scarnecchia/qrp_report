@@ -419,7 +419,7 @@
                       options mergenoby = warn;
 					  
 					  data appendixsubgroup_&sub._&cat.;
-					    length dpidsiteid $10 nchar $20;
+					    length dpidsiteid $10;
                         set aggdistribution(in=a) 
 					   	    weightdistribution;
                         if a then do;
@@ -441,6 +441,7 @@
                   %isdata(dataset=repdata.appendix&tableletter.&look.)
                   %if &nobs < 1 %then %do;
                      data repdata.appendix&tableletter.&look.;
+					     length nchar $20;
                          set appendixsubgroup_&sub._:;
                          if missing(n) then Nchar='N/A';
                          else Nchar=strip(put(n,comma12.));
