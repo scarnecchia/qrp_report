@@ -1743,18 +1743,6 @@
                delete _pscs_masterinputs_subgroups;
               quit;
 		   %end;
-
-            /*Type 4 - add GROUPNAME (base cohort)*/
-            %if &reporttype. = T4L2 %then %do;
-            proc sql noprint undo_policy=none;
-                create table pscs_masterinputs as 
-                select x.*,
-                       y.groupname
-                from pscs_masterinputs as x
-                     left join infolder.&&&runid._micohortfile
-                on x.substr(eoi,1,length(eoi)-4) = y.groupname
-            quit;
-            %end;
         %end;
 
         /*Merge in EOI/REF group name*/
@@ -1777,9 +1765,6 @@
                   ,case when missing(pscs.ref) then est.ref
                   else pscs.ref
                   end as ref
-                  %if &reporttype. = T4L2 %then %do;
-                  ,pscs.groupname
-                  %end;
 				  ,pscs.unconditional
 				  ,pscs.pstrim
 			      ,pscs.subgroup
@@ -1788,6 +1773,18 @@
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
         quit;
+
+        /*Type 4 - add GROUPNAME (base cohort)*/
+        %if &reporttype. = T4L2 %then %do;
+          proc sql noprint undo_policy=none;
+            create table pscs_masterinputs as 
+            select x.*,
+                   y.groupname
+            from pscs_masterinputs as x
+            left join master_mil as y
+            on substr(x.eoi,1,length(x.eoi)-4) = y.milgrp and x.runid = y.runid;
+        quit;
+        %end;
 
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
