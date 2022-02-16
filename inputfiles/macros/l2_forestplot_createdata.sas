@@ -271,7 +271,7 @@
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid(keep = title analysisgrp analysisgrpsort analysis subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder
+      proc sort data =forest_&periodid out=forest&periodid (keep = title analysisgrp analysisgrpsort analysis subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder
                                                                    %if "&reporttype." = "T2L2" %then %do;
                                                                    HR_95ci HR  
                                                                    %end;
