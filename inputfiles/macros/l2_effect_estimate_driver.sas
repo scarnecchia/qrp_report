@@ -184,6 +184,7 @@
                     call symputx("stratavar", 'percentile');
                     call symputx("analysisgrpweight",strip(upcase(strataweight)));
                     call symputx('ormethod', 'cmh');
+                    call symputx('outputunconditional', 'N');
                     /*set individualreturn to N*/
                     if missing(strataweight)=0 then do;
                         call symputx('individualreturn', 'N');
@@ -940,8 +941,6 @@
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
         by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
     run;
-
-    data output.l2_effectestimates_&periodid. ; set l2_effectestimates_&periodid. ; run;
 
     proc datasets lib=work nolist nowarn; 
         delete rdest logitest _:; 
