@@ -1641,14 +1641,14 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles truncweight pstrim 8 unconditional $1. subgroup subgroupcat $11;
-            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, truncweight, ceiling, caliper, ratio, strataweight,
+                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim);
             stop;
         run;
         data psest_masterinputs;
-            length runid $5 psestimategrp eoi ref $40;
-            call missing(runid, psestimategrp, eoi, ref);
+            length runid $5 psestimategrp eoi ref $40 hdps $1;
+            call missing(runid, psestimategrp, eoi, ref, hdps);
             stop;
         run;
 
@@ -1689,7 +1689,7 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps;
             run;
 
 			data psest_masterinputs;
@@ -1728,6 +1728,7 @@
 					  ,pscs.pstrim
 				      ,lowcase(sub.subgroup) as subgroup
 					  ,upcase(sub.subgroupcat) as subgroupcat
+                      ,sub.reestimateps
 			    from pscs_masterinputs as pscs
 				inner join infolder.&&&runid._pscssubgroupfile as sub
 				on pscs.analysisgrp = sub.analysisgrp;
@@ -1745,7 +1746,7 @@
 		   %end;
         %end;
 
-        /*Merge in EOI/REF group name*/
+        /*Merge in psestimategrp parameters name*/
         proc sql noprint undo_policy=none;
             create table pscs_masterinputs as 
             select pscs.runid
@@ -1765,10 +1766,12 @@
                   ,case when missing(pscs.ref) then est.ref
                   else pscs.ref
                   end as ref
+                  ,est.hdps
 				  ,pscs.unconditional
 				  ,pscs.pstrim
 			      ,pscs.subgroup
 				  ,pscs.subgroupcat
+				  ,pscs.reestimateps
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
