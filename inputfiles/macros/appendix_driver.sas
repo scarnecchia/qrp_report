@@ -160,28 +160,20 @@
                     %isdata(dataset=_temphdps);
 			        %if &nobs. > 0 %then %do;
 			            /* Increment table letter when periodid equals look start or subgroup is populated*/
-                        %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
-			       
-    		            /* Assign numeric suffix associated with table number*/
-                        %let look = %upcase(&tableletter.);
-                        %let looktab = %upcase(&tableletter.);
-                        %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                          %let look = %upcase(&tableletter.)&periodid.;
-                          %let looktab = %upcase(&tableletter.).&periodid;
-                        %end;
-    	  	           
+                        %tableletter(); 
+			    
     			        /* Save to repdata folder */
                         proc datasets library = work;
                             copy out=repdata memtype=data;
                             select _temphdps(memtype=data);
                         quit;
                         proc datasets library = repdata;
-                            change _temphdps = appendix&look;
+                            change _temphdps = appendix&tableletter.;
                         quit; 
                            
                         /*add to tabe of contents*/
-      	                %addtotoc(tabnum = Appendix &looktab., 
-        	         	          caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &grouplabel.&titlesuffix.),
+      	                %addtotoc(tabnum = Appendix %upcase(&tableletter.), 
+        	         	          caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix.),
         	         	          appendixtype = appendixhdps);
                    %end; /* hdps data for runid and psestimategrp/analysisgrp */
 
