@@ -56,7 +56,7 @@
     /* Create appendix for each unique runid periodid combination */
 	%isdata(dataset=agghdps);
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
-	  /* Rank hdps vars */
+	   /* Rank hdps vars */
 	   proc sort data = agghdps;
 		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
 	   run;
@@ -67,159 +67,130 @@
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
-	
-       /* Loop through all order values */
-       %do corder = 1 %to &numl2comparisons;
 
-		  data _null_;
-            set l2comparisonfile(where=(order=&corder.));
-            call symputx('runid', runid);
-		  	call symputx('psestimategrp', psestimategrp);
-		  	call symputx('unique_psestimate',unique_psestimate);
-		  	if missing(topnhdps) then call symputx('topnhdps',25);
-		  	else call symputx('topnhdps',topnhdps);
-			call symputx('analysisgrp', analysisgrp);
-          run;
+        /*loop through each periodid*/
+	    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
-          /* Defaults */
-		  %let pscsfile = ;
-		  %let hdps = N;
+        /* Loop through each ANALYSISGRP and determine if HDPS was used */
+        %do corder = 1 %to &numl2comparisons;
+
+            data _null_;
+                set l2comparisonfile(where=(order=&corder.));
+                call symputx('runid', runid);
+    		  	call symputx('psestimategrp', psestimategrp);
+    		  	call symputx('unique_psestimate',unique_psestimate);
+    		  	if missing(topnhdps) then call symputx('topnhdps',25);
+    		  	else call symputx('topnhdps',topnhdps);
+    			call symputx('analysisgrp', analysisgrp);
+            run;
+
+            /* Set default values */
+		    %let pscsfile = ;
+		    %let hdps = N;
+            %let rank = ;
 		  
-          proc sql noprint;
-        	/*extract QRP input file associated with analysisgrp*/
-            select distinct strip(file) into: pscsfile trimmed
-            from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
-          quit;
-		  
-		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
-             data _null_; 
-                 set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
-                 call symputx('HDPS',hdps);
-                 if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
-                 else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
-                 else call symputx('rank','Outcome Association');			 
-             run;
-          %end;
-		  
-		  %if &hdps. = Y %then %do;
-		     %let psestimategrplabel = &psestimategrp.;
-			 %let analysisgrplabel = &analysisgrp.;
-		     
-		     %isdata(dataset=labelfile);
-             %if &nobs > 0 %then %do;
-               proc sql noprint;
-		         select c.label 
-		         into :psestimategrplabel trimmed
-		       from (select a.*, b.label
-		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
-		             on a.psestimategrp = b.group
-		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
-					 
-			   select c.label 
-		         into :analysisgrplabel trimmed
-		       from (select a.*, b.label
-		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
-		             on a.analysisgrp = b.group
-		             where a.analysisgrp = "&analysisgrp." and b.runid = "&runid") as c;
-		       quit;
-		     %end;
-			 
-		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-			    /* Loop for each subgroup subgroupcat combination */
-				proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
-			      by subgroup;
-                run;
-			    
-				%let subgrouplist =;
-				%let numsubgroup = 0;
-				%let subgroup = ; 
-				%let titlesuffix = ;
-					 
-                %isdata(dataset=_subgrp);
-				%let numsubgroup = &nobs.;
-                %if %eval(&nobs.>0) %then %do;
+            data _null_; 
+                set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                call symputx('HDPS',hdps);
+                if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
+                else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
+                else call symputx('rank','Outcome Association');			 
+            run;
+	  
+	        %if &hdps. = Y %then %do;
+                
+                /*Assign labels*/
+                %let psestimategrplabel = &psestimategrp.;
+                %let analysisgrplabel = &analysisgrp.;
+                %if &labelfileexists. = Y %then %do;
                     proc sql noprint;
-                        select subgroup 
-                        into :subgrouplist separated by ' '
-                        from _subgrp;
+                        select label 
+	                     into :psestimategrplabel trimmed
+	                     from labelfile(where=(labeltype='grouplabel' and group ="&psestimategrp" and runid = "&runid."));
+                        select label 
+	                     into :analysisgrplabel trimmed
+	                     from labelfile(where=(labeltype='grouplabel' and group ="&analysisgrplabel" and runid = "&runid."));
                     quit;
                 %end;
-				
-				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
-                  %if &sub. > 0 %then %do; 
-				     %let subgroup = %scan(&subgrouplist, &sub.);
-                     %let titlesuffix = %str(, &subgroup.);					 
-				  %end;
-				  
-                  %let subcategorization=; *the list of categorization;
-				  
-				  /* Identify subgroup categories */	
-		          proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup.")) out = _subgrp_cat;
-			        by subgroupcat;
-                  run;
-			      
-                  %isdata(dataset=_subgrp_cat);
-				  %let numsubcat = &nobs.;
-                  %if %eval(&nobs.>0) %then %do;
-                      proc sql noprint;
-                        select subgroupcat 
-                        into :subcategorization separated by ' '
-					    from _subgrp_cat;
-                      quit;
-                  %end;
-				  
-				  /*Loop through each subgroup category*/
-                  %do cat=1 %to &numsubcat.; 
-                    %if %str(&subgroup.) = %str() %then %do; 
-					   %let subgroupcat = ; 
-					%end;
-					%else %do; 
-					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
-					   %let titlesuffix = %str(&titlesuffix.: &subgroupcat.);
-					%end;
-					
-			        /* Confirm data exists on agghdps for desired psestimategrp or analysisgrp, runid, periodid, subgroup, subgroupcat*/
-				    proc sql noprint;
-				     select count(psestimategrp) into: nobs trimmed
-                     from agghdps where psestimategrp = "&psestimategrp." and analysisgrp = "&analysisgrp." and runid = "&runid." and periodid = &periodid. 
-					                    and subgroup = "&subgroup." and subgroupcat = "&subgroupcat.";
-				    quit;
-				    
-				    %if &nobs. > 0 %then %do;
-				       /* Increment table letter when periodid equals look start or subgroup is populated*/
-				       %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
-				       
-			           /* Assign numeric suffix associated with table number*/
-                       %let look = %upcase(&tableletter.);
-                       %let looktab = %upcase(&tableletter.);
-                       %if %eval(&look_end.) > %eval(&look_start.) %then %do;
+
+
+                /* Loop for each subgroup subgroupcat combination */
+                proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and (missing(subgroup) | reestimateps = 'Y'))) out = _subgrp;
+                    by subgrouporder subgroupcatorder;
+                run;
+
+                %isdata(dataset=_subgrp);
+                %let numsubgroup = &nobs.;
+                %do sub = 1 %to &numsubgroup.;
+
+                    /*skip overall table if unique_psestimate >1*/
+                    %if &sub. = 1 & %eval(&unique_psestimate.>1) %then %goto skiphdps;
+
+                    *assign titlesuffix, subgroup, subgroupcat, group label (psestimategrp vs analysisgrp) and where clause to subset agghdps;
+                    %let titlesuffix = ;
+                    %let wherecl = ;
+                    %let grouplabel = ;
+                    %let subgroup = ;
+                    %let subgroupcat = ;
+                    data _null_;
+                        set _subgrp;
+                        if _n_ = &sub. then do;
+                            call symputx('subgroup', subgroup);
+                            call symputx('subgroupcat', subgroupcat);
+                            if subgroup ne '' then do;
+                                call symputx('titlesuffix', cat(', ',strip(tabletitle), ": ", strip(subgroupcatlabel)));
+                                call symputx('wherecl', %str(analysisgrp = "&analysisgrp.")); 
+                                call symputx('grouplabel', %quote("&analysisgrplabel")); 
+                            end;
+                            else do;
+                                call symputx('wherecl', %str(psestimategrp = "&psestimategrp."));
+                                call symputx('grouplabel', %quote("&psestimategrplabel")); 
+                            end;
+                        end;
+                    run;
+
+    		        /* Subset data and confirm data exists on agghdps for desired psestimategrp or analysisgrp, runid, periodid, subgroup, subgroupcat*/
+                    data _temphdps(drop=hdpsnum);
+                        set agghdps (where = (&wherecl. and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup." and subgroupcat = "&subgroupcat." and hdpsnum le &topnhdps.));
+                        /*round ranking to 3 decimals*/
+                        format ranking 8.3;
+                        ranking = round(ranking, .001);
+	  	            run;		
+
+                    %isdata(dataset=_temphdps);
+			        %if &nobs. > 0 %then %do;
+			            /* Increment table letter when periodid equals look start or subgroup is populated*/
+                        %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
+			       
+    		            /* Assign numeric suffix associated with table number*/
+                        %let look = %upcase(&tableletter.);
+                        %let looktab = %upcase(&tableletter.);
+                        %if %eval(&look_end.) > %eval(&look_start.) %then %do;
                           %let look = %upcase(&tableletter.)&periodid.;
                           %let looktab = %upcase(&tableletter.).&periodid;
-                       %end;
-		  	           
-				       /* Do not re-create appendix data that already exists */
-				       %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
-                         data repdata.appendix&look. (drop = hdpsnum);
-		  	               set agghdps (where = (psestimategrp = "&psestimategrp." and analysisgrp = "&analysisgrp." and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup."
-						     and subgroupcat = "&subgroupcat." and hdpsnum le &topnhdps.));
-                           /*round ranking to 3 decimals*/
-                           format ranking 8.3;
-                           ranking = round(ranking, .001);
-		  	             run;		
-				      
-		  	             %addtotoc(tabnum = Appendix &looktab., 
-		    	         	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel., &analysisgrplabel. &titlesuffix.),
-		    	         	        appendixtype = appendixhdps);
-				       
-			           %end; /* Determine if appendix data already exists */
-				    %end; /* hdps data for runid and psestimategrp/analysisgrp */
-				  %end; /* subgroup category loop */
-				%end; /* subgroup loop */
-		     %end; /* periodid */
-		  %end; /* HDPS */
+                        %end;
+    	  	           
+    			        /* Save to repdata folder */
+                        proc datasets library = work;
+                            copy out=repdata memtype=data;
+                            select _temphdps(memtype=data);
+                        quit;
+                        proc datasets library = repdata;
+                            change _temphdps = appendix&look;
+                        quit; 
+                           
+                        /*add to tabe of contents*/
+      	                %addtotoc(tabnum = Appendix &looktab., 
+        	         	          caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &grouplabel.&titlesuffix.),
+        	         	          appendixtype = appendixhdps);
+                   %end; /* hdps data for runid and psestimategrp/analysisgrp */
+
+               %skiphdps:
+			   %end; /* subgroup loop */
+	       %end; /* HDPS */
 	    %end; /* comparison file order */
-	%end; /* aggregated hdps data exists */
+        %end; /* periodid */
+    %end; /* L2 with HDPS*/
 
     /*********************************************************************************************/
     /* Weight Distribution appendices                                      			 			 */
