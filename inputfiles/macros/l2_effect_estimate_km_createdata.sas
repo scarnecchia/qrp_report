@@ -443,7 +443,10 @@
                 end;
             %end;
 
-            keep day lag_episodes_atrisk: km_: subgroup subgroupcat;
+            format analysisgrp $40.;
+            analysisgrp = "&analysisgrp";
+
+            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysisgrp;
 
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
@@ -468,6 +471,10 @@
                 %if %eval(&xmax. > .) %then %do;
                 day = &xmax.; output;
                 %end;
+            run;
+
+            proc sort data=_tempxmax;
+                by subgroup subgroupcat day;
             run;
 
             data &plotdata.;
