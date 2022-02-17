@@ -1782,7 +1782,7 @@
                    y.groupname
             from pscs_masterinputs as x
             left join master_mil as y
-            on substr(x.eoi,1,length(x.eoi)-4) = y.milgrp and x.runid = y.runid;
+            on substr(x.eoi,1,length(x.eoi)-4) = y.group and x.runid = y.runid;
         quit;
         %end;
 
