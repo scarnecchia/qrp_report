@@ -88,7 +88,15 @@
 		    %let pscsfile = ;
 		    %let hdps = N;
             %let rank = ;
+
+        	/*extract QRP input file associated with analysisgrp*/
+            proc sql noprint;
+                select distinct strip(file) into: pscsfile trimmed
+                from pscs_masterinputs
+                where analysisgrp = "&analysisgrp." and runid = "&runid";
+            quit;
 		  
+		    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
             data _null_; 
                 set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
                 call symputx('HDPS',hdps);
@@ -96,6 +104,7 @@
                 else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
                 else call symputx('rank','Outcome Association');			 
             run;
+            %end;
 	  
 	        %if &hdps. = Y %then %do;
                 
@@ -112,7 +121,6 @@
 	                     from labelfile(where=(labeltype='grouplabel' and group ="&analysisgrplabel" and runid = "&runid."));
                     quit;
                 %end;
-
 
                 /* Loop for each subgroup subgroupcat combination */
                 proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and (missing(subgroup) | reestimateps = 'Y'))) out = _subgrp;
