@@ -826,7 +826,7 @@
 
         data pscs_masterinputs;
             set pscs_masterinputs(where=(subgroup ne 'agegroup')) _pscs_masterinputs_age; 
-            format tabletitle $100. subgroupcatlabel $50.;
+            format tabletitle combinedlabel $100. subgroupcatlabel $50.;
             length subgroupcatorder 3;
             if subgroup='' then do;
                 tabletitle = '';
@@ -889,6 +889,14 @@
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
                 if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
+
+                /*Combined label*/
+                if index(subgroup, 'covar')=0 then do;
+                    combinedlabel = cat(', ',strip(tabletitle), ": ", strip(subgroupcatlabel));
+                end;
+                else do;
+                    combinedlabel = cat(' ,',subgroupcatlabel);
+                end;
             end;
         run;
     %end;
@@ -932,6 +940,8 @@
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
         by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
     run;
+
+    data output.l2_effectestimates_&periodid. ; set l2_effectestimates_&periodid. ; run;
 
     proc datasets lib=work nolist nowarn; 
         delete rdest logitest _:; 

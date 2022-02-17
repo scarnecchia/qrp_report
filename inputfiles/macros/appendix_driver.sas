@@ -137,8 +137,8 @@
                         if _n_ = &sub. then do;
                             call symputx('subgroup', subgroup);
                             call symputx('subgroupcat', subgroupcat);
+                            call symputx('titlesuffix', combinedlabel);
                             if subgroup ne '' then do;
-                                call symputx('titlesuffix', cat(', ',strip(tabletitle), ": ", strip(subgroupcatlabel)));
                                 call symputx('wherecl', %str(analysisgrp = "&analysisgrp.")); 
                                 call symputx('grouplabel', %quote("&analysisgrplabel")); 
                             end;
