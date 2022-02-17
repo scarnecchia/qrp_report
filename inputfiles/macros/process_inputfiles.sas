@@ -1728,7 +1728,11 @@
 					  ,pscs.pstrim
 				      ,lowcase(sub.subgroup) as subgroup
 					  ,upcase(sub.subgroupcat) as subgroupcat
-                      ,sub.reestimateps
+                      /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
+                      ,case when (strip(pscs.file) = 'iptwfile' | strip(pscs.file) = 'stratificationfile' & missing(strataweight)=0) then 'Y'
+                       when strip(pscs.file) = 'covstratfile' then 'N'
+                       else sub.reestimateps 
+                       end as reestimateps
 			    from pscs_masterinputs as pscs
 				inner join infolder.&&&runid._pscssubgroupfile as sub
 				on pscs.analysisgrp = sub.analysisgrp;
