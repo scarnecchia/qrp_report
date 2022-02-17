@@ -896,7 +896,7 @@
                     combinedlabel = cat(', ',strip(tabletitle), ": ", strip(subgroupcatlabel));
                 end;
                 else do;
-                    combinedlabel = cat(' ,',subgroupcatlabel);
+                    combinedlabel = cat(', ',subgroupcatlabel);
                 end;
             end;
         run;
