@@ -336,13 +336,19 @@
 		%let total_unadjusted_comp_patients=0;
 		%let total_unadjusted_exp_patients=0;
 		%let total_unadjusted_comp_patients=0;
+		%let total_adjusted_exp_episodes=0;
+		%let total_adjusted_exp_patients=0;
+		%let total_adjusted_comp_episodes=0;
+		%let total_adjusted_comp_patients=0;
 
 		%do a = 1 %to &num_dp.;
-			%let n_switchstep_0_episodes_exp&a=0;
-			%let n_unadjusted_episodes_exp&a=0;
-			%let n_unadjusted_episodes_comp&a=0;
-			%let n_unadjusted_patients_exp&a=0;
-			%let n_unadjusted_patients_comp&a=0;
+		      %let n_switchstep_0_episodes_exp&a=0;
+		      %let n_unadjusted_episodes_exp&a=0;
+		      %let n_unadjusted_episodes_comp&a=0;
+		      %let n_unadjusted_patients_exp&a=0;
+		      %let n_unadjusted_patients_comp&a=0;
+		      %let n_adjusted_episodes_exp&a=0;
+		      %let n_adjusted_episodes_comp&a=0;
 		%end;
 
 		%macro baselinecomputetotals(subgroup=, subgroupcat=);
