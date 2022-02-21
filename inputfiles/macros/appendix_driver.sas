@@ -197,24 +197,25 @@
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
-    /* Loop through all order values */
-    %do corder = 1 %to &numl2comparisons;
+	/*loop through each periodid*/
+	%do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	    /* Loop through all order values */
+	    %do corder = 1 %to &numl2comparisons;
 
-		data _null_;
-            set l2comparisonfile(where=(order=&corder.));
-            call symputx('runid', runid);
-            call symputx('analysisgrp', analysisgrp);
-        run;
+			data _null_;
+	            set l2comparisonfile(where=(order=&corder.));
+	            call symputx('runid', runid);
+	            call symputx('analysisgrp', analysisgrp);
+	        run;
 
-        proc sql noprint;
-        	/*extract QRP input file associated with analysisgrp*/
-            select distinct strip(file) into: pscsfile trimmed
-            from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
-        quit;
+	        proc sql noprint;
+	        	/*extract QRP input file associated with analysisgrp*/
+	            select distinct strip(file) into: pscsfile trimmed
+	            from pscs_masterinputs
+	            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+	        quit;
 
-         %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
-
+         	%if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
 
                 %let outputdistweight = Y;
                 %if &pscsfile = stratificationfile %then %do;
@@ -241,17 +242,7 @@
                     run;
                 %end;
 
-                %if &outputdistweight. = Y %then %do;
-
-                %do periodid = %eval(&look_start) %to %eval(&look_end);
-
-                /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
-                %let look = ;
-                %let looktab = ;
-                %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                   %let look = &periodid.;
-                   %let looktab = .&periodid;
-                %end;
+                %if &outputdistweight. = Y %then %do;                
 
                 %let analysisgrplabel = ;
                 %isdata(dataset=labelfile);
@@ -285,13 +276,18 @@
                         select subgroup 
                         into :subgrouplist separated by ' '
                         from _subgrp;
+
+						select tabletitle 
+                        into :tabletitlelist separated by '|'
+                        from _subgrp;
                     quit;
                 %end;
 				
 				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
 				  %if &sub. > 0 %then %do; 
-				     %let subgroup = %scan(&subgrouplist, &sub.);
-                     %let titlesuffix = %str(, &subgroup.);					 
+				     %let subgroup = %scan(&subgrouplist, &sub.);                     
+					 %let tabletitle = %scan(&tabletitlelist, &sub., '|');
+                     %let titlesuffix = %str(, &tabletitlelist.); 
 				  %end;
 				  
                   %let subcategorization=; *the list of categorization;
@@ -405,15 +401,13 @@
 					%end; /* Nobs > 0 weightdistribution */
                   %end; /* Subgroup Categorization */
 	
-                  /* Increment table letter when periodid equals look start or subgroup is populated*/
-				  %if (%eval(&periodid. = &look_start.) and &sub. = 0) or &sub. > 0 %then %tableletter(); 
-				  
-				  /* Stack appendix data by subgroup */
-                  %isdata(dataset=repdata.appendix&tableletter.&look.)
-                  %if &nobs < 1 %then %do;
-                     data repdata.appendix&tableletter.&look.;
-					     length nchar $20;
-                         set appendixsubgroup_&sub._:;
+                  
+				  /* Stack appendix data by subgroup */               
+				  	 %tableletter();
+                     data repdata.appendix&tableletter.
+						  %if &sub. = 0 %then %do; aggwd_overall %end; ;
+					     length nchar $20;						
+                         set  appendixsubgroup_&sub._:;
                          if missing(n) then Nchar='N/A';
                          else Nchar=strip(put(n,comma12.));
                          if n = 0 then do;
@@ -425,30 +419,36 @@
                          drop n;
                          rename nchar=n;
                      run;
-				     
-                     proc sort data=repdata.appendix&tableletter.&look.;
-                         by dpidsiteid;
+
+					  * Must repeat overall data in each subgroup dataset;
+					 %if &sub. > 0 %then %do;
+					 	data repdata.appendix&tableletter.;
+						set aggwd_overall
+							repdata.appendix&tableletter.;
+						run;
+					 %end;
+				     			
+                     proc sort data=repdata.appendix&tableletter.;
+                         by dpidsiteid subgroup subgroupcat;
                      run;
 				   
-				     %addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-				     	  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. &titlesuffix., by Data Partner (DP), Weight: &weightschemelong.),
-				     	  appendixtype = appendixWeightDist);
-                  %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
-                  %end; /* subgroup */
-				%end;  /* periodid */
-              %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
+				     %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
+				     	  	   appendixtype = appendixWeightDist);                 
+                  %end; /* subgroup */				
+              
+	              proc datasets lib=work nolist;
+				  	delete part: aggdistribution sd n weightdistribution appendixsubgroup:;
+				  quit;
 
-              proc datasets lib=work nolist;
-				delete part: aggdistribution sd n weightdistribution appendixsubgroup:;
-			  quit;
-
-            %end;/* Outputweightdist = Y */
-
+				%end; /* Outputweightdist = Y */ 
+            %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
         %end; /* corder */
+	%end;  /* periodid */
 
-	    proc datasets lib=work nolist;
-			delete aggwd;
-		quit;
+    proc datasets lib=work nolist;
+		delete aggwd aggwd_overall;
+	quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 
