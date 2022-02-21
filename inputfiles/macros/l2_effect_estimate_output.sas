@@ -51,7 +51,7 @@
             call symputx('conditional', upcase(outputconditional));
         run;
 
-    	/* Subset dataset on analysisgrp with all subgroups */
+    	/* Subset dataset on analysisgrp with all covarnums */
     	data table&tablenum;
     		set l2_effectestimates_&look_end.(where=(analysisgrp="&analysisgrp."));
     	run;
@@ -88,7 +88,7 @@
 	          			left join labelfile_est b
 	          			on coalescec(a.medicalproduct, a.analysisgrp) = b.group
                         where b.runid = "&runid.") c
-            order by c.analysisgrpsort, c.subgroup, c.subgroupcat, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
+            order by c.analysisgrpsort, c.covarnum, c.subgroupcat, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
 	    quit;
 	    %end;
 
@@ -99,9 +99,9 @@
             from pscs_masterinputs
             where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
 
-            /*Get all values of subgroups for a given analysisgrp */
-            select distinct subgroup 
-            into :subgrouplist separated by ' '
+            /*Get all values of covarnum for a given analysisgrp */
+            select distinct covarnum 
+            into :covarnumlist separated by ' '
             from table&tablenum;
 
             /*Determine whether to print Monitoring Period column*/
@@ -117,7 +117,7 @@
             %end;
         quit;
 
-        %if %str("&subgrouplist") = %str("") %then %let tablecount = 0;
+        %if &covarnumlist = 0 %then %let tablecount = 0;
 
 	    %let MPColumn = ;
 	    %let MPDefine = ;
@@ -129,10 +129,9 @@
 				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$periodidfmt.;
 	    %end;
 
-        /* Create output datasets based on subgroups */
-        %do subgroupcount = 0 %to %sysfunc(countw(&subgrouplist.));
-			%if &subgroupcount. = 0 %then %let subgroup=;
-        	%else %let subgroup = %scan(&subgrouplist,&subgroupcount.);
+        /* Create output datasets based on covarnum */
+        %do covarnumcount = 1 %to %sysfunc(countw(&covarnumlist));
+        	%let covarnum = %scan(&covarnumlist,&covarnumcount);
 
         %let caliper&corder. = ;
         %let ratio&corder. = ;
@@ -220,7 +219,7 @@
         %if %eval(&nobs.<1) %then %do;
 
         data repdata.table&tablenum.&tableletter;
-            set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
+            set table&tablenum.(where=(covarnum=&covarnum));
             %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
             if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
@@ -244,10 +243,10 @@
               %if %length(&weightscheme) > 0 %then %do;
               1 4
               %end;
-              %if %lowcase(&subgroup.) = race %then %do;
+              %if &covarnum = 1012 %then %do;
               2
               %end;
-              %if %lowcase(&subgroup.) = prepostind %then %do;
+              %if &covarnum = 1014 %then %do;
               3
               %end; ))
                %if %index(&reporttype,T4) > 0 %then %do;
@@ -274,34 +273,29 @@
 		%assign_superscripts(type =weight, order =1);
 		%assign_superscripts(type =line, order =4);
 
-        /* Determine what text to append to title based on subgroups */
-        %if %str("&subgroup.") = %str("") %then %do;
+        /* Determine what text to append to title based on covarnum */
+        %if &covarnum = 0 %then %do;
         %let titleend = %str();
         %end;
-        %else %if &subgroup. = DP %then %do; /*DMA: TODO: Use substring(1,2)*/
+        %else %if &covarnum = 9000 %then %do; 
         %let titleend = %str(and Data Partner);
         %end;
         %else %do;
         %let subcategorization = ;
 
         proc sql noprint;
-            select distinct subgroupcat 
+            select distinct title 
             into :subcategorization separated by '@'
             from repdata.table&tablenum.&tableletter
-            where subgroup = "&subgroup.";
+            where covarnum = &covarnum;
 
-			select distinct strip(tabletitle) into: subgrouplabel trimmed
-            from Pscs_masterinputs
-            where subgroup = "&subgroup.";
-/*DMA
             %if &covarnum < 1000 %then %do;
             select distinct strip(studyname) into: subgrouplabel
             from infolder.&&&runid._covariatecodes
             where covarnum = &covarnum.;
             %end;
-*/
         quit;
-/*DMA
+
         %if &covarnum = 1000 %then %let subgrouplabel = Sex;
         %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
         %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
@@ -311,7 +305,7 @@
         %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
         %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
         %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
-*/
+
         %let titleend = %str(and &subgrouplabel);
         %end;
 
@@ -319,8 +313,8 @@
         %if &reporttype = T4L2 %then %do;
         %isdata(dataset=SelectionProbabilitiesFile);
         %if &nobs > 0 %then %do; 
-            data _null_;			
-            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
+            data _null_;
+            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and covarnum = &covarnum.));
                 call symputx('s11', s11);
             run;
         %end;
@@ -344,7 +338,7 @@
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
             columns (
-                %if %str("&subgroup.") ne %str("") %then %do; subgroupcat %end; analysis &medicalproduct &MPColumn. n 
+                %if &covarnum ne 0 %then %do; title %end; analysis &medicalproduct &MPColumn. n 
 				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
                 %if %index(&customizecolumns.,sumevents) = 0 %then %do;
                     EVchar
@@ -374,8 +368,8 @@
                 %end;
                 );
             
-            %if %str("&subgroup.") ne %str("") %then %do;
-            define subgroupcat / order order=data noprint;
+            %if &covarnum ne 0 %then %do;
+            define title / order order=data noprint;
             %end;
             define analysis / order order=data noprint  ;
             define &medicalproduct / display 'Medical Product'
@@ -443,7 +437,7 @@
             endcomp;
 
             /*Add spanning description of analysis*/
-            %if %str("&subgroup.") eq %str("") %then %do;
+            %if &covarnum = 0 %then %do;
             compute before analysis / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             %end;
             %else %do;
@@ -522,38 +516,30 @@
                 line text $Varying. num; 
             endcomp;
 
-            %if %str("&subgroup.") ne %str("") %then %do;
+            %if &covarnum ne 0 %then %do;
             /*Add spanning label for subgroup category*/
-                compute before subgroupcat / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-                    length text $100;	
-					*Overall always repeated at top of each subgroup;	
-					if subgroupcat = "" then do;	
-					 	text = "&analysisgrpfmt.";
-                        num=100;
-					end;
-					else
-					/*DMA todo: use substring*/
-                    %if &subgroup. ne DP %then %do;
-						*DMA todo: use substring (5);
-                        %if %lowcase(&subgroup.) ne covar %then %do;
+                compute before title / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    length text $100;
+                    %if &covarnum ne 9000 %then %do;
+                        %if %eval(&covarnum. >=1000) %then %do;
                             %do x = 1 %to %sysfunc(countw(%bquote(&subcategorization.),@));
                                 %let cat = %scan(%bquote(&subcategorization.), &x., @);
-                                if subgroupcat = "&cat" then do;
+                                if title = "&cat" then do;
                                     /* Apply format for age categories */
-                                    %if %lowcase(&subgroup.) = agegroup %then %let cat = %sysfunc(putc(&cat,$agegroupfmt.));
-                                    text = "&analysisgrpfmt., &subgrouplabel: &cat.";
+                                    %if &covarnum = 1001 %then %let cat = %sysfunc(putc(&cat,$agegroupfmt.));
+                                    text = "&subgrouplabel: &cat.";
                                     num=100;
                                 end;
                                 else 
                             %end;
                         %end;
-                        %else %do;
-                            if subgroupcat = "0" then do;
-                                text = "&analysisgrpfmt., No &subgrouplabel";
+                        %if %eval(&covarnum. <1000) %then %do;
+                            if title = "0" then do;
+                                text = "No &subgrouplabel";
                                 num=100;
                             end;
-                            else if subgroupcat = "1" then do;
-                                text = "&analysisgrpfmt., &subgrouplabel";
+                            else if title = "1" then do;
+                                text = "&subgrouplabel";
                                 num=100;
                             end;
                             else
@@ -562,17 +548,17 @@
                     %else %do;
                      %do dps = 1 %to &num_dp.;
                             %let maskedID = %scan(&masked_dplist., &dps.);
-                            if subgroupcat = "&maskedID" then do;
-                                text = "&analysisgrpfmt., Data Partner %substr(&maskedID., 3)";
+                            if title = "&maskedID" then do;
+                                text = "Data Partner %substr(&maskedID., 3)";
                                 num=100;
                             end;
                             else
                      %end;
-					%end;
                     do; 
                         text = "";
                         num=0;
-                    end;                   
+                    end;
+                    %end;
 
                     line text $Varying. num; 
                 endcomp;
@@ -597,7 +583,7 @@
         %end;
 
         proc datasets nowarn noprint lib=work;
-            *DMA delete label_est table&tablenum _footnotes;
+            delete label_est table&tablenum _footnotes;
         quit;
 
         %let tablenum = %eval(&tablenum + 1);
