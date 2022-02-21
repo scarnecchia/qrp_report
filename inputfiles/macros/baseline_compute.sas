@@ -430,7 +430,7 @@
          
 			* Recompute totals for subgroup. Overall already computed above;
 			%if (%str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2")) and %str("&subgroup") ne %str("") %then %do;
-				%baselinecomputetotals(subgroup=%str(&subgroup.) and subgroupcat=%str(&subgroupcat.));
+				%baselinecomputetotals(subgroup=%str(&subgroup.), subgroupcat=%str(&subgroupcat.));
 			%end;
 
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
