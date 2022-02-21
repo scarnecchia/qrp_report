@@ -31,11 +31,11 @@
 		%isdata(dataset=repdata.Figure&figurenum.&tableletter.);
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure&figurenum.&tableletter.;
-		set histogram_&i. (where=(runid="&runid." and order="&loopcount."));
+		set histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
 		run;
 		%end;
 
-		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount."));  
+		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount."and subgroup="&subgroup." and subgroupcat="&subgroupcat."));  
 			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
 			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
 			keylegend / location=outside position=bottom noborder valueattrs=(size=&fontsize. family=&font.);
@@ -45,12 +45,14 @@
 		run;
 	%mend output_histogram;
 
-  options orientation=portrait;
-  options nocenter;
-  ods startpage = now;
-  ods startpage = no;
+  	options orientation=portrait;
+  	options nocenter;
+  	ods startpage = now;
+  	ods startpage = no;
     %let tablecount=1;
     %let tableletter=a;
+
+	%do i = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
 	    %do loopcount = 1 %to &numl2comparisons.; 
 
@@ -88,9 +90,9 @@
 	            %let analysisgrpchemelong = ;
 				%let pstrim =;
 
-            %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
-                data _null_; 
-                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+            	%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+                	data _null_; 
+                  	set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
                     call symputx("psestimategrp", lowcase(psestimategrp));
                         %if &psfile. = psmatchfile  %then %do;
 							call symputx("matchtype",strip(upcase(ratio)));
@@ -113,186 +115,211 @@
                              else if upcase(strataweight)= "ATT" then call symputx("analysisgrpschemelong", %str(", Stratum Weighted, Average Treatment Effect in the Treated (ATT)"));
 						   end;
                         %end;
-                run; 
-                data _null_; 
-                    set psest_masterinputs (where=(lowcase(psestimategrp)="&psestimategrp."));
-                    call symputx('eoi', eoi) ;
-                    call symputx('ref', ref) ;    
-                run;
+                	run; 
+	                data _null_; 
+	                    set psest_masterinputs (where=(lowcase(psestimategrp)="&psestimategrp."));
+	                    call symputx('eoi', eoi) ;
+	                    call symputx('ref', ref) ;    
+	                run;
 
-              %let num_loops = 0;
-              %if &stratifybydp. = Y %then %do;
-                %let num_loops = &num_dp;
-              %end;
+					%let numsubgroups=0;
+					%let subgroup=;
+					%let subgroupcat=;
+					%let subgrouptitle=;
 
-              %do i = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-
-                ods graphics on / width=5in scale=on;
-
-                /*Trick excel to create new sheet*/
-				%if &destination. = excel %then %do;
-                ods excel options(sheet_interval="table");
-                ods exclude all;
-                data _null_;
-                file print;
-                put _all_;
-                run;
-                ods select all;
-				%end;
-
-				proc sql noprint;
-					select count(distinct AnalysisGrp) into: numPScomparisons
-            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
-				quit;
-
-				%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %let tablecount = 0;
-                %tableletter();
-                %if &destination. = excel %then %do;
-                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue" flow='none');
-                %end;
-
-                proc odstext pagebreak=yes;
-	                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. ^{newline} in the &database. from &startdateformatted. to &&enddate&i.formatted.") /
-	                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
-					%if &destination. = pdf %then %do;
-						ODS PDF BOOKMARKGEN = ON; 
-						ods proclabel = "Figure &figurenum.&tableletter.";
-					%end;
-                run;
-				%if &destination. = pdf %then %do;
-				ODS PDF BOOKMARKGEN = OFF; 
-				%end;
-
-                %let maskeddpid = agg;
-                %let dps= 0;
-                %let hisanalysis = Unadjusted;
-                %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
-                  proc odstext ;
-					p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
-                %end;
-				%else %do;
-				  proc odstext ;
-					p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
-				%end;
-				
-                %output_histogram(type=Unadjusted, weight=Unweighted);
-
-                  %if "&matchtype" = "F" %then %do;
-	                  proc odstext ;
-						p " ";
-						p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
-	                  %let hisanalysis = Adjusted;
-	                  %output_histogram(type=Adjusted, weight=Unweighted);
-                  %end;
-
-                  %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
-                    
-                    proc sql noprint;
-                      select distinct(weight)
-                      into :weight_type 
-                      separated by ' '
-                      from histogram_&i. (where=(runid="&runid." and order="&loopcount."));
-                    quit;
-
-                    %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
-                      %let analysisgrp_type = %scan(&weight_type,&analysisgrpcount);
-
-                      %if &analysisgrp_type. = Weighted %then %do;
-                        ods startpage = now;
-						proc odstext ;
-							p " ";
-							p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
-                      %end;
-					  %else %do;
-					    proc odstext ;
-							p " ";
-							p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
-					  %end;
-                      
-                      %let hisanalysis = Adjusted;
-                      %output_histogram(type=Adjusted, weight=&analysisgrp_type);
-
-                    %end; *analysisgrpcount;
-                  %end; * iptwfile;                
-
-                %if &stratifybydp. = Y %then %do;
-				  ods startpage = now;
-				  proc odstext pagebreak=yes;
-                      p " ";
-				  run;
-				  
-                  %do dps = 1 %to &num_loops;
-                  	ods startpage = now;
-					proc odstext pagebreak=yes;
-		                p " ";
+					proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+										   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
+					by runid analysisgrp subgroup subgroupcat;
 					run;
-                 
-                    %let DPSITEID = %scan(&random_dplist,&dps);
-                    %let maskeddpid = %scan(&masked_dplist,&dps);
-                 
-                    /*output histogram*/
-                    %let hisanalysis = Unadjusted;
-                    %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
-                      proc odstext ;
-						p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
-                    %end;
-				    %else %do;
-				      proc odstext ;
-						p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
-				    %end;
-					proc odstext ;
-						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-                    %output_histogram(type=Unadjusted, weight=Unweighted);
 
-                    %if "&matchtype" = "F" %then %do;
-                      %let hisanalysis = Adjusted;
-                      proc odstext ;
-						p " ";
-						p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
-						p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-                      %output_histogram(type=Adjusted, weight=Unweighted);
-                    %end;
-					
-					%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
-                    
-                      proc sql noprint;
-                        select distinct(weight)
-                        into :weight_type 
-                        separated by ' '
-                        from histogram_&i. (where=(runid="&runid." and order="&loopcount."));
-                      quit;
-					  
-                      %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
-                        %let analysisgrp_type = %scan(&weight_type,&analysisgrpcount);
-					  
-                        %if &analysisgrp_type. = Weighted %then %do;
-                          ods startpage = now;
-						  proc odstext ;
-							p " ";
-							p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
-                        %end;
-						%else %do;
-                          proc odstext ;
-							p " ";
-							p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
+					proc sql noprint;
+					select count(*) into :numsubgroups from _subgroups;
+					quit;
+
+					%do sub=0 %to &numsubgroups.;
+
+						%if &sub. > 0 %then %do;
+							data _null_;
+							set _subgroups;
+							if _N_=&sub.;
+							call symputx("SubGroup",lowcase(strip(subgroup)));
+						    call symputx("SubgroupCat",upcase(strip(subgroupcat)));
+							call symputx("subgrouptitle",combinedlabel);
+							run;
+
+						%end;			
+						%put Looping on subgroup &SubGroup.: &SubgroupCat.;
+
+	              		%let num_loops = 0;
+	              		%if &stratifybydp. = Y %then %let num_loops = &num_dp;
+	              
+	                	ods graphics on / width=5in scale=on;
+
+		                /*Trick excel to create new sheet*/
+						%if &destination. = excel %then %do;
+		                ods excel options(sheet_interval="table");
+		                ods exclude all;
+		                data _null_;
+		                file print;
+		                put _all_;
+		                run;
+		                ods select all;
 						%end;
-						proc odstext ;
-							p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-						%let hisanalysis = Adjusted;
-                        %output_histogram(type=Adjusted, weight=&analysisgrp_type);
-                      %end; *analysisgrpcount;
-					%end; *iptwfile;  
-                  %end; * dps;  
-                %end; *stratify by DP;
-              %end; *look;
-			  ods startpage = now;
-			%end; *psfile;
+
+						proc sql noprint;
+							select count(distinct AnalysisGrp) into: numPScomparisons
+		            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
+						quit;
+
+						%if &numPScomparisons.=1 and %eval(&look_end)=1 and &numsubgroups.=0 %then %let tablecount = 0;
+		                %tableletter();
+		                %if &destination. = excel %then %do;
+		                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue" flow='none');
+		                %end;
+
+		                proc odstext pagebreak=yes;
+			                p %quote("Figure &figurenum.&tableletter.. Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. ^{newline} in the &database. from &startdateformatted. to &&enddate&i.formatted.&subgrouptitle. ") /
+			                style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:12'];
+							%if &destination. = pdf %then %do;
+								ODS PDF BOOKMARKGEN = ON; 
+								ods proclabel = "Figure &figurenum.&tableletter.";
+							%end;
+		                run;
+						%if &destination. = pdf %then %do;
+							ODS PDF BOOKMARKGEN = OFF; 
+							%end;
+
+			                %let maskeddpid = agg;
+			                %let dps= 0;
+			                %let hisanalysis = Unadjusted;
+			                %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                  proc odstext ;
+								p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
+		                %end;
+						%else %do;
+						  	proc odstext ;
+								p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
+						%end;
+						
+		                %output_histogram(type=Unadjusted, weight=Unweighted);
+
+	                  	%if "&matchtype" = "F" %then %do;
+		                  proc odstext ;
+							p " ";
+							p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
+		                  %let hisanalysis = Adjusted;
+		                  %output_histogram(type=Adjusted, weight=Unweighted);
+	                  	%end;
+
+	                  	%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+	                    
+		                    proc sql noprint;
+		                      select distinct(weight)
+		                      into :weight_type 
+		                      separated by ' '
+		                      from histogram_&i. (where=(runid="&runid." and order="&loopcount."  and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+		                    quit;
+
+		                    %do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
+		                      %let analysisgrp_type = %scan(&weight_type,&analysisgrpcount);
+
+		                      %if &analysisgrp_type. = Weighted %then %do;
+		                        ods startpage = now;
+								proc odstext ;
+									p " ";
+									p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
+		                      %end;
+							  %else %do;
+							    proc odstext ;
+									p " ";
+									p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
+							  %end;
+		                      
+		                      %let hisanalysis = Adjusted;
+		                      %output_histogram(type=Adjusted, weight=&analysisgrp_type);
+
+		                    %end; *analysisgrpcount;
+	                  	%end; * iptwfile;                
+
+	                	%if &stratifybydp. = Y %then %do;
+					  		ods startpage = now;
+					  		proc odstext pagebreak=yes;
+	                      		p " ";
+					  		run;
+					  
+	                  		%do dps = 1 %to &num_loops;
+			                  	ods startpage = now;
+								proc odstext pagebreak=yes;
+					                p " ";
+								run;
+			                 
+			                    %let DPSITEID = %scan(&random_dplist,&dps);
+			                    %let maskeddpid = %scan(&masked_dplist,&dps);
+			                 
+			                    /*output histogram*/
+			                    %let hisanalysis = Unadjusted;
+			                    %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                      proc odstext ;
+									p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black];
+			                    %end;
+							    %else %do;
+							      proc odstext ;
+									p "Unadjusted Propensity Score Distribution" / style=[just=L color=black];
+							    %end;
+								proc odstext ;
+									p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+			                    %output_histogram(type=Unadjusted, weight=Unweighted);
+
+			                    %if "&matchtype" = "F" %then %do;
+			                      %let hisanalysis = Adjusted;
+			                      proc odstext ;
+									p " ";
+									p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black];
+									p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+			                      %output_histogram(type=Adjusted, weight=Unweighted);
+			                    %end;
+								
+								%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                    
+				                      proc sql noprint;
+				                        select distinct(weight)
+				                        into :weight_type 
+				                        separated by ' '
+				                        from histogram_&i. (where=(runid="&runid." and order="&loopcount."  and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+				                      quit;
+
+									%do analysisgrpcount = 1 %to %sysfunc(countw(&weight_type));
+										%let analysisgrp_type = %scan(&weight_type,&analysisgrpcount);
+
+											%if &analysisgrp_type. = Weighted %then %do;
+											  ods startpage = now;
+											  proc odstext ;
+												p " ";
+												p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black];
+											%end;
+											%else %do;
+											  proc odstext ;
+												p " ";
+												p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black];
+											%end;
+											proc odstext ;
+												p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+											%let hisanalysis = Adjusted;
+											%output_histogram(type=Adjusted, weight=&analysisgrp_type);
+				                    %end; *analysisgrpcount;
+								%end; *iptwfile;  
+			                %end; * dps;  
+	                	%end; *stratify by DP;  
+					%end; *subgroupcat; 
+			  	ods startpage = now;
+				%end; *psfile;
 		    %end; *OutputPSDistribution;
 	    %end; *numl2comparisons;
+	%end; *look;
 
-		%if &destination. = pdf %then %do;
-		 ODS PDF BOOKMARKGEN = ON;
-		%end; 
-		%let figurenum = %eval(&figurenum.+1); 
+	%if &destination. = pdf %then %do;
+		ODS PDF BOOKMARKGEN = ON;
+	%end; 
+	%let figurenum = %eval(&figurenum.+1); 
 
 %mend l2_psdistribution_output;
