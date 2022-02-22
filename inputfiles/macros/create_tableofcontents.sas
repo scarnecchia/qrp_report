@@ -71,8 +71,8 @@
 
 
     /*temporary - L2 reporting code out of date*/
-    %*DMA if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
-*DMA; %goto figures;
+    %if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
+
     /*********************************************************************************************/
     /* Baseline Table                                                                            */
     /*********************************************************************************************/
@@ -465,7 +465,7 @@
 
     %if &numl2comparisons > 0 %then %do; 
 
-        /*loop through each baseline table*/
+        /*loop through each comparison*/
         %do c = 1 %to &numl2comparisons;
 
         /* reset counter to reset table letter */
@@ -493,44 +493,35 @@
                 into :subgrouplist
                 separated by ' '
                 from l2_effectestimates_&look_end.
-                where analysisgrp="&analysisgrp.";
+                where analysisgrp="&analysisgrp.";				
             quit;
 
             %if %str(&subgrouplist.) = %str() %then %let tablecount = 0;
 
             /* loop subgroup and assign subgroup label */
-            %do subgroupcount = 1 %to %sysfunc(countw(&subgrouplist));
-                %let subgroup= %scan(&subgrouplist,&subgroupcount);
+            %do subgroupcount = 0 %to %sysfunc(countw(&subgrouplist));
+                %if &subgroupcount. = 0 %then %let subgroup=;
+        		%else %let subgroup= %scan(&subgrouplist,&subgroupcount);
+				%let subgrouplabel=;
+
+				proc sql noprint;
+					select distinct strip(tabletitle) into: subgrouplabel trimmed
+            		from Pscs_masterinputs
+            		where subgroup = "&subgroup.";
+				quit;
 
                 %if %str(&subgroup.) = %str() %then %do;
                 %let titleend = %str();
                 %end;
 
-                %else %if &covarnum = 9000 %then %do; 
+                %else %if %substr(%upcase(&subgroup.),1,2) eq DP %then %do;
                 %let titleend = %str(and Data Partner);
                 %end;
 
-                %else %do;
-                %if &covarnum < 1000 %then %do;
-                proc sql noprint;
-                select distinct strip(studyname) into: subgrouplabel
-                from infolder.&&&runid._covariatecodes
-                where covarnum = &covarnum.;
-                quit;
-                %end;
-
-                %if &covarnum = 1000 %then %let subgrouplabel = Sex;
-                %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
-                %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
-                %else %if &covarnum = 1003 %then %let subgrouplabel = Monitoring Period;
-                %else %if &covarnum = 1012 %then %let subgrouplabel = Race;
-                %else %if &covarnum = 1013 %then %let subgrouplabel = Hispanic Origin;
-                %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
-                %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
-                %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
-
+                %else %do;                
                 %let titleend = %str(and &subgrouplabel);
                 %end;
+
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
                 caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.));
@@ -1311,7 +1302,7 @@
     /*********************************************************************************************/
     /*   Figures                                                                                 */
     /*********************************************************************************************/  
-*DMA; %figures:
+
     %isdata(dataset=figurefile);
     %if %eval(&nobs.>0) %then %do; 
 
@@ -1746,7 +1737,7 @@
 
     %end; /* Figure file */
 	
-    %*DMA end; /*to be removed*/
+    %end; /*to be removed*/
 
     /*****************/
     /* Appendices    */
