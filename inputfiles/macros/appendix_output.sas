@@ -244,6 +244,28 @@
 	/********************************************/	
 	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);
 
+		* Get combinedlabel to display in the compute block of subgroup appendices;
+		proc sort data=repdata.&_data;
+		by subgroup subgroupcat dpidsiteid;
+		run;
+
+		proc sort nodupkey data=pscs_masterinputs out=_labels(keep=subgroup subgroupcat combinedlabel);
+		by subgroup subgroupcat;
+		run;
+
+		data repdata.&_data;
+		merge repdata.&_data(in=a)
+			  _labels;
+		by subgroup subgroupcat;
+		if a;
+		combinedlabel=strip(compress(combinedlabel, ","));
+		if combinedlabel="" then combinedlabel="Overall";
+		run;
+
+		proc sql noprint;
+			select count (distinct subgroup) into :numsubgroups from repdata.&_data;
+		quit
+
         ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
@@ -258,8 +280,11 @@
             style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
         	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
-            column (dpidsiteid N min max mean sd); 
+            column (%if &numsubgroups. > 0 %then %do; combinedlabel %end; dpidsiteid N min max mean sd); 
 
+			%if &numsubgroups. > 0 %then %do;
+				define combinedlabel / order order=data noprint;
+			%end;
             define dpidsiteid / display 'Masked DP ID' 
                 style(column)=[width=1in just=C]  style(header)=[just=C background = bgr borderleftcolor = BGR];
             define N / display 'Number of Patients' 
@@ -277,6 +302,15 @@
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
 			line "&apptitle.";
 			endcomp;
+
+			%if &numsubgroups. > 0 %then %do;
+			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+	            length text $100;				
+				text = combinedlabel;
+	            num=100;
+				line text $Varying. num; 
+			endcomp;
+			%end;
 
             %if &convergence. = 0 %then %do;
             compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
