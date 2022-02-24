@@ -70,9 +70,6 @@
     %end;
 
 
-    /*temporary - L2 reporting code out of date*/
-    %if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
-
     /*********************************************************************************************/
     /* Baseline Table                                                                            */
     /*********************************************************************************************/
@@ -218,39 +215,70 @@
 
             /*1 block of code for both aggregate and DP tables*/
             %macro baselinetoc(aggregated=, dpinparenthesis=, dpcomma=);
-                %if %eval(&unique_psestimate.) = 1 %then %do;
-                 %tableletter(); 
-                 %addtotoc(tabnum=Table 1&tableletter., 
-                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                %end;
 
-                /*For L2 tables - up to 2 additional adjusted tables*/
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-                    /*PS Match Adjusted*/
-                    %if &psfile. = psmatchfile %then %do;
-                    %tableletter(); 
-                    %addtotoc(tabnum=Table 1&tableletter., 
-                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
+* Process L2 subgroups;
+%let numsubgroups=0;
+%let subgroup=;
+%let subgroupcat=;
+%let subgrouptitle=;
 
-                    /*Unweighted - IPTW and PS Stratum*/
-                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
-                    %tableletter(); 
-                    %addtotoc(tabnum=Table 1&tableletter., 
-                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
+%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
+	proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+					   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
+	by runid analysisgrp subgroup subgroupcat;
+	run;
 
-                    /*Weighted - IPTW, PS Stratum, PS Stratification*/
-                    %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                        %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then 
-                         %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
-                        %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
-                        %tableletter(); 
-                        %addtotoc(tabnum=Table 1&tableletter., 
-                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
-                %end; /*Additional L2 tables*/
+	proc sql noprint;
+	select count(*) into :numsubgroups from _subgroups;
+	quit;
+%end;
+
+%do sub=0 %to &numsubgroups.;
+
+	%if &sub. > 0 %then %do;
+		data _null_;
+		set _subgroups;
+		if _N_=&sub.;		
+		call symputx("subgrouptitle",combinedlabel);
+		run;
+		
+		%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+%end;	
+
+	                %if %eval(&unique_psestimate.) = 1 %then %do;
+	                 %tableletter(); 
+	                 %addtotoc(tabnum=Table 1&tableletter., 
+	                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                %end;
+
+	                /*For L2 tables - up to 2 additional adjusted tables*/
+	                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+	                    /*PS Match Adjusted*/
+	                    %if &psfile. = psmatchfile %then %do;
+	                    %tableletter(); 
+	                    %addtotoc(tabnum=Table 1&tableletter., 
+	                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+
+	                    /*Unweighted - IPTW and PS Stratum*/
+	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                    %tableletter(); 
+	                    %addtotoc(tabnum=Table 1&tableletter., 
+	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+
+	                    /*Weighted - IPTW, PS Stratum, PS Stratification*/
+	                    %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
+	                        %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
+	                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then 
+	                         %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
+	                        %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
+	                        %tableletter(); 
+	                        %addtotoc(tabnum=Table 1&tableletter., 
+	                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+	                %end; /*Additional L2 tables*/
+				%end; /*Subgroups looping*/
             %mend;
 
             /*loop through each periodid*/
@@ -1736,8 +1764,7 @@
         %end; /*L2 figures*/
 
     %end; /* Figure file */
-	
-    %end; /*to be removed*/
+
 
     /*****************/
     /* Appendices    */
