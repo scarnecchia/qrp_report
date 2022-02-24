@@ -177,7 +177,7 @@
 			%let DPSITEID = %lowcase(%scan(&bypassDPlist,&cnt));
 			data _null_;
 				set dppath;
-				call symputx("PATH",lowcase(strip(path)));
+				call symputx("PATH",strip(path));
 				where lowcase(DP) = "&DPSITEID.";
 			run;		
             
