@@ -287,16 +287,11 @@
 			%let subcategorizationlabel = ;
 
 	        proc sql noprint;
-	            select distinct subgroupcat 
-	            into :subcategorization separated by '@'
+	            select distinct subgroupcat, subgroupcatlabel
+	            into :subcategorization separated by '@', :subcategorizationlabel separated by '@'
 	            from repdata.table&tablenum.&tableletter
 	            where subgroup = "&subgroup.";
-
-				select distinct subgroupcatlabel 
-	            into :subcategorizationlabel separated by '@'
-	            from repdata.table&tablenum.&tableletter
-	            where subgroup = "&subgroup.";
-
+				
 				select distinct strip(tabletitle) into: subgrouplabel trimmed
 	            from Pscs_masterinputs
 	            where subgroup = "&subgroup.";
