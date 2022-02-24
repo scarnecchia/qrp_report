@@ -69,6 +69,10 @@
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define the Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
 
+
+    /*temporary - L2 reporting code out of date*/
+    %if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
+
     /*********************************************************************************************/
     /* Baseline Table                                                                            */
     /*********************************************************************************************/
@@ -128,7 +132,7 @@
          
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
                 call symputx('psfile', strip(file));
                 call symputx('psestimategrp', psestimategrp);
                 call symput('unadjusted', 'Unadjusted '); /*for unadjusted table label*/
@@ -483,22 +487,22 @@
             run;
             %end;
 
-            /* Store covarnums to determine covar labels */
+            /* Store subgroup to determine subgroup labels */
             proc sql noprint;
-                select distinct covarnum
-                into :covarlist
+                select distinct subgroup
+                into :subgrouplist
                 separated by ' '
                 from l2_effectestimates_&look_end.
                 where analysisgrp="&analysisgrp.";
             quit;
 
-            %if &covarlist = 0 %then %let tablecount = 0;
+            %if %str(&subgrouplist.) = %str() %then %let tablecount = 0;
 
-            /* loop covarnums and assign subgroup label */
-            %do covarcount = 1 %to %sysfunc(countw(&covarlist));
-                %let covarnum = %scan(&covarlist,&covarcount);
+            /* loop subgroup and assign subgroup label */
+            %do subgroupcount = 1 %to %sysfunc(countw(&subgrouplist));
+                %let subgroup= %scan(&subgrouplist,&subgroupcount);
 
-                %if &covarnum = 0 %then %do;
+                %if %str(&subgroup.) = %str() %then %do;
                 %let titleend = %str();
                 %end;
 
@@ -1522,12 +1526,12 @@
 					proc sql noprint;
 		            select strip(file) into: psfile
 		            from pscs_masterinputs
-		            where analysisgrp = "&analysisgrp.";
+		            where analysisgrp = "&analysisgrp." and missing(subgroup);
 			        quit;
 
                     %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				      data _null_; 
-	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp." and missing(subgroup)));
 	                    call symputx("psestimategrp", lowcase(psestimategrp));
 	                        %if &psfile. = psmatchfile  %then %do;
 	                            if upcase(ratio) = "F" then do;
@@ -1603,14 +1607,14 @@
                     proc sql noprint;
                         select distinct strip(file) into: pscsfile trimmed
                         from pscs_masterinputs
-                        where analysisgrp = "&analysisgrp." and runid = "&runid";
+                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
                     quit;
 
                     %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
 
                         /*assign labels*/
                         data _null_; 
-                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
+                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
                             call symputx("psestimategrp", lowcase(psestimategrp));
                         run;
                         data _null_; 
@@ -1689,6 +1693,7 @@
 
     %end; /* Figure file */
 	
+    %end; /*to be removed*/
 
     /*****************/
     /* Appendices    */

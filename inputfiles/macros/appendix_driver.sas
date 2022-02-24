@@ -53,133 +53,169 @@
 	/*********************************************************************************************/
     /* Create HDPS Var Info appendices                                                           */
     /*********************************************************************************************/
-    /* Create appendix for each unique runid periodid combination */	
+    /* Create appendix for each unique runid periodid combination */
 	%isdata(dataset=agghdps);
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
-	  /* Rank hdps vars */
+	   /* Rank hdps vars */
 	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp periodid descending ranking;
+		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
 	   run;
 		
 	   data agghdps;
 	     set agghdps;
-	     by dpidsiteid psestimategrp periodid descending ranking;
+	     by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
 	     hdpsnum+1;
 	     if first.periodid then hdpsnum = 1;
 	   run;
-	
-       /* Loop through all order values */
-       %do corder = 1 %to &numl2comparisons;
 
-		  data _null_;
-            set l2comparisonfile(where=(order=&corder.));
-            call symputx('runid', runid);
-		  	call symputx('psestimategrp', psestimategrp);
-		  	call symputx('unique_psestimate',unique_psestimate);
-		  	if missing(topnhdps) then call symputx('topnhdps',25);
-		  	else call symputx('topnhdps',topnhdps);
-			call symputx('analysisgrp', analysisgrp);
-          run;
+        /*loop through each periodid*/
+	    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
-          /* Defaults */
-		  %let pscsfile = ;
-		  %let hdps = N;
-		  
-          proc sql noprint;
+        /* Loop through each ANALYSISGRP and determine if HDPS was used */
+        %do corder = 1 %to &numl2comparisons;
+
+            data _null_;
+                set l2comparisonfile(where=(order=&corder.));
+                call symputx('runid', runid);
+    		  	call symputx('psestimategrp', psestimategrp);
+    		  	call symputx('unique_psestimate',unique_psestimate);
+    		  	if missing(topnhdps) then call symputx('topnhdps',25);
+    		  	else call symputx('topnhdps',topnhdps);
+    			call symputx('analysisgrp', analysisgrp);
+            run;
+
+            /* Set default values */
+		    %let pscsfile = ;
+		    %let hdps = N;
+            %let rank = ;
+
         	/*extract QRP input file associated with analysisgrp*/
-            select distinct strip(file) into: pscsfile trimmed
-            from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
-          quit;
+            proc sql noprint;
+                select distinct strip(file) into: pscsfile trimmed
+                from pscs_masterinputs
+                where analysisgrp = "&analysisgrp." and runid = "&runid";
+            quit;
 		  
-		  %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
-             data _null_; 
-                 set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
-                 call symputx('HDPS',hdps);
-                 if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
-                 else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
-                 else call symputx('rank','Outcome Association');			 
-             run;
-          %end;
-		  
-		  %if &hdps. = Y and %eval(&unique_psestimate. = 1) %then %do;
-		     %let psestimategrplabel = &psestimategrp.;
-		     
-		     %isdata(dataset=labelfile);
-             %if &nobs > 0 %then %do;
-               proc sql noprint;
-		         select c.label 
-		         into :psestimategrplabel trimmed
-		       from (select a.*, b.label
-		       	  from agghdps a left join labelfile(where=(labeltype='grouplabel')) b
-		             on a.psestimategrp = b.group
-		             where a.psestimategrp = "&psestimategrp." and b.runid = "&runid") as c;
-		       quit;
-		     %end;
-			 
-		     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-			    /* Confirm data exists on agghdps for desired psestimategrp, runid, periodid */
-				proc sql noprint;
-				 select count(psestimategrp) into: nobs trimmed
-                 from agghdps where psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid.;
-				quit;
-				
-				%if &nobs. > 0 %then %do;
-				   /* Increment table letter when periodid equals look start */
-				   %if %eval(&periodid. = &look_start.) %then %tableletter(); 
-				   
-			       /* Assign numeric suffix associated with table number*/
-                   %let look = %upcase(&tableletter.);
-                   %let looktab = %upcase(&tableletter.);
-                   %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                      %let look = %upcase(&tableletter.)&periodid.;
-                      %let looktab = %upcase(&tableletter.).&periodid;
-                   %end;
-		  	       
-				   /* Do not re-create appendix data that already exists */
-				   %if %sysfunc(exist(repdata.appendix&look))=0 %then %do;
-                     data repdata.appendix&look. (drop = hdpsnum);
-		  	           set agghdps (where = (psestimategrp = "&psestimategrp." and runid = "&runid." and periodid = &periodid. and hdpsnum le &topnhdps.));
-                       /*round ranking to 3 decimals*/
-                       format ranking 8.3;
-                       ranking = round(ranking, .001);
-		  	         run;		
-				  
-		  	         %addtotoc(tabnum = Appendix &looktab., 
-		    	     	        caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm, by Data Partner (DP); &psestimategrplabel.),
-		    	     	        appendixtype = appendixhdps);
-				   
-			       %end; /* Determine if appendix data already exists */
-				%end; /* hdps data for runid and psestimategrp */
-		     %end; /* periodid */
-		  %end; /* HDPS and unique psestimategrp */
+		    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+            data _null_; 
+                set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+                call symputx('HDPS',hdps);
+                if missing(ranking) or lowcase(ranking) = 'exp_assoc' then call symputx('rank','Exposure Association');
+                else if lowcase(ranking) = 'bias' then call symputx('rank','Bias Potential');
+                else call symputx('rank','Outcome Association');			 
+            run;
+            %end;
+	  
+	        %if &hdps. = Y %then %do;
+                
+                /*Assign labels*/
+                %let psestimategrplabel = &psestimategrp.;
+                %let analysisgrplabel = &analysisgrp.;
+                %if &labelfileexists. = Y %then %do;
+                    proc sql noprint;
+                        select label 
+	                     into :psestimategrplabel trimmed
+	                     from labelfile(where=(labeltype='grouplabel' and group ="&psestimategrp" and runid = "&runid."));
+                        select label 
+	                     into :analysisgrplabel trimmed
+	                     from labelfile(where=(labeltype='grouplabel' and group ="&analysisgrplabel" and runid = "&runid."));
+                    quit;
+                %end;
+
+                /* Loop for each subgroup subgroupcat combination */
+                proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and (missing(subgroup) | reestimateps = 'Y'))) out = _subgrp;
+                    by subgrouporder subgroupcatorder;
+                run;
+
+                %isdata(dataset=_subgrp);
+                %let numsubgroup = &nobs.;
+                %do sub = 1 %to &numsubgroup.;
+
+                    /*skip overall table if unique_psestimate >1*/
+                    %if &sub. = 1 & %eval(&unique_psestimate.>1) %then %goto skiphdps;
+
+                    *assign titlesuffix, subgroup, subgroupcat, group label (psestimategrp vs analysisgrp) and where clause to subset agghdps;
+                    %let titlesuffix = ;
+                    %let wherecl = ;
+                    %let grouplabel = ;
+                    %let subgroup = ;
+                    %let subgroupcat = ;
+                    data _null_;
+                        set _subgrp;
+                        if _n_ = &sub. then do;
+                            call symputx('subgroup', subgroup);
+                            call symputx('subgroupcat', subgroupcat);
+                            call symputx('titlesuffix', combinedlabel);
+                            if subgroup ne '' then do;
+                                call symputx('wherecl', %str(analysisgrp = "&analysisgrp.")); 
+                                call symputx('grouplabel', %quote("&analysisgrplabel")); 
+                            end;
+                            else do;
+                                call symputx('wherecl', %str(psestimategrp = "&psestimategrp."));
+                                call symputx('grouplabel', %quote("&psestimategrplabel")); 
+                            end;
+                        end;
+                    run;
+
+    		        /* Subset data and confirm data exists on agghdps for desired psestimategrp or analysisgrp, runid, periodid, subgroup, subgroupcat*/
+                    data _temphdps(drop=hdpsnum);
+                        set agghdps (where = (&wherecl. and runid = "&runid." and periodid = &periodid. and subgroup = "&subgroup." and subgroupcat = "&subgroupcat." and hdpsnum le &topnhdps.));
+                        /*round ranking to 3 decimals*/
+                        format ranking 8.3;
+                        ranking = round(ranking, .001);
+	  	            run;		
+
+                    %isdata(dataset=_temphdps);
+			        %if &nobs. > 0 %then %do;
+			            /* Increment table letter when periodid equals look start or subgroup is populated*/
+                        %tableletter(); 
+			    
+    			        /* Save to repdata folder */
+                        proc datasets library = work;
+                            copy out=repdata memtype=data;
+                            select _temphdps(memtype=data);
+                        quit;
+                        proc datasets library = repdata;
+                            change _temphdps = appendix&tableletter.;
+                        quit; 
+                           
+                        /*add to tabe of contents*/
+      	                %addtotoc(tabnum = Appendix %upcase(&tableletter.), 
+        	         	          caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix.),
+        	         	          appendixtype = appendixhdps);
+                   %end; /* hdps data for runid and psestimategrp/analysisgrp */
+
+               %skiphdps:
+			   %end; /* subgroup loop */
+	       %end; /* HDPS */
 	    %end; /* comparison file order */
-	%end; /* aggregated hdps data exists */
+        %end; /* periodid */
+    %end; /* L2 with HDPS*/
 
     /*********************************************************************************************/
     /* Weight Distribution appendices                                      			 			 */
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
+	/*loop through each periodid*/
+	%do periodid = %eval(&look_start.) %to %eval(&look_end.);
+	    /* Loop through all order values */
+	    %do corder = 1 %to &numl2comparisons;
 
-    /* Loop through all order values */
-    %do corder = 1 %to &numl2comparisons;
+			data _null_;
+	            set l2comparisonfile(where=(order=&corder.));
+	            call symputx('runid', runid);
+	            call symputx('analysisgrp', analysisgrp);
+	        run;
 
-		data _null_;
-            set l2comparisonfile(where=(order=&corder.));
-            call symputx('runid', runid);
-            call symputx('analysisgrp', analysisgrp);
-        run;
+	        proc sql noprint;
+	        	/*extract QRP input file associated with analysisgrp*/
+	            select distinct strip(file) into: pscsfile trimmed
+	            from pscs_masterinputs
+	            where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+	        quit;
 
-        proc sql noprint;
-        	/*extract QRP input file associated with analysisgrp*/
-            select distinct strip(file) into: pscsfile trimmed
-            from pscs_masterinputs
-            where analysisgrp = "&analysisgrp." and runid = "&runid";
-        quit;
-
-         %if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
-
+         	%if &pscsfile = stratificationfile | &pscsfile = iptwfile %then %do;
 
                 %let outputdistweight = Y;
                 %if &pscsfile = stratificationfile %then %do;
@@ -206,17 +242,7 @@
                     run;
                 %end;
 
-                %if &outputdistweight. = Y %then %do;
-
-                %do periodid = %eval(&look_start) %to %eval(&look_end);
-
-                /* Assign numeric suffix associated with look number to Appendix if there are multiple looks */
-                %let look = ;
-                %let looktab = ;
-                %if %eval(&look_end.) > %eval(&look_start.) %then %do;
-                   %let look = &periodid.;
-                   %let looktab = .&periodid;
-                %end;
+                %if &outputdistweight. = Y %then %do;                
 
                 %let analysisgrplabel = ;
                 %isdata(dataset=labelfile);
@@ -232,121 +258,197 @@
 		    	%end;
 
 		    	%if %length(&analysisgrplabel) = 0 %then %let analysisgrplabel = &analysisgrp;
-
-                data weightdistribution;
-                    set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and time=&periodid));
-                    keep analysisgrp dpidsiteid N min max mean sd time;
+				
+				 /* Loop for each subgroup subgroupcat combination */
+				proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
+			      by subgroup;
                 run;
+			    
+				%let subgrouplist =;
+				%let numsubgroup = 0;
+				%let subgroup = ; 
+				%let titlesuffix = ;
+				
+                %isdata(dataset=_subgrp);
+				%let numsubgroup = &nobs.;
+                %if %eval(&nobs.>0) %then %do;
+                    proc sql noprint;
+                        select subgroup 
+                        into :subgrouplist separated by ' '
+                        from _subgrp;
 
-                /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID */
-                proc sort data = weightdistribution nodupkey;
-                	by time dpidsiteid;
-                run;
+						select tabletitle 
+                        into :tabletitlelist separated by '|'
+                        from _subgrp;
+                    quit;
+                %end;
+				
+				%do sub=0 %to &numsubgroup.;  *Note: 0 is for full analysis;
+				  %if &sub. > 0 %then %do; 
+				     %let subgroup = %scan(&subgrouplist, &sub.);                     
+					 %let tabletitle = %scan(&tabletitlelist, &sub., '|');
+                     %let titlesuffix = %str(, &tabletitlelist.); 
+				  %end;
+				  
+                  %let subcategorization=; *the list of categorization;
+				  
+				  /* Identify subgroup categories */	
+		          proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and subgroup = "&subgroup.")) out = _subgrp_cat;
+			        by subgroupcat;
+                  run;
+			      
+                  %isdata(dataset=_subgrp_cat);
+                  %if %eval(&nobs.>0) %then %do;
+                      proc sql noprint;
+                        select count(*)
+						      ,subgroupcat 
+                        into :numsubcat
+						    ,:subcategorization separated by ' '
+					    from _subgrp_cat;
+                      quit;
+                  %end;
+				  
+				  %do cat=1 %to &numsubcat.; 
+                    %if %str(&subgroup.) = %str() %then %do; 
+					   %let subgroupcat = ; 
+					%end;
+					%else %do; 
+					   %let subgroupcat = %scan(&subcategorization., &cat., ' '); 
+					%end;
+					
+                    data weightdistribution;
+                        set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid and subgroup = "&subgroup" and subgroupcat = "&subgroupcat."));
+                        keep analysisgrp subgroup subgroupcat dpidsiteid N min max mean sd periodid;
+                    run;
+				    
+                    /* Duplicate rows may exist when multiple MPs are specified, need to de-dup on MP and dpID  */
+                    proc sort data = weightdistribution nodupkey;
+                    	by periodid dpidsiteid subgroup subgroupcat;
+                    run;
+					
+                    %isdata(dataset=weightdistribution);
+                    %if &nobs > 0 %then %do;
+                      /*N, min, max */
+                      proc means data=weightdistribution nway noprint;
+                          var N min max;
+                          where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                          output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
+                      run;
+				      
+                      /*Mean*/
+                      proc means data=weightdistribution nway noprint;
+                          var mean;
+                          weight N;
+                          where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+                          output out=part2(drop=_:) mean(mean)=mean;
+                      run;
+					  
+                      /*SD*/
+                      proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
+                          id dpidsiteid;
+                          var sd;
+                      run;
+                      proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
+                          id dpidsiteid;
+                          var n;
+                      run;
+				      
+                      options mergenoby = nowarn;
+                      data part3;
+                          merge sd n;
+				      
+                          array npts(*) _ncount_:;
+                          array stddev(*) _sd_:;
+                                 
+                          weighted_std = 0;
+                          std = 0;
+                          count = 0;
+				      
+                          totpts = sum(of _ncount_:);
+				      
+                          do i = 1 to dim(npts);
+                          ** Calculate weighted standard deviation;
+                              if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
+                              if ^missing(stddev(i)) then count = count + 1 ;
+                          end;
+				      
+                          ** Calculate pooled standard deviation;
+                          if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
+                          else sd = .;
+                                
+                          keep sd;
+                      run;
+				      
+                      data aggdistribution;
+                          merge part1 part2 part3;
+                      run;
+				      
+                      options mergenoby = warn;
+					  
+					  data appendixsubgroup_&sub._&cat.;
+					    length dpidsiteid $10;
+                        set aggdistribution(in=a) 
+					   	    weightdistribution;
+                        if a then do;
+						  dpidsiteid="Aggregated";
+						  subgroup = "&subgroup.";
+						  subgroupcat = "&subgroupcat.";
+						  periodid = "&periodid";
+						  analysisgrp = "&analysisgrp.";
+						end;
+					  run;
+						
+					%end; /* Nobs > 0 weightdistribution */
+                  %end; /* Subgroup Categorization */
+	
+                  
+				  /* Stack appendix data by subgroup */               
+				  	 %tableletter();
+                     data repdata.appendix&tableletter.
+						  %if &sub. = 0 %then %do; aggwd_overall %end; ;
+					     length nchar $20;						
+                         set  appendixsubgroup_&sub._:;
+                         if missing(n) then Nchar='N/A';
+                         else Nchar=strip(put(n,comma12.));
+                         if n = 0 then do;
+                         	min=.z;
+                         	max=.z;
+                         	mean=.z;
+                         	sd=.z;
+                         end;
+                         drop n;
+                         rename nchar=n;
+                     run;
 
-                %isdata(dataset=weightdistribution);
-                %if &nobs > 0 %then %do;
-                /*N, min, max*/
-                proc means data=weightdistribution nway noprint;
-                    var N min max;
-                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                    output out=part1(drop=_:) sum(N)=n min(min)=min max(max)=max;
-                run;
+					  * Must repeat overall data in each subgroup dataset;
+					 %if &sub. > 0 %then %do;
+					 	data repdata.appendix&tableletter.;
+						set aggwd_overall
+							repdata.appendix&tableletter.;
+						run;
+					 %end;
+				     			
+                     proc sort data=repdata.appendix&tableletter.;
+                         by dpidsiteid subgroup subgroupcat;
+                     run;
+				   
+				     %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
+				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
+				     	  	   appendixtype = appendixWeightDist);                 
+                  %end; /* subgroup */				
+              
+	              proc datasets lib=work nolist;
+				  	delete part: aggdistribution sd n weightdistribution appendixsubgroup:;
+				  quit;
 
-                /*Mean*/
-                proc means data=weightdistribution nway noprint;
-                    var mean;
-                    weight N;
-                    where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
-                    output out=part2(drop=_:) mean(mean)=mean;
-                run;
-
-                /*SD*/
-                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=sd(drop=_name_) prefix=_sd_;
-                    id dpidsiteid;
-                    var sd;
-                run;
-                proc transpose data=weightdistribution(where=(not missing(min) and not missing(max) and not missing(mean) and not missing(sd))) out=n(drop=_name_) prefix=_ncount_;
-                    id dpidsiteid;
-                    var n;
-                run;
-
-                options mergenoby = nowarn;
-                data part3;
-                    merge sd n;
-
-                    array npts(*) _ncount_:;
-                    array stddev(*) _sd_:;
-                           
-                    weighted_std = 0;
-                    std = 0;
-                    count = 0;
-
-                    totpts = sum(of _ncount_:);
-
-                    do i = 1 to dim(npts);
-                    ** Calculate weighted standard deviation;
-                        if ^missing(stddev(i)) then weighted_std = weighted_std + (stddev(i)**2)*(npts(i) - 1);
-                        if ^missing(stddev(i)) then count = count + 1 ;
-                    end;
-
-                    ** Calculate pooled standard deviation;
-                    if ^missing(weighted_std) AND (totpts gt 0) then sd = sqrt(divide(weighted_std, (totpts - count)));
-                    else sd = .;
-                          
-                    keep sd;
-                run;
-
-                data aggdistribution;
-                    merge part1 part2 part3;
-                run;
-
-                options mergenoby = warn;
-
-                %if %eval(&look_end - &look_start) = 0 or &periodid = 1 %then %tableletter();
-                %isdata(dataset=repdata.appendix&tableletter.&look.)
-                %if &nobs < 1 %then %do;
-                data repdata.appendix&tableletter.&look.;
-                	length dpidsiteid $10 nchar $20;
-                    set aggdistribution(in=a) weightdistribution;
-                    if a then dpidsiteid="Aggregated";
-                    if missing(n) then Nchar='N/A';
-                    else Nchar=strip(put(n,comma12.));
-                    if n = 0 then do;
-                    	min=.z;
-                    	max=.z;
-                    	mean=.z;
-                    	sd=.z;
-                    end;
-                    drop n;
-                    rename nchar=n;
-                run;
-
-                proc sort data=repdata.appendix&tableletter.&look.;
-                    by dpidsiteid;
-                run;
-
-				%addtotoc(tabnum= Appendix %upcase(&tableletter.&looktab.), 
-					  caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel., by Data Partner (DP), Weight: &weightschemelong.),
-					  appendixtype = appendixWeightDist);
-                %end; /* Nobs > 0 repdata.appendix&tableletter.&look */
-
-                %end; /* Nobs > 0 weightdistribution */
-
-                %end; /* periodid */
-
-              %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
-
-              proc datasets lib=work nolist;
-				delete part: aggdistribution sd n weightdistribution;
-			  quit;
-
-            %end;/* Outputweightdist = Y */
-
+				%end; /* Outputweightdist = Y */ 
+            %end; /* &pscsfile = stratificationfile | &pscsfile = iptwfile */
         %end; /* corder */
+	%end;  /* periodid */
 
-	    proc datasets lib=work nolist;
-			delete aggwd;
-		quit;
+    proc datasets lib=work nolist;
+		delete aggwd aggwd_overall;
+	quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
 

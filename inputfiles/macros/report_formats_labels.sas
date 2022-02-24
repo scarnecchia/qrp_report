@@ -22,19 +22,20 @@
 *   -racesort
 *   -hispanicfmt
 *   -hispanicsort
-*   -deliveryfmt
-*   -deliverysort
-*   -birthtypefmt
-*   -birthtypesort
-*   -matchfmt
-*   -matchsort
-*   -timefmt
-*   -timesort
+*   -prepostindfmt
+*   -prepostindsort
+*   -birth_typefmt
+*   -birth_typesort
+*   -matchmethodfmt
+*   -matchmethodsort
+*   -periodidfmt
+*   -periodidsort
 *   -hhs_regfmt
 *   -cb_regfmt
 *   -monthfmt
 *   -quarterfmt
 *   -nafmt
+*   -subgrouporderfmt
 *
 *
 *  PARAMETERS:                                                                       
@@ -253,21 +254,21 @@
         'Missing' = 6
         'Other' = 7;
 		
-        /* Delivery Status format */
-        value $deliveryfmt
+        /* Preterm/Postterm status format */
+        value $prepostindfmt
         "PRE" = "Pre-Term (0-258 days)"
         "TERM" = "Term (259-280 days)"
         "POST" = "Post-Term (281-301 days)"
         "NONE" = "Unknown Term";
 
-        value $deliverysort
+        value $prepostindsort
         "PRE" = 1
         "TERM" = 2
         "POST" = 3
         "NONE" = 4;
 
         /* Birth Type format */
-        value $birthtypefmt
+        value $birth_typefmt
         "0" = "Unspecified # of live births"
         "1" = "1 live birth"
         "2" = "2 live births"
@@ -277,7 +278,7 @@
         "8" = "Multiple live births, unspecified number"
         "9" = "Conflicting code(s) for number of live births";
 
-        value $birthtypesort
+        value $birth_typesort
         "0" = 1
         "1" = 2
         "2" = 3
@@ -288,7 +289,7 @@
         "9" = 8;
 
         /* Match method format */
-        value $matchfmt
+        value $matchmethodfmt
         "BC" = "Birth Certificate"
         "RE" = "Birth Registry"
         "SI" = "Health plan subscriber or family number"
@@ -299,7 +300,7 @@
         "N3" = "Neither subscriber/family IDs nor name/address available for linkage"
         "NA" = "No linkage made; any other reasons";
 
-        value $matchsort
+        value $matchmethodsort
         "BC" = 1
         "RE" = 2
         "LA" = 3
@@ -311,13 +312,13 @@
         "OT" = 9;
 
         /* Time format */
-        value $timefmt
+        value $periodidfmt
         %do n = 1 %to &look_end;
         "&n" = "&startdateformatted to &&enddate&n.formatted"
         %end;
         ;
 
-        value $timesort
+        value $periodidsort
         %do n = 1 %to &look_end;
         "&n" = &n
         %end;
@@ -353,6 +354,21 @@
            3='Quarter 3'
            4='Quarter 4'           
        other='';
+
+
+        /*master order for subgroups - explicitely defined for L2s, determined by order in 
+          TABLEFILE for L1s*/
+        value $subgrouporderfmt
+            /*1 reserved for overall*/
+            'sex' = 2
+            'agegroup' = 3
+            'year' = 4
+            'race' = 5
+            'hispanic' = 6
+            'prepostind' = 7
+            'matchmethod' = 8
+            'birth_type' = 9
+            'periodid' = 10;
     run;
 
 /***************************************************************************************************

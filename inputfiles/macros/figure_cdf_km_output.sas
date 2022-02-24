@@ -408,14 +408,14 @@
 						into: pscsfile trimmed
 						    ,:strataweight trimmed
                         from pscs_masterinputs
-                        where analysisgrp = "&analysisgrp." and runid = "&runid";
+                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
                     quit;
 
                     %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
 
                         /*assign labels*/
                         data _null_; 
-                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
+                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
                             call symputx("psestimategrp", lowcase(psestimategrp));
                         run;
                         data _null_; 
