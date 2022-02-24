@@ -304,7 +304,6 @@
 		 	%end;
 
             /*Merge table with GROUPSTABLE and only keep Analysisgrps in the input file*/
-
             proc sql noprint;
                 create table _temp_baseline_tablenum&b. as
                 select x.*
@@ -351,7 +350,7 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
+            by analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -379,7 +378,7 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid order table group1 group2 weight vartype metvar; 
+                by analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar; 
             run;
             data _baseline_agg_&periodid.;
                 set _baseline_agg_&periodid.
@@ -403,7 +402,7 @@
         %end;
 		
         proc sort data=_baseline_agg_&periodid.; 
-            by dpidsiteid analysisgrp runid order table group1 group2 weight vartype metvar;                 
+            by dpidsiteid analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
 			
     %end; /*level 2 baseline tables*/
