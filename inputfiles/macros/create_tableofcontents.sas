@@ -524,10 +524,14 @@
                 where analysisgrp="&analysisgrp.";				
             quit;
 
-            %if %str(&subgrouplist.) = %str() %then %let tablecount = 0;
+            %if %str(&subgrouplist.) = %str() %then %do;
+				%let tablecount = 0;
+				%let numsubgroups=0;
+			%end;
+			%else %let numsubgroups=%sysfunc(countw(&subgrouplist));
 
             /* loop subgroup and assign subgroup label */
-            %do subgroupcount = 0 %to %sysfunc(countw(&subgrouplist));
+            %do subgroupcount = 0 %to &numsubgroups.;
                 %if &subgroupcount. = 0 %then %let subgroup=;
         		%else %let subgroup= %scan(&subgrouplist,&subgroupcount);
 				%let subgrouplabel=;
