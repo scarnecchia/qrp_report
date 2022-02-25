@@ -140,8 +140,7 @@
 
 						%let max_eoi=0;
 						%let max_ref=0;						
-
-						%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
+						
 						%if &sub. > 0 %then %do;
 							data _null_;
 							set _subgroups;
@@ -163,6 +162,8 @@
 							quit;
 						%end;
 	
+						%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
+
 						%put Looping on subgroup &SubGroup.: &SubgroupCat.;
 
 	              		%let num_loops = 0;
@@ -325,8 +326,8 @@
 								%end; *iptwfile;  
 			                %end; * dps;  
 	                	%end; *stratify by DP;  
-						%end; *sufficient data to plot histogram;
-					%end; *subgroupcat; 
+						%end; *subgroupcat;
+					%end;  *sufficient data to plot histogram;
 			  	ods startpage = now;
 				%end; *psfile;
 		    %end; *OutputPSDistribution;
