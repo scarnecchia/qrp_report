@@ -223,7 +223,7 @@
         %else %let cohortheaderlabel = Medical Product;
 
         %if &destination. = excel %then %do;
-        ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen");
+        ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen" flow="1:400");
         %let linebreak = ; /*reset line break and headerheight*/
         %let headerheight = .3;
         %if %eval(&numcolumns.=6) %then %let width = 1;
