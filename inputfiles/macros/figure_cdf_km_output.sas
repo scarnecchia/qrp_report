@@ -483,14 +483,9 @@
 		                        %if &figure = F3 %then %let titlestart=Unadjusted;
 		                        %else %if &figure = F4 %then %let titlestart=Conditional;
 		                        %else %let titlestart=Unconditional;
-
-								data sample;
-								set figure&figure._analysis&loopcount._&j.;
-								where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
-								run;
-
-		                        %output_cdf_km(dataset=sample,
-											 where=1,
+								
+		                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
+											 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
 											 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 											 figfn=,
 											 xaxislabel=%str(Follow-up time (days)),
