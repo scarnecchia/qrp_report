@@ -1589,22 +1589,35 @@
 
 						%do sub=0 %to &numsubgroups.;
 
+							%let max_eoi=0;
+							%let max_ref=0;
+
+							proc sql noprint;
+								select max(_eoi), max(_ref) into :max_eoi, :max_ref
+								from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+							quit;
+
 							%if &sub. > 0 %then %do;
 								data _null_;
 								set _subgroups;
-								if _N_=&sub.;									
+								if _N_=&sub.;		
+								call symputx("SubGroup",lowcase(strip(subgroup)));
+						    	call symputx("SubgroupCat",upcase(strip(subgroupcat)));	
 								call symputx("subgrouptitle",combinedlabel);
-								run;
-
+								run;								
 							%end;
-
-							%if &numPScomparisons.=1 and %eval(&look_end)=1 and &numsubgroups.=0 %then %do;
-								%let tablecount = 0;
+							
+							%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
+								%if &numPScomparisons.=1 and %eval(&look_end)=1 and &numsubgroups.=0 %then %do;
+									%let tablecount = 0;
+								%end;
+				                %tableletter();
+				                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.))
 							%end;
-			                %tableletter();
-			                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
-			                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.))
-
+							%else %do;
+								 %put WARNING: (Sentinel) Insufficient data to produce histogram for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. Histogram will not be produced.; 
+							%end;
 			            %end; /* loop subgroups */
 					 %end; /*psfile*/
 				    %end; /* OutputPSDistribution */

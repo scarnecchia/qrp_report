@@ -138,6 +138,15 @@
 
 					%do sub=0 %to &numsubgroups.;
 
+						%let max_eoi=0;
+						%let max_ref=0;
+
+						proc sql noprint;
+							select max(_eoi), max(_ref) into :max_eoi, :max_ref
+							from histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+						quit;
+
+						%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
 						%if &sub. > 0 %then %do;
 							data _null_;
 							set _subgroups;
@@ -310,6 +319,7 @@
 								%end; *iptwfile;  
 			                %end; * dps;  
 	                	%end; *stratify by DP;  
+						%end; *sufficient data to plot histogram;
 					%end; *subgroupcat; 
 			  	ods startpage = now;
 				%end; *psfile;
