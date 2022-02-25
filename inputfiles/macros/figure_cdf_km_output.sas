@@ -474,37 +474,47 @@
 
 							/*Loop through each figure */
 							%do f = 1 %to %sysfunc(countw(&figurelist));
-								%let figure = %scan(&figurelist,&f);
+								%let figure = %scan(&figurelist,&f);								
 
 		                        /*F3, F4 and/or F5*/
 		                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
 		                        %if %eval(&nobs.>0) %then %do;
 
-		                        %if &figure = F3 %then %let titlestart=Unadjusted;
-		                        %else %if &figure = F4 %then %let titlestart=Conditional;
-		                        %else %let titlestart=Unconditional;
-								
-		                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
-											 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
-											 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
-											 figfn=,
-											 xaxislabel=%str(Follow-up time (days)),
-											 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
-											 figure=&figure,
-											 font=&fontfamily,
-											 analysis=&titlestart,
-											 analysisgrp=&analysisgrp,
-											 monitoringperiod=&j,
-											 eoi=&GRP1,
-											 ref=&GRP0,
-											 eoilabel=&eoilabel,
-											 reflabel=&reflabel,
-											 %if &figure ^= F4 %then %do; 
-											 kmrefpop=unweighted 
-											 %end;
-											 %else %do; 
-											 kmrefpop=&kmrefpop 
-											 %end;);
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figure&figure._analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %if &figure = F3 %then %let titlestart=Unadjusted;
+				                        %else %if &figure = F4 %then %let titlestart=Conditional;
+				                        %else %let titlestart=Unconditional;
+										
+				                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
+													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
+													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figfn=,
+													 xaxislabel=%str(Follow-up time (days)),
+													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+													 figure=&figure,
+													 font=&fontfamily,
+													 analysis=&titlestart,
+													 analysisgrp=&analysisgrp,
+													 monitoringperiod=&j,
+													 eoi=&GRP1,
+													 ref=&GRP0,
+													 eoilabel=&eoilabel,
+													 reflabel=&reflabel,
+													 %if &figure ^= F4 %then %do; 
+													 kmrefpop=unweighted 
+													 %end;
+													 %else %do; 
+													 kmrefpop=&kmrefpop 
+													 %end;);
+									%end; /* sufficient data to plot the figure */
 		                        %end; /* &nobs.>0 */
 							%end; /* figurelist */ 
 	                	%end; /* subgroups */	                

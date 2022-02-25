@@ -1721,36 +1721,77 @@
 							quit;
 
 							%do sub=0 %to &numsubgroups.;
-
+								
 								%if &sub. > 0 %then %do;
 									data _null_;
 									set _subgroups;
-									if _N_=&sub.;									
+									if _N_=&sub.;					
+									call symputx("SubGroup",lowcase(strip(subgroup)));	
+									call symputx("SubgroupCat",upcase(strip(subgroupcat)));										
 									call symputx("subgrouptitle",combinedlabel);
 									run;
 
 								%end;			 
 
-		                        /*F3*/
+		                        /*F3*/								
 		                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
 		                        %if %eval(&nobs.>0) %then %do;
-		                        %tableletter();	
-		                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-		                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF3_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
 		                        %end;
 		                        /*F4*/
 		                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
 		                        %if %eval(&nobs.>0) %then %do;
-		                        %tableletter();	
-		                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-		                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF4_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
 		                        %end;
 		                        /*F5*/
 		                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
 		                        %if %eval(&nobs.>0) %then %do;
-		                        %tableletter();	
-		                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-		                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF5_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
 		                        %end;
 
 							%end; /*loop through numsubgroups */                        
