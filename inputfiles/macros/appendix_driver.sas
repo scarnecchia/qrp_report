@@ -197,6 +197,11 @@
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
+	
+	proc sort nodupkey data=pscs_masterinputs out=_labels(keep=subgroup subgroupcat combinedlabel);
+	by subgroup subgroupcat;
+	run;
+
 	/*loop through each periodid*/
 	%do periodid = %eval(&look_start.) %to %eval(&look_end.);
 	    /* Loop through all order values */
@@ -429,8 +434,17 @@
 					 %end;
 				     			
                      proc sort data=repdata.appendix&tableletter.;
-                         by dpidsiteid subgroup subgroupcat;
-                     run;
+                         by subgroup subgroupcat dpidsiteid;
+                     run;					 
+
+					 data repdata.appendix&tableletter.;
+					 merge repdata.appendix&tableletter.(in=a)
+						   _labels;
+					 by subgroup subgroupcat;
+					 if a;
+					 combinedlabel=strip(compress(combinedlabel, ","));
+					 if combinedlabel="" then combinedlabel="Overall";
+					 run;
 				   
 				     %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
@@ -447,7 +461,7 @@
 	%end;  /* periodid */
 
     proc datasets lib=work nolist;
-		delete aggwd aggwd_overall;
+		delete aggwd aggwd_overall _labels;
 	quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */
