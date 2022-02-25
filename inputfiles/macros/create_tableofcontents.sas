@@ -1591,12 +1591,7 @@
 
 							%let max_eoi=0;
 							%let max_ref=0;
-
-							proc sql noprint;
-								select max(_eoi), max(_ref) into :max_eoi, :max_ref
-								from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
-							quit;
-
+							
 							%if &sub. > 0 %then %do;
 								data _null_;
 								set _subgroups;
@@ -1604,7 +1599,18 @@
 								call symputx("SubGroup",lowcase(strip(subgroup)));
 						    	call symputx("SubgroupCat",upcase(strip(subgroupcat)));	
 								call symputx("subgrouptitle",combinedlabel);
-								run;								
+								run;			
+
+								proc sql noprint;
+								select max(_eoi), max(_ref) into :max_eoi, :max_ref
+								from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+							quit;	
+							%end;
+							%else %do;
+								proc sql noprint;
+									select max(_eoi), max(_ref) into :max_eoi, :max_ref
+									from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="" and subgroupcat=""));
+								quit;
 							%end;
 							
 							%if &max_eoi. > 0 and &max_ref. > 0 %then %do;

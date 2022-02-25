@@ -139,12 +139,7 @@
 					%do sub=0 %to &numsubgroups.;
 
 						%let max_eoi=0;
-						%let max_ref=0;
-
-						proc sql noprint;
-							select max(_eoi), max(_ref) into :max_eoi, :max_ref
-							from histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
-						quit;
+						%let max_ref=0;						
 
 						%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
 						%if &sub. > 0 %then %do;
@@ -156,7 +151,18 @@
 							call symputx("subgrouptitle",combinedlabel);
 							run;
 
-						%end;			
+							proc sql noprint;
+								select max(_eoi), max(_ref) into :max_eoi, :max_ref
+								from histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+							quit;
+						%end;
+						%else %do;
+							proc sql noprint;
+								select max(_eoi), max(_ref) into :max_eoi, :max_ref
+								from histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="" and subgroupcat=""));
+							quit;
+						%end;
+	
 						%put Looping on subgroup &SubGroup.: &SubgroupCat.;
 
 	              		%let num_loops = 0;
