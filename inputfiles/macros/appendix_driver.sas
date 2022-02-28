@@ -57,8 +57,8 @@
 	%isdata(dataset=agghdps);
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	   /* Rank hdps vars */
-	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
+	   proc sort nodupkey data = agghdps;		  
+		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking codecat codetype code;
 	   run;
 		
 	   data agghdps;
@@ -147,11 +147,11 @@
                             call symputx('subgroupcat', subgroupcat);
                             call symputx('titlesuffix', combinedlabel);
                             if subgroup ne '' then do;
-                                call symputx('wherecl', %str(analysisgrp = "&analysisgrp.")); 
+                                call symputx('wherecl', "analysisgrp = '&analysisgrp.'"); 
                                 call symputx('grouplabel', %quote("&analysisgrplabel")); 
                             end;
                             else do;
-                                call symputx('wherecl', %str(psestimategrp = "&psestimategrp."));
+                                call symputx('wherecl', "psestimategrp = '&psestimategrp.'");
                                 call symputx('grouplabel', %quote("&psestimategrplabel")); 
                             end;
                         end;
