@@ -26,6 +26,7 @@
 *       - comp_w1_1-comp_w1_&num_dp (if group2 populated)
 *       - comp_w2_1-comp_w2_&num_dp (if group2 populated)
 *       - ad1-ad_&num_dp and sd1-sd_&num_dp (if group 2 populated and covar balance computed)
+*       - weight, table, subgroup, subgroupcat (if reporttype = T2L2 or T4L2)
 *
 *  Program outputs:                                                                                                                                       
 *  	- Dataset with additional aggregated columns
@@ -147,10 +148,17 @@
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
                 call symputx('psfile', strip(file));
-
+                call symputx('psestimategrp', psestimategrp);
+                %if %str("&reporttype") = %str("T2L2") %then %do;
+                call symputx('eoi', strip(eoi));	
+                %end;
+                %if %str("&reporttype") = %str("T4L2") %then %do;
+                call symputx('eoi', strip(groupname));	
+                %end;
+ 
                 if file = 'psmatchfile' then call symputx('ratio',upcase(ratio));
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
-            run;			
+            run;
 		%end;
 
         *************************************************************
@@ -210,38 +218,13 @@
         %end;
 
         /*L2*/
-        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            /*if file = psmatchfile, stratificationfile, iptwfile - then link to psestimationfile*/
-            /*if file = covstratfile, pull directly*/
-            %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
-                data _null_;
-                    set infolder.&&&runid._&psfile.(where=(analysisgrp="&analysisgrp."));
-                    call symputx('psestimategrp', psestimategrp);
-                run;
-                data _null_;
-                    set infolder.&&&runid._psestimationfile(where=(psestimategrp="&psestimategrp."));
-                    call symputx('eoi', strip(eoi));		 
-                run;
-            %end;
-            %else %if &psfile. = covstratfile %then %do;
-                data _null_;
-                    set infolder.&&&runid._covstratfile(where=(analysisgrp="&analysisgrp."));
-                    call symputx('eoi', strip(eoi));				 
-                run;
-            %end;
-
-            *T2: EOI group = cohortgrp;
-            %if %str("&reporttype") = %str("T2L2") %then %do;
-                %let cohortgrp = &eoi;
-            %end;
-            *T4: After extracting EOI group - need to link to MICOHORTFILE to grab cohortgrp;
-            %if %str("&reporttype") = %str("T4L2") %then %do;
-                data _null_;
-                    set infolder.&&&runid._micohortfile(where=(milgrp=substr("&eoi",1,length("&eoi")-4)));
-                    call symputx('cohortgrp', strip(groupname));
-                run;
-            %end;
+        %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;          
+            *T2: EOI group = cohortgrp - assigned to EOI above;
+            *T4: EOI group = groupname - assigned to EOI above;
+             %let cohortgrp = &eoi;
         %end;
+
+        /*T6*/
 		%else %if %sysfunc(prxmatch(m/T6/i,&reporttype.)) > 0 %then %do;
             data _null_;
 			    set infolder.&&&runid._treatmentpathways (where=((analysisgrp="&analysisgrp." and switchevalstep = 0)));
@@ -1307,6 +1290,10 @@
 	            call symputx("SubgroupCat",upcase(strip(subgroupcat)));
 				call symputx("suffix", "_" || strip(put(subgroupnum,best.)) || "_" || strip(put(subgroupcatnum,best.)));
 				run;
+
+                /*reset unique_psestimate for subgroups because subgroup data may vary with the same PSESTIMATEGRP due to
+                  using the post-trimmed/matchedinfull population*/
+                %let unique_psestimate = 1;
 			%end;
 
 	        /*Types 1-5: unweighted*/
@@ -1699,7 +1686,7 @@
 
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
-            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end;  table weight sortorder1 sortorder2;
+            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2;
         run;
 
         ***********************************************************************************************;
