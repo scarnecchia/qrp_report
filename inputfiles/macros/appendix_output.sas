@@ -244,24 +244,6 @@
 	/********************************************/	
 	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);
 
-		* Get combinedlabel to display in the compute block of subgroup appendices;
-		proc sort data=repdata.&_data;
-		by subgroup subgroupcat dpidsiteid;
-		run;
-
-		proc sort nodupkey data=pscs_masterinputs out=_labels(keep=subgroup subgroupcat combinedlabel);
-		by subgroup subgroupcat;
-		run;
-
-		data repdata.&_data;
-		merge repdata.&_data(in=a)
-			  _labels;
-		by subgroup subgroupcat;
-		if a;
-		combinedlabel=strip(compress(combinedlabel, ","));
-		if combinedlabel="" then combinedlabel="Overall";
-		run;
-
 		proc sql noprint;
 			select count (distinct subgroup) into :numsubgroups from repdata.&_data;
 		quit
