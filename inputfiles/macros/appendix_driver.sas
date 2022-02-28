@@ -58,7 +58,7 @@
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	   /* Rank hdps vars */
 	   proc sort nodupkey data = agghdps;		  
-		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking codecat codetype code;
+		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking frequency codecat codetype code;
 	   run;
 		
 	   data agghdps;
