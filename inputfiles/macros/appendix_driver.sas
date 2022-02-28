@@ -292,7 +292,7 @@
 				  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);                     
 					 %let tabletitle = %scan(&tabletitlelist, &sub., '|');
-                     %let titlesuffix = %str(, &tabletitlelist.); 
+                     %let titlesuffix = %str(, &tabletitle.); 
 				  %end;
 				  
                   %let subcategorization=; *the list of categorization;

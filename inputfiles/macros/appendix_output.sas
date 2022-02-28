@@ -244,6 +244,10 @@
 	/********************************************/	
 	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);		
 
+		%let numsubgroups=0;
+		%let covarlabel=;
+		%let nocovarlabel=;
+
 		proc sql noprint;
 			select count (distinct subgroup) into :numsubgroups from repdata.&_data;
 			select combinedlabel into :covarlabel from repdata.&_data where substr(compress(combinedlabel, ' &'),1,10)="StudyCovar"; 

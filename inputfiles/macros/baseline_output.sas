@@ -410,6 +410,7 @@
 				call symputx('comorbidscore',comorbidscore);
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
+				call symputx('unique_psestimate_orig',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);	
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
@@ -648,14 +649,6 @@
             run;
         %end;
 
-        %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-        %if %length(&baselinegroupnum.)>0 %then %do;
-        %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
-        %end;
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-        %let captionlabel = %bquote(&psestimatelabel.);
-        %end;         
-
         /*Set group labels*/
         %if %sysfunc(prxmatch(m/T1|T5|T2L1/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = %bquote(&grouplabel.);
@@ -739,6 +732,17 @@
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
 					%let unique_psestimate = 1;
 				%end;	
+				%else %do;
+					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+			        %if %length(&baselinegroupnum.)>0 %then %do;
+			        %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			        %end;
+			        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+			        %let captionlabel = %bquote(&psestimatelabel.);
+			        %end; 
+
+					%let unique_psestimate = &unique_psestimate_orig;
+				%end;
 		
 	            %if %eval(&unique_psestimate.) = 1 and (&psfile. ne iptwfile or &sub. eq 0) %then %do;					
 	             %tableletter(); 

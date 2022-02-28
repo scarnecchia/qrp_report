@@ -110,6 +110,7 @@
                     call symputx('runid', runid);
                     call symputx('cohort', cohort);
                     call symputx('unique_psestimate',unique_psestimate);
+					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
                         if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
@@ -205,46 +206,49 @@
                 run;
             %end;
 
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-            %if %length(&baselinegroupnum.)>0 %then %do;
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
-            %end;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-            %let captionlabel = %bquote(&psestimatelabel.);
-            %end;         
-
             /*1 block of code for both aggregate and DP tables*/
             %macro baselinetoc(aggregated=, dpinparenthesis=, dpcomma=);
 
-* Process L2 subgroups;
-%let numsubgroups=0;
-%let subgroup=;
-%let subgroupcat=;
-%let subgrouptitle=;
+				* Process L2 subgroups;
+				%let numsubgroups=0;
+				%let subgroup=;
+				%let subgroupcat=;
+				%let subgrouptitle=;
 
-%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
-	proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-					   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-	by runid analysisgrp subgroup subgroupcat;
-	run;
+				%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
+					proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+									   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
+					by runid analysisgrp subgroup subgroupcat;
+					run;
 
-	proc sql noprint;
-	select count(*) into :numsubgroups from _subgroups;
-	quit;
-%end;
+					proc sql noprint;
+					select count(*) into :numsubgroups from _subgroups;
+					quit;
+				%end;
 
-%do sub=0 %to &numsubgroups.;
+				%do sub=0 %to &numsubgroups.;
 
-	%if &sub. > 0 %then %do;
-		data _null_;
-		set _subgroups;
-		if _N_=&sub.;		
-		call symputx("subgrouptitle",combinedlabel);
-		run;
-		
-		%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-		%let unique_psestimate = 1;
-%end;	
+					%if &sub. > 0 %then %do;
+						data _null_;
+						set _subgroups;
+						if _N_=&sub.;		
+						call symputx("subgrouptitle",combinedlabel);
+						run;
+						
+						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+						%let unique_psestimate = 1;
+					%end;	
+					%else %do;
+						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+			            %if %length(&baselinegroupnum.)>0 %then %do;
+			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			            %end;
+			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+			            %let captionlabel = %bquote(&psestimatelabel.);
+			            %end;  
+
+						%let unique_psestimate = &unique_psestimate_orig;
+					%end;
 
 	                %if %eval(&unique_psestimate.) = 1 and (&psfile. ne iptwfile or &sub. eq 0) %then %do;
 	                 %tableletter(); 
