@@ -737,6 +737,7 @@
 					run;
 					
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+					%let unique_psestimate = 1;
 				%end;	
 		
 	            %if %eval(&unique_psestimate.) = 1 %then %do;					
