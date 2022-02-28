@@ -331,12 +331,16 @@
 			  	ods startpage = now;
 				%end; *psfile;
 		    %end; *OutputPSDistribution;
+
+			%let figurenum = %eval(&figurenum.+1); 
+			%let tablecount = 1;
+			%let tableletter =a;
+
 	    %end; *numl2comparisons;
 	%end; *look;
 
 	%if &destination. = pdf %then %do;
 		ODS PDF BOOKMARKGEN = ON;
-	%end; 
-	%let figurenum = %eval(&figurenum.+1); 
+	%end; 	
 
 %mend l2_psdistribution_output;

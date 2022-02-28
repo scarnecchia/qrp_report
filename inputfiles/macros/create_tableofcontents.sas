@@ -1632,9 +1632,13 @@
 			            %end; /* loop subgroups */
 					 %end; /*psfile*/
 				    %end; /* OutputPSDistribution */
+
+					%let figurenum = %eval(&figurenum.+1); 
+					%let tablecount = 1;
+					%let tableletter =a;
+
 				   %end; /* loop comparisons */
-				%end; /* loop periods */
-			 %let figurenum = %eval(&figurenum.+1); 
+				%end; /* loop periods */			 
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
@@ -1807,6 +1811,11 @@
 
 							%end; /*loop through numsubgroups */                        
 	                    %end; /*only PSmatch or stratification*/
+
+						%let figurenum = %eval(&figurenum.+1); 
+						%let tablecount = 1;
+						%let tableletter =a;
+
 					%end; /*loop through numl2comparisons */
                 %end; /*loop through periodid*/
             
@@ -1825,9 +1834,7 @@
                         tabnum = "Figure &figurenum.";
                         end;
                     run;
-                %end;
-                                           
-			 %let figurenum = %eval(&figurenum.+1); 
+                %end;                                           			 
 
             %end; /*KM plots*/
         %end; /*L2 figures*/

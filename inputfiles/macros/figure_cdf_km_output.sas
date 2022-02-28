@@ -518,7 +518,12 @@
 		                        %end; /* &nobs.>0 */
 							%end; /* figurelist */ 
 	                	%end; /* subgroups */	                
-	            	%end; /* psfile */	                                          
+	            	%end; /* psfile */	  
+
+					%let figurenum=%eval(&figurenum+1); 
+					%let tablecount = 1;
+					%let tableletter =a;
+
 			 	%end; /* loopcount */
 			%end; /* Monitoring Period */
 		%end; /* reporttype */
