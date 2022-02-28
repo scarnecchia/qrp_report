@@ -224,7 +224,7 @@
 		    define dpidsiteid    / display 'Masked DP ID'  style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
             define code          / display 'Code'          style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
             define codecat       / display 'Code Category' style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
-            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C tagattr='type:string'] style(header)=[background = bgr borderleftcolor = BGR]; 
+            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
             define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
             define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
 
@@ -242,10 +242,12 @@
 	/********************************************/
 	/* Create Weight Distribution Appendix      */
 	/********************************************/	
-	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);
+	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);		
 
 		proc sql noprint;
 			select count (distinct subgroup) into :numsubgroups from repdata.&_data;
+			select combinedlabel into :covarlabel from repdata.&_data where substr(compress(combinedlabel, ' &'),1,10)="StudyCovar"; 
+			select combinedlabel into :nocovarlabel from repdata.&_data where substr(compress(combinedlabel, ' &'),1,12)="NoStudyCovar"; 
 		quit
 
         ods proclabel = "&_tab.";
@@ -287,8 +289,16 @@
 
 			%if &numsubgroups. > 0 %then %do;
 			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-	            length text $100;				
-				text = combinedlabel;
+	            length text $100;			
+				if substr(compress(combinedlabel, ' &'),1,10)="StudyCovar" then do;
+					text = "&covarlabel.";
+				end;
+				else if substr(compress(combinedlabel, ' &'),1,12)="NoStudyCovar" then do;
+					text = "&nocovarlabel.";
+				end;
+				else do;
+					text = combinedlabel;
+				end;
 	            num=100;
 				line text $Varying. num; 
 			endcomp;
