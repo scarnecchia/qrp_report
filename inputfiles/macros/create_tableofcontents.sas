@@ -250,7 +250,7 @@
 						%let unique_psestimate = &unique_psestimate_orig;
 					%end;
 
-	                %if %eval(&unique_psestimate.) = 1 and (&psfile. ne iptwfile or &sub. eq 0) %then %do;
+	                %if %eval(&unique_psestimate.) = 1 %then %do;
 	                 %tableletter(); 
 	                 %addtotoc(tabnum=Table 1&tableletter., 
 	                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));

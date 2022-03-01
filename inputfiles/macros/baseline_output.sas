@@ -744,7 +744,7 @@
 					%let unique_psestimate = &unique_psestimate_orig;
 				%end;
 		
-	            %if %eval(&unique_psestimate.) = 1 and (&psfile. ne iptwfile or &sub. eq 0) %then %do;					
+	            %if %eval(&unique_psestimate.) = 1 %then %do;					
 	             %tableletter(); 
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
 	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
