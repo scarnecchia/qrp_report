@@ -266,7 +266,7 @@
 				
 				 /* Loop for each subgroup subgroupcat combination */
 				proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
-			      by subgroup;
+			      by subgrouporder;
                 run;
 			    
 				%let subgrouplist =;
