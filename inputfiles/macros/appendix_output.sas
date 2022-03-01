@@ -293,21 +293,16 @@
 
 			%if &numsubgroups. > 0 %then %do;
 			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-	            length text $100;	
-				if length(compress(combinedlabel, ' &')) >= 10 then do;	
-					if substr(compress(combinedlabel, ' &'),1,10)="StudyCovar" then do;
-						text = "&covarlabel.";
-					end;
-					else if substr(compress(combinedlabel, ' &'),1,12)="NoStudyCovar" then do;
-						text = "&nocovarlabel.";
-					end;
-					else do;
-						text = combinedlabel;
-					end;
+	            length text $100;					
+				if prxmatch('/^StudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
+					text = "&covarlabel.";
+				end;
+				else if prxmatch('/^NoStudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
+					text = "&nocovarlabel.";
 				end;
 				else do;
 					text = combinedlabel;
-				end;
+				end;				
 	            num=100;
 				line text $Varying. num; 
 			endcomp;
