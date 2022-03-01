@@ -294,7 +294,7 @@
 			%if &numsubgroups. > 0 %then %do;
 			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 	            length text $100;	
-				if length(substr(compress(combinedlabel, ' &'),1,10))>=10 then do;	
+				if length(compress(combinedlabel, ' &')) >= 10 then do;	
 					if substr(compress(combinedlabel, ' &'),1,10)="StudyCovar" then do;
 						text = "&covarlabel.";
 					end;
