@@ -336,18 +336,22 @@
 				%else %if &reporttype = T6 %then %do;
 					%if &figure = F4 %then %do;
 						%let title = Kaplan-Meier Estimate of First Switch Not Occurring Among &grouplabel.;
+						%let xaxislabel = %str(Follow-up time until first switch or censoring (days));
 						%let yaxislabel = %str(Cumulative probability that first switch(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F5 %then %do;
 						%let title = Kaplan-Meier Estimate of Second Switch Not Occurring Among &grouplabel.;
+						%let xaxislabel = %str(Follow-up time since first switch until second switch or censoring (days));
 						%let yaxislabel = %str(Cumulative probability that second switch(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F6 %then %do;
 						%let title = Reasons for Censoring at First Switch Evaluation Among &grouplabel.;
+						%let xaxislabel = %str(Follow-up time until first switch or censoring (days));
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
 					%else %if &figure = F7 %then %do;
 						%let title = Reasons for Censoring at Second Switch Evaluation Among &grouplabel.;
+						%let xaxislabel = %str(Follow-up time since first switch until second switch or censoring (days));
 						%let yaxislabel = %str(Cumulative probability that censoring reason(*ESC*){unicode '000A'x} has not occurred);
 					%end;
                       
@@ -356,7 +360,7 @@
 									 where=%str(order=&order.),
 									 figtitle=%quote(&title in the &database. from &startdateformatted. to &enddateformatted.),
 									 figfn=,
-									 xaxislabel=%str(Follow-up time (days)),
+									 xaxislabel=&xaxislabel,
 						 		 	 yaxislabel=&yaxislabel,
 									 figure=&figure,
 									 font=&fontfamily,
