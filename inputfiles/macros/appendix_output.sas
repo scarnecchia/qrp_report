@@ -294,11 +294,11 @@
 			%if &numsubgroups. > 0 %then %do;
 			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 	            length text $100;					
-				if prxmatch('/^StudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
-					text = "&covarlabel.";
-				end;
-				else if prxmatch('/^NoStudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
+				if prxmatch('/^NoStudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
 					text = "&nocovarlabel.";
+				end;
+				else if prxmatch('/^StudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
+					text = "&covarlabel.";
 				end;
 				else do;
 					text = combinedlabel;
