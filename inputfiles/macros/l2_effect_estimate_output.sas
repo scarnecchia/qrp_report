@@ -88,7 +88,7 @@
 	          			left join labelfile_est b
 	          			on coalescec(a.medicalproduct, a.analysisgrp) = b.group
                         where b.runid = "&runid.") c
-            order by c.analysisgrpsort, c.subgroup, c.subgrouporder, c.subgroupcatorder, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
+            order by c.analysisgrpsort, c.subgrouporder, c.subgroupcatorder, c.sort1, c.sort2 %if &look_start ^= &look_end %then %do; ,c.monitoringperiod %end;;
 	    quit;
 	    %end;
 

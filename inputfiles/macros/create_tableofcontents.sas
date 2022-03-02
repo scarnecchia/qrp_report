@@ -217,8 +217,8 @@
 
 				%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
 					proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-									   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-					by runid analysisgrp subgroup subgroupcat;
+									   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+					by subgrouporder subgroupcatorder;
 					run;
 
 					proc sql noprint;
@@ -521,12 +521,16 @@
             %end;
 
             /* Store subgroup to determine subgroup labels */
+			proc sort nodupkey data=l2_effectestimates_&look_end.(where=(analysisgrp="&analysisgrp."))
+							   out=_subgroups(keep= subgroup subgrouporder);
+			by subgrouporder;
+			run;
+
             proc sql noprint;
                 select distinct subgroup
                 into :subgrouplist
                 separated by ' '
-                from l2_effectestimates_&look_end.
-                where analysisgrp="&analysisgrp.";				
+                from _subgroups;				
             quit;
 
             %if %str(&subgrouplist.) = %str() %then %do;
@@ -1584,8 +1588,8 @@
 						%let subgrouptitle=;
 
 						proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-											   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-						by runid analysisgrp subgroup subgroupcat;
+											   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+						by subgrouporder subgroupcatorder;
 						run;
 
 						proc sql noprint;
@@ -1630,13 +1634,13 @@
 								 %put WARNING: (Sentinel) Insufficient data to produce histogram for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. Histogram will not be produced.; 
 							%end;
 			            %end; /* loop subgroups */
+
+						%let figurenum = %eval(&figurenum.+1); 
+						%let tablecount = 1;
+						%let tableletter =a;
+
 					 %end; /*psfile*/
-				    %end; /* OutputPSDistribution */
-
-					%let figurenum = %eval(&figurenum.+1); 
-					%let tablecount = 1;
-					%let tableletter =a;
-
+				    %end; /* OutputPSDistribution */					
 				   %end; /* loop comparisons */
 				%end; /* loop periods */			 
 	        %end; /*Histograms*/
@@ -1727,8 +1731,8 @@
 							%let subgrouptitle=;
 
 							proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-												   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-							by runid analysisgrp subgroup subgroupcat;
+												   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+							by subgrouporder subgroupcatorder;
 							run;
 
 							proc sql noprint;
@@ -1809,13 +1813,13 @@
 									%end;
 		                        %end;
 
-							%end; /*loop through numsubgroups */                        
-	                    %end; /*only PSmatch or stratification*/
+							%end; /*loop through numsubgroups */    
+ 
+							%let figurenum = %eval(&figurenum.+1); 
+							%let tablecount = 1;
+							%let tableletter =a; 
 
-						%let figurenum = %eval(&figurenum.+1); 
-						%let tablecount = 1;
-						%let tableletter =a;
-
+	                    %end; /*only PSmatch or stratification*/						
 					%end; /*loop through numl2comparisons */
                 %end; /*loop through periodid*/
             

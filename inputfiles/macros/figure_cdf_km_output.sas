@@ -449,8 +449,8 @@
 						%let subgrouptitle=;
 
 						proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-											   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-						by runid analysisgrp subgroup subgroupcat;
+											   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+						by subgrouporder subgroupcatorder;
 						run;
 
 						proc sql noprint;
@@ -517,13 +517,13 @@
 									%end; /* sufficient data to plot the figure */
 		                        %end; /* &nobs.>0 */
 							%end; /* figurelist */ 
-	                	%end; /* subgroups */	                
+	                	%end; /* subgroups */
+
+						%let figurenum=%eval(&figurenum+1); 
+						%let tablecount = 1;
+						%let tableletter =a; 
+
 	            	%end; /* psfile */	  
-
-					%let figurenum=%eval(&figurenum+1); 
-					%let tablecount = 1;
-					%let tableletter =a;
-
 			 	%end; /* loopcount */
 			%end; /* Monitoring Period */
 		%end; /* reporttype */

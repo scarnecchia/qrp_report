@@ -709,8 +709,8 @@
 
 			%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
 				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-								   out=_subgroups(keep=runid analysisgrp subgroup subgroupcat combinedlabel);
-				by runid analysisgrp subgroup subgroupcat;
+								   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+				by subgrouporder subgroupcatorder;
 				run;
 
 				proc sql noprint;
