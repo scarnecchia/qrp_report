@@ -35,7 +35,7 @@
 		run;
 		%end;
 
-		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount."and subgroup="&subgroup." and subgroupcat="&subgroupcat."));  
+		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));  
 			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
 			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
 			keylegend / location=outside position=bottom noborder valueattrs=(size=&fontsize. family=&font.);
@@ -180,14 +180,9 @@
 		                put _all_;
 		                run;
 		                ods select all;
-						%end;
+						%end;						
 
-						proc sql noprint;
-							select count(distinct AnalysisGrp) into: numPScomparisons
-		            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
-						quit;
-
-						%if &numPScomparisons.=1 and %eval(&look_end)=1 and &numsubgroups.=0 %then %let tablecount = 0;
+						%if &numsubgroups.=0 %then %let tablecount = 0;
 		                %tableletter();
 		                %if &destination. = excel %then %do;
 		                ods excel options(sheet_interval="none" sheet_name = "Figure &figurenum.&tableletter." tab_color="DeepSkyBlue" flow='none');

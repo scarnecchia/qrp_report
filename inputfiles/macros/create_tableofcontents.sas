@@ -1523,12 +1523,7 @@
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 
 	        /*F1: PS distribution histograms*/
-	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
-
-				proc sql noprint;
-					select count(distinct AnalysisGrp) into: numPScomparisons
-            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
-				quit;
+	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;				
 
 				%do j = %eval(&look_start) %to %eval(&look_end);
 					%do loopcount = 1 %to &numl2comparisons.; 
@@ -1623,9 +1618,7 @@
 							%end;
 							
 							%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
-								%if &numPScomparisons.=1 and %eval(&look_end)=1 and &numsubgroups.=0 %then %do;
-									%let tablecount = 0;
-								%end;
+								%if &numsubgroups.=0 %then %let tablecount = 0;								
 				                %tableletter();
 				                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
 				                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.))
@@ -1815,6 +1808,24 @@
 
 							%end; /*loop through numsubgroups */    
  
+							/* if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  				the numerous permutations of situations that can lead to 1 figure */
+							%let countkm = 0;
+							proc sql noprint;
+			                    select count(caption) into: countkm
+			                    from tableofcontents
+			                    where index(tabnum, "Figure &figurenum.")>0;
+			                quit;
+
+			                %if %eval(&countkm.)=1 %then %do;
+			                    data tableofcontents;
+			                        set tableofcontents;
+			                        if index(tabnum, "Figure &figurenum.")>0 then do;
+			                        tabnum = "Figure &figurenum.";
+			                        end;
+			                    run;
+			                %end;     
+
 							%let figurenum = %eval(&figurenum.+1); 
 							%let tablecount = 1;
 							%let tableletter =a; 
@@ -1823,8 +1834,8 @@
 					%end; /*loop through numl2comparisons */
                 %end; /*loop through periodid*/
             
-                /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
-                  the numerous permutations of situations that can lead to 1 figure */
+                /*dma if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  the numerous permutations of situations that can lead to 1 figure 
                 proc sql noprint;
                     select count(caption) into: countkm
                     from tableofcontents
@@ -1839,7 +1850,7 @@
                         end;
                     run;
                 %end;                                           			 
-
+*/
             %end; /*KM plots*/
         %end; /*L2 figures*/
 
