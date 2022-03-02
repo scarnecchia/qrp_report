@@ -1832,25 +1832,7 @@
 
 	                    %end; /*only PSmatch or stratification*/						
 					%end; /*loop through numl2comparisons */
-                %end; /*loop through periodid*/
-            
-                /*dma if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
-                  the numerous permutations of situations that can lead to 1 figure 
-                proc sql noprint;
-                    select count(caption) into: countkm
-                    from tableofcontents
-                    where index(caption, 'Kaplan-Meier Estimate')>0;
-                quit;
-
-                %if %eval(&countkm.)=1 %then %do;
-                    data tableofcontents;
-                        set tableofcontents;
-                        if index(caption, 'Kaplan-Meier Estimate')>0 then do;
-                        tabnum = "Figure &figurenum.";
-                        end;
-                    run;
-                %end;                                           			 
-*/
+                %end; /*loop through periodid*/                      
             %end; /*KM plots*/
         %end; /*L2 figures*/
 
