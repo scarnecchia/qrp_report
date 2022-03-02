@@ -569,10 +569,7 @@
         %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
                 %let tablecount = 0;
-            %end;
-            %else %do;
-                %if &psfile. = covstratfile %then %let tablecount = 0;
-            %end;
+            %end;       
         %end;
 
         /*Assign labels*/
@@ -744,6 +741,8 @@
 					%let unique_psestimate = &unique_psestimate_orig;
 				%end;
 		
+				%if &psfile. = covstratfile and &numsubgroups. = 0 %then %let tablecount = 0;
+
 	            %if %eval(&unique_psestimate.) = 1 %then %do;					
 	             %tableletter(); 
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',

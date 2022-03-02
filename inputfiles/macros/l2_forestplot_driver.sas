@@ -117,15 +117,6 @@
             %isdata(dataset=forest);
             %if %eval(&nobs)>0 %then %do;
 
-				proc sort data=forest;
-				by analysisgrpsort subgrouporder subgroupcatorder id;
-				run;
-
-				data forest;
-				set forest;				
-              	obsid=_n_;
-				run;
-
                 /*Site-adjusted and covariate stratification do not have footnotes*/
                 %if %eval(&plot.=1) | %eval(&plot.=7) %then %let forestfootnote = N;
 
