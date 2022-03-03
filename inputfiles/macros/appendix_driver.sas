@@ -57,8 +57,8 @@
 	%isdata(dataset=agghdps);
     %if &nobs > 0 and &numl2comparisons > 0 %then %do;
 	   /* Rank hdps vars */
-	   proc sort data = agghdps;
-		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking;
+	   proc sort nodupkey data = agghdps;		  
+		  by dpidsiteid psestimategrp analysisgrp subgroup subgroupcat periodid descending ranking frequency codecat codetype code;
 	   run;
 		
 	   data agghdps;
@@ -147,11 +147,11 @@
                             call symputx('subgroupcat', subgroupcat);
                             call symputx('titlesuffix', combinedlabel);
                             if subgroup ne '' then do;
-                                call symputx('wherecl', %str(analysisgrp = "&analysisgrp.")); 
+                                call symputx('wherecl', "analysisgrp = '&analysisgrp.'"); 
                                 call symputx('grouplabel', %quote("&analysisgrplabel")); 
                             end;
                             else do;
-                                call symputx('wherecl', %str(psestimategrp = "&psestimategrp."));
+                                call symputx('wherecl', "psestimategrp = '&psestimategrp.'");
                                 call symputx('grouplabel', %quote("&psestimategrplabel")); 
                             end;
                         end;
@@ -197,6 +197,11 @@
     /*********************************************************************************************/	
 	%isdata(dataset=aggwd);
 	%if &nobs > 0 and &numl2comparisons > 0 %then %do;
+	
+	proc sort nodupkey data=pscs_masterinputs out=_labels(keep=subgroup subgroupcat combinedlabel);
+	by subgroup subgroupcat;
+	run;
+
 	/*loop through each periodid*/
 	%do periodid = %eval(&look_start.) %to %eval(&look_end.);
 	    /* Loop through all order values */
@@ -261,7 +266,7 @@
 				
 				 /* Loop for each subgroup subgroupcat combination */
 				proc sort nodupkey data = pscs_masterinputs (where = (lowcase(analysisgrp) = "&analysisgrp" and not missing(subgroup))) out = _subgrp;
-			      by subgroup;
+			      by subgrouporder;
                 run;
 			    
 				%let subgrouplist =;
@@ -287,7 +292,7 @@
 				  %if &sub. > 0 %then %do; 
 				     %let subgroup = %scan(&subgrouplist, &sub.);                     
 					 %let tabletitle = %scan(&tabletitlelist, &sub., '|');
-                     %let titlesuffix = %str(, &tabletitlelist.); 
+                     %let titlesuffix = %str(, &tabletitle.); 
 				  %end;
 				  
                   %let subcategorization=; *the list of categorization;
@@ -429,8 +434,17 @@
 					 %end;
 				     			
                      proc sort data=repdata.appendix&tableletter.;
-                         by dpidsiteid subgroup subgroupcat;
-                     run;
+                         by subgroup subgroupcat dpidsiteid;
+                     run;					 
+
+					 data repdata.appendix&tableletter.;
+					 merge repdata.appendix&tableletter.(in=a)
+						   _labels;
+					 by subgroup subgroupcat;
+					 if a;
+					 combinedlabel=strip(compress(combinedlabel, ","));
+					 if combinedlabel="" then combinedlabel="Overall";
+					 run;
 				   
 				     %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
 				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
@@ -447,7 +461,7 @@
 	%end;  /* periodid */
 
     proc datasets lib=work nolist;
-		delete aggwd aggwd_overall;
+		delete aggwd aggwd_overall _labels;
 	quit;
 
 	%end; /* &nobs > 0  and &numl2comparisons > 0 */

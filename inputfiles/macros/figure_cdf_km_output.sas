@@ -390,6 +390,8 @@
 
            %if &countkm = 1 %then %let tablecount = 0;
 
+		   %do j = %eval(&look_start) %to %eval(&look_end);
+
         	/*loop through each analysisgrp - dataset only exists if curve computed*/
 			%do loopcount = 1 %to &numl2comparisons.;   
 
@@ -439,55 +441,95 @@
                                 if b then call symputx('eoilabel', label);
                                 if c then call symputx('reflabel', label);
                             run;
-                        %end;
+                        %end;                    
+                
+						%let numsubgroups=0;
+						%let subgroup=;
+						%let subgroupcat=;
+						%let subgrouptitle=;
 
-                    %do j = %eval(&look_start) %to %eval(&look_end);
+						proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+											   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+						by subgrouporder subgroupcatorder;
+						run;
 
-                    /*Loop through each figure */
-					%do f = 1 %to %sysfunc(countw(&figurelist));
-						%let figure = %scan(&figurelist,&f);
+						proc sql noprint;
+						select count(*) into :numsubgroups from _subgroups;
+						quit;
 
-                        /*F3, F4 and/or F5*/
-                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) %then %do;
+						%do sub=0 %to &numsubgroups.;
 
-                        %if &figure = F3 %then %let titlestart=Unadjusted;
-                        %else %if &figure = F4 %then %let titlestart=Conditional;
-                        %else %let titlestart=Unconditional;
+							%if &sub. > 0 %then %do;
+								data _null_;
+								set _subgroups;
+								if _N_=&sub.;
+								call symputx("SubGroup",lowcase(strip(subgroup)));
+							    call symputx("SubgroupCat",upcase(strip(subgroupcat)));
+								call symputx("subgrouptitle",combinedlabel);
+								run;
 
-                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
-									 where=1,
-									 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.),
-									 figfn=,
-									 xaxislabel=%str(Follow-up time (days)),
-									 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
-									 figure=&figure,
-									 font=&fontfamily,
-									 analysis=&titlestart,
-									 analysisgrp=&analysisgrp,
-									 monitoringperiod=&j,
-									 eoi=&GRP1,
-									 ref=&GRP0,
-									 eoilabel=&eoilabel,
-									 reflabel=&reflabel,
-									 %if &figure ^= F4 %then %do; 
-									 kmrefpop=unweighted 
-									 %end;
-									 %else %do; 
-									 kmrefpop=&kmrefpop 
-									 %end;);
-                        %end;
+							%end;			
 
-	                %end; /* figurelist */ 
-	                %end; /* Monitoring Period */
-	            %end; /* psfile */
-	                                          
-			%end; /* loopcount */
+							%put Looping on subgroup &SubGroup.: &SubgroupCat.;
 
+							/*Loop through each figure */
+							%do f = 1 %to %sysfunc(countw(&figurelist));
+								%let figure = %scan(&figurelist,&f);								
+
+		                        /*F3, F4 and/or F5*/
+		                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
+		                        %if %eval(&nobs.>0) %then %do;
+
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figure&figure._analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %if &figure = F3 %then %let titlestart=Unadjusted;
+				                        %else %if &figure = F4 %then %let titlestart=Conditional;
+				                        %else %let titlestart=Unconditional;
+										
+				                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
+													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
+													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figfn=,
+													 xaxislabel=%str(Follow-up time (days)),
+													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+													 figure=&figure,
+													 font=&fontfamily,
+													 analysis=&titlestart,
+													 analysisgrp=&analysisgrp,
+													 monitoringperiod=&j,
+													 eoi=&GRP1,
+													 ref=&GRP0,
+													 eoilabel=&eoilabel,
+													 reflabel=&reflabel,
+													 %if &figure ^= F4 %then %do; 
+													 kmrefpop=unweighted 
+													 %end;
+													 %else %do; 
+													 kmrefpop=&kmrefpop 
+													 %end;);
+									%end; /* sufficient data to plot the figure */
+		                        %end; /* &nobs.>0 */
+							%end; /* figurelist */ 
+	                	%end; /* subgroups */
+
+						%let figurenum=%eval(&figurenum+1); 
+						%let tablecount = 1;
+						%let tableletter =a; 
+
+	            	%end; /* psfile */	  
+			 	%end; /* loopcount */
+			%end; /* Monitoring Period */
 		%end; /* reporttype */
 
     proc datasets nowarn nolist noprint lib=work;
-        delete _kmcols;
+        delete _kmcols sample;
     quit;
 
 	ods graphics / reset=height;

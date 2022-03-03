@@ -210,10 +210,7 @@
 ***************************************************************************************************;
 *   Output report                                                
 ***************************************************************************************************;
-
-    /*temporary - L2 reporting code out of date*/
-    %if %str("&reporttype") ne %str("T2L2") & %str("&reporttype") ne %str("T4L2") %then %do;
-
+    
     /*Excel*/
     %if "&report_destination." = "BOTH" | "&report_destination." = "EXCEL"  %then %do;
         /*windows: report font = Calibri, font size = 10, footnote fontsize = 9*/
@@ -231,10 +228,8 @@
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt, bordersize=2pt);
     %end;
-
-    %end; /*to be removed*/
-
-    %end;
+  
+    %end; /*reporttype is not TREE*/
 
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
