@@ -69,6 +69,7 @@
 	  %addtotoc(tabnum=Glossary (PSA), caption=List of Terms to Define the Propensity Score Analysis (PSA) Found in this Report);				 
     %end;
 
+
     /*********************************************************************************************/
     /* Baseline Table                                                                            */
     /*********************************************************************************************/
@@ -109,6 +110,7 @@
                     call symputx('runid', runid);
                     call symputx('cohort', cohort);
                     call symputx('unique_psestimate',unique_psestimate);
+					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
                         if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
@@ -128,7 +130,7 @@
          
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and covarnum=0));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
                 call symputx('psfile', strip(file));
                 call symputx('psestimategrp', psestimategrp);
                 call symput('unadjusted', 'Unadjusted '); /*for unadjusted table label*/
@@ -155,18 +157,15 @@
             run;
             %end;
 
-            /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
+            /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
             - 1 monitoring period
             - DP stratification = N
             - max(order) in baselinefile = 1
-            - if reporttype = T2L2, T4L2- then analysis must be covariate stratification*/
+             For L2 tables, tablecount assigned in macro baselinetoc*/
             %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
                 %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
                     %let tablecount = 0;
-                %end;
-                %else %do;
-                    %if &psfile. = covstratfile %then %let tablecount = 0;
-                %end;
+                %end;                
             %end;
 
             /*Assign labels*/
@@ -204,49 +203,88 @@
                 run;
             %end;
 
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-            %if %length(&baselinegroupnum.)>0 %then %do;
-            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
-            %end;
-            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-            %let captionlabel = %bquote(&psestimatelabel.);
-            %end;         
-
             /*1 block of code for both aggregate and DP tables*/
             %macro baselinetoc(aggregated=, dpinparenthesis=, dpcomma=);
-                %if %eval(&unique_psestimate.) = 1 %then %do;
-                 %tableletter(); 
-                 %addtotoc(tabnum=Table 1&tableletter., 
-                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                %end;
 
-                /*For L2 tables - up to 2 additional adjusted tables*/
-                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-                    /*PS Match Adjusted*/
-                    %if &psfile. = psmatchfile %then %do;
-                    %tableletter(); 
-                    %addtotoc(tabnum=Table 1&tableletter., 
-                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
+				* Process L2 subgroups;
+				%let numsubgroups=0;
+				%let subgroup=;
+				%let subgroupcat=;
+				%let subgrouptitle=;
 
-                    /*Unweighted - IPTW and PS Stratum*/
-                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
-                    %tableletter(); 
-                    %addtotoc(tabnum=Table 1&tableletter., 
-                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
+				%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
+					proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+									   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+					by subgrouporder subgroupcatorder;
+					run;
 
-                    /*Weighted - IPTW, PS Stratum, PS Stratification*/
-                    %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
-                        %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
-                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then 
-                         %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
-                        %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
-                        %tableletter(); 
-                        %addtotoc(tabnum=Table 1&tableletter., 
-                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.));
-                    %end;
-                %end; /*Additional L2 tables*/
+					proc sql noprint;
+					select count(*) into :numsubgroups from _subgroups;
+					quit;
+				%end;
+
+				%do sub=0 %to &numsubgroups.;
+
+					%if &sub. > 0 %then %do;
+						data _null_;
+						set _subgroups;
+						if _N_=&sub.;		
+						call symputx("subgrouptitle",combinedlabel);
+						run;
+						
+						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+						%let unique_psestimate = 1;
+					%end;	
+					%else %do;
+						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
+			            %if %length(&baselinegroupnum.)>0 %then %do;
+			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			            %end;
+			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
+			            %let captionlabel = %bquote(&psestimatelabel.);
+			            %end;  
+
+						%let unique_psestimate = &unique_psestimate_orig;
+					%end;
+
+                    /*For L2 queries, set &tablecount to 0 if covariate stratification AND no subgroups*/
+					%if &psfile. = covstratfile and &numsubgroups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
+						&stratifybydp. = N and %eval(&numbaselinetablegrp.=1) %then %let tablecount = 0;
+
+	                %if %eval(&unique_psestimate.) = 1 %then %do;
+	                 %tableletter(); 
+	                 %addtotoc(tabnum=Table 1&tableletter., 
+	                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                %end;
+
+	                /*For L2 tables - up to 2 additional adjusted tables*/
+	                %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+	                    /*PS Match Adjusted*/
+	                    %if &psfile. = psmatchfile %then %do;
+	                    %tableletter(); 
+	                    %addtotoc(tabnum=Table 1&tableletter., 
+	                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+
+	                    /*Unweighted - IPTW and PS Stratum*/
+	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                    %tableletter(); 
+	                    %addtotoc(tabnum=Table 1&tableletter., 
+	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+
+	                    /*Weighted - IPTW, PS Stratum, PS Stratification*/
+	                    %if &psfile. = iptwfile | &psfile. = stratificationfile %then %do;
+	                        %if &psfile. = iptwfile %then %let stratumtitle = Inverse Probability of Treatment Weighted, Trimmed&dpcomma., Weight: &weightlabel., Truncation: &truncationlabel.%nrbquote(%);
+	                        %else %if "&weightscheme." = "ATE" | "&weightscheme." = "ATT" %then 
+	                         %let stratumtitle = Propensity Score Stratum Weighted, Trimmed&dpcomma., Percentiles: &percentiles., Weight: &weightlabel.;
+	                        %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
+	                        %tableletter(); 
+	                        %addtotoc(tabnum=Table 1&tableletter., 
+	                        caption=%quote(&aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+	                    %end;
+	                %end; /*Additional L2 tables*/
+				%end; /*Subgroups looping*/
             %mend;
 
             /*loop through each periodid*/
@@ -461,7 +499,7 @@
 
     %if &numl2comparisons > 0 %then %do; 
 
-        /*loop through each baseline table*/
+        /*loop through each comparison*/
         %do c = 1 %to &numl2comparisons;
 
         /* reset counter to reset table letter */
@@ -483,50 +521,49 @@
             run;
             %end;
 
-            /* Store covarnums to determine covar labels */
+            /* Store subgroup to determine subgroup labels */
+			proc sort nodupkey data=l2_effectestimates_&look_end.(where=(analysisgrp="&analysisgrp."))
+							   out=_subgroups(keep= subgroup subgrouporder);
+			by subgrouporder;
+			run;
+
             proc sql noprint;
-                select distinct covarnum
-                into :covarlist
+                select distinct subgroup
+                into :subgrouplist
                 separated by ' '
-                from l2_effectestimates_&look_end.
-                where analysisgrp="&analysisgrp.";
+                from _subgroups;				
             quit;
 
-            %if &covarlist = 0 %then %let tablecount = 0;
+            %if %str(&subgrouplist.) = %str() %then %do;
+				%let tablecount = 0;
+				%let numsubgroups=0;
+			%end;
+			%else %let numsubgroups=%sysfunc(countw(&subgrouplist));
 
-            /* loop covarnums and assign subgroup label */
-            %do covarcount = 1 %to %sysfunc(countw(&covarlist));
-                %let covarnum = %scan(&covarlist,&covarcount);
+            /* loop subgroup and assign subgroup label */
+            %do subgroupcount = 0 %to &numsubgroups.;
+                %if &subgroupcount. = 0 %then %let subgroup=;
+        		%else %let subgroup= %scan(&subgrouplist,&subgroupcount);
+				%let subgrouplabel=;
 
-                %if &covarnum = 0 %then %do;
+				proc sql noprint;
+					select distinct strip(tabletitle) into: subgrouplabel trimmed
+            		from Pscs_masterinputs
+            		where subgroup = "&subgroup.";
+				quit;
+
+                %if %str(&subgroup.) = %str() %then %do;
                 %let titleend = %str();
                 %end;
 
-                %else %if &covarnum = 9000 %then %do; 
+                %else %if %substr(%upcase(&subgroup.),1,2) eq DP %then %do;
                 %let titleend = %str(and Data Partner);
                 %end;
 
-                %else %do;
-                %if &covarnum < 1000 %then %do;
-                proc sql noprint;
-                select distinct strip(studyname) into: subgrouplabel
-                from infolder.&&&runid._covariatecodes
-                where covarnum = &covarnum.;
-                quit;
-                %end;
-
-                %if &covarnum = 1000 %then %let subgrouplabel = Sex;
-                %else %if &covarnum = 1001 %then %let subgrouplabel = Age Group;
-                %else %if &covarnum = 1002 %then %let subgrouplabel = Year;
-                %else %if &covarnum = 1003 %then %let subgrouplabel = Monitoring Period;
-                %else %if &covarnum = 1012 %then %let subgrouplabel = Race;
-                %else %if &covarnum = 1013 %then %let subgrouplabel = Hispanic Origin;
-                %else %if &covarnum = 1014 %then %let subgrouplabel = Delivery Status;
-                %else %if &covarnum = 2000 %then %let subgrouplabel = Match Method;
-                %else %if &covarnum = 2001 %then %let subgrouplabel = Birth Type;
-
+                %else %do;                
                 %let titleend = %str(and &subgrouplabel);
                 %end;
+
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
                 caption=%quote(Effect Estimates for &grouplabel. in the &database. from &startdateformatted. to &&enddate&look_end.formatted., by Analysis Type &titleend.));
@@ -1487,76 +1524,119 @@
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 
 	        /*F1: PS distribution histograms*/
-	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;
+	        %if %sysfunc(prxmatch(m/F1/i,&figurelist.)) > 0 %then %do;				
 
-				proc sql noprint;
-					select count(distinct AnalysisGrp) into: numPScomparisons
-            		from l2comparisonfile(where=(OutputPSDistribution="Y"));
-				quit;
+				%do j = %eval(&look_start) %to %eval(&look_end);
+					%do loopcount = 1 %to &numl2comparisons.; 
 
-				%do loopcount = 1 %to &numl2comparisons.; 
+						data _NULL_;
+			            set l2comparisonfile(where=(order=&loopcount.));
+			            call symputx('runid', runid);
+			            call symputx('analysisgrp', analysisgrp);
+			            call symputx('OutputPSDistribution', OutputPSDistribution);
+			       		run;
 
-					data _NULL_;
-		            set l2comparisonfile(where=(order=&loopcount.));
-		            call symputx('runid', runid);
-		            call symputx('analysisgrp', analysisgrp);
-		            call symputx('OutputPSDistribution', OutputPSDistribution);
-		       		run;
+					  %if &OutputPSDistribution. = Y %then %do;
 
-				  %if &OutputPSDistribution. = Y %then %do;
+						%isdata(dataset=labelfile);
+						%let grouplabel=&analysisgrp.;
 
-					%isdata(dataset=labelfile);
-					%let grouplabel=&analysisgrp.;
-
-				    %if %eval(&nobs>0) %then %do;
-					  data _NULL_;
-					  set labelfile(where=(lowcase(labeltype)='grouplabel'));
-					  if group="&analysisgrp." and runid = "&runid";
-		              call symputx('grouplabel', Label);
-					  run;
-					  %put &grouplabel.;
-					%end;
-
-					%let andafter=;
-
-					proc sql noprint;
-		            select strip(file) into: psfile
-		            from pscs_masterinputs
-		            where analysisgrp = "&analysisgrp.";
-			        quit;
-
-                    %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
-				      data _null_; 
-	                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
-	                    call symputx("psestimategrp", lowcase(psestimategrp));
-	                        %if &psfile. = psmatchfile  %then %do;
-	                            if upcase(ratio) = "F" then do;
-								    call symput("andafter", " and After");
-	                            end;
-	                        %end;
-	                        %if &psfile = iptwfile %then %do;
-							   call symput("andafter", " and After");
-	                        %end;
-							%else %if &psfile = stratificationfile %then %do;
-							   if upcase(strataweight) in ("ATE", "ATT") then do;
-							     call symput("andafter", " and After");
-							   end;
-	                        %end;
-	                  run; 
-
-		            %do j = %eval(&look_start) %to %eval(&look_end);
-
-						%if &numPScomparisons.=1 and %eval(&look_end)=1 %then %do;
-							%let tablecount = 0;
+					    %if %eval(&nobs>0) %then %do;
+						  data _NULL_;
+						  set labelfile(where=(lowcase(labeltype)='grouplabel'));
+						  if group="&analysisgrp." and runid = "&runid";
+			              call symputx('grouplabel', Label);
+						  run;
+						  %put &grouplabel.;
 						%end;
-		                %tableletter();
-		                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
-		                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.))
-		            %end; /* loop periods */
-				%end; /*psfile*/
-			  %end; /* OutputPSDistribution */
-			 %end; /* loop comparisons */
-			 %let figurenum = %eval(&figurenum.+1); 
+
+						%let andafter=;
+
+						proc sql noprint;
+			            select strip(file) into: psfile
+			            from pscs_masterinputs
+			            where analysisgrp = "&analysisgrp." and missing(subgroup);
+				        quit;
+
+	                    %if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
+					      data _null_; 
+		                  set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp." and missing(subgroup)));
+		                    call symputx("psestimategrp", lowcase(psestimategrp));
+		                        %if &psfile. = psmatchfile  %then %do;
+		                            if upcase(ratio) = "F" then do;
+									    call symput("andafter", " and After");
+		                            end;
+		                        %end;
+		                        %if &psfile = iptwfile %then %do;
+								   call symput("andafter", " and After");
+		                        %end;
+								%else %if &psfile = stratificationfile %then %do;
+								   if upcase(strataweight) in ("ATE", "ATT") then do;
+								     call symput("andafter", " and After");
+								   end;
+		                        %end;
+		                  run; 
+
+			            
+						%let numsubgroups=0;
+						%let subgroup=;
+						%let subgroupcat=;
+						%let subgrouptitle=;
+
+						proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+											   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+						by subgrouporder subgroupcatorder;
+						run;
+
+						proc sql noprint;
+						select count(*) into :numsubgroups from _subgroups;
+						quit;
+
+						%do sub=0 %to &numsubgroups.;
+
+							%let max_eoi=0;
+							%let max_ref=0;
+							
+							%if &sub. > 0 %then %do;
+								data _null_;
+								set _subgroups;
+								if _N_=&sub.;		
+								call symputx("SubGroup",lowcase(strip(subgroup)));
+						    	call symputx("SubgroupCat",upcase(strip(subgroupcat)));	
+								call symputx("subgrouptitle",combinedlabel);
+								run;			
+
+								proc sql noprint;
+								select max(_eoi), max(_ref) into :max_eoi, :max_ref
+								from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+							quit;	
+							%end;
+							%else %do;
+								proc sql noprint;
+									select max(_eoi), max(_ref) into :max_eoi, :max_ref
+									from histogram_&j. (where=(runid="&runid." and order="&loopcount." and subgroup="" and subgroupcat=""));
+								quit;
+							%end;
+							
+							%if &max_eoi. > 0 and &max_ref. > 0 %then %do;
+								%if &numsubgroups.=0 %then %let tablecount = 0;								
+				                %tableletter();
+				                %addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                caption=%quote(Histograms Depicting Propensity Score Distributions Before&andafter Adjustment for &grouplabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.))
+							%end;
+							%else %do;
+								 %put WARNING: (Sentinel) Insufficient data to produce histogram for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. Histogram will not be produced.; 
+							%end;
+			            %end; /* loop subgroups */
+
+						%let figurenum = %eval(&figurenum.+1); 
+						%let tablecount = 1;
+						%let tableletter =a;
+
+					 %end; /*psfile*/
+				    %end; /* OutputPSDistribution */					
+				   %end; /* loop comparisons */
+				%end; /* loop periods */			 
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
@@ -1592,103 +1672,173 @@
                 *reset tablecount; 
 				%let tablecount = 1;
 
-                /*loop through each analysisgrp - dataset only exists if curve computed*/
-				%do loopcount = 1 %to &numl2comparisons.;   
-                    data _null_;
-                        set l2comparisonfile(where=(order=&loopcount.));
-		                call symputx('runid', runid);
-		                call symputx('analysisgrp', analysisgrp);
-                    run;
+				/*loop through periodid*/
+                %do j = %eval(&look_start) %to %eval(&look_end);
 
-                    proc sql noprint;
-                        select distinct strip(file) into: pscsfile trimmed
-                        from pscs_masterinputs
-                        where analysisgrp = "&analysisgrp." and runid = "&runid";
-                    quit;
+	                /*loop through each analysisgrp - dataset only exists if curve computed*/
+					%do loopcount = 1 %to &numl2comparisons.;   
+	                    data _null_;
+	                        set l2comparisonfile(where=(order=&loopcount.));
+			                call symputx('runid', runid);
+			                call symputx('analysisgrp', analysisgrp);
+	                    run;
 
-                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
+	                    proc sql noprint;
+	                        select distinct strip(file) into: pscsfile trimmed
+	                        from pscs_masterinputs
+	                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+	                    quit;
 
-                        /*assign labels*/
-                        data _null_; 
-                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and covarnum = 0));
-                            call symputx("psestimategrp", lowcase(psestimategrp));
-                        run;
-                        data _null_; 
-                            set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
-                            call symputx('GRP1', eoi);
-                            call symputx('GRP0', ref); 
-                        run;
+	                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
 
-                        %let outcomelabel = Event of Interest;
-                        %let eoilabel = &grp1.;
-                        %let reflabel = &grp0.;
+	                        /*assign labels*/
+	                        data _null_; 
+	                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
+	                            call symputx("psestimategrp", lowcase(psestimategrp));
+	                        run;
+	                        data _null_; 
+	                            set infolder.&&&runid._psestimationfile(where=(lowcase(psestimategrp)="&psestimategrp."));
+	                            call symputx('GRP1', eoi);
+	                            call symputx('GRP0', ref); 
+	                        run;
 
-                        %isdata(dataset=labelfile);
-                        %if %eval(&nobs.>0) %then %do;
-                            data _null_;
-                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
-                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
-                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
+	                        %let outcomelabel = Event of Interest;
+	                        %let eoilabel = &grp1.;
+	                        %let reflabel = &grp0.;
 
-                                if a then call symputx('outcomelabel', label);
-                                if b then call symputx('eoilabel', label);
-                                if c then call symputx('reflabel', label);
-                            run;
-                        %end;
+	                        %isdata(dataset=labelfile);
+	                        %if %eval(&nobs.>0) %then %do;
+	                            data _null_;
+	                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
+	                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
+	                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
 
-                        /*loop through periodid*/
-                        %do j = %eval(&look_start) %to %eval(&look_end);
+	                                if a then call symputx('outcomelabel', label);
+	                                if b then call symputx('eoilabel', label);
+	                                if c then call symputx('reflabel', label);
+	                            run;
+	                        %end;         
 
-                        /*F3*/
-                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) %then %do;
-                        %tableletter();	
-                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                        %end;
-                        /*F4*/
-                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) %then %do;
-                        %tableletter();	
-                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                        %end;
-                        /*F5*/
-                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
-                        %if %eval(&nobs.>0) %then %do;
-                        %tableletter();	
-                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.));
-                        %end;
+							%let numsubgroups=0;
+							%let subgroup=;
+							%let subgroupcat=;
+							%let subgrouptitle=;
 
-                        %end; /*loop through periodid*/
-                    %end; /*only PSmatch or stratification*/
-                %end;
-            
-                /*if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
-                  the numerous permutations of situations that can lead to 1 figure */
-                proc sql noprint;
-                    select count(caption) into: countkm
-                    from tableofcontents
-                    where index(caption, 'Kaplan-Meier Estimate')>0;
-                quit;
+							proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+												   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+							by subgrouporder subgroupcatorder;
+							run;
 
-                %if %eval(&countkm.)=1 %then %do;
-                    data tableofcontents;
-                        set tableofcontents;
-                        if index(caption, 'Kaplan-Meier Estimate')>0 then do;
-                        tabnum = "Figure &figurenum.";
-                        end;
-                    run;
-                %end;
-                                           
-			 %let figurenum = %eval(&figurenum.+1); 
+							proc sql noprint;
+							select count(*) into :numsubgroups from _subgroups;
+							quit;
 
+							%do sub=0 %to &numsubgroups.;
+								
+								%if &sub. > 0 %then %do;
+									data _null_;
+									set _subgroups;
+									if _N_=&sub.;					
+									call symputx("SubGroup",lowcase(strip(subgroup)));	
+									call symputx("SubgroupCat",upcase(strip(subgroupcat)));										
+									call symputx("subgrouptitle",combinedlabel);
+									run;
+
+								%end;			 
+
+		                        /*F3*/								
+		                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
+		                        %if %eval(&nobs.>0) %then %do;
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF3_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
+		                        %end;
+		                        /*F4*/
+		                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
+		                        %if %eval(&nobs.>0) %then %do;
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF4_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
+		                        %end;
+		                        /*F5*/
+		                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
+		                        %if %eval(&nobs.>0) %then %do;
+									%let max_day=0;
+									
+									proc sql noprint;
+										select max(day) into :max_day
+										from figureF5_analysis&loopcount._&j. 
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+									quit;
+
+									%if &max_day. > 0 %then %do;
+				                        %tableletter();	
+				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
+				                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+									%end;
+									%else %do;
+										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
+									%end;
+		                        %end;
+
+							%end; /*loop through numsubgroups */    
+ 
+							/* if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  				the numerous permutations of situations that can lead to 1 figure */
+							%let countkm = 0;
+							proc sql noprint;
+			                    select count(caption) into: countkm
+			                    from tableofcontents
+			                    where index(tabnum, "Figure &figurenum.")>0;
+			                quit;
+
+			                %if %eval(&countkm.)=1 %then %do;
+			                    data tableofcontents;
+			                        set tableofcontents;
+			                        if index(tabnum, "Figure &figurenum.")>0 then do;
+			                        tabnum = "Figure &figurenum.";
+			                        end;
+			                    run;
+			                %end;     
+
+							%let figurenum = %eval(&figurenum.+1); 
+							%let tablecount = 1;
+							%let tableletter =a; 
+
+	                    %end; /*only PSmatch or stratification*/						
+					%end; /*loop through numl2comparisons */
+                %end; /*loop through periodid*/                      
             %end; /*KM plots*/
         %end; /*L2 figures*/
 
     %end; /* Figure file */
-	
+
 
     /*****************/
     /* Appendices    */
