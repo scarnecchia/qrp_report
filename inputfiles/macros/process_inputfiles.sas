@@ -271,7 +271,8 @@
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
-            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere; 
+            &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
+			&&id&n.._pscssubgroupfile; 
 			      
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -322,6 +323,7 @@
         %let &&id&n.._multeventfile        = ;
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
+		%let &&id&n.._pscssubgroupfile     = ;
 
         data _null_;
 		  set infolder.qrp_parameters (keep = parameter &&run&n.);
@@ -1639,14 +1641,14 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles truncweight pstrim 8 unconditional $1. subgroup subgroupcat $11;
-            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, truncweight, ceiling, caliper, ratio, strataweight,
+                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11;
+            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim);
             stop;
         run;
         data psest_masterinputs;
-            length runid $5 psestimategrp eoi ref $40;
-            call missing(runid, psestimategrp, eoi, ref);
+            length runid $5 psestimategrp eoi ref $40 hdps $1;
+            call missing(runid, psestimategrp, eoi, ref, hdps);
             stop;
         run;
 
@@ -1686,9 +1688,8 @@
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
-                if missing(covarnum) then covarnum = 0;
-                keep runid file analysisgrp psestimategrp subgroup subgroupcat covarnum ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim;
+                keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps;
             run;
 
 			data psest_masterinputs;
@@ -1704,6 +1705,92 @@
                 eoi = lowcase(eoi);
                 ref = lowcase(ref);
 			run;
+			
+            /* If subgroups file exists then add subgroups to pscs_masterinputs */
+  		    %isdata(dataset=infolder.&&&runid._pscssubgroupfile);
+		    %if %eval(&nobs. > 0) %then %do;
+			  proc sql noprint undo_policy=none;
+			    create table _pscs_masterinputs_subgroups as
+				select pscs.runid
+				      ,pscs.file
+					  ,pscs.analysisgrp
+					  ,pscs.psestimategrp
+					  ,pscs.ceiling
+					  ,pscs.caliper
+					  ,pscs.ratio
+					  ,pscs.strataweight
+					  ,pscs.truncweight
+					  ,pscs.ipweight
+					  ,pscs.percentiles
+					  ,pscs.eoi
+					  ,pscs.ref
+					  ,pscs.unconditional
+					  ,pscs.pstrim
+				      ,lowcase(sub.subgroup) as subgroup
+					  ,upcase(sub.subgroupcat) as subgroupcat
+                      /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
+                      ,case when (strip(pscs.file) = 'iptwfile' | strip(pscs.file) = 'stratificationfile' & missing(strataweight)=0) then 'Y'
+                       when strip(pscs.file) = 'covstratfile' then 'N'
+                       else sub.reestimateps 
+                       end as reestimateps
+			    from pscs_masterinputs as pscs
+				inner join infolder.&&&runid._pscssubgroupfile as sub
+				on pscs.analysisgrp = sub.analysisgrp;
+			  quit;
+			  
+			  data pscs_masterinputs;
+			    set pscs_masterinputs
+				   _pscs_masterinputs_subgroups;
+			  run;
+			  
+			  /* Clean up work space */
+              proc datasets lib = work;
+               delete _pscs_masterinputs_subgroups;
+              quit;
+		   %end;
+        %end;
+
+        /*Merge in psestimategrp parameters name*/
+        proc sql noprint undo_policy=none;
+            create table pscs_masterinputs as 
+            select pscs.runid
+			      ,pscs.file
+				  ,pscs.analysisgrp
+				  ,pscs.psestimategrp
+				  ,pscs.ceiling
+				  ,pscs.caliper
+				  ,pscs.ratio
+				  ,pscs.strataweight
+				  ,pscs.truncweight
+				  ,pscs.ipweight
+				  ,pscs.percentiles
+                  ,case when missing(pscs.eoi) then est.eoi
+                  else pscs.eoi
+                  end as eoi
+                  ,case when missing(pscs.ref) then est.ref
+                  else pscs.ref
+                  end as ref
+                  ,est.hdps
+				  ,pscs.unconditional
+				  ,pscs.pstrim
+			      ,pscs.subgroup
+				  ,pscs.subgroupcat
+				  ,pscs.reestimateps
+            from pscs_masterinputs as pscs
+                 left join psest_masterinputs est
+            on pscs.psestimategrp = est.psestimategrp; 
+        quit;
+
+        /*Type 4 - add GROUPNAME (base cohort)*/
+        %if &reporttype. = T4L2 %then %do;
+          proc sql noprint undo_policy=none;
+            create table pscs_masterinputs as 
+            select x.*,
+                   y.groupname
+            from pscs_masterinputs as x
+            left join master_mil as y
+            on substr(x.eoi,1,length(x.eoi)-4) = y.group and x.runid = y.runid;
+        quit;
         %end;
 
         *Add unique psestimategrp flag to the l2comparisonfile;     
@@ -1714,7 +1801,7 @@
     	     select base.*
     	 	       ,pscs.psestimategrp
     	     from l2comparisonfile as base
-    	 	 left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+    	 	 left join pscs_masterinputs (where = (missing(subgroup))) as pscs
     	 	  on base.runid = pscs.runid
     	      and base.analysisgrp = pscs.analysisgrp
     	      order by runid, psestimategrp, order;
@@ -1731,7 +1818,7 @@
          %end;
     
         proc sort data=pscs_masterinputs nodupkey;
-            by runid covarnum analysisgrp;
+            by runid analysisgrp subgroup subgroupcat;
         run;
     %end;	
 
@@ -1805,7 +1892,10 @@
 
             proc sql noprint;    
                 create table covarname_&runid. as 
-                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
+                select distinct covarnum, 
+                                strip(studyname) as studyname, 
+                                "&runid" as runid length=5, 
+                                cats('covar',covarnum) as cov_varname length=8
                 from infolder.&&&runid._covariatecodes.;
 
                 select length

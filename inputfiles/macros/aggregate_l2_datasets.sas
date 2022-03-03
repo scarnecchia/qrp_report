@@ -56,15 +56,39 @@
 
         *Manage convergence status - if model did not meet convergence status, then set variables list in 
          SETTOMISSVARS to missing;
+        %let convergeclause = ;
         %let converge = 1;
         %if %length(&convrule.)>0 %then %do;
         %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
             %if %sysfunc(exist(&dpidsiteid..&convdata))=1 %then %do;
-                data _null_;
-                	set &dpidsiteid..&convdata.(where=(lowcase(psestimategrp)="&psestimategrp"));
-                	if status in(%quote(&convrule.)) then call symputx("converge",1);
-                	else call symputx("converge",0);
+                data _non_converged_models;
+                	set &dpidsiteid..&convdata.(where=(lowcase(psestimategrp)="&psestimategrp" | lowcase(analysisgrp) = "&analysisgrp"));
+                    if status not in(%quote(&convrule.)) then do;
+                        call symputx('converge', 0);
+                        output;
+                    end;
                 run;
+
+                %isdata(dataset=_non_converged_models);
+                %if %eval(&nobs.>0) %then %do;
+                    /*build if clause*/
+                    %do bc = 1 %to &nobs.;
+                        data _null_;
+                            set _non_converged_models(keep=subgroup subgroupcat);
+                            if _n_ = &bc. then do;
+                            call symputx('estimatessubgroup', subgroup);
+                            call symputx('estimatessubgroupcat', subgroupcat);
+                            if &bc. >1 then call symputx('orclause', 'or');
+                            else call symputx('orclause', '');
+                            end;
+                        run;
+                        %let convergeclause = &convergeclause. &orclause. (subgroup = "&estimatessubgroup" and subgroupcat = "&estimatessubgroupcat.");
+                    %end;
+                %end;
+                   
+                proc datasets nowarn noprint lib=work;
+                    delete _non_converged_models;
+                quit;
             %end;
         %end;
         %end;
@@ -103,12 +127,12 @@
 				   
 				   periodid = &periodid.;
 				   
-				   keep psestimategrp codecat codetype dpidsiteid frequency ranking code periodid runid;
+				   keep psestimategrp analysisgrp subgroup subgroupcat codecat codetype dpidsiteid frequency ranking code periodid runid;
 				%end;
                 
                 /*set variables to missing if convergence not met*/
                 %if %eval(&converge.=0) %then %do;
-                    call missing(&settomissvars.);
+                    if &convergeclause. then call missing(&settomissvars.);
                 %end;
             run; 
 
@@ -118,7 +142,7 @@
 			/*If varinfo then append for msocdata output*/			
 			%if %index(&infile.,varinfo) > 0 %then %do;
 				data _temp_varinfo_&dps.; 
-					set &dpidsiteid..&infile.(where=(lowcase(psestimategrp)="&psestimategrp"));
+					set &dpidsiteid..&infile.(where=(&whereclause.));
 					length dpidsiteid $4.;
 					dpidsiteid = "&maskedID.";
 					%if %length(&runidvar) > 0 %then %do;
