@@ -561,11 +561,11 @@
             %let baselinerowitalics = &baselinerowitalics1.;
 		%end;
 
-        /*determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
+        /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
         - 1 monitoring period
         - DP stratification = N
         - max(order) in baselinefile = 1
-        - if reporttype = T2L2, T4L2 - then analysis must be covariate stratification*/
+         For L2 tables, tablecount assigned in macro baselinereport*/
         %if %eval(&b.=1) & %eval(&look_start.) = %eval(&look_end.) & &stratifybydp. = N & %eval(&numbaselinetablegrp.=1) %then %do;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 %then %do;
                 %let tablecount = 0;
@@ -741,6 +741,7 @@
 					%let unique_psestimate = &unique_psestimate_orig;
 				%end;
 		
+                /*For L2 queries, set &tablecount to 0 if covariate stratification AND no subgroups*/
 				%if &psfile. = covstratfile and &numsubgroups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
 					&stratifybydp. = N and %eval(&numbaselinetablegrp.=1) %then %let tablecount = 0;
 
