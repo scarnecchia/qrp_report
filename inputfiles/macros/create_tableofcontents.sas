@@ -247,7 +247,8 @@
 						%let unique_psestimate = &unique_psestimate_orig;
 					%end;
 
-					%if &psfile. = covstratfile and &numsubgroups. = 0 %then %let tablecount = 0;
+					%if &psfile. = covstratfile and &numsubgroups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
+						&stratifybydp. = N and %eval(&numbaselinetablegrp.=1) %then %let tablecount = 0;
 
 	                %if %eval(&unique_psestimate.) = 1 %then %do;
 	                 %tableletter(); 
