@@ -189,6 +189,7 @@
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
 		claim_level = "L2";  descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
+		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 	 run; 
 
   %mend create_lookup;
