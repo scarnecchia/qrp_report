@@ -1353,6 +1353,10 @@
         /*stack all tables*/
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
+            /* Remove TOTAL_WEIGHTED row for unweighted PS stratification */
+            %if (&psfile. = stratificationfile and "&weightscheme." = "") %then %do;
+                if MetVar = 'TOTAL_WEIGHTED' then delete;
+            %end;
         run;
 		
         ***********************************************************************************************;
