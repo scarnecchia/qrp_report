@@ -186,10 +186,10 @@
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
 		claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
+		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
 		claim_level = "L2";  descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
-		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 	 run; 
 
   %mend create_lookup;
