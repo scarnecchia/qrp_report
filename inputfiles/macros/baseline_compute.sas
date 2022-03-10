@@ -1226,6 +1226,11 @@
                     end;
                 %end;
 
+                /* Remove TOTAL_WEIGHTED row for unweighted PS stratification */
+                %if (&psfile. = stratificationfile and "&weightscheme." = "") %then %do;
+                    if MetVar = 'TOTAL_WEIGHTED' then delete;
+                %end;
+
 				/*Removing FOLLOWUPTIME/EVENT rows*/
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
