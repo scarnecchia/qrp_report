@@ -169,11 +169,13 @@
 ***************************************************************************************************;
     /*loop l2 processing by periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-			%l2_effect_estimate_driver();
+		%if %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+			%l2_effect_estimate_driver(); 
+		%end;
 		%if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
 		%end;
-        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+        %if %index(&reporttype,L2) and %index(&figurelist,F2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
             %l2_forestplot_createdata;
         %end;
     %end;
