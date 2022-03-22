@@ -1229,7 +1229,7 @@
                 %end;
 
                 /* Remove TOTAL_WEIGHTED row for unweighted PS stratification */
-                %if (&psfile. = stratificationfile and "&weightscheme." = "") %then %do;
+                %if ((&psfile. = stratificationfile and "&weightscheme." = "") | (&psfile. = psmatchfile and "&ratio" = "V" )) %then %do;
                     if MetVar = 'TOTAL_WEIGHTED' then delete;
                 %end;
 
