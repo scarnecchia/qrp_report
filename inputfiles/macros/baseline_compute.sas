@@ -424,8 +424,9 @@
 
             /*Put total number of episodes into a macro variable for Adjusted tables - note: L2 only*/
             %if "&table." = "Adjusted" %then %do;
+
                 data _null_; 
-                    set &datain.(where=(upcase(metvar)='N_EPISODES' and table = "&table." and weight = "&weight" and order=&b.
+                    set &datain.(where=(upcase(metvar)= %if &weight. = Unweighted %then %do; 'N_EPISODES' %end; %else %do; 'TOTAL_WEIGHTED' %end; and table = "&table." and weight = "&weight" and order=&b.
 								 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 							    	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 							   	 %end;));
@@ -447,6 +448,7 @@
                 %put total number of adjusted group1 patients for order=&b.:  &total_adjusted_exp_patients.;
                 %put total number of adjusted group2 episodes for order=&b.:  &total_adjusted_comp_episodes.;
                 %put total number of adjusted group2 patients for order=&b.:  &total_adjusted_comp_patients.;
+
             %end;
 
             /*For T6 tables, put total number of episodes and patients in macro variable for current switch step
@@ -1227,7 +1229,7 @@
                 %end;
 
                 /* Remove TOTAL_WEIGHTED row for unweighted PS stratification */
-                %if (&psfile. = stratificationfile and "&weightscheme." = "") %then %do;
+                %if ((&psfile. = stratificationfile and "&weightscheme." = "") | (&psfile. = psmatchfile and "&ratio" = "V" )) %then %do;
                     if MetVar = 'TOTAL_WEIGHTED' then delete;
                 %end;
 
