@@ -238,12 +238,13 @@
 
             /*If KM curves requested, determine which apply to the analysis*/
             %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
-                %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
                 /*Fixed PS matched analysis: Unadjusted, Conditional, Unconditional*/
                 /*Variable PS matched analysis: Unadjusted, Conditional */
                 /*PS Stratification analysis: Unadjusted*/
                 %if %sysfunc(prxmatch(m/F3/i,&figurelist.)) > 0 %then %let kmplotlist = &kmplotlist. 'Unadjusted';
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &pscsfile. = psmatchfile %then %let kmplotlist = &kmplotlist. 'Conditional';
+				%if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & &marginalweights. = Y %then %let kmplotlist = &kmplotlist. 'Weighted';
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let kmplotlist = &kmplotlist. 'Unconditional';
 
                 /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
@@ -339,7 +340,7 @@
 
                 /*if KM curves requested, aggregate survivaldata dataset*/
                 %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
-                        %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                        %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
                         %aggregate_l2_datasets(infile=&runid._survivaldata_&periodid.,
                                                outfile=aggsurvival,
                                                pscsfile=&pscsfile.,
@@ -508,7 +509,7 @@
                 /* Compute KM cuves - all KM curves computed when &sub = 0 for efficiency         */
                 /**********************************************************************************/
                 %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
-                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile & &marginalweights. = N) %then %do;
+                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
                     %l2_effect_estimate_km_createdata(plotstocreate=&kmplotlist.,
                                                       kmrefpop=&kmrefpop.);
                     %end;
