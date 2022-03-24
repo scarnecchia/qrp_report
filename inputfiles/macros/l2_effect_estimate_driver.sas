@@ -264,6 +264,8 @@
             /* For overall analysis - subset data where subgroup is missing and execute computation macros */
             /***********************************************************************************************/
             %if &sub. = 0 %then %do;
+				%if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto hdpsdata;
+
 				/*******************************************************/
 	            /* Aggregate data - only needed 1st loop (when &sub=0) */
 	            /*******************************************************/
@@ -350,7 +352,7 @@
                                                runidvar=&runid.);                      
                         %end;
                 %end;
-
+%hdpsdata:			
                 /*aggregate hdps vars */
 				%if &hdps. = Y %then %do;
 				   %aggregate_l2_datasets(infile=&runid._varinfo_&periodid.,
@@ -363,6 +365,8 @@
 										  renameclause = %str(rename = (code_id = code  &ranking._ranking_var = ranking)),
 	                                      runidvar=&runid.);	
 				%end;
+
+				%if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto enddriver;
 
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
                 %if &individualreturn. = Y %then %do;
@@ -838,6 +842,8 @@
     proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
         by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
     run;
+
+%enddriver:
 
     proc datasets lib=work nolist nowarn; 
         delete rdest logitest _:; 
