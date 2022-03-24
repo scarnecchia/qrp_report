@@ -497,7 +497,7 @@
     /* Effect estimate table                                                                     */
     /*********************************************************************************************/
 
-    %if &numl2comparisons > 0 %then %do; 
+    %if &numl2comparisons > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do; 
 
         /*loop through each comparison*/
         %do c = 1 %to &numl2comparisons;
@@ -1640,7 +1640,7 @@
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
-	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 %then %do;
+	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Odds Ratios (OR);
 
@@ -1667,7 +1667,7 @@
 	        %end; /*Forest plots */
 
             /*F3-F5: KM Plots - Type 2 only*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
 
                 *reset tablecount; 
 				%let tablecount = 1;
