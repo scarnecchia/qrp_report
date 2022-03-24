@@ -6,23 +6,23 @@
 * Created (mm/dd/yyyy): 07/22/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro computes Kaplan-Meier estimates for PS Match and PS Stratification analysis
+* PURPOSE: This macro computes Kaplan-Meier estimates for PS Match, PS Stratification and IPTW analyses
 *                                        
 *  Program inputs:                                                                                   
-*   - Either a patient level or risk set level dataset
+*   - Either a patient level, risk set level or marginal weight dataset
 * 
 *  Program outputs: 
 *   - One dataset per plot. This dataset contains the KM curve for the overall and all 
 *     requested subgroups
 * 
 *  PARAMETERS:  
-*   - plotstocreate: list of plots (Unadjusted Conditional Unconditional)
+*   - plotstocreate: list of plots (Unadjusted Conditional Unconditional Weighted)
 *   - kmrefpop: determines whether to produce weighted curves for VRM analysis
 *            
 *  Programming Notes: 
-*   - All unweighted curves (unadjusted, FRM conditional/unconditional, VRM exposure cohort)
-*     will be computed using risk-set data. Only VRM weighted curves will be computed using 
-*     patient level data 
+*   - For unweighted analyses, all unweighted curves (unadjusted, FRM conditional/unconditional, 
+*     VRM exposure cohort) will be computed using risk-set data. Only VRM weighted curves will be 
+*     computed using patient level data. 
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -77,7 +77,7 @@
     %mend addrows;
 
 
-	* KM plots using survival data;
+	* Extract sample for KM plots using survival data;
 	%if %index(&plotstocreate, 'Unadjusted')>0 or %index(&plotstocreate, 'Conditional')>0 or %index(&plotstocreate, 'Unconditional')>0 %then %do;
 	    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
 	    data _tempaggsurvival;
@@ -90,7 +90,7 @@
 	%let nobssurvival = &nobs.;
 
 
-	* KM plots using marginal weights;
+	* Extract sample for KM plots using marginal weights;
 	%if %index(&plotstocreate, 'Weighted')>0 %then %do;
 	    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
 	    data _tempaggmw;
@@ -103,6 +103,7 @@
 	%let nobsmw = &nobs.;
 
 
+	* Output a custom warning if there is no survival or marginal weight data avaiblable to compute KM;
     %if %eval(&nobssurvival <1) and %eval(&nobsmw <1) %then %do;
         %put WARNING: (Sentinel) No observations to produce KM curves for &analysisgrp.. Curves will not be produced;
     %end;
@@ -121,6 +122,9 @@
         %end;
 	%end;
 
+	*********************************************************************************************************
+	* KM plots using marginal weights are requested (figure F4 for IPTW/PS stratum weighted analyses)
+	********************************************************************************************************;
 	%if %eval(&nobsmw >0) %then %do;		
 		%let weightedpop = N;
 
@@ -219,6 +223,10 @@
 
 	%end; /*marginal weights data exists*/
 
+
+	************************************************************************************************************************
+	* KM plots using survival data are requested (figure F3, F4, F5 for Unadjusted, Conditional and Unconditional analyses)
+	***********************************************************************************************************************;
     %if %eval(&nobssurvival >0) %then %do;
         /*Square dataset to include 1 row per day*/
         proc sort data=_tempaggsurvival;
