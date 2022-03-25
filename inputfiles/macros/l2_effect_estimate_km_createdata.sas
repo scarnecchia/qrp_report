@@ -186,11 +186,11 @@
 		data _squarekmcdf(rename=i=day);
         set _kmdata(keep=subgroup subgroupcat day);
         by subgroup subgroupcat day;
-        if last.subgroupcat then do;  
+        if last.subgroupcat and day > 0 then do;  
             do i = 0 to day;
             	output;
             end;
-        end;
+        end;		
         drop day;
         run;
 
