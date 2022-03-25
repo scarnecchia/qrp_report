@@ -248,11 +248,8 @@
                 %if %sysfunc(prxmatch(m/F5/i,&figurelist.)) > 0 & &outputunconditional= Y %then %let kmplotlist = &kmplotlist. 'Unconditional';
 
 				/*Defensive: kmrefpop only applies when &pscsfile. is psmatchfile*/
-				%if &pscsfile. ne psmatchfile & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
-					%put WARNING: (Sentinel) Weighted KM curves only available for Variable Ratio Match Analysis. KMREFPOP will be set to Unweighted for &analysisgrp.;
-                    %let kmrefpop = unweighted;
-				%end;
-
+				%if &pscsfile. ne psmatchfile & (&kmrefpop. = weighted | &kmrefpop. = both) %then %let kmrefpop = unweighted;
+	
                 /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     %if &individualreturn. = N %then %do;
