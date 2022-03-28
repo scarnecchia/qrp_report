@@ -418,11 +418,11 @@
 	run;
 
 /***************************************************************************************************
-* Assign L2 subgroups title, order, and labels												         
+* Assign L2 subgroups title, order, and labels                                                       
 ***************************************************************************************************/
-	%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 %then %do;
+    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 %then %do;
 
-		%macro assignsubgroupvalue(subgroup, format, sort);
+        %macro assignsubgroupvalue(subgroup, format, sort);
             if index(subgroup,"&subgroup.")>0 then do;
                 subgroupcatlabel = &format.;
                 subgroupcatorder = &sort.;
@@ -517,7 +517,7 @@
                 end;
             end;
         run;
-	%end;
+    %end;
 	
 %mend report_formats_labels;
 	
