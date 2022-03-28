@@ -87,6 +87,7 @@
 		%else %do;
 		  %let reportid = ;
 		  %let dpfile = input.&DPInfoFile.;
+		  %global reportdata;
 		  %let reportdata = Y;
 		%end;
 
