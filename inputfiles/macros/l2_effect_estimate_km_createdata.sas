@@ -95,7 +95,7 @@
 	    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
 	    data _tempaggmw;
 	        set aggmw(keep=followuptime SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE analysis dpidsiteid subgroup subgroupcat
-	                  where=(analysis in (&plotstocreate.)));
+	                  where=(analysis in (&plotstocreate.) and missing(followuptime)=0 ));
 	    run;
 	%end;
     
@@ -120,108 +120,7 @@
                 if b then call symputx('grp0label', label);
             run;
         %end;
-	%end;
-
-	*********************************************************************************************************
-	* KM plots using marginal weights are requested (figure F4 for IPTW/PS stratum weighted analyses)
-	********************************************************************************************************;
-	%if %eval(&nobsmw >0) %then %do;		
-		%let weightedpop = N;
-
-		/* Summarize across DPs */
-		proc means data=_tempaggmw nway noprint missing;		
-		var SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE;
-		class subgroup subgroupcat followuptime / missing;
-        output out=_kmdata(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
-		run;
-		
-		/* Compute KM plots */
-		data figureF4_analysis&loopcount._&periodid.;
-		length day 8;
-		set _kmdata;
-		by subgroup subgroupcat;
-
-		RatioE=SumEC/SumE;
-		tempE=1-RatioE;
-		
-		RatioUnE=(SumC-SumEC)/SumUnE;
-		tempUnE=1-RatioUnE;		
-
-		if first.subgroupcat then do;			
-			km_evexp=tempE;
-			km_evunexp=tempUnE;			
-			output;
-
-			* Add day 0;
-			day=0;
-			km_evexp=1;
-			km_evunexp=1;			
-			output;
-		end;
-		else do;
-			km_evexp=km_evexp*tempE;
-			km_evunexp=km_evunexp*tempUnE;
-			output;
-		end;
-		retain km_evexp km_evunexp;		
-
-		* For weighted plots, # at risk is weighted N;
-		rename SumE=episodes_atriskexp
-			   SumUnE=episodes_atriskunexp;
-
-		label km_evexp = "&grp1label."
-              SumE = "&grp1label."
-              km_evunexp = "&grp0label."
-              SumUnE = "&grp0label."
-              ;
-		
-		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp;
-		run;
-
-		proc sort data=figureF4_analysis&loopcount._&periodid.;
-		by subgroup subgroupcat day;
-		run;
-
-		/* Add missing day values to make sure at risk data is correctly output */
-		data _squarekmcdf(rename=i=day);
-        set _kmdata(keep=subgroup subgroupcat day);
-        by subgroup subgroupcat day;
-        if last.subgroupcat and day > 0 then do;  
-            do i = 0 to day;
-            	output;
-            end;
-        end;		
-        drop day;
-        run;
-
-		data figureF4_analysis&loopcount._&periodid.;
-		merge figureF4_analysis&loopcount._&periodid.(in=a)
-			  _squarekmcdf(in=b);
-		by subgroup subgroupcat day;
-
-		if not missing(episodes_atriskexp) then do;
-			lagepisodes_atriskexp=episodes_atriskexp;
-			lagepisodes_atriskunexp=episodes_atriskunexp;
-			lagkm_evexp=km_evexp;
-			lagkm_evunexp=km_evunexp;	
-		end;
-		else do;
-			episodes_atriskexp=lagepisodes_atriskexp;
-			episodes_atriskunexp=lagepisodes_atriskunexp;
-			km_evexp=lagkm_evexp;
-			km_evunexp=lagkm_evunexp;
-		end;
-
-		format analysisgrp $40.;
-        analysisgrp = "&analysisgrp";
-
-		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;
-		drop lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;	
-		run;
-
-		%addrows(figureF4_analysis&loopcount._&periodid., F4);
-
-	%end; /*marginal weights data exists*/
+	%end;	
 
 
 	************************************************************************************************************************
@@ -626,6 +525,109 @@
         %addrows(figureF5_analysis&loopcount._&periodid., F5);
 
     %end; /*survival data exists*/
+
+
+	*********************************************************************************************************
+	* KM plots using marginal weights are requested (figure F4 for IPTW/PS stratum weighted analyses)
+	********************************************************************************************************;
+	%if %eval(&nobsmw >0) %then %do;		
+		%let weightedpop = N;
+
+		/* Summarize across DPs */
+		proc means data=_tempaggmw nway noprint missing;		
+		var SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE;
+		class subgroup subgroupcat followuptime / missing;
+        output out=_kmdata(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
+		run;
+		
+		/* Compute KM plots */
+		data figureF4_analysis&loopcount._&periodid.;
+		length day 8;
+		set _kmdata;
+		by subgroup subgroupcat;
+
+		RatioE=SumEC/SumE;
+		tempE=1-RatioE;
+		
+		RatioUnE=(SumC-SumEC)/SumUnE;
+		tempUnE=1-RatioUnE;		
+
+		if first.subgroupcat then do;			
+			km_evexp=tempE;
+			km_evunexp=tempUnE;			
+			output;
+
+			* Add day 0;
+			day=0;
+			km_evexp=1;
+			km_evunexp=1;			
+			output;
+		end;
+		else do;
+			km_evexp=km_evexp*tempE;
+			km_evunexp=km_evunexp*tempUnE;
+			output;
+		end;
+		retain km_evexp km_evunexp;		
+
+		* For weighted plots, # at risk is weighted N;
+		rename SumE=episodes_atriskexp
+			   SumUnE=episodes_atriskunexp;
+
+		label km_evexp = "&grp1label."
+              SumE = "&grp1label."
+              km_evunexp = "&grp0label."
+              SumUnE = "&grp0label."
+              ;
+		
+		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp;
+		run;
+
+		proc sort data=figureF4_analysis&loopcount._&periodid.;
+		by subgroup subgroupcat day;
+		run;
+
+		/* Add missing day values to make sure at risk data is correctly output */
+		data _squarekmcdf(rename=i=day);
+        set _kmdata(keep=subgroup subgroupcat day);
+        by subgroup subgroupcat day;
+        if last.subgroupcat and day > 0 then do;  
+            do i = 0 to day;
+            	output;
+            end;
+        end;		
+        drop day;
+        run;
+
+		data figureF4_analysis&loopcount._&periodid.;
+		merge figureF4_analysis&loopcount._&periodid.(in=a)
+			  _squarekmcdf(in=b);
+		by subgroup subgroupcat day;
+
+		if not missing(episodes_atriskexp) then do;
+			lagepisodes_atriskexp=episodes_atriskexp;
+			lagepisodes_atriskunexp=episodes_atriskunexp;
+			lagkm_evexp=km_evexp;
+			lagkm_evunexp=km_evunexp;	
+		end;
+		else do;
+			episodes_atriskexp=lagepisodes_atriskexp;
+			episodes_atriskunexp=lagepisodes_atriskunexp;
+			km_evexp=lagkm_evexp;
+			km_evunexp=lagkm_evunexp;
+		end;
+
+		format analysisgrp $40.;
+        analysisgrp = "&analysisgrp";
+
+		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;
+		drop lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;	
+		run;
+
+		%addrows(figureF4_analysis&loopcount._&periodid., F4);
+
+	%end; /*marginal weights data exists*/
+
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
