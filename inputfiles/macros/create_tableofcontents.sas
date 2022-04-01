@@ -1806,8 +1806,7 @@
 										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
 									quit;
 
-									%if &pscsfile. = psmatchfile %then %let pop=Unconditional Matched Population after;
-									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
+									%let pop=Unconditional Matched Population after;
 
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
