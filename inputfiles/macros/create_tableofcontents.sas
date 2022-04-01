@@ -1689,7 +1689,7 @@
 	                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
 	                    quit;
 
-	                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
+	                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
 
 	                        /*assign labels*/
 	                        data _null_; 
@@ -1705,17 +1705,23 @@
 	                        %let outcomelabel = Event of Interest;
 	                        %let eoilabel = &grp1.;
 	                        %let reflabel = &grp0.;
+							%let AnalysisGroupLabel = &analysisgrp.;
+							%let PSEstimateGroupLabel = &psestimategrp.;
 
 	                        %isdata(dataset=labelfile);
 	                        %if %eval(&nobs.>0) %then %do;
 	                            data _null_;
 	                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
 	                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
-	                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
-
+	                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"))
+										labelfile(in=d where=(group="&analysisgrp" and runid = "&runid" and labeltype = "grouplabel"))
+										labelfile(in=e where=(group="&psestimategrp" and runid = "&runid" and labeltype = "grouplabel"))
+									;
 	                                if a then call symputx('outcomelabel', label);
 	                                if b then call symputx('eoilabel', label);
 	                                if c then call symputx('reflabel', label);
+									if d then call symputx('AnalysisGroupLabel', label);
+									if e then call symputx('PSEstimateGroupLabel', label);
 	                            run;
 	                        %end;         
 
@@ -1760,7 +1766,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1777,10 +1783,13 @@
 										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
 									quit;
 
+									%if &pscsfile. = psmatchfile %then %let pop=Conditional Matched Population after;
+									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
+
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1797,10 +1806,13 @@
 										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
 									quit;
 
+									%if &pscsfile. = psmatchfile %then %let pop=Unconditional Matched Population after;
+									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
+
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
