@@ -35,7 +35,7 @@
     run;
 
     %isdata(dataset=forest);
-    %if %eval(&NOBS.>=2) & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+    %if %eval(&NOBS.>=2) & %index(&customizecolumns.,events) = 0 %then %do;
 
         * Obtain stratified cox PH estimates with confidence intervals;
         proc phreg data = forest;
@@ -46,19 +46,18 @@
         run;
 
         DATA coxPHest; 
-            RETAIN analysisgrp COVARNUM catnum MonitoringPeriod HR_95CI HR_pvalue;
+            RETAIN analysisgrp subgroup MonitoringPeriod HR_95CI HR_pvalue;
             SET pest (RENAME = (hazardratio = HR)
                       RENAME = (estimate = HR_coef)
                       RENAME = (stderr = HR_se)
                       RENAME = (HRLOWERCL=LCL) 
                       RENAME = (HRUPPERCL=UCL));
             where lowcase(parameter) = "exposure";
-            FORMAT analysisgrp $40. COVARNUM catnum best. MonitoringPeriod 2.0;
-            length analysisgrp $40 HR_95CI $30 analysis $13. subgroupcat $10 HR_pvalue $6;
+            FORMAT analysisgrp $40. MonitoringPeriod 2.0;
+            length analysisgrp $40 HR_95CI $30 analysis $13. subgroup subgroupcat $11 HR_pvalue $6;
 
             analysisgrp = "&analysisgrp.";
-            COVARNUM  = &covarnum.;
-            catnum = &cat.;
+            subgroup  = "&subgroup.";
             MonitoringPeriod = &periodid.;
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
@@ -86,17 +85,16 @@
             label LCL = "95% LCL";
             label UCL = "95% UCL";
 
-            KEEP analysisgrp COVARNUM catnum analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
+            KEEP analysisgrp subgroup analysis subgroupcat MonitoringPeriod HR_95CI HR_pvalue HR LCL UCL HR_coef HR_se ;
         RUN;
     %end;
-    %else %if %index(%lowcase(&redactcolumns.),events) > 0 %then %do;
+    %else %if %index(&customizecolumns.,events) > 0 %then %do;
      data coxPHest;
-            FORMAT analysisgrp $40. COVARNUM catnum best. HR_se 8.4; 
-            length subgroupcat $10. analysis $13. analysisgrp $40;
+            FORMAT analysisgrp $40. HR_se 8.4; 
+            length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
-            COVARNUM  = &covarnum.;
-            catnum = &cat.;
+            subgroup  = "&subgroup.";
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
 
@@ -115,12 +113,11 @@
     %end;
     %else %do;  *create empty dataset;
         data coxPHest;
-            FORMAT analysisgrp $40. COVARNUM catnum best. HR_se 8.4; 
-            length subgroupcat $10. analysis $13. analysisgrp $40;
+            FORMAT analysisgrp $40. HR_se 8.4; 
+            length subgroup subgroupcat $11. analysis $13. analysisgrp $40;
 
             analysisgrp = "&analysisgrp.";
-            COVARNUM  = &covarnum.;
-            catnum = &cat.;
+            subgroup  = "&subgroup.";
             Analysis= &analysis.;
             subgroupcat = "&subgroupcat.";
 

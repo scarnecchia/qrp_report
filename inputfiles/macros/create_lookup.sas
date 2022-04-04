@@ -32,12 +32,16 @@
   
   %macro create_lookup();
      data lookup.lookup_footnotes;
-	   attrib type         length = $10  format = $10.
+	   attrib type         length = $10  format = $10. 
 	          order        length = 3    format = 3.
 	          description  length = $575 format = $575.;
-			  
+
+	   /* Footnotes for in Type 4 tables - applied to multiple tables*/
+       type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
+       type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
+
 	   /* Footnotes for baseline table */
-	   type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
+       type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
 	   type = "baseline";  order = 2;  description = "&covar_characteristic. in blue show a standardized difference greater than &sdthreshold.."; output;
 	   type = "baseline";  order = 3;  description = "Covariates in italics were not included in the propensity score logistic regression model."; output;
 	   type = "baseline";  order = 4;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated/control patients are weighted by the proportion of the total patient population included in their PS stratum divided by the proportion of the total treated/control patient population included in their PS stratum."; output;
@@ -47,13 +51,14 @@
 	   type = "baseline";  order = 8;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are weighted by the proportion of treated patients in the trimmed population divided by the inverse of their propensity score (PS). Reference patients are weighted by 1 minus the proportion of treated patients in the trimmed population divided by 1 minus their PS."; output;
 	   type = "baseline";  order = 9;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1. Reference patients are weighted by their propensity score (PS) divided by 1 minus their PS."; output;
 	   type = "baseline";  order = 10; description = "With variable ratio matching, each exposed subject is matched to a variable number of comparator subjects. The weight for each treated subject equals 1. The weight for each control subject equals the inverse of the matching ratio for that specific matched set."; output;
-	   type = "baseline";  order = 11; description = "Baseline period in reference to user defined index date (pregnancy start, exposure date, or delivery date)."; output;
+	   type = "baseline";  order = 11; description = "Baseline period in reference to user-defined index date (start of first valid exposed pregnancy resulting in live birth delivery, exposure date, or delivery date)."; output;
 	   type = "baseline";  order = 12; description = "Value represents the proportion of episodes with first switch."; output;
 	   type = "baseline";  order = 13; description = "Value represents the proportion of first switch episodes with second switch."; output;
 	   type = "baseline";  order = 14; description = "Value represents standard deviation where no % follows the value."; output;
        type = "baseline";  order = 15; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-	   type = "baseline";  order = 16; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for pre-term and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
-	   type = "baseline";  order = 17; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
+       type = "baseline";  order = 16; description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+	   type = "baseline";  order = 17; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for pre-term and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
+	   type = "baseline";  order = 18; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
 	   
 	   /* Footnotes for L2 effect estimates table */	  
 	   type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
@@ -76,7 +81,12 @@
 	   type = "t1t2conc";  order = 6;  description = 'Eligible Members and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	   type = "t1t2conc";  order = 7;  description = 'Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	   type = "t1t2conc";  order = 8;  description = 'Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
-	 
+	   type = "t1t2conc";  order = 9;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+
+	   /* Footnotes for type 5 tables and figures (note - dose table footnotes query specific and are generated in t5tables_createdata */
+       /* order = 1 reserved for dose footnotes*/
+       type = "t5tablefig";  order = 2;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+
 	   /* Footnotes for types 1, 2, 5, and 6 censor tables */
 	   type = "censor";    order = 1;  description = "An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes."; output;
 	   type = "censor";    order = 2;  description = "A patient's episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of patients."; output;
@@ -90,7 +100,14 @@
 	   type = "censor";    order = 10; description = "Represents episodes censored due to user-specified study end date."; output;
 	   type = "censor";    order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
 	   type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
-	 run; 
+
+       /* Footnotes for type 4 MOI tables */
+       type = "t4l1moi"; order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
+	   type = "t4l1moi"; order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
+	   type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
+	   type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
+
+     run; 
 
      data lookup.lookup_attrition;
 	   attrib claim_level   length = $10	format = $10.
@@ -114,9 +131,6 @@
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one episode defining index claim during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Episode-defining index claims must be during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be during the query period"; report_descr = "Pregnancy episode recorded during the query period"; output;
-		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode incident with respect to other criteria"; report_descr = "Met exposure incidence criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must be incident with respect to other criteria"; report_descr = "Met exposure incidence criteria"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be incident with respect to other criteria"; report_descr = "Met pregnancy episode incidence criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have only one exposure RX on index date"; report_descr = "Had single National Drug Code on index date"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have only one exposure RX on index date"; report_descr = "Had single National Drug Code on index date"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
@@ -139,9 +153,9 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the maximum current filled daily dose criteria"; report_descr = "Met maximum current filled daily dose criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode that meets HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
-		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the post-index enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the post-delivery enrollment criterion"; report_descr = "Had sufficient post-index continuous enrollment"; output;
+		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment and available data criteria"; report_descr = "Had sufficient post-index continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the post-index enrollment and available data criteria"; report_descr = "Had sufficient post-index continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the post-delivery enrollment and available data criteria"; report_descr = "Had sufficient post-index continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode with at least minimum days supplied"; report_descr = "Had minimum days' supply on index date"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days supplied"; report_descr = "Met minimum days' supply criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode with at least minimum days duration"; report_descr = "Had index episode of at least required length"; output;
@@ -172,6 +186,7 @@
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
 		claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
+		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
 		claim_level = "L2";  descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
@@ -179,5 +194,3 @@
 
   %mend create_lookup;
   %create_lookup();
-
-

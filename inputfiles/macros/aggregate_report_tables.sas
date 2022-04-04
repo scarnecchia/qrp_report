@@ -140,7 +140,7 @@
 				 
 				 %let totalstrata = %sysfunc(countw(&allstrata));
 
-				 data _stratavars;
+				 data stratavars_&outfile.;
 				   length strata $15 strataorder 3;
 				   %do a = 1 %to &totalstrata.;
 				     strata = "%scan(&allstrata.,&a.)"; 
@@ -149,23 +149,22 @@
 				   %end;
 				 run;
 
-				 proc sort nodupkey data = _stratavars;
+				 proc sort nodupkey data = stratavars_&outfile.;
 				   by strata;
 				 run;
-
-				 proc sort data = _stratavars;
+				 
+				 proc sort data = stratavars_&outfile.;
 				   by strataorder;
 				 run;
 				 
 				 proc sql noprint;
 				   select count(strata) into: numstrata_&dataset. trimmed
-				   from _stratavars;
+				   from stratavars_&outfile.;
 				   
 				   select strata
 				   into: strata1 -  :strata&&numstrata_&dataset.
-				   from _stratavars;
-				 quit;
-			  
+				   from stratavars_&outfile.;
+				 quit;			  
 			  
 			     /* Put stratification variables through formats to acquire full names */
                  data &outfile.;
@@ -181,7 +180,7 @@
 				     length sortorder&s. 3;
 				     
                      %if &&strata&s. = sex      %then length sex $15;;
-                     %if &&strata&s. = race     %then length race $45;;
+                     %if &&strata&s. = race     %then length race $55;;
 					 %if &&strata&s. = hispanic %then length hispanic $20;;
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
@@ -198,13 +197,13 @@
                      %end;
 				     %else %if &&strata&s. = month %then %do;
                        length month $10;
-                       month = put(_month, mn_name.);
+                       month = put(_month, monthfmt.);
 					   sortorder&s. = _month;
                        drop _month;
                      %end;
 					 %else %if &&strata&s. = quarter %then %do;
                        length quarter $10;
-                       quarter = put(_quarter, qtr_name.);
+                       quarter = put(_quarter, quarterfmt.);
 					   sortorder&s. = _quarter;
                        drop _quarter;
                      %end;
@@ -213,7 +212,7 @@
                      %end;
 				     %else %if &&strata&s. = agegroup %then %do;
                        length agegroup $40;
-                       agegroup = put(_agegroup, $agefmt.);
+                       agegroup = put(_agegroup, $agegroupfmt.);
 					   sortorder&s. = agegroupnum;
                        drop _agegroup;
                      %end;
@@ -294,18 +293,18 @@
 	%end; *periodid;
 
 	    %if %str("&reporttype") = %str("T4L1") %then %do;
-			%if %index(&datasetlist.,t4preg) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4preg))%then %do;
 			  %agg_report(infile=t4_cida_preg, outfile=agg_t4preg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
-			%if %index(&datasetlist.,t4preggestwk) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4preggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_preg_gestwk, outfile=agg_t4preggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
 			%end;
-			%if %index(&datasetlist.,t4nopreg) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4nopreg))%then %do;
 			  %agg_report(infile=t4_cida_nopreg, outfile=agg_t4nopreg, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
 			%end;
-			%if %index(&datasetlist.,t4nopreggestwk) > 0 %then %do;
+			%if %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
-			%end;			
+			%end;	  
 		%end; *T4L1;
 
 	    %if %str("&reporttype") = %str("T5") %then %do;
@@ -358,7 +357,17 @@
 			  %agg_report(infile=t6_switchplotb, outfile=agg_t6plotb, name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 
+			%isdata(dataset=groupsfile);
+        	%if %eval(&nobs.>0) %then %do;			
 			  %agg_report(infile=t6_productsdates, outfile=agg_t6_productsdates, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..)));
+			%end;
+			%else %do; 
+				data agg_t6_productsdates;
+				format runid $5. dpidsiteid $6. group $40. productmarketingdate productapprovaldate Otherproductdate computedstartmarketingdate date9.;
+				call missing(of _ALL_);
+				stop;
+				run;
+			%end;			
 		%end; *T6;
 
 		/* Code distribution */

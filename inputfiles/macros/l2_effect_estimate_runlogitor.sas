@@ -55,7 +55,7 @@
     %let Expevlvl = 0;
     %let Unexpevlvl = 0;
 
-    %if "&individualreturn" = "N" & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+    %if "&individualreturn" = "N" & %index(&customizecolumns.,events) = 0 %then %do;
         data _sub1;
             set cat_dp_rd(where=(&where.));
 		    /* retain observations with non-missing counts only */
@@ -89,9 +89,9 @@
         %end; /* end do statement for creating person-level dataset */
     %end; /* risk-level data */
 
-    %if "&individualreturn" = "Y" & %index(%lowcase(&redactcolumns.),events) = 0 %then %do;
+    %if "&individualreturn" = "Y" & %index(&customizecolumns.,events) = 0 %then %do;
         data _forest;
-            set cat_dp_pl(keep=event dp dpidsiteid exposure covarnum analysisgrp subgroupcat &stratavar. &classvars. &noclassvars. where=(&where.));
+            set cat_dp_pl(keep=event dp dpidsiteid exposure subgroup analysisgrp subgroupcat &stratavar. &classvars. &noclassvars. where=(&where.));
         run;
     %end;
   
@@ -140,12 +140,11 @@
 
             /*for both ORs - a character variable is computed in the form XX.XX (XX.XX-XX.XX) and 3 numeric variables are 
               output to use in the forest plot*/
-  	        format analysisgrp $40. covarnum catnum best. or adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
-  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat $10;
+  	        format analysisgrp $40. or adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
+  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat subgroup $11;
 
             analysisgrp = "&analysisgrp.";
-	        COVARNUM  = &covarnum.;
-	        catnum = &cat.;
+	        subgroup  = "&subgroup.";
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
@@ -198,7 +197,7 @@
             label adjor_LCL = "Adjusted 95% LCL";
             label adjor_UCL = "Adjusted 95% UCL";
 
-  			keep analysisgrp covarnum catnum analysis subgroupcat MonitoringPeriod or or_95ci or_se adjor adjor_95ci LCL UCL adjor_LCL adjor_UCL;
+  			keep analysisgrp subgroup analysis subgroupcat MonitoringPeriod or or_95ci or_se adjor adjor_95ci LCL UCL adjor_LCL adjor_UCL;
   		run;
     %end; /* end do statement for formatting output for data with adequate events */
 
@@ -207,12 +206,11 @@
     /****************************************/
     %else %do; 
         data oddsratio;
-  	        format analysisgrp $40. covarnum catnum best. adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
-  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat $10;
+  	        format analysisgrp $40. adjor adjor_ucl adjor_lcl lcl ucl or 5.2 MonitoringPeriod 2.0;
+  		    length analysisgrp $40 or_95ci adjor_95ci $30 analysis $13 subgroupcat subgroup $11;
 
             analysisgrp = "&analysisgrp.";
-	        COVARNUM  = &covarnum.;
-	        catnum = &cat.;
+	        subgroup  = "&subgroup.";
 	  		MonitoringPeriod = &periodid.;
 			Analysis= &analysis.;
 			subgroupcat = "&subgroupcat.";
@@ -221,14 +219,24 @@
 		    or = .;
             lcl = .;
             ucl = .;
+            %if %index(&customizecolumns.,events) > 0 %then %do;
+            or_95ci = 'N/A';
+            %end;
+            %else %do;
             or_95ci= "NaN";
+            %end;
             or_se = .;
 
             *adjusted odds ratio;
             adjor = .;
             adjor_lcl = .;
             adjor_ucl = .;
+            %if %index(&customizecolumns.,events) > 0 %then %do;
+            adjor_95ci = 'N/A';
+            %end;
+            %else %do;
             adjor_95ci = 'NaN';		
+            %end;
         run; 
     %end; /* end do statement for analysis when not events and nonevents */
 

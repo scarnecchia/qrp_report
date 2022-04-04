@@ -64,7 +64,7 @@
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
 							  case when missing(ref) then ref2 else ref end as ref
 		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2
-		      from pscs_masterinputs a 
+		      from pscs_masterinputs (where = (missing(subgroup))) a 
 			  left join 
 			  psest_masterinputs b 
 			  on a.psestimategrp = b.psestimategrp);
@@ -122,7 +122,7 @@
 		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
 							  case when missing(ref) then ref2 else ref end as ref, groupname 
 		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
-		      from pscs_masterinputs a 
+		      from pscs_masterinputs (where = (missing(subgroup))) a 
 			  left join 
 			  psest_masterinputs b 
 			  on a.psestimategrp = b.psestimategrp
@@ -499,7 +499,10 @@
 	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'grouplabel')) b
 	        on a.group = b.group %if %length(&analysisgrps) > 0 %then %do; or scan(a.group,-1,'@') = b.group %end;
 	        left join &labelfileattrition.(where=(lowcase(labeltype) = 'header')) c
-	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; or substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group %end;
+	        on a.group = c.group %if %length(&milgrps) > 0 %then %do; 
+                                 or (case when findc(a.group, '_') > 0 then substr(a.group,1,findc(a.group, '_',-length(a.group))-1) = c.group 
+                                    else a.group = c.group end) 
+                                 %end;
 	        					 %if %length(&analysisgrps) > 0 %then %do; or (scan(a.group,1,'@') = c.group or scan(a.group,-1,'@') = c.group) %end;
 	        ;
 	  quit;
@@ -559,7 +562,17 @@
 	  	if report_descr in ('Number of events in comparative analysis', 'Number of patients with a truncated inverse probability of treatment weight')
 	  	then agg_excluded_char = 'N/A';
 	  	%end;
+		%if %sysfunc(prxmatch(m/redactevents|sumevents/i,&customizecolumns.)) > 0 and 
+                %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+            if index(lowcase(report_descr), 'event')>0  and claim_level='L2' then do;
+			  agg_remaining = .;
+			  agg_remaining_char = 'N/A';
+			  agg_excluded = .;
+			  agg_excluded_char = 'N/A';
+			end;
+			%end;
 	  	output;
+        %if &reporttype. ne T5 %then %do;
 	  	if last.group then do;
 	  		%if %index(&reporttype,T4) %then %do;
 	  		report_descr = "Number of pregnancy episodes";
@@ -578,12 +591,13 @@
 	  		agg_remaining_char = episodecountchar;
 	  		agg_excluded = .;
 	  		agg_excluded_char = 'N/A';
-	  		if t%substr(&reporttype,2,1)cohortdef in ('01','04') and level=99 then do;
+	  		if t%substr(&reporttype,2,1)cohortdef in ('01') and level=99 then do;
 	  		agg_remaining = lag_rem;
 	  		agg_remaining_char = strip(put(agg_remaining,comma12.));
 	  		end;
 	  		output;
 	  	end;
+        %end;
 	  	drop episodecount episodecountchar lag_rem;
 	  run;
 
@@ -602,7 +616,7 @@
 
 	  %if %index(&reporttype,L2) %then %do;
 
-	  %let attrperiodid=_&periodid;
+	    %let attrperiodid=_&periodid;
 	    proc sql noprint undo_policy=none;
 		/* Create ordering variable based off eoi/ref values */
 		create table all_attrition_agg as 
@@ -612,16 +626,15 @@
 						 end as eoireforder
 		from all_attrition_agg a 
 		left join
-		(select distinct a.runid, a.analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
-		from l2comparisonfile a 
-		left join pscs_masterinputs b 
-		on a.analysisgrp = b.analysisgrp
+		(select distinct a.runid, a.group as analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
+		from inputfiles a 
+		left join pscs_masterinputs (where = (missing(subgroup))) b 
+		on a.group = b.analysisgrp
 		left join psest_masterinputs c 
 		on b.psestimategrp = c.psestimategrp) d
 		on scan(a.group,1,'@') = d.analysisgrp and scan(a.group,-1,'@') = coalescec(d.eoi,d.ref);
 	    quit;
 	  %end; 
-
 
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;

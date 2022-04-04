@@ -42,10 +42,10 @@
         run;
 
 		%if &OutputPSDistribution.=Y %then %do;
-        /* only psmatchfile, stratificationfile, and iptwfile have histogram */
+            /* only psmatchfile, stratificationfile, and iptwfile have histogram */
 	        proc sql noprint;
 	            select strip(file) into: psfile
-	            from pscs_masterinputs
+	            from pscs_masterinputs (where = (missing(subgroup)))
 	            where analysisgrp = "&analysisgrp.";
 	        quit;
 
@@ -53,7 +53,7 @@
 
 			%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 				data _null_; 
-		          set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp."));
+		          set pscs_masterinputs (where=(lowcase(analysisgrp)="&analysisgrp." and missing(subgroup)));
 		            call symputx("psestimategrp", lowcase(psestimategrp));
 		                 %if &psfile. = psmatchfile  %then %do;
 		                    call symputx('RATIO',upcase(ratio)) ;
@@ -67,9 +67,6 @@
 		          call symputx('eoi', eoi) ;
 		          call symputx('ref', ref) ;    
 		        run;
-			%end;
-
-	      	%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
 
 	            /* Determine weights on input dataset to use for squaring */
 	            proc sql noprint;
@@ -114,9 +111,9 @@
 
 	                /*Aggregate across DPs*/
 	                %if &dps = 0 %then %do;
-	                    proc means data=agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and runid="&runid.")) noprint nway;
+	                    proc means data=agg_psdistribution_&periodid. (where=(lowcase(analysisgrp)="&analysisgrp." and runid="&runid.")) noprint nway missing;
 	                        var npts;
-	                        class group type weight ps_cat analysisgrp;
+	                        class group type weight ps_cat analysisgrp subgroup subgroupcat / missing;
 	                        output out=hist_0(drop=_:) sum=;
 	                    run;
 						
@@ -135,11 +132,11 @@
 
 	                /*Transpose to create separate column for exposure and comparator counts*/
 	                proc sort data=raw_histogram;
-	                    by type weight ps_cat;
+	                    by type weight ps_cat subgroup subgroupcat;
 	                run;
 
 	                proc transpose data=raw_histogram out=raw_histogram1 prefix = _;
-	                    by type weight ps_cat;
+	                    by type weight ps_cat subgroup subgroupcat;
 	                    id group;
 	                    var npts;
 	                run;
@@ -156,7 +153,6 @@
 				 	  run;
 					%end;
 
-
 	                proc sql noprint;
 	                    create table raw_histogram_&loopcount._&dps._&periodid. as
 	                    select    x._eoi
@@ -164,6 +160,8 @@
 	                            , y.type
 	                            , y.ps_cat
 	                            , y.weight
+                                , x.subgroup
+                                , x.subgroupcat
 	                            , "&analysisgrp" as analysisgrp format=$40. length=40
 	                            , y.bin_eoi label="Histogram of &eoilabel."
 	                            , y.bin_ref label="Histogram of &reflabel."
@@ -183,8 +181,8 @@
     	%end; /*OutputPSDistribution*/
 	%end;  /*loop through comparisons*/
 
-		proc datasets nowarn noprint lib=work;
-		delete raw: hist_: bins;
-		quit;
-
+	proc datasets nowarn noprint lib=work;
+	delete raw: hist_: bins;
+	quit;
+    
 %mend l2_psdistribution_createdata;

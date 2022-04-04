@@ -48,13 +48,13 @@
     %let maxqueryyear = ;
 
     /*variables related to createreport input file*/
-    %global ReportType small_cellcounts redactcolumns stratifybyDP seed groupsfile baselinefile tablefile
+    %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination;
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars;
 
     %let ReportType= ;
     %let small_cellcounts = ;
-    %let redactcolumns =;
+    %let customizecolumns =;
     %let stratifybyDP = ;
     %let seed = ;
     %let groupsfile = ;
@@ -74,6 +74,7 @@
     %let look_end = 1;
     %let datedistributed = ;
     %let report_destination = ;
+	%let collapse_vars = ;
 
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
@@ -85,9 +86,8 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp baselinerowitalics numprofilecovarstoinclude;
+    %global numbaselinetablegrp numprofilecovarstoinclude;
     %let numbaselinetablegrp =0;
-	%let baselinerowitalics =;
     %let numprofilecovarstoinclude=0;
 
 	/*groupsfile table variables*/
@@ -104,27 +104,28 @@
 
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
-            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow;
+            cens_event_label cens_switch1_label cens_switch2_label includeheaderrow includemoiheaderrow;
     %let reporttitle = Exposures of Interest;
 	%let labelfileexists = N;		
     %let label_length = 250;
     %let cens_elig_label =Disenrollment;
-    %let cens_dth_label =Evidence of death;
-    %let cens_dpend_label =End of data partner data;
-    %let cens_qryend_label =End of query period;
-    %let cens_episend_label =End of exposure episode;
-    %let cens_spec_label =Occurence of request-defined censoring criteria;
-    %let cens_event_label =Occurence of event;
-    %let cens_switch1_label =First switch; 
-    %let cens_switch2_label =Second switch; 
+    %let cens_dth_label =Evidence of Death;
+    %let cens_dpend_label =End of Data;
+    %let cens_qryend_label =End of Study Period;
+    %let cens_episend_label =End of Exposure Episode;
+    %let cens_spec_label =Occurrence of User-Defined Censoring Criteria;
+    %let cens_event_label =Occurrence of Outcome of Interest;
+    %let cens_switch1_label =First Switch; 
+    %let cens_switch2_label =Second Switch; 
     %let includeheaderrow = N;
+    %let includemoiheaderrow = N;
 
     /*censor reasons*/
     %global defaultcensororder;
     %let defaultcensororder = cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend cens_switch;
 
     /*Age stratification format */
-    %global agefmt;
+    %global agegroupfmt;
 
     /*Output counter variables*/
     %global tableletter tablecount;
@@ -136,16 +137,25 @@
 	/* zipfile is a local macro variable in qrp therefore when leave behind report is requested do not set to global */
     %if &leavebehindreport. = N %then %do; %global zipfile; %end;
 	%let zipfile = ;
-	
-	/* covariate codes formats */
-	%global maxlen_studyname;
-    %let maxlen_studyname = 0;
-	
+
+    /* covariate stratifications in summary tables */
+    %global numsummarystratcovars;
+    %let numsummarystratcovars = 0;
+
+    /* baseline label covariate stratifications */
+    %global includecovars baselinelabellength;
+    %let includecovars = N;
+    %let baselinelabellength = 70;
+
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
+
+    /*figure specific variables*/
+    %global unicode_list;
+    %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
 
 	/* Leave behind report */
 	%global reportid dpfile logofile;

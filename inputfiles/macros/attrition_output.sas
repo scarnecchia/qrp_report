@@ -36,14 +36,15 @@
     %tableletter();
 
         /*assign footnotes*/
-        %let num_fn = 0;
+        %if %index(&reporttype,T4) > 0 %then %let num_fn = 1; %else %let num_fn = 0;
         %let exclincl = N;
         %let milexcl = N;
         %let claim_level_descr = &tabletype.;
+
         data repdata.table&tablenum.&tableletter.;
             set agg_&tabletype._attrition&attrperiodid;
             if index(lowcase(report_descr), 'evidence of')>0 then do;
-                call symputx('num_fn', 1);
+                call symputx('num_fn', %eval(&num_fn.+1));
                 if claim_level = 'MIL' then call symputx('milexcl', 'Y'); /*to mark which row to apply superscript*/
                 if claim_level ne 'MIL' then call symputx('exclincl', 'Y');
                 %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
@@ -59,7 +60,9 @@
         %if %eval(&num_fn.>0) %then %do;
             data _footnotes;
                length footnote_order 3; 
-               set lookup.lookup_footnotes (where = (type = "attrition"));
+               set lookup.lookup_footnotes (where = (type = "attrition" 
+                    %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;
+               ));
                by order;
                footnote_order = _n_;
             run;
@@ -71,11 +74,12 @@
             quit;
 
             /* Assign macro variables for superscipts */
+    		%assign_superscripts(type =title, order = -2);
     		%assign_superscripts(type =exclincl, order = 1);
         %end;
 
         %if &destination = excel %then %do;
-        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal" flow="tables");
+        ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal" flow="1:400");
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
@@ -118,7 +122,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.";
+            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.&super_title.";
             endcomp;
 
           
@@ -130,7 +134,7 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' or
+			else if report_descr = 'Had any cohort-defining claim during the query period' or
                     report_descr = 'Had a live birth delivery claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
@@ -169,7 +173,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,L2) %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
@@ -192,11 +196,11 @@
                 text='Members meeting enrollment and demographic requirements'; 
                 num=100;
             end;
-            else if report_descr = 'Had any cohort-defining claim during the query period' then do; 
+		    else if report_descr = 'Had any cohort-defining claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
-            else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
+			else if report_descr = 'Had sufficient pre-index continuous enrollment' then do; 
                 text='Members with required pre-index history'; 
                 num=100;
             end;
@@ -212,7 +216,7 @@
                 text='Final cohort'; 
                 num=100;
             end;
-            %if %index(&reporttype,L2) %then %do;
+            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;

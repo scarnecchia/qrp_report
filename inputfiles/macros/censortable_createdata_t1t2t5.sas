@@ -530,7 +530,7 @@
 	  	 %end;
 	  	 %if %index(&tablesubs.,agegroup) > 0 %then %do;
 	  	 	length _agegroup $40;
-	  	 	_agegroup = put(agegroup, $agefmt.);
+	  	 	_agegroup = put(agegroup, $agegroupfmt.);
 	  	 	drop agegroup;
 	  	 	rename _agegroup=agegroup;
 	  	 %end;

@@ -46,7 +46,6 @@
     ods listing close;
     ods select all;
     ods noresults;
-    options nodate nonumber orientation = landscape;
     %if &destination. = excel %then %do;
     ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
@@ -120,7 +119,7 @@
 * Effect estimate tables                                                      
 ***************************************************************************************************;
 
-    %if %index(&reporttype,L2) %then %do;
+    %if %index(&reporttype,L2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
     /* Need to set to landscape so PDF tables don't wrap */
     options orientation = landscape;
         %l2_effect_estimate_output;
@@ -273,7 +272,7 @@
 
                     %else %if &tableid. = T2 %then %do;
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                                where=%str(dpidsiteid = 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=&strat.,
@@ -282,7 +281,7 @@
                     %if &stratifybydp. = Y & %eval(&st.=1) %then %do;
                     %tableletter();
                     %censortable_output_table2(tablename=&tablename.,
-                                               title=%quote(Table &tablenum.&tableletter.. Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
+                                               title=%quote(Summary of Reasons for End of &tablenametitle. for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Data Partner),
                                                where=%str(dpidsiteid ne 'ALL' and table_name = 'overall' and strat = "&strat." and censorcat_sort = 1),
                                                reasonlist= &t2censorreasons.,
 											   tablesub=dpidsiteid,
@@ -334,11 +333,11 @@
                                 %tableletter();
                                 %censortable_output_table13(tablename=&tablename.,
                                 tablenum=&tablenum.&tableletter.,
-                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
+                                title=%quote(Summary of Time to End of &tablenametitle. due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.),
                                 where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "&strat."),
                                 tablesub=&strat.,
                                 continuousmetrics=&continuousmetrics.,
-                                cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by &cattableheader.),
+                                cattableheader=%quote(Censored due to %bquote(&&&reason._label) by &cattableheader.),
                                 conttableheader=%str(&conttableheader. in Days, by Episode),
                                 episodesorpatients=Episodes,
                                 censorreason=&reason.);
@@ -379,79 +378,210 @@
 
     %end; /*ReportType = T1 and T2L1 summary tables*/
 
+
+/*********************************************************************************************/
+/* Type 4 summary tables                                                                     */
+/*********************************************************************************************/
+	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
+
+        options orientation = landscape;
+     
+        %do tb = 1 %to %sysfunc(countw(&tablelist.));
+            %let table = %scan(&tablelist., &tb);
+
+            /*determine if table includes non-pregnant section*/;
+            %let nonpreglabel = %str( );
+            %let nonpreg = N;
+            %let s=;
+
+            /*table specific information*/
+            %let datasuffix=;
+            %let spanningheader=;
+
+            /*column order*/
+            %let gestwkorder = ;
+
+            data _null_;
+                set tablefile(where=(table="&table"));
+
+                if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
+                if table in ('T5', 'T6') then do;
+                    call symputx('datasuffix','gestwk');
+                    call symputx('gestwkorder','gestwkorder,');
+                end;
+
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
+                    call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
+                    call symputx('s', "s");
+                    call symputx('nonpreg', 'Y');
+                end;
+            run;
+
+             proc sql noprint;
+                select cats(columnname,'_char') 
+                      ,cats(columnwidth,'in')
+                      ,smallcellyn
+                      ,columnlabel
+                      ,columnheader
+                into :outvarlist separated by ' ',
+                     :outwidths separated by ' ',
+                     :outsmallcells separated by ' ',
+                     :columnlabels separated by '|||',
+                     :columnheaders separated by '|||'
+                from tablecolumns
+                where table="&table"
+                order by &gestwkorder. order;
+
+                %if &table. = T5 | &table. = T6 %then %do;
+                select distinct spanningheader into: spanningheader trimmed
+                from tablecolumns
+                where table="&table";
+                %end;
+                quit;
+            quit; 
+                
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+            %tableletter();
+
+            /*Overall*/
+            %t4tables_output(table=&table.,
+                             dataset=final_t4&datasuffix.,
+                             %if &nonpreg. = N %then %do;
+                             where=pregflg = 'Y',
+                             %end;
+                             %else %do;
+                             where=1,
+                             %end;
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
+
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %t4tables_output(table=&table.,
+                             dataset=final_dps_t4&datasuffix.,
+                             where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
+                %end;
+            %end;
+
+            %let tablenum = %eval(&tablenum + 1);
+        %end; /*loop through each table*/
+
+        options orientation = portrait;
+
+    %end; /*ReportType = T4L1 summary tables*/
+
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
 /*********************************************************************************************/
 	%if %str("&reporttype") = %str("T5") %then %do;
         options orientation = landscape;
 
-        /*Split table order map file to T1-T13 and T18-T22*/
-		%isdata(dataset=t5_tempmap);
+        /*****************************************************************************************/
+        /* Type 5 Tables T1-T13, T18-T22                                                         */
+        /*****************************************************************************************/
+
+        /*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
+    	%isdata(dataset=t5_tempmap);
         %if %eval(&nobs.>0) %then %do;
-            data _temp_t5_tempmap1 _temp_t5_tempmap2;
-                set t5_tempmap;
-                if table in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','T13') then output _temp_t5_tempmap1;
-                if table in ('T18','T19','T20','T21','T22') then output _temp_t5_tempmap2;
-            run;
-	    %end;
+        	%let t5tableobs = &nobs.;
+        	%do st = 1 %to %eval(&t5tableobs.);
 
-        /*Macro to produce Tables T1-T13, T18-T22*/
-        %macro loopt5tablesoutput(dataset=);
-        	/*Loop through each tablesub, determine whether to output categorical and/or continuous table*/
-    		%isdata(dataset=&dataset.);
-            %if %eval(&nobs.>0) %then %do;
+        		%let cattabledataset = ;
+        		%let distabledataset = ;
+        		%let tableorder=0;
 
-        		%let t5tableobs = &nobs.;
-        		%do st = 1 %to %eval(&t5tableobs.);
+        		data _null_;
+        		 set t5_tempmap;
+        			if _n_ = &st. then do;
+        				call symputx('numtables', numtables);
+        				call symputx('tableorder', tableorder);               
+        				%if %varexist(t5_tempmap,cattable) = 1 %then %do;
+        					if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,best.)));
+        				%end;
+        				%if %varexist(t5_tempmap,disttable) = 1 %then %do;
+        					if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,best.)));
+        				%end;
+        			end;
+        		run;
+                    
+        		/*Increment the table number and reset the table letter counter*/
+        		%if %eval(&tableorder.=1) %then %do;
+        			%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
+        			%let tablecount=1;
+        		%end;
+        		
+        		/*reset table letter counter if only 1 table*/
+        		%if %eval(&numtables.=1) %then %let tablecount=0;
 
-        			%let cattabledataset = ;
-        			%let distabledataset = ;
-        			%let tableorder=0;
+        		%if %str("&cattabledataset.") ne %str("") %then %do;
+        			%tableletter();
+        			%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
+        		%end;
+        		%if %str("&distabledataset.") ne %str("") %then %do;
+        			%tableletter();
+        			%t5tables_output(dataset=&distabledataset.,reporttype=dist);
+        		%end;		
+            %end;		
+        	%let tablenum = %eval(&tablenum + 1);
 
-        			data _null_;
-        			 set &dataset.;
-        				if _n_ = &st. then do;
-        					call symputx('numtables', numtables);
-        					call symputx('tableorder', tableorder);               
-        					%if %varexist(t5_tempmap,cattable) = 1 %then %do;
-        						if missing(cattable)=0 then call symputx('cattabledataset', catx('_',cattable,put(catstratificationorder,best.)));
-        					%end;
-        					%if %varexist(t5_tempmap,disttable) = 1 %then %do;
-        						if missing(disttable)=0 then call symputx('distabledataset', catx('_',disttable,put(diststratificationorder,best.)));
-        					%end;
-        				end;
-        			run;
-                        
-        			/*Increment the table number and reset the table letter counter*/
-        			%if %eval(&tableorder.=1) %then %do;
-        				%if %eval(&st. ^=1) %then %let tablenum = %eval(&tablenum + 1);
-        				%let tablecount=1;
-        			%end;
-        			
-        			/*reset table letter counter if only 1 table*/
-        			%if %eval(&numtables.=1) %then %let tablecount=0;
-
-        			%if %str("&cattabledataset.") ne %str("") %then %do;
-        				%tableletter();
-        				%t5tables_output(dataset=&cattabledataset.,reporttype=cat);
-        			%end;
-        			%if %str("&distabledataset.") ne %str("") %then %do;
-        				%tableletter();
-        				%t5tables_output(dataset=&distabledataset.,reporttype=dist);
-        			%end;		
-                %end;		
-        		%let tablenum = %eval(&tablenum + 1);
-
-                proc datasets nowarn noprint lib=work;
-                    delete _temp_t5_tempmap1; 
-                quit;
-            %end;
-        %mend;
-
-        /*****************************************************************************************/
-        /* Type 5 Tables T1-T13                                                                  */
-        /*****************************************************************************************/
-        %loopt5tablesoutput(dataset=_temp_t5_tempmap1);
+            proc datasets nowarn noprint lib=work;
+                delete _temp_t5_tempmap; 
+            quit;
+        %end;
 	
         /*****************************************************************************************/
         /* Type 5 censor tables                                                                  */
@@ -511,11 +641,11 @@
                         /*note - table is not stratified by DP*/
                         %censortable_output_table13(tablename=&tablename.,
                          tablenum=&tablenum.,
-                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(%sysfunc(propcase(&&&reason._label))) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                         title=%quote(Summary of Episode Duration for &first.Treatment Episodes Ended due to %bquote(&&&reason._label) for &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
                          where=%str(dpidsiteid = 'ALL' and table_name = "&reason" and strat = "overall" and not missing(censdays_value_cat_format)),
                          tablesub=overall,
                          continuousmetrics=Y, /*continuous metrics always returned*/
-                         cattableheader=%quote(Censored due to %bquote(%sysfunc(propcase(&&&reason._label))) by Episode Length),
+                         cattableheader=%quote(Censored due to %bquote(&&&reason._label) by Episode Length),
                          conttableheader=%str(Treatment Episode Length, in Days),
                          episodesorpatients=&episodesorpatients.,
                          censorreason=&reason.);
@@ -541,11 +671,6 @@
         %if %sysfunc(prxmatch(m/T17\b/i,&tablelist.)) > 0 %then %do;
             %t5censoroutput(tableid=T17, tablename = t5censor, first=, episodesorpatients=Episodes);
         %end;
-
-        /*****************************************************************************************/
-        /* Type 5 Tables T1-T13                                                                  */
-        /*****************************************************************************************/
-        %loopt5tablesoutput(dataset=_temp_t5_tempmap2);
 
         options orientation = portrait;
 
@@ -675,7 +800,7 @@
         %if %index(&figurelist,F1) %then %do;
         %l2_psdistribution_output;
         %end;
-        %if %index(&figurelist,F2) %then %do;
+        %if %index(&figurelist,F2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
         %l2_forestplot_driver;
         %end;   
     %end; 
@@ -758,7 +883,9 @@
 	 ************************************************;
     * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
     ************************************************;
-	%figure_cdf_km_output;
+	%if %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+		%figure_cdf_km_output;
+	%end;
 	
      options orientation = portrait;
     

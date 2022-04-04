@@ -118,10 +118,105 @@
             quit;
         %end;
 
-        /*Stack baseline tables and transpose*/
+        /*Stack baseline tables*/
         data _temp_baseline_stacked;
             set _temp_baseline_tablenum:;
         run;
+
+		/*if stratifying by data partner and collapse_vars = race, recode values 1-10 to Unknown*/
+		%if "&stratifybydp." = "Y" and "&collapse_vars." = "race" %then %do;
+            /*confirm race vars exist on dataset*/
+            proc contents noprint data = _temp_baseline_stacked 
+                                   out = content_out;
+            run;
+
+            proc sql noprint;
+    		    select count(name) into :race_cats 
+    		    from content_out
+    		    where lowcase(name) like 'race_%';
+            quit; 
+
+            proc datasets nowarn noprint lib=work;
+                delete content_out;
+            quit;
+
+            %if %eval(&race_cats>0) %then %do;
+
+                /*type 6 - if any switch is collapsed, collapse all switches*/
+                proc sort data=_temp_baseline_stacked;
+                    by order %if &reporttype.=T6 %then %do; descending switchstep %end;;
+                run;
+
+                %let collapse_comparator = N;
+
+                data _temp_baseline_stacked(drop=recode_:);
+                    missing R;
+                    set _temp_baseline_stacked;
+                    by order;
+
+                    /*Recode*/
+                    if first.order then do;
+                        %do c_r = 1 %to %eval(&race_cats -1);
+                        recode_&c_r. = 'N'; /*to track if another anchor switch or cohort collapsed*/
+        		        if 1 <= race_&c_r <= 10 then do;
+                            race_0 = sum(race_0, race_&c_r.);
+                            /*set recoded value to special missing value to track in code and final table*/
+                            race_&c_r. = .R;
+                            recode_&c_r. = 'Y';
+                        end;
+                        retain recode_&c_r.;
+                        %end;             
+                    end;
+                    else do;
+                        %do c_r = 1 %to %eval(&race_cats -1);
+        		        if 1 <= race_&c_r <= 10 | recode_&c_r. = 'Y' then do;
+                            race_0 = sum(race_0, race_&c_r.);
+                            /*set recoded value to special missing value to track in code and final table*/
+                            race_&c_r. = .R;
+                            recode_&c_r. = 'Y';
+                            retain recode_&c_r.;
+                        end;
+                        %end;
+                        /*mark if comparator cohort*/
+                        %if &reporttype. ne T6 %then %do; call symputx('collapse_comparator', 'Y'); %end;
+                    end;
+                run; 
+
+                %if &collapse_comparator = Y %then %do;
+                /*if there is a comparator cohort, need to recode other group if a row has been collapsed in 1 group.
+                  This is not needed for Type 6 because the at each switch, the # of patients will inherantly decrease, 
+                  whereas for comparator cohorts this is not the case */
+                    proc sort data=_temp_baseline_stacked out=_temp_baseline_stacked;
+                        by order descending &mergevar.;
+                    run;
+
+                    data _temp_baseline_stacked(drop=recode_:);
+                        set _temp_baseline_stacked;
+                        by order;
+
+                       /*Determine if other cohort was recoded*/
+                        if first.order then do;
+                            %do c_r = 1 %to %eval(&race_cats -1);
+                            recode_&c_r. = 'N';
+            		        if race_&c_r =.R then do;
+                                recode_&c_r. = 'Y';
+                            end;
+                            retain recode_&c_r.;
+                            %end;             
+                        end;
+                        else do;
+                            %do c_r = 1 %to %eval(&race_cats -1);
+            		        if recode_&c_r. = 'Y' then do;
+                                race_0 = sum(race_0, race_&c_r.);
+                                /*set recoded value to special missing value to track in code and final table*/
+                                race_&c_r. = .R;
+                            end;
+                            %end;
+                        end;
+                    run; 
+                %end;
+            %end; /*race exists on dataset*/
+        %end; /*collapse race categories*/
 
         /*Transpose and rename variable holding metrics to DP&DPNUMBER*/
         proc sort data=_temp_baseline_stacked;
@@ -180,6 +275,7 @@
             run;
         %end;
 
+		
     %end; /*level 1 baseline tables*/
 
 
@@ -208,7 +304,6 @@
 		 	%end;
 
             /*Merge table with GROUPSTABLE and only keep Analysisgrps in the input file*/
-
             proc sql noprint;
                 create table _temp_baseline_tablenum&b. as
                 select x.*
@@ -255,7 +350,7 @@
         quit;
 
         proc sort data=_temp_baseline_stacked; 
-            by analysisgrp runid order table group1 group2 weight vartype metvar;                 
+            by analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
@@ -283,7 +378,7 @@
             data &outdata.;
                 merge &outdata.(in=a)
                       _temp_baseline_stacked;
-                by analysisgrp runid order table group1 group2 weight vartype metvar; 
+                by analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar; 
             run;
             data _baseline_agg_&periodid.;
                 set _baseline_agg_&periodid.
@@ -307,7 +402,7 @@
         %end;
 		
         proc sort data=_baseline_agg_&periodid.; 
-            by dpidsiteid analysisgrp runid order table group1 group2 weight vartype metvar;                 
+            by dpidsiteid analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
 			
     %end; /*level 2 baseline tables*/

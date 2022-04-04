@@ -15,26 +15,27 @@
 *   -agefmtsort: one row per cohortgrp, agegroup, agegroupnum
 *
 *   formats;
-*   -agefmt
+*   -agegroupfmt
 *   -sexfmt
 *   -sexsort
 *   -racefmt
 *   -racesort
 *   -hispanicfmt
 *   -hispanicsort
-*   -deliveryfmt
-*   -deliverysort
-*   -birthtypefmt
-*   -birthtypesort
-*   -matchfmt
-*   -matchsort
-*   -timefmt
-*   -timesort
+*   -prepostindfmt
+*   -prepostindsort
+*   -birth_typefmt
+*   -birth_typesort
+*   -matchmethodfmt
+*   -matchmethodsort
+*   -periodidfmt
+*   -periodidsort
 *   -hhs_regfmt
 *   -cb_regfmt
-*   -mn_name
-*   -qtr_name
+*   -monthfmt
+*   -quarterfmt
 *   -nafmt
+*   -subgrouporderfmt
 *
 *
 *  PARAMETERS:                                                                       
@@ -135,11 +136,11 @@
     run;
 
 	proc sql noprint;
-      select distinct label_fmt into: AGEFMT  separated by ' '    
+      select distinct label_fmt into: agegroupfmt  separated by ' '    
       from _agefmt;
     quit; 
 
-	%put &=AGEFMT;
+	%put &=agegroupfmt;
 
     proc datasets nowarn noprint lib=work;
         delete _agefmt;
@@ -151,8 +152,8 @@
     proc format;  
 
         /*Age Format*/
-        value $agefmt
-        &AGEFMT.;
+        value $agegroupfmt
+        &agegroupfmt.;
 
         /*Sex Format*/
         value $sexfmt
@@ -253,21 +254,21 @@
         'Missing' = 6
         'Other' = 7;
 		
-        /* Delivery Status format */
-        value $deliveryfmt
+        /* Preterm/Postterm status format */
+        value $prepostindfmt
         "PRE" = "Pre-Term (0-258 days)"
         "TERM" = "Term (259-280 days)"
         "POST" = "Post-Term (281-301 days)"
         "NONE" = "Unknown Term";
 
-        value $deliverysort
+        value $prepostindsort
         "PRE" = 1
         "TERM" = 2
         "POST" = 3
         "NONE" = 4;
 
         /* Birth Type format */
-        value $birthtypefmt
+        value $birth_typefmt
         "0" = "Unspecified # of live births"
         "1" = "1 live birth"
         "2" = "2 live births"
@@ -277,7 +278,7 @@
         "8" = "Multiple live births, unspecified number"
         "9" = "Conflicting code(s) for number of live births";
 
-        value $birthtypesort
+        value $birth_typesort
         "0" = 1
         "1" = 2
         "2" = 3
@@ -288,7 +289,7 @@
         "9" = 8;
 
         /* Match method format */
-        value $matchfmt
+        value $matchmethodfmt
         "BC" = "Birth Certificate"
         "RE" = "Birth Registry"
         "SI" = "Health plan subscriber or family number"
@@ -299,7 +300,7 @@
         "N3" = "Neither subscriber/family IDs nor name/address available for linkage"
         "NA" = "No linkage made; any other reasons";
 
-        value $matchsort
+        value $matchmethodsort
         "BC" = 1
         "RE" = 2
         "LA" = 3
@@ -311,13 +312,13 @@
         "OT" = 9;
 
         /* Time format */
-        value $timefmt
+        value $periodidfmt
         %do n = 1 %to &look_end;
         "&n" = "&startdateformatted to &&enddate&n.formatted"
         %end;
         ;
 
-        value $timesort
+        value $periodidsort
         %do n = 1 %to &look_end;
         "&n" = &n
         %end;
@@ -332,7 +333,7 @@
         ' ' = 'N/A'
         other=[$50.];
 
-        value mn_name 
+        value monthfmt 
            1='January'
            2='February'
            3='March'
@@ -347,55 +348,28 @@
           12='December'
        other='';
 
-	   value qtr_name 
+	   value quarterfmt 
            1='Quarter 1'
            2='Quarter 2'
            3='Quarter 3'
            4='Quarter 4'           
        other='';
+
+
+        /*master order for subgroups - explicitely defined for L2s, determined by order in 
+          TABLEFILE for L1s*/
+        value $subgrouporderfmt
+            /*1 reserved for overall*/
+            'sex' = 2
+            'agegroup' = 3
+            'year' = 4
+            'race' = 5
+            'hispanic' = 6
+            'prepostind' = 7
+            'matchmethod' = 8
+            'birth_type' = 9
+            'periodid' = 10;
     run;
-
-
-/***************************************************************************************************
-*  Create stacked dataset containing covariate labels for all runs                                              
-***************************************************************************************************/
-    /*loop through each runID, create datasets &runid._covarname*/
-    %do r = 1 %to %eval(&numrunid.);
-        %let runid = %scan(&runidlist., &r.);
-        %if %sysfunc(exist(infolder.&&&runid._covariatecodes.))=1 %then %do;
-
-        	/* Get studyname length per runid */
-        	proc contents data = infolder.&&&runid._covariatecodes. out=studylen(keep=name length) noprint;
-        	run;
-
-            proc sql noprint;    
-                create table covarname_&runid. as 
-                select distinct covarnum, strip(studyname) as studyname, "&runid" as runid length=5
-                from infolder.&&&runid._covariatecodes.;
-
-               	select length
-               	into: MAXLEN_STUDYNAME_&r
-               	from studylen
-               	where lower(name)='studyname';
-            quit;
-
-            /* Need to set maximum studyname length across all runs */
-            %if &MAXLEN_STUDYNAME < &&MAXLEN_STUDYNAME_&r %then %let MAXLEN_STUDYNAME = &&MAXLEN_STUDYNAME_&r;
-        %end;
-    %end;
-
-    %if %eval(&MAXLEN_STUDYNAME) > 0 %then %do;
-     data covarname;
-     	length studyname $&MAXLEN_STUDYNAME;
-        set covarname:;
-     run;
-    %end;
-
-    /*Delete temporary dataset*/
-   proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_:; 
-   quit;    
-   
 
 /***************************************************************************************************
 *  Small cell count formats                                            
@@ -442,6 +416,108 @@
 			"DX" = "Diagnosis"
 			"PX" = "Procedure";
 	run;
+
+/***************************************************************************************************
+* Assign L2 subgroups title, order, and labels                                                       
+***************************************************************************************************/
+    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 %then %do;
+
+        %macro assignsubgroupvalue(subgroup, format, sort);
+            if index(subgroup,"&subgroup.")>0 then do;
+                subgroupcatlabel = &format.;
+                subgroupcatorder = &sort.;
+            end;
+        %mend;
+
+        /*Merge in agegroupnum*/
+        proc sql noprint;
+            create table _pscs_masterinputs_age as
+            select x.*,
+                   y.agegroupnum
+            from pscs_masterinputs(where=(subgroup="agegroup")) as x
+            left join agefmtsort as y
+            on %if &reporttype.=T2L2 %then %do; x.eoi %end;
+               %if &reporttype.=T4L2 %then %do; x.groupname %end;
+               = y.cohortgrp
+            and x.subgroupcat = y.agegroup;
+        quit;
+
+        data pscs_masterinputs;
+            set pscs_masterinputs(where=(subgroup ne 'agegroup')) _pscs_masterinputs_age; 
+            format tabletitle combinedlabel $100. subgroupcatlabel $50.;
+            length subgroupcatorder 3;
+            if subgroup='' then do;
+                tabletitle = '';
+                subgrouporder = 1;
+                subgroupcatorder = 1;
+            end;
+            else do;
+                /*assign subgroup order*/
+                if index(subgroup, 'covar')=0 then do;
+                    subgrouporder = put(subgroup, subgrouporderfmt.);
+                end;
+                else do;
+                    covar = substr(subgroup, 6);
+                    subgrouporder = 10+covar;
+                end;
+
+                /*assign subgroup category labels and order*/
+                %assignsubgroupvalue(sex, put(subgroupcat,$sexfmt.),put(subgroupcat,sexsort.));
+                %assignsubgroupvalue(agegroup, put(subgroupcat,$agegroupfmt.), agegroupnum);
+                %assignsubgroupvalue(year,subgroupcat,input(compress(subgroupcat),? $11.));
+                %assignsubgroupvalue(race, put(subgroupcat,$racefmt.),put(subgroupcat,racesort.));
+                %assignsubgroupvalue(hispanic, put(subgroupcat,$hispanicfmt.),put(subgroupcat,hispanicsort.));
+                %assignsubgroupvalue(prepostind, put(subgroupcat,$prepostindfmt.),put(subgroupcat,prepostindsort.));
+                %assignsubgroupvalue(matchmethod, put(subgroupcat,$matchmethodfmt.),put(subgroupcat,matchmethodsort.));
+                %assignsubgroupvalue(birth_type, put(subgroupcat,$birth_typefmt.),put(subgroupcat,birth_typesort.));
+                %assignsubgroupvalue(periodid, put(subgroupcat,$periodidfmt.),put(subgroupcat,periodidsort.));
+                if index(subgroup,"covar")>0 then do;
+                    subgroupcatorder = input(compress(subgroupcat),? $11.);
+                    if subgroupcat = '0' then subgroupcatlabel = catx(' ','No',tranwrd(subgroup, 'covar', '&StudyCovar'));
+                    if subgroupcat = '1' then subgroupcatlabel = tranwrd(subgroup, 'covar', '&StudyCovar');
+                end;    
+
+                /*Assign description for title*/
+                tabletitle = strip(propcase(subgroup));
+                   
+                /*change the following tablesub values:
+                 - Agegroup => Age Group
+                 - Hispanic => Hispanic Origin
+                 - Periodid => Monitoring Period
+                 - Prepostind => Delivery Status
+                 - Matchmethod => Match Method
+                 - Birthtype => Birth Type
+
+                /*note - geographic strata not currently available in QRP
+                 - Zip3 => 3-Digit Zip/State
+                 - Zip_uncertain => Zip Uncertain
+                 - Hhs_reg => Health and Human Services (HHS) Region
+                 - Cb_reg => Census Bureau Region
+                */
+                if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
+                if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
+                if index(tabletitle, 'Periodid')>0 then tabletitle =tranwrd(tabletitle, 'Periodid', 'Monitoring Period');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Delivery Status');
+                if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Matchmethod', 'Match Method');
+                if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Birthtype', 'Birth Type');
+                if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
+                if index(tabletitle, 'Zip_uncertain')>0 then tabletitle =tranwrd(tabletitle, 'Zip_uncertain', 'Zip Uncertain');
+                if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
+                if index(tabletitle, 'Cb_reg')>0 then tabletitle =tranwrd(tabletitle, 'Cb_reg', 'Census Bureau Region');
+
+                /*Add ampersand to covariate. Will be resovled when title prints*/
+                if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
+
+                /*Combined label*/
+                if index(subgroup, 'covar')=0 then do;
+                    combinedlabel = cat(', ',strip(tabletitle), ": ", strip(subgroupcatlabel));
+                end;
+                else do;
+                    combinedlabel = cat(', ',subgroupcatlabel);
+                end;
+            end;
+        run;
+    %end;
 	
 %mend report_formats_labels;
 	

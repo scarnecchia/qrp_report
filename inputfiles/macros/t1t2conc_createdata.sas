@@ -62,7 +62,38 @@
             where tablesub ne 'overall' and dataset = "&table.";
     quit;
 
-   /************************************************************************************************
+    /************************************************************************************************
+      Collapse data - if stratifybyDP = Y, need to reclassify prior to aggregation
+                      if stratifybyDP = N, collapse after aggregation 
+    ************************************************************************************************/
+	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" %then %do;
+
+        /*identify sort order #*/
+        data _null_;
+            set stratavars_agg_&table.;
+            if strata = "race" then call symputx("sortnb",_n_);
+        run;
+
+		%if &stratifybydp = Y %then %do;
+        %collapse_vars(dataset=agg_&table., 
+                       dpstrat=Y,
+                       groupvar=&grpvar.,
+                       where =level in (&&&table._levelid), 
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       unknown="Unknown", 
+                       sort=&sortnb., 
+                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+                              %if %index(&table,conc) = 0 %then %do;
+                                 dennumpts dennummemdays timetocensor
+                    		  %end;
+                    		  %if %substr(&table,2,1) ne 1 %then %do;
+                    		     eps_wevents all_events followuptime
+                    		  %end;,
+                       classlist=dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
+		%end;
+    %end;
+
+    /************************************************************************************************
       Summarize data                 
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
@@ -76,6 +107,19 @@
 		  %end;;
         output out = agg_&table._sum (drop = _:) sum=;
     run;
+
+    /*Collapse if stratifybyDP = N*/
+	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
+        %collapse_vars(dataset=agg_&table._sum, 
+                       groupvar=&grpvar.,
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       unknown="Unknown", 
+                       sort=&sortnb., 
+                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+                              %if %index(&table,conc) = 0 %then %do; dennumpts dennummemdays timetocensor %end;
+                    		  %if %substr(&table,2,1) ne 1 %then %do; eps_wevents all_events followuptime %end;,
+                       classlist= level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
+	%end;
 	
    /************************************************************************************************
       Determine total count of variables on table and put tablecolumns information into macro variables             
@@ -106,53 +150,6 @@
 			,:footnote1 - :footnote&numcolumns.
 	  from tablecolumns where table = "&table.";
     quit;
-	
-   /************************************************************************************************
-      Create covariatelist             
-    ************************************************************************************************/
-	 data _covars (keep = covarnum);
-	   length covarnum 8;
-	   set tablefile (where = (index(tablesub,'covar') > 0 and index(tablesub,'#') = 0 and dataset = "&table."));
-	   call missing(covarnum);
-	   if index(tablesub,'covar') > 0 then do;
-	     numstrat = countw(tablesub,' ');
-		 do ns = 1 to numstrat;
-		   if index(scan(tablesub,ns,' '),'covar') > 0 then do;
-		     covarstrat = scan(tablesub,ns,' ');
-		     covarnum = input(substr(covarstrat,6),8.); output;
-		   end;
-		 end;
-	   end;
-	   if missing(covarnum) then delete;
-     run;
-	 
-	 proc sort nodupkey data = _covars;
-	   by covarnum;
-	 run;
-	 
-	 %let numcovars = 0;
-	 %ISDATA(dataset=_covars); 
-     %if &nobs > 0 %then %do;
-	   proc sort nodupkey data = covarname(keep = covarnum studyname) out = _covarnames;
-	     by covarnum;
-	   run;
-       
-       proc sql noprint;
-	     select count(covarnum) into: numcovars trimmed
-	     from _covars;
-	     %do cc = 1 %to &numcovars;
-	     %global covar&cc study&cc;
-	     %end;
-	   
-	     select cats('covar',a.covarnum),
-                b.studyname
-         into :covar1 - :covar&numcovars.,
-              :study1 - :study&numcovars.
-	     from _covars a
-         left join _covarnames b
-	     on a.covarnum = b.covarnum;
-       quit;
-     %end;
 
    /************************************************************************************************
        Prepare final summary datasets           
@@ -226,6 +223,9 @@
 			   end;
 			   else do;
 			   	&&var&vv. = "NaN";
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end;
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -254,6 +254,9 @@
                end;
 			   else do;
 			   	&&var&vv. = "NaN";
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end; 
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -275,6 +278,9 @@
 			   else do;
 			   	&&var&vv. =0;
 			   	&&var&vv.._char="NaN";
+				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
+					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
+				%end;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
 				 %end;	
@@ -315,7 +321,8 @@
 		  if totalnpts = 0 or totalepisodes = 0 then &&var&vv.._char='.';
 		  %end;	
 		  %if %sysfunc(prxmatch(m/dennumpts|dennummemdays/i,&&formula&vv.)) %then %do;
-		  if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
+			if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
+			else if missing(dennumpts) then &&var&vv.._char='N/A';
 	      %end;	  
 	    %end;
 		
@@ -366,13 +373,13 @@
               %end;;
 
              /*covariate*/
-             %if &numcovars. > 0 %then %do;
-               %do c = 1 %to &numcovars.;
+             %if &numsummarystratcovars. > 0 %then %do;
+               %do c = 1 %to &numsummarystratcovars.;
                   %if %index(&&&table._stratification,&&covar&c..) %then %do;
-				    length _&&covar&c. $%eval(&maxlen_studyname + 15);
+				    length _&&covar&c. $%eval(&baselinelabellength + 15);
                     label _&&covar&c. = "&&covar&c.";
-                    if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&study&c..";
-                    if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&study&c.."; 
+                    if &&covar&c.. = 0 then _&&covar&c. = "No evidence of &&&&study&&covar&c..";
+                    if &&covar&c. = 1 then _&&covar&c. = "Evidence of &&&&study&&covar&c.."; 
 					drop &&covar&c.;
                     rename _&&covar&c. = &&covar&c.;
                   %end;
@@ -380,10 +387,10 @@
              %end;
             ;                
         run;
-		
+
 		/* Apply labels */
 		%isdata(dataset=labelfile);
-		
+	
         proc sql noprint;
           create table &dsout. as
           select a.*, b.order

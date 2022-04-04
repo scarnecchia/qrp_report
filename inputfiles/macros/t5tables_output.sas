@@ -17,7 +17,7 @@
 * 
 *  PARAMETERS:  
 *   - dataset: input dataset
-*   - report: indicator whether to produce categorical (1) or continuous (2) metrics
+*   - reporttype: indicator whether to produce categorical (cat) or continuous (dist) metrics
 *   
 *  Programming Notes:         
 *  
@@ -33,17 +33,10 @@
 
 	%put =====> MACRO CALLED: t5tables_output;
 	
-	%isdata(dataset=repdata.table&tablenum.&tableletter.);
-    %if %eval(&nobs.<1) %then %do;
-	data repdata.table&tablenum.&tableletter.;
-		set &dataset.;
-	run;
-    %end;
-
 	proc sql noprint;
-	select max(sortorder1), max(sortorder2)
-	  into :maxorder1, :maxorder2
-	 from &dataset.;
+	   select max(sortorder1), max(sortorder2)
+	   into :maxorder1, :maxorder2
+	   from &dataset.;
 	quit;
 	%put maxorder1 = &maxorder1.;
 	%put maxorder2 = &maxorder2.;
@@ -53,6 +46,7 @@
 	%let tabletitle = ;
 	%let categories = ;
 	%let num_categories = 0;
+    %let num_fn=0;
 
 	data _null_;
 		set tablefile;
@@ -66,6 +60,43 @@
 		end;
 	run;
 
+    /*Footnotes:
+        - footnote table for dose generated in tables footnotes generated in t5tables_createdata */
+   data _footnotes;
+       length footnote_order 3; 
+       set %if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
+                %substr(&dataset.,1,3)_lookup_footnotes_dose(where=(order not in (0
+                %if &collapse_vars. ne race | %index(&tablesub., race)=0 %then %do;
+                2
+                %end; 
+                )))
+           %end;
+           %else %do;
+                lookup.lookup_footnotes(where=(type = "t5tablefig" and order in (0 
+                %if &collapse_vars. = race & %index(&tablesub., race)>0 %then %do;
+                2    
+                %end;
+                )))
+           %end;
+           ;
+           by order;
+           footnote_order = _n_;
+    run;
+     
+    proc sql noprint;
+        select count(order) into: num_fn trimmed
+        from _footnotes;
+      
+        %if &num_fn > 0 %then %do;
+          select description into: fn1 - :fn&num_fn.
+          from _footnotes
+          order by order;
+        %end;
+    quit;
+
+    %assign_superscripts(type=raceunknown, order = 2);
+
+    /*Assign dose group labels and number of categories*/ 
 	%if %sysfunc(prxmatch(m/T18_|T19_|T20_|T21_|T22_/i,&dataset.)) > 0 %then %do;
 		data _null_;
 			set MASTER_TYPEFILE;
@@ -84,21 +115,6 @@
 
         %let num_categories = %sysfunc(countw(&categories, ' '));
 
-        /*Footnotes - only dose tables (T18-T22 have footnotes)*/
-        proc sql noprint;
-          select max(order) into: num_fn trimmed
-          from %substr(&dataset.,1,3)_lookup_footnotes_dose;
-        quit;
-
-        %if %eval(&num_fn.>0) %then %do;
-        proc sql noprint;
-          select description into: fn1 - :fn&num_fn.
-          from %substr(&dataset.,1,3)_lookup_footnotes_dose
-          order by order;
-        quit;
-        %end;      
-
-        /*Assign dose group labels*/ 
 		%do c =1 %to &num_categories.;
 			%let lbl&c. = Dose Group &c.;
 		%end;
@@ -117,6 +133,17 @@
     %end;
 
 	%let num_categories = %sysfunc(countw(&categories, ' '));
+
+    /*save to REPORTDATA folder and append superscript if necessary*/
+	%isdata(dataset=repdata.table&tablenum.&tableletter.);
+    %if %eval(&nobs.<1) %then %do;
+	data repdata.table&tablenum.&tableletter.;
+		set &dataset.;
+        %if &collapse_vars. = race & %index(&tablesub., race)>0 %then %do;
+            if grouplabel = 'Unknown' then grouplabel= cats(grouplabel, "&super_raceunknown.");
+        %end
+	run;
+    %end;
 
     /*Assign table labels and titles*/
     %let t5title=;
@@ -147,11 +174,11 @@
         %let t5distributiontitle = Distribution of Days Supplied by Dispensing;
     %end;
     %else %if %sysfunc(prxmatch(m/T3_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Categorical Summary of Patients%str(%') Cumulative Exposure Duration;
+        %let t5title = Categorical Summary of Patients%str(%') Cumulative Treatment Episode Durations;
         %let t5head = Number of Patients by Cumulative Treatment Episode Duration;
     %end;
     %else %if %sysfunc(prxmatch(m/T4_/i,&dataset.)) > 0 %then %do;
-        %let t5title = Continuous Summary of Patients%str(%') Cumulative Exposure Duration; 
+        %let t5title = Continuous Summary of Patients%str(%') Cumulative Treatment Episode Durations; 
         %let t5distributiontitle = Distribution of Cumulative Treatment Episode Duration, days;
     %end;
     %else %if %sysfunc(prxmatch(m/T5_/i,&dataset.)) > 0 %then %do;
@@ -234,7 +261,7 @@
 		%end;
         
 		%if &destination = excel %then %do;
-			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green");
+			ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green" flow="1:400"); /*flow=to prevent line break, 400 arbitrarily chosen to ensure long tables are covered*/
 		%end;
 		ods proclabel = "Table &tablenum.&tableletter.";		
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
@@ -300,7 +327,7 @@
             compute grouplabel;
                 if sortorder1=0 then do;
 					%if &includeheaderrow. = Y %then %do;
-						call define (_col_,"style","style=[fontstyle=italic]");
+						call define (%if &maxorder1.=0 %then %do; _col_ %end; %else %do; _row_ %end;,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
 						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");
@@ -331,7 +358,8 @@
 
             /* Add Footnotes */
             %if %eval(&num_fn > 0) %then %do;
-                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize];
+                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize
+                                       nobreakspace=off];
     		    %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
     		    %end;
@@ -396,7 +424,7 @@
             compute grouplabel;
                 if sortorder1=0 then do;
 					%if &includeheaderrow. = Y %then %do;
-						call define (_col_,"style","style=[fontstyle=italic]");
+						call define (%if &maxorder1.=0 %then %do; _col_ %end; %else %do; _row_ %end;,"style","style=[fontstyle=italic]");
 					%end;
 					%else %do;
 						if &maxorder1=0 then call define (_col_,"style","style=[fontstyle=italic]");
@@ -424,11 +452,22 @@
 				line text $Varying. num;
             endcomp; 
 			%end;
-         
-            /*Add thick line to bottom of report*/
-            compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
-            line ' ';
-            endcomp;
+
+           /* Add Footnotes */
+            %if %eval(&num_fn > 0) %then %do;
+                compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize
+                                       nobreakspace=off];
+    		    %do f = 1 %to &num_fn.;
+                line "^{super &f.}&&fn&f.";
+    		    %end;
+                endcomp;
+            %end;
+            %else %do;
+                /*Add thick line to bottom of report*/
+                compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
+                line ' ';
+                endcomp;
+            %end;
         run;
 	%end;	/* Continuous */
 		

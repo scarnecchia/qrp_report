@@ -131,7 +131,19 @@
 
        %end;
     %end;
-
+    
+	/*ReportType T4*/
+	%if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
+	     /* Create data for T4Preg and T4NoPreg datasets */
+		 %if %sysfunc(findw(&datasetlist,t4preg)) | %sysfunc(findw(&datasetlist,t4nopreg)) %then %do;
+	       %t4tables_createdata(dataset = preg, output_suffix = _t4moi, episode_var=episodes);
+		 %end;
+	     /* Create data for T4Preggestwk and T4NoPreggestwk datasets */
+		 %if %sysfunc(findw(&datasetlist,t4preggestwk)) | %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
+	       %t4tables_createdata(dataset = preggestwk, output_suffix = _t4gestwk, episode_var = pregepisodes);
+		 %end;
+	%end;
+	
     /*ReportType T5*/
 	%if %str("&reporttype") = %str("T5") %then %do;
 	   %t5tables_driver();
@@ -156,12 +168,12 @@
 *   Compute effect estimates, forest plot, and PS Histograms dataset for Reporttype = T2L2 and T4L2                                              
 ***************************************************************************************************;
     /*loop l2 processing by periodid*/
-    %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-			%l2_effect_estimate_driver();
+    %do periodid = %eval(&look_start.) %to %eval(&look_end.);		
+		%l2_effect_estimate_driver();
 		%if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
 		%end;
-        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+        %if %index(&reporttype,L2) and %index(&figurelist,F2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
             %l2_forestplot_createdata;
         %end;
     %end;
@@ -198,7 +210,7 @@
 ***************************************************************************************************;
 *   Output report                                                
 ***************************************************************************************************;
-
+    
     /*Excel*/
     %if "&report_destination." = "BOTH" | "&report_destination." = "EXCEL"  %then %do;
         /*windows: report font = Calibri, font size = 10, footnote fontsize = 9*/
@@ -216,8 +228,8 @@
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt, bordersize=2pt);
     %end;
-
-    %end;
+  
+    %end; /*reporttype is not TREE*/
 
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             

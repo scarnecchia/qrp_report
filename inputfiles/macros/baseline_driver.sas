@@ -64,7 +64,7 @@
 		       select base.*
 		   	      ,pscs.psestimategrp
 		       from &outdata. as base
-		   	left join pscs_masterinputs (where = (covarnum = 0)) as pscs
+		   	left join pscs_masterinputs (where = (missing(subgroup))) as pscs
 		   	  on base.runid = pscs.runid
 			  and base.analysisgrp = pscs.analysisgrp
 		      order by runid, psestimategrp, order;
@@ -219,6 +219,7 @@
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
 			%let maskedid = %scan(&masked_dplist, &dps);
+
             %baseline_aggregate(dpsiteid = &dpsiteid.,
 								maskedid = &maskedid.,
                                   dpnumber = &dps.,
@@ -232,7 +233,7 @@
                                   outdata = alldptable1_&periodid.,
                                   periodid = &periodid.);
         %end;
-		
+
 		%output_datasets(dataset=_baseline_agg_&periodid., outlib=msocdata, 
 		%if %index(&reporttype., L2)>0 %then %do; name=adjusted_baseline_&periodid. %end;
 		%else %do; name=baseline_&periodid. %end;);
@@ -451,7 +452,7 @@
 
                             /*percent*/
                             if vartype = 'dichotomous' then do;
-                                if missing(&var.mean(&var.)) then &var.mean(&var.) = 0;
+                                if missing(&var.mean(&var.)) and &var.mean(&var.) ne .R then &var.mean(&var.) = 0;
                                 if &var.var1(&var.)>0 then &var.std(&var.) = &var.mean(&var.) / &var.var1(&var.);
                                 else if &var.var1(&var.)=0 then &var.std(&var.) = 0;
                                 if &var.std(&var.)>0 then &var.s2(&var.)=&var.std(&var.)*(1-&var.std(&var.));
@@ -573,6 +574,41 @@
         %end; /*reformat table*/
 
         ***********************************************************************************************;
+        * Determine if DP returns race and hispanic information                       
+        ***********************************************************************************************;
+
+        /*total sum of race/hispanic categories across DPs and if stratifybyDP = Y, within DP*/
+        %do r = 1 %to &num_dp.;
+            %let returnrace&r. = N;
+        %end;
+
+        %let compvars = N;
+
+        data _temp_racehispanic;
+            set alldptable1_&periodid.(where=(substr(upcase(metvar),1,4)='RACE' | substr(upcase(metvar),1,8)='HISPANIC'));
+            if _n_ = 1 then do;
+            dsid = open("alldptable1_&periodid.");
+                if varnum(dsid,"comp_mean1") ne 0 then call symputx('compvars', 'Y');
+            rc= close(dsid);
+            end;
+            drop rc dsid;
+        run;
+
+        %isdata(dataset=_temp_racehispanic);
+        %if %eval(&nobs.>0) %then %do;
+            data _null_;
+                set _temp_racehispanic(keep=metvar exp_: %if "&compvars" = "Y" %then %do; comp_: %end;);
+                %do r = 1 %to &num_dp.;
+                    if upcase(metvar) not in ('RACE_0', 'HISPANIC_U') then do;
+                        if exp_mean&r.>0 %if "&compvars" = "Y" %then %do; | comp_mean&r.>0 %end; then do;
+                            call symputx("returnrace&r.", 'Y');
+                        end;
+                    end;
+                %end;
+            run;
+        %end;
+
+        ***********************************************************************************************;
         * Compute Aggregate metrics and format DP metrics                       
         ***********************************************************************************************;
 
@@ -585,7 +621,7 @@
                           periodid = &periodid.);
 
     %end; /*loop through periodid*/
-    
+  
      ***********************************************************************************************;
     * Aggregate covariate profile tables across DPs                               
     ***********************************************************************************************;
