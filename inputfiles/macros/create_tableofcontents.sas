@@ -1672,6 +1672,10 @@
                 *reset tablecount; 
 				%let tablecount = 1;
 
+				%let F3nobs = 0;
+				%let F4nobs = 0;
+				%let F5nobs = 0;
+
 				/*loop through periodid*/
                 %do j = %eval(&look_start) %to %eval(&look_end);
 
@@ -1754,6 +1758,7 @@
 
 		                        /*F3*/								
 		                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
+								%let F3nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
@@ -1766,7 +1771,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1774,6 +1779,7 @@
 		                        %end;
 		                        /*F4*/
 		                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
+								%let F4nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
@@ -1797,6 +1803,7 @@
 		                        %end;
 		                        /*F5*/
 		                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
+								%let F4nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
@@ -1836,18 +1843,19 @@
 			                        tabnum = "Figure &figurenum.";
 			                        end;
 			                    run;
-			                %end;     
+			                %end;   
 
-							%let figurenum = %eval(&figurenum.+1); 
-							%let tablecount = 1;
-							%let tableletter =a; 
+							%if %eval(&F3nobs.>0) | %eval(&F4nobs.>0) | %eval(&F5nobs.>0) %then %do;
+								%let figurenum = %eval(&figurenum.+1); 
+								%let tablecount = 1;
+								%let tableletter =a; 
+							%end;
 
 	                    %end; /*only PSmatch or stratification*/						
 					%end; /*loop through numl2comparisons */
                 %end; /*loop through periodid*/                      
             %end; /*KM plots*/
         %end; /*L2 figures*/
-
     %end; /* Figure file */
 
 

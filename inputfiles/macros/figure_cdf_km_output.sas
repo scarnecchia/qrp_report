@@ -468,6 +468,10 @@
 						select count(*) into :numsubgroups from _subgroups;
 						quit;
 
+						%let F3nobs = 0;
+						%let F4nobs = 0;
+						%let F5nobs = 0;
+
 						%do sub=0 %to &numsubgroups.;
 
 							%if &sub. > 0 %then %do;
@@ -489,6 +493,7 @@
 
 		                        /*F3, F4 and/or F5*/
 		                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
+								%let &figure.nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 
 									%let max_day=0;
@@ -539,9 +544,11 @@
 							%end; /* figurelist */ 
 	                	%end; /* subgroups */
 
-						%let figurenum=%eval(&figurenum+1); 
-						%let tablecount = 1;
-						%let tableletter =a; 
+						%if %eval(&F3nobs.>0) | %eval(&F4nobs.>0) | %eval(&F5nobs.>0) %then %do;
+							%let figurenum=%eval(&figurenum+1); 
+							%let tablecount = 1;
+							%let tableletter =a; 
+						%end;
 
 	            	%end; /* psfile */	  
 			 	%end; /* loopcount */
