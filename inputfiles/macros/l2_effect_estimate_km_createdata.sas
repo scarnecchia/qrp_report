@@ -553,14 +553,17 @@
 		tempUnE=1-RatioUnE;		
 
 		if first.subgroupcat then do;			
-			km_evexp=tempE;
-			km_evunexp=tempUnE;			
-			output;
-
+			holdtempday=day;
+			
 			* Add day 0;
 			day=0;
 			km_evexp=1;
 			km_evunexp=1;			
+			output;
+
+			day=holdtempday;
+			km_evexp=tempE;
+			km_evunexp=tempUnE;			
 			output;
 		end;
 		else do;
