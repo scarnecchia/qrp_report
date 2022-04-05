@@ -6,23 +6,23 @@
 * Created (mm/dd/yyyy): 07/22/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro computes Kaplan-Meier estimates for PS Match and PS Stratification analysis
+* PURPOSE: This macro computes Kaplan-Meier estimates for PS Match, PS Stratification and IPTW analyses
 *                                        
 *  Program inputs:                                                                                   
-*   - Either a patient level or risk set level dataset
+*   - Either a patient level, risk set level or marginal weight dataset
 * 
 *  Program outputs: 
 *   - One dataset per plot. This dataset contains the KM curve for the overall and all 
 *     requested subgroups
 * 
 *  PARAMETERS:  
-*   - plotstocreate: list of plots (Unadjusted Conditional Unconditional)
+*   - plotstocreate: list of plots (Unadjusted Conditional Unconditional Weighted)
 *   - kmrefpop: determines whether to produce weighted curves for VRM analysis
 *            
 *  Programming Notes: 
-*   - All unweighted curves (unadjusted, FRM conditional/unconditional, VRM exposure cohort)
-*     will be computed using risk-set data. Only VRM weighted curves will be computed using 
-*     patient level data 
+*   - For unweighted analyses, all unweighted curves (unadjusted, FRM conditional/unconditional, 
+*     VRM exposure cohort) will be computed using risk-set data. Only VRM weighted curves will be 
+*     computed using patient level data. 
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -35,18 +35,98 @@
 
 	%put =====> MACRO CALLED: l2_effect_estimate_km_createdata;
 
-    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
-    data _tempaggsurvival;
-        set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid subgroup subgroupcat
-                        where=(analysis in (&plotstocreate.) and missing(evexp)=0 and missing(evunexp)=0 and missing(nexp)=0 and missing(nunexp)=0));
-    run;
+	/* Macro that will be used for final data processing:
+        - if xmax specified and xmax > max followup time add a final row with 0 patients at risk
+        - if subgroup is dropped, add a dummy row for final plot */
+    %macro addrows(plotdata, figure);
+        %isdata(dataset=&plotdata.);
+        %if %eval(&nobs.>0) %then %do;
+        data _null_;
+            set figurefile(where=(figure="&figure."));
+            call symputx('xmax', xmax);
+        run;
 
-    %isdata(dataset=_tempaggsurvival);
-    %if %eval(&nobs <1) %then %do;
+        *Create dataset with xmax;
+        data _tempxmax;
+            set _subgrp(keep=subgroup subgroupcat);
+            day = 0; output;
+            %if %eval(&xmax. > .) %then %do;
+            day = &xmax.; output;
+            %end;
+        run;
+
+        proc sort data=_tempxmax;
+            by subgroup subgroupcat day;
+        run;
+
+        data &plotdata.;
+            merge &plotdata.(in=a) _tempxmax(in=b);
+            by subgroup subgroupcat day;
+            if b and not a then do;
+                episodes_atriskexp = 0;
+                episodes_atriskunexp = 0;
+                km_evexp = .;
+                km_evunexp = .;
+                %if &weightedpop. = Y %then %do; 
+                episodes_atriskunexp_wght = 0;
+                km_evunexp_wght = .;
+                %end;
+            end;
+        run;
+        %end;
+    %mend addrows;
+
+
+	* Extract sample for KM plots using survival data;
+	%if %index(&plotstocreate, 'Unadjusted')>0 or %index(&plotstocreate, 'Conditional')>0 or %index(&plotstocreate, 'Unconditional')>0 %then %do;
+	    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
+	    data _tempaggsurvival;
+	        set aggsurvival(keep=followupday evexp evunexp nexp nunexp analysis dpidsiteid subgroup subgroupcat
+	                        where=(analysis in (&plotstocreate.) and missing(evexp)=0 and missing(evunexp)=0 and missing(nexp)=0 and missing(nunexp)=0));
+	    run;
+	%end;
+
+	%isdata(dataset=_tempaggsurvival);
+	%let nobssurvival = &nobs.;
+
+
+	* Extract sample for KM plots using marginal weights;
+	%if %index(&plotstocreate, 'Weighted')>0 %then %do;
+	    /*Restrict aggsurvival to requested plots, remove DPs that do not converge*/
+	    data _tempaggmw;
+	        set aggmw(keep=followuptime SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE analysis dpidsiteid subgroup subgroupcat
+	                  where=(analysis in (&plotstocreate.) and missing(followuptime)=0 ));
+	    run;
+	%end;
+    
+	%isdata(dataset=_tempaggmw);
+	%let nobsmw = &nobs.;
+
+
+	* Output a custom warning if there is no survival or marginal weight data avaiblable to compute KM;
+    %if %eval(&nobssurvival <1) and %eval(&nobsmw <1) %then %do;
         %put WARNING: (Sentinel) No observations to produce KM curves for &analysisgrp.. Curves will not be produced;
     %end;
-    %else %do;
+	%else %do;
+		/*Group Labels*/
+        %isdata(dataset=labelfile);
+        %let grp1label = &grp1;
+        %let grp0label = &grp0;
+        %if %eval(&nobs.>0) %then %do;
+            data _null_;    
+                set labelfile(where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel") in=a)
+                    labelfile(where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel") in=b);
+                if a then call symputx('grp1label', label);
+                if b then call symputx('grp0label', label);
+            run;
+        %end;
+	%end;	
 
+
+	************************************************************************************************************************
+	* KM plots using survival data are requested (figure F3, F4, F5 for Unadjusted, Conditional and Unconditional analyses)
+	***********************************************************************************************************************;
+    %if %eval(&nobssurvival >0) %then %do;
         /*Square dataset to include 1 row per day*/
         proc sort data=_tempaggsurvival;
             by subgroup subgroupcat analysis dpidsiteid followupday;
@@ -322,20 +402,7 @@
             from _kmdata
             group by subgroup, subgroupcat, analysis;
         quit;
-
-        /*Group Labels*/
-        %isdata(dataset=labelfile);
-        %let grp1label = &grp1;
-        %let grp0label = &grp0;
-        %if %eval(&nobs.>0) %then %do;
-            data _null_;    
-                set labelfile(where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel") in=a)
-                    labelfile(where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel") in=b);
-                if a then call symputx('grp1label', label);
-                if b then call symputx('grp0label', label);
-            run;
-        %end;
-
+        
         %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
         
         %if &weightedpop = Y %then %do;
@@ -452,56 +519,122 @@
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Unconditional')>0 %then %do; if analysis = 'Unconditional' then output figureF5_analysis&loopcount._&periodid.; %end;
         run;
-
-        /*Final data processing:
-            - if xmax specified and xmax > max followup time add a final row with 0 patients at risk
-            - if subgroup is dropped, add a dummy row for final plot */
-        %macro addrows(plotdata, figure);
-            %isdata(dataset=&plotdata.);
-            %if %eval(&nobs.>0) %then %do;
-            data _null_;
-                set figurefile(where=(figure="&figure."));
-                call symputx('xmax', xmax);
-            run;
-
-            *Create dataset with xmax;
-            data _tempxmax;
-                set _subgrp(keep=subgroup subgroupcat);
-                day = 0; output;
-                %if %eval(&xmax. > .) %then %do;
-                day = &xmax.; output;
-                %end;
-            run;
-
-            proc sort data=_tempxmax;
-                by subgroup subgroupcat day;
-            run;
-
-            data &plotdata.;
-                merge &plotdata.(in=a) _tempxmax(in=b);
-                by subgroup subgroupcat day;
-                if b and not a then do;
-                    episodes_atriskexp = 0;
-                    episodes_atriskunexp = 0;
-                    km_evexp = .;
-                    km_evunexp = .;
-                    %if &weightedpop. = Y %then %do; 
-                    episodes_atriskunexp_wght = 0;
-                    km_evunexp_wght = .;
-                    %end;
-                end;
-            run;
-            %end;
-        %mend;
+        
         %addrows(figureF3_analysis&loopcount._&periodid., F3);
         %addrows(figureF4_analysis&loopcount._&periodid., F4);
         %addrows(figureF5_analysis&loopcount._&periodid., F5);
 
-    %end; /*data exists*/
+    %end; /*survival data exists*/
+
+
+	*********************************************************************************************************
+	* KM plots using marginal weights are requested (figure F4 for IPTW/PS stratum weighted analyses)
+	********************************************************************************************************;
+	%if %eval(&nobsmw >0) %then %do;		
+		%let weightedpop = N;
+
+		/* Summarize across DPs */
+		proc means data=_tempaggmw nway noprint missing;		
+		var SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE;
+		class subgroup subgroupcat followuptime / missing;
+        output out=_kmdata(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
+		run;
+		
+		/* Compute KM plots */
+		data figureF4_analysis&loopcount._&periodid.;
+		length day 8;
+		set _kmdata;
+		by subgroup subgroupcat;
+
+		RatioE=SumEC/SumE;
+		tempE=1-RatioE;
+		
+		RatioUnE=(SumC-SumEC)/SumUnE;
+		tempUnE=1-RatioUnE;		
+
+		if first.subgroupcat then do;			
+			holdtempday=day;
+			
+			* Add day 0;
+			day=0;
+			km_evexp=1;
+			km_evunexp=1;			
+			output;
+
+			day=holdtempday;
+			km_evexp=tempE;
+			km_evunexp=tempUnE;			
+			output;
+		end;
+		else do;
+			km_evexp=km_evexp*tempE;
+			km_evunexp=km_evunexp*tempUnE;
+			output;
+		end;
+		retain km_evexp km_evunexp;		
+
+		* For weighted plots, # at risk is weighted N;
+		rename SumE=episodes_atriskexp
+			   SumUnE=episodes_atriskunexp;
+
+		label km_evexp = "&grp1label."
+              SumE = "&grp1label."
+              km_evunexp = "&grp0label."
+              SumUnE = "&grp0label."
+              ;
+		
+		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp;
+		run;
+
+		proc sort data=figureF4_analysis&loopcount._&periodid.;
+		by subgroup subgroupcat day;
+		run;
+
+		/* Add missing day values to make sure at risk data is correctly output */
+		data _squarekmcdf(rename=i=day);
+        set _kmdata(keep=subgroup subgroupcat day);
+        by subgroup subgroupcat day;
+        if last.subgroupcat and day > 0 then do;  
+            do i = 0 to day;
+            	output;
+            end;
+        end;		
+        drop day;
+        run;
+
+		data figureF4_analysis&loopcount._&periodid.;
+		merge figureF4_analysis&loopcount._&periodid.(in=a)
+			  _squarekmcdf(in=b);
+		by subgroup subgroupcat day;
+
+		if not missing(episodes_atriskexp) then do;
+			lagepisodes_atriskexp=episodes_atriskexp;
+			lagepisodes_atriskunexp=episodes_atriskunexp;
+			lagkm_evexp=km_evexp;
+			lagkm_evunexp=km_evunexp;	
+		end;
+		else do;
+			episodes_atriskexp=lagepisodes_atriskexp;
+			episodes_atriskunexp=lagepisodes_atriskunexp;
+			km_evexp=lagkm_evexp;
+			km_evunexp=lagkm_evunexp;
+		end;
+
+		format analysisgrp $40.;
+        analysisgrp = "&analysisgrp";
+
+		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;
+		drop lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;	
+		run;
+
+		%addrows(figureF4_analysis&loopcount._&periodid., F4);
+
+	%end; /*marginal weights data exists*/
+
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _temp: _aggsurvivalsquare: nexp cumulative_totals step: _maxdata: _squareweightedkm;
+        delete _temp: _aggsurvivalsquare: nexp cumulative_totals step: _maxdata: _squareweightedkm _squarekmcdf _kmdata;
     quit;
 
 	%put =====> END MACRO: l2_effect_estimate_km_createdata;
