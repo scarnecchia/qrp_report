@@ -1803,7 +1803,7 @@
 		                        %end;
 		                        /*F5*/
 		                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
-								%let F4nobs = &nobs.;
+								%let F5nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
@@ -1851,7 +1851,7 @@
 								%let tableletter =a; 
 							%end;
 
-	                    %end; /*only PSmatch or stratification*/						
+	                    %end; /*PSmatch, stratification or IPTW*/						
 					%end; /*loop through numl2comparisons */
                 %end; /*loop through periodid*/                      
             %end; /*KM plots*/

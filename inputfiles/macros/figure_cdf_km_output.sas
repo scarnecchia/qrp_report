@@ -506,7 +506,6 @@
 
 									%if &max_day. > 0 %then %do;
 				                        %if &figure = F3 %then %let titlestart=Unadjusted;
-				                        %else %if &figure = F4 %then %let titlestart=Adjusted;
 				                        %else %let titlestart=Adjusted;
 
 										%if &titlestart. = Unadjusted %then %let PSEstimateGroupLabelT=;
