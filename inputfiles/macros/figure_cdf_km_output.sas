@@ -472,6 +472,17 @@
 						%let F4nobs = 0;
 						%let F5nobs = 0;
 
+						%let numkm = 0;
+						proc sql noprint;
+						    select count(caption) into: numkm
+						    from tableofcontents
+						    where index(tabnum, "Figure &figurenum.")>0;
+						quit;
+
+						%if %eval(&numkm.)=1 %then %do;
+						    %let tablecount = 0;
+						%end; 
+
 						%do sub=0 %to &numsubgroups.;
 
 							%if &sub. > 0 %then %do;
