@@ -171,14 +171,15 @@
                         %tableletter(); 
 			    
     			        /* Save to repdata folder */
-                        proc datasets library = work;
-                            copy out=repdata memtype=data;
-                            select _temphdps(memtype=data);
-                        quit;
-                        proc datasets library = repdata;
+						%if &reportdata. eq Y %then %do;
+	                        proc datasets library = work;
+	                            copy out=repdata memtype=data;
+	                            select _temphdps(memtype=data);
+	                        quit;	                        
+                        %end;   
+						proc datasets library = repdata;
                             change _temphdps = appendix&tableletter.;
                         quit; 
-                           
                         /*add to tabe of contents*/
       	                %addtotoc(tabnum = Appendix %upcase(&tableletter.), 
         	         	          caption = %bquote(Top &topnhdps. Codes Ranked by &rank. Selected by the High Dimensional Propensity Score Algorithm for &grouplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix.),

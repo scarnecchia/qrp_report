@@ -626,16 +626,15 @@
 						 end as eoireforder
 		from all_attrition_agg a 
 		left join
-		(select distinct a.runid, a.analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
-		from l2comparisonfile a 
+		(select distinct a.runid, a.group as analysisgrp, a.order, coalescec(b.eoi,c.eoi) as eoi, coalescec(b.ref,c.ref) as ref 
+		from inputfiles a 
 		left join pscs_masterinputs (where = (missing(subgroup))) b 
-		on a.analysisgrp = b.analysisgrp
+		on a.group = b.analysisgrp
 		left join psest_masterinputs c 
 		on b.psestimategrp = c.psestimategrp) d
 		on scan(a.group,1,'@') = d.analysisgrp and scan(a.group,-1,'@') = coalescec(d.eoi,d.ref);
 	    quit;
 	  %end; 
-
 
 	  /* Output patient/episode level tables */
 	  %if ^%index(&reporttype,T4L1) %then %do;

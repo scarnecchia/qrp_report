@@ -541,34 +541,62 @@
 		run;
 		
 		/* Compute KM plots */
+		%macro computeKMWeightedCI(cohort=);
+			cVE = ( 1/(log(km_ev&cohort.))**2 ) * cumV&cohort.;
+			lowerCI_&cohort. = km_ev&cohort. ** (exp(1.96*sqrt(cVE)));
+			upperCI_&cohort. = km_ev&cohort. ** (exp(-1.96*sqrt(cVE)));
+		%mend computeKMWeightedCI;
+
 		data figureF4_analysis&loopcount._&periodid.;
 		length day 8;
 		set _kmdata;
 		by subgroup subgroupcat;
 
+		* Exposed computation;
 		RatioE=SumEC/SumE;
 		tempE=1-RatioE;
+		VE=(RatioE)/((1-RatioE)*SumE**2 / SumSquareE);
 		
+		* Unexposed computation;
 		RatioUnE=(SumC-SumEC)/SumUnE;
 		tempUnE=1-RatioUnE;		
+		VUnE=(RatioUnE)/((1-RatioUnE)*SumUnE**2 / SumSquareUnE);
 
 		if first.subgroupcat then do;			
-			km_evexp=tempE;
-			km_evunexp=tempUnE;			
-			output;
-
+			holdtempday=day;
+			
 			* Add day 0;
 			day=0;
 			km_evexp=1;
 			km_evunexp=1;			
 			output;
-		end;
-		else do;
-			km_evexp=km_evexp*tempE;
-			km_evunexp=km_evunexp*tempUnE;
+
+			day=holdtempday;
+
+			* Survival probability;
+			km_evexp=tempE;
+			km_evunexp=tempUnE;	
+
+			* 95% CI;
+			cumVExp=VE;
+			%computeKMWeightedCI(cohort=exp);
+			cumVUnExp=VUnE;
+			%computeKMWeightedCI(cohort=unexp);
 			output;
 		end;
-		retain km_evexp km_evunexp;		
+		else do;
+			* Survival probability;
+			km_evexp=km_evexp*tempE;
+			km_evunexp=km_evunexp*tempUnE;
+
+			* 95% CI;
+			cumVExp=cumVExp+VE;
+			%computeKMWeightedCI(cohort=exp);
+			cumVUnExp=cumVUnExp+VUnE;
+			%computeKMWeightedCI(cohort=unexp);
+			output;
+		end;
+		retain km_evexp km_evunexp cumVExp cumVUnExp;		
 
 		* For weighted plots, # at risk is weighted N;
 		rename SumE=episodes_atriskexp
@@ -580,7 +608,7 @@
               SumUnE = "&grp0label."
               ;
 		
-		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp;
+		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp lowerCI_: upperCI_:;
 		run;
 
 		proc sort data=figureF4_analysis&loopcount._&periodid.;
@@ -609,19 +637,28 @@
 			lagepisodes_atriskunexp=episodes_atriskunexp;
 			lagkm_evexp=km_evexp;
 			lagkm_evunexp=km_evunexp;	
+			laglowerCI_exp=lowerCI_exp;
+			laglowerCI_unexp=lowerCI_unexp;	
+			lagupperCI_exp=upperCI_exp;
+			lagupperCI_unexp=upperCI_unexp;	
 		end;
 		else do;
 			episodes_atriskexp=lagepisodes_atriskexp;
 			episodes_atriskunexp=lagepisodes_atriskunexp;
 			km_evexp=lagkm_evexp;
 			km_evunexp=lagkm_evunexp;
+			lowerCI_exp=laglowerCI_exp;
+			lowerCI_unexp=laglowerCI_unexp;	
+			upperCI_exp=lagupperCI_exp;
+			upperCI_unexp=lagupperCI_unexp;	
 		end;
 
 		format analysisgrp $40.;
         analysisgrp = "&analysisgrp";
 
-		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;
-		drop lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp;	
+		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp
+			   laglowerCI_exp laglowerCI_unexp lagupperCI_exp lagupperCI_unexp;
+		drop lag:;	
 		run;
 
 		%addrows(figureF4_analysis&loopcount._&periodid., F4);
