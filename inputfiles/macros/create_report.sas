@@ -241,6 +241,23 @@
       %end;
     %end;
 
+/*************************************************************************************************/
+/* Run log checker                                                                               */
+/*************************************************************************************************/
+	/* If leave behind report runs then use reportid for log suffix */
+    %if &leavebehindreport = Y %then %do;
+	  proc printto log="&output.log_checker.log" new;
+      run;
+	  %ms_logchecker(logdir =&output., logname=&RUNID._cida.log qrp_report_log&reportid..log );
+    %end;
+	%else %do;
+	  proc printto log="&output.log_checker.log" new;
+      run;
+	   %ms_logchecker(logdir =&output., logname=qrp_report_log.log );
+	%end;
+
+	proc printto;
+    run;
 ***************************************************************************************************;
 *   Clean Work                                                                                 
 ***************************************************************************************************;
