@@ -410,6 +410,13 @@
                                             lag_episodes_atriskunexp_wght=episodes_atriskunexp_wght));
         %end;
 
+		/* Compute KM 95%CI */
+		%macro computeKMCI(cohort=);
+			Qt3&cohort. = sqrt(cumQt1&cohort.)*km_ev&cohort.;
+			lowerCI_&cohort. = km_ev&cohort. ** exp((-1.96*Qt3&cohort.)/log(km_ev&cohort.));
+			upperCI_&cohort. = km_ev&cohort. ** exp((1.96*Qt3&cohort.)/log(km_ev&cohort.));
+		%mend computeKMCI;
+
         /*Compute KM curve*/
         data %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; figureF3_analysis&loopcount._&periodid.(&renamestatement.) %end;
              %if %index(&plotstocreate, 'Conditional')>0 %then %do; figureF4_analysis&loopcount._&periodid.(&renamestatement.) %end;
@@ -420,7 +427,12 @@
 
             array sum{*} sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
             array varlist{*} evexp evunexp censorexp censorunexp %if &weightedpop. = Y %then %do; evunexp_wght censorunexp_wght %end; ;
-           
+
+			if NExp = 0 then Qt1Exp=0;
+			else Qt1Exp = EVExp / (NExp*(NExp-EVExp));
+			if NUnExp = 0 then Qt1UnExp=0;
+			else Qt1UnExp = EVUnExp / (NUnExp*(NUnExp-EVUnExp));
+
             if first.analysis then do;
                 merge cumulative_totals;
                 by subgroup subgroupcat analysis;
@@ -428,14 +440,18 @@
                 do i = 1 to dim(varlist);
                     sum{i} = varlist{i};
                 end;
+				cumQt1Exp=Qt1Exp;
+				cumQt1UnExp=Qt1UnExp;
             end;
             else do;
                 do i = 1 to dim(varlist);
                     sum{i} = varlist{i} + sum{i} ;
                 end;
+				cumQt1Exp=cumQt1Exp+Qt1Exp;
+				cumQt1UnExp=cumQt1UnExp+Qt1UnExp;
             end;
 
-            retain sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
+            retain cumQt1Exp cumQt1UnExp sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
 
             /*Episodes_atrisk used in atrisk table in plot and for KM curve - 
               need to lag to get the # of episodes at risk on the day and not episodes still at risk*/
@@ -489,6 +505,9 @@
     		end;
     		retain km_evexp km_evunexp %if &weightedpop. = Y %then %do; km_evunexp_wght %end;;
 
+			%computeKMCI(cohort=exp);
+			%computeKMCI(cohort=Unexp);
+
             label km_evexp = "&grp1label."
                   lag_episodes_atriskexp = "&grp1label."
                   km_evunexp = "&grp0label."
@@ -510,10 +529,14 @@
                 end;
             %end;
 
+            %if &ratio.=V and (&kmrefpop = both | &kmrefpop = weighted) %then %do; 
+			     call missing(lowerCI_exp, lowerCI_Unexp, upperCI_exp, upperCI_Unexp);
+			%end;
+
             format analysisgrp $40.;
             analysisgrp = "&analysisgrp";
 
-            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysisgrp;
+            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysis analysisgrp lowerCI_: upperCI_:;
 
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
@@ -524,8 +547,7 @@
         %addrows(figureF4_analysis&loopcount._&periodid., F4);
         %addrows(figureF5_analysis&loopcount._&periodid., F5);
 
-    %end; /*survival data exists*/
-
+	%end; /*survival data exists*/
 
 	*********************************************************************************************************
 	* KM plots using marginal weights are requested (figure F4 for IPTW/PS stratum weighted analyses)
