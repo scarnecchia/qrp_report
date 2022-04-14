@@ -536,7 +536,7 @@
             format analysisgrp $40.;
             analysisgrp = "&analysisgrp";
 
-            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysis analysisgrp lowerCI_: upperCI_:;
+            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysisgrp lowerCI_: upperCI_:;
 
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
