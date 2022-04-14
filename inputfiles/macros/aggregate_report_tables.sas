@@ -223,6 +223,7 @@
 					 %else %do;
 					   sortorder&s. = 1;
 					 %end;
+					 label sortorder&s. = "&&strata&s.";
 				   %end;
                  run;
 			    
