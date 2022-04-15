@@ -31,7 +31,7 @@
 
     data forest;
         set cat_dp_mw;
-        where &where.;
+        where &where. and RisksetID > 0;
     run;
 
     *Determine at least 1 event in exposure and reference group;
