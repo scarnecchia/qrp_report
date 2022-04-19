@@ -172,16 +172,14 @@
   /*-----------------------------------------------------------------------------------------------------------
     Save final dataset to msoc folder
     -----------------------------------------------------------------------------------------------------------*/	
-	data  %if &leavebehindreport = Y %then %do; msoc %end; 
-          %else %do; output %end;.log_checker;
+	data  &logdir..log_checker;
 	  set _input_log:;
 	run;
 	
   /*-----------------------------------------------------------------------------------------------------------
     Sort log checker dataset by level, logname, logline_number
     -----------------------------------------------------------------------------------------------------------*/	
-	proc sort data = %if &leavebehindreport = Y %then %do; msoc%end; 
-                     %else %do; output%end;.log_checker;
+	proc sort data = &logdir..log_checker;
 	  by level logname logline_number;
 	run; 
 	
