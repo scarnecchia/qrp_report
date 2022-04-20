@@ -99,6 +99,9 @@
     /*Save dataset to repdata folder and create newcategory variable if >=2 stratification variables. 
       this variable is used as a computed header in the proc report*/
 
+    /* Stratification count */
+    %let countstrata = %sysfunc(countw(&stratavar));
+
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
     	data repdata.table&tablenum.&tableletter;
@@ -107,11 +110,11 @@
                 if missing(header) then header=grouplabel;
             %end;
 
-            %if %sysfunc(countw(&stratavar.)) >=2 %then %do;
+            %if &countstrata >=2 %then %do;
                 length newcategory $90;
                 newcategory = "";
 
-                %do cat = 1 %to %eval(%sysfunc(countw(&stratavar.))-1);
+                %do cat = 1 %to %eval(&countstrata-1);
                     %if &cat. = 1 %then %do;
                     newcategory = strip(%scan(&stratavar., &cat.));;
                     %end;
@@ -124,15 +127,13 @@
             /*if collapse_vars = race, add superscript to 'Unknown' category*/
             %if %index(&stratavar,race) & &collapse_vars. = race %then %do;
                 if index(race,'Unknown')>0 then race= cats(race,"&super_raceunknown."); 
-                %if %sysfunc(countw(&stratavar.)) >=2 and %lowcase(%scan(&stratavar., %eval(%sysfunc(countw(&stratavar.))))) ne race %then %do;
+                %if &countstrata >=2 and %lowcase(%scan(&stratavar., &countstrata)) ne race %then %do;
                     if index(race,'Unknown')>0 then newcategory= cats(newcategory,"&super_raceunknown."); 
                 %end;
             %end;
     	run;
 
         /* If more than 2 stratifications, explicitly sort based on the sort order variables */
-        %let countstrata = %sysfunc(countw(&stratavar));
-
         %if &countstrata > 2 %then %do;
         /* Output meta-data for sort order names and labels */
         proc contents data = repdata.table&tablenum.&tableletter noprint out = _tablesort&tablenum.&tableletter(keep=name label);
@@ -210,7 +211,7 @@
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
         columns %if &includeheaderrow = Y %then %do; header %end; order grouplabel 
-                %if %sysfunc(countw(&stratavar.)) >= 2 %then %do; newcategory %end; 
+                %if &countstrata >= 2 %then %do; newcategory %end; 
                 %if &stratavar. ne overall %then %do;&stratavar. %end;  &varlist.;
 
         %if &includeheaderrow = Y %then %do; 
@@ -226,15 +227,15 @@
         define grouplabel /group noprint;
         %end;
 
-        %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
+        %if &countstrata >= 2 %then %do;
         define newcategory / order noprint order=data ' ';
         %end;
 
         /*stratifications*/
         %if &stratavar. ne overall %then %do;
-        %do c = 1 %to %sysfunc(countw(&stratavar.));         
+        %do c = 1 %to &countstrata;         
             %let cat = %scan(&stratavar., &c.);
-             %if %sysfunc(countw(&stratavar.)) = 1 or &c. = %sysfunc(countw(&stratavar.)) %then %do;
+             %if &countstrata = 1 or &c. = &countstrata %then %do;
                 define &cat. / id ' ' 
                     style(column)=[just=L
                         %if "%lowcase(&cat.)" = "race" or "%lowcase(&cat.)" = "hispanic" %then width= 2.3in;
@@ -293,7 +294,7 @@
         endcomp;
         %end;
 
-        %if %sysfunc(countw(&stratavar.)) >= 2 %then %do;
+        %if &countstrata >= 2 %then %do;
         /*add grouplabel*/
         compute before newcategory / style=[fontstyle=italic just=L font_weight=medium bordertopcolor=white borderbottomcolor=white];
             length text $100;
