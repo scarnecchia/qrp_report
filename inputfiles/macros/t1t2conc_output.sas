@@ -148,18 +148,12 @@
                 select name 
                 into :tablesort&sortnum 
                 from _tablesort&tablenum.&tableletter
-                where name contains 'sortorder' and label = "&restrata";
+                where name contains 'sortorder' and label = "&restrata._sort";
             quit;
 
             %if %length(&tablesort) = 0 %then %let tablesort = &&tablesort&sortnum;
             %else %let tablesort = &tablesort &&tablesort&sortnum;
         %end;
-
-        /* Remove all labels from sort order variables */
-        proc datasets lib=repdata nolist;
-            modify table&tablenum.&tableletter;
-            attrib sortorder: label='';
-        quit;
 
         proc sort data = repdata.table&tablenum.&tableletter;
             by &tablesort;
