@@ -208,18 +208,33 @@
 
 		/* Create KM/CDF plots */
 		proc sgplot data=repdata.Figure&figurenum.&tableletter noborder;
-			%do km = 1 %to %sysfunc(countw(&kmcols));
-				%let kmcolor=%scan(&datacolors., &km.);
+			%if (&reporttype. ne T2L2 and &reporttype. ne T4L2) %then %do;
+				styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
+											  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
+											  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
+			%end; /*L1 report type*/
+
+			%do km = 1 %to %sysfunc(countw(&kmcols));				
 				%let kmcol = %scan(&kmcols,&km);
 				
-				step x=day y=&kmcol. / lineattrs=(color=&kmcolor. thickness=2 pattern=solid);
+				%if (&reporttype. = T2L2 or &reporttype. = T4L2) %then %do;
+					%let kmcolor=%scan(&datacolors., &km.);
 
-				%if (&reporttype = T2L2 or &reporttype = T4L2) and &kmrefpop. = unweighted %then %do;
-					%let lowercicol = %scan(&lowercicols,&km);
-					%let uppercicol = %scan(&uppercicols,&km);
+					* L2 report type: use colors specified in datacolors macro variable since datacontrastcolors does not work with band statement;
+					step x=day y=&kmcol. / lineattrs=(color=&kmcolor. thickness=2 pattern=solid);
 
-					band x=day lower=&lowercicol. upper=&uppercicol. / fillattrs=(color=&kmcolor. transparency=0.8) legendlabel='95% CI';
-				%end;				
+					* Plot CI only if unweighted;
+					%if &kmrefpop. = unweighted %then %do;
+						%let lowercicol = %scan(&lowercicols,&km);
+						%let uppercicol = %scan(&uppercicols,&km);
+
+						band x=day lower=&lowercicol. upper=&uppercicol. / fillattrs=(color=&kmcolor. transparency=0.8) legendlabel='95% CI';
+					%end;
+				%end; /*L2 report type*/
+				%else %do;
+					* L1 report type: use colors specified in datacontrastcolors to allow more than 25 curves to be handled correctly;
+					step x=day y=&kmcol. / lineattrs=(thickness=2 pattern=solid);
+				%end; /*L1 report type*/	
 			%end;
 			xaxis label = "&xaxislabel" values=(&kmxtickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font); 
 			yaxis label = "&yaxislabel" values=(&kmytickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font);
