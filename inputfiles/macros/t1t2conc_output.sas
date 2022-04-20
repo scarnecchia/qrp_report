@@ -130,7 +130,10 @@
             %end;
     	run;
 
-        %if %length(&stratavar) > 0 %then %do;
+        /* If more than 2 stratifications, explicitly sort based on the sort order variables */
+        %let countstrata = %sysfunc(countw(&stratavar));
+
+        %if &countstrata > 2 %then %do;
         /* Output meta-data for sort order names and labels */
         proc contents data = repdata.table&tablenum.&tableletter noprint out = _tablesort&tablenum.&tableletter(keep=name label);
         run;
@@ -138,7 +141,7 @@
         %let tablesort = ;
 
         /* Iterate over each stratification individually to obtain correct order for ordering*/
-        %do sortnum = 1 %to %sysfunc(countw(&stratavar));
+        %do sortnum = 1 %to &countstrata;
             %let restrata = %scan(&stratavar,&sortnum);
             proc sql noprint;
                 select name 
