@@ -1685,6 +1685,7 @@
 	                        set l2comparisonfile(where=(order=&loopcount.));
 			                call symputx('runid', runid);
 			                call symputx('analysisgrp', analysisgrp);
+							call symputx('kmrefpop',kmrefpop);
 	                    run;
 
 	                    proc sql noprint;
@@ -1771,7 +1772,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1793,9 +1794,12 @@
 									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
 
 									%if &max_day. > 0 %then %do;
+										%if &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
+										%else %let cititle=; 
+
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1818,7 +1822,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
