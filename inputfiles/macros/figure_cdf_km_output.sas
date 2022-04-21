@@ -571,7 +571,7 @@
 
 				                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
 													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
-													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate &cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
 													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),

@@ -1799,7 +1799,7 @@
 
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate &cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
