@@ -535,9 +535,11 @@
                 end;
             %end;
 
-            %if &ratio.=V and (&kmrefpop = both | &kmrefpop = weighted) %then %do; 
-			     call missing(lowerCI_exp, lowerCI_Unexp, upperCI_exp, upperCI_Unexp);
-			%end;
+			if analysis ne 'Unadjusted' then do;
+	            %if &ratio.=V and (&kmrefpop = both | &kmrefpop = weighted) %then %do; 
+				     call missing(lowerCI_exp, lowerCI_Unexp, upperCI_exp, upperCI_Unexp);
+				%end;
+			end;
 
             format analysisgrp $40.;
             analysisgrp = "&analysisgrp";
