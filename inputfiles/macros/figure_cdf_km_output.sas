@@ -108,7 +108,22 @@
 			%else %do;
 			scan(lower(name),1,'_') in ('km' 'cdf')
 			%end;
-			;
+			order by lower(name);
+
+			%if (&reporttype = T2L2 or &reporttype = T4L2) and &kmrefpop. = unweighted %then %do;
+			select lower(name) 
+			into :lowercicols separated by ' '
+			from _kmcolnames
+			where lower(name) in ('lowerci_exp' 'lowerci_unexp')
+			order by lower(name);
+			
+			select lower(name) 
+			into :uppercicols separated by ' '
+			from _kmcolnames
+			where lower(name) in ('upperci_exp' 'upperci_unexp')
+			order by lower(name);
+			%end;
+
 			%if &atrisktable = Y %then %do;
 			select lower(name)
 			into :atriskcols separated by ' '
@@ -123,7 +138,7 @@
 			%else %do;
 			scan(lower(name),1,'_') = 'episodes'
 			%end;
-			;
+			order by lower(name);
 			%end;
 		quit;
 
@@ -188,14 +203,38 @@
 		%if &destination. = pdf %then %do;
 		ODS PDF BOOKMARKGEN = OFF; 
 		%end;
+
+		%let datacolors=DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine;
+
 		/* Create KM/CDF plots */
 		proc sgplot data=repdata.Figure&figurenum.&tableletter noborder;
-			styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
-										  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
-										  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
-			%do km = 1 %to %sysfunc(countw(&kmcols));
+			%if (&reporttype. ne T2L2 and &reporttype. ne T4L2) %then %do;
+				styleattrs datacontrastcolors=(DarkBlue DarkGreen DarkPurple DarkRed DarkOrange Black DarkBrown Magenta 
+											  Yellow Skyblue Chartreuse Pink Maroon Grey LightPurple Tomato Olive Aqua 
+											  LightRed GreenYellow DarkSlateGray DarkCyan Violet Goldenrod MediumAquamarine);
+			%end; /*L1 report type*/
+
+			%do km = 1 %to %sysfunc(countw(&kmcols));				
 				%let kmcol = %scan(&kmcols,&km);
-			step x=day y=&kmcol / lineattrs=(thickness=2 pattern=solid);
+				
+				%if (&reporttype. = T2L2 or &reporttype. = T4L2) %then %do;
+					%let kmcolor=%scan(&datacolors., &km.);
+
+					* L2 report type: use colors specified in datacolors macro variable since datacontrastcolors does not work with band statement;
+					step x=day y=&kmcol. / lineattrs=(color=&kmcolor. thickness=2 pattern=solid);
+
+					* Plot CI only if unweighted;
+					%if &kmrefpop. = unweighted %then %do;
+						%let lowercicol = %scan(&lowercicols,&km);
+						%let uppercicol = %scan(&uppercicols,&km);
+
+						band x=day lower=&lowercicol. upper=&uppercicol. / fillattrs=(color=&kmcolor. transparency=0.8) legendlabel='95% CI';
+					%end;
+				%end; /*L2 report type*/
+				%else %do;
+					* L1 report type: use colors specified in datacontrastcolors to allow more than 25 curves to be handled correctly;
+					step x=day y=&kmcol. / lineattrs=(thickness=2 pattern=solid);
+				%end; /*L1 report type*/	
 			%end;
 			xaxis label = "&xaxislabel" values=(&kmxtickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font); 
 			yaxis label = "&yaxislabel" values=(&kmytickmarks) valueattrs=(size=&fontsize. family=&font.) labelattrs=(size=&fontsize family=&font);
@@ -208,7 +247,7 @@
 										x=xaxisatrisk location=outside nomissingclass nomissingchar;
 										format &atriskcols comma12.;
 			%end;
-			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in;
+			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in exclude=("95% CI");
 		run;
 
 		%if &figfn = Y %then %do;
@@ -417,7 +456,7 @@
                         where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
                     quit;
 
-                    %if &pscsfile. = psmatchfile | (&pscsfile. = stratificationfile and %length(&strataweight)=0) %then %do;
+                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
 
                         /*assign labels*/
                         data _null_; 
@@ -433,17 +472,24 @@
                         %let outcomelabel = Event of Interest;
                         %let eoilabel = &grp1.;
                         %let reflabel = &grp0.;
+						%let AnalysisGroupLabel = &analysisgrp.;
+						%let PSEstimateGroupLabel = &psestimategrp.;
 
                         %isdata(dataset=labelfile);
                         %if %eval(&nobs.>0) %then %do;
                             data _null_;
                                 set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
                                     labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
-                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
+                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"))
+									labelfile(in=d where=(group="&analysisgrp" and runid = "&runid" and labeltype = "grouplabel"))
+									labelfile(in=e where=(group="&psestimategrp" and runid = "&runid" and labeltype = "grouplabel"))
+									;
 
                                 if a then call symputx('outcomelabel', label);
                                 if b then call symputx('eoilabel', label);
                                 if c then call symputx('reflabel', label);
+								if d then call symputx('AnalysisGroupLabel', label);
+								if e then call symputx('PSEstimateGroupLabel', label);
                             run;
                         %end;                    
                 
@@ -460,6 +506,21 @@
 						proc sql noprint;
 						select count(*) into :numsubgroups from _subgroups;
 						quit;
+
+						%let F3nobs = 0;
+						%let F4nobs = 0;
+						%let F5nobs = 0;
+
+						%let numkm = 0;
+						proc sql noprint;
+						    select count(caption) into: numkm
+						    from tableofcontents
+						    where index(tabnum, "Figure &figurenum.")>0;
+						quit;
+
+						%if %eval(&numkm.)=1 %then %do;
+						    %let tablecount = 0;
+						%end; 
 
 						%do sub=0 %to &numsubgroups.;
 
@@ -482,6 +543,7 @@
 
 		                        /*F3, F4 and/or F5*/
 		                        %isdata(dataset=figure&figure._analysis&loopcount._&j.);
+								%let &figure.nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 
 									%let max_day=0;
@@ -494,12 +556,22 @@
 
 									%if &max_day. > 0 %then %do;
 				                        %if &figure = F3 %then %let titlestart=Unadjusted;
-				                        %else %if &figure = F4 %then %let titlestart=Conditional;
-				                        %else %let titlestart=Unconditional;
-										
+				                        %else %let titlestart=Adjusted;
+
+										%if &titlestart. = Unadjusted %then %let PSEstimateGroupLabelT=;
+										%else %do; %let PSEstimateGroupLabelT=&PSEstimateGroupLabel.; %end;
+
+										%if &titlestart. = Unadjusted %then %let pop=Whole Population;
+										%else %if &figure = F4 and &pscsfile. = psmatchfile %then %let pop=Conditional Matched Population after;
+										%else %if &figure = F5 and &pscsfile. = psmatchfile %then %let pop=Unconditional Matched Population after;
+										%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
+
+										%if &figure ^= F4 or &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
+										%else %let cititle=; 
+
 				                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,
 													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
-													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
 													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
@@ -518,14 +590,17 @@
 													 %else %do; 
 													 kmrefpop=&kmrefpop 
 													 %end;);
+
 									%end; /* sufficient data to plot the figure */
 		                        %end; /* &nobs.>0 */
 							%end; /* figurelist */ 
 	                	%end; /* subgroups */
 
-						%let figurenum=%eval(&figurenum+1); 
-						%let tablecount = 1;
-						%let tableletter =a; 
+						%if %eval(&F3nobs.>0) | %eval(&F4nobs.>0) | %eval(&F5nobs.>0) %then %do;
+							%let figurenum=%eval(&figurenum+1); 
+							%let tablecount = 1;
+							%let tableletter =a; 
+						%end;
 
 	            	%end; /* psfile */	  
 			 	%end; /* loopcount */
