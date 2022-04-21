@@ -570,9 +570,15 @@
 		
 		/* Compute KM plots */
 		%macro computeKMWeightedCI(cohort=);
-			cVE = ( 1/(log(km_ev&cohort.))**2 ) * cumV&cohort.;
-			lowerCI_&cohort. = km_ev&cohort. ** (exp(1.96*sqrt(cVE)));
-			upperCI_&cohort. = km_ev&cohort. ** (exp(-1.96*sqrt(cVE)));
+			if 0 < km_ev&cohort. < 1 then do;
+				cVE = ( 1/(log(km_ev&cohort.))**2 ) * cumV&cohort.;
+				lowerCI_&cohort. = km_ev&cohort. ** (exp(1.96*sqrt(cVE)));
+				upperCI_&cohort. = km_ev&cohort. ** (exp(-1.96*sqrt(cVE)));
+			end;
+			else do;
+				lowerCI_&cohort. = km_ev&cohort.;
+				upperCI_&cohort. = km_ev&cohort.;
+			end;		
 		%mend computeKMWeightedCI;
 
 		data figureF4_analysis&loopcount._&periodid.;
