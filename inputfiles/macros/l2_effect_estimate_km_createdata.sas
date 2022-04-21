@@ -412,9 +412,15 @@
 
 		/* Compute KM 95%CI */
 		%macro computeKMCI(cohort=);
-			Qt3&cohort. = sqrt(cumQt1&cohort.)*km_ev&cohort.;
-			lowerCI_&cohort. = km_ev&cohort. ** exp((-1.96*Qt3&cohort.)/log(km_ev&cohort.));
-			upperCI_&cohort. = km_ev&cohort. ** exp((1.96*Qt3&cohort.)/log(km_ev&cohort.));
+			if 0 < km_ev&cohort. < 1 then do;
+				Qt3&cohort. = sqrt(cumQt1&cohort.)*km_ev&cohort.;
+				lowerCI_&cohort. = km_ev&cohort. ** exp((-1.96*Qt3&cohort.)/log(km_ev&cohort.));
+				upperCI_&cohort. = km_ev&cohort. ** exp((1.96*Qt3&cohort.)/log(km_ev&cohort.));
+			end;
+			else do;
+				lowerCI_&cohort. = km_ev&cohort.;
+				upperCI_&cohort. = km_ev&cohort.;
+			end;
 		%mend computeKMCI;
 
         /*Compute KM curve*/
