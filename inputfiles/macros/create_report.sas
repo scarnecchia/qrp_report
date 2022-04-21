@@ -244,7 +244,7 @@
 /*************************************************************************************************/
 /* Run log checker                                                                               */
 /*************************************************************************************************/
-	/* If leave behind report runs then use reportid for log suffix */
+	
     %if &leavebehindreport = N %then %do;
 	  proc printto log="&output.log_checker.log" new;
       run;

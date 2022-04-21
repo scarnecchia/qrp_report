@@ -18,7 +18,7 @@
 *   - SAS dataset = log_checker
 *
 *  PARAMETERS:     
-*   - LogDir       = The directory (full path) containing one or more logs to be scanned.
+*   - LogDir       = The directory (full path) containing one or more logs to be scanned. This is the directory where outputs will be saved. 
 *   - Logname      = The name of the specific log file(s) to be scanned, with the ".log" suffix. If specifying more than one log file, separate with a space. 
 *   - Keywords     = Additional, user-specified keywords that the tool will scan and report on, separate with a pipe
 *
@@ -171,15 +171,16 @@
 	
   /*-----------------------------------------------------------------------------------------------------------
     Save final dataset to msoc folder
-    -----------------------------------------------------------------------------------------------------------*/	
-	data  &logdir..log_checker;
+    -----------------------------------------------------------------------------------------------------------*/
+    libname Outlib "&logdir.";	
+	data  Outlib.log_checker;
 	  set _input_log:;
 	run;
 	
   /*-----------------------------------------------------------------------------------------------------------
     Sort log checker dataset by level, logname, logline_number
     -----------------------------------------------------------------------------------------------------------*/	
-	proc sort data = &logdir..log_checker;
+	proc sort data = Outlib.log_checker;
 	  by level logname logline_number;
 	run; 
 	
