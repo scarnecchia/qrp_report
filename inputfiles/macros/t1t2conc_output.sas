@@ -133,13 +133,13 @@
             %end;
     	run;
 
-        /* If more than 2 stratifications, explicitly sort based on the sort order variables */
-        %if &countstrata > 2 %then %do;
         /* Output meta-data for sort order names and labels */
         proc contents data = repdata.table&tablenum.&tableletter noprint out = _tablesort&tablenum.&tableletter(keep=name label);
         run;
 
         %let tablesort = ;
+        %let zipflag = 0;
+        %let stateflag = 0;
 
         /* Iterate over each stratification individually to obtain correct order for ordering*/
         %do sortnum = 1 %to &countstrata;
@@ -151,14 +151,19 @@
                 where name contains 'sortorder' and label = "&restrata._sort";
             quit;
 
+            %if &restrata = zip3 %then %let zipflag = 1;
+            %if &restrata = state %then %let stateflag = 1;
+
             %if %length(&tablesort) = 0 %then %let tablesort = &&tablesort&sortnum;
             %else %let tablesort = &tablesort &&tablesort&sortnum;
         %end;
 
         proc sort data = repdata.table&tablenum.&tableletter;
-            by &tablesort;
+            by %if &stratifybydp = Y %then %do; dpidsiteid %end; order level &tablesort 
+               %if &zipflag = 1 %then %do; zip3 %end; 
+               %if &stateflag = 1 %then %do; sortorder_state %end;
+            ;
         run;
-        %end;
 
         /*Modify footnotes # to reassign eligible member/member day footnote # from 1 to 2 if table stratified by race*/
     	%if %index(&stratavar,race) %then %do;
