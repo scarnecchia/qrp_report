@@ -566,7 +566,7 @@
 										%else %if &figure = F5 and &pscsfile. = psmatchfile %then %let pop=Unconditional Matched Population after;
 										%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
 
-										%if &figure ^= F4 or &kmrefpop. = unweighted %then %let cititle=%str(and 95% Confidence Interval);
+										%if &figure ^= F4 or &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
 										%else %let cititle=; 
 
 				                        %output_cdf_km(dataset=figure&figure._analysis&loopcount._&j.,

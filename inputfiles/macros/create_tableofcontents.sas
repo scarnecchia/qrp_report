@@ -1794,7 +1794,7 @@
 									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
 
 									%if &max_day. > 0 %then %do;
-										%if &kmrefpop. = unweighted %then %let cititle=%str(and 95% Confidence Interval);
+										%if &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
 										%else %let cititle=; 
 
 				                        %tableletter();	
