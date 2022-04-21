@@ -412,9 +412,15 @@
 
 		/* Compute KM 95%CI */
 		%macro computeKMCI(cohort=);
-			Qt3&cohort. = sqrt(cumQt1&cohort.)*km_ev&cohort.;
-			lowerCI_&cohort. = km_ev&cohort. ** exp((-1.96*Qt3&cohort.)/log(km_ev&cohort.));
-			upperCI_&cohort. = km_ev&cohort. ** exp((1.96*Qt3&cohort.)/log(km_ev&cohort.));
+			if 0 < km_ev&cohort. < 1 then do;
+				Qt3&cohort. = sqrt(cumQt1&cohort.)*km_ev&cohort.;
+				lowerCI_&cohort. = km_ev&cohort. ** exp((-1.96*Qt3&cohort.)/log(km_ev&cohort.));
+				upperCI_&cohort. = km_ev&cohort. ** exp((1.96*Qt3&cohort.)/log(km_ev&cohort.));
+			end;
+			else do;
+				lowerCI_&cohort. = km_ev&cohort.;
+				upperCI_&cohort. = km_ev&cohort.;
+			end;
 		%mend computeKMCI;
 
         /*Compute KM curve*/
@@ -529,9 +535,11 @@
                 end;
             %end;
 
-            %if &ratio.=V and (&kmrefpop = both | &kmrefpop = weighted) %then %do; 
-			     call missing(lowerCI_exp, lowerCI_Unexp, upperCI_exp, upperCI_Unexp);
-			%end;
+			if analysis ne 'Unadjusted' then do;
+	            %if &ratio.=V and (&kmrefpop = both | &kmrefpop = weighted) %then %do; 
+				     call missing(lowerCI_exp, lowerCI_Unexp, upperCI_exp, upperCI_Unexp);
+				%end;
+			end;
 
             format analysisgrp $40.;
             analysisgrp = "&analysisgrp";
@@ -564,9 +572,15 @@
 		
 		/* Compute KM plots */
 		%macro computeKMWeightedCI(cohort=);
-			cVE = ( 1/(log(km_ev&cohort.))**2 ) * cumV&cohort.;
-			lowerCI_&cohort. = km_ev&cohort. ** (exp(1.96*sqrt(cVE)));
-			upperCI_&cohort. = km_ev&cohort. ** (exp(-1.96*sqrt(cVE)));
+			if 0 < km_ev&cohort. < 1 then do;
+				cVE = ( 1/(log(km_ev&cohort.))**2 ) * cumV&cohort.;
+				lowerCI_&cohort. = km_ev&cohort. ** (exp(1.96*sqrt(cVE)));
+				upperCI_&cohort. = km_ev&cohort. ** (exp(-1.96*sqrt(cVE)));
+			end;
+			else do;
+				lowerCI_&cohort. = km_ev&cohort.;
+				upperCI_&cohort. = km_ev&cohort.;
+			end;		
 		%mend computeKMWeightedCI;
 
 		data figureF4_analysis&loopcount._&periodid.;
