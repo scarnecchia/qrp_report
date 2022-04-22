@@ -138,9 +138,7 @@
         run;
 
         %let tablesort = ;
-        %let zipflag = 0;
-        %let stateflag = 0;
-
+        
         /* Iterate over each stratification individually to obtain correct order for ordering*/
         %do sortnum = 1 %to &countstrata;
             %let restrata = %scan(&stratavar,&sortnum);
@@ -151,18 +149,15 @@
                 where name contains 'sortorder' and label = "&restrata._sort";
             quit;
 
-            %if &restrata = zip3 %then %let zipflag = 1;
-            %if &restrata = state %then %let stateflag = 1;
+            %if &restrata = zip3 %then %let tablesort&sortnum = &&tablesort&sortnum zip3;
+            %if &restrata = state %then %let tablesort&sortnum = &&tablesort&sortnum sortorder_state;
 
             %if %length(&tablesort) = 0 %then %let tablesort = &&tablesort&sortnum;
             %else %let tablesort = &tablesort &&tablesort&sortnum;
         %end;
 
         proc sort data = repdata.table&tablenum.&tableletter;
-            by %if &stratifybydp = Y %then %do; dpidsiteid %end; order level &tablesort 
-               %if &zipflag = 1 %then %do; zip3 %end; 
-               %if &stateflag = 1 %then %do; sortorder_state %end;
-            ;
+            by order &tablesort;
         run;
 
         /*Modify footnotes # to reassign eligible member/member day footnote # from 1 to 2 if table stratified by race*/
