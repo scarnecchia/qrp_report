@@ -18,7 +18,8 @@
 *   - SAS dataset = log_checker
 *
 *  PARAMETERS:     
-*   - LogDir       = The directory (full path) containing one or more logs to be scanned. This is the directory where outputs will be saved. 
+*   - LogDir       = The directory (full path) containing one or more logs to be scanned. 
+*   - LogDir_Out   = This is the directory where outputs will be saved. 
 *   - Logname      = The name of the specific log file(s) to be scanned, with the ".log" suffix. If specifying more than one log file, separate with a space. 
 *   - Keywords     = Additional, user-specified keywords that the tool will scan and report on, separate with a pipe
 *
@@ -29,6 +30,7 @@
 *
 ***************************************************************************************************;
   %macro ms_logchecker(logdir =
+                      ,logdir_out =
                       ,logname =
 				      ,keywords =);
 
@@ -168,19 +170,26 @@
        run;
 	
 	%end;
-	
+	options mprint symbolgen macrogen;
   /*-----------------------------------------------------------------------------------------------------------
     Save final dataset to msoc folder
     -----------------------------------------------------------------------------------------------------------*/
-    libname Outlib "&logdir.";	
-	data  Outlib.log_checker;
+    /* For qrp with leave behing report use msoc, if qrp_report only then use output otherwise use specified path*/	
+	%if "&leavebehindreport" = "Y" and "&logdir_out" = "" %then %do; 
+      %let logdir_out = msoc; 
+    %end; 
+    %else %if "&logdir_out" = "" %then %do; 
+      %let logdir_out = output; 
+    %end;
+	  
+	data  &logdir_out..log_checker;
 	  set _input_log:;
 	run;
 	
   /*-----------------------------------------------------------------------------------------------------------
     Sort log checker dataset by level, logname, logline_number
     -----------------------------------------------------------------------------------------------------------*/	
-	proc sort data = Outlib.log_checker;
+	proc sort data = &logdir_out..log_checker;
 	  by level logname logline_number;
 	run; 
 	
