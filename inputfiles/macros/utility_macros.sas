@@ -124,10 +124,13 @@
     %global super_&type.;
     %let super_&type. =;
     
-    proc sql noprint;
-      select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
-      from _footnotes where order in (&order.);
-    quit; 
+	%isdata(dataset=_footnote);
+    %if %eval(&nobs.>0) %then %do;
+	    proc sql noprint;
+	      select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
+	      from _footnotes where order in (&order.);
+	    quit; 
+	%end;
   %mend assign_superscripts;
 
 *Macro for converting categories to mathematical expression;
