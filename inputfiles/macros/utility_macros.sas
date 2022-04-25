@@ -124,7 +124,7 @@
     %global super_&type.;
     %let super_&type. =;
     
-	%isdata(dataset=_footnote);
+	%isdata(dataset=_footnotes);
     %if %eval(&nobs.>0) %then %do;
 	    proc sql noprint;
 	      select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
