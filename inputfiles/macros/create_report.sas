@@ -248,7 +248,8 @@
     %if &leavebehindreport = N %then %do;
 	  proc printto log="&output.log_checker.log" new;
       run;
-	   %ms_logchecker(logdir =&output., logname=qrp_report_log.log );
+
+	   %ms_logchecker(logdir =&output., logdir_out=output, logname=qrp_report_log.log );
 	%end;
 
 ***************************************************************************************************;

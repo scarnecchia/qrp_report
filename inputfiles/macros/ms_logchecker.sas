@@ -172,16 +172,8 @@
 	%end;
 	options mprint symbolgen macrogen;
   /*-----------------------------------------------------------------------------------------------------------
-    Save final dataset to msoc folder
-    -----------------------------------------------------------------------------------------------------------*/
-    /* For qrp with leave behing report use msoc, if qrp_report only then use output otherwise use specified path*/	
-	%if "&leavebehindreport" = "Y" and "&logdir_out" = "" %then %do; 
-      %let logdir_out = msoc; 
-    %end; 
-    %else %if "&logdir_out" = "" %then %do; 
-      %let logdir_out = output; 
-    %end;
-	  
+    Save final dataset to logdir_out folder
+    -----------------------------------------------------------------------------------------------------------*/  
 	data  &logdir_out..log_checker;
 	  set _input_log:;
 	run;
