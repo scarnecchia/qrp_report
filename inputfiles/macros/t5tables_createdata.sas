@@ -400,8 +400,8 @@
 					end;
 					mean_char = strip(put(mean, comma12.1));
 					stddev_char = strip(put(stddev, comma12.1));
-					minimum_char = strip(put(minimum, comma12.0));
-					maximum_char = strip(put(maximum, comma12.0));
+					minimum_char = strip(put(minimum, comma12.1));
+					maximum_char = strip(put(maximum, comma12.1));
 					keep runid group dpidsiteid mean_char stddev_char minimum_char maximum_char;
 					run;
 			
