@@ -1287,11 +1287,12 @@
 	                        abort;
 	                    end;                                           
                     end;
+					drop numcensordisplay;
                 end;
                 /*if figure using t6plota/t6plotb dataset, need to request figures in at last 1 analysisgrp in the TREATMENTPATHWAYS file*/
                 if index(dataset, 't6plot') then call symputx('t6checktreatmentpathways', 'Y');
             %end;
-            drop censordisplay numcensordisplay;
+            drop censordisplay;
 
         	*defensive: replace overall with missing;
         	if levelid1 = 'overall' then levelid1 = '';

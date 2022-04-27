@@ -50,6 +50,8 @@
         5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
         6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
         7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+		8) F8: t6plota = Cumulative Incidence of First Switch
+        9) F9: t6plotb = Cumulative Incidence of Second Switch
     /***********************************************************************************************/
 
     %isdata(dataset=figurefile);
@@ -86,6 +88,8 @@
             if (dataset='t2followuptime' and figure = 'F1') |
                (dataset='t6plota' and figure = 'F4') | 
                (dataset='t6plotb' and figure = 'F5') then call symputx('curve', 'KM');
+			else if (dataset='t6plota' and figure = 'F8') | 
+               		(dataset='t6plotb' and figure = 'F9') then call symputx('curve', 'CIF');
             else call symputx('curve', 'CDF');
 
             /*Determine whether to transpose dataset from stacked by group to a wide dataset*/
