@@ -75,10 +75,10 @@
         proc means data=&dataset.(&rename. where=(&whereclause.)) nway noprint;
             var episodes &includevars. %if "&curve" = "CIF" %then %do; &eventvar. %end;;
             class runid group &dayvar. / missing;
-            output out=_kmcdfdata(drop=_: where=(missing(day)=0) rename=&dayvar.=day) sum=;
+            output out=_survivaldata(drop=_: where=(missing(day)=0) rename=&dayvar.=day) sum=;
         run;
 
-        %isdata(dataset=_kmcdfdata);
+        %isdata(dataset=_survivaldata);
         %if %eval(&nobs.<1) %then %do;
             %put WARNING: SENTINEL: plot &figure. requested, however no observations available to compute curve;
             %goto skipfigure;
@@ -89,8 +89,8 @@
         /*--------------------------------------------------------------------------------------------*/
         %let minday = 0;
         %if %str(&discardnegativetimegroups.) ne %str() %then %do;
-            data _kmcdfdata;
-                set _kmcdfdata;
+            data _survivaldata;
+                set _survivaldata;
                 if group in (&discardnegativetimegroups.) and day <0 then delete;
             run;
         %end;
@@ -102,7 +102,7 @@
         %if &reporttype. = T6 %then %do;
             proc sql noprint;
                 select min(day) into: minday
-                from _kmcdfdata;
+                from _survivaldata;
             quit;
             %let minday = %sysfunc(min(-1,&minday.-1));
         %end;
@@ -110,8 +110,8 @@
             %let minday = 0;
         %end;
 
-        data _squarekmcdf(rename=i=day);
-            set _kmcdfdata(keep=runid group day);
+        data _squaresurvival(rename=i=day);
+            set _survivaldata(keep=runid group day);
             by runid group day;
             if last.group then do;
                 /*type 6 - length = 4*/ %if &reporttype.=T6 %then %do; length i 4; %end;
@@ -122,9 +122,9 @@
             drop day;
         run;
 
-        data _kmcdfdata;
-            merge _kmcdfdata
-                  _squarekmcdf 
+        data _survivaldata;
+            merge _survivaldata
+                  _squaresurvival 
                   _squaregroup;
             by runid group day;
             *set missing to 0;
@@ -135,9 +135,9 @@
         run;
 
         proc sql noprint undo_policy=none;
-            create table _kmcdfdata as
+            create table _survivaldata as
             select x.*, y.order
-            from _kmcdfdata x
+            from _survivaldata x
             inner join groupsfile(where=(includeinfigure='Y')) y
             on x.runid = y.runid and x.group = y.group
             %if &reporttype. = T6 %then %do;
@@ -152,15 +152,15 @@
         /* Build macro variables                                                                      */
         /*--------------------------------------------------------------------------------------------*/
         %let censorreasonnum = %sysfunc(countw(&includevars.)); /*number of censor reasons*/
-        %let kmcdf_cumlist = %sysfunc(prxchange(s/(\w+)/cum_$1/,-1,&includevars.));
-        %let kmcdf_sumlist = %sysfunc(prxchange(s/(\w+)/sum_$1/,-1,&includevars.));
-        %let kmcdf_cdflist = %sysfunc(prxchange(s/(\w+)/cdf_$1/,-1,&includevars.));
+        %let survival_cumlist = %sysfunc(prxchange(s/(\w+)/cum_$1/,-1,&includevars.));
+        %let survival_sumlist = %sysfunc(prxchange(s/(\w+)/sum_$1/,-1,&includevars.));
+        %let survival_cdflist = %sysfunc(prxchange(s/(\w+)/cdf_$1/,-1,&includevars.));
 
         /*--------------------------------------------------------------------------------------------*/
         /* Compute total number of episodes for each censoring criteria                               */
         /*--------------------------------------------------------------------------------------------*/
-        data cumulative_totals(keep=group &kmcdf_cumlist. cum_episodes);
-            array cum{*} &kmcdf_cumlist. cum_episodes;
+        data cumulative_totals(keep=group &survival_cumlist. cum_episodes);
+            array cum{*} &survival_cumlist. cum_episodes;
             array censorcriteria{*} &includevars. episodes;
 
             do i = 1 to dim(cum);
@@ -168,7 +168,7 @@
             end;
 
             do until(last.group);
-                set _kmcdfdata;  
+                set _survivaldata;  
                 by group;
 
                 do a = 1 to dim(cum);
@@ -183,14 +183,14 @@
         %isdata(dataset=labelfile); /*if labelfile exists*/
 
         data figure&figure.(rename=lag_episodes_atrisk=episodes_atrisk);
-            set _kmcdfdata; 
+            set _survivaldata; 
             by group day;
 
-            array sum{*} &kmcdf_sumlist. sum_episodes;
+            array sum{*} &survival_sumlist. sum_episodes;
             array varlist{*} &includevars. episodes;
-            array cum{*} &kmcdf_cumlist.; 
+            array cum{*} &survival_cumlist.; 
             %if "&curve" = "CDF" %then %do;
-            array cdflist{*} &kmcdf_cdflist. ;
+            array cdflist{*} &survival_cdflist. ;
             %end;
 
             if first.group then do;
@@ -207,7 +207,7 @@
                 end;
             end;
 
-            retain &kmcdf_sumlist. sum_episodes;
+            retain &survival_sumlist. sum_episodes;
 
             /*Episodes_atrisk used in atrisk table in plot and for KM curve*/
             episodes_atrisk = cum_episodes - sum_episodes;
@@ -262,7 +262,7 @@
 			%end;
 			/*-----CIF Plot--------*/
 			%else %do;
-				rename &includevars. = competing; 
+				rename &includevars. = competingrisk; 
 			%end;
 
             keep runid group: order day lag_episodes_atrisk %if "&curve" = "CIF" %then %do; &includevars. &eventvar. %end; %else %do; &curve._: %end;;
@@ -282,7 +282,7 @@
 				prev_survival=survival;		
 			end;
 			else do;
-				survival=prev_survival*((episodes_atrisk - (&eventvar. + competing))/episodes_atrisk);
+				survival=prev_survival*((episodes_atrisk - (&eventvar. + competingrisk))/episodes_atrisk);
 				prev_survival=survival;		
 			end;
 			retain prev_survival;
@@ -305,7 +305,7 @@
 			end;
 			retain cumincidence;
 
-			drop competing &eventvar. survival prev_survival failure incidence;
+			drop competingrisk &eventvar. survival prev_survival failure incidence;
 			rename cumincidence=cif_&eventvar.;
 
 			%if &dataset. = agg_t6plota %then %let s = 1;
@@ -393,7 +393,7 @@
     %skipfigure:
 
     proc datasets nowarn nolist noprint lib=work;
-        delete _squarekmcdf _kmcdfdata _cumulative_totals _tempfigure:;
+        delete _squaresurvival _survivaldata _cumulative_totals _tempfigure:;
     quit;
 
 	%put =====> END MACRO: figure_survivalcurves_createdata;
