@@ -17,11 +17,13 @@
 *  PARAMETERS:  
 *   - dataset: aggregate dataset from %aggregate_report_tables
 *   - rename: syntax to rename variables on input dataset
-*   - curve: KM or CDF
+*   - curve: KM, CDF or CIF
 *   - whereclause: where statement to restrict &dataset
 *   - dayvar: variable name for censor day variable
 *   - includegroups: Groups to include in report
-*   - includevars: censor reasons to include in final dataset
+*   - includevars: For KM and CDF curves, censor reasons to include in final dataset. 
+*				   For CIF curves, censor reason to use as competing risk
+*   - eventvar: For CIF curves, censor reason to use as event of interest
 *   - transposedata: Y/N/T whether all groups are in 1 plot (Y=Yes, N=No, T=only execute transpose)
 *   - discardnegativetimegroups: list of groups to remove negative ttswitch (Relevant for T6 only)
 *   - figure: standard figure # from FIGUREFILE
@@ -46,6 +48,7 @@
 		                                dayvar=,
 		                                includegroups=,
 		                                includevars=,
+										eventvar=,
 		                                transposedata=,
 		                                discardnegativetimegroups=,
 		                                figure=);
@@ -70,7 +73,7 @@
         /* Select rows and columns and aggregate data                                                 */
         /*--------------------------------------------------------------------------------------------*/
         proc means data=&dataset.(&rename. where=(&whereclause.)) nway noprint;
-            var episodes &includevars.;
+            var episodes &includevars. %if "&curve" = "CIF" %then %do; &eventvar. %end;;
             class runid group &dayvar. / missing;
             output out=_kmcdfdata(drop=_: where=(missing(day)=0) rename=&dayvar.=day) sum=;
         run;
@@ -125,7 +128,7 @@
                   _squaregroup;
             by runid group day;
             *set missing to 0;
-            array change episodes &includevars.;
+            array change episodes &includevars. %if "&curve" = "CIF" %then %do; &eventvar. %end;;
             do over change;
                 if change=. then change=0;
             end;
@@ -245,19 +248,71 @@
             grouplabel = group;
             %end;
 
-            /*Assign censoring criteria labels*/
-            %do lbl = 1 %to %eval(&censorreasonnum.);
-                %let s=;
-                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
-                    %if &dataset. = agg_t6plota %then %let s = 1;
-                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
-                %end;
-                %let var = %scan(&includevars., &lbl.);
-                label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
-            %end;
+            /*Assign censoring criteria labels. CIF label will be assigned after the cumulative incidence computation*/
+			%if "&curve" ne "CIF" %then %do;
+	            %do lbl = 1 %to %eval(&censorreasonnum.);
+	                %let s=;
+	                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
+	                    %if &dataset. = agg_t6plota %then %let s = 1;
+	                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
+	                %end;
+	                %let var = %scan(&includevars., &lbl.);
+	                label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+	            %end;
+			%end;
+			/*-----CIF Plot--------*/
+			%else %do;
+				rename &includevars. = competing; 
+			%end;
 
-            keep runid group: order day lag_episodes_atrisk &curve._:;
+            keep runid group: order day lag_episodes_atrisk %if "&curve" = "CIF" %then %do; &includevars. &eventvar. %end; %else %do; &curve._: %end;;
          run;
+
+		%if "&curve" = "CIF" %then %do;
+			proc sort data=figure&figure.;
+			by group day;
+			run;
+
+			* Step 1: Calculate the Kaplan-Meier estimate using both the event of interest and the competing risk as event;
+			data figure&figure.;
+			set figure&figure.;
+			by group day;
+			if first.group then do;
+				survival=1;
+				prev_survival=survival;		
+			end;
+			else do;
+				survival=prev_survival*((episodes_atrisk - (&eventvar. + competing))/episodes_atrisk);
+				prev_survival=survival;		
+			end;
+			retain prev_survival;
+			drop prev_survival;
+			run;
+
+			* Step 2: Calculate the cumulative incidence using only the event of interest as event;
+			data figure&figure.;
+			set figure&figure.;
+			by group day;	
+			prev_survival=lag(survival);
+			if first.group then do;	
+				prev_survival=survival;	
+				cumincidence=0;
+			end;
+			else do;		
+				failure=&eventvar./episodes_atrisk;
+				incidence=failure*prev_survival;		
+				cumincidence=cumincidence+incidence;
+			end;
+			retain cumincidence;
+
+			drop competing &eventvar. survival prev_survival failure incidence;
+			rename cumincidence=cif_&eventvar.;
+
+			%if &dataset. = agg_t6plota %then %let s = 1;
+			%else %if &dataset. = agg_t6plotb %then %let s = 2;
+			label cumincidence = &&&eventvar.&s._label.;
+			run;
+		%end; /* CIF curve computation */
 
         /*--------------------------------------------------------------------------------------------*/
         /* Assign Group label                                                                         */

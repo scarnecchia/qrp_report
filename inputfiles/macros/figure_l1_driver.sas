@@ -167,6 +167,7 @@
 		                                      dayvar=ttswitch,
 		                                      includegroups=&includegroupinfigure.,
 		                                      includevars=&censordisplay.,
+											  eventvar=cens_switch,
 		                                      transposedata=&transposedata.,
 		                                      discardnegativetimegroups = %quote(&discardnegativetimegroups.),
 		                                      figure = &figure.);
