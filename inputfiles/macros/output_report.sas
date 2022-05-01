@@ -884,7 +884,7 @@
     * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
     ************************************************;
 	%if %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
-		%figure_cdf_km_output;
+		%figure_survivalcurves_output;
 	%end;
 	
      options orientation = portrait;

@@ -1394,8 +1394,15 @@
                         set &dataset_name.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
+                        /* Assign competing risk label */
+                        %if &reporttype = T6 and %sysfunc(prxmatch(m/F8|F9/i,&figure)) %then %do;
+                        call symputx('competingrisklabel',vlabel(competingrisk));
+                        %end;
                         end;
                     run;
+
+                    /* Unmask title for T6 F8 and F9 figures to resolve competing risk macro variable */
+                    %if &reporttype = T6 and %sysfunc(prxmatch(m/F8|F9/i,&figure)) %then %let title = %unquote(&title);
 
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
@@ -1499,6 +1506,8 @@
                 5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
                 6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
                 7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+                8) F8: t6plota = Cumulative Incidence of First Switch against competing risk by Analysisgrp
+                9) F9: t6plotb = Cumulative Incidence of Second Switch against competing risk by Analysisgrp
             /***********************************************************************************************/
             %if &reporttype. = T6 %then %do;
                 /*F4 - F7: 1 figure per group*/
@@ -1514,6 +1523,12 @@
                 %if %sysfunc(prxmatch(m/F7/i,&figurelist.)) > 0 %then %do;
                     %figuretoc(figure=F7, title =Reasons for Censoring at Second Switch Evaluation Among, dataset_name = figureF7);
                 %end; /*figuref7*/
+                %if %sysfunc(prxmatch(m/F8/i,&figurelist.)) > 0 %then %do;
+                    %figuretoc(figure=F8, title =%nrstr(Cumulative Incidence of First Switch Accounting for &competingrisklabel. as a Competing Risk Among), dataset_name = figureF8);
+                %end; /*figuref8*/
+                %if %sysfunc(prxmatch(m/F9/i,&figurelist.)) > 0 %then %do;
+                    %figuretoc(figure=F9, title =%nrstr(Cumulative Incidence of Second Switch Accounting for &competingrisklabel. as a Competing Risk Among), dataset_name = figureF9);
+                %end; /*figuref9*/
             %end; /*T6*/
 
         %end; /*L1 figures*/

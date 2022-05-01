@@ -249,7 +249,6 @@
             %end;
 
             /*Assign censoring criteria labels. CIF label will be assigned after the cumulative incidence computation*/
-			%if "&curve" ne "CIF" %then %do;
 	            %do lbl = 1 %to %eval(&censorreasonnum.);
 	                %let s=;
 	                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
@@ -257,11 +256,15 @@
 	                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
 	                %end;
 	                %let var = %scan(&includevars., &lbl.);
+                    %if "&curve" ^= "CIF" %then %do;
 	                label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+                    %end;
+                    %else %do; 
+                    label &includevars. = "&&&var.&s._label";
+                    %end;
 	            %end;
-			%end;
 			/*-----CIF Plot--------*/
-			%else %do;
+			%if "&curve" = "CIF" %then %do;
 				rename &includevars. = competingrisk; 
 			%end;
 
@@ -305,7 +308,7 @@
 			end;
 			retain cumincidence;
 
-			drop competingrisk &eventvar. survival prev_survival failure incidence;
+			drop &eventvar. survival prev_survival failure incidence;
 			rename cumincidence=cif_&eventvar.;
 
 			%if &dataset. = agg_t6plota %then %let s = 1;
