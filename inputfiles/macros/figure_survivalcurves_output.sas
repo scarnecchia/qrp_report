@@ -400,12 +400,12 @@
 					%else %if &figure = F8 %then %do;
 						%let title = Cumulative Incidence of First Switch Accounting for &competingrisklabel. as a Competing Risk Among &grouplabel.;
 						%let xaxislabel = %str(Follow-up time until first switch or censoring (days));;
-						%let yaxislabel = %str(Cumulative probability that first switch occurred accounting for &competingrisklabel. as a competing risk);
+						%let yaxislabel = %str(Cumulative probability that first switch occurred accounting for(*ESC*){unicode '000A'x} &competingrisklabel. as a competing risk);
 					%end;
 					%else %if &figure = F9 %then %do;
 						%let title = Cumulative Incidence of Second Switch Accounting for &competingrisklabel. as a Competing Risk Among &grouplabel;
 						%let xaxislabel = %str(Follow-up time since first switch until second switch or censoring (days));
-						%let yaxislabel = %str(Cumulative probability that second switch occurred accounting for &competingrisklabel. as a competing risk);
+						%let yaxislabel = %str(Cumulative probability that second switch occurred accounting for(*ESC*){unicode '000A'x} &competingrisklabel. as a competing risk);
 					%end;
                       
 
