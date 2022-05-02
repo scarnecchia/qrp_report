@@ -248,23 +248,25 @@
             grouplabel = group;
             %end;
 
-            /*Assign censoring criteria labels. CIF label will be assigned after the cumulative incidence computation*/
-	            %do lbl = 1 %to %eval(&censorreasonnum.);
-	                %let s=;
-	                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
-	                    %if &dataset. = agg_t6plota %then %let s = 1;
-	                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
-	                %end;
-	                %let var = %scan(&includevars., &lbl.);
-                    %if "&curve" ^= "CIF" %then %do;
-	                label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
-                    %end;
-                    %else %do; 
-                    label &includevars. = "&&&var.&s._label";
-                    %end;
-	            %end;
+            /*Assign censoring criteria labels.*/			
+            %do lbl = 1 %to %eval(&censorreasonnum.);
+                %let s=;
+                %if %scan(&includevars., &lbl.) = cens_switch %then %do;
+                    %if &dataset. = agg_t6plota %then %let s = 1;
+                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
+                %end;
+                %let var = %scan(&includevars., &lbl.);
+				%if "&curve" ne "CIF" %then %do;
+                	label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+				%end;
+				%else %do;
+					* Label for CIF &eventvar. will be assigned after the cumulative incidence computation;
+					label &includevars. = "&&&var.&s._label";
+				%end;
+            %end;
+			
 			/*-----CIF Plot--------*/
-			%if "&curve" = "CIF" %then %do;
+			%if "&curve" eq "CIF" %then %do;
 				rename &includevars. = competingrisk; 
 			%end;
 
@@ -348,7 +350,7 @@
 
             /*delete extraneous datasets*/
             %do g = 1 %to &numgroups.;
-                %isdata(dataset=(figure&figure._group&g.));
+                %isdata(dataset=figure&figure._group&g.);
                 %if %eval(&nobs.<1) %then %do;
                     proc datasets nowarn noprint lib=work;  
                     delete figure&figure._group&g.;
