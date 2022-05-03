@@ -6,7 +6,8 @@
 * Created (mm/dd/yyyy): 07/14/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro computes Kaplan-Meier and Cumulative Distribution Function (CDF) estimates
+* PURPOSE: This macro computes Kaplan-Meier (KM), Cumulative Distribution Function (CDF), and
+*          Cumulative Incidence Function (CIF) estimates
 *                                        
 *  Program inputs:                                                                                   
 *   - MSOC dataset containing 1 row per day and columns containing counts of episodes censored
