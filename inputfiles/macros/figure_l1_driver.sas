@@ -42,7 +42,7 @@
         3) F3: Total Days Supply in Patients First Episodes by Month
         4) F4: t5censor = Reasons for End of First Treatment Episode by Group
         5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
-     T6: 7 figures:
+     T6: 9 figures:
         1) F1 (not yet implemented)
         2) F2 (not yet implemented)
         3) F3 (not yet implemented)
