@@ -254,12 +254,12 @@
             %end;
 
             /*Assign censoring criteria labels.*/			
-            %do lbl = 1 %to %eval(&censorreasonnum.);    
-				%let var = %scan(&includevars., &lbl.); 
+            %do lbl = 1 %to %eval(&censorreasonnum.);
+                %let var = %scan(&includevars., &lbl.);
 
                 %if %scan(&includevars., &lbl.) = cens_switch %then %do;
-                    label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
-                %end;                
+                	label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+				%end;
 				%else %if "&curve" ne "CIF" %then %do;
                 	label &&curve._%scan(&includevars., &lbl.) = "&&&var._label";
 				%end;
@@ -314,9 +314,9 @@
 			end;
 			retain cumincidence;
 
-			drop competingrisk &eventvar. survival prev_survival failure incidence;
+			drop &eventvar. survival prev_survival failure incidence;
 			rename cumincidence=cif_&eventvar.;
-			
+
 			label cumincidence = &&&eventvar.&s._label.;
 			run;
 		%end; /* CIF curve computation */
