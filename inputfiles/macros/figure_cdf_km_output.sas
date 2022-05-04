@@ -10,7 +10,7 @@
 *          Function (CDF) curves with an at-risk table
 *                                        
 *  Program inputs:                                                                                   
-*   - Dataset(s) computed in figure_cdf_km_createdata.sas (L1 plots) or 
+*   - Dataset(s) computed in figure_survivalcurves_createdata.sas (L1 plots) or 
 *     l2_effect_estimate_km_createdata.sas (L2 plots)
 * 
 *  Program outputs: 

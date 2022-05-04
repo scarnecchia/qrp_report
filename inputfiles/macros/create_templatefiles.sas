@@ -1103,9 +1103,9 @@ libname tempfl "";
              %end;
         %end;
     
-        %do f = 4 %to 7;
-            %if %eval(&f.=4) | %eval(&f.=6) %then %do; dataset = "t6plota"; %end;
-            %if %eval(&f.=5) | %eval(&f.=7) %then %do; dataset = "t6plotb"; %end;
+        %do f = 4 %to 9;
+            %if %eval(&f.=4) | %eval(&f.=6) | %eval(&f.=8) %then %do; dataset = "t6plota"; %end;
+            %if %eval(&f.=5) | %eval(&f.=7) | %eval(&f.=9) %then %do; dataset = "t6plotb"; %end;
             table = "F&f.";
             tablesub= "overall";
             levelnum =1;

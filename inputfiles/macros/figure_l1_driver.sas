@@ -42,7 +42,7 @@
         3) F3: Total Days Supply in Patients First Episodes by Month
         4) F4: t5censor = Reasons for End of First Treatment Episode by Group
         5) F5: t5censor = End of First Treatment Episode due to [Censoring Reason] by Group 
-     T6: 7 figures:
+     T6: 9 figures:
         1) F1 (not yet implemented)
         2) F2 (not yet implemented)
         3) F3 (not yet implemented)
@@ -50,6 +50,8 @@
         5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
         6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
         7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+		8) F8: t6plota = Cumulative Incidence of First Switch
+        9) F9: t6plotb = Cumulative Incidence of Second Switch
     /***********************************************************************************************/
 
     %isdata(dataset=figurefile);
@@ -86,6 +88,8 @@
             if (dataset='t2followuptime' and figure = 'F1') |
                (dataset='t6plota' and figure = 'F4') | 
                (dataset='t6plotb' and figure = 'F5') then call symputx('curve', 'KM');
+			else if (dataset='t6plota' and figure = 'F8') | 
+               		(dataset='t6plotb' and figure = 'F9') then call symputx('curve', 'CIF');
             else call symputx('curve', 'CDF');
 
             /*Determine whether to transpose dataset from stacked by group to a wide dataset*/
@@ -94,16 +98,16 @@
         run;
             
         %if &reporttype. = T1 | &reporttype. = T2L1 %then %do;
-        %figure_cdf_km_createdata(dataset=&dataset., 
-                                  rename=,
-                                  curve=&curve., 
-                                  whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
-                                  dayvar=censdays_value,
-                                  includegroups=&includegroupinfigure.,
-                                  includevars=&censordisplay.,
-                                  transposedata=&transposedata.,
-                                  discardnegativetimegroups=,
-                                  figure = &figure.);
+        %figure_survivalcurves_createdata(dataset=&dataset., 
+                                  		  rename=,
+		                                  curve=&curve., 
+		                                  whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)), 
+		                                  dayvar=censdays_value,
+		                                  includegroups=&includegroupinfigure.,
+		                                  includevars=&censordisplay.,
+		                                  transposedata=&transposedata.,
+		                                  discardnegativetimegroups=,
+		                                  figure = &figure.);
         %end;
         %else %if &reporttype. = T5 %then %do;
             /*Figures 1, 2, and 3 - will call 1x*/
@@ -115,7 +119,7 @@
             %end;
             %else %if %sysfunc(prxmatch(m/F4|F5/i,&figure.)) %then %do;
                 /*Figure F5 selects 1 censoring reason from F4, so if figuref4 exists and 
-                  censoring reason selected in F4 then can subset that dataset, else need to execute %figure_cdf_km_createdata()*/
+                  censoring reason selected in F4 then can subset that dataset, else need to execute %figure_survivalcurves_createdata()*/
                 %isdata(dataset=figuref4); /*will only exist if F4 has been created*/
                 %if %eval(&nobs.>0) %then %do;
                     %let censordisplayf4 = ;
@@ -136,36 +140,37 @@
                 %end;
                 %else %do;
                     %createfigure:
-                    %figure_cdf_km_createdata(dataset=&dataset., 
-                                              rename=,
-                                              curve=&curve., 
-                                              whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
-                                              dayvar=episodelength,
-                                              includegroups=&includegroupinfigure.,
-                                              includevars=&censordisplay.,
-                                              transposedata=&transposedata.,
-                                              discardnegativetimegroups=,
-                                              figure = &figure.);
+                    %figure_survivalcurves_createdata(dataset=&dataset., 
+		                                              rename=,
+		                                              curve=&curve., 
+		                                              whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure) and episodenum = 1), 
+		                                              dayvar=episodelength,
+		                                              includegroups=&includegroupinfigure.,
+		                                              includevars=&censordisplay.,
+		                                              transposedata=&transposedata.,
+		                                              discardnegativetimegroups=,
+		                                              figure = &figure.);
                 %end;
             %end;
         %end; /*T5*/
         %else %if &reporttype. = T6 %then %do;
-            %figure_cdf_km_createdata(dataset=&dataset., 
-                                      rename=%str(rename=(analysisgrp=group 
-                                                          SwitchedCount=cens_switch 
-                                                          EndEnrollmentCount=cens_elig 
-                                                          DeathCount=cens_dth 
-                                                          EndAvailDataCount=cens_dpend 
-                                                          EndQueryCount=cens_qryend 
-                                                          ProductDiscontinuationCount=cens_episend)),
-                                      curve=&curve., 
-                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)),                                       
-                                      dayvar=ttswitch,
-                                      includegroups=&includegroupinfigure.,
-                                      includevars=&censordisplay.,
-                                      transposedata=&transposedata.,
-                                      discardnegativetimegroups = %quote(&discardnegativetimegroups.),
-                                      figure = &figure.);
+            %figure_survivalcurves_createdata(dataset=&dataset., 
+		                                      rename=%str(rename=(analysisgrp=group 
+		                                                          SwitchedCount=cens_switch 
+		                                                          EndEnrollmentCount=cens_elig 
+		                                                          DeathCount=cens_dth 
+		                                                          EndAvailDataCount=cens_dpend 
+		                                                          EndQueryCount=cens_qryend 
+		                                                          ProductDiscontinuationCount=cens_episend)),
+		                                      curve=&curve., 
+		                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)),                                       
+		                                      dayvar=ttswitch,
+		                                      includegroups=&includegroupinfigure.,
+		                                      includevars=&censordisplay.,
+											  eventvar=cens_switch,
+		                                      transposedata=&transposedata.,
+		                                      discardnegativetimegroups = %quote(&discardnegativetimegroups.),
+		                                      figure = &figure.);
         %end; /*T6*/
     %end; /*loop through figures*/
 
