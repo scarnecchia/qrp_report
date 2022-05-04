@@ -878,16 +878,19 @@
        %end;
 	  %end;
 
-	%end;
+	%end; /*end type 5 plots*/
 
-	 ************************************************;
-    * Kaplan-Meier and CDF Plots (L1 and L2 reports)                                                
+	************************************************;
+    * Survival plots for L1 and L2 reports
+        - Kaplan-Meier
+        - 1-CDF
+        - CIF
     ************************************************;
 	%if %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
 		%figure_survivalcurves_output;
 	%end;
 	
-     options orientation = portrait;
+    options orientation = portrait;
     
 ***************************************************************************************************;
 * Appendices                                                                                
