@@ -179,9 +179,13 @@
         run;
 
         /*--------------------------------------------------------------------------------------------*/
-        /* Compute KM or 1-CDF estimate                                                               */
+        /* Compute KM, CIF or 1-CDF estimate                                                               */
         /*--------------------------------------------------------------------------------------------*/
         %isdata(dataset=labelfile); /*if labelfile exists*/
+
+		%if &dataset. = agg_t6plota %then %let s = 1;
+        %else %if &dataset. = agg_t6plotb %then %let s = 2;
+		%else %let s =;
 
         data figure&figure.(rename=lag_episodes_atrisk=episodes_atrisk);
             set _survivaldata; 
@@ -250,19 +254,18 @@
             %end;
 
             /*Assign censoring criteria labels.*/			
-            %do lbl = 1 %to %eval(&censorreasonnum.);
-                %let s=;
+            %do lbl = 1 %to %eval(&censorreasonnum.);    
+				%let var = %scan(&includevars., &lbl.); 
+
                 %if %scan(&includevars., &lbl.) = cens_switch %then %do;
-                    %if &dataset. = agg_t6plota %then %let s = 1;
-                    %else %if &dataset. = agg_t6plotb %then %let s = 2;
-                %end;
-                %let var = %scan(&includevars., &lbl.);
-				%if "&curve" ne "CIF" %then %do;
-                	label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+                    label &&curve._%scan(&includevars., &lbl.) = "&&&var.&s._label";
+                %end;                
+				%else %if "&curve" ne "CIF" %then %do;
+                	label &&curve._%scan(&includevars., &lbl.) = "&&&var._label";
 				%end;
 				%else %do;
 					* Label for CIF &eventvar. will be assigned after the cumulative incidence computation;
-					label &includevars. = "&&&var.&s._label";
+					label &includevars. = "&&&var._label";
 				%end;
             %end;
 			
@@ -313,9 +316,7 @@
 
 			drop competingrisk &eventvar. survival prev_survival failure incidence;
 			rename cumincidence=cif_&eventvar.;
-
-			%if &dataset. = agg_t6plota %then %let s = 1;
-			%else %if &dataset. = agg_t6plotb %then %let s = 2;
+			
 			label cumincidence = &&&eventvar.&s._label.;
 			run;
 		%end; /* CIF curve computation */
