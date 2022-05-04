@@ -1498,7 +1498,7 @@
             %end; /*T5*/
 
             /**********************************************************************************************
-             T6: 7 figures:
+             T6: 9 figures:
                 1) F1 (not yet implemented)
                 2) F2 (not yet implemented)
                 3) F3 (not yet implemented)
@@ -1506,8 +1506,8 @@
                 5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
                 6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
                 7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
-                8) F8: t6plota = Cumulative Incidence of First Switch against competing risk by Analysisgrp
-                9) F9: t6plotb = Cumulative Incidence of Second Switch against competing risk by Analysisgrp
+                8) F8: t6plota = Cumulative Incidence of First Switch Against Competing Risk by Analysisgrp
+                9) F9: t6plotb = Cumulative Incidence of Second Switch Against Competing Risk by Analysisgrp
             /***********************************************************************************************/
             %if &reporttype. = T6 %then %do;
                 /*F4 - F7: 1 figure per group*/
