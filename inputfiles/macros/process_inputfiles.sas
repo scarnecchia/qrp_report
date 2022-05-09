@@ -1270,6 +1270,25 @@
                         censordisplay1=tranwrd(censordisplay1, "switchedcount", "cens_switch");
                     end;
                 end;
+				/*Figure F8 and F9 are Cumulative Incidence curves - censordisplay should be populated and set to a single value*/
+                if figure in ('F8', 'F9') then do;
+					if missing(censordisplay) then do;
+						put 'WARNING: (Sentinel) Figures F8 and F9 are Cumulative Incidence of Switch - censordisplay must be specified as competing risk. Figure will not be produced.';
+						delete;
+					end;
+					else do
+						numcensordisplay = countw(censordisplay);
+						censordisplay1=scan(censordisplay, 1);						
+						if numcensordisplay > 1 then do;
+							put 'WARNING: (Sentinel) Figures F8 and F9 are Cumulative Incidence of Switch - censordisplay must contain one unique value. The first value specified will be used as competing risk.';						
+						end;
+	                    if censordisplay1 not in ('cens_elig', 'cens_dth', 'cens_dpend', 'cens_episend', 'cens_dth') then do;
+	                        put 'ERROR: (Sentinel) Figures F8 and F9 are Cumulative Incidence of Switch - censordisplay must be one of cens_elig, cens_dth, cens_dpend, cens_qryend, cens_episend';
+	                        abort;
+	                    end;                                           
+                    end;
+					drop numcensordisplay;
+                end;
                 /*if figure using t6plota/t6plotb dataset, need to request figures in at last 1 analysisgrp in the TREATMENTPATHWAYS file*/
                 if index(dataset, 't6plot') then call symputx('t6checktreatmentpathways', 'Y');
             %end;
