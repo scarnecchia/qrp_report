@@ -358,6 +358,12 @@
                 %if %eval(&maxswitch.=2) %then %do; & switch2_mean&dpnum. ne .R %end; ;
             %end;
         run;   
+
+        /*clean up*/
+        proc datasets nowarn noprint lib=work;
+            delete _footnotes;
+        quit;
+
     %mend baseline_procreport;
 
     /*counter for determining table letter*/
