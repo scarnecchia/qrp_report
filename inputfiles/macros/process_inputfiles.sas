@@ -1528,7 +1528,7 @@
 
         /* Check if covnotinps has been specifed for L1 requests*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covnotinps) > 0 %then %do;
-         %put WARNING: (Sentinel) covnotinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be italicized in the Baseline Characteristics table.;
+         %put WARNING: (Sentinel) covnotinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
         %end;
 
      %end; /* baselinefile */

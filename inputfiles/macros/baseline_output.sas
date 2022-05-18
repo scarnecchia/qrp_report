@@ -130,8 +130,8 @@
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
-		   /* L2 baselinerowitalics specified */
-		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
+		   /* L2 covnotinps specified */
+		     %if %length(&covnotinps.) > 0 %then %do; 3 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */
 		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
@@ -254,7 +254,7 @@
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
-            define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
+            define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
@@ -297,7 +297,8 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
+			  if metvar in (&covnotinps) then label = catt(label, "&super_character.");
+			  else if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
@@ -310,12 +311,6 @@
                  if metvar = 'RACE_0' then label = catt(label,"&super_unknownrace.");
               %end;
 
-			  /*Italicize covariates*/
-	          %if %length(&baselinerowitalics.) > 0 %then %do;             
-              if upcase(metvar) in (&baselinerowitalics.) then do;
-                call define(_row_,'style','style={fontstyle=italic}');					
-              end;
-        	  %end;
             endcomp;
 
 			/*Change font color to blue if abs(SD) > threshold value*/
@@ -323,17 +318,7 @@
             compute sd&dpnum._char;
                 if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
                     if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
-                        %if %str(&baselinerowitalics) ne %str() %then %do;
-                            if upcase(metvar) in (&baselinerowitalics.) then do;
-                                call define(_row_,'style','style={fontstyle=italic foreground=blue}');
-                            end;
-                            else do;
-                                call define(_row_,'style','style={foreground=blue}');
-                            end;
-                        %end;
-                        %else %do;
-                            call define(_row_,'style','style={foreground=blue}');
-                        %end;
+                      call define(_row_,'style','style={foreground=blue}');
                     end;
                 end;
             endcomp;
@@ -379,7 +364,7 @@
         %let includecomp = N;
         %let computebalance =N;
         %let maxswitch = 0;
-        %let baselinerowitalics = ;
+        %let covnotinps = ;
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
@@ -420,7 +405,7 @@
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);	
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
-                if missing(baselinerowitalics)=0 then call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+                if missing(covnotinps)=0 then call symputx('covnotinps', strip(upcase(covnotinps)));
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
@@ -504,14 +489,14 @@
             run;
             %end;
 
-			/*Defensive check for sdthreshold and baselinerowitalics parameters*/
+			/*Defensive check for sdthreshold and covnotinps parameters*/
 			%if %eval(&unique_psestimate.) ne 1 %then %do;
 				proc sql noprint;
 				create table baseline_unique_check as
 				select a.analysisgrp,
 					   a.psestimategrp,
 					   a.sdthreshold,
-					   a.baselinerowitalics
+					   a.covnotinps
 				from baselinefile as a
 				left join pscs_masterinputs as b
 				on a.analysisgrp = b.analysisgrp and
@@ -525,14 +510,14 @@
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 
-				select count (distinct baselinerowitalics) into :baselinerowitalics_count trimmed
+				select count (distinct covnotinps) into :covnotinps_count trimmed
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 				quit;
 
-				%if %eval(&sdthreshold_count. > 1) or %eval(&baselinerowitalics_count. > 1) %then %do;
-					%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
-					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
+				%if %eval(&sdthreshold_count. > 1) or %eval(&covnotinps_count. > 1) %then %do;
+					%put WARNING: (Sentinel) SDTHRESHOLD or covnotinps value differs across analyses that share the same psestimategrp.;
+					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &covnotinps_count covnotinps distinct value(s);
 					
 					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
 					data _null_;
@@ -540,7 +525,7 @@
 					if _N_=1;
 					if missing(sdthreshold) then call symputx('sdthreshold', '');
 	                else call symputx('sdthreshold', sdthreshold);
-					call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+					call symputx('covnotinps', strip(upcase(covnotinps)));
 					run;
 				%end;
 			%end;
@@ -562,9 +547,9 @@
             run;
         %end;
 
-		%if %length(&baselinerowitalics.) > 0 %then %do;
-			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics1);
-            %let baselinerowitalics = &baselinerowitalics1.;
+		%if %length(&covnotinps.) > 0 %then %do;
+			%create_comma_charlist(inlist=&covnotinps., outlist=covnotinps1);
+            %let covnotinps = &covnotinps1.;
 		%end;
 
         /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
