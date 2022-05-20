@@ -131,7 +131,7 @@
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
 		   /* L2 covnotinps specified */
-		     %if %length(&covnotinps.) > 0 %then %do; 3 %end;
+		     %if %length(&covnotinps.) > 0 %then %do; 19 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */
 		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
@@ -200,6 +200,7 @@
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18);
+		%assign_superscripts(type =covar, order =19);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -297,7 +298,7 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if metvar in (&covnotinps) then label = catt(label, "&super_character.");
+			  if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
 			  else if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
