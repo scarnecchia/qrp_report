@@ -191,7 +191,7 @@
         
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =title, order =-2 -1);
-		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
+		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
 		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18);
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
@@ -255,7 +255,7 @@
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
-            define label / display "&characteristiclabel. Characteristics" style(column)=[width=&labelwidth.in just=L] 
+            define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
