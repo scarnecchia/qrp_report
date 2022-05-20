@@ -298,8 +298,12 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
-			  else if index(label,'Race') > 0 then label = catt(label,"&super_race.");
+
+			  %if %str("&covnotinps.") ne %str("") %then %do;
+                if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
+                else
+              %end; 
+              if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
