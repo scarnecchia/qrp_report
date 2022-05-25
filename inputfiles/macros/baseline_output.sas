@@ -118,20 +118,73 @@
         %end;
 
 		/* Select Footnotes */  
-	     data _footnotes;
+		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
+		%let covnotinpsorer = 19;
+		/*need to reorder the footnotes when there is  covnotinps */
+		/* L2 covnotinps specified */
+		%if %length(&covnotinps.) > 0 %then %do; 
+		  data _footnotes;
+		    length order 4;
+			format order 4.2;
+		    set lookup.lookup_footnotes (where = (type = "baseline"));
+            /*age*/
+            %if %index(%trim(&covnotinps_no.), AGE) > 0 %then %do;
+              if order = 19 then order = 14.4;
+			  %let covnotinpsorer = 14.4;
+			%end;
+		    /*sex*/
+            %if %index(%trim(&covnotinps_no.), SEX) > 0 %then %do;
+              if order = 19 then order = 14.5;
+			  %let covnotinpsorer = 14.5;
+			%end;
+		    /*race*/
+            %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
+              if order = 19 then order = 14.6;
+			  %let covnotinpsorer = 14.6;
+			%end;
+		    /*hispanic*/
+            %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
+              if order = 19 then order = 14.7;
+			  %let covnotinpsorer = 14.7;
+			%end;
+		    /*year*/
+			%if %index(%trim(&covnotinps_no.), YEAR) > 0 %then %do;
+              if order = 19 then order = 14.8;
+			  %let covnotinpsorer = 14.8;
+			%end;
+
+		    /*gestitional age*/
+			%if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 %then %do;
+              if order = 19 then order = 14.9;
+			  %let covnotinpsorer = 14.9;
+			%end;
+		  run;
+
+		  proc sort data = _footnotes;
+		    by order;
+		  run;
+
+        %end;
+
+		data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-	       set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15
-           /* if race is collapsed in table*/
-            %if &collapse_vars. = race %then %do; 16 %end;
+		   %if %length(&covnotinps.) > 0 %then %do; 
+		     set _footnotes (where =  ((type = "baseline" and order in (14 &covnotinpsorer. 15
+		   %end;
+		   %else %do;
+	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
+		   %end;
+		   /* T4 L1 or L2 gestational age specified*/
+		       %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
+			   /* if race is collapsed in table*/
+               %if &collapse_vars. = race %then %do; 16 %end; 
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.))) > 0 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
-		   /* L2 covnotinps specified */
-		     %if %length(&covnotinps.) > 0 %then %do; 19 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */
 		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
@@ -160,8 +213,6 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* T4 L1 or L2 gestational age specified*/
-		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
 		   ))
@@ -173,7 +224,7 @@
 		  by order;
 		  footnote_order = _n_;
 	    run;
-
+     
         /*Set first word for SDthreshold footnote*/
 		%if %str(&sdthreshold.) ne %str() %then %do;
              %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
@@ -188,7 +239,8 @@
 		  from _footnotes
 		  order by order;
 		quit;
-        
+
+ 
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =title, order =-2 -1);
 		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11);
@@ -196,11 +248,11 @@
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =race, order =15);
+        %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18);
-		%assign_superscripts(type =covar, order =19);
+		%assign_superscripts(type =covar, order =&covnotinpsorer.);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -299,10 +351,6 @@
             /*Indent demographic header lines*/
             compute label;
 
-			  %if %str("&covnotinps.") ne %str("") %then %do;
-                if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
-                else
-              %end; 
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
@@ -310,6 +358,9 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+			  %if %str("&covnotinps.") ne %str("") %then %do;
+                if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
+              %end;
 
               /*assign unknown race footnote*/
               %if &collapse_vars. = race %then %do;
