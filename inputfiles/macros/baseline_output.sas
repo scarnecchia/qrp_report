@@ -128,22 +128,22 @@
 			format order 4.2;
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
             /*age*/
-            %if %index(%trim(&covnotinps_no.), AGE) > 0 %then %do;
+            %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
               if order = 19 then order = 14.4;
 			  %let covnotinpsorer = 14.4;
 			%end;
 		    /*sex*/
-            %if %index(%trim(&covnotinps_no.), SEX) > 0 %then %do;
+            %if %index(%trim(&covnotinps_no.), SEX) > 0  %then %do;
               if order = 19 then order = 14.5;
 			  %let covnotinpsorer = 14.5;
 			%end;
 		    /*race*/
-            %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
+            %if %index(%trim(&covnotinps_no.), RACE) > 0  %then %do;
               if order = 19 then order = 14.6;
 			  %let covnotinpsorer = 14.6;
 			%end;
 		    /*hispanic*/
-            %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
+            %if %index(%trim(&covnotinps_no.), HISPANIC) > 0  %then %do;
               if order = 19 then order = 14.7;
 			  %let covnotinpsorer = 14.7;
 			%end;
@@ -154,9 +154,9 @@
 			%end;
 
 		    /*gestitional age*/
-			%if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 %then %do;
-              if order = 19 then order = 14.9;
-			  %let covnotinpsorer = 14.9;
+			%if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 and &covnotinpsorer. > 17 %then %do;
+              if order > 17 then order = 16.5;
+			  %let covnotinpsorer = 16.5;
 			%end;
 		  run;
 
