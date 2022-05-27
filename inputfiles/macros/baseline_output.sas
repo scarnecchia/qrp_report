@@ -118,11 +118,11 @@
         %end;
 
 		/* Select Footnotes */  
-		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
 		%let covnotinpsorer = 19;
 		/*need to reorder the footnotes when there is  covnotinps */
 		/* L2 covnotinps specified */
 		%if %length(&covnotinps.) > 0 %then %do; 
+		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
 		  data _footnotes;
 		    length order 4;
 			format order 4.2;
