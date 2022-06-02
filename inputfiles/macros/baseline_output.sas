@@ -118,9 +118,9 @@
         %end;
 
 		/* Select Footnotes */  
-
-		%let covnotinpsorer = 19;
-		/*need to reorder the footnotes when there is  covnotinps */
+		%let covnotinpsorder = 19;
+		/*need to reorder the footnotes when covnotinps is populated because 
+		  footnote plaacement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
 		%if %length(&covnotinps.) > 0 %then %do; 
 		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
@@ -131,40 +131,40 @@
             /*age*/
             %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
               if order = 19 then order = 14.4;
-			  %let covnotinpsorer = 14.4;
+			  %let covnotinpsorder = 14.4;
 			%end;
 		    /*sex*/
-            %if %index(%trim(&covnotinps_no.), SEX) > 0 and &covnotinpsorer. = 19  %then %do;
+            %else %if %index(%trim(&covnotinps_no.), SEX) > 0 %then %do;
               if order = 19  then order = 14.5;
-			  %let covnotinpsorer = 14.5;
+			  %let covnotinpsorder = 14.5;
 			%end;
 		    /*race*/
-            %if %index(%trim(&covnotinps_no.), RACE) > 0 and &covnotinpsorer. = 19 %then %do;
+            %else %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
               if order = 19  then do; 
                 order = 16.5; 
-                %let covnotinpsorer = 16.5;
+                %let covnotinpsorder = 16.5;
 			  end;
 			%end;
     	    /*hispanic*/
-            %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 and &covnotinpsorer. = 19 %then %do;
+            %else %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
 			 if order =19  then do; 
                 order = 16.6; 
-                %let covnotinpsorer = 16.6;
+                %let covnotinpsorder = 16.6;
 			  end;
 			%end;
 		    /*year*/
-			%if %index(%trim(&covnotinps_no.), YEAR) > 0 and &covnotinpsorer. = 19 %then %do;
+			%else %if %index(%trim(&covnotinps_no.), YEAR) > 0 %then %do;
              if order =19  then do; 
                 order = 16.7; 
-                %let covnotinpsorer = 16.7;
+                %let covnotinpsorder = 16.7;
 			  end;
 			%end;
 
-		    /*gestitional age*/
-			%if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 and &covnotinpsorer. = 19 %then %do;
+		    /*gestational age*/
+			%else %if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 %then %do;
               if order =19  then do; 
                 order = 16.8; 
-                %let covnotinpsorer = 16.8;
+                %let covnotinpsorder = 16.8;
 			  end;
 			%end;
 		  run;
@@ -179,7 +179,7 @@
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 		   %if %length(&covnotinps.) > 0 %then %do; 
-		     set _footnotes (where =  ((type = "baseline" and order in (14 &covnotinpsorer. 15
+		     set _footnotes (where =  ((type = "baseline" and order in (14 &covnotinpsorder. 15
 		   %end;
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
@@ -260,8 +260,10 @@
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
-		%assign_superscripts(type =comorbidscore, order =18 &covnotinpsorer.);
-		%assign_superscripts(type =covar, order =&covnotinpsorer.);
+		%assign_superscripts(type =comorbidscore, order =18 
+          %if &comorbidscore = N and %index(%trim(&covnotinps_no.), comorbidscore) > 0 %then %do;
+            &covnotinpsorder. %end;);
+		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -367,8 +369,8 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
-			  %if %str(&covnotinps.) ne %str("") %then %do;
-                if metvar in (&covnotinps) then label = catt(label, "&super_covar.");
+			  %if %length(&covnotinps.) > 0 %then %do;
+                if metvar in (&covnotinps.) then label = catt(label, "&super_covar.");
               %end;
 
               /*assign unknown race footnote*/
