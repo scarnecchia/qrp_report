@@ -128,6 +128,15 @@
 		    length order 8;
 			format order 4.2;
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
+			/*birth_enroll or enroll_diff*/
+            %if %index(%trim(&covnotinps_no.), birth_enroll) > 0  %then %do;
+              if order = 19 then order = 14.2;
+			  %let covnotinpsorder = 14.2;
+			%end;
+			%if %index(%trim(&covnotinps_no.), enroll_diff) > 0  %then %do;
+              if order = 19 then order = 14.3;
+			  %let covnotinpsorder = 14.3;
+			%end;
             /*age*/
             %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
               if order = 19 then order = 14.4;
@@ -141,30 +150,49 @@
 		    /*race*/
             %else %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
               if order = 19  then do; 
-                order = 16.5; 
-                %let covnotinpsorder = 16.5;
+                order = 16.3; 
+                %let covnotinpsorder = 16.3;
 			  end;
 			%end;
     	    /*hispanic*/
             %else %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
 			 if order =19  then do; 
-                order = 16.6; 
-                %let covnotinpsorder = 16.6;
+                order = 16.4; 
+                %let covnotinpsorder = 16.4;
 			  end;
 			%end;
 		    /*year*/
 			%else %if %index(%trim(&covnotinps_no.), YEAR) > 0 %then %do;
              if order =19  then do; 
-                order = 16.7; 
-                %let covnotinpsorder = 16.7;
+                order = 16.5; 
+                %let covnotinpsorder = 16.5;
+			  end;
+			%end;
+			/*prepostind*/
+			%else %if %index(%trim(&covnotinps_no.), PREPOSTIND) > 0 %then %do;
+             if order =19  then do; 
+                order = 16.6; 
+                %let covnotinpsorder = 16.6;
 			  end;
 			%end;
 
 		    /*gestational age*/
-			%else %if %index(%trim(&covnotinps_no.), GA_BIRTH) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps_no.), GA_) > 0 %then %do;
+              if order =19  then do; 
+                order = 16.7; 
+                %let covnotinpsorder = 16.7;
+			  end;
+			%end;
+			%else %if %index(%trim(&covnotinps_no.), ADJUSTEDDISP_) > 0 %then %do;
               if order =19  then do; 
                 order = 16.8; 
                 %let covnotinpsorder = 16.8;
+			  end;
+			%end;
+			%else %if %index(%trim(&covnotinps_no.), EXP_) > 0 %then %do;
+              if order =19  then do; 
+                order = 16.9; 
+                %let covnotinpsorder = 16.9;
 			  end;
 			%end;
 		  run;
@@ -261,7 +289,7 @@
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18 
-          %if &comorbidscore = N and %index(%trim(&covnotinps_no.), comorbidscore) > 0 %then %do;
+          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), comorbidscore) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		
