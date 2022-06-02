@@ -129,11 +129,11 @@
 			format order 4.2;
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
 			/*birth_enroll or enroll_diff*/
-            %if %index(%trim(&covnotinps_no.), birth_enroll) > 0  %then %do;
+            %if %index(%trim(&covnotinps_no.), BIRTH_ENROLL) > 0  %then %do;
               if order = 19 then order = 14.2;
 			  %let covnotinpsorder = 14.2;
 			%end;
-			%else %if %index(%trim(&covnotinps_no.), enroll_diff) > 0  %then %do;
+			%else %if %index(%trim(&covnotinps_no.), ENROLL_DIFF) > 0  %then %do;
               if order = 19 then order = 14.3;
 			  %let covnotinpsorder = 14.3;
 			%end;
@@ -289,7 +289,7 @@
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18 
-          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), comorbidscore) > 0 %then %do;
+          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), COMORBIDSCORE) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		
@@ -394,12 +394,14 @@
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
+              %if %length(&covnotinps.) > 0 %then %do;
+			    /*Comborbidscore already included in &super_comorbidscore*/
+                else if metvar in (&covnotinps.) and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
+              %end;
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
-			  %if %length(&covnotinps.) > 0 %then %do;
-                if metvar in (&covnotinps.) then label = catt(label, "&super_covar.");
-              %end;
+			  
 
               /*assign unknown race footnote*/
               %if &collapse_vars. = race %then %do;
