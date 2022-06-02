@@ -133,12 +133,12 @@
               if order = 19 then order = 14.2;
 			  %let covnotinpsorder = 14.2;
 			%end;
-			%if %index(%trim(&covnotinps_no.), enroll_diff) > 0  %then %do;
+			%else %if %index(%trim(&covnotinps_no.), enroll_diff) > 0  %then %do;
               if order = 19 then order = 14.3;
 			  %let covnotinpsorder = 14.3;
 			%end;
             /*age*/
-            %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
+            %else %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
               if order = 19 then order = 14.4;
 			  %let covnotinpsorder = 14.4;
 			%end;
