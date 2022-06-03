@@ -82,7 +82,22 @@
             from _temp_baseline_tablenames;
             select count(distinct baselinetablename) into: num_unique_baseline_tables
             from _temp_baseline_tablenames;
+            %let labcovars=;
+            select upper(labcharacteristics) into: labcovars separated by ','
+            from input.&baselinefile;
         quit;
+
+        %if %length(&labcovars) > 0 %then %do;
+        /* Expand lab covariates */
+        %baseline_expand_parameters(var=labcovars);
+        /* Remove commas from the list */
+        %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
+        /* Remove quotes from the list */
+        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
+        /* Remove duplicate covar values from list */
+        %nonrep(invar=labcovars, outvar=labcharacteristics);
+        %end;
+
         %put Extracting baseline tables: &baselinetables.;
 
         /*Loop through each baseline table, import, stack groups*/
@@ -108,6 +123,12 @@
                      , y.runid
                      , y.order
                      , y.cohort
+                    %if %length(&labcharacteristics) > 0 %then %do;
+                        %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
+                        %let labvar = %scan(&labcharacteristics,&labvars);
+                        , n_episodes - &labvar as &labvar._notestrecord label="No test record"
+                        %end;
+                    %end;
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;

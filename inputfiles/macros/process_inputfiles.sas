@@ -1915,7 +1915,9 @@
                 select distinct covarnum, 
                                 strip(studyname) as studyname, 
                                 "&runid" as runid length=5, 
-                                cats('covar',covarnum) as cov_varname length=8
+                                cats('covar',covarnum) as cov_varname length=8,
+                                codetype,
+                                codecat
                 from infolder.&&&runid._covariatecodes.;
 
                 select length

@@ -105,7 +105,9 @@
                 if missing(medproduse) then call symputx('medproduse', 'missing');
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
-                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                if missing(labcharacteristics) then call symputx('labcharacteristics','missing');
+                else call symputx('labcharacteristics',upcase(labcharacteristics));				
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
@@ -1368,6 +1370,7 @@
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
+        %baseline_expand_parameters(var =labcharacteristics);
         %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
         %baseline_expand_parameters(var =pregnancychar);
         %baseline_expand_parameters(var =exposurechar);
@@ -1376,12 +1379,26 @@
         %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
         ***********************************************************************************************;
-        * Derive labels for covariates              
+        * Derive labels for covariates      
         ***********************************************************************************************;
 
         %isdata(dataset=covarname);
         %if %eval(&nobs.>0) %then %do;
 			%let includecovars = Y;
+
+            /* Check whether labcharacteristics parameter contains non-lab codes */
+            %if %quote(&labcharacteristics) ^= "missing" %then %do;
+            data _null_;
+                set covarname(where=(codecat^='LB'));
+                %do labcovarnum = 1 %to %sysfunc(countw(%quote(&labcharacteristics)));
+                    %let labcovar = %scan(%quote(&labcharacteristics),&labcovarnum);
+                    if upcase(cov_varname) = &labcovar then do;
+                        put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
+                        put cov_varname= codecat= codetype=;
+                    end;
+                %end;
+            run;            
+            %end;
 
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;
