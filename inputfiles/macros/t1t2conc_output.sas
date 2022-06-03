@@ -96,6 +96,11 @@
     %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
 	%assign_superscripts(type=raceunknown, order = 9);
 
+    /*clean up*/
+    proc datasets nowarn noprint lib=work;
+        delete _footnotes;
+    quit;
+
     /*Save dataset to repdata folder and create newcategory variable if >=2 stratification variables. 
       this variable is used as a computed header in the proc report*/
 
