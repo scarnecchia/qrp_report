@@ -100,7 +100,7 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)
-							  %if &reporttype=T2L2 or &reporttype=T2L4 %then %do;
+							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
 							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 							  %end;));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
@@ -119,6 +119,7 @@
 
 		/* Select Footnotes */  
 		%let covnotinpsorder = 19;
+		%let covnotinps_no =;
 		/*need to reorder the footnotes when covnotinps is populated because 
 		  footnote plaacement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
@@ -200,7 +201,6 @@
 		  proc sort data = _footnotes;
 		    by order;
 		  run;
-
         %end;
 
 		data _footnotes;
@@ -392,7 +392,15 @@
 
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
+			  %if %length(&covnotinps.) > 0 %then %do;
+			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
+                  then label = "Gestational age&super_gestage. at delivery&super_covar.";
+			  %end;
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
+			  %if %length(&covnotinps.) > 0 %then %do;
+			    else if metvar in (&covnotinps.) and metvar eq 'GA_FIRST' and label = "Gestational age of first exposure (weeks)"
+                  then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
+			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
               %if %length(&covnotinps.) > 0 %then %do;
 			    /*Comborbidscore already included in &super_comorbidscore*/
