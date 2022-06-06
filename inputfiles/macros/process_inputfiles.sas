@@ -1916,7 +1916,8 @@
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
 
 /***************************************************************************************************
-*  Create stacked dataset containing covariate labels for all runs                                              
+*  Create stacked dataset containing covariate labels for all runs          
+*  Check stacked dataset for non-lab covariates that were specified as lab covariates                                    
 ***************************************************************************************************/
     /*loop through each runID, create datasets covarname_&runid.*/
     %do r = 1 %to %eval(&numrunid.);
