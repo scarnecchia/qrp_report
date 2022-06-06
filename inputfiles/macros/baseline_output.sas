@@ -100,7 +100,7 @@
 
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)
-							  %if &reporttype=T2L2 or &reporttype=T2L4 %then %do;
+							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
 							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 							  %end;));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
@@ -118,20 +118,110 @@
         %end;
 
 		/* Select Footnotes */  
-	     data _footnotes;
+		%let covnotinpsorder = 19;
+		%let covnotinps_no =;
+		/*need to reorder the footnotes when covnotinps is populated because 
+		  footnote plaacement is determined by METVAR values listed in the parameter*/
+		/* L2 covnotinps specified */
+		%if %length(&covnotinps.) > 0 %then %do; 
+		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
+		  data _footnotes;
+		    length order 8;
+			format order 4.2;
+		    set lookup.lookup_footnotes (where = (type = "baseline"));
+			/*birth_enroll or enroll_diff*/
+            %if %index(%trim(&covnotinps_no.), BIRTH_ENROLL) > 0  %then %do;
+              if order = 19 then order = 14.2;
+			  %let covnotinpsorder = 14.2;
+			%end;
+			%else %if %index(%trim(&covnotinps_no.), ENROLL_DIFF) > 0  %then %do;
+              if order = 19 then order = 14.3;
+			  %let covnotinpsorder = 14.3;
+			%end;
+            /*age*/
+            %else %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
+              if order = 19 then order = 14.4;
+			  %let covnotinpsorder = 14.4;
+			%end;
+		    /*sex*/
+            %else %if %index(%trim(&covnotinps_no.), SEX) > 0 %then %do;
+              if order = 19  then order = 14.5;
+			  %let covnotinpsorder = 14.5;
+			%end;
+		    /*race*/
+            %else %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
+              if order = 19  then do; 
+                order = 16.3; 
+                %let covnotinpsorder = 16.3;
+			  end;
+			%end;
+    	    /*hispanic*/
+            %else %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
+			 if order =19  then do; 
+                order = 16.4; 
+                %let covnotinpsorder = 16.4;
+			  end;
+			%end;
+		    /*year*/
+			%else %if %index(%trim(&covnotinps_no.), YEAR) > 0 %then %do;
+             if order =19  then do; 
+                order = 16.5; 
+                %let covnotinpsorder = 16.5;
+			  end;
+			%end;
+			/*prepostind*/
+			%else %if %index(%trim(&covnotinps_no.), PREPOSTIND) > 0 %then %do;
+             if order =19  then do; 
+                order = 16.6; 
+                %let covnotinpsorder = 16.6;
+			  end;
+			%end;
+
+		    /*gestational age*/
+			%else %if %index(%trim(&covnotinps_no.), GA_) > 0 %then %do;
+              if order =19  then do; 
+                order = 17.5; 
+                %let covnotinpsorder = 17.5;
+			  end;
+			%end;
+			%else %if %index(%trim(&covnotinps_no.), ADJUSTEDDISP_) > 0 %then %do;
+              if order =19  then do; 
+                order = 17.6; 
+                %let covnotinpsorder = 17.6;
+			  end;
+			%end;
+			%else %if %index(%trim(&covnotinps_no.), EXP_) > 0 %then %do;
+              if order =19  then do; 
+                order = 17.7; 
+                %let covnotinpsorder = 17.7;
+			  end;
+			%end;
+		  run;
+
+		  proc sort data = _footnotes;
+		    by order;
+		  run;
+        %end;
+
+		data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-	       set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15
-           /* if race is collapsed in table*/
-            %if &collapse_vars. = race %then %do; 16 %end;
+		   %if %length(&covnotinps.) > 0 %then %do; 
+		     set _footnotes (where =  ((type = "baseline" and order in (14 &covnotinpsorder. 15
+		   %end;
+		   %else %do;
+	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
+		   %end;
+		   /* T4 L1 or L2 gestational age specified*/
+		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
+		   /* if race is collapsed in table*/
+           %if &collapse_vars. = race %then %do; 16 %end; 
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
 		   %if ((%str("&reporttype") = %str("T1") | %str("&reporttype") = %str("T2L1") | %str("&reporttype") = %str("T6")) and %sysfunc(prxmatch(m/02|03/i,&cohortdef.))) > 0 
 		       | (%str("&reporttype") = %str("T4L1") and %str("&cohort.") ne %str("mi")) %then %do; 1 %end;
 		   /* Sdthreshold greater than 0 */
 		   %if &sdthreshold. > 0 %then %do; 2 %end;
 		   %if %index(&reporttype,L2) %then %do;
-		   /* L2 baselinerowitalics specified */
-		     %if %length(&baselinerowitalics.) > 0 %then %do; 3 %end;
 		   /* L2 weighted table for PS stratification where weight is ATE */
 		     %if &psfile. = stratificationfile and %index(&weight.,Weighted) > 0 %then %do;
 			   %if "&weightscheme." = "ATE" %then %do; 4 %end;
@@ -160,8 +250,6 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* T4 L1 or L2 gestational age specified*/
-		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
 		   ))
@@ -188,18 +276,22 @@
 		  from _footnotes
 		  order by order;
 		quit;
-        
+
+ 
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =title, order =-2 -1);
-		%assign_superscripts(type =character, order =1 2 3 4 5 6 7 8 9 10 11);
-		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18);
+		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11 );
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18 );
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
-		%assign_superscripts(type =race, order =15);
+        %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
-		%assign_superscripts(type =comorbidscore, order =18);
+		%assign_superscripts(type =comorbidscore, order =18 
+          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), COMORBIDSCORE) > 0 %then %do;
+            &covnotinpsorder. %end;);
+		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -297,25 +389,33 @@
 
             /*Indent demographic header lines*/
             compute label;
-			  if index(label,'Race') > 0 then label = catt(label,"&super_race.");
+
+              if index(label,'Race') > 0 then label = catt(label,"&super_race.");
 			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
+			  %if %length(&covnotinps.) > 0 %then %do;
+			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
+                  then label = "Gestational age&super_gestage. at delivery&super_covar.";
+			  %end;
 			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
+			  %if %length(&covnotinps.) > 0 %then %do;
+			    else if metvar in (&covnotinps.) and metvar eq 'GA_FIRST' and label = "Gestational age of first exposure (weeks)"
+                  then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
+			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
+              %if %length(&covnotinps.) > 0 %then %do;
+			    /*Comborbidscore already included in &super_comorbidscore*/
+                else if metvar in (&covnotinps.) and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
+              %end;
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+			  
 
               /*assign unknown race footnote*/
               %if &collapse_vars. = race %then %do;
                  if metvar = 'RACE_0' then label = catt(label,"&super_unknownrace.");
               %end;
 
-			  /*Italicize covariates*/
-	          %if %length(&baselinerowitalics.) > 0 %then %do;             
-              if upcase(metvar) in (&baselinerowitalics.) then do;
-                call define(_row_,'style','style={fontstyle=italic}');					
-              end;
-        	  %end;
             endcomp;
 
 			/*Change font color to blue if abs(SD) > threshold value*/
@@ -323,17 +423,7 @@
             compute sd&dpnum._char;
                 if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
                     if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
-                        %if %str(&baselinerowitalics) ne %str() %then %do;
-                            if upcase(metvar) in (&baselinerowitalics.) then do;
-                                call define(_row_,'style','style={fontstyle=italic foreground=blue}');
-                            end;
-                            else do;
-                                call define(_row_,'style','style={foreground=blue}');
-                            end;
-                        %end;
-                        %else %do;
-                            call define(_row_,'style','style={foreground=blue}');
-                        %end;
+                      call define(_row_,'style','style={foreground=blue}');
                     end;
                 end;
             endcomp;
@@ -379,7 +469,7 @@
         %let includecomp = N;
         %let computebalance =N;
         %let maxswitch = 0;
-        %let baselinerowitalics = ;
+        %let covnotinps = ;
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
@@ -420,7 +510,7 @@
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);	
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
-                if missing(baselinerowitalics)=0 then call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+                if missing(covnotinps)=0 then call symputx('covnotinps', strip(upcase(covnotinps)));
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
@@ -504,14 +594,14 @@
             run;
             %end;
 
-			/*Defensive check for sdthreshold and baselinerowitalics parameters*/
+			/*Defensive check for sdthreshold and covnotinps parameters*/
 			%if %eval(&unique_psestimate.) ne 1 %then %do;
 				proc sql noprint;
 				create table baseline_unique_check as
 				select a.analysisgrp,
 					   a.psestimategrp,
 					   a.sdthreshold,
-					   a.baselinerowitalics
+					   a.covnotinps
 				from baselinefile as a
 				left join pscs_masterinputs as b
 				on a.analysisgrp = b.analysisgrp and
@@ -525,14 +615,14 @@
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 
-				select count (distinct baselinerowitalics) into :baselinerowitalics_count trimmed
+				select count (distinct covnotinps) into :covnotinps_count trimmed
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 				quit;
 
-				%if %eval(&sdthreshold_count. > 1) or %eval(&baselinerowitalics_count. > 1) %then %do;
-					%put WARNING: (Sentinel) SDTHRESHOLD or BASELINEROWITALICS value differs across analyses that share the same psestimategrp.;
-					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &baselinerowitalics_count BASELINEROWITALICS distinct value(s);
+				%if %eval(&sdthreshold_count. > 1) or %eval(&covnotinps_count. > 1) %then %do;
+					%put WARNING: (Sentinel) SDTHRESHOLD or covnotinps value differs across analyses that share the same psestimategrp.;
+					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &covnotinps_count covnotinps distinct value(s);
 					
 					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
 					data _null_;
@@ -540,7 +630,7 @@
 					if _N_=1;
 					if missing(sdthreshold) then call symputx('sdthreshold', '');
 	                else call symputx('sdthreshold', sdthreshold);
-					call symputx('baselinerowitalics', strip(upcase(baselinerowitalics)));
+					call symputx('covnotinps', strip(upcase(covnotinps)));
 					run;
 				%end;
 			%end;
@@ -562,9 +652,9 @@
             run;
         %end;
 
-		%if %length(&baselinerowitalics.) > 0 %then %do;
-			%create_comma_charlist(inlist=&baselinerowitalics., outlist=baselinerowitalics1);
-            %let baselinerowitalics = &baselinerowitalics1.;
+		%if %length(&covnotinps.) > 0 %then %do;
+			%create_comma_charlist(inlist=&covnotinps., outlist=covnotinps1);
+            %let covnotinps = &covnotinps1.;
 		%end;
 
         /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
