@@ -611,7 +611,7 @@
                         drop i;
                         %end;
 
-                        drop n_episodes: n_patients:;
+                        drop n_episodes: n_patients: %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do; n_covar: %end;;
                     run;
 
                     /*use set to avoid missing var warnings*/
