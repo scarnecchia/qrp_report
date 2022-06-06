@@ -371,79 +371,51 @@
                         %let totallabunits = %sysfunc(countw(&labunitcovars));
                     %end;
 
+                    /* Assigns and extracts various rows from _temp_mean_count */
+                    %macro assigndataset(wherevalue=, var=, varname=, group=);
+                                _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                                where=(order=&b. and &wherevalue &group &switch_where )
+                                /*rename dp to &varname._&var*/
+                                %do d =1 %to %eval(&num_dp.);
+                                rename=dp&d.=&varname._&var.&d.
+                                %end; )
+                    %mend assigndataset;
+
 					/*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
                     data _temp_totalcounts&b.&switch.; 
                         merge /*EOI*/
-                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                where=(order=&b. and metvar in ('N_EPISODES') &group1where. &switch_where )
-                                /*rename dp to n_episodes_exp*/
-                                %do d =1 %to %eval(&num_dp.);
-                                rename=dp&d.=n_episodes_exp&d.
-                                %end; )
-                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                              where=(order=&b. and metvar in ('PATIENT') &group1where. &switch_where)
-                               /*rename dp to n_patients_exp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_patients_exp&d.
-                               %end; )
+                            %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=exp, varname=n_episodes, group=&group1where)
+                            %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=exp, varname=n_patients, group=&group1where)
+
                             /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
                             %if &totallabcovar > 0 %then %do;
                                 %do labcount = 1 %to &totallabcovar;
                                     %let lab = %scan(&labcharacteristics,&labcount);
-                                _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                  where=(order=&b. and upcase(metvar) = "&lab" &group1where. &switch_where)
-                                   /*rename dp to n_covar[n]_exp*/
-                                   %do d =1 %to %eval(&num_dp.);
-                                   rename=dp&d.=n_covar&labcount._exp&d.
-                                   %end; )
+                                    %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=exp, varname=n_covar&labcount, group=&group1where)
                                 %end;
 
                                 /* Loop through unique number of lab covariates with units for numeric labs */
                                 %do labunitcount = 1 %to &totallabunits;
                                     %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                    _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                      where=(order=&b. and index(metvar,"&labunitvar")  &group1where. &switch_where)
-                                      /*rename dp to n_covar[n]unit_exp*/
-                                       %do d =1 %to %eval(&num_dp.);
-                                       rename=dp&d.=&labunitvar._exp&d.
-                                       %end; )
+                                    %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=exp, varname=&labunitvar, group=&group1where)
                                 %end;
                             %end; /* totallabcovar > 0 */
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where. ) 
-                               /*rename dp to n_episodes_comp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_episodes_comp&d.
-                               %end; )
-                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                where=(order=&b. and metvar in ('PATIENT') &group2where. )
-                               /*rename dp to n_patients_comp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_patients_comp&d.
-                               %end; )
+                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where);
+                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where);
+
                             /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
                                %if &totallabcovar > 0 %then %do;
                                     %do labcount = 1 %to &totallabcovar;
                                         %let lab = %scan(&labcharacteristics,&labcount);
-                                    _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                      where=(order=&b. and upcase(metvar) = "&lab" &group1where. &switch_where)
-                                       /*rename dp to n_covar[n]_comp*/
-                                       %do d =1 %to %eval(&num_dp.);
-                                       rename=dp&d.=n_covar&labcount._comp&d.
-                                       %end; )
+                                        %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=comp, varname=n_covar&labcount, group=&group2where)
                                     %end;
                                     /* Loop through unique number of lab covariates with units for numeric labs */
                                     %do labunitcount = 1 %to &totallabunits;
                                         %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                    _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                      where=(order=&b. and index(metvar,"&labunitvar")) &group1where. &switch_where)
-                                      /*rename dp to n_covar[n]unit_exp*/
-                                       %do d =1 %to %eval(&num_dp.);
-                                       rename=dp&d.=&labunitvar._comp&d.
-                                       %end; )
+                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=exp, varname=&labunitvar, group=&group2where)
                                     %end;
                                 %end; /* totallabcovar > 0 */
                             %end;

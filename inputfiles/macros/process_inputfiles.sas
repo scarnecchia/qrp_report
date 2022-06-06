@@ -1482,7 +1482,8 @@
     %put datasetlist = &datasetlist;
 
 /***************************************************************************************************
-*   BASELINEGROUPNUM parameter check - ensure valid parameter combinations are used                                           
+*   BASELINEGROUPNUM parameter check - ensure valid parameter combinations are used    
+*   LABCHARACTERISTICS parameter check - if lab covariates specified, process list                                       
 ***************************************************************************************************/
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
@@ -1494,7 +1495,23 @@
             select count(distinct order)
             into :numorder 
             from input.&baselinefile;
+
+            /* Check if lab covariates specified */
+            %let labcovars=;
+            select upper(labcharacteristics) into: labcovars separated by ','
+            from input.&baselinefile;
         quit;
+
+        %if %length(&labcovars) > 0 %then %do;
+        /* Expand lab covariates */
+        %baseline_expand_parameters(var=labcovars);
+        /* Remove commas from the list */
+        %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
+        /* Remove quotes from the list */
+        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
+        /* Remove duplicate covar values from list */
+        %nonrep(invar=labcovars, outvar=labcharacteristics);
+        %end;
 
         %do m = 1 %to &numorder;
         data _null_;
