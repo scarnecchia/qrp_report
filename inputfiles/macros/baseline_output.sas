@@ -180,20 +180,20 @@
 		    /*gestational age*/
 			%else %if %index(%trim(&covnotinps_no.), GA_) > 0 %then %do;
               if order =19  then do; 
-                order = 16.7; 
-                %let covnotinpsorder = 16.7;
+                order = 17.5; 
+                %let covnotinpsorder = 17.5;
 			  end;
 			%end;
 			%else %if %index(%trim(&covnotinps_no.), ADJUSTEDDISP_) > 0 %then %do;
               if order =19  then do; 
-                order = 16.8; 
-                %let covnotinpsorder = 16.8;
+                order = 17.6; 
+                %let covnotinpsorder = 17.6;
 			  end;
 			%end;
 			%else %if %index(%trim(&covnotinps_no.), EXP_) > 0 %then %do;
               if order =19  then do; 
-                order = 16.9; 
-                %let covnotinpsorder = 16.9;
+                order = 17.7; 
+                %let covnotinpsorder = 17.7;
 			  end;
 			%end;
 		  run;
