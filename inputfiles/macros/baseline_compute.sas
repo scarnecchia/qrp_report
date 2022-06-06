@@ -1386,20 +1386,6 @@
         %if %eval(&nobs.>0) %then %do;
 			%let includecovars = Y;
 
-            /* Check whether labcharacteristics parameter contains non-lab codes */
-            %if %quote(&labcharacteristics) ^= "missing" %then %do;
-            data _null_;
-                set covarname(where=(codecat^='LB'));
-                %do labcovarnum = 1 %to %sysfunc(countw(%quote(&labcharacteristics)));
-                    %let labcovar = %scan(%quote(&labcharacteristics),&labcovarnum);
-                    if upcase(cov_varname) = &labcovar then do;
-                        put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
-                        put cov_varname= codecat= codetype=;
-                    end;
-                %end;
-            run;            
-            %end;
-
             /*if covarsort = A, then alphabetize by covarlabel*/
             %if %str("&covarsort") = %str("A") %then %do;
             proc sort data=covarname sortseq=linguistic (numeric_collation=on);

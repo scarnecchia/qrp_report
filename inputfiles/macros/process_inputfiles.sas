@@ -1499,7 +1499,7 @@
             /* Check if lab covariates specified */
             %let labcovars=;
             select upper(labcharacteristics) into: labcovars separated by ','
-            from input.&baselinefile;
+            from input.&baselinefile(where=(not missing(labcharacteristics)));
         quit;
 
         %if %length(&labcovars) > 0 %then %do;
@@ -1508,7 +1508,7 @@
         /* Remove commas from the list */
         %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
         /* Remove quotes from the list */
-        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
+        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%"),%str( )));
         /* Remove duplicate covar values from list */
         %nonrep(invar=labcovars, outvar=labcharacteristics);
         %end;
@@ -1962,6 +1962,21 @@
 
         %end;
     %end;    
+
+    /* Check whether labcharacteristics parameter contains non-lab codes */
+    %isdata(dataset=covarname);
+    %if %length(&labcovars) > 0 and &nobs > 0 %then %do;
+        data _null_;
+            set covarname(where=(codecat^='LB'));
+            %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
+                %let labcovar = %scan(&labcharacteristics,&labcovarnum);
+                if upcase(cov_varname) = "&labcovar" then do;
+                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
+                    put cov_varname= codecat= codetype=;
+                end;
+            %end;
+        run;            
+    %end;
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 

@@ -368,7 +368,8 @@
                             ;
                         quit;
                         /* Count up the unique number of lab covariates with units to loop through later */
-                        %let totallabunits = %sysfunc(countw(&labunitcovars));
+                        %if %length(&labunitcovars) > 0 %then %let totallabunits = %sysfunc(countw(&labunitcovars));
+                        %else %let totallabunits = 0;
                     %end;
 
                     /* Assigns and extracts various rows from _temp_mean_count */
