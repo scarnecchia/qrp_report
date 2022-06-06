@@ -1508,7 +1508,7 @@
         /* Remove commas from the list */
         %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
         /* Remove quotes from the list */
-        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%"),%str( )));
+        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
         /* Remove duplicate covar values from list */
         %nonrep(invar=labcovars, outvar=labcharacteristics);
         %end;
@@ -1977,12 +1977,12 @@
                     put cov_varname= codecat= codetype=;
                 end;
             %end;
-        run;
-
-        proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
-            by runid covarnum;
-        run;          
+        run;        
     %end;
+
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+        by runid covarnum;
+    run;  
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
