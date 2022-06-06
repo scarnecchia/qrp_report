@@ -350,10 +350,11 @@
                     run;
 
                     %let totallabcovar = 0;
+                    %let labunitcovars=;
+                    %let checklabvars=;
                     %if %length(&labcharacteristics) > 0 %then %do;
                         /* Count the number of lab covariates requested in LABCHARACTERISTICS parameter */
                         %let totallabcovar = %sysfunc(countw(&labcharacteristics));
-                        %let labunitcovars=;
                         /* Find and match all the lab unit related lab covariates, put in list */
                         proc sql noprint;
                             select distinct metvar 
@@ -368,7 +369,6 @@
                             ;
 
                             /* Check if data actually has lab variables */
-                            %let checklabvars = ;
                             select distinct metvar 
                             into :checklabvars separated by ' '
                             from _temp_mean_count
