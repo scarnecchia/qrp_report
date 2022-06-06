@@ -145,7 +145,7 @@
     /* baseline label covariate stratifications */
     %global includecovars baselinelabellength;
     %let includecovars = N;
-    %let baselinelabellength = 70;
+    %let baselinelabellength = 80;
 
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
