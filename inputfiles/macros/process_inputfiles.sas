@@ -1975,7 +1975,11 @@
                     put cov_varname= codecat= codetype=;
                 end;
             %end;
-        run;            
+        run;
+
+        proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+            by runid covarnum;
+        run;          
     %end;
 
     /*Delete temporary dataset*/
