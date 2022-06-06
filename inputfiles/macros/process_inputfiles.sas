@@ -1488,7 +1488,7 @@
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
         %let chk_baselinegroupnum = ;
-        %let chk_baselinerowitalics=;
+        %let chk_covnotinps=;
 
         /* Check whether order values are the same across different run IDs */
         proc sql noprint;
@@ -1533,7 +1533,7 @@
              abort;
            end;
            if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
-           if not missing(baselinerowitalics) then call symputx('chk_baselinerowitalics', baselinerowitalics);
+           if not missing(covnotinps) then call symputx('chk_covnotinps', covnotinps);
         run;
         %end; /* m */
         
@@ -1543,9 +1543,9 @@
          %abort;
         %end;
 
-        /* Check if baselinerowitalics has been specifed for L1 requests*/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_baselinerowitalics) > 0 %then %do;
-         %put WARNING: (Sentinel) BASELINEROWITALICS is not relevant for REPORTTYPE = &reporttype.. No covariates will be italicized in the Baseline Characteristics table.;
+        /* Check if covnotinps has been specifed for L1 requests*/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covnotinps) > 0 %then %do;
+         %put WARNING: (Sentinel) covnotinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
         %end;
 
      %end; /* baselinefile */
@@ -1945,7 +1945,7 @@
 
             /* Need to set maximum studyname length across all runs */
             %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
-            %if %eval(&baselinelabellength. <70) %then %let baselinelabellength = 70;
+            %if %eval(&baselinelabellength. <80) %then %let baselinelabellength = 80;
 
 			%if %sysfunc(exist(covarname))=0 %then %do;
                 data covarname;
