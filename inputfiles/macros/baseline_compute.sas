@@ -546,7 +546,7 @@
 
             data &dataout.&suffix.; 
 			    missing R;
-                length metvar $30;
+                length metvar $32;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
 							 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 							    and subgroup="&subgroup." and subgroupcat="&subgroupcat."
@@ -1394,7 +1394,7 @@
             %end;
 
             data covarname_baseline; 
-                length MetVar $30 covarlabel $&baselinelabellength.;
+                length MetVar $32 covarlabel $&baselinelabellength.;
                 set covarname(where=(runid="&runid.")); 
                 %if %str("&covarsort") = %str("A") %then %do;
                 by studyname;
@@ -1427,7 +1427,7 @@
         %mend;
 
         data baseline_aggregatelabels;
-            length label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;

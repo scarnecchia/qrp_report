@@ -514,7 +514,7 @@
                                 %end;
                                 %do labunitcount = 1 %to &totallabunits;
                                     %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                else if index(metvar,"&labunitvar") and vartype='continuous' then do;
+                                else if index(metvar,"&labunitvar") and vartype='dichotomous' then do;
                                     &var.var1(&var) = &labunitvar._&var.(&var);
                                     &var.var2(&var.) =&labunitvar._&var.(&var);
                                 end;
