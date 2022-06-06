@@ -1933,6 +1933,7 @@
                                 strip(studyname) as studyname, 
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
+                                codedays,
                                 codetype,
                                 codecat
                 from infolder.&&&runid._covariatecodes.;
@@ -1967,7 +1968,7 @@
     %isdata(dataset=covarname);
     %if %length(&labcovars) > 0 and &nobs > 0 %then %do;
         data _null_;
-            set covarname(where=(codecat^='LB'));
+            set covarname(where=(codecat^='LB' or codedays>1));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
                 %let labcovar = %scan(&labcharacteristics,&labcovarnum);
                 if upcase(cov_varname) = "&labcovar" then do;
