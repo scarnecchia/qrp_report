@@ -106,7 +106,7 @@
             /*If lab covariates specified, create comma separated list to ensure they exist in data */
             %let checkbaselinelabvars=;
             %if %length(&labcharacteristics) > 0 %then %do;
-                proc contents data = &infile out=_labvarsname(keep=name);
+                proc contents data = &infile noprint out=_labvarsname(keep=name);
                 run;
 
                 %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
