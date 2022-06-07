@@ -400,7 +400,7 @@
                             %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
                                 %do labcount = 1 %to &totallabcovar;
                                     %let lab = %scan(&labcharacteristics,&labcount);
-                                    %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=exp, varname=n_covar&labcount, group=&group1where)
+                                    %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=exp, varname=n_&lab, group=&group1where)
                                 %end;
 
                                 /* Loop through unique number of lab covariates with units for numeric labs */
@@ -419,7 +419,7 @@
                                %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
                                     %do labcount = 1 %to &totallabcovar;
                                         %let lab = %scan(&labcharacteristics,&labcount);
-                                        %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=comp, varname=n_covar&labcount, group=&group2where)
+                                        %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=comp, varname=n_&lab, group=&group2where)
                                     %end;
                                     /* Loop through unique number of lab covariates with units for numeric labs */
                                     %do labunitcount = 1 %to &totallabunits;
@@ -481,7 +481,8 @@
                         /* Store results for lab covariates in array - one array for categorical, one for continuous */
                         %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
                             %do labcount = 1 %to &totallabcovar;
-                            array ncovar&labcount._&var.{&num_dp.} n_covar&labcount._&var.1-n_covar&labcount._&var.&num_dp.; 
+                                %let lab = %scan(&labcharacteristics,&labcount);
+                            array n&lab._&var.{&num_dp.} n_&lab._&var.1-n_&lab._&var.&num_dp.; 
                             %end;
                             %do labunitcount = 1 %to &totallabunits;
                                 %let labunitvar = %scan(&labunitcovars,&labunitcount);
@@ -506,18 +507,22 @@
                             /* Assign weights for lab covariates */
                             %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
                                 %do labcount = 1 %to &totallabcovar;
-                                        %let lab = %scan(&labcharacteristics,&labcount);
-                                else if index(metvar,cats("&lab","LBRES")) and vartype='dichotomous' then do; 
-                                    &var.var1(&var) = ncovar&labcount._&var.(&var);
-                                    &var.var2(&var.) = ncovar&labcount._&var.(&var);
-                                end;
+                                    %let lab = %scan(&labcharacteristics,&labcount);
+                                    else if index(metvar,cats("N_","&lab")) and vartype='dichotomous' then do; 
+                                        &var.var1(&var) = n&lab._&var.(&var);
+                                        &var.var2(&var.) = n&lab._&var.(&var);
+                                    end;
                                 %end;
+
+                                /* Extract the covar value and unit associated, store in separate macro variables */
                                 %do labunitcount = 1 %to &totallabunits;
                                     %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                else if index(metvar,"&labunitvar") and vartype='dichotomous' then do;
-                                    &var.var1(&var) = &labunitvar._&var.(&var);
-                                    &var.var2(&var.) =&labunitvar._&var.(&var);
-                                end;
+                                    %let labcovar = %scan(%sysfunc(prxchange(s/(LBUNIT).*//,-1,&labunitvar)),-1,%str(_));
+                                    %let labunit = %sysfunc(prxchange(s/^[^_]*_[^_]*_//,-1,&labunitvar));
+                                    else if metvar = cats("&labcovar","LBRES_","&labunit") and vartype='continuous' then do; 
+                                        &var.var1(&var) = &labunitvar._&var.(&var);
+                                        &var.var2(&var.) =&labunitvar._&var.(&var);
+                                    end;
                                 %end;
                             %end;
                             else do;

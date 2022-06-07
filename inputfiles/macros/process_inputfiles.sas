@@ -1511,6 +1511,27 @@
         %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
         /* Remove duplicate covar values from list */
         %nonrep(invar=labcovars, outvar=labcharacteristics);
+
+        /* sort covariates in ascending order */
+        data _tempcovars;
+            length tempcovar $20;
+            %do i = 1 %to %sysfunc(countw(&labcharacteristics));
+                %let tempcovar = %scan(&labcharacteristics,&i);
+            tempcovar="&tempcovar";
+            output;
+            %end;
+        run;
+
+        proc sort data = _tempcovars sortseq=linguistic(numeric_collation=on);
+            by tempcovar;
+        run;
+
+        proc sql noprint;
+            select tempcovar 
+            into :labcharacteristics separated by ' '
+            from _tempcovars;
+        quit;
+
         %end;
 
         %do m = 1 %to &numorder;
