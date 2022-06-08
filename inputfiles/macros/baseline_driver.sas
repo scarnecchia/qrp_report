@@ -353,6 +353,10 @@
                     %let labunitcovars=;
                     %let checklabvars=;
                     %if %length(&labcharacteristics) > 0 %then %do;
+                    /* Computations for lab covariates will only occur correctly for ones specified in
+                       the LABCHARACTERISTICS parameter. Other lab covariates will be carried through but 
+                       will not be included in final table 1 dataset */
+
                         /* Count the number of lab covariates requested in LABCHARACTERISTICS parameter */
                         %let totallabcovar = %sysfunc(countw(&labcharacteristics));
                         /* Find and match all the lab unit related lab covariates, put in list */
