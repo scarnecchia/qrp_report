@@ -508,7 +508,7 @@
                             %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
                                 %do labcount = 1 %to &totallabcovar;
                                     %let lab = %scan(&labcharacteristics,&labcount);
-                                    else if index(metvar,cats("N_","&lab")) and vartype='dichotomous' then do; 
+                                    else if prxmatch("/^N_&lab.$/",prxchange('s/(LBUNIT|LBRES).*//',-1,metvar)) and vartype='dichotomous' then do; 
                                         &var.var1(&var) = n&lab._&var.(&var);
                                         &var.var2(&var.) = n&lab._&var.(&var);
                                     end;
