@@ -266,12 +266,6 @@
         proc sort data=_temp_baseline_transposed;
             by analysisgrp group1 runid order cohort metvar &switch_s;
         run;
-
-        /* Set metvar to maximum # of characters for variable name */
-        data _temp_baseline_transposed;
-            length metvar $32;
-            set _temp_baseline_transposed;
-        run;
 		
 		/* Change case of metvar from n_episodes to N_episodes for baseline datasets that have 0 total N_episodes */
 		%if &total_episodes. = 0 %then %do;
@@ -294,6 +288,7 @@
         %end;
         %else %do;
             data &outdata.;
+                length metvar $32;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar &switch_s;
