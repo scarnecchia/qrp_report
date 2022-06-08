@@ -412,8 +412,8 @@
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where);
-                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where);
+                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where)
+                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where)
 
                             /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
                                %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
