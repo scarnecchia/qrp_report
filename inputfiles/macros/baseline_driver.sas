@@ -424,7 +424,7 @@
                                     /* Loop through unique number of lab covariates with units for numeric labs */
                                     %do labunitcount = 1 %to &totallabunits;
                                         %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=exp, varname=&labunitvar, group=&group2where)
+                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=comp, varname=&labunitvar, group=&group2where)
                                     %end;
                                 %end; /* totallabcovar > 0 */
                             %end;
