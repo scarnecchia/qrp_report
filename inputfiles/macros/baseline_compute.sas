@@ -105,7 +105,9 @@
                 if missing(medproduse) then call symputx('medproduse', 'missing');
                 else call symputx('medproduse', upcase(medproduse));
                 if missing(UtilizationIntensity) then call symputx('UtilizationIntensity', 'missing');
-                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));				
+                else call symputx('UtilizationIntensity', upcase(UtilizationIntensity));
+                if missing(labcharacteristics) then call symputx('labcharacteristics','missing');
+                else call symputx('labcharacteristics',upcase(labcharacteristics));				
 
                 /*type 4 pregnancy specific parameters*/
                 %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
@@ -544,7 +546,7 @@
 
             data &dataout.&suffix.; 
 			    missing R;
-                length metvar $30;
+                length metvar $32;
                 set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
 							 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 							    and subgroup="&subgroup." and subgroupcat="&subgroupcat."
@@ -1368,6 +1370,7 @@
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
+        %baseline_expand_parameters(var =labcharacteristics);
         %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
         %baseline_expand_parameters(var =pregnancychar);
         %baseline_expand_parameters(var =exposurechar);
@@ -1376,7 +1379,7 @@
         %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
         ***********************************************************************************************;
-        * Derive labels for covariates              
+        * Derive labels for covariates      
         ***********************************************************************************************;
 
         %isdata(dataset=covarname);
@@ -1391,7 +1394,7 @@
             %end;
 
             data covarname_baseline; 
-                length MetVar $30 covarlabel $&baselinelabellength.;
+                length MetVar $32 covarlabel $&baselinelabellength.;
                 set covarname(where=(runid="&runid.")); 
                 %if %str("&covarsort") = %str("A") %then %do;
                 by studyname;
@@ -1424,7 +1427,7 @@
         %mend;
 
         data baseline_aggregatelabels;
-            length label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;

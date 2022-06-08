@@ -83,6 +83,7 @@
             select count(distinct baselinetablename) into: num_unique_baseline_tables
             from _temp_baseline_tablenames;
         quit;
+
         %put Extracting baseline tables: &baselinetables.;
 
         /*Loop through each baseline table, import, stack groups*/
@@ -102,12 +103,35 @@
                 call symputx('mergevar', mergevar);
             run;
 
+            /*If lab covariates specified, create comma separated list to ensure they exist in data */
+            %let checkbaselinelabvars=;
+            %if %length(&labcharacteristics) > 0 %then %do;
+                proc contents data = &infile noprint out=_labvarsname(keep=name);
+                run;
+
+                %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+                
+                /* Check to see if specified lab covariates exist */
+                proc sql noprint;
+                select name 
+                into :checkbaselinelabvars 
+                from _labvarsname
+                where upper(name) in (&labcharscomma);
+                quit;
+            %end;
+
             proc sql noprint;
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
                      , y.order
                      , y.cohort
+                    %if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;
+                        %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
+                        %let labvar = %scan(&labcharacteristics,&labvars);
+                        , n_episodes - &labvar as &labvar._notestrecord label="No test record"
+                        %end;
+                    %end;
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;
@@ -264,6 +288,7 @@
         %end;
         %else %do;
             data &outdata.;
+                length metvar $32;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar &switch_s;

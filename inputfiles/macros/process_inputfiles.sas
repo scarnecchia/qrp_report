@@ -1482,7 +1482,8 @@
     %put datasetlist = &datasetlist;
 
 /***************************************************************************************************
-*   BASELINEGROUPNUM parameter check - ensure valid parameter combinations are used                                           
+*   BASELINEGROUPNUM parameter check - ensure valid parameter combinations are used    
+*   LABCHARACTERISTICS parameter check - if lab covariates specified, process list                                       
 ***************************************************************************************************/
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
@@ -1494,7 +1495,44 @@
             select count(distinct order)
             into :numorder 
             from input.&baselinefile;
+
+            /* Check if lab covariates specified */
+            %let labcovars=;
+            select upper(labcharacteristics) into: labcovars separated by ','
+            from input.&baselinefile(where=(not missing(labcharacteristics)));
         quit;
+
+        %if %length(&labcovars) > 0 %then %do;
+        /* Expand lab covariates */
+        %baseline_expand_parameters(var=labcovars);
+        /* Remove commas from the list */
+        %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
+        /* Remove quotes from the list */
+        %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
+        /* Remove duplicate covar values from list */
+        %nonrep(invar=labcovars, outvar=labcharacteristics);
+
+        /* sort covariates in ascending order */
+        data _tempcovars;
+            length tempcovar $20;
+            %do i = 1 %to %sysfunc(countw(&labcharacteristics));
+                %let tempcovar = %scan(&labcharacteristics,&i);
+            tempcovar="&tempcovar";
+            output;
+            %end;
+        run;
+
+        proc sort data = _tempcovars sortseq=linguistic(numeric_collation=on);
+            by tempcovar;
+        run;
+
+        proc sql noprint;
+            select tempcovar 
+            into :labcharacteristics separated by ' '
+            from _tempcovars;
+        quit;
+
+        %end;
 
         %do m = 1 %to &numorder;
         data _null_;
@@ -1899,7 +1937,8 @@
 	  %end; /* reporttypes are T2L2 T4L2 or TREE */ 
 
 /***************************************************************************************************
-*  Create stacked dataset containing covariate labels for all runs                                              
+*  Create stacked dataset containing covariate labels for all runs          
+*  Check stacked dataset for non-lab covariates that were specified as lab covariates                                    
 ***************************************************************************************************/
     /*loop through each runID, create datasets covarname_&runid.*/
     %do r = 1 %to %eval(&numrunid.);
@@ -1915,7 +1954,10 @@
                 select distinct covarnum, 
                                 strip(studyname) as studyname, 
                                 "&runid" as runid length=5, 
-                                cats('covar',covarnum) as cov_varname length=8
+                                cats('covar',covarnum) as cov_varname length=8,
+                                codedays,
+                                codetype,
+                                codecat
                 from infolder.&&&runid._covariatecodes.;
 
                 select length
@@ -1943,6 +1985,25 @@
 
         %end;
     %end;    
+
+    /* Check whether labcharacteristics parameter contains non-lab codes */
+    %isdata(dataset=covarname);
+    %if %length(&labcovars) > 0 and &nobs > 0 %then %do;
+        data _null_;
+            set covarname(where=(codecat^='LB' or codedays>1));
+            %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
+                %let labcovar = %scan(&labcharacteristics,&labcovarnum);
+                if upcase(cov_varname) = "&labcovar" then do;
+                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
+                    put cov_varname= codecat= codetype=;
+                end;
+            %end;
+        run;        
+    %end;
+
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+        by runid covarnum;
+    run;  
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 

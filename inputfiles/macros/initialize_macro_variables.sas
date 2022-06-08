@@ -86,9 +86,10 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
+    %let labcharacteristics=;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
