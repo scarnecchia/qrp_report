@@ -353,6 +353,10 @@
                     %let labunitcovars=;
                     %let checklabvars=;
                     %if %length(&labcharacteristics) > 0 %then %do;
+                    /* Computations for lab covariates will only occur correctly for ones specified in
+                       the LABCHARACTERISTICS parameter. Other lab covariates will be carried through but 
+                       will not be included in final table 1 dataset */
+
                         /* Count the number of lab covariates requested in LABCHARACTERISTICS parameter */
                         %let totallabcovar = %sysfunc(countw(&labcharacteristics));
                         /* Find and match all the lab unit related lab covariates, put in list */
@@ -412,8 +416,8 @@
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where);
-                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where);
+                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where)
+                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where)
 
                             /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
                                %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
@@ -424,7 +428,7 @@
                                     /* Loop through unique number of lab covariates with units for numeric labs */
                                     %do labunitcount = 1 %to &totallabunits;
                                         %let labunitvar = %scan(&labunitcovars,&labunitcount);
-                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=exp, varname=&labunitvar, group=&group2where)
+                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=comp, varname=&labunitvar, group=&group2where)
                                     %end;
                                 %end; /* totallabcovar > 0 */
                             %end;
