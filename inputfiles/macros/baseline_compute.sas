@@ -804,7 +804,7 @@
                        - Denominator for other metrics is total number of episodes 
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
-                            - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
+                            - L2: 100% for unadjusted, compute % out of unadjusted total for adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
                     if prxmatch('/RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                         if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = divide(exp_mean0,total_exp_patients);
@@ -924,6 +924,15 @@
                         end;
                         end;
                         %end;
+                        %end;
+                    end;
+                    /* Calculate lab covariate percentages */
+                    else if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
+                        if missing(exp_mean0) then exp_std0 = .;
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
+                        if missing(comp_mean0) then comp_std0 = .;
                         %end;
                     end;
                     else do;
@@ -1239,7 +1248,7 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessary variables for labeling */
+            /* Assign necessary variables for labeling, and laboratory characteristic labels if available */
             data &labelout&suffix.;
                 set init_labels;
                 length analysisgrp $40 table weight $30;
@@ -1592,6 +1601,18 @@
                     end;
                 end;
             %end;
+
+            /*********************************************************************************************/
+            /* Lab Characteristics                                                                       */
+            /*********************************************************************************************/
+            else if prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar) in (&labcharacteristics) then do; 
+                %assignbaselinevars(label=, grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=);
+                if index(metvar,'LBRES') and vartype = 'dichotomous' then do; 
+                end;
+                if index(metvar,'LBRES') and vartype = 'continuous' then do; 
+                end;
+            end;
+
 
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
