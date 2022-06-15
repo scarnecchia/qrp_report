@@ -202,9 +202,11 @@
 		if b then dpidsiteid="ALL";
 		run;
 
-		proc sort data=_kmdata;
-		by dpidsiteid subgroup subgroupcat analysis day;
-		run;
+		%if &stratifybyDP = Y %then %do;
+			proc sort data=_kmdata;
+			by dpidsiteid subgroup subgroupcat analysis day;
+			run;
+		%end;
 
         /*--------------------------------------------------------------------------------------------*/
         /* If weighted reference cohort (VRM only for Conditional Plots), then compute weighted       */
@@ -364,9 +366,11 @@
 					if a then dpidsiteid="ALL";
 					run;
 
-					proc sort data=step3;
-					by dpidsiteid day;
-					run;
+					%if &stratifybyDP = Y %then %do;
+						proc sort data=step3;
+						by dpidsiteid day;
+						run;
+					%end;
 
                     /*Square table to include all potential followup days*/
                     data _squareweightedkm(rename=i=day);
@@ -623,9 +627,11 @@
 		if b then dpidsiteid="ALL";
 		run;
 			
-		proc sort data=_kmdata;
-		by dpidsiteid subgroup subgroupcat day;
-		run;
+		%if &stratifybyDP = Y %then %do;
+			proc sort data=_kmdata;
+			by dpidsiteid subgroup subgroupcat day;
+			run;
+		%end;
 
 		/* Compute KM plots */
 		%macro computeKMWeightedCI(cohort=);
