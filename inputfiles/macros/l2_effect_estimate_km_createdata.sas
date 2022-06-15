@@ -12,7 +12,7 @@
 *   - Either a patient level, risk set level or marginal weight dataset
 * 
 *  Program outputs: 
-*   - One dataset per plot. This dataset contains the KM curve for the overall and all 
+*   - One dataset per plot. This dataset contains the KM curve for the overall, by DP (if requested) and all 
 *     requested subgroups
 * 
 *  PARAMETERS:  
