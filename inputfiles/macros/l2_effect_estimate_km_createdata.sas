@@ -193,14 +193,11 @@
             output out=_kmdata(drop=_: rename=followupday=day) sum=; /*rename followupday to match L1 figures*/
         run;
 
-		proc means data=_aggsurvivalsquare1 nway noprint;
-		    var nexp nunexp evexp evunexp censorexp censorunexp;
-		    class dpidsiteid subgroup subgroupcat analysis followupday / missing;
-		    output out=_kmdataDP(drop=_: rename=followupday=day) sum=; /*rename followupday to match L1 figures*/
-		run;
-
 		data _kmdata;
-		set _kmdataDP
+		set %if &stratifybyDP = Y %then %do;
+			_aggsurvivalsquare1(keep=dpidsiteid subgroup subgroupcat analysis followupday nexp nunexp evexp evunexp censorexp censorunexp
+								rename=followupday=day)
+			%end;
 			_kmdata(in=b);
 		if b then dpidsiteid="ALL";
 		run;
@@ -341,25 +338,29 @@
                     proc means data=step2 noprint nway;
                         var nunexp_wght evunexp_wght;
                         class day;
-                        output out=step3a(drop=_:) sum()= ;
+                        output out=step3(drop=_:) sum()= ;
                     run;
 
-					data step3b;
-					set step2;
-					format dpidsiteid $4.;
-					dpidsiteid = substr(matchid, index(matchid,"DP"), 4);
-					keep dpidsiteid nunexp_wght evunexp_wght day;
-					run;
+					%if &stratifybyDP = Y %then %do;
+						data step3b;
+						set step2;
+						format dpidsiteid $4.;
+						dpidsiteid = substr(matchid, index(matchid,"DP"), 4);
+						keep dpidsiteid nunexp_wght evunexp_wght day;
+						run;
 
-					proc means data=step3b noprint nway;
-					    var nunexp_wght evunexp_wght;
-					    class dpidsiteid day;
-					    output out=step3b(drop=_:) sum()= ;
-					run;
+						proc means data=step3b noprint nway;
+						    var nunexp_wght evunexp_wght;
+						    class dpidsiteid day;
+						    output out=step3b(drop=_:) sum()= ;
+						run;
+					%end;
 
 					data step3;
-					set step3b
-						step3a(in=a);
+					set %if &stratifybyDP = Y %then %do;
+						step3b
+						%end;
+						step3(in=a);
 					if a then dpidsiteid="ALL";
 					run;
 
@@ -612,15 +613,12 @@
 		class subgroup subgroupcat followuptime / missing;
         output out=_kmdata(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
 		run;
-
-		proc means data=_tempaggmw nway noprint missing;		
-		var SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE;
-		class dpidsiteid subgroup subgroupcat followuptime / missing;
-		output out=_kmdataDP(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
-		run;
-
+		
 		data _kmdata;
-		set _kmdataDP
+		set %if &stratifybyDP = Y %then %do;
+			_tempaggmw(keep=dpidsiteid subgroup subgroupcat followuptime SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE
+					   rename=followuptime=day)
+			%end;
 			_kmdata(in=b);
 		if b then dpidsiteid="ALL";
 		run;
@@ -763,7 +761,7 @@
 
     /*Clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _temp: _aggsurvivalsquare: nexp cumulative_totals step: _maxdata: _squareweightedkm _squarekmcdf _kmdata _kmdatadp;
+        delete _temp: _aggsurvivalsquare: nexp cumulative_totals step: _maxdata: _squareweightedkm _squarekmcdf _kmdata;
     quit;
 
 	%put =====> END MACRO: l2_effect_estimate_km_createdata;
