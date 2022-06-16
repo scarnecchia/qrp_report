@@ -1073,14 +1073,14 @@
                         if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
-                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(total_exp_episodes - count))) ;
+                        if ^missing(exp_std_sum) AND (agg_exp_w gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(agg_exp_w - count))) ;
                         exp_std0_char = compress(put(exp_std0,8.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(total_comp_episodes - count)));
+                        if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
                         comp_std0_char = compress(put(comp_std0,8.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
@@ -1253,7 +1253,6 @@
 				%end;
                 %if %quote(&labcharacteristics) ^= %str("") %then %do; 
                  if b then do;
-                    length label $&baselinelabellength.;
                     grouper='Laboratory Characteristics';
                     sortorder2=0;
                     sortorder1=11;

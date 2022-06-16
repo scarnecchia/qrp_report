@@ -2010,6 +2010,7 @@
         run;
     %end;
 
+    /* Codecat kept in order to select lab covariates later on */
     proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname codecat);
         by runid covarnum;
     run;  
