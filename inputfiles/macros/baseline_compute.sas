@@ -1238,12 +1238,21 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessary variables for labeling, quote lab characteristic values */
-            %let clausequotes=%sysfunc(prxchange(s/([^\s,]+)/"\1"/,-1,%nrbquote(&labcharacteristics)));
+            ***********************************************************************************************;
+            * Execute %baseline_expand_parameters()              
+            ***********************************************************************************************;
+            %baseline_expand_parameters(var =medproduse);
+            %baseline_expand_parameters(var =healthchar);
+            %baseline_expand_parameters(var =UtilizationIntensity);
+            %baseline_expand_parameters(var =labcharacteristics);
+            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+            %baseline_expand_parameters(var =pregnancychar);
+            %baseline_expand_parameters(var =exposurechar);
+            %end;
 
             data &labelout&suffix.;
-                set init_labels %if %quote(&labcharacteristics) ^= %str("") %then %do; 
-                                    covarname(in=b where=(upcase(cov_varname) in (&clausequotes))) 
+                set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
+                                    covarname(in=b where=(upcase(cov_varname) in (&labcharacteristics))) 
                                 %end;;
                 length analysisgrp $40 table weight $30;
 				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
@@ -1251,7 +1260,7 @@
 					subgroup="&subgroup.";
 					subgroupcat="&subgroupcat.";
 				%end;
-                %if %quote(&labcharacteristics) ^= %str("") %then %do; 
+                %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
                  if b then do;
                     grouper='Laboratory Characteristics';
                     sortorder2=0;
@@ -1374,18 +1383,6 @@
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
         run;
-		
-        ***********************************************************************************************;
-        * Execute %baseline_expand_parameters()              
-        ***********************************************************************************************;
-        %baseline_expand_parameters(var =medproduse);
-        %baseline_expand_parameters(var =healthchar);
-        %baseline_expand_parameters(var =UtilizationIntensity);
-        %baseline_expand_parameters(var =labcharacteristics);
-        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
-        %baseline_expand_parameters(var =pregnancychar);
-        %baseline_expand_parameters(var =exposurechar);
-        %end;
 
         %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
