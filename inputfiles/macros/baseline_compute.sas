@@ -1202,7 +1202,7 @@
                     %end;
                 end;
                
-                keep metvar %if ^%index(&reporttype,L2) %then %do; _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do;  _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1604,6 +1604,7 @@
             /*********************************************************************************************/
             /* Lab Characteristics                                                                       */
             /*********************************************************************************************/
+            %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
             else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar)) in (&labcharacteristics) then do;
                 /* All lab covariates with no test record row */ 
                 if prxmatch('/NOTESTRECORD/',metvar) then do; 
@@ -1635,7 +1636,7 @@
                 %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=5);
                 end;
             end;
-
+            %end;
 
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */

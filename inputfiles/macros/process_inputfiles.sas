@@ -1996,8 +1996,6 @@
             where codecat = 'LB' and substr(strip(reverse(codetype)), 1, 1) = 'C';
         quit;
 
-        %if %length(&charlabslist) = 0 %then %let charlabslist = "missing";
-
         data _null_;
             set covarname(where=(codecat^='LB' or codedays>1));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
