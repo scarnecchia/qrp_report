@@ -36,6 +36,8 @@
 *   -quarterfmt
 *   -nafmt
 *   -subgrouporderfmt
+*   -charlabfmt
+*   -charlabsort
 *
 *
 *  PARAMETERS:                                                                       
@@ -370,6 +372,7 @@
             'birth_type' = 9
             'periodid' = 10;
 
+        /* Format for character lab covariates and their categories */
         value $charlabfmt
         "BORDERLINE"='Borderline'
         "NEGATIVE"='Negative'

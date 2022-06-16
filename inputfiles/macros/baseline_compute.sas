@@ -57,7 +57,7 @@
 
     /* Create a labels dataset for subgroup header creation */
     data init_labels;
-        length label $70 sortorder1 sortorder2 3;
+        length label $&baselinelabellength sortorder1 sortorder2 3;
         grouper='Demographic Characteristics';
         sortorder2=0;
         sortorder1=3;
@@ -76,18 +76,6 @@
         label='Year';
         output;
     run;
-
-    /* Create lab covariate subgroup headers */
-    %if %quote(&labcharacteristics) ^= "missing" %then %do;
-        data init_labels_labs(keep=grouper label cov_varname sortorder1 sortorder2);
-            set lab_labels;
-            length label $70 sortorder1 sortorder2 3;
-            grouper='Laboratory Characteristics';
-            sortorder2=0;
-            sortorder1=11;
-            label=studyname;
-        run;
-    %end;
 
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
@@ -1250,15 +1238,28 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessary variables for labeling */
+            /* Assign necessary variables for labeling, quote lab characteristic values */
+            %let clausequotes=%sysfunc(prxchange(s/([^\s,]+)/"\1"/,-1,%nrbquote(&labcharacteristics)));
+
             data &labelout&suffix.;
-                set init_labels %if %quote(&labcharacteristics) ^= "missing" %then %do; init_labels_labs %end;;
+                set init_labels %if %quote(&labcharacteristics) ^= %str("") %then %do; 
+                                    covarname(in=b where=(upcase(cov_varname) in (&clausequotes))) 
+                                %end;;
                 length analysisgrp $40 table weight $30;
 				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 					format subgroup subgroupcat $11.;
 					subgroup="&subgroup.";
 					subgroupcat="&subgroupcat.";
 				%end;
+                %if %quote(&labcharacteristics) ^= %str("") %then %do; 
+                 if b then do;
+                    length label $&baselinelabellength.;
+                    grouper='Laboratory Characteristics';
+                    sortorder2=0;
+                    sortorder1=11;
+                    label=studyname;
+                end;
+                %end;
                 order=&b;
                 analysisgrp="&analysisgrp.";
                 table="&table";
@@ -1423,14 +1424,6 @@
             proc sort data=baseline_aggregate_prelabel;
                 by metvar;
             run;
-
-            /* label dataset will have all lab covariates specified, only keep ones relevant to the cohort */
-            %if %quote(&labcharacteristics) ^= "missing" %then %do;
-            data baseline_labels1;
-                set baseline_labels1;
-                if ^missing(cov_varname) and upcase(cov_varname) not in (&labcharacteristics) then delete;
-            run;
-            %end;
         %end;
 
         ***********************************************************************************************;
@@ -1615,23 +1608,33 @@
             /*********************************************************************************************/
             /* Lab Characteristics                                                                       */
             /*********************************************************************************************/
-            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar)) in (&labcharacteristics) then do; 
+            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar)) in (&labcharacteristics) then do;
+                /* All lab covariates with no test record row */ 
                 if prxmatch('/NOTESTRECORD/',metvar) then do; 
                 %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=1);
                 end;
+                /* Character lab covariates with test record row */
                 if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
                 %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=2);
                 end;
                 /* For Numeric labs - Test record row */
-                if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do; 
-                %assignbaselinevars(label=cat("Test record in ","[",strip(_label_),"]"), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
+                    if strip(_label_) = 'UNKNOWN' then do; 
+                    %assignbaselinevars(label="Test records with missing or unknown units", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                    end;
+                    else do;
+                    %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                    end;
                 end;
+                /* Character lab covariates for all rows without start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
                 %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=input(put(scan(metvar,-1,'_'), charlabsort.),1.));
                 end;
+                /* Character lab covariates for rows with start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
                 %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=4);
                 end;
+                /* Numeric labs for all rows with units */
                 if index(metvar,'LBRES') and vartype = 'continuous' then do; 
                 %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=5);
                 end;
