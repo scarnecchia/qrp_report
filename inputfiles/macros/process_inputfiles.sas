@@ -1988,6 +1988,14 @@
     /* Check whether labcharacteristics parameter contains non-lab codes */
     %isdata(dataset=covarname);
     %if %length(&labcovars) > 0 and &nobs > 0 %then %do;
+
+        proc sql noprint; 
+            select upper(quote(cov_varname))
+            into: charlabslist separated by ','
+            from covarname
+            where codecat = 'LB' and substr(strip(reverse(codetype)), 1, 1) = 'C';
+        quit;
+
         data _null_;
             set covarname(where=(codecat^='LB' or codedays>1));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
@@ -1997,6 +2005,10 @@
                     put cov_varname= codecat= codetype=;
                 end;
             %end;
+        run;
+
+        data lab_labels;
+            set covarname(where=(codecat='LB'));
         run;        
     %end;
 

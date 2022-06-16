@@ -144,10 +144,11 @@
     %let numsummarystratcovars = 0;
 
     /* baseline covariates */
-    %global includecovars baselinelabellength labcovars;
+    %global includecovars baselinelabellength labcovars charlabslist;
     %let includecovars = N;
     %let baselinelabellength = 80;
     %let labcovars = ;
+    %let charlabslist = ;
 
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;

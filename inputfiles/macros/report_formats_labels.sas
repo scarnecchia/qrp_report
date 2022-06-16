@@ -369,6 +369,22 @@
             'matchmethod' = 8
             'birth_type' = 9
             'periodid' = 10;
+
+        value $charlabfmt
+        "BORDERLINE"='Borderline'
+        "NEGATIVE"='Negative'
+        "POSITIVE"='Positive'
+        "UNDETERMINED"='Undetermined'
+        "UNKNOWN"='Invalid Categorical Result'
+        other='Other result';
+
+        /* Start|end unit sort computed when format is applied */ 
+        value $charlabsort
+        "BORDERLINE" = 1
+        "NEGATIVE" = 2
+        "POSITIVE" = 3
+        "UNDETERMINED" = 4
+        "UNKNOWN" = 9999999;
     run;
 
 /***************************************************************************************************
