@@ -77,6 +77,18 @@
         output;
     run;
 
+    /* Create lab covariate subgroup headers */
+    %if %quote(&labcharacteristics) ^= "missing" %then %do;
+        data init_labels_labs(keep=grouper label cov_varname sortorder1 sortorder2);
+            set lab_labels;
+            length label $70 sortorder1 sortorder2 3;
+            grouper='Laboratory Characteristics';
+            sortorder2=0;
+            sortorder1=11;
+            label=studyname;
+        run;
+    %end;
+
     ***********************************************************************************************;
     * Loop through each requested baseline table in BASELINEFILE                            
     ***********************************************************************************************;
@@ -930,9 +942,11 @@
                     else if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
+                        exp_std0_char = compress(put(exp_std0,percent10.1));
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
                         if missing(comp_mean0) then comp_std0 = .;
+                        comp_std0_char = compress(put(comp_std0,percent10.1));
                         %end;
                     end;
                     else do;
@@ -1018,18 +1032,6 @@
 
                 /*Aggregate continuous variables*/
                 if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
-                    /*assign dp specific patient and episode count*/
-                    %do a = 1 %to &num_dp.; 
-                        exp_episodes&a. = &&&&n_&table._episodes_exp&a.; /*Total number of patients in the exposed*/
-                        %if "&includecomp" = "Y" %then %do;
-                        comp_episodes&a. = &&&&n_&table._episodes_comp&a.; /*Total number of patients in the reference group*/
-                        %end;
-                    %end;
-                    array exp_episodes(&num_dp.) exp_episodes1-exp_episodes&num_dp.;
-                    %if "&includecomp" = "Y" %then %do;
-                    array comp_episodes(&num_dp.) comp_episodes1-comp_episodes&num_dp.;
-                    %end;
-
                     count = 0;
                     exp_mean_num = 0; 
                     exp_std_sum = 0; /*Weighted sum for std calculation in the exposed group*/
@@ -1050,11 +1052,11 @@
                         %end;
                         %else %do;
                             ** Get weighted Std Dev for pooled Standard Deviation calculation  ** ;
-                            if ^missing(std_exp(i)) then exp_std_sum = exp_std_sum + (std_exp(i)**2)*(exp_episodes(i) - 1);
+                            if ^missing(std_exp(i)) then exp_std_sum = exp_std_sum + (std_exp(i)**2)*(exp_w(i) - 1);
                             ** Count number of data partners with a value - for pooled std dev calculation  ** ;
                             if ^missing(std_exp(i)) then count = count + 1 ;
                             %if "&includecomp" = "Y" %then %do;
-                            if ^missing(std_comp(i)) then comp_std_sum = comp_std_sum + (std_comp(i)**2)*(comp_episodes(i) - 1);
+                            if ^missing(std_comp(i)) then comp_std_sum = comp_std_sum + (std_comp(i)**2)*(comp_w(i) - 1);
                             %end;
                         %end;
                     end;
@@ -1200,7 +1202,7 @@
                     %end;
                 end;
                
-                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar %if ^%index(&reporttype,L2) %then %do; _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1248,9 +1250,9 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessary variables for labeling, and laboratory characteristic labels if available */
+            /* Assign necessary variables for labeling */
             data &labelout&suffix.;
-                set init_labels;
+                set init_labels %if %quote(&labcharacteristics) ^= "missing" %then %do; init_labels_labs %end;;
                 length analysisgrp $40 table weight $30;
 				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 					format subgroup subgroupcat $11.;
@@ -1421,6 +1423,14 @@
             proc sort data=baseline_aggregate_prelabel;
                 by metvar;
             run;
+
+            /* label dataset will have all lab covariates specified, only keep ones relevant to the cohort */
+            %if %quote(&labcharacteristics) ^= "missing" %then %do;
+            data baseline_labels1;
+                set baseline_labels1;
+                if ^missing(cov_varname) and upcase(cov_varname) not in (&labcharacteristics) then delete;
+            run;
+            %end;
         %end;
 
         ***********************************************************************************************;
@@ -1605,11 +1615,25 @@
             /*********************************************************************************************/
             /* Lab Characteristics                                                                       */
             /*********************************************************************************************/
-            else if prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar) in (&labcharacteristics) then do; 
-                %assignbaselinevars(label=, grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=);
-                if index(metvar,'LBRES') and vartype = 'dichotomous' then do; 
+            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar)) in (&labcharacteristics) then do; 
+                if prxmatch('/NOTESTRECORD/',metvar) then do; 
+                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=1);
+                end;
+                if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=2);
+                end;
+                /* For Numeric labs - Test record row */
+                if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do; 
+                %assignbaselinevars(label=cat("Test record in ","[",strip(_label_),"]"), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                end;
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
+                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=input(put(scan(metvar,-1,'_'), charlabsort.),1.));
+                end;
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
+                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=4);
                 end;
                 if index(metvar,'LBRES') and vartype = 'continuous' then do; 
+                %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=5);
                 end;
             end;
 
