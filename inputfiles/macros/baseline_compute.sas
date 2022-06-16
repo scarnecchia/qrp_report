@@ -163,6 +163,18 @@
             run;
 		%end;
 
+        ***********************************************************************************************;
+        * Execute %baseline_expand_parameters()              
+        ***********************************************************************************************;
+        %baseline_expand_parameters(var =medproduse);
+        %baseline_expand_parameters(var =healthchar);
+        %baseline_expand_parameters(var =UtilizationIntensity);
+        %baseline_expand_parameters(var =labcharacteristics);
+        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+        %baseline_expand_parameters(var =pregnancychar);
+        %baseline_expand_parameters(var =exposurechar);
+        %end;
+
         *************************************************************
         * Processing - need to:
             - determine cohortgrp associated with EOI cohort
@@ -1237,18 +1249,6 @@
 				/*Removing FOLLOWUPTIME/EVENT rows*/
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
-
-            ***********************************************************************************************;
-            * Execute %baseline_expand_parameters()              
-            ***********************************************************************************************;
-            %baseline_expand_parameters(var =medproduse);
-            %baseline_expand_parameters(var =healthchar);
-            %baseline_expand_parameters(var =UtilizationIntensity);
-            %baseline_expand_parameters(var =labcharacteristics);
-            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
-            %baseline_expand_parameters(var =pregnancychar);
-            %baseline_expand_parameters(var =exposurechar);
-            %end;
 
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
