@@ -55,17 +55,22 @@
             %end;
         run;
 
-        proc sort data=_tempxmax;
-            by subgroup subgroupcat day;
-        run;
+        proc sql noprint undo_policy=none;
+		create table _tempxmax as 
+		select a.dpidsiteid,
+			   b.*
+		from (select distinct dpidsiteid from &plotdata.(keep=dpidsiteid)) as a,
+			 _tempxmax as b
+		order by dpidsiteid, subgroup, subgroupcat, day;
+		quit;
 
 		proc sort data=&plotdata.;
-			by subgroup subgroupcat day;
+			by dpidsiteid subgroup subgroupcat day;
         run;
 
         data &plotdata.;
             merge &plotdata.(in=a) _tempxmax(in=b);
-            by subgroup subgroupcat day;
+            by dpidsiteid subgroup subgroupcat day;
             if b and not a then do;
                 episodes_atriskexp = 0;
                 episodes_atriskunexp = 0;
