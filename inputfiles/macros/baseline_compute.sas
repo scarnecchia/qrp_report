@@ -57,10 +57,11 @@
 
     /* Create a labels dataset for subgroup header creation */
     data init_labels;
-        length label $&baselinelabellength sortorder1 sortorder2 3;
+        length label $&baselinelabellength sortorder1 sortorder2 sortorder3 3;
         grouper='Demographic Characteristics';
         sortorder2=0;
         sortorder1=3;
+        sortorder3=0;
         label='Age';
         output;
         sortorder1=4;
@@ -174,6 +175,8 @@
         %baseline_expand_parameters(var =pregnancychar);
         %baseline_expand_parameters(var =exposurechar);
         %end;
+
+        %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
         *************************************************************
         * Processing - need to:
@@ -1252,7 +1255,7 @@
 
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
-                                    covarname(in=b where=(upcase(cov_varname) in (&labcharacteristics))) 
+                                    covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
                                 %end;;
                 length analysisgrp $40 table weight $30;
 				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
@@ -1261,11 +1264,23 @@
 					subgroupcat="&subgroupcat.";
 				%end;
                 %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
+                length sortorder1 sortorder2 sortorder3 3.;
                  if b then do;
                     grouper='Laboratory Characteristics';
-                    sortorder2=0;
-                    sortorder1=11;
+                    sortorder1=14;
+                    %if %str("&covarsort") = %str("A") %then %do;
+                    sortorder2=_n_;
+                    %end;
+                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    sortorder2=input(compress(cov_varname,,'AF'),4.);
+                    %end;
+                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
+                    sortorder2 = findw(compress(covarorderlist), compress(cov_varname), ',','e');
+                    %end;                 
+                    sortorder3=1;
                     label=studyname;
+                    drop studyname;
                 end;
                 %end;
                 order=&b;
@@ -1382,9 +1397,9 @@
         /*stack all tables*/
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
+            /* Create covar merging variable */
+            if index(metvar,'COVAR') then cov_varname=prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,lowcase(metvar)));
         run;
-
-        %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
         ***********************************************************************************************;
         * Derive labels for covariates      
@@ -1402,23 +1417,22 @@
             %end;
 
             data covarname_baseline; 
-                length MetVar $32 covarlabel $&baselinelabellength.;
+                length covarlabel $&baselinelabellength.;
                 set covarname(where=(runid="&runid.")); 
                 %if %str("&covarsort") = %str("A") %then %do;
                 by studyname;
                 alphabeticalorder = _n_;
                 %end;
-                MetVar = cats("COVAR", covarnum);
                 covarlabel = studyname;
                 drop covarnum studyname;
             run;
 
             proc sort data=covarname_baseline; 
-                by metvar; 
+                by cov_varname; 
             run;
 
             proc sort data=baseline_aggregate_prelabel;
-                by metvar;
+                by cov_varname;
             run;
         %end;
 
@@ -1427,19 +1441,20 @@
         ***********************************************************************************************;
 
         /*utility macro to assign label, grouper, sortorder, sortorder2*/
-        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=);
+        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=, sortorder3=);
             %if %length(&label)>0 %then %do; label= &label; %end;
             %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
             %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
             %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
+            %if %length(&sortorder3)>0 %then %do; sortorder3=&sortorder3.; %end;
         %mend;
 
         data baseline_aggregatelabels;
-            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 sortorder3 3;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;
-                by metvar;
+                by cov_varname;
                 if a;
             %end;
             %else %do;
@@ -1605,35 +1620,54 @@
             /* Lab Characteristics                                                                       */
             /*********************************************************************************************/
             %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
-            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//',-1,metvar)) in (&labcharacteristics) then do;
+            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar)) in (&labcharacteristics) then do;
                 /* All lab covariates with no test record row */ 
                 if prxmatch('/NOTESTRECORD/',metvar) then do; 
-                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=1);
+                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=2);
                 end;
                 /* Character lab covariates with test record row */
                 if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
-                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=2);
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=3);
+                end;
+                /* Character lab covariates for all rows without start|end unit */
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
+                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(put(scan(metvar,-1,'_'), charlabsort.),1.));
+                end;
+                /* Character lab covariates for rows with start|end unit */
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
+                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(1,_label_,'|'),8.));
                 end;
                 /* For Numeric labs - Test record row */
                 if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
                     if strip(_label_) = 'UNKNOWN' then do; 
-                    %assignbaselinevars(label="Test records with missing or unknown units", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                    %assignbaselinevars(label="Test records with missing or unknown units", sortorder1=14, grouper="Laboratory Characteristics", sortorder2=, sortorder3=99);
                     end;
                     else do;
-                    %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=3);
+                    %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics",sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_)));
                     end;
-                end;
-                /* Character lab covariates for all rows without start|end unit */
-                if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
-                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=input(put(scan(metvar,-1,'_'), charlabsort.),1.));
-                end;
-                /* Character lab covariates for rows with start|end unit */
-                if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
-                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=4);
                 end;
                 /* Numeric labs for all rows with units */
                 if index(metvar,'LBRES') and vartype = 'continuous' then do; 
-                %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1 = 11, sortorder2=5);
+                    if ^index(metvar,'UNKNOWN') then do;
+                    %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_))+1);
+                    end;
+                    else do; 
+                    %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=100);
+                    end;
+                end;
+                if sortorder1=14 then do;
+                    *Assign sort order using covarsort parameter;
+                    %if %str("&covarsort") = %str("A") %then %do;
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=alphabeticalorder, sortorder3=);
+                    %end;
+                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=input(compress(metvar,,'AF'),4.), sortorder3=);
+                    %end;
+                    %else %if %str("&covarsort") = %str("O") %then %do;
+                    length covarorderlist $&covarlistlength.;
+                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));                     
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(metvar), ',','e'), sortorder3=);
+                    %end;
                 end;
             end;
             %end;
@@ -1644,13 +1678,13 @@
             else if metvar in (&healthchar.,&medproduse.,&UtilizationIntensity.) then do;   
                 /*Assign grouper and sortorder1*/
                 if metvar in (&healthchar.) then do;
-                %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 11, sortorder2=);
+                %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
                 if metvar in (&medproduse.) then do;
-                %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 12, sortorder2=);
+                %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
                 if metvar in (&UtilizationIntensity.) then do;
-                %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 13, sortorder2=);
+                %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
                 end;
 
                 /*Assign labels and sortorder2*/
@@ -1699,7 +1733,7 @@
             
             if missing(label) then delete;
 
-            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 sortorder3 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1736,12 +1770,12 @@
         run;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels:;
+            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 grouper analysisgrp table weight order);
         run;
 
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
-            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2;
+            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2 sortorder3;
         run;
 
         ***********************************************************************************************;
