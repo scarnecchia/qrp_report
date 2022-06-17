@@ -1253,6 +1253,13 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
+            /*if covarsort = A, then alphabetize by covarlabel*/
+            %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
+            proc sort data=covarname sortseq=linguistic (numeric_collation=on);
+                by studyname;
+            run;
+            %end;
+
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
                                     covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
