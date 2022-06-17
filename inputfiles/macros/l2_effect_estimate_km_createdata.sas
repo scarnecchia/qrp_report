@@ -12,7 +12,7 @@
 *   - Either a patient level, risk set level or marginal weight dataset
 * 
 *  Program outputs: 
-*   - One dataset per plot. This dataset contains the KM curve for the overall and all 
+*   - One dataset per plot. This dataset contains the KM curve for the overall, by DP (if requested) and all 
 *     requested subgroups
 * 
 *  PARAMETERS:  
@@ -55,13 +55,22 @@
             %end;
         run;
 
-        proc sort data=_tempxmax;
-            by subgroup subgroupcat day;
+        proc sql noprint undo_policy=none;
+		create table _tempxmax as 
+		select a.dpidsiteid,
+			   b.*
+		from (select distinct dpidsiteid from &plotdata.(keep=dpidsiteid)) as a,
+			 _tempxmax as b
+		order by dpidsiteid, subgroup, subgroupcat, day;
+		quit;
+
+		proc sort data=&plotdata.;
+			by dpidsiteid subgroup subgroupcat day;
         run;
 
         data &plotdata.;
             merge &plotdata.(in=a) _tempxmax(in=b);
-            by subgroup subgroupcat day;
+            by dpidsiteid subgroup subgroupcat day;
             if b and not a then do;
                 episodes_atriskexp = 0;
                 episodes_atriskunexp = 0;
@@ -188,6 +197,21 @@
             class subgroup subgroupcat analysis followupday / missing;
             output out=_kmdata(drop=_: rename=followupday=day) sum=; /*rename followupday to match L1 figures*/
         run;
+
+		data _kmdata;
+		set %if &stratifybyDP = Y %then %do;
+			_aggsurvivalsquare1(keep=dpidsiteid subgroup subgroupcat analysis followupday nexp nunexp evexp evunexp censorexp censorunexp
+								rename=followupday=day)
+			%end;
+			_kmdata(in=b);
+		if b then dpidsiteid="ALL";
+		run;
+
+		%if &stratifybyDP = Y %then %do;
+			proc sort data=_kmdata;
+			by dpidsiteid subgroup subgroupcat analysis day;
+			run;
+		%end;
 
         /*--------------------------------------------------------------------------------------------*/
         /* If weighted reference cohort (VRM only for Conditional Plots), then compute weighted       */
@@ -324,11 +348,40 @@
                         output out=step3(drop=_:) sum()= ;
                     run;
 
+					%if &stratifybyDP = Y %then %do;
+						data step3b;
+						set step2;
+						format dpidsiteid $4.;
+						dpidsiteid = substr(matchid, index(matchid,"DP"), 4);
+						keep dpidsiteid nunexp_wght evunexp_wght day;
+						run;
+
+						proc means data=step3b noprint nway;
+						    var nunexp_wght evunexp_wght;
+						    class dpidsiteid day;
+						    output out=step3b(drop=_:) sum()= ;
+						run;
+					%end;
+
+					data step3;
+					set %if &stratifybyDP = Y %then %do;
+						step3b
+						%end;
+						step3(in=a);
+					if a then dpidsiteid="ALL";
+					run;
+
+					%if &stratifybyDP = Y %then %do;
+						proc sort data=step3;
+						by dpidsiteid day;
+						run;
+					%end;
+
                     /*Square table to include all potential followup days*/
                     data _squareweightedkm(rename=i=day);
-                        set step3(keep=day) end=eof;
-                        by day;
-                        if eof then do;  
+                        set step3(keep=dpidsiteid day);
+                        by dpidsiteid day;
+                        if last.dpidsiteid then do;  
                             do i = 0 to day;
                             output;
                             end;
@@ -339,7 +392,7 @@
                     /*Merge square dataset into step and set event counts to 0 when day is missing*/
                     data step4;
                         merge step3 _squareweightedkm;
-                        by day;
+                        by dpidsiteid day;
                         if evunexp_wght = . then evunexp_wght = 0;
                         if day = 0 then nunexp_wght = 0;
                     run;
@@ -347,15 +400,15 @@
                     /*fill in missing nexp and unexp counts with the previous value and
                       create lag variables to compute total # of episodes censored/with event at each time point*/
                     proc sort data=step4;
-                        by descending day;
+                        by dpidsiteid descending day;
                     run;
 
                     data step5;
                         set step4;
-                        by descending day;
+                        by dpidsiteid descending day;
                         length analysis $13;
                         analysis = 'Conditional';
-                        %aggsurvivaldatastep(unexp_wght, %str(day=0));
+                        %aggsurvivaldatastep(unexp_wght, %str(last.dpidsiteid));
                     run;
 
                     /*merge in _kmdata*/
@@ -367,8 +420,7 @@
                                y.censorunexp_wght
                         from _kmdata(where=(analysis='Conditional' and subgroup="&kmloopsubgroup." and subgroupcat="&kmloopsubgroupcat.")) as x
                         left join step5 as y
-                        on x.day = y.day
-                        order by analysis, day;
+                        on x.day = y.day and x.dpidsiteid=y.dpidsiteid;
                     quit;
                 %end; /*data exists*/
             %end; /*loop through each subgroup*/
@@ -380,7 +432,7 @@
             run;
 
             proc sort data=_kmdata;
-                by subgroup subgroupcat analysis day;
+                by dpidsiteid subgroup subgroupcat analysis day;
             run;
 
         %end; /*compute weighted metrics*/
@@ -388,7 +440,8 @@
         /*Total counts*/
         proc sql noprint;
             create table cumulative_totals as
-            select analysis
+            select dpidsiteid
+				   , analysis
                    , subgroup
                    , subgroupcat
                    , max(nexp) as cum_nexp
@@ -400,7 +453,7 @@
                    , sum(evunexp_wght) as cum_evexp_wght
                    %end;
             from _kmdata
-            group by subgroup, subgroupcat, analysis;
+            group by dpidsiteid, subgroup, subgroupcat, analysis;
         quit;
         
         %let renamestatement = %str(rename=(lag_episodes_atriskexp=episodes_atriskexp lag_episodes_atriskunexp=episodes_atriskunexp));
@@ -429,7 +482,7 @@
              %if %index(&plotstocreate, 'Unconditional')>0 %then %do; figureF5_analysis&loopcount._&periodid.(&renamestatement.) %end; ;
 
             set _kmdata; 
-            by subgroup subgroupcat analysis day;
+            by dpidsiteid subgroup subgroupcat analysis day;
 
             array sum{*} sum_evexp sum_evunexp sum_censorexp sum_censorunexp %if &weightedpop. = Y %then %do; sum_evunexp_wght sum_censorunexp_wght %end; ;
             array varlist{*} evexp evunexp censorexp censorunexp %if &weightedpop. = Y %then %do; evunexp_wght censorunexp_wght %end; ;
@@ -441,7 +494,7 @@
 
             if first.analysis then do;
                 merge cumulative_totals;
-                by subgroup subgroupcat analysis;
+                by dpidsiteid subgroup subgroupcat analysis;
         
                 do i = 1 to dim(varlist);
                     sum{i} = varlist{i};
@@ -544,7 +597,7 @@
             format analysisgrp $40.;
             analysisgrp = "&analysisgrp";
 
-            keep day lag_episodes_atrisk: km_: subgroup subgroupcat analysisgrp lowerCI_: upperCI_:;
+            keep dpidsiteid day lag_episodes_atrisk: km_: subgroup subgroupcat analysisgrp lowerCI_: upperCI_:;
 
             %if %index(&plotstocreate, 'Unadjusted')>0 %then %do; if analysis = 'Unadjusted' then output figureF3_analysis&loopcount._&periodid.; %end;
             %if %index(&plotstocreate, 'Conditional')>0 %then %do; if analysis = 'Conditional' then output figureF4_analysis&loopcount._&periodid.; %end;
@@ -570,6 +623,21 @@
         output out=_kmdata(drop=_: rename=followuptime=day) sum=; /*rename followuptime to match L1 figures*/		
 		run;
 		
+		data _kmdata;
+		set %if &stratifybyDP = Y %then %do;
+			_tempaggmw(keep=dpidsiteid subgroup subgroupcat followuptime SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE
+					   rename=followuptime=day)
+			%end;
+			_kmdata(in=b);
+		if b then dpidsiteid="ALL";
+		run;
+			
+		%if &stratifybyDP = Y %then %do;
+			proc sort data=_kmdata;
+			by dpidsiteid subgroup subgroupcat day;
+			run;
+		%end;
+
 		/* Compute KM plots */
 		%macro computeKMWeightedCI(cohort=);
 			if 0 < km_ev&cohort. < 1 then do;
@@ -586,7 +654,7 @@
 		data figureF4_analysis&loopcount._&periodid.;
 		length day 8;
 		set _kmdata;
-		by subgroup subgroupcat;
+		by dpidsiteid subgroup subgroupcat;
 
 		* Exposed computation;
 		RatioE=SumEC/SumE;
@@ -644,17 +712,17 @@
               SumUnE = "&grp0label."
               ;
 		
-		keep subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp lowerCI_: upperCI_:;
+		keep dpidsiteid subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp lowerCI_: upperCI_:;
 		run;
 
 		proc sort data=figureF4_analysis&loopcount._&periodid.;
-		by subgroup subgroupcat day;
+		by dpidsiteid subgroup subgroupcat day;
 		run;
 
 		/* Add missing day values to make sure at risk data is correctly output */
 		data _squarekmcdf(rename=i=day);
-        set _kmdata(keep=subgroup subgroupcat day);
-        by subgroup subgroupcat day;
+        set _kmdata(keep=dpidsiteid subgroup subgroupcat day);
+        by dpidsiteid subgroup subgroupcat day;
         if last.subgroupcat and day > 0 then do;  
             do i = 0 to day;
             	output;
@@ -666,7 +734,7 @@
 		data figureF4_analysis&loopcount._&periodid.;
 		merge figureF4_analysis&loopcount._&periodid.(in=a)
 			  _squarekmcdf(in=b);
-		by subgroup subgroupcat day;
+		by dpidsiteid subgroup subgroupcat day;
 
 		if not missing(episodes_atriskexp) then do;
 			lagepisodes_atriskexp=episodes_atriskexp;
