@@ -1274,7 +1274,7 @@
                     %else %if %str("&covarsort") = %str("C") %then %do;
                     sortorder2=input(compress(cov_varname,,'AF'),4.);
                     %end;
-                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    %else %if %str("&covarsort") = %str("O") %then %do;
                     covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
                     sortorder2 = findw(compress(covarorderlist), compress(cov_varname), ',','e');
                     %end;                 
