@@ -1278,8 +1278,8 @@
                     covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
                     sortorder2 = findw(compress(covarorderlist), compress(upcase(cov_varname)), ',','e');
                     %end;                 
-                    sortorder3=1;
-                    sortorder4=1;
+                    sortorder3=-1;
+                    sortorder4=-1;
                     label=studyname;
                     drop studyname;
                 end;
@@ -1623,13 +1623,9 @@
             /*********************************************************************************************/
             %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
             else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar)) in (&labcharacteristics) then do;
-                /* All lab covariates with no test record row */ 
-                if prxmatch('/NOTESTRECORD/',metvar) then do; 
-                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=2, sortorder4=2);
-                end;
                 /* Character lab covariates with test record row */
                 if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
-                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=3, sortorder4=3);
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=0, sortorder4=0);
                 end;
                 /* Character lab covariates for all rows without start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
@@ -1656,6 +1652,10 @@
                     else do; 
                     %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=100, sortorder4=100);
                     end;
+                end;
+                /* All lab covariates with no test record row */ 
+                if prxmatch('/NOTESTRECORD/',metvar) then do; 
+                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=99999999, sortorder4=99999999);
                 end;
                 if sortorder1=14 then do;
                     *Assign sort order using covarsort parameter;
