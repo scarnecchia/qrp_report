@@ -1633,7 +1633,7 @@
                 end;
                 /* Character lab covariates for all rows without start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
-                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(put(scan(metvar,-1,'_'), charlabsort.),8.), sortorder4=input(put(scan(metvar,-1,'_'), charlabsort.),5.));
+                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(put(scan(metvar,-1,'_'), charlabsort.),8.), sortorder4=input(put(scan(metvar,-1,'_'), charlabsort.),8.));
                 end;
                 /* Character lab covariates for rows with start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
