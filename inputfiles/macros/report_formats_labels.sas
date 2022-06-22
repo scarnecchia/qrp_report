@@ -386,7 +386,7 @@
         "NEGATIVE" = 6
         "POSITIVE" = 7
         "UNDETERMINED" = 8
-        /* Start|end unit displayed after UNDETERMIEND, however sort computed when format is applied to capture each START value */ 
+        /* Start|end unit displayed after UNDETERMINED, however sort computed when format is applied to capture each START value */ 
         "INVALID" = 99999999;
     run;
 
