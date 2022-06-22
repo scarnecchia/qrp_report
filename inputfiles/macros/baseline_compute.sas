@@ -1443,7 +1443,7 @@
         * Apply user defined inclusion parameters and assign 1) row labels and 2) row headers          
         ***********************************************************************************************;
 
-        /*utility macro to assign label, grouper, sortorder, sortorder2*/
+        /*utility macro to assign label, grouper, sortorder1, sortorder2, sortorder3 and sortorder4 */
         %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=, sortorder3=, sortorder4=);
             %if %length(&label)>0 %then %do; label= &label; %end;
             %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
