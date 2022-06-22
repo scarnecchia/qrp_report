@@ -2010,9 +2010,11 @@
         run;
     %end;
 
+    %if &nobs > 0 %then %do;
     proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
         by runid covarnum;
     run;  
+    %end;
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 

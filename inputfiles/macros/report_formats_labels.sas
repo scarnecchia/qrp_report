@@ -378,7 +378,7 @@
         "NEGATIVE"='Negative'
         "POSITIVE"='Positive'
         "UNDETERMINED"='Undetermined'
-        "INVALID"='Invalid Categorical Result'
+        "INVALID"='Invalid categorical result'
         other='Other result';
 
         value $charlabsort

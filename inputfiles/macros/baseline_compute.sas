@@ -1425,17 +1425,6 @@
                 drop covarnum studyname;
             run;
 
-            /* Merge in alphabetical sortorder into baseline labels dataset */
-            %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
-            proc sql noprint undo_policy=none; 
-                create table baseline_labels1 as 
-                select a.*, b.alphabeticalorder as sortorder2 length=3
-                from baseline_labels1(drop=sortorder2) a 
-                left join covarname_baseline b
-                on a.cov_varname = b.cov_varname;
-            quit;
-            %end;
-
             proc sort data=covarname_baseline; 
                 by cov_varname; 
             run;
@@ -1632,11 +1621,11 @@
             else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar)) in (&labcharacteristics) then do;
                 /* All lab covariates with no test record row */ 
                 if prxmatch('/NOTESTRECORD/',metvar) then do; 
-                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=2);
+                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=5);
                 end;
                 /* Character lab covariates with test record row */
                 if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
-                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=2);
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=6);
                 end;
                 /* Character lab covariates for all rows without start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
@@ -1644,7 +1633,7 @@
                 end;
                 /* Character lab covariates for rows with start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
-                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(_label_,1,'|'),8.)+4);
+                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(scan(_label_,1,' '),-1,'|'),8.)+4);
                 end;
                 /* For Numeric labs - Test record row */
                 if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
@@ -1666,6 +1655,7 @@
                 end;
                 if sortorder1=14 then do;
                     *Assign sort order using covarsort parameter;
+                    if ^index(_label_,'|') then do; 
                     %if %str("&covarsort") = %str("A") %then %do;
                     %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=alphabeticalorder, sortorder3=);
                     %end;
@@ -1677,6 +1667,10 @@
                     covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));                     
                     %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ',','e'), sortorder3=);
                     %end;
+                    end;
+                    else do; 
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=input(scan(_label_,1,'|'),8.)+4, sortorder3=);
+                    end;
                 end;
             end;
             %end;
@@ -1777,6 +1771,31 @@
                 end;
             drop agegroup agegroupnum;
         run;
+
+        /* Merge in alphabetical sortorder into baseline labels dataset */
+        %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
+            %if &reporttype = T6 %then %do; 
+                %do labelcounter = &switch_counter %to 0 %by -1;
+                proc sql noprint undo_policy=none; 
+                    create table baseline_labels&labelcounter. as 
+                    select a.*, b.alphabeticalorder as sortorder2 length=3
+                    from baseline_labels&labelcounter.(drop=sortorder2) a 
+                    left join covarname_baseline b
+                    on a.cov_varname = b.cov_varname;
+                quit;
+                %end;
+            %end;
+            %else %do; 
+            %let labelcounter = 1;
+                proc sql noprint undo_policy=none; 
+                    create table baseline_labels&labelcounter. as 
+                    select a.*, b.alphabeticalorder as sortorder2 length=3
+                    from baseline_labels&labelcounter.(drop=sortorder2) a 
+                    left join covarname_baseline b
+                    on a.cov_varname = b.cov_varname;
+                quit;
+            %end;
+        %end;
 
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 grouper analysisgrp table weight order);
