@@ -11,7 +11,7 @@
 *          to use in a data step in ("var", "var") notation
 *
 *  Program inputs:    
-*   - Macro variable containing comma delineated list 
+*   - Macro variable containing space delineated list 
 * 
 *  Program outputs:                                                                                                                                       
 *  	- Macro variable containing each variable in the list in double quotes and separated by a list

@@ -84,21 +84,15 @@
             call symputx('kmrefpop', kmrefpop);
             if not missing(convrule) then do;
 				convrule = tranwrd(convrule,"",",");
-				convrule = tranwrd(convrule,",or"," ");
-				convrule = tranwrd(convrule,"or,"," ");
+				convrule = tranwrd(convrule,",,","");
+				convrule = compress(convrule);
+				if substr(convrule,length(convrule),1) = ',' then convrule = substr(convrule,1,length(convrule)-1);
 				call symputx('convrule', convrule);
 			end;
         run;
+
         %put now computing effect estimates for &analysisgrp.;
 
-		data _null_;
-		var = "&convrule.";
-		var = tranwrd(var,"",",");
-		var = tranwrd(var2,",or"," ");
-		var = tranwrd(var2,"or,"," ");
-		call symputx('kmrefpop', kmrefpop);
-		run;
-       
         /*extract QRP input file associated with analysisgrp*/ 
         proc sql noprint;
             select distinct strip(file) into: pscsfile trimmed
