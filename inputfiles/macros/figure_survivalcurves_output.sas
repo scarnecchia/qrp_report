@@ -438,19 +438,19 @@
 		%else %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 %then %do;
 		   /* If there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
               the numerous permutations of situations that can lead to 1 figure */ 
-		   
+
            proc sql noprint;
              select count(caption) into: countkm
              from tableofcontents
              where index(caption, 'Kaplan-Meier Estimate')>0;
            quit;
 
-           %if &countkm = 1 %then %let tablecount = 0;
+           %if &countkm = 1 %then %let tablecount = 0;		   
 
-		   %do j = %eval(&look_start) %to %eval(&look_end);
+		   %macro l2_survivalcurves_output(dpinparenthesis=, dpwhere=);
 
-        	/*loop through each analysisgrp - dataset only exists if curve computed*/
-			%do loopcount = 1 %to &numl2comparisons.;   
+        		/*loop through each analysisgrp - dataset only exists if curve computed*/
+				%do loopcount = 1 %to &numl2comparisons.;   
 
                     data _null_;
                         set l2comparisonfile(where=(order=&loopcount.));
@@ -565,7 +565,7 @@
 									proc sql noprint;
 										select max(day) into :max_day
 										from figure&figure._analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
 									%if &max_day. > 0 %then %do;
@@ -584,8 +584,8 @@
 										%else %let cititle=; 
 
 				                        %output_survivalcurves(dataset=figure&figure._analysis&loopcount._&j.,
-													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat"),
-													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat" and dpidsiteid="&dpwhere"),
+													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
 													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
@@ -617,9 +617,27 @@
 						%end;
 
 	            	%end; /* psfile */	  
-			 	%end; /* loopcount */
-			%end; /* Monitoring Period */
-		%end; /* reporttype */
+			 	%end; /* analysisgrp loopcount */
+			%mend l2_survivalcurves_output;
+
+			%do j = %eval(&look_start) %to %eval(&look_end);
+				%l2_survivalcurves_output(%if %eval(&num_dp.)=1 %then %do;
+			                              dpinparenthesis=,
+			                              %end;
+			                              %else %do;
+			                              dpinparenthesis=%str( (Aggregated) ),
+			                              %end;
+										  dpwhere=ALL);
+
+				*Output separate table for each Data Partner - loop through each DP;
+                %if &stratifybydp. = Y %then %do;    
+                    %do dps = 1 %to %eval(&num_dp.);
+        		        %let maskedID = %scan(&masked_dplist,&dps); 
+                        %l2_survivalcurves_output(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+                    %end;
+                %end; /*DP stratification*/
+			%end; /* Monitoring Period loop */
+		%end; /* L2 reporttype */
 
     proc datasets nowarn nolist noprint lib=work;
         delete _kmcols sample;
