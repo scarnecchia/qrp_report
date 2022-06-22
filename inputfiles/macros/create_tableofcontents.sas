@@ -1691,9 +1691,7 @@
 				%let F4nobs = 0;
 				%let F5nobs = 0;
 
-				/*loop through periodid*/
-                %do j = %eval(&look_start) %to %eval(&look_end);
-
+				%macro survivalcurvestoc(dpinparenthesis=, dpwhere=);	
 	                /*loop through each analysisgrp - dataset only exists if curve computed*/
 					%do loopcount = 1 %to &numl2comparisons.;   
 	                    data _null_;
@@ -1781,13 +1779,13 @@
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF3_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1802,7 +1800,7 @@
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF4_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
 									%if &pscsfile. = psmatchfile %then %let pop=Conditional Matched Population after;
@@ -1814,7 +1812,7 @@
 
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1829,7 +1827,7 @@
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF5_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
 									%let pop=Unconditional Matched Population after;
@@ -1837,7 +1835,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1872,7 +1870,28 @@
 
 	                    %end; /*PSmatch, stratification or IPTW*/						
 					%end; /*loop through numl2comparisons */
-                %end; /*loop through periodid*/                      
+				%mend survivalcurvestoc;
+
+				/*loop through periodid*/
+                %do j = %eval(&look_start) %to %eval(&look_end);
+					%survivalcurvestoc( %if %eval(&num_dp.)=1 %then %do;
+			                            dpinparenthesis=,
+			                            %end;
+			                            %else %do;
+			                            dpinparenthesis=%str( (Aggregated) ),
+			                            %end;
+										dpwhere=ALL);
+
+					*Output separate table for each Data Partner - loop through each DP;
+                	%if &stratifybydp. = Y %then %do;    
+	                    %do dps = 1 %to %eval(&num_dp.);
+	        		        %let maskedID = %scan(&masked_dplist,&dps); 
+	                        %survivalcurvestoc(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+	                    %end;
+                	%end; /*DP stratification*/
+                %end; /*loop through periodid*/  
+
+ 
             %end; /*KM plots*/
         %end; /*L2 figures*/
     %end; /* Figure file */
