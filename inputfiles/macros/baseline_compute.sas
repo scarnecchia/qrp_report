@@ -1268,7 +1268,6 @@
 					subgroupcat="&subgroupcat.";
 				%end;
                 %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
-                length sortorder1 sortorder2 3 sortorder3 sortorder4 8;
                  if b then do;
                     grouper='Laboratory Characteristics';
                     sortorder1=14;
