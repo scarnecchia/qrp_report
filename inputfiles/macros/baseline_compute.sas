@@ -1456,6 +1456,10 @@
         data baseline_aggregatelabels;
             length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3 sortorder3 sortorder4 8;
 
+            /* Initialize sortorder3 and sortorder4 */
+            sortorder3=.;
+            sortorder4=.;
+
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;
                 by cov_varname;
