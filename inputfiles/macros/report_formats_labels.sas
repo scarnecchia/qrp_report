@@ -378,7 +378,7 @@
         "NEGATIVE"='Negative'
         "POSITIVE"='Positive'
         "UNDETERMINED"='Undetermined'
-        "UNKNOWN"='Invalid Categorical Result'
+        "INVALID"='Invalid Categorical Result'
         other='Other result';
 
         /* Start|end unit sort computed when format is applied */ 
@@ -387,7 +387,7 @@
         "NEGATIVE" = 2
         "POSITIVE" = 3
         "UNDETERMINED" = 4
-        "UNKNOWN" = 9999999;
+        "INVALID" = 99999;
     run;
 
 /***************************************************************************************************

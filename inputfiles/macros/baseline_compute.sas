@@ -176,7 +176,7 @@
         %baseline_expand_parameters(var =exposurechar);
         %end;
 
-        %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
+        %let covarlistlength = %length(&healthchar.,&medproduse., &labcharacteristics., &UtilizationIntensity);
 
         *************************************************************
         * Processing - need to:
@@ -1253,13 +1253,6 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /*if covarsort = A, then alphabetize by covarlabel*/
-            %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
-            proc sort data=covarname sortseq=linguistic (numeric_collation=on);
-                by studyname;
-            run;
-            %end;
-
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
                                     covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
@@ -1275,15 +1268,13 @@
                  if b then do;
                     grouper='Laboratory Characteristics';
                     sortorder1=14;
-                    %if %str("&covarsort") = %str("A") %then %do;
-                    sortorder2=_n_;
-                    %end;
-                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    %if %str("&covarsort") = %str("C") %then %do;
                     sortorder2=input(compress(cov_varname,,'AF'),4.);
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
+                    length covarorderlist $&covarlistlength.;
                     covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
-                    sortorder2 = findw(compress(covarorderlist), compress(cov_varname), ',','e');
+                    sortorder2 = findw(compress(covarorderlist), compress(upcase(cov_varname)), ',','e');
                     %end;                 
                     sortorder3=1;
                     label=studyname;
@@ -1433,6 +1424,17 @@
                 covarlabel = studyname;
                 drop covarnum studyname;
             run;
+
+            /* Merge in alphabetical sortorder into baseline labels dataset */
+            %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
+            proc sql noprint undo_policy=none; 
+                create table baseline_labels1 as 
+                select a.*, b.alphabeticalorder as sortorder2 length=3
+                from baseline_labels1(drop=sortorder2) a 
+                left join covarname_baseline b
+                on a.cov_varname = b.cov_varname;
+            quit;
+            %end;
 
             proc sort data=covarname_baseline; 
                 by cov_varname; 
@@ -1634,7 +1636,7 @@
                 end;
                 /* Character lab covariates with test record row */
                 if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
-                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=3);
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=2);
                 end;
                 /* Character lab covariates for all rows without start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
@@ -1642,12 +1644,12 @@
                 end;
                 /* Character lab covariates for rows with start|end unit */
                 if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
-                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(1,_label_,'|'),8.));
+                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(_label_,1,'|'),8.)+4);
                 end;
                 /* For Numeric labs - Test record row */
                 if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
                     if strip(_label_) = 'UNKNOWN' then do; 
-                    %assignbaselinevars(label="Test records with missing or unknown units", sortorder1=14, grouper="Laboratory Characteristics", sortorder2=, sortorder3=99);
+                    %assignbaselinevars(label="Test records with missing or unknown units", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=99);
                     end;
                     else do;
                     %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics",sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_)));
@@ -1673,7 +1675,7 @@
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
                     covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));                     
-                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(metvar), ',','e'), sortorder3=);
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ',','e'), sortorder3=);
                     %end;
                 end;
             end;
