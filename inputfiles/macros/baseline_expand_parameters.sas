@@ -6,7 +6,7 @@
 * Created (mm/dd/yyyy): 11/19/2020
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This utility macro takes a macro variable that contains a comma delineated list and/or 
+* PURPOSE: This utility macro takes a macro variable that contains a space delineated list and/or 
 *          covariates with a dash notation in the format COVAR#-COVAR# and expands the covariate list
 *          to use in a data step in ("var", "var") notation
 *

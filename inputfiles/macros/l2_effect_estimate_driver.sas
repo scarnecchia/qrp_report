@@ -82,9 +82,22 @@
             call symputx('noclassvars', noclassvars);
 			call symputx('unique_psestimate', unique_psestimate);
             call symputx('kmrefpop', kmrefpop);
-            if not missing(convrule) then call symputx('convrule', convrule);
+            if not missing(convrule) then do;
+				convrule = tranwrd(convrule,"",",");
+				convrule = tranwrd(convrule,",or"," ");
+				convrule = tranwrd(convrule,"or,"," ");
+				call symputx('convrule', convrule);
+			end;
         run;
         %put now computing effect estimates for &analysisgrp.;
+
+		data _null_;
+		var = "&convrule.";
+		var = tranwrd(var,"",",");
+		var = tranwrd(var2,",or"," ");
+		var = tranwrd(var2,"or,"," ");
+		call symputx('kmrefpop', kmrefpop);
+		run;
        
         /*extract QRP input file associated with analysisgrp*/ 
         proc sql noprint;
