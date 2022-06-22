@@ -57,11 +57,12 @@
 
     /* Create a labels dataset for subgroup header creation */
     data init_labels;
-        length label $&baselinelabellength sortorder1 sortorder2 sortorder3 3;
+        length label $&baselinelabellength sortorder1 sortorder2 3 sortorder3 sortorder4 8;
         grouper='Demographic Characteristics';
-        sortorder2=0;
         sortorder1=3;
+        sortorder2=0;
         sortorder3=0;
+        sortorder4=0;
         label='Age';
         output;
         sortorder1=4;
@@ -1267,7 +1268,7 @@
 					subgroupcat="&subgroupcat.";
 				%end;
                 %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
-                length sortorder1 sortorder2 sortorder3 sortorder4 3.;
+                length sortorder1 sortorder2 3 sortorder3 sortorder4 8;
                  if b then do;
                     grouper='Laboratory Characteristics';
                     sortorder1=14;
@@ -1453,7 +1454,7 @@
         %mend;
 
         data baseline_aggregatelabels;
-            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 sortorder3 sortorder4 3;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3 sortorder3 sortorder4 8;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;
