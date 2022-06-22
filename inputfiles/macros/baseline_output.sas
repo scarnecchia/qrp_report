@@ -90,6 +90,7 @@
                     from table1_&periodid.(where=(order = &order. and table = 'Switchstep_0')) as x
                     left join table1_&periodid.(where=(order = &order. and table = 'Switchstep_1')) as y
                     on x.metvar = y.metvar and x.sortorder1 = y.sortorder1 and x.sortorder2 = y.sortorder2
+                    					   and x.sortorder3 = y.sortorder3 and x.sortorder4 = y.sortorder4
                    %if %eval(&maxswitch.=2) %then %do;
                     left join table1_&periodid.(where=(order = &order. and table = 'Switchstep_2')) as z
                     on x.metvar = z.metvar and x.sortorder1 = z.sortorder1 and x.sortorder2 = z.sortorder2 and x.sortorder3 = z.sortorder3 and x.sortorder4 = z.sortorder4
