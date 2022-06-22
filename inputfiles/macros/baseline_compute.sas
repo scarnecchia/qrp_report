@@ -325,6 +325,7 @@
 		%let total_adjusted_exp_patients=0;
 		%let total_adjusted_comp_episodes=0;
 		%let total_adjusted_comp_patients=0;
+		%let total_Switchstep_0_exp_patients=0;
 
 		%do a = 1 %to &num_dp.;
 		      %let n_switchstep_0_episodes_exp&a=0;
