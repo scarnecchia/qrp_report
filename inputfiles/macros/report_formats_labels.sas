@@ -381,12 +381,12 @@
         "INVALID"='Invalid Categorical Result'
         other='Other result';
 
-        /* Start|end unit sort computed when format is applied */ 
         value $charlabsort
         "BORDERLINE" = 1
         "NEGATIVE" = 2
         "POSITIVE" = 3
         "UNDETERMINED" = 4
+        /* Start|end unit displayed after UNDETERMIEND, however sort computed when format is applied to capture each START value */ 
         "INVALID" = 99999;
     run;
 
