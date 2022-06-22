@@ -66,6 +66,7 @@
                            x.sortorder1, 
                            x.sortorder2,
                            x.sortorder3,
+                           x.sortorder4,
                            x.metvar,
                            x.vartype,
                            x.analysisgrp,
@@ -91,9 +92,9 @@
                     on x.metvar = y.metvar and x.sortorder1 = y.sortorder1 and x.sortorder2 = y.sortorder2
                    %if %eval(&maxswitch.=2) %then %do;
                     left join table1_&periodid.(where=(order = &order. and table = 'Switchstep_2')) as z
-                    on x.metvar = z.metvar and x.sortorder1 = z.sortorder1 and x.sortorder2 = z.sortorder2 and x.sortorder3 = z.sortorder3
+                    on x.metvar = z.metvar and x.sortorder1 = z.sortorder1 and x.sortorder2 = z.sortorder2 and x.sortorder3 = z.sortorder3 and x.sortorder4 = z.sortorder4
                    %end;
-                   order by x.sortorder1, x.sortorder2, x.sortorder3;
+                   order by x.sortorder1, x.sortorder2, x.sortorder3, x.sortorder4;
                 quit;
             
                 %let dataset = table1&tableletter.;
@@ -104,7 +105,7 @@
 							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
 							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 							  %end;));
-                keep label grouper metvar vartype analysisgrp table weight sortorder1 sortorder2 sortorder3 exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
+                keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
                 %if &includecomp. = Y %then %do; comp_mean&dpnum. comp_std&dpnum. comp_mean&dpnum._char comp_std&dpnum._char %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum. switch2_std&dpnum. switch2_mean&dpnum._char switch2_std&dpnum._char %end;
                 %if &computebalance. = Y %then %do; ad&dpnum. sd&dpnum. ad&dpnum._char sd&dpnum._char %end;
