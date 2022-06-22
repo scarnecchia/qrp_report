@@ -39,10 +39,10 @@
     %let tempvar = ;
 
     %if %length(&&&var.) > 0 %then %do;
-		%let countvars = %sysfunc(countw(%quote(&&&var), %str(,)));
+		%let countvars = %sysfunc(countw(%quote(&&&var), %str( )));
             /*loop through each word. If '-' is used, then expand to each covar*/
 			%do count = 1 %to &countvars.;
-				%let word = %scan(%quote(&&&var),&count, %str(,));
+				%let word = %scan(%quote(&&&var),&count, %str( ));
 					%if %index(&word.,%str(-)) = 0 %then %do;
 						%if &count = 1 %then %do;
 							%let tempvar = "&word.";
