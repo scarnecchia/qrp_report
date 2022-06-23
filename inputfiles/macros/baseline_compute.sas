@@ -1398,6 +1398,7 @@
 		
         /*stack all tables*/
         data baseline_aggregate_prelabel;
+            length cov_varname $8;
             set baseline_aggregatetab:;
             /* Create covar merging variable */
             if index(metvar,'COVAR') then cov_varname=prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,lowcase(metvar)));
