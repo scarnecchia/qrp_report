@@ -426,7 +426,7 @@
               		call define(_col_,'style','style={indent=25}');
               	end;
               	else if prxmatch('/borderline|negative|positive|invalid|undetermined|mean,|\|/i',label) then do; 
-              	    call define(_col_,'style','style={indent=50}');
+              	    call define(_col_,'style','style={indent=50 fontstyle=italic}');
               	end;
               %end;
 			  
