@@ -422,14 +422,12 @@
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %quote(&labcharacteristics) ^= "missing" %then %do; 
-              if grouper= "Laboratory Characteristics" then do;
               	if prxmatch('/test record/i',label)  then do; 
               		call define(_col_,'style','style={indent=25}');
               	end;
               	else if prxmatch('/borderline|negative|positive|invalid|undetermined|mean,|\|/i',label) then do; 
               	    call define(_col_,'style','style={indent=50}');
               	end;
-              end;
               %end;
 			  
 
@@ -565,6 +563,12 @@
                 end;
             end;
         run;
+
+        /* Assign patient/episode label for lab footnote based on cohortdef value */
+        %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+        	%if %sysfunc(prxmatch(/01|04/,&cohortdef)) %then %let patientepi = patients; 
+        	%else %if %sysfunc(prxmatch(/02|03/,&cohortdef)) %then %let patientepi = episodes;
+        %end;
 
         /*Additional meta-data and group-specific names for each reporttype*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
