@@ -1497,7 +1497,6 @@
             from input.&baselinefile;
 
             /* Check if lab covariates specified */
-            %let labcovars=;
             select upper(labcharacteristics) into: labcovars separated by ','
             from input.&baselinefile(where=(not missing(labcharacteristics)));
         quit;
@@ -1986,9 +1985,19 @@
         %end;
     %end;    
 
-    /* Check whether labcharacteristics parameter contains non-lab codes */
+    /* Check whether labcharacteristics parameter contains non-lab codes and identify which lab covariates are categorical  */
     %isdata(dataset=covarname);
     %if %length(&labcovars) > 0 and &nobs > 0 %then %do;
+
+        /*list of categorical labs*/
+        proc sql noprint; 
+            select upper(quote(cov_varname))
+            into: charlabslist separated by ','
+            from covarname
+            where codecat = 'LB' and substr(strip(reverse(codetype)), 1, 1) = 'C';
+        quit;
+
+        /*warn user if labcharacteristics parameter contains non-lab covariates*/
         data _null_;
             set covarname(where=(codecat^='LB' or codedays>1));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
@@ -1998,12 +2007,14 @@
                     put cov_varname= codecat= codetype=;
                 end;
             %end;
-        run;        
+        run;
     %end;
 
+    %if &nobs > 0 %then %do;
     proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
         by runid covarnum;
     run;  
+    %end;
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
