@@ -44,6 +44,7 @@
                                weight = ,
                                title= ,
                                characteristiclabel =, 
+                               labcharacteristics =,
                                dpnum = ,
                                numcolumns = ,
                                grp1_label=,
@@ -380,7 +381,7 @@
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
-            /*Add Characteristic header lines*/
+            /*Add Characteristic header lines and superscript to Lab characteristic header */
             compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
@@ -422,12 +423,12 @@
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %quote(&labcharacteristics) ^= "missing" %then %do; 
-              	if prxmatch('/test record/i',label)  then do; 
+              if prxmatch('/^(Test record|No test record|Test records with missing or unknown units)$|Test record in/', strip(label)) then do;
               		call define(_col_,'style','style={indent=25}');
-              	end;
-              	else if prxmatch('/borderline|negative|positive|invalid|undetermined|mean,|\|/i',label) then do; 
-              	    call define(_col_,'style','style={indent=50 fontstyle=italic}');
-              	end;
+              end;
+              else if prxmatch('/^(Borderline|Negative|Positive|Invalid categorical result|Undetermined|Mean, standard deviation)$|\|/', strip(label)) then do; 
+              	    call define(_row_,'style','style={indent=50 fontstyle=italic}');
+              end;
               %end;
 			  
 
@@ -529,6 +530,8 @@
 				call symputx('unique_psestimate_orig',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);	
+                if missing(labcharacteristics) then call symputx('labcharacteristics',"missing");
+                else call symputx('labcharacteristics', labcharacteristics);
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
                 if missing(covnotinps)=0 then call symputx('covnotinps', strip(upcase(covnotinps)));
                 call symputx('computebalance', 'Y');
@@ -872,6 +875,7 @@
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
 	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	              characteristiclabel =&characteristiclabel.,
+	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
 	              numcolumns =&numcolumns.,
 	              grp1_label=&grp1_label.,

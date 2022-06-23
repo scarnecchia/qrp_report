@@ -700,8 +700,8 @@
                 end;
                 else do;
                     /*continuous metrics*/
-                    exp_mean&i._char = compress(put(exp_mean&i,8.1));
-                    exp_std&i._char = compress(put(exp_std&i,8.1));
+                    exp_mean&i._char = compress(put(exp_mean&i,12.1));
+                    exp_std&i._char = compress(put(exp_std&i,12.1));
                     if exp_mean&i = 0 and exp_std&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                         exp_mean&i._char = '.';
                         exp_std&i._char = '.';
@@ -725,8 +725,8 @@
                     end;
                     %end;
                     %if "&includecomp" = "Y" %then %do;
-                    comp_mean&i._char = compress(put(comp_mean&i,8.1));
-                    comp_std&i._char = compress(put(comp_std&i,8.1));
+                    comp_mean&i._char = compress(put(comp_mean&i,12.1));
+                    comp_std&i._char = compress(put(comp_std&i,12.1));
 
                     if comp_mean&i = 0 and comp_std&i = 0 and &&&n_&table._episodes_comp&i = 0 then do;
                         comp_mean&i._char = '.';
@@ -1069,38 +1069,38 @@
                     end;
                         
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = divide(exp_mean_num,agg_exp_w) ;
-                    exp_mean0_char = compress(put(exp_mean0,8.1));
+                    exp_mean0_char = compress(put(exp_mean0,12.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
-                    comp_mean0_char = compress(put(comp_mean0,8.1));
+                    comp_mean0_char = compress(put(comp_mean0,12.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
                     if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
                         if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(divide(agg_sw_exp,agg_v_exp)) ;
-                        exp_std0_char = compress(put(exp_std0,8.1));
+                        exp_std0_char = compress(put(exp_std0,12.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
                         if missing(agg_sw_exp) then exp_std0_char = '.';
                         if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(divide(agg_sw_comp,agg_v_comp)) ;
-                        comp_std0_char = compress(put(comp_std0,8.1));
+                        comp_std0_char = compress(put(comp_std0,12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
                         if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
                         if ^missing(exp_std_sum) AND (agg_exp_w gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(agg_exp_w - count))) ;
-                        exp_std0_char = compress(put(exp_std0,8.1));
+                        exp_std0_char = compress(put(exp_std0,12.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
-                        comp_std0_char = compress(put(comp_std0,8.1));
+                        comp_std0_char = compress(put(comp_std0,12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
