@@ -37,11 +37,11 @@
 	          description  length = $575 format = $575.;
 
 	   /* Footnotes for in Type 4 tables - applied to multiple tables*/
-       type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
-       type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
+      type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
+      type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
 
 	   /* Footnotes for baseline table */
-       type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
+      type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
 	   type = "baseline";  order = 2;  description = "&covar_characteristic. in blue show a standardized difference greater than &sdthreshold.."; output;
 	   type = "baseline";  order = 4;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated/control patients are weighted by the proportion of the total patient population included in their PS stratum divided by the proportion of the total treated/control patient population included in their PS stratum."; output;
 	   type = "baseline";  order = 5;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1, and control patients are weighted by the proportion of the total treated patient population included in their PS stratum divided by the proportion of the total control patient population included in their PS stratum."; output;
@@ -54,11 +54,12 @@
 	   type = "baseline";  order = 12; description = "Value represents the proportion of episodes with first switch."; output;
 	   type = "baseline";  order = 13; description = "Value represents the proportion of first switch episodes with second switch."; output;
 	   type = "baseline";  order = 14; description = "Value represents standard deviation where no % follows the value."; output;
-       type = "baseline";  order = 15; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-       type = "baseline";  order = 16; description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+      type = "baseline";  order = 15; description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
+      type = "baseline";  order = 16; description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
 	   type = "baseline";  order = 17; description = "Gestational age estimated using a claims-based algorithm, previously validated in the Medication Exposure in Pregnancy Risk Evaluation Program (MEPREP), to identify pregnancies ending in a live birth. ICD-10-CM diagnosis codes indicative of weeks of gestation, and ICD-9-CM and ICD-10-CM diagnosis codes for pre-term and post-term deliveries, were used to calculate the length of the pregnancy episode. Codes had to occur within 7 days of a delivery date in the inpatient setting. In absence of pre-/post-term codes, pregnancy duration was set to 273 days."; output;
 	   type = "baseline";  order = 18; description = "The Charlson/Elixhauser Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759)"; output;
-	   type = "baseline";  order = 19;  description = "Covariate not included in the propensity score logistic regression model."; output;
+	   type = "baseline";  order = 19; description = "Covariate not included in the propensity score logistic regression model."; output;
+	   type = "baseline"; order = 20;  description = "Only the laboratory result closest to the index date in the user-defined evaluation window is described. The number of &patientepi with a given categorical result value, or the mean numerical result value among those reported in given unit, is shown indented and italicized below the Romanized number of unique &patientepi with or without a test record."; output;
 
 	   /* Footnotes for L2 effect estimates table */	  
 	   type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
