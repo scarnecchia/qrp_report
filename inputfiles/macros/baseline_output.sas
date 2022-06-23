@@ -252,6 +252,8 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
+		   /* Lab characteristics specified */
+		   %if %quote(&labcharacteristics) ^= "missing" %then %do; 20 %end;
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
             or (type='type4' and order in (-2 
@@ -292,6 +294,8 @@
           %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), COMORBIDSCORE) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
+		%assign_superscripts(type =labcovar, order =20);
+
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -377,7 +381,12 @@
             compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
+              	if grouper = "Laboratory Characteristics" then do; 
+              	text=catt(grouper,"&super_labcovar.");
+              	end;
+              	else do;
                 text=grouper;
+            	end;
                 num=100;
               end;
               else do; 
@@ -409,6 +418,16 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+              %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+              if grouper= "Laboratory Characteristics" then do;
+              	if prxmatch('/test record/i',label)  then do; 
+              		call define(_col_,'style','style={indent=25}');
+              	end;
+              	else if prxmatch('/borderline|negative|positive|invalid|undetermined|mean,|\|/i',label) then do; 
+              	    call define(_col_,'style','style={indent=50}');
+              	end;
+              end;
+              %end;
 			  
 
               /*assign unknown race footnote*/
