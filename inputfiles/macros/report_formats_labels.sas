@@ -36,6 +36,8 @@
 *   -quarterfmt
 *   -nafmt
 *   -subgrouporderfmt
+*   -charlabfmt
+*   -charlabsort
 *
 *
 *  PARAMETERS:                                                                       
@@ -369,6 +371,23 @@
             'matchmethod' = 8
             'birth_type' = 9
             'periodid' = 10;
+
+        /* Format for character lab covariates and their categories */
+        value $charlabfmt
+        "BORDERLINE"='Borderline'
+        "NEGATIVE"='Negative'
+        "POSITIVE"='Positive'
+        "UNDETERMINED"='Undetermined'
+        "INVALID"='Invalid categorical result'
+        other='Other result';
+
+        value $charlabsort
+        "BORDERLINE" = 1
+        "NEGATIVE" = 2
+        "POSITIVE" = 3
+        "UNDETERMINED" = 4
+        /* Start|end unit displayed after UNDETERMINED, however sort computed when format is applied to capture each START value */ 
+        "INVALID" = 999999;
     run;
 
 /***************************************************************************************************

@@ -57,10 +57,12 @@
 
     /* Create a labels dataset for subgroup header creation */
     data init_labels;
-        length label $70 sortorder1 sortorder2 3;
+        length label $&baselinelabellength sortorder1 sortorder2 3 sortorder3 sortorder4 8;
         grouper='Demographic Characteristics';
-        sortorder2=0;
         sortorder1=3;
+        sortorder2=0;
+        sortorder3=0;
+        sortorder4=0;
         label='Age';
         output;
         sortorder1=4;
@@ -123,6 +125,8 @@
 
                 /*initialize switch_count (used for type 6)*/
                 call symputx('switch_count',0);
+                /* initialize switch_counter(# of switches) */
+                call symputx('switch_counter',0);
 
                 /*if reporttype = T2L2, T4L2, or cohort = mi or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
@@ -162,6 +166,20 @@
                 if file = 'stratificationfile' then call symputx("weightscheme",strip(upcase(strataweight)));
             run;
 		%end;
+
+        ***********************************************************************************************;
+        * Execute %baseline_expand_parameters()              
+        ***********************************************************************************************;
+        %baseline_expand_parameters(var =medproduse);
+        %baseline_expand_parameters(var =healthchar);
+        %baseline_expand_parameters(var =UtilizationIntensity);
+        %baseline_expand_parameters(var =labcharacteristics);
+        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+        %baseline_expand_parameters(var =pregnancychar);
+        %baseline_expand_parameters(var =exposurechar);
+        %end;
+
+        %let covarlistlength = %length(&healthchar.,&medproduse., &labcharacteristics., &UtilizationIntensity);
 
         *************************************************************
         * Processing - need to:
@@ -682,8 +700,8 @@
                 end;
                 else do;
                     /*continuous metrics*/
-                    exp_mean&i._char = compress(put(exp_mean&i,8.1));
-                    exp_std&i._char = compress(put(exp_std&i,8.1));
+                    exp_mean&i._char = compress(put(exp_mean&i,comma12.1));
+                    exp_std&i._char = compress(put(exp_std&i,comma12.1));
                     if exp_mean&i = 0 and exp_std&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                         exp_mean&i._char = '.';
                         exp_std&i._char = '.';
@@ -707,8 +725,8 @@
                     end;
                     %end;
                     %if "&includecomp" = "Y" %then %do;
-                    comp_mean&i._char = compress(put(comp_mean&i,8.1));
-                    comp_std&i._char = compress(put(comp_std&i,8.1));
+                    comp_mean&i._char = compress(put(comp_mean&i,comma12.1));
+                    comp_std&i._char = compress(put(comp_std&i,comma12.1));
 
                     if comp_mean&i = 0 and comp_std&i = 0 and &&&n_&table._episodes_comp&i = 0 then do;
                         comp_mean&i._char = '.';
@@ -805,7 +823,7 @@
                        - Denominator for other metrics is total number of episodes 
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
-                            - L2: 100% for unadjusted, compute % out of unadjusted totalfor adjusted tables
+                            - L2: 100% for unadjusted, compute % out of unadjusted total for adjusted tables
 					        - T6 switching: 100% for switch step 0, compute % of out prior switch total for switch step 1 and switch step 2;
                     if prxmatch('/RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                         if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = divide(exp_mean0,total_exp_patients);
@@ -927,6 +945,17 @@
                         %end;
                         %end;
                     end;
+                    /* Calculate lab covariate percentages */
+                    else if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
+                        if missing(exp_mean0) then exp_std0 = .;
+                        exp_std0_char = compress(put(exp_std0,percent10.1));
+                        %if "&includecomp" = "Y" %then %do;
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
+                        if missing(comp_mean0) then comp_std0 = .;
+                        comp_std0_char = compress(put(comp_std0,percent10.1));
+                        %end;
+                    end;
                     else do;
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
@@ -1010,18 +1039,6 @@
 
                 /*Aggregate continuous variables*/
                 if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
-                    /*assign dp specific patient and episode count*/
-                    %do a = 1 %to &num_dp.; 
-                        exp_episodes&a. = &&&&n_&table._episodes_exp&a.; /*Total number of patients in the exposed*/
-                        %if "&includecomp" = "Y" %then %do;
-                        comp_episodes&a. = &&&&n_&table._episodes_comp&a.; /*Total number of patients in the reference group*/
-                        %end;
-                    %end;
-                    array exp_episodes(&num_dp.) exp_episodes1-exp_episodes&num_dp.;
-                    %if "&includecomp" = "Y" %then %do;
-                    array comp_episodes(&num_dp.) comp_episodes1-comp_episodes&num_dp.;
-                    %end;
-
                     count = 0;
                     exp_mean_num = 0; 
                     exp_std_sum = 0; /*Weighted sum for std calculation in the exposed group*/
@@ -1042,48 +1059,48 @@
                         %end;
                         %else %do;
                             ** Get weighted Std Dev for pooled Standard Deviation calculation  ** ;
-                            if ^missing(std_exp(i)) then exp_std_sum = exp_std_sum + (std_exp(i)**2)*(exp_episodes(i) - 1);
+                            if ^missing(std_exp(i)) then exp_std_sum = exp_std_sum + (std_exp(i)**2)*(exp_w(i) - 1);
                             ** Count number of data partners with a value - for pooled std dev calculation  ** ;
                             if ^missing(std_exp(i)) then count = count + 1 ;
                             %if "&includecomp" = "Y" %then %do;
-                            if ^missing(std_comp(i)) then comp_std_sum = comp_std_sum + (std_comp(i)**2)*(comp_episodes(i) - 1);
+                            if ^missing(std_comp(i)) then comp_std_sum = comp_std_sum + (std_comp(i)**2)*(comp_w(i) - 1);
                             %end;
                         %end;
                     end;
                         
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = divide(exp_mean_num,agg_exp_w) ;
-                    exp_mean0_char = compress(put(exp_mean0,8.1));
+                    exp_mean0_char = compress(put(exp_mean0,comma12.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
-                    comp_mean0_char = compress(put(comp_mean0,8.1));
+                    comp_mean0_char = compress(put(comp_mean0,comma12.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
                     if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
                         if ^missing(agg_sw_exp) AND (agg_v_exp gt 0) then exp_std0 = sqrt(divide(agg_sw_exp,agg_v_exp)) ;
-                        exp_std0_char = compress(put(exp_std0,8.1));
+                        exp_std0_char = compress(put(exp_std0,comma12.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if agg_sw_exp > 0 and agg_v_exp = 0 then exp_std0_char = 'NaN';
                         if missing(agg_sw_exp) then exp_std0_char = '.';
                         if ^missing(agg_sw_comp) AND (agg_v_comp gt 0) then comp_std0 = sqrt(divide(agg_sw_comp,agg_v_comp)) ;
-                        comp_std0_char = compress(put(comp_std0,8.1));
+                        comp_std0_char = compress(put(comp_std0,comma12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if agg_sw_comp > 0 and agg_v_comp = 0 then comp_std0_char = 'NaN';
                         if missing(agg_sw_comp) then comp_std0_char = '.';
                     %end;
                     %else %do;
-                        if ^missing(exp_std_sum) AND (total_exp_episodes gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(total_exp_episodes - count))) ;
-                        exp_std0_char = compress(put(exp_std0,8.1));
+                        if ^missing(exp_std_sum) AND (agg_exp_w gt 0) then exp_std0 = sqrt(divide(exp_std_sum,(agg_exp_w - count))) ;
+                        exp_std0_char = compress(put(exp_std0,comma12.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_std_sum) AND (total_comp_episodes gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(total_comp_episodes - count)));
-                        comp_std0_char = compress(put(comp_std0,8.1));
+                        if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
+                        comp_std0_char = compress(put(comp_std0,comma12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
@@ -1192,7 +1209,7 @@
                     %end;
                 end;
                
-                keep metvar analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do;  _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1240,15 +1257,34 @@
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
 
-            /* Assign necessary variables for labeling */
             data &labelout&suffix.;
-                set init_labels;
+                set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
+                                    covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
+                                %end;;
                 length analysisgrp $40 table weight $30;
 				%if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 					format subgroup subgroupcat $11.;
 					subgroup="&subgroup.";
 					subgroupcat="&subgroupcat.";
 				%end;
+                %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
+                 if b then do;
+                    grouper='Laboratory Characteristics';
+                    sortorder1=14;
+                    %if %str("&covarsort") = %str("C") %then %do;
+                    sortorder2=input(compress(cov_varname,,'AF'),4.);
+                    %end;
+                    %else %if %str("&covarsort") = %str("O") %then %do;
+                    length covarorderlist $&covarlistlength.;
+                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
+                    sortorder2 = findw(compress(covarorderlist), compress(upcase(cov_varname)), ',','e');
+                    %end;                 
+                    sortorder3=-1;
+                    sortorder4=-1;
+                    label=studyname;
+                    drop studyname;
+                end;
+                %end;
                 order=&b;
                 analysisgrp="&analysisgrp.";
                 table="&table";
@@ -1308,7 +1344,7 @@
 
 	        /*Types 1-5: unweighted*/
 			%if %str("&reporttype") ne %str("T6") and %eval(&unique_psestimate.) = 1 %then %do;
-	          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels1, suffix=&suffix.);
+	          %baselinecomputemetrics(table=Unadjusted, weight=Unweighted, dataout=baseline_aggregatetab1, labelout=baseline_labels0, suffix=&suffix.);
 	        %end;
 
 	        /*L2 tables*/
@@ -1364,20 +1400,6 @@
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
         run;
-		
-        ***********************************************************************************************;
-        * Execute %baseline_expand_parameters()              
-        ***********************************************************************************************;
-        %baseline_expand_parameters(var =medproduse);
-        %baseline_expand_parameters(var =healthchar);
-        %baseline_expand_parameters(var =UtilizationIntensity);
-        %baseline_expand_parameters(var =labcharacteristics);
-        %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
-        %baseline_expand_parameters(var =pregnancychar);
-        %baseline_expand_parameters(var =exposurechar);
-        %end;
-
-        %let covarlistlength = %length(&healthchar.,&medproduse.,&UtilizationIntensity);
 
         ***********************************************************************************************;
         * Derive labels for covariates      
@@ -1395,23 +1417,29 @@
             %end;
 
             data covarname_baseline; 
-                length MetVar $32 covarlabel $&baselinelabellength.;
+                length covarlabel $&baselinelabellength.;
                 set covarname(where=(runid="&runid.")); 
                 %if %str("&covarsort") = %str("A") %then %do;
                 by studyname;
                 alphabeticalorder = _n_;
                 %end;
-                MetVar = cats("COVAR", covarnum);
                 covarlabel = studyname;
                 drop covarnum studyname;
             run;
 
+            data baseline_aggregate_prelabel;
+                length cov_varname $8;
+                set baseline_aggregate_prelabel;
+                /* Create covar merging variable */
+                if index(metvar,'COVAR') then cov_varname=prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,lowcase(metvar)));
+            run;
+
             proc sort data=covarname_baseline; 
-                by metvar; 
+                by cov_varname; 
             run;
 
             proc sort data=baseline_aggregate_prelabel;
-                by metvar;
+                by cov_varname;
             run;
         %end;
 
@@ -1419,20 +1447,26 @@
         * Apply user defined inclusion parameters and assign 1) row labels and 2) row headers          
         ***********************************************************************************************;
 
-        /*utility macro to assign label, grouper, sortorder, sortorder2*/
-        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=);
+        /*utility macro to assign label, grouper, sortorder1, sortorder2, sortorder3 and sortorder4 */
+        %macro assignbaselinevars(label=, grouper=, sortorder1 = , sortorder2=, sortorder3=, sortorder4=);
             %if %length(&label)>0 %then %do; label= &label; %end;
             %if %length(&grouper)>0 %then %do; grouper= &grouper; %end;
             %if %length(&sortorder1)>0 %then %do; sortorder1=&sortorder1.; %end;
             %if %length(&sortorder2)>0 %then %do; sortorder2=&sortorder2.; %end;
+            %if %length(&sortorder3)>0 %then %do; sortorder3=&sortorder3.; %end;
+            %if %length(&sortorder4)>0 %then %do; sortorder4=&sortorder4.; %end;
         %mend;
 
         data baseline_aggregatelabels;
-            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3 sortorder3 sortorder4 8;
+
+            /* Initialize sortorder3 and sortorder4 */
+            sortorder3=.;
+            sortorder4=.;
 
             %if "&includecovars" = "Y" %then %do;
                 merge baseline_aggregate_prelabel (in=a) covarname_baseline;
-                by metvar;
+                by cov_varname;
                 if a;
             %end;
             %else %do;
@@ -1595,18 +1629,74 @@
             %end;
 
             /*********************************************************************************************/
+            /* Lab Characteristics                                                                       */
+            /*********************************************************************************************/
+            %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+            else if prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar)) in (&labcharacteristics) then do;
+                /* Character lab covariates with test record row */
+                if metvar in (&labcharacteristics) and metvar in (&charlabslist) then do; 
+                %assignbaselinevars(label="Test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=0, sortorder4=0);
+                end;
+                /* Character lab covariates for all rows without start|end unit */
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and ^index(_label_,'|') then do; 
+                %assignbaselinevars(label=put(scan(metvar,-1,'_'), $charlabfmt.), grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(put(scan(metvar,-1,'_'), charlabsort.),8.), sortorder4=input(put(scan(metvar,-1,'_'), charlabsort.),8.));
+                end;
+                /* Character lab covariates for rows with start|end unit */
+                if index(metvar,'LBRES') and vartype = 'dichotomous' and index(_label_,'|') then do; 
+                %assignbaselinevars(label=_label_, grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=input(scan(_label_,1,'|'),8.)+5, sortorder4=input(scan(scan(_label_,1,' '),-1,'|'),8.)+5);
+                end;
+                /* For Numeric labs - Test record row */
+                if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
+                    if strip(_label_) = 'UNKNOWN' then do; 
+                    %assignbaselinevars(label="Test records with missing or unknown units", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=99, sortorder4=99);
+                    end;
+                    else do;
+                    %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics",sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_)), sortorder4=rank(strip(_label_)));
+                    end;
+                end;
+                /* Numeric labs for all rows with units */
+                if index(metvar,'LBRES') and vartype = 'continuous' then do; 
+                    if ^index(metvar,'UNKNOWN') then do;
+                    %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_))+1, sortorder4=rank(strip(_label_))+1);
+                    end;
+                    else do; 
+                    %assignbaselinevars(label="Mean, standard deviation", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=100, sortorder4=100);
+                    end;
+                end;
+                /* All lab covariates with no test record row */ 
+                if prxmatch('/NOTESTRECORD/',metvar) then do; 
+                %assignbaselinevars(label="No test record", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=99999999, sortorder4=99999999);
+                end;
+                if sortorder1=14 then do;
+                    *Assign sort order using covarsort parameter;
+                    %if %str("&covarsort") = %str("A") %then %do;
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=alphabeticalorder, sortorder3=, sortorder4=);
+                    %end;
+                    %else %if %str("&covarsort") = %str("C") %then %do;
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=input(compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar)),,'A'),4.), sortorder3=, sortorder4=);
+                    %end;
+                    %else %if %str("&covarsort") = %str("O") %then %do;
+                    length covarorderlist $&covarlistlength.;
+                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));                     
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ',','e'), sortorder3=, sortorder4=);
+                    %end;
+                end;
+            end;
+            %end;
+
+            /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
             else if metvar in (&healthchar.,&medproduse.,&UtilizationIntensity.) then do;   
                 /*Assign grouper and sortorder1*/
                 if metvar in (&healthchar.) then do;
-                %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 11, sortorder2=);
+                %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
                 if metvar in (&medproduse.) then do;
-                %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 12, sortorder2=);
+                %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
                 if metvar in (&UtilizationIntensity.) then do;
-                %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 13, sortorder2=);
+                %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
                 end;
 
                 /*Assign labels and sortorder2*/
@@ -1655,7 +1745,7 @@
             
             if missing(label) then delete;
 
-            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+            keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 sortorder3 sortorder4 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                   %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1691,13 +1781,27 @@
             drop agegroup agegroupnum;
         run;
 
+        /* Merge in alphabetical sortorder into baseline labels dataset */
+        %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
+            %do labelcounter = &switch_counter %to 0 %by -1;
+            proc sql noprint undo_policy=none; 
+                create table baseline_labels&labelcounter. as 
+                select a.*, b.alphabeticalorder as sortorder2 length=3
+                from baseline_labels&labelcounter.(drop=sortorder2) a 
+                left join covarname_baseline b
+                on a.cov_varname = b.cov_varname;
+            quit;
+            %end;
+        %end;
+
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels:;
+            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
         run;
 
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
-            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2;
+            by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2 sortorder3 sortorder4;
         run;
 
         ***********************************************************************************************;
