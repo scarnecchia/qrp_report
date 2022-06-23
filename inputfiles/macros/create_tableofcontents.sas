@@ -1691,7 +1691,7 @@
 				%let F4nobs = 0;
 				%let F5nobs = 0;
 				
-				%macro survivalcurvestoc(dpinparenthesis=, dpwhere=);		                	                    
+				%macro survivalcurvestoc(aggregated=, dpinparenthesis=, dpwhere=);		                	                    
 	                        /*assign labels*/
 	                        data _null_; 
 	                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
@@ -1768,7 +1768,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1795,7 +1795,7 @@
 
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1818,7 +1818,7 @@
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1849,12 +1849,12 @@
 						/*loop through periodid*/
 		                %do j = %eval(&look_start) %to %eval(&look_end);
 							%survivalcurvestoc( %if %eval(&num_dp.)=1 %then %do;
-					                            dpinparenthesis=,
+					                            aggregated=,
 					                            %end;
 					                            %else %do;
-					                            dpinparenthesis=%str( (Aggregated) ),
+					                            aggregated=%str(Aggregated ),
 					                            %end;
-												dpwhere=ALL);
+												dpinparenthesis=, dpwhere=ALL);
 
 							* Save number of observations for the aggregated curves for figurenum increment below;
 							%let F3nobsALL=&F3nobs.;
@@ -1865,7 +1865,7 @@
 		                	%if &stratifybydp. = Y %then %do;    
 			                    %do dps = 1 %to %eval(&num_dp.);
 			        		        %let maskedID = %scan(&masked_dplist,&dps); 
-			                        %survivalcurvestoc(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+			                        %survivalcurvestoc(aggregated=, dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
 			                    %end;
 		                	%end; /*DP stratification*/
 		                %end; /*loop through periodid*/  

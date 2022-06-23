@@ -451,7 +451,7 @@
 		   %let F4nobs = 0;
 		   %let F5nobs = 0; 
 
-		   %macro l2_survivalcurves_output(dpinparenthesis=, dpwhere=);        		
+		   %macro l2_survivalcurves_output(aggregated=, dpinparenthesis=, dpwhere=);        		
                         /*assign labels*/
                         data _null_; 
                             set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
@@ -561,7 +561,7 @@
 
 				                        %output_survivalcurves(dataset=figure&figure._analysis&loopcount._&j.,
 													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat" and dpidsiteid="&dpwhere"),
-													 figtitle=%quote(&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figtitle=%quote(&aggregated.&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
 													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
@@ -612,12 +612,12 @@
 
 					%do j = %eval(&look_start) %to %eval(&look_end);
 						%l2_survivalcurves_output(%if %eval(&num_dp.)=1 %then %do;
-					                              dpinparenthesis=,
+					                              aggregated=,
 					                              %end;
 					                              %else %do;
-					                              dpinparenthesis=%str( (Aggregated) ),
+					                              aggregated=%str(Aggregated ),
 					                              %end;
-												  dpwhere=ALL);
+												  dpinparenthesis=, dpwhere=ALL);
 
 						* Save number of observations for the aggregated curves for figurenum increment below;
 						%let F3nobsALL=&F3nobs.;
@@ -628,7 +628,7 @@
 		                %if &stratifybydp. = Y %then %do;    
 		                    %do dps = 1 %to %eval(&num_dp.);
 		        		        %let maskedID = %scan(&masked_dplist,&dps); 
-		                        %l2_survivalcurves_output(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+		                        %l2_survivalcurves_output(aggregated=, dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
 		                    %end;
 		                %end; /*DP stratification*/
 
