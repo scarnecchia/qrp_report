@@ -445,33 +445,13 @@
              where index(caption, 'Kaplan-Meier Estimate')>0;
            quit;
 
-           %if &countkm = 1 %then %let tablecount = 0;		   
+           %if &countkm = 1 %then %let tablecount = 0;	
 
-		   %macro l2_survivalcurves_output(dpinparenthesis=, dpwhere=);
+		   %let F3nobs = 0;
+		   %let F4nobs = 0;
+		   %let F5nobs = 0; 
 
-        		/*loop through each analysisgrp - dataset only exists if curve computed*/
-				%do loopcount = 1 %to &numl2comparisons.;   
-
-                    data _null_;
-                        set l2comparisonfile(where=(order=&loopcount.));
-		                call symputx('runid', runid);
-		                call symputx('analysisgrp', analysisgrp);
-		                call symputx('kmrefpop',kmrefpop);
-                    run;
-                    
-					/* KM plots not available for PS Stratum Weighted analysis */
-                    proc sql noprint;
-                    	%let strataweight = ;
-                        select distinct strip(file)
-           					  ,strataweight
-						into: pscsfile trimmed
-						    ,:strataweight trimmed
-                        from pscs_masterinputs
-                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
-                    quit;
-
-                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
-
+		   %macro l2_survivalcurves_output(dpinparenthesis=, dpwhere=);        		
                         /*assign labels*/
                         data _null_; 
                             set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
@@ -519,11 +499,7 @@
 
 						proc sql noprint;
 						select count(*) into :numsubgroups from _subgroups;
-						quit;
-
-						%let F3nobs = 0;
-						%let F4nobs = 0;
-						%let F5nobs = 0;
+						quit;						
 
 						%let numkm = 0;
 						proc sql noprint;
@@ -608,35 +584,64 @@
 									%end; /* sufficient data to plot the figure */
 		                        %end; /* &nobs.>0 */
 							%end; /* figurelist */ 
-	                	%end; /* subgroups */
+	                	%end; /* subgroups */							            	
+			%mend l2_survivalcurves_output;
 
-						%if %eval(&F3nobs.>0) | %eval(&F4nobs.>0) | %eval(&F5nobs.>0) %then %do;
-							%let figurenum=%eval(&figurenum+1); 
+			/*loop through each analysisgrp - dataset only exists if curve computed*/
+			%do loopcount = 1 %to &numl2comparisons.;   
+
+                data _null_;
+                    set l2comparisonfile(where=(order=&loopcount.));
+	                call symputx('runid', runid);
+	                call symputx('analysisgrp', analysisgrp);
+	                call symputx('kmrefpop',kmrefpop);
+                run;
+                
+				/* KM plots not available for PS Stratum Weighted analysis */
+                proc sql noprint;
+                    %let strataweight = ;
+                    select distinct strip(file)
+           				  ,strataweight
+					into: pscsfile trimmed
+					    ,:strataweight trimmed
+                    from pscs_masterinputs
+                    where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+                quit;
+
+                %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+
+					%do j = %eval(&look_start) %to %eval(&look_end);
+						%l2_survivalcurves_output(%if %eval(&num_dp.)=1 %then %do;
+					                              dpinparenthesis=,
+					                              %end;
+					                              %else %do;
+					                              dpinparenthesis=%str( (Aggregated) ),
+					                              %end;
+												  dpwhere=ALL);
+
+						* Save number of observations for the aggregated curves for figurenum increment below;
+						%let F3nobsALL=&F3nobs.;
+						%let F4nobsALL=&F3nobs.;
+						%let F5nobsALL=&F3nobs.;
+
+						*Output separate table for each Data Partner - loop through each DP;
+		                %if &stratifybydp. = Y %then %do;    
+		                    %do dps = 1 %to %eval(&num_dp.);
+		        		        %let maskedID = %scan(&masked_dplist,&dps); 
+		                        %l2_survivalcurves_output(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+		                    %end;
+		                %end; /*DP stratification*/
+
+						%if %eval(&F3nobsALL.>0) | %eval(&F4nobsALL.>0) | %eval(&F5nobsALL.>0) %then %do;
+							%let figurenum = %eval(&figurenum.+1); 
 							%let tablecount = 1;
 							%let tableletter =a; 
 						%end;
 
-	            	%end; /* psfile */	  
-			 	%end; /* analysisgrp loopcount */
-			%mend l2_survivalcurves_output;
+					%end; /* Monitoring Period loop */
 
-			%do j = %eval(&look_start) %to %eval(&look_end);
-				%l2_survivalcurves_output(%if %eval(&num_dp.)=1 %then %do;
-			                              dpinparenthesis=,
-			                              %end;
-			                              %else %do;
-			                              dpinparenthesis=%str( (Aggregated) ),
-			                              %end;
-										  dpwhere=ALL);
-
-				*Output separate table for each Data Partner - loop through each DP;
-                %if &stratifybydp. = Y %then %do;    
-                    %do dps = 1 %to %eval(&num_dp.);
-        		        %let maskedID = %scan(&masked_dplist,&dps); 
-                        %l2_survivalcurves_output(dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
-                    %end;
-                %end; /*DP stratification*/
-			%end; /* Monitoring Period loop */
+				%end; /* psfile */	  
+			%end; /* analysisgrp loopcount */
 		%end; /* L2 reporttype */
 
     proc datasets nowarn nolist noprint lib=work;
