@@ -1398,10 +1398,7 @@
 		
         /*stack all tables*/
         data baseline_aggregate_prelabel;
-            length cov_varname $8;
             set baseline_aggregatetab:;
-            /* Create covar merging variable */
-            if index(metvar,'COVAR') then cov_varname=prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,lowcase(metvar)));
         run;
 
         ***********************************************************************************************;
@@ -1428,6 +1425,13 @@
                 %end;
                 covarlabel = studyname;
                 drop covarnum studyname;
+            run;
+
+            data baseline_aggregate_prelabel;
+                length cov_varname $8;
+                set baseline_aggregate_prelabel;
+                /* Create covar merging variable */
+                if index(metvar,'COVAR') then cov_varname=prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,lowcase(metvar)));
             run;
 
             proc sort data=covarname_baseline; 
@@ -1791,7 +1795,8 @@
         %end;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order);
+            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
         run;
 
         /*Final sort*/;
