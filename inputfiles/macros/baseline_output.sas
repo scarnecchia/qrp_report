@@ -400,7 +400,7 @@
               line text $Varying. num; 
             endcomp;
 
-            /*Indent demographic header lines*/
+            /*Indent demographic header lines and lab covariate record lines*/
             compute label;
 
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");
