@@ -1505,8 +1505,6 @@
         %if %length(&labcovars) > 0 %then %do;
         /* Expand lab covariates */
         %baseline_expand_parameters(var=labcovars);
-        /* Remove commas from the list */
-        %let labcovars = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&labcovars),%str(,),%str( )))));
         /* Remove quotes from the list */
         %let labcovars = %sysfunc(tranwrd(&labcovars,%str(%")/*"*/,%str( )));
         /* Remove duplicate covar values from list */
