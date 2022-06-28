@@ -1865,7 +1865,7 @@
 		                	%if &stratifybydp. = Y %then %do;    
 			                    %do dps = 1 %to %eval(&num_dp.);
 			        		        %let maskedID = %scan(&masked_dplist,&dps); 
-			                        %survivalcurvestoc(aggregated=, dpinparenthesis=%str( (&maskedid.) ), dpwhere=&maskedid.);
+			                        %survivalcurvestoc(aggregated=, dpinparenthesis=%str( (&maskedid.)), dpwhere=&maskedid.);
 			                    %end;
 		                	%end; /*DP stratification*/
 		                %end; /*loop through periodid*/  
