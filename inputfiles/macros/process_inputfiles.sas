@@ -1991,7 +1991,7 @@
         /*list of categorical labs*/
         proc sql noprint; 
             select upper(quote(cov_varname))
-            into: charlabslist separated by ','
+            into: charlabslist separated by ' '
             from covarname
             where codecat = 'LB' and substr(strip(reverse(codetype)), 1, 1) = 'C';
         quit;
