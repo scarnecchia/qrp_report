@@ -549,7 +549,7 @@
 				                        %else %let titlestart=Adjusted;
 
 										%if &titlestart. = Unadjusted %then %let PSEstimateGroupLabelT=;
-										%else %do; %let PSEstimateGroupLabelT=&PSEstimateGroupLabel.; %end;
+										%else %do; %let PSEstimateGroupLabelT=%str( &PSEstimateGroupLabel.); %end;
 
 										%if &titlestart. = Unadjusted %then %let pop=Whole Population;
 										%else %if &figure = F4 and &pscsfile. = psmatchfile %then %let pop=Conditional Matched Population after;
@@ -561,7 +561,7 @@
 
 				                        %output_survivalcurves(dataset=figure&figure._analysis&loopcount._&j.,
 													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat" and dpidsiteid="&dpwhere"),
-													 figtitle=%quote(&aggregated.&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
+													 figtitle=%quote(&aggregated.&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop.&PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
 													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
