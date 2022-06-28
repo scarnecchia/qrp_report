@@ -44,6 +44,7 @@
                                weight = ,
                                title= ,
                                characteristiclabel =, 
+                               labcharacteristics =,
                                dpnum = ,
                                numcolumns = ,
                                grp1_label=,
@@ -255,6 +256,8 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
+		   /* Lab characteristics specified */
+		   %if %quote(&labcharacteristics) ^= "missing" %then %do; 20 %end;
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
             or (type='type4' and order in (-2 
@@ -295,6 +298,8 @@
           %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), COMORBIDSCORE) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
+		%assign_superscripts(type =labcovar, order =20);
+
 		
         /*determine optimal report formatting*/
         %let labelwidth = 3.5;
@@ -376,11 +381,16 @@
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
-            /*Add Characteristic header lines*/
+            /*Add Characteristic header lines and superscript to Lab characteristic header */
             compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
+              	if grouper = "Laboratory Characteristics" then do; 
+              	text=catt(grouper,"&super_labcovar.");
+              	end;
+              	else do;
                 text=grouper;
+            	end;
                 num=100;
               end;
               else do; 
@@ -390,7 +400,7 @@
               line text $Varying. num; 
             endcomp;
 
-            /*Indent demographic header lines*/
+            /*Indent demographic header lines and lab covariate record lines*/
             compute label;
 
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");
@@ -412,6 +422,15 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
+              %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+              if prxmatch('/^(Test record|No test record|Test records with missing or unknown units)$|Test record in/', strip(label)) then do;
+              		call define(_col_,'style','style={indent=25}');
+              end;
+              else if prxmatch('/^(Borderline|Negative|Positive|Invalid categorical result|Undetermined|Mean, standard deviation)$|\|/', strip(label)) then do; 
+              	    call define(_col_,'style','style={indent=50}');
+              	    call define(_row_,'style','style={fontstyle=italic}');
+              end;
+              %end;
 			  
 
               /*assign unknown race footnote*/
@@ -512,6 +531,8 @@
 				call symputx('unique_psestimate_orig',unique_psestimate);
                 if missing(sdthreshold) then call symputx('sdthreshold', '');
                 else call symputx('sdthreshold', sdthreshold);	
+                if missing(labcharacteristics) then call symputx('labcharacteristics',"missing");
+                else call symputx('labcharacteristics', labcharacteristics);
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
                 if missing(covnotinps)=0 then call symputx('covnotinps', strip(upcase(covnotinps)));
                 call symputx('computebalance', 'Y');
@@ -546,6 +567,12 @@
                 end;
             end;
         run;
+
+        /* Assign patient/episode label for lab footnote based on cohortdef value */
+        %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+        	%if %sysfunc(prxmatch(/01|04/,&cohortdef)) %then %let patientepi = patients; 
+        	%else %if %sysfunc(prxmatch(/02|03/,&cohortdef)) %then %let patientepi = episodes;
+        %end;
 
         /*Additional meta-data and group-specific names for each reporttype*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -849,6 +876,7 @@
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
 	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	              characteristiclabel =&characteristiclabel.,
+	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
 	              numcolumns =&numcolumns.,
 	              grp1_label=&grp1_label.,
