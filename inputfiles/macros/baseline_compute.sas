@@ -659,6 +659,13 @@
                         end;
                     end;
                     else do;
+                        /* For lab categories, set to N/A when one category does not exist across DPs */
+                        if prxmatch("/(LBRES)/",metvar) then do; 
+                            if &&&n_&table._episodes_exp&i > 0 and exp_mean&i = 0 then do;
+                                exp_mean&i._char = 'N/A';                        
+                                exp_std&i._char = 'N/A';    
+                            end;                    
+                        end;
                         /*set to . if no patients in cohort*/
                         if exp_mean&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                             exp_mean&i._char = '.';
@@ -690,6 +697,13 @@
                         end;
                     end;
                     else do;
+                        /* For lab categories, set to N/A when one category does not exist across DPs */
+                        if prxmatch("/(LBRES)/",metvar) then do; 
+                            if &&&n_&table._episodes_comp&i > 0 and comp_mean&i = 0 then do;
+                                comp_mean&i._char = 'N/A';                        
+                                comp_std&i._char = 'N/A';     
+                            end;                   
+                        end;
                         /*set to . if no patients in cohort*/
                         if comp_mean&i = 0 and &&&n_&table._episodes_comp&i = 0 then do; 
                             comp_mean&i._char = '.';
@@ -713,7 +727,7 @@
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
                     %end;
                     %else %do;
-                    if (exp_mean&i = 0 and exp_std&i = 0) or (missing(exp_mean&i) and missing(exp_std&i)) then do;
+                    if (exp_mean&i = 0 and exp_std&i = 0 or missing(exp_std&i)) or (missing(exp_mean&i) and missing(exp_std&i)) then do;
                         if &&&n_&table._episodes_exp&i > 0 then do;
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
@@ -936,7 +950,7 @@
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_episodes >= 0) then do;
                         comp_std0 = divide(comp_mean0,&total_unadjusted_comp_episodes.);   
-                        if metvar = 'PATIENT'  and total_comp_episodes >= 0 then comp_std0_char = 'N/A';
+                        if metvar = 'PATIENT' and total_comp_episodes >= 0 then comp_std0_char = 'N/A';
                         if metvar = 'N_EPISODES' then do;
                             comp_std0_char = compress(put(comp_std0,percent10.1));
                             if missing(comp_std0) then comp_std0_char = 'NaN';
@@ -950,10 +964,24 @@
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
+                        if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
+                        if missing(exp_mean0) or exp_mean0=0 then do;
+                            if total_exp_patients <= 0 then do;
+                                exp_mean0_char = '.'; 
+                                exp_std0_char = '.';
+                            end;
+                        end;
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
+                        if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
+                        if missing(comp_mean0) or comp_mean0=0 then do;
+                            if total_comp_patients <= 0 then do;
+                                comp_mean0_char='.';
+                                comp_std0_char = '.';
+                            end;
+                        end;
                         %end;
                     end;
                     else do;
