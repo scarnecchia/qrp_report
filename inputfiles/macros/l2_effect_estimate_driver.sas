@@ -83,7 +83,6 @@
             call symputx('unique_psestimate', unique_psestimate);
             call symputx('kmrefpop', kmrefpop);
             if not missing(convrule) then call symputx('convrule', convrule);
-            end;
         run;
 
         %put now computing effect estimates for &analysisgrp.;
