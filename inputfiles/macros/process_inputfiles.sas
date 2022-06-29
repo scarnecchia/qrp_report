@@ -1497,7 +1497,6 @@
             from input.&baselinefile;
 
             /* Check if lab covariates specified */
-            %let labcovars=;
             select upper(labcharacteristics) into: labcovars separated by ' '
             from input.&baselinefile(where=(not missing(labcharacteristics)));
         quit;
