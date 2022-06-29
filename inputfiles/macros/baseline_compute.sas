@@ -1100,11 +1100,13 @@
                     exp_mean0_char = compress(put(exp_mean0,comma12.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
+                    if prxmatch('/LBRES/',metvar) and &total_unadjusted_exp_episodes > 0 and missing(exp_mean0) and missing(agg_exp_w) then exp_mean0_char = 'N/A';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
                     comp_mean0_char = compress(put(comp_mean0,comma12.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
                     if missing(comp_mean_num) then comp_mean0_char = '.';
+                    if prxmatch('/LBRES/',metvar) and &total_unadjusted_comp_episodes > 0 and missing(comp_mean0) and missing(agg_comp_w) then comp_mean0_char = 'N/A';
                     %end;            
 
                     %if "&weight" = "Weighted" %then %do;
@@ -1126,6 +1128,7 @@
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
+                         if prxmatch('/LBRES/',metvar) and &total_unadjusted_exp_episodes > 0 and missing(exp_std0) and missing(agg_exp_w) then exp_std0_char = 'N/A';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
                         comp_std0_char = compress(put(comp_std0,comma12.1));
@@ -1133,6 +1136,7 @@
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
+                        if prxmatch('/LBRES/',metvar) and &total_unadjusted_comp_episodes > 0 and missing(comp_std0) and missing(agg_comp_w) then comp_std0_char = 'N/A';
                         %end;
                     %end;
 
