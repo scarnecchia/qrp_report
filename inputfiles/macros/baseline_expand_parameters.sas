@@ -56,7 +56,7 @@
                             %if &count = 1 and &covar = &start. %then %do;
                                 %let tempvar = "COVAR&covar.";
                             %end;
-                            %else %let tempvar = &tempvar.  "COVAR&covar.";
+                            %else %let tempvar = &tempvar. "COVAR&covar.";
                         %end;
                     %end;
             %end;
@@ -71,4 +71,3 @@
     %put =====> END MACRO: baseline_expand_parameters;
 
 %mend baseline_expand_parameters;
-
