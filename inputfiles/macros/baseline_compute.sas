@@ -1277,7 +1277,7 @@
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
                     covarorderlist = tranwrd(resolve('&labcharacteristics.'), '"', "");    
-                    sortorder2 = findw(covarorderlist, upcase(cov_varname), ' ','e');
+                    sortorder2 = findw(covarorderlist, compress(upcase(cov_varname)), ' ','e');
                     %end;                 
                     sortorder3=-1;
                     sortorder4=-1;
@@ -1677,8 +1677,8 @@
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
-                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));                     
-                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ',','e'), sortorder3=, sortorder4=);
+                    covarorderlist = tranwrd(resolve('&labcharacteristics.'), '"', "");                     
+                    %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ',','e'), sortorder3=, sortorder4=);
                     %end;
                 end;
             end;
@@ -1737,8 +1737,8 @@
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
-                    covarorderlist = compress(tranwrd(resolve('&healthchar. &medproduse. &UtilizationIntensity'), '"', ""));                     
-                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(compress(covarorderlist), compress(metvar), ' ','e'));
+                    covarorderlist = tranwrd(resolve('&healthchar. &medproduse. &UtilizationIntensity'), '"', "");                     
+                    %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(metvar), ' ','e'));
                     %end;
                 end;
             end;
