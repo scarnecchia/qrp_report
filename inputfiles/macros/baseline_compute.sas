@@ -1276,8 +1276,8 @@
                     %end;
                     %else %if %str("&covarsort") = %str("O") %then %do;
                     length covarorderlist $&covarlistlength.;
-                    covarorderlist = compress(tranwrd(resolve('&labcharacteristics.'), '"', ""));    
-                    sortorder2 = findw(compress(covarorderlist), compress(upcase(cov_varname)), ' ','e');
+                    covarorderlist = tranwrd(resolve('&labcharacteristics.'), '"', "");    
+                    sortorder2 = findw(covarorderlist, upcase(cov_varname), ' ','e');
                     %end;                 
                     sortorder3=-1;
                     sortorder4=-1;
