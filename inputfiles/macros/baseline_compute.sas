@@ -660,7 +660,7 @@
                     end;
                     else do;
                         /* For lab categories, set to N/A when one category does not exist across DPs */
-                        if prxmatch("/(LBRES)/",metvar) then do; 
+                        if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                             if &&&n_&table._episodes_exp&i > 0 and exp_mean&i = 0 then do;
                                 exp_mean&i._char = 'N/A';                        
                                 exp_std&i._char = 'N/A';    
@@ -698,7 +698,7 @@
                     end;
                     else do;
                         /* For lab categories, set to N/A when one category does not exist across DPs */
-                        if prxmatch("/(LBRES)/",metvar) then do; 
+                        if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                             if &&&n_&table._episodes_comp&i > 0 and comp_mean&i = 0 then do;
                                 comp_mean&i._char = 'N/A';                        
                                 comp_std&i._char = 'N/A';     
