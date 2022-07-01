@@ -660,12 +660,13 @@
                     end;
                     else do;
                         /* For lab categories, set to N/A when one category does not exist across DPs */
-                        if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
+                        /* Controls lab specific formatting for dichotomous rows - will need changing in future */
+/*                         if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                             if &&&n_&table._episodes_exp&i > 0 and exp_mean&i = 0 then do;
                                 exp_mean&i._char = 'N/A';                        
                                 exp_std&i._char = 'N/A';    
                             end;                    
-                        end;
+                        end; */
                         /*set to . if no patients in cohort*/
                         if exp_mean&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
                             exp_mean&i._char = '.';
@@ -698,12 +699,13 @@
                     end;
                     else do;
                         /* For lab categories, set to N/A when one category does not exist across DPs */
-                        if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
+                        /* Controls lab specific formatting for dichotomous rows - will need changing in future */
+/*                         if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                             if &&&n_&table._episodes_comp&i > 0 and comp_mean&i = 0 then do;
                                 comp_mean&i._char = 'N/A';                        
                                 comp_std&i._char = 'N/A';     
                             end;                   
-                        end;
+                        end; */
                         /*set to . if no patients in cohort*/
                         if comp_mean&i = 0 and &&&n_&table._episodes_comp&i = 0 then do; 
                             comp_mean&i._char = '.';
@@ -732,10 +734,11 @@
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
                         end;
+                        /* Controls lab specific formatting for continuous rows - will need changing in future */
                         else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if exp_w1_&i. <= 0 then do; 
-                            exp_mean&i._char = 'N/A';
-                            exp_std&i._char = 'N/A';
+                            exp_mean&i._char = 'NaN';
+                            exp_std&i._char = 'NaN';
                             end;
                             else if exp_w1_&i > 0 then do;
                             exp_mean&i._char = '0.0';
@@ -768,10 +771,11 @@
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
                         end;
+                        /* Controls lab specific formatting for continuous rows - will need changing in future */
                         else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if comp_w1_&i. <= 0 then do; 
-                            comp_mean&i._char = 'N/A';
-                            comp_std&i._char = 'N/A';
+                            comp_mean&i._char = 'NaN';
+                            comp_std&i._char = 'NaN';
                             end;
                             else if comp_w1_&i. > 0 then do; 
                             comp_mean&i._char = '0.0';
@@ -1123,13 +1127,13 @@
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = divide(exp_mean_num,agg_exp_w) ;
                     exp_mean0_char = compress(put(exp_mean0,comma12.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
-                    if prxmatch('/LBRES/',metvar) and &total_unadjusted_exp_episodes > 0 and missing(exp_mean0) and missing(agg_exp_w) then exp_mean0_char = 'NaN';
+                    if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and missing(exp_mean0) and missing(agg_exp_w) then exp_mean0_char = 'NaN';
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
                     comp_mean0_char = compress(put(comp_mean0,comma12.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
-                    if prxmatch('/LBRES/',metvar) and &total_unadjusted_comp_episodes > 0 and missing(comp_mean0) and missing(agg_comp_w) then comp_mean0_char = 'NaN';
+                    if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and missing(comp_mean0) and missing(agg_comp_w) then comp_mean0_char = 'NaN';
                     if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
@@ -1152,7 +1156,7 @@
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
-                        if prxmatch('/LBRES/',metvar) and &total_unadjusted_exp_episodes > 0 and missing(exp_std0) and missing(agg_exp_w) then exp_std0_char = 'NaN';
+                        if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and missing(exp_std0) and missing(agg_exp_w) then exp_std0_char = 'NaN';
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
                         comp_std0_char = compress(put(comp_std0,comma12.1));
@@ -1160,7 +1164,7 @@
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
-                        if prxmatch('/LBRES/',metvar) and &total_unadjusted_comp_episodes > 0 and missing(comp_std0) and missing(agg_comp_w) then comp_std0_char = 'NaN';
+                        if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and missing(comp_std0) and missing(agg_comp_w) then comp_std0_char = 'NaN';
                         %end;
                     %end;
 
