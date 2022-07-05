@@ -869,6 +869,9 @@
 
                     ** Calculate aggregated percent: 
                        - Denominator for sex, race, and Hispanic is total number of patients
+                       - Denominator for laboratory characteristics is number of episodes or patients
+                            - For numeric labs: Out of # of patients or episodes
+                            - For categorical labs: Out of the # of patients or episodes with test records
                        - Denominator for other metrics is total number of episodes 
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
@@ -877,6 +880,7 @@
                     if prxmatch('/RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                         if ^missing(exp_mean0) and (total_exp_patients gt 0) then exp_std0 = divide(exp_mean0,total_exp_patients);
                         exp_std0_char=compress(put(exp_std0,percent10.1)); 
+                        if exp_mean0 > 0 and total_exp_patients = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0 = 0 then do;
                             if total_exp_patients <= 0 then do; 
                             exp_mean0_char = '.';
@@ -885,7 +889,8 @@
                         end;
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_patients gt 0) then comp_std0 = divide(comp_mean0,total_comp_patients);
-                        comp_std0_char=compress(put(comp_std0,percent10.1)); 
+                        comp_std0_char=compress(put(comp_std0,percent10.1));
+                        if comp_mean0 > 0 and total_comp_patients = 0 then comp_std0_char = 'NaN'; 
                         if missing(comp_mean0) or comp_mean0 = 0 then do;
                             if total_comp_patients <= 0 then do;
                             comp_mean0_char = '.';
@@ -997,7 +1002,6 @@
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
-                        if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0=0 then do;
                             if agg_exp_w <= 0 then exp_std0_char = 'NaN';
                             if total_exp_patients <= 0 then do;
@@ -1009,7 +1013,6 @@
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
-                        if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
                             if agg_comp_w <= 0 then exp_std0_char = 'NaN';
                             if total_comp_patients <= 0 then do;
@@ -1161,7 +1164,7 @@
                         exp_std0_char = compress(put(exp_std0,comma12.1));
                         if exp_mean0 = 0 and exp_std0 = 0 then exp_std0_char = 'NaN'; 
                         if exp_mean0 > 0 and exp_std0 = . then exp_std0_char = 'NaN'; 
-                        if exp_mean0 > 0 and exp_std0 = 0 then exp_std0_char = 'NaN';
+                        if exp_mean0 > 0 and exp_std0 = 0 and agg_exp_w = 1 then exp_std0_char = 'NaN';
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
                         if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and missing(exp_std0) and missing(agg_exp_w) then exp_std0_char = 'NaN';
@@ -1170,7 +1173,7 @@
                         comp_std0_char = compress(put(comp_std0,comma12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
                         if comp_mean0 > 0 and comp_std0 = . then comp_std0_char = 'NaN'; 
-                        if comp_mean0 > 0 and comp_std0 = 0 then comp_std0_char='NaN';
+                        if comp_mean0 > 0 and comp_std0 = 0 and agg_comp_w = 1 then comp_std0_char='NaN';
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
                         if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and missing(comp_std0) and missing(agg_comp_w) then comp_std0_char = 'NaN';
