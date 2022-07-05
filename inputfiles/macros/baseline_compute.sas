@@ -729,18 +729,20 @@
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
                     %end;
                     %else %do;
-                    if (exp_mean&i = 0 and exp_std&i = 0 or missing(exp_std&i)) or (missing(exp_mean&i) and missing(exp_std&i)) then do;
+                    if exp_mean&i = 0 and missing(exp_std&i) and prxmatch('/LBRES/', metvar) then exp_std&i._char='NaN';
+
+                    if (exp_mean&i = 0 and exp_std&i = 0) or (missing(exp_mean&i) and missing(exp_std&i)) then do;
                         if &&&n_&table._episodes_exp&i > 0 and ^prxmatch('/LBRES/', metvar) then do;
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
                         end;
-                        /* Controls lab specific formatting for continuous rows - will need changing in future */
-                        else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBRES/',metvar) then do;
+                        /* Controls lab specific formatting for lab specific rows - will need changing in future */
+                        else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBUNIT|LBRES/',metvar) then do;
                             if exp_w1_&i. <= 0 then do; 
                             exp_mean&i._char = 'NaN';
                             exp_std&i._char = 'NaN';
                             end;
-                            else if exp_w1_&i > 0 then do;
+                            else if exp_w1_&i > 0 and prxmatch('/LBRES/', metvar) then do;
                             exp_mean&i._char = '0.0';
                             exp_std&i._char = 'NaN';
                             end;
@@ -766,18 +768,19 @@
                     if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
                     %end;
                     %else %do;
-                    if (comp_mean&i = 0 and comp_std&i = 0 or missing(comp_std&i)) or (missing(comp_mean&i) and missing(comp_std&i)) then do;
+                    if comp_mean&i = 0 and missing(comp_std&i) and prxmatch('/LBRES/', metvar) then comp_std&i._char='NaN';
+                    if (comp_mean&i = 0 and comp_std&i = 0) or (missing(comp_mean&i) and missing(comp_std&i)) then do;
                         if &&&n_&table._episodes_comp&i > 0 then do;
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
                         end;
                         /* Controls lab specific formatting for continuous rows - will need changing in future */
-                        else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBRES/',metvar) then do;
+                        else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBUNIT|LBRES/',metvar) then do;
                             if comp_w1_&i. <= 0 then do; 
                             comp_mean&i._char = 'NaN';
                             comp_std&i._char = 'NaN';
                             end;
-                            else if comp_w1_&i. > 0 then do; 
+                            else if comp_w1_&i. > 0 and prxmatch('/LBRES/', metvar) then do; 
                             comp_mean&i._char = '0.0';
                             comp_std&i._char = 'NaN';
                             end;
@@ -990,8 +993,7 @@
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if exp_mean0 > 0 and total_exp_episodes = 0 then exp_std0_char = 'NaN';
                         if missing(exp_mean0) or exp_mean0=0 then do;
-                            if agg_exp_w <= 0 then exp_std0_char = 'NaN';
-                            if agg_exp_w > 0 then exp_std0_char = '0.0%';
+                            if agg_exp_w <= 1 then exp_std0_char = 'NaN';
                             if total_exp_patients <= 0 then do;
                                 exp_mean0_char = '.'; 
                                 exp_std0_char = '.';
@@ -1003,8 +1005,7 @@
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if comp_mean0 > 0 and total_comp_episodes = 0 then comp_std0_char = 'NaN';
                         if missing(comp_mean0) or comp_mean0=0 then do;
-                            if agg_comp_w <= 0 then exp_std0_char = 'NaN';
-                            if agg_comp_w > 0 then exp_std0_char = '0.0%';
+                            if agg_comp_w <= 1 then exp_std0_char = 'NaN';
                             if total_comp_patients <= 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
