@@ -271,7 +271,10 @@
 		%if &total_episodes. = 0 %then %do;
 		   data _temp_baseline_transposed;
 		     set _temp_baseline_transposed;
+             length _label_ $&baselinelabellength;
 			 if metvar = 'n_episodes' then metvar = 'N_episodes';
+             /* Initialize _label_ variable when there are no patients in the cohort */
+            _label_='';
 		   run;
 		%end;
 
