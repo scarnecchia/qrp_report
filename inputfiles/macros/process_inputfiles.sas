@@ -40,17 +40,58 @@
         %abort;
     %end;
     
+	* Check if createreportfile has horizontal structure;
+	proc contents data=input.&createreportfile. noprint out=createreportfile_content;
+	quit;
+
+	%let parameter_variable_exists=0;
+	proc sql noprint;
+	select count(*) into :parameter_variable_exists from createreportfile_content
+	where lowcase(name)="parameter";
+	quit;
+
+	%put &=parameter_variable_exists;
+
+	/* createreportfile has vertical structure */
+	%if &parameter_variable_exists. > 0 %then %do;	
+		data &createreportfile.;
+		set input.&createreportfile.;
+		run; 
+	%end;
+	/* createreportfile has horizontal structure */
+	%else %do;
+		proc contents data=input.&createreportfile. noprint out=createreportfile_content;
+		quit;
+
+		proc sql noprint;
+		select distinct name into :report_param_content separated by ' ' from createreportfile_content			
+		quit;
+
+		%put &=report_param_content;
+
+		data &createreportfile.;
+		set input.&createreportfile.;
+		value="value";		
+		run;
+
+		proc transpose data=&createreportfile. 
+					   out=&createreportfile.(rename=_name_=parameter);
+		id value;
+		var &report_param_content.;
+		run;		
+	%end;
+
     /* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
        Create macro variable to identify if it is a leave behind report */
         proc sql noprint;
             select count(*) into: numparms
-            from input.&createreportfile;
+            from &createreportfile;
         quit;
 
         /*Assign all parameters to macro variables*/
         %do createreportparameter = 1 %to %eval(&numparms.);
             data _null_;
-                set input.&createreportfile;
+                set &createreportfile;
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
