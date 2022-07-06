@@ -662,14 +662,10 @@
                         /* For lab categories, categorical labs get set to 0/NaN, numeric labs get set to 0.0/NaN */
                         /* Controls lab specific formatting for dichotomous rows - will need changing in future */
                         if &&&n_&table._episodes_exp&i > 0 and exp_mean&i = 0 and exp_w1_&i = 0 then do;
-                            if prxmatch("/(LBRES)/",metvar) and prxmatch("/N_COVAR/",metvar) then do; 
+                            if prxmatch("/(LBRES)/",metvar) then do; 
                                 exp_mean&i._char = '0';                        
                                 exp_std&i._char = 'NaN';     
-                            end;
-                            else if prxmatch("/(LBRES)/",metvar) and ^prxmatch("/N_COVAR/",metvar) then do;
-                                exp_mean&i._char = '0.0';                        
-                                exp_std&i._char = 'NaN';
-                            end;     
+                            end;  
                         end;   
                         /*set to . if no patients in cohort*/
                         if exp_mean&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
@@ -705,14 +701,10 @@
                         /* For lab categories, categorical labs get set to 0/NaN, numeric labs get set to 0.0/NaN */
                         /* Controls lab specific formatting for dichotomous rows - will need changing in future */
                         if &&&n_&table._episodes_comp&i > 0 and comp_mean&i = 0 and comp_w1_&i = 0 then do;
-                            if prxmatch("/(LBRES)/",metvar) and prxmatch("/N_COVAR/",metvar) then do; 
+                            if prxmatch("/(LBRES)/",metvar) then do; 
                                 comp_mean&i._char = '0';                        
                                 comp_std&i._char = 'NaN';     
-                            end;
-                            else if prxmatch("/(LBRES)/",metvar) and ^prxmatch("/N_COVAR/",metvar) then do;
-                                comp_mean&i._char = '0.0';                        
-                                comp_std&i._char = 'NaN';
-                            end;                      
+                            end;                    
                         end;
                         /*set to . if no patients in cohort*/
                         if comp_mean&i = 0 and &&&n_&table._episodes_comp&i = 0 then do; 
@@ -745,12 +737,12 @@
                         exp_std&i._char = 'NaN';
                         end;
                         /* Controls lab specific formatting for lab specific rows - will need changing in future */
-                        else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBUNIT|LBRES/',metvar) then do;
+                        else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if exp_w1_&i. <= 0 then do; 
                             exp_mean&i._char = 'NaN';
                             exp_std&i._char = 'NaN';
                             end;
-                            else if exp_w1_&i > 0 and prxmatch('/LBRES/', metvar) then do;
+                            else if exp_w1_&i > 0  then do;
                             exp_mean&i._char = '0.0';
                             exp_std&i._char = 'NaN';
                             end;
@@ -783,12 +775,12 @@
                         comp_std&i._char = 'NaN';
                         end;
                         /* Controls lab specific formatting for continuous rows - will need changing in future */
-                        else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBUNIT|LBRES/',metvar) then do;
+                        else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if comp_w1_&i. <= 0 then do; 
                             comp_mean&i._char = 'NaN';
                             comp_std&i._char = 'NaN';
                             end;
-                            else if comp_w1_&i. > 0 and prxmatch('/LBRES/', metvar) then do; 
+                            else if comp_w1_&i. > 0 then do; 
                             comp_mean&i._char = '0.0';
                             comp_std&i._char = 'NaN';
                             end;
@@ -869,9 +861,9 @@
 
                     ** Calculate aggregated percent: 
                        - Denominator for sex, race, and Hispanic is total number of patients
-                       - Denominator for laboratory characteristics is number of episodes or patients
-                            - For numeric labs: Out of # of patients or episodes
-                            - For categorical labs: Out of the # of patients or episodes with test records
+                       - Denominator for laboratory characteristics is number of episodes
+                            - For numeric labs: Out of # of episodes
+                            - For categorical labs: Out of the # of episodes with test records
                        - Denominator for other metrics is total number of episodes 
                        - Total Episodes/Patients: for unadjusted tables:
                             - L1: do not fill in %, 
