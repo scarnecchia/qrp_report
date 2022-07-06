@@ -253,16 +253,32 @@
         %end;
 
         /*Extract agegroup, sex, race, and hispanic requirements*/
-        data _tempcohort;
+        data _tempcohort(drop=tempsex temprace temphispanic);
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
+            length tempsex temprace temphispanic $200;
             if missing(agestrat) then call symputx("agestrat", "00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+");
             else call symputx("agestrat", upcase(agestrat));
-            if missing(sex) then call symputx("sex", "'F', 'M', 'O'");
-            else call symputx("sex", upcase(sex));
-            if missing(race) then call symputx("race", "'0', '1', '2', '3', '4', '5'");
-            else call symputx("race", upcase(race));
-            if missing(hispanic) then call symputx("hispanic", "'Y', 'N', 'U'");
-            else call symputx("hispanic", upcase(hispanic));
+            if missing(sex) then do; 
+            call symputx("sex", "'F', 'M', 'O'");
+            end;
+            else do; 
+            tempsex=cat('"',tranwrd(upcase(sex)," ",'" "'),'"');
+            call symputx("sex", tempsex);
+            end;
+            if missing(race) then do; 
+            call symputx("race", "'0', '1', '2', '3', '4', '5'");
+            end;
+            else do; 
+            temprace=cat('"',tranwrd(upcase(race)," ",'" "'),'"');
+            call symputx("race", temprace);
+            end;
+            if missing(hispanic) then do; 
+            call symputx("hispanic", "'Y', 'N', 'U'");
+            end;
+            else do;
+            temphispanic=cat('"',tranwrd(upcase(hispanic)," ",'" "'),'"');
+            call symputx("hispanic", temphispanic);
+            end;
         run;
         %create_comma_charlist(inlist=&agestrat, outlist=agestrat1);
 
