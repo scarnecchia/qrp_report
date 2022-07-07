@@ -59,10 +59,7 @@
 		run; 
 	%end;
 	/* createreportfile has horizontal structure */
-	%else %do;
-		proc contents data=input.&createreportfile. noprint out=createreportfile_content;
-		quit;
-
+	%else %do;		
 		proc sql noprint;
 		select distinct name into :report_param_content separated by ' ' from createreportfile_content			
 		quit;
