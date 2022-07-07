@@ -259,12 +259,31 @@
 		proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
 		var run:;
 		run;
+
+		data qrp_parameters;
+		set infolder.qrp_parameters;
+		run;
 	%end;
 	%else %do;
 		data _qrp_parameters_trans(keep=_name_ col1);
 		set infolder.qrp_parameters;
 		_name_= "run" || strip(put(_N_, best.));
 		rename runid=col1;
+		run;
+		
+		proc sql noprint;
+		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
+		quit;
+
+		data qrp_parameters;
+		set infolder.qrp_parameters;	
+		run = "run" || strip(put(_N_, best.));			
+		run;
+
+		proc transpose data=qrp_parameters 
+					   out=qrp_parameters(rename=_name_=parameter);
+		id run;
+		var &qrp_param_content.;
 		run;
 	%end;
      
@@ -385,7 +404,7 @@
         %let &&id&n.._pscssubgroupfile     = ;
 
         data _null_;
-          set infolder.qrp_parameters (keep = parameter &&run&n.);
+          set qrp_parameters (keep = parameter &&run&n.);
           new_parameter = catx("_","&&id&n.",parameter);
           call symputx(new_parameter,&&run&n.,'G');
           if parameter = "zipfile" and not missing(&&run&n.) then do;
@@ -393,7 +412,7 @@
           end;
         run;
      %end;
-     
+    
 /***********************************************************************************************************
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
 ************************************************************************************************************/
