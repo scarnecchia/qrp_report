@@ -61,10 +61,10 @@
 	/* createreportfile has horizontal structure */
 	%else %do;		
 		proc sql noprint;
-		select distinct name into :report_param_content separated by ' ' from createreportfile_content			
+		select distinct name into :createreportfile_param_content separated by ' ' from createreportfile_content			
 		quit;
 
-		%put &=report_param_content;
+		%put &=createreportfile_param_content;
 
 		data &createreportfile.;
 		set input.&createreportfile.;
@@ -74,7 +74,7 @@
 		proc transpose data=&createreportfile. 
 					   out=&createreportfile.(rename=_name_=parameter);
 		id value;
-		var &report_param_content.;
+		var &createreportfile_param_content.;
 		run;		
 	%end;
 
