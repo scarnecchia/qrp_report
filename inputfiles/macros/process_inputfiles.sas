@@ -265,20 +265,15 @@
 		run;
 	%end;
 	%else %do;
-		data _qrp_parameters_trans(keep=_name_ col1);
-		set infolder.qrp_parameters;
-		_name_= "run" || strip(put(_N_, best.));
-		rename runid=col1;
+		data _qrp_parameters_trans(keep=run runid rename=runid=col1 rename=run=_name_)
+			 qrp_parameters;
+		set infolder.qrp_parameters;		
+		run = "run" || strip(put(_N_, best.));	
 		run;
-		
+
 		proc sql noprint;
 		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
 		quit;
-
-		data qrp_parameters;
-		set infolder.qrp_parameters;	
-		run = "run" || strip(put(_N_, best.));			
-		run;
 
 		proc transpose data=qrp_parameters 
 					   out=qrp_parameters(rename=_name_=parameter);
