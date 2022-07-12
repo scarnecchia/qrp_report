@@ -40,17 +40,55 @@
         %abort;
     %end;
     
+	* Check if createreportfile has horizontal structure;
+	proc contents data=input.&createreportfile. noprint out=createreportfile_content;
+	quit;
+
+	%let parameter_variable_exists=0;
+	proc sql noprint;
+	select count(*) into :parameter_variable_exists from createreportfile_content
+	where lowcase(name)="parameter";
+	quit;
+
+	%put &=parameter_variable_exists;
+
+	/* createreportfile has vertical structure */
+	%if &parameter_variable_exists. > 0 %then %do;	
+		data &createreportfile.;
+		set input.&createreportfile.;
+		run; 
+	%end;
+	/* createreportfile has horizontal structure */
+	%else %do;		
+		proc sql noprint;
+		select distinct name into :createreportfile_param_content separated by ' ' from createreportfile_content			
+		quit;
+
+		%put &=createreportfile_param_content;
+
+		data &createreportfile.;
+		set input.&createreportfile.;
+		value="value";		
+		run;
+
+		proc transpose data=&createreportfile. 
+					   out=&createreportfile.(rename=_name_=parameter);
+		id value;
+		var &createreportfile_param_content.;
+		run;		
+	%end;
+
     /* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
        Create macro variable to identify if it is a leave behind report */
         proc sql noprint;
             select count(*) into: numparms
-            from input.&createreportfile;
+            from &createreportfile;
         quit;
 
         /*Assign all parameters to macro variables*/
         %do createreportparameter = 1 %to %eval(&numparms.);
             data _null_;
-                set input.&createreportfile;
+                set &createreportfile;
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
@@ -75,7 +113,7 @@
             run;
             %let &parameter. = &value.;
         %end;
-        
+  
         /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
            dpfile is set to the work dpinfofile and reportdata is N. */
         %if &leavebehindreport = Y %then %do;
@@ -204,12 +242,46 @@
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
 ***************************************************************************************************/
+	* Check if qrp_parameters has horizontal structure;
+	proc contents data=infolder.qrp_parameters noprint out=qrp_param_content;
+	quit;
 
-    /* Transpose qrp_parameters to determine run values associated with desired runids */
-     proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
-       var run:;
-     run;
+	%let parameter_var_exists=0;
+	proc sql noprint;
+	select count(*) into :parameter_var_exists from qrp_param_content
+	where lowcase(name)="parameter";
+	quit;
 
+	%put &=parameter_var_exists;
+
+	%if &parameter_var_exists. > 0 %then %do;
+		/* Transpose qrp_parameters to determine run values associated with desired runids */
+		proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+		var run:;
+		run;
+
+		data qrp_parameters;
+		set infolder.qrp_parameters;
+		run;
+	%end;
+	%else %do;
+		data _qrp_parameters_trans(keep=run runid rename=runid=col1 rename=run=_name_)
+			 qrp_parameters;
+		set infolder.qrp_parameters;		
+		run = "run" || strip(put(_N_, best.));	
+		run;
+
+		proc sql noprint;
+		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
+		quit;
+
+		proc transpose data=qrp_parameters 
+					   out=qrp_parameters(rename=_name_=parameter);
+		id run;
+		var &qrp_param_content.;
+		run;
+	%end;
+     
     /* Combine input files to identify all runids requested */
     data inputfiles;
        set 
@@ -327,7 +399,7 @@
         %let &&id&n.._pscssubgroupfile     = ;
 
         data _null_;
-          set infolder.qrp_parameters (keep = parameter &&run&n.);
+          set qrp_parameters (keep = parameter &&run&n.);
           new_parameter = catx("_","&&id&n.",parameter);
           call symputx(new_parameter,&&run&n.,'G');
           if parameter = "zipfile" and not missing(&&run&n.) then do;
@@ -335,7 +407,7 @@
           end;
         run;
      %end;
-     
+    
 /***********************************************************************************************************
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
 ************************************************************************************************************/
