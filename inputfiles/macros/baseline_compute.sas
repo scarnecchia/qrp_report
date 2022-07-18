@@ -253,7 +253,7 @@
         %end;
 
         /*Extract agegroup, sex, race, and hispanic requirements*/
-        data _tempcohort(drop=tempsex temprace temphispanic);
+        data _tempcohort;
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
             if missing(agestrat) then call symputx("agestrat", "00-01 02-04 05-09 10-14 15-18 19-21 22-44 45-64 65-74 75+");
             else call symputx("agestrat", upcase(agestrat));
