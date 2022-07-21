@@ -175,15 +175,17 @@
         "2"   = "Asian"
         "3"   = "Black or African American"
         "4"   = "Native Hawaiian or Other Pacific Islander"
-        "5"   = "White";
+        "5"   = "White"
+        "M"   = "Multi-racial";
 
         value $racesort     
         "1"   = 1
         "2"   = 2
         "3"   = 3
-        "4"   = 4
-        "0"   = 5
-        "5"   = 6;
+        "M"   = 4
+        "4"   = 5
+        "0"   = 6
+        "5"   = 7;
 
         /*Hispanic Format*/
         value $hispanicfmt

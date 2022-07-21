@@ -128,6 +128,11 @@
     /*Age stratification format */
     %global agegroupfmt;
 
+    /* Race categories and race count - 0 not included in list because other categories get collapsed in RACE=0*/
+    %global racelist racecount;
+    %let racelist = 1 2 3 4 5 M;
+    %let racecount = %sysfunc(countw(&racelist));
+
     /*Output counter variables*/
     %global tableletter tablecount;
 
