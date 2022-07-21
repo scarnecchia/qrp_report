@@ -179,7 +179,7 @@
                     by order;
 
                     /* Remove 0 from list and count */
-                    %let race_cats_nozero = %sysfunc(tranwrd(&racecats,0,%str()));
+                    %let race_cats_nozero = %sysfunc(tranwrd(&race_cats,0,%str()));
                     %let race_cats_count = %sysfunc(countw(&race_cats_nozero));
 
                     /*Recode*/
