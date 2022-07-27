@@ -178,27 +178,33 @@
                     set _temp_baseline_stacked;
                     by order;
 
+                    /* Remove 0 from list and count */
+                    %let race_cats_nozero = %sysfunc(tranwrd(&race_cats,0,%str()));
+                    %let race_cats_count = %sysfunc(countw(&race_cats_nozero));
+
                     /*Recode*/
                     if first.order then do;
-                        %do c_r = 1 %to %eval(&race_cats -1);
-                        recode_&c_r. = 'N'; /*to track if another anchor switch or cohort collapsed*/
-        		        if 1 <= race_&c_r <= 10 then do;
-                            race_0 = sum(race_0, race_&c_r.);
+                        %do c_r = 1 %to &race_cats_count;
+                            %let race_value = %scan(&race_cats_nozero,&c_r);
+                        recode_&race_value. = 'N'; /*to track if another anchor switch or cohort collapsed*/
+        		        if 1 <= race_&race_value <= 10 then do;
+                            race_0 = sum(race_0, race_&race_value.);
                             /*set recoded value to special missing value to track in code and final table*/
-                            race_&c_r. = .R;
-                            recode_&c_r. = 'Y';
+                            race_&race_value. = .R;
+                            recode_&race_value. = 'Y';
                         end;
-                        retain recode_&c_r.;
+                        retain recode_&race_value.;
                         %end;             
                     end;
                     else do;
-                        %do c_r = 1 %to %eval(&race_cats -1);
-        		        if 1 <= race_&c_r <= 10 | recode_&c_r. = 'Y' then do;
-                            race_0 = sum(race_0, race_&c_r.);
+                        %do c_r = 1 %to &race_cats_count;
+                            %let race_value = %scan(&race_cats_nozero,&c_r);
+        		        if 1 <= race_&race_value <= 10 | recode_&race_value. = 'Y' then do;
+                            race_0 = sum(race_0, race_&race_value.);
                             /*set recoded value to special missing value to track in code and final table*/
-                            race_&c_r. = .R;
-                            recode_&c_r. = 'Y';
-                            retain recode_&c_r.;
+                            race_&race_value. = .R;
+                            recode_&race_value. = 'Y';
+                            retain recode_&race_value.;
                         end;
                         %end;
                         /*mark if comparator cohort*/
@@ -220,20 +226,22 @@
 
                        /*Determine if other cohort was recoded*/
                         if first.order then do;
-                            %do c_r = 1 %to %eval(&race_cats -1);
-                            recode_&c_r. = 'N';
-            		        if race_&c_r =.R then do;
-                                recode_&c_r. = 'Y';
+                            %do c_r = 1 %to &race_cats_count;
+                                %let race_value = %scan(&race_cats_nozero,&c_r);
+                            recode_&race_value. = 'N';
+            		        if race_&race_value =.R then do;
+                                recode_&race_value. = 'Y';
                             end;
-                            retain recode_&c_r.;
+                            retain recode_&race_value.;
                             %end;             
                         end;
                         else do;
-                            %do c_r = 1 %to %eval(&race_cats -1);
-            		        if recode_&c_r. = 'Y' then do;
-                                race_0 = sum(race_0, race_&c_r.);
+                            %do c_r = 1 %to &race_cats_count;
+                                %let race_value = %scan(&race_cats_nozero,&c_r);
+            		        if recode_&race_value. = 'Y' then do;
+                                race_0 = sum(race_0, race_&race_value.);
                                 /*set recoded value to special missing value to track in code and final table*/
-                                race_&c_r. = .R;
+                                race_&race_value. = .R;
                             end;
                             %end;
                         end;

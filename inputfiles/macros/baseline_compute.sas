@@ -264,7 +264,7 @@
             call symputx("sex", cat('"',tranwrd(upcase(strip(sex))," ",'" "'),'"'));
             end;
             if missing(race) then do; 
-            call symputx("race", '"0" "1" "2" "3" "4" "5"');
+            call symputx("race", '"0" "1" "2" "3" "4" "5" "M"');
             end;
             else do; 
             call symputx("race", cat('"',tranwrd(upcase(strip(race))," ",'" "'),'"'));
@@ -531,7 +531,7 @@
             %if "&stratifybydp." = "N" and "&collapse_vars." = "race" %then %do;
                 data race_data;
                     set &datain.(keep=table weight order metvar exp_mean: %if "&includecomp" = "Y" %then %do; comp_mean: %end;
-                        where=(table="&table" and weight = "&weight" and order=&b. and metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5')
+                        where=(table="&table" and weight = "&weight" and order=&b. and metvar in ('RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5', 'RACE_M')
                         %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
                             and subgroup="&subgroup." and subgroupcat="&subgroupcat."
                         %end;));
@@ -543,27 +543,29 @@
                 run;
 
                 /*Assign macro variable that will hold the count to add to and subtract from totals*/
-                %do c_r = 1 %to 5;
-                    %let race&c_r._exp = 0;
-                    %let race&c_r._comp = 0;
+                %do c_r = 1 %to &racecount;
+                    %let race_value = %scan(&racelist,&c_r);
+                    %let race&race_value._exp = 0;
+                    %let race&race_value._comp = 0;
                 %end;
 
                 data _null_;
                     set race_data(keep=metvar exp_mean0 %if "&includecomp" = "Y" %then %do; comp_mean0 %end;);
-                    %do c_r = 1 %to 5;
-                        if metvar = "RACE_&c_r." then do;
+                    %do c_r = 1 %to &racecount;
+                        %let race_value = %scan(&racelist,&c_r);
+                        if metvar = "RACE_&race_value." then do;
                             if 1 <= exp_mean0 <= 10 %if "&includecomp" = "Y" %then %do; | 1 <= comp_mean0 <= 10 %end;
                                 /*collapse if other anchor date is collapsed*/
                                 %if &reporttype.=T6 %then %do;
-                                    | "&&t6base_collapse&c_r." ="Y"
+                                    | "&&t6base_collapse&race_value." ="Y"
                                 %end;
                             then do;
-                                call symputx("race&c_r._exp", exp_mean0);
+                                call symputx("race&race_value._exp", exp_mean0);
                                 %if "&includecomp" = "Y" %then %do; 
-                                call symputx("race&c_r._comp", comp_mean0);
+                                call symputx("race&race_value._comp", comp_mean0);
                                 %end;
                                 %if &reporttype.=T6 %then %do;
-                                call symputx("t6base_collapse&c_r.", "Y");
+                                call symputx("t6base_collapse&race_value.", "Y");
                                 %end;
                             end;
                         end;
@@ -817,11 +819,12 @@
 
                     /*collapse race*/
                     %if &collapse_vars = race %then %do;
-                        if metvar in ('RACE_0', 'RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5') then do;
+                        if metvar in ('RACE_0', 'RACE_1', 'RACE_2', 'RACE_3', 'RACE_4', 'RACE_5', 'RACE_M') then do;
                             %if &stratifybydp.=N %then %do;
-                                %do c_r = 1 %to 5;
-                                    %if %eval(&&race&c_r._exp >0) | %eval(&&race&c_r._comp >0) %then %do;
-                                        if metvar = "RACE_&c_r." then do;
+                                %do c_r = 1 %to &racecount;
+                                    %let race_value = %scan(&racelist,&c_r);
+                                    %if %eval(&&race&race_value._exp >0) | %eval(&&race&race_value._comp >0) %then %do;
+                                        if metvar = "RACE_&race_value." then do;
                                             exp_mean0 = .R;
                                             %if "&includecomp" = "Y" %then %do;
                                             comp_mean0 = .R;
@@ -830,9 +833,9 @@
                                     %end;
                                 %end;
                                 if metvar = "RACE_0" then do;
-                                    exp_mean0 = sum(exp_mean0 %do c_r = 1 %to 5; ,&&race&c_r._exp %end;);
+                                    exp_mean0 = sum(exp_mean0 %do c_r = 1 %to &racecount; %let race_value = %scan(&racelist,&c_r); ,&&race&race_value._exp %end;);
                                     %if "&includecomp" = "Y" %then %do;
-                                    comp_mean0 = sum(comp_mean0 %do c_r = 1 %to 5; ,&&race&c_r._comp %end;);
+                                    comp_mean0 = sum(comp_mean0 %do c_r = 1 %to &racecount; %let race_value = %scan(&racelist,&c_r); ,&&race&race_value._comp %end;);
                                     %end;
                                 end;
                             %end;
@@ -1461,8 +1464,9 @@
 
             /*initialize race collapsing vars*/
             %if &collapse_vars = race & &stratifybydp = N %then %do;
-                %do c_r = 1 %to 5;
-                %let t6base_collapse&c_r. = N;
+                %do c_r = 1 %to &racecount; 
+                    %let race_value = %scan(&racelist,&c_r);
+                    %let t6base_collapse&race_value. = N;
                 %end;
             %end;
         
@@ -1625,6 +1629,9 @@
                 end;
                 else if MetVar in ('RACE_3') and '3' in (&race.) then do; 
                 %assignbaselinevars(label=put('3', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('3', racesort.),1.));
+                end;
+                else if MetVar in ('RACE_M') and 'M' in (&race.) then do; 
+                %assignbaselinevars(label=put('M', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('M', racesort.),1.));
                 end;
                 else if MetVar in ('RACE_4') and '4' in (&race.) then do; 
                 %assignbaselinevars(label=put('4', $racefmt.), grouper="Demographic Characteristics", sortorder1 = 5, sortorder2=input(put('4', racesort.),1.));

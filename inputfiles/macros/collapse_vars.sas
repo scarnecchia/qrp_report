@@ -113,7 +113,7 @@
                 if pt.find()=0 then do;
                         &var. = &unknown.;
                         %if %str("&sort.") ne %str("") %then %do;
-                        sortorder&sort. = 5;
+                        sortorder&sort. = 6;
                         %end;
                     output;
                 end;

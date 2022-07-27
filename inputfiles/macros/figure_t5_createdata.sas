@@ -122,7 +122,7 @@
 	%if %index(&stratvars.,race) & "&collapse_vars." = "race" %then %do;
         %collapse_vars(dataset=agg_t5first_all, 
                        sumcontinuousvars=mntsfromstart,
-                       list=%str('1','2','3','4','5'),
+                       list=%str('1','2','3','4','5','M'),
                        unknown='0', 
                        varlist=&npts. &daysupp. &adjustedcodecount.,
                        classlist=group runid level mntsfromstart &stratvars.);
