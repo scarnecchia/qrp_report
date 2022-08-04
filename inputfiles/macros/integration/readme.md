@@ -1,4 +1,4 @@
-![alt text](../resources/logo.png)
+![alt text](../../../resources/logo.png)
 # "integration" Folder  
 
 ### What is this?  
