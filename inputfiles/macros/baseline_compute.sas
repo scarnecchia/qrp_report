@@ -1882,6 +1882,51 @@
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
         run;
 
+        %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+        /* check lab covariates to see if they have the same sortorder values */
+        proc sort data = baseline_aggregatefinal nodupkey dupout=lab_dups(where=(prxmatch('/LBRES|LBUNIT/',metvar))); 
+            by sortorder1 sortorder2 sortorder3 sortorder4;
+        run;
+
+            /* if there are rows, then there are unit labels with the same first letter that are the same length */
+            %isdata(dataset=lab_dups);
+            %if &nobs > 0 %then %do;
+            /* Need to create sorting variable to correctly sort rows */
+            data lab_dups;
+                set lab_dups; 
+                length sortinglabel $50;
+                if prxmatch('/N_COVAR*/',metvar) then sortinglabel=prxchange('s/^[^_]*_[^_]*_//',-1,metvar);
+                else sortinglabel=prxchange('s/^[^_]*_//',-1,metvar);
+            run;
+
+            proc sort data = lab_dups;
+                by sortinglabel sortorder1 sortorder2 sortorder3 sortorder4;
+            run;
+
+            /* Increment the last sorting variable by observation number */
+            data lab_dups;
+                set lab_dups;
+                sortorder4=sortorder4+_n_;
+                drop sortinglabel;
+            run;
+
+            proc sort data = lab_dups;
+                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+            run;
+
+            proc sort data = baseline_aggregatefinal;
+                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+            run;
+
+            /* put updated rows back in the main dataset */
+            data baseline_aggregatefinal;
+                update baseline_aggregatefinal lab_dups;
+                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+            run;
+            %end;
+        %end;
+
+
         /*Final sort*/;
         proc sort data=baseline_aggregatefinal;
             by %if &reporttype. = T2L2 or &reporttype. = T4L2 %then %do; subgroup subgroupcat %end; table weight sortorder1 sortorder2 sortorder3 sortorder4;
