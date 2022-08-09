@@ -563,7 +563,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file580-typeall-monitoring.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
                 {
@@ -599,12 +599,12 @@
                     "values": [
                         "FUPDRIVEN",
                         "DATADRIVEN",
-                        ""
+                        " "
                     ],
 					"value_map": {
 						"FUPDRIVEN": "Earliest of FUPENDDATE/CDPEND; program will only evaluate for values that have been specified by the user",
                         "DATADRIVEN": "Query-dependent to support fixed risk window analyses",
-                        "": "INDENDDATE will be used to explicitly specify date"
+                        " ": "INDENDDATE will be used to explicitly specify date"
 					}
                 },
                 {
@@ -647,7 +647,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file522-typeall-mainparam.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": true,
             "parameters": [
 				{
@@ -681,11 +681,11 @@
                     "info": "Indicates what, if any, additional analyses will be performed on the cohort after extraction",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"TREE"
 					],
 					"value_map":{
-						"": "No additional analyses requested",
+						" ": "No additional analyses requested",
 						"TREE": "Perform a signal idenfitication analysis"
 					}
                 },
@@ -747,11 +747,11 @@
                     "info": "Name of the SAS dataset defining the time period(s) for each data extraction",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MONITORINGFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MONITORINGFILE]": "Include"
 					}
                 },
@@ -762,11 +762,11 @@
                     "info": "Name of the SAS dataset defining the cohort identification strategy used and continuous enrollment requirements",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[COHORTFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[COHORTFILE]": "Include"
 					}
                 },
@@ -777,11 +777,11 @@
                     "info": "Name of the SAS dataset defining parameters required for a background rate calculation cohort identification strategy",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TYPE1FILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TYPE1FILE]": "Include"
 					}
                 },
@@ -792,11 +792,11 @@
                     "info": "Name of the SAS dataset defining parameters required for an exposures and follow-up time cohort identification strategy",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TYPE2FILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TYPE2FILE]": "Include"
 					}
                 },
@@ -807,11 +807,11 @@
                     "info": "Name of the SAS dataset defining parameters required for a pregnancy episodes cohort identification strategy",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TYPE4FILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TYPE4FILE]": "Include"
 					}
                 },
@@ -822,11 +822,11 @@
                     "info": "Name of the SAS dataset defining parameters required for a medical product utilization cohort identification strategy",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TYPE5FILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TYPE5FILE]": "Include"
 					}
                 },																
@@ -837,11 +837,11 @@
                     "info": "Name of the SAS dataset listing codes used to define the cohort",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[COHORTCODES]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[COHORTCODES]": "Include"
 					}
                 },
@@ -852,11 +852,11 @@
                     "info": "Name of the SAS dataset listing codes used to define additional cohort inclusion and exclusion criteria",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[INCLUSIONCODES]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[INCLUSIONCODES]": "Include"
 					}
                 },
@@ -867,11 +867,11 @@
                     "info": "Name of the SAS dataset listing codes used to define covariates",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[COVARIATECODES]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[COVARIATECODES]": "Include"
 					}
                 },
@@ -882,11 +882,11 @@
                     "info": "Name of the SAS dataset to request most frequent utilization assessment",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MFUFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MFUFILE]": "Include"
 					}
                 },
@@ -897,11 +897,11 @@
                     "info": "Name of the SAS dataset defining how dispensings, days supplied, and amount supplied are handled by the QRP (if defaults should be modified)",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[STOCKPILINGFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[STOCKPILINGFILE]": "Include"
 					}
                 },
@@ -912,11 +912,11 @@
                     "info": "Name of the SAS dataset defining the drug and medical utilization evaluation windows",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[UTILFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[UTILFILE]": "Include"
 					}
                 },
@@ -927,11 +927,11 @@
                     "info": "Name of the SAS dataset used to specify the algorithms used to define complex events (i.e., any event that cannot be defined as a simple list of codes, which requires temporal relationships or multiple criteria to be true to define an event)",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[COMBOFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[COMBOFILE]": "Include"
 					}
                 },
@@ -942,11 +942,11 @@
                     "info": "Name of the SAS dataset defining the Charlson/Elixhauser combined comorbidity score calculation and stratification parameters",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[COMORBFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[COMORBFILE]": "Include"
 					}
                 },
@@ -957,11 +957,11 @@
                     "info": "Name of the SAS dataset defining the codes used to define pregnancy episode duration. Required for pregnancy episodes cohort identification strategy, Type 4 analysis",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MODPREGDUR]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MODPREGDUR]": "Include"
 					}
                 },
@@ -972,11 +972,11 @@
                     "info": "Contains parameters to query the Mother-Infant Linkage Table and to specify criteria to build new pregnant exposure, pregnant comparator, and preganant unexposed cohorts",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MICOHORTFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MICOHORTFILE]": "Include"
 					}
                 },
@@ -987,11 +987,11 @@
                     "info": "Name of the SAS dataset listing user-defined strata levels to include in output",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[USERSTRATA]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[USERSTRATA]": "Include"
 					}
                 },
@@ -1002,11 +1002,11 @@
                     "info": "Name of the SAS dataset defining parameters to assess overlap analysis",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[OVERLAPFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[OVERLAPFILE]": "Include"
 					}
                 },
@@ -1017,11 +1017,11 @@
                     "info": "Name of the SAS dataset defining treatment adherence for an overlap analysis",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[OVERLAPFILE_ADHERE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[OVERLAPFILE_ADHERE]": "Include"
 					}
                 },
@@ -1032,11 +1032,11 @@
                     "info": "Name of the SAS dataset defining parameters to assess concomitant use",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[CONCFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[CONCFILE]": "Include"
 					}
                 },
@@ -1047,11 +1047,11 @@
                     "info": "Name of the SAS dataset defining parameters to assess multiple events during requestor defined observation window",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MULTEVENTFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MULTEVENTFILE]": "Include"
 					}
                 },
@@ -1062,11 +1062,11 @@
                     "info": "Name of the SAS dataset defining treatment adherence for a multiple events analysis",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[MULTEVENTFILE_ADHERE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[MULTEVENTFILE_ADHERE]": "Include"
 					}
                 },
@@ -1077,11 +1077,11 @@
                     "info": "Name of the SAS dataset used to perform Interrupted Time Series analysis",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[ITSFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[ITSFILE]": "Include"
 					}
                 },
@@ -1092,11 +1092,11 @@
                     "info": "Name of the SAS dataset defining parameters required for prospective surveillance",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[METADATAFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[METADATAFILE]": "Include"
 					}
                 },
@@ -1107,11 +1107,11 @@
                     "info": "Name of the input file containing the ICD-10-CM - ICD-9-CM lookup table that will be used in the request",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[ICD10ICD9MAP]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[ICD10ICD9MAP]": "Include"
 					}
                 },
@@ -1122,11 +1122,11 @@
                     "info": "Name of the input file containing the tree lookup table that will be used in the request",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TREELOOKUP]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TREELOOKUP]": "Include"
 					}
                 },
@@ -1137,11 +1137,11 @@
                     "info": "Name of the input file containing the Signal Identification specific parameters that will be used in the request",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[TREEFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[TREEFILE]": "Include"
 					}
                 },
@@ -1152,11 +1152,11 @@
                     "info": "Name of the SAS lookup table containing a list of NDCs by unique generic name indicator and unique drug class indicator",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[DRUGCLASSFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[DRUGCLASSFILE]": "Include"
 					}
                 },
@@ -1167,11 +1167,11 @@
                     "info": "Name of the SAS lookup table defining lab codes used to query the SCDM Laboratory Result table",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[LABSCODEMAP]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[LABSCODEMAP]": "Include"
 					}
                 },
@@ -1182,11 +1182,11 @@
                     "info": "Name of the SAS lookup table defining ZIP codes, state codes, Health and Human Services region codes and Census Bureau region codes",
                     "input_type": "SingleSelect",
                     "values": [
-						"",
+						" ",
 						"[ZIPFILE]"
 					],
 					"value_map":{
-						"": "Exclude",
+						" ": "Exclude",
 						"[ZIPFILE]": "Include"
 					}
                 },
@@ -1800,13 +1800,13 @@
 						0,
 						1,
 						2,
-						""
+						" "
 					],
 					"value_map": {
 						"0": "Count all occurrences of an HOI during an exposure episode",
 						"1": "De-duplicate occurrences of the same HOI code and code type on the same day",
 						"2": "De-duplicate occurrences of the same HOI GROUP on the same day",
-						"": "HOI count is not relevant (for signal identification analyses)"
+						" ": "HOI count is not relevant (for signal identification analyses)"
 					}
                 },
 				{
@@ -2227,7 +2227,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file524-type0102040506-report_parameters.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -2676,7 +2676,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file594-typeall-covariatecodes.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -3195,7 +3195,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file610-typeall-mostfrequtil.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -3369,7 +3369,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file612-typeall-combocodes.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -3544,7 +3544,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file614-typeall-combo.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -3793,7 +3793,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file616-typeall-combostockpiling.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -3893,7 +3893,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file544-type02-concfile.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -4022,7 +4022,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file545-type02-multeventfile.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -4151,7 +4151,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file546-type02-multeventfile_adhere.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -4248,7 +4248,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file547-type02-overlapfile.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -4388,7 +4388,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file548-type02-overlap_adhere.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": false,
             "parameters": [
 				{
@@ -4448,7 +4448,7 @@
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file606-type04-micohortfile.md",
             "table_type": "generic",
             "row_source": [],
-            "row_parameter": "",
+            "row_parameter": " ",
             "all_groups_required": true,
             "parameters": [
 				{
