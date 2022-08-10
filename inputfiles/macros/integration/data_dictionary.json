@@ -153,18 +153,18 @@
                         "1",
                         "2",
                         "3",
+						"M",
                         "4",
-                        "5",
-                        "0 1 2 3 4 5"
+                        "5"
                     ],
                     "value_map": {
                         "0": "Unknown",
                         "1": "American Indian or Alaska Native",
                         "2": "Asian",
                         "3": "Black or African American",
+						"M": "Multi-racial"
                         "4": "Native Hawaiian or Other Pacific Islander",
-                        "5": "White",
-                        "0 1 2 3 4 5": "All"
+                        "5": "White"
                     }
                 },
                 {
