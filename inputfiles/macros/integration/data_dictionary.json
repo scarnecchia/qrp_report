@@ -3909,7 +3909,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -3917,7 +3917,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4038,7 +4038,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4046,7 +4046,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4264,7 +4264,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4272,7 +4272,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
