@@ -131,15 +131,13 @@
                         "A",
                         "F",
                         "M",
-                        "U",
-                        "A F M U"
+                        "U"
                     ],
                     "value_map": {
                         "A": "Ambiguous",
                         "F": "Female",
                         "M": "Male",
-                        "U": "Unknown",
-                        "A F M U": "All"
+                        "U": "Unknown"
                     }
                 },
                 {
@@ -153,18 +151,18 @@
                         "1",
                         "2",
                         "3",
+						"M",
                         "4",
-                        "5",
-                        "0 1 2 3 4 5"
+                        "5"
                     ],
                     "value_map": {
                         "0": "Unknown",
                         "1": "American Indian or Alaska Native",
                         "2": "Asian",
                         "3": "Black or African American",
+						"M": "Multi-racial",
                         "4": "Native Hawaiian or Other Pacific Islander",
-                        "5": "White",
-                        "0 1 2 3 4 5": "All"
+                        "5": "White"
                     }
                 },
                 {
@@ -176,14 +174,12 @@
                     "values": [
                         "N",
                         "U",
-                        "Y",
-						"N U Y"
+                        "Y"
                     ],
                     "value_map": {
                         "N": "No",
                         "U": "Unknown",
-                        "Y": "Yes",
-						"N U Y": "All"
+                        "Y": "Yes"
                     }
                 },
                 {
@@ -431,8 +427,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -445,8 +440,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
                 {
@@ -748,11 +742,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MONITORINGFILE]"
+						"MONITORINGFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MONITORINGFILE]": "Include"
+						"MONITORINGFILE": "Include"
 					}
                 },
 				{
@@ -763,11 +757,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[COHORTFILE]"
+						"COHORTFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[COHORTFILE]": "Include"
+						"COHORTFILE": "Include"
 					}
                 },
 				{
@@ -778,11 +772,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TYPE1FILE]"
+						"TYPE1FILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TYPE1FILE]": "Include"
+						"TYPE1FILE": "Include"
 					}
                 },
 				{
@@ -793,11 +787,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TYPE2FILE]"
+						"TYPE2FILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TYPE2FILE]": "Include"
+						"TYPE2FILE": "Include"
 					}
                 },
 				{
@@ -808,11 +802,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TYPE4FILE]"
+						"TYPE4FILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TYPE4FILE]": "Include"
+						"TYPE4FILE": "Include"
 					}
                 },
 				{
@@ -823,11 +817,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TYPE5FILE]"
+						"TYPE5FILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TYPE5FILE]": "Include"
+						"TYPE5FILE": "Include"
 					}
                 },																
 				{
@@ -838,11 +832,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[COHORTCODES]"
+						"COHORTCODES"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[COHORTCODES]": "Include"
+						"COHORTCODES": "Include"
 					}
                 },
 				{
@@ -853,11 +847,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[INCLUSIONCODES]"
+						"INCLUSIONCODES"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[INCLUSIONCODES]": "Include"
+						"INCLUSIONCODES": "Include"
 					}
                 },
 				{
@@ -868,11 +862,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[COVARIATECODES]"
+						"COVARIATECODES"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[COVARIATECODES]": "Include"
+						"COVARIATECODES": "Include"
 					}
                 },
 				{
@@ -883,11 +877,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MFUFILE]"
+						"MFUFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MFUFILE]": "Include"
+						"MFUFILE": "Include"
 					}
                 },
 				{
@@ -898,11 +892,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[STOCKPILINGFILE]"
+						"STOCKPILINGFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[STOCKPILINGFILE]": "Include"
+						"STOCKPILINGFILE": "Include"
 					}
                 },
 				{
@@ -913,11 +907,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[UTILFILE]"
+						"UTILFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[UTILFILE]": "Include"
+						"UTILFILE": "Include"
 					}
                 },
 				{
@@ -928,11 +922,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[COMBOFILE]"
+						"COMBOFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[COMBOFILE]": "Include"
+						"COMBOFILE": "Include"
 					}
                 },
 				{
@@ -943,11 +937,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[COMORBFILE]"
+						"COMORBFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[COMORBFILE]": "Include"
+						"COMORBFILE": "Include"
 					}
                 },
 				{
@@ -958,11 +952,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MODPREGDUR]"
+						"MODPREGDUR"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MODPREGDUR]": "Include"
+						"MODPREGDUR": "Include"
 					}
                 },
 				{
@@ -973,11 +967,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MICOHORTFILE]"
+						"MICOHORTFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MICOHORTFILE]": "Include"
+						"MICOHORTFILE": "Include"
 					}
                 },
 				{
@@ -988,11 +982,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[USERSTRATA]"
+						"USERSTRATA"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[USERSTRATA]": "Include"
+						"USERSTRATA": "Include"
 					}
                 },
 				{
@@ -1003,11 +997,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[OVERLAPFILE]"
+						"OVERLAPFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[OVERLAPFILE]": "Include"
+						"OVERLAPFILE": "Include"
 					}
                 },
 				{
@@ -1018,11 +1012,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[OVERLAPFILE_ADHERE]"
+						"OVERLAPFILE_ADHERE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[OVERLAPFILE_ADHERE]": "Include"
+						"OVERLAPFILE_ADHERE": "Include"
 					}
                 },
 				{
@@ -1033,11 +1027,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[CONCFILE]"
+						"CONCFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[CONCFILE]": "Include"
+						"CONCFILE": "Include"
 					}
                 },
 				{
@@ -1048,11 +1042,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MULTEVENTFILE]"
+						"MULTEVENTFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MULTEVENTFILE]": "Include"
+						"MULTEVENTFILE": "Include"
 					}
                 },
 				{
@@ -1063,11 +1057,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[MULTEVENTFILE_ADHERE]"
+						"MULTEVENTFILE_ADHERE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[MULTEVENTFILE_ADHERE]": "Include"
+						"MULTEVENTFILE_ADHERE": "Include"
 					}
                 },
 				{
@@ -1078,11 +1072,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[ITSFILE]"
+						"ITSFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[ITSFILE]": "Include"
+						"ITSFILE": "Include"
 					}
                 },
 				{
@@ -1093,11 +1087,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[METADATAFILE]"
+						"METADATAFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[METADATAFILE]": "Include"
+						"METADATAFILE": "Include"
 					}
                 },
 				{
@@ -1108,11 +1102,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[ICD10ICD9MAP]"
+						"ICD10ICD9MAP"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[ICD10ICD9MAP]": "Include"
+						"ICD10ICD9MAP": "Include"
 					}
                 },
 				{
@@ -1123,11 +1117,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TREELOOKUP]"
+						"TREELOOKUP"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TREELOOKUP]": "Include"
+						"TREELOOKUP": "Include"
 					}
                 },
 				{
@@ -1138,11 +1132,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[TREEFILE]"
+						"TREEFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[TREEFILE]": "Include"
+						"TREEFILE": "Include"
 					}
                 },
 				{
@@ -1153,11 +1147,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[DRUGCLASSFILE]"
+						"DRUGCLASSFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[DRUGCLASSFILE]": "Include"
+						"DRUGCLASSFILE": "Include"
 					}
                 },
 				{
@@ -1168,11 +1162,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[LABSCODEMAP]"
+						"LABSCODEMAP"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[LABSCODEMAP]": "Include"
+						"LABSCODEMAP": "Include"
 					}
                 },
 				{
@@ -1183,11 +1177,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"[ZIPFILE]"
+						"ZIPFILE"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"[ZIPFILE]": "Include"
+						"ZIPFILE": "Include"
 					}
                 },
 				{
@@ -1435,8 +1429,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -1449,8 +1442,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -2444,8 +2436,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -2458,8 +2449,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -2837,8 +2827,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -2851,8 +2840,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -3319,8 +3307,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -3333,8 +3320,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -3909,7 +3895,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -3917,7 +3903,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4038,7 +4024,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4046,7 +4032,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4264,7 +4250,7 @@
                     "name": "Primary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the primary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4272,7 +4258,7 @@
                     "name": "Secondary Episode",
                     "sas_format": "$40",
                     "info": "COHORTGRP name of the secondary episode of interest",
-                    "input_type": "SingleSelect",
+                    "input_type": "SingleSelectGroup",
                     "values": ["COHORT"]
                 },
 				{
@@ -4492,14 +4478,12 @@
                     "values": [
 						"F",
 						"M",
-						"O",
-						"F M O"
+						"O"
 					],
 					"value_map": {
 						"F": "Female",
 						"M": "Male",
-						"O": "Other",
-						"F M O": "All"
+						"O": "Other"
 					}
                 },
 				{
