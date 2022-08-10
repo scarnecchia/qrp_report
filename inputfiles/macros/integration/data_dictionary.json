@@ -131,15 +131,13 @@
                         "A",
                         "F",
                         "M",
-                        "U",
-                        "A F M U"
+                        "U"
                     ],
                     "value_map": {
                         "A": "Ambiguous",
                         "F": "Female",
                         "M": "Male",
-                        "U": "Unknown",
-                        "A F M U": "All"
+                        "U": "Unknown"
                     }
                 },
                 {
@@ -176,14 +174,12 @@
                     "values": [
                         "N",
                         "U",
-                        "Y",
-						"N U Y"
+                        "Y"
                     ],
                     "value_map": {
                         "N": "No",
                         "U": "Unknown",
-                        "Y": "Yes",
-						"N U Y": "All"
+                        "Y": "Yes"
                     }
                 },
                 {
@@ -431,8 +427,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -445,8 +440,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
                 {
@@ -1435,8 +1429,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -1449,8 +1442,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -2444,8 +2436,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -2458,8 +2449,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -2837,8 +2827,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -2851,8 +2840,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -3319,8 +3307,7 @@
 						"IS*",
                         "ED*",
                         "AV*",
-                        "OA*",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*"
+                        "OA*"
                     ],
                     "value_map": {
                         "IPP": "Inpatient hospital stays, principal diagnoses",
@@ -3333,8 +3320,7 @@
 						"IS*": "Non-acute institutional stays, any diagnosis position",
                         "ED*": "Emergency department encounters",
                         "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits",
-						"IPP IPS IPX ISP ISS ISX ED* AV* OA*": "Any"
+                        "OA*": "Other ambulatory visits"
                     }
                 },
 				{
@@ -4492,14 +4478,12 @@
                     "values": [
 						"F",
 						"M",
-						"O",
-						"F M O"
+						"O"
 					],
 					"value_map": {
 						"F": "Female",
 						"M": "Male",
-						"O": "Other",
-						"F M O": "All"
+						"O": "Other"
 					}
                 },
 				{
