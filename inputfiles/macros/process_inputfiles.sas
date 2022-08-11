@@ -112,6 +112,8 @@
                 end;
             run;
             %let &parameter. = &value.;
+
+            %get_sas_format (package=qrp_report, lib=input, inputfile = &value, parameter=&parameter);
         %end;
   
         /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
