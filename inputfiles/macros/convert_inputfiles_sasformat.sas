@@ -2,23 +2,42 @@
 *                                           PROGRAM OVERVIEW
 ****************************************************************************************************
 *
-* PROGRAM: convert_inputfiles.sas  
+* PROGRAM: convert_inputfiles_sasformat.sas  
 * Created (mm/dd/yyyy): 08/11/2022
 *
 *--------------------------------------------------------------------------------------------------
 * PURPOSE:
-*  Converts CSV inputfiles to SAS inputfiles and reads in JSON data dictionary
-*   
+*  This file contains two macros:
+*
+*  Macro 1: convert_inputfiles determines if CSV input files exists, reads in as SAS datasets, and 
+*           reads in JSON data dictionary
+*
 *  Program inputs: 
 *   - csv files 
 *   - QRP data dictionary
 *                                     
 *  Program outputs:
-*   - sas datasets 
+*   - Raw SAS datasets 
 *                                                                                                  
 *  PARAMETERS:                              
 *   -lib            =   inputfiles directory where the csv files are located
 *   -json_lib       =   integration directory where the json files are located
+*
+*
+*  Macro 2: get_sas_format uses the format in the data dictionary to apply variable lengths
+*
+*  Program inputs: 
+*   - Raw SAS dataset
+*   - QRP data dictionary
+*                                     
+*  Program outputs:
+*   - Formatting SAS datasets 
+*                                                                                                  
+*  PARAMETERS:                              
+*   -lib            =   inputfiles directory where the csv files are located
+*   -inputfile      =   input file name
+*   -parameter      =   input parameter name
+*
 *
 *  Programming Notes:                                                                                                                                       
 *                                                                                  
@@ -86,8 +105,11 @@
         quit;
 
         proc sql;
-            create table format_values as
-            select a.id, a.sas_format, b.id as inputfile, cat(strip(a.id)," ",strip(a.sas_format)) as id_format
+            create table tmplib.format_values as
+            select a.id, a.sas_format, b.id as inputfile,
+                case when index(lowcase(sas_format), 'date')>0 then cat(strip(a.id)," ",4)
+                else cat(strip(a.id)," ",strip(a.sas_format)) 
+                end as id_format
             from input_files_parameters as a left join input_files as b
             on a.ordinal_input_files = b.ordinal_input_files;
         quit;
@@ -104,30 +126,65 @@
 %mend convert_inputfiles;
 
 
-/*get the variables and the sas_format for needed dataset*/
 %macro get_sas_format(lib=, inputfile = , parameter=);
-
     /*check if input file is CSV*/
     %let applyformats= N;
    
     data _null_;
-        set tmplib.filenames;
+        set &lib..filenames;
         if upcase(fname) = upcase("&inputfile") then call symputx('applyformats', 'Y');
     run;
 
+    /*if CSV file, apply variable lengths*/
     %if &applyformats = Y %then %do;
-      proc sql noprint;
-        select id_format into: sas_format 
-        separated by " " from format_values
-        where upcase(inputfile) = upcase("&parameter");
-      quit;
 
-      data &lib..&inputfile.; 
-/*        length &sas_format.;*/
-        set &lib..&inputfile.;
-      run;
-    %end;
+        %let date_id = ;
+        proc sql noprint;
+            select id_format into: sas_format 
+            separated by " " from &lib..format_values
+            where upcase(inputfile) = upcase("&parameter");
 
-%mend;
+    		select id into: sas_id
+            separated by " " from &lib..format_values
+            where upcase(inputfile) = upcase("&parameter");
 
+            select id
+            into :date_id separated by " "
+            from &lib..format_values
+            where upcase(inputfile) = upcase("&parameter") and index(lowcase(sas_format), 'date9')>0;
+         quit;
 
+        data &inputfile.;
+	       set &lib..&inputfile.;
+	       rename 
+	      %do var = 1 %to %sysfunc(countw(&sas_id));
+            %let current_var = %scan(&sas_id, &var);
+		    &current_var. = csv_&current_var.
+	      %end;;
+        run;
+
+        data &lib..&inputfile.;
+            set &inputfile.;
+    	    length &sas_format.;
+            %do var = 1 %to %sysfunc(countw(&sas_id));
+              %let current_var = %scan(&sas_id, &var);
+    	      &current_var. = csv_&current_var.;
+    	    %end;
+
+            %if %length(&date_id.)>0 %then %do;
+            %do var = 1 %to %sysfunc(countw(&date_id));
+              %let current_var = %scan(&date_id, &var);
+    	      format &current_var. date9.;
+    	    %end;
+            %end;
+
+    	    drop csv_:;
+        run;
+
+        proc datasets nowarn noprint lib=work;
+            delete &inputfile.;
+        quit;
+
+    %end; /*csv file exists*/
+
+%mend get_sas_format;

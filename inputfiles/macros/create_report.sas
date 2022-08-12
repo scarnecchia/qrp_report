@@ -265,10 +265,10 @@
     /*remove filenames datasets if created*/
     %if &leavebehindreport = N %then %do;
     proc datasets nowarn nolist lib=input;
-        delete filenames;
+        delete filenames format_values;
     quit;
     proc datasets nowarn nolist lib=infolder;
-        delete filenames;
+        delete filenames format_values;
     quit;
     %end;
 
