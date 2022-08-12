@@ -28,12 +28,14 @@
 *  info@sentinelsystem.org
 *******************************************************************************************************;
 
-%macro convert_inputfiles (package = , LIB =, JSON_LIB=);
+%macro convert_inputfiles (LIB =, JSON_LIB=);
 
     %put =====> MACRO CALLED: convert_inputfiles ;
 
+    libname tmplib "&lib";
+
     /*read in all CSV files and get the names*/
-    data filenames&package.(where=(substr(fname1, length(fname1)-2, 3)= 'csv'));
+    data tmplib.filenames(where=(substr(fname1, length(fname1)-2, 3)= 'csv'));
         length fref $8 fname fname1 $200;
         did = filename(fref,"&lib");
         did = dopen(fref);
@@ -46,18 +48,17 @@
         did = filename(fref);
      run;
 
-     %isdata(dataset=filenames&package.);
+     %isdata(dataset=tmplib.filenames);
      %if %eval(&nobs.>0) %then %do;
 
         %let list_set= ;
         proc sql noprint;
             select fname into: list_set 
-            separated by " " from filenames&package.
+            separated by " " from tmplib.filenames
         quit;
 
         %put &list_set;
 
-        libname tmplib "&lib";
 
         %do f = 1 %to %sysfunc(countw(&list_set));
             %let inputfile = %scan(&list_set, &f.);
@@ -104,13 +105,13 @@
 
 
 /*get the variables and the sas_format for needed dataset*/
-%macro get_sas_format (package=, lib=, inputfile = , parameter=);
+%macro get_sas_format(lib=, inputfile = , parameter=);
 
     /*check if input file is CSV*/
     %let applyformats= N;
    
     data _null_;
-        set filenames&package.;
+        set tmplib.filenames;
         if upcase(fname) = upcase("&inputfile") then call symputx('applyformats', 'Y');
     run;
 

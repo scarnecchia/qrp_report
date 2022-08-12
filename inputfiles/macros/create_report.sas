@@ -49,8 +49,8 @@
 	   proc datasets nowarn nolist lib=msocdata kill; quit; 
 
         /*read in JSON file and determine if there are any CSV files*/
-        %convert_inputfiles(package=qrp, lib=&INFOLDER, JSON_LIB=&infolder.macros/integration);
-        %convert_inputfiles(package=qrp_report, lib=&REPORTROOT.inputfiles/, JSON_LIB=&input.macros/integration);
+        %convert_inputfiles(lib=&INFOLDER, JSON_LIB=&infolder.macros/integration);
+        %convert_inputfiles(lib=&REPORTROOT.inputfiles/, JSON_LIB=&input.macros/integration);
 
        proc printto log="&output.qrp_report_log.log" new;
 	%end;
@@ -257,10 +257,20 @@
 	%end;
 
 ***************************************************************************************************;
-*   Clean Work                                                                                 
+*   Clean directories                                                                                 
 ***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
+
+    /*remove filenames datasets if created*/
+    %if &leavebehindreport = N %then %do;
+    proc datasets nowarn nolist lib=input;
+        delete filenames;
+    quit;
+    proc datasets nowarn nolist lib=infolder;
+        delete filenames;
+    quit;
+    %end;
 
     /* End log */
     proc printto;

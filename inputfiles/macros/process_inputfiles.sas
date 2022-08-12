@@ -113,7 +113,10 @@
             run;
             %let &parameter. = &value.;
 
-            %get_sas_format (package=qrp_report, lib=input, inputfile = &value, parameter=&parameter);
+            /*assign formats to input files that were initially CSV*/
+            %get_sas_format (%if &leavebehindreport = Y %then %do; lib=infolder, %end;
+                             %if &leavebehindreport = N %then %do; lib=input, %end;
+                             inputfile = &value, parameter=&parameter);
         %end;
   
         /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
@@ -347,7 +350,7 @@
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile; 
+            &&id&n.._pscssubgroupfile;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -408,8 +411,24 @@
             call symputx("zipfile",&&run&n.);
           end;
         run;
+
+        /*if CSV files, assign SAS format*/
+        %isdata(dataset=qrp_parameters);
+        %do p = 1 %to &nobs.;
+
+            data _null_;
+              set qrp_parameters (keep = parameter &&run&n.);
+              if _n_ = &p. then do;
+                call symputx("parameter", strip(parameter));
+                call symputx("value", strip(&&run&n.));
+              end;
+            run;
+
+            %get_sas_format (lib=infolder, inputfile = &value, parameter=&parameter);
+        %end;
+      
      %end;
-    
+
 /***********************************************************************************************************
 *   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
 ************************************************************************************************************/
