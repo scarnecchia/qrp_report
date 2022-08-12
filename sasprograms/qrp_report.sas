@@ -137,8 +137,8 @@ options validvarname = v7;
 %mend initialize_paths;
 %initialize_paths;
 
-%soc_lib(INFOLDER, &INFOLDER, options=%str(access=readonly));
-%soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER, options=%str(access=readonly));
+%soc_lib(INFOLDER, &INFOLDER;
+%soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER);
 %soc_lib(OUTPUT, &REPORTROOT.output/);
 %soc_lib(lookup, &REPORTROOT.inputfiles/macros/lookuptables/);
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
