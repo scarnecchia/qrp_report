@@ -22,7 +22,7 @@
 *  This utility macro have the following parameters:
 * 		- PATH: unquoted full directory path
 * 		- OUTDS: two-level SAS dataset name for the output table
-*  create_lookup.sas is a standalone program and excluded from the include list.
+*  These standalone programs are excluded from the include list: create_lookup.sas, create_templatefiles.sas
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
