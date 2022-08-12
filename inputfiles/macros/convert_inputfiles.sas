@@ -62,8 +62,11 @@
         %do f = 1 %to %sysfunc(countw(&list_set));
             %let inputfile = %scan(&list_set, &f.);
 
-            /*note if file will be overwritten*/
-            /*To Do*/
+            /*Note if file will be overwritten*/
+            %isdata(dataset=tmplib.&inputfile.);
+            %if %eval(&nobs.>0) %then %do;
+               %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten wiith contents of CSV file;
+            %end;
 
             proc import file ="&lib.&inputfile..csv"
                 out = tmplib.&inputfile.
