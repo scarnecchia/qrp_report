@@ -5,8 +5,9 @@
 * Created (mm/dd/yyyy): 03/23/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro creates all files that reside in the lookuptables folder. These are lookuptables
-*          used for processing, but cannot be modified by the user.
+* PURPOSE: This is a standalone program executed prior to qrp_report when there are updates to the lookuptables.
+*          The macro creates all files that reside in the lookuptables folder. These are lookuptables used for
+*          processing, but cannot be modified by the user.
 * 
 *  Program inputs:                                                                                   
 * 
