@@ -208,7 +208,7 @@
             ]
         },
         {
-            "id": "COHORTCODESFILE",
+            "id": "COHORTCODES",
             "name": "Cohort Codes File",
             "analysis_types": [
                 1,
