@@ -1,0 +1,4622 @@
+{
+    "types": [
+        {
+            "id": "1",
+            "name": "Type 1",
+            "info": "Background Rates"
+        },
+        {
+            "id": "2",
+            "name": "Type 2",
+            "info": "Exposure and Follow-up Time"
+        },
+        {
+            "id": "4",
+            "name": "Type 4",
+            "info": "Pregnancy"
+        },
+        {
+            "id": "5",
+            "name": "Type 5",
+            "info": "Medical Product Utilization"
+        }
+    ],
+    "input_files": [
+        {
+            "id": "COHORTFILE",
+            "name": "Cohort File",
+            "analysis_types": [
+                "1",
+                "2",
+                "4",
+                "5"
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "User-visible description of the Cohort File",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file526-typeall-cohortfile.md",
+            "table_type": "group",
+            "row_source": [
+                "cohort"
+            ],
+            "row_parameter": "cohortgrp",
+            "all_groups_required": true,
+            "parameters": [
+                {
+                    "id": "COHORTGRP",
+                    "name": "Cohort",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+                {
+                    "id": "COVERAGE",
+                    "name": "Coverage Type Requirement",
+                    "sas_format": "$2",
+                    "info": "Indicates medical and drug coverage type requirements for the cohort",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "M",
+                        "D",
+                        "MD"
+                    ],
+                    "value_map": {
+                        "M": "Medical Coverage",
+                        "D": "Drug Coverage",
+                        "MD": "Medical and Drug Coverage"
+                    }
+                },
+                {
+                    "id": "ENROLGAP",
+                    "name": "Enrollment Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days that will be bridged between two consecutive enrollment periods to create a 'continuously enrolled' period",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "ENRDAYS",
+                    "name": "Pre-Index Enrollment",
+                    "sas_format": "3",
+                    "info": "Specifies the number of days of continuous enrollment required before the index date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "REQDAYSAFTIND",
+                    "name": "Post-Index Enrollment",
+                    "sas_format": "3",
+                    "info": "Optional parameter to specify the number of days a patient is required to be in the data after the index date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "TYPE",
+                    "name": "Cohort Identification Strategy",
+                    "sas_format": "3",
+                    "info": "Indicates cohort identification strategy to be performed",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        1,
+                        2,
+                        4,
+                        5
+                    ],
+					"value_map": {
+						"1": "Type 1 (background rate cohort identification strategy)",
+                        "2": "Type 2 (exposures and follow-up time cohort identification strategy)",
+                        "4": "Type 4 (pregnancy episodes cohort identification strategy)",
+                        "5": "Type 5 (medical product utilization cohort identification strategy)"
+					}
+                },
+                {
+                    "id": "CHARTRES",
+                    "name": "Chart Availability Restriction",
+                    "sas_format": "$1",
+                    "info": "Indicates if extraction should exclude members for whom medical charts cannot be requested for the entire study period",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ]
+                },
+                {
+                    "id": "SEX",
+                    "name": "Sex",
+                    "sas_format": "$7",
+                    "info": "Optional parameter to restrict cohort to only specified Sex values",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "A",
+                        "F",
+                        "M",
+                        "U"
+                    ],
+                    "value_map": {
+                        "A": "Ambiguous",
+                        "F": "Female",
+                        "M": "Male",
+                        "U": "Unknown"
+                    }
+                },
+                {
+                    "id": "RACE",
+                    "name": "Race",
+                    "sas_format": "$11",
+                    "info": "Optional parameter to restrict cohort to only specified Race values",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "0",
+                        "1",
+                        "2",
+                        "3",
+						"M",
+                        "4",
+                        "5"
+                    ],
+                    "value_map": {
+                        "0": "Unknown",
+                        "1": "American Indian or Alaska Native",
+                        "2": "Asian",
+                        "3": "Black or African American",
+						"M": "Multi-racial",
+                        "4": "Native Hawaiian or Other Pacific Islander",
+                        "5": "White"
+                    }
+                },
+                {
+                    "id": "HISPANIC",
+                    "name": "Hispanic Ethnicity",
+                    "sas_format": "$5",
+                    "info": "Optional parameter to restrict cohort to only specified Hispanic values",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "N",
+                        "U",
+                        "Y"
+                    ],
+                    "value_map": {
+                        "N": "No",
+                        "U": "Unknown",
+                        "Y": "Yes"
+                    }
+                },
+                {
+                    "id": "AGESTRAT",
+                    "name": "Age groups",
+                    "sas_format": "$100",
+                    "info": "Age group categories for reporting. Specifying this parameter will (1) restrict to certain age groups and (2) specify how age groups will be stratified in result tables",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "CREATEBASELINE",
+                    "name": "Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding COHORTGRP",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+            ]
+        },
+        {
+            "id": "COHORTCODESFILE",
+            "name": "Cohort Codes File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "Allows the user to specify codes used to define exposures, outcomes, outcome incidence criteria, and live births using a set of drug, procedure/diagnosis, evidence of all-cause death, cause of death codes, and lab result values",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file590-typeall-cohortcodes.md",
+            "table_type": "group_codes",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+                {
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+                {
+                    "id": "STOCKGROUP",
+                    "name": "Stockpiling Group",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP.",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "CODECAT",
+                    "name": "Code Category",
+                    "sas_format": "$2",
+                    "info": "Type of each code category value included in the CodeType field",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "RX",
+                        "DX",
+                        "PX",
+                        "LB",
+                        "AN",
+                        "DT",
+                        "MI",
+                        "EN",
+                        "DH",
+                        "CD"
+                    ],
+                    "value_map": {
+                        "RX": "Drug Code",
+                        "DX": "Diagnosis Code",
+                        "PX": "Procedure Code",
+                        "LB": "Lab Code",
+                        "AN": "Target age anniversary",
+                        "DT": "Fixed calendar date",
+                        "MI": "Mother-Infant Linkage Table code",
+                        "EN": "Encounter",
+                        "DH": "Death",
+                        "CD": "Cause of Death"
+                    }
+                },
+                {
+                    "id": "CODETYPE",
+                    "name": "Code type",
+                    "sas_format": "$3",
+                    "info": "Type of each code value included in the Code field",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "ND",
+                        "SN",
+                        "SK",
+                        "DM",
+                        "DI",
+                        "RN",
+                        "AT",
+                        "CB",
+                        "09",
+                        "10",
+                        "11",
+                        "OT",
+                        "C4",
+                        "HC",
+                        "H3",
+                        "C2",
+                        "C3",
+                        "CV",
+                        "RE",
+                        "LO",
+                        "01N",
+                        "02N",
+                        "09N",
+                        "10N",
+                        "11N",
+                        "C4N",
+                        "HCN",
+                        "H3N",
+                        "C2N",
+                        "C3N",
+                        "NDN",
+                        "REN",
+                        "LON",
+                        "01C",
+                        "02C",
+                        "09C",
+                        "10C",
+                        "11C",
+                        "C4C",
+                        "HCC",
+                        "H3C",
+                        "C2C",
+                        "C3C",
+                        "NDC",
+                        "REC",
+                        "LOC",
+                        "Y",
+                        "M",
+                        "D",
+                        "W",
+                        "AD",
+                        "DD",
+                        "ET",
+                        "DT"
+                    ]
+                },
+                {
+                    "id": "CODE",
+                    "name": "Code",
+                    "sas_format": "$14",
+                    "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "STRENGTH",
+                    "name": "Medical Product Strength",
+                    "sas_format": "8",
+                    "analysis_types": [
+                        "2",
+                        "5"
+                    ],
+                    "info": "A strength associated with each medical product dispensing",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "UNIT",
+                    "name": "Medical Product Unit",
+                    "sas_format": "$10",
+                    "analysis_types": [
+                        "2",
+                        "5"
+                    ],
+                    "info": "Unit with which strength is measured for each medical product dispensing",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "mg",
+                        "mEq",
+                        "IU",
+                        "mL",
+                        "mg/gm",
+                        "mg/mL",
+                        "mg/24hr",
+                        "mEq/gm",
+                        "mEq/mL",
+                        "IU/gm",
+                        "IU/mL",
+                        "mL/mL",
+                        "gm/100gm",
+                        "gm/100mL",
+                        "mEq/100gm",
+                        "mEq/100mL",
+                        "IU/100gm",
+                        "IU/100mL",
+                        "mL/100mL"
+                    ],
+                    "value_map": {
+                        "mg": "Mass per each (milligram)",
+                        "mEq": "Particles per each (milliequivalents)",
+                        "IU": "Standardized amount per each (international unit)",
+                        "mL": "Volume per each (milliliter)",
+                        "mg/gm": "Mass per mass (milligram per gram)",
+                        "mg/mL": "Mass per volume (milligram per milliliter)",
+                        "mg/24hr": "Mass per time (milligram per 24-hours)",
+                        "mEq/gm": "Particles per mass (milliequivalent per gram)",
+                        "mEq/ml": "Particles per volume (milliequivalent per milliliter)",
+                        "IU/gm": "Standardized amount per mass (international unit per gram)",
+                        "IU/mL": "Standardized amount per volume (international unit per milliliter)",
+                        "mL/mL": "Volume per volume (milliliter per milliliter)",
+                        "gm/100gm": "Mass per 100 mass (gram per 100 grams)",
+                        "gm/100mL": "Mass per 100 volume (gram per 100 milliliters)",
+                        "mEq/100gm": "Particles per mass (milliequivalent per 100 grams)",
+                        "mEq/100mL": "Particles per volume (milliequivalent per 100 milliliters)",
+                        "IU/100gm": "Standardized amount per mass (international unit per 100 grams)",
+                        "IU/100mL": "Standardized amount per volume (international unit per 100 milliliters)",
+                        "mL/100mL": "Volume per 100 volume (milliliter per 100 milliliters)"
+                    }
+                },
+                {
+                    "id": "CARESETTINGPRINCIPAL",
+                    "name": "Care Setting and Diagnosis Position",
+                    "sas_format": "$30",
+                    "info": "Defines the care setting and principal diagnosis position requirements for each code",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "IPP",
+                        "IPS",
+                        "IPX",
+						"IP*",
+                        "ISP",
+                        "ISS",
+                        "ISX",
+						"IS*",
+                        "ED*",
+                        "AV*",
+                        "OA*"
+                    ],
+                    "value_map": {
+                        "IPP": "Inpatient hospital stays, principal diagnoses",
+                        "IPS": "Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "Inpatient hospital stay, any diagnosis position",
+                        "ISP": "Non-acute institutional stays, principal diagnoses",
+                        "ISS": "Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "Non-acute institutional stays, any diagnosis position",
+                        "ED*": "Emergency department encounters",
+                        "AV*": "Ambulatory visits",
+                        "OA*": "Other ambulatory visits"
+                    }
+                },
+                {
+                    "id": "INDEXCRITERIA",
+                    "name": "Index Criteria",
+                    "sas_format": "$5",
+                    "info": "Indicates what role the code will play in defining an index date/exposure episode",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "FUPCRITERIA",
+                    "name": "Follow-up Criteria",
+                    "sas_format": "$3",
+                    "info": "Indicates what role the code will play in defining an HOI or concomitant event",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "DEF",
+                        "IOC",
+                        "NOT"
+                    ],
+					"value_map": {
+						"DEF": "Code should be used to identify the cohort HOI/concomitant episode event",
+                        "IOC": "Code should be used to assess cohort HOI incidence/concomitant event only",
+                        "NOT": "Code should not be used to define cohort HOI/concomitant event or incidence"
+					}
+                },
+                {
+                    "id": "CODESUPPLY",
+                    "name": "Forced Code Supply",
+                    "sas_format": "3",
+                    "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "DATEONLY",
+                    "name": "Lookback Period Definition",
+                    "sas_format": "$1",
+                    "info": "Indicates if lookback period to define new use of a medical product looks for evidence of a date or evidence of an interval",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Lookback period should search for evidence of a date or an interval",
+						"N": "Lookback period should search for evidence of a date only"
+					}
+                },
+                {
+                    "id": "LABDATETYPE",
+                    "name": "Lab Date Selection Algorithm",
+                    "sas_format": "$3",
+                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "LABRESULT",
+                    "name": "Lab Result Values",
+                    "sas_format": "$30",
+                    "info": "Specifies the lab result value or lab result range for querying",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "PRODUCTAPPROVALDATE",
+                    "name": "Product Approval Date",
+                    "sas_format": "Date9",
+                    "analysis_types": [
+                        "6"
+                    ],
+                    "info": "Defines user-specified approval date for product. Valid for Type 6 only",
+                    "input_type": "Date",
+                    "values": []
+                },
+                {
+                    "id": "PRODUCTMARKETINGDATE",
+                    "name": "Product Marketing Start Date",
+                    "sas_format": "Date9",
+                    "analysis_types": [
+                        "6"
+                    ],
+                    "info": "Defines user-specified start marketing date for product. If unknown, leave blank. Valid for Type 6 only",
+                    "input_type": "Date",
+                    "values": []
+                },
+                {
+                    "id": "OTHERPRODUCTDATE",
+                    "name": "Other Product Date",
+                    "sas_format": "Date9",
+                    "analysis_types": [
+                        "6"
+                    ],
+                    "info": "Defines user-specified other product-related date. If unknown or not needed, leave blank. Valid for Type 6 only",
+                    "input_type": "Date",
+                    "values": []
+                }
+            ]
+        },
+        {
+            "id": "MONITORINGFILE",
+            "name": "Monitoring File",
+            "analysis_types": [
+                "1",
+                "2",
+                "4",
+                "5"
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "Allows the user to specify a monitoring (query) period for descriptive and inferential analyses, and multiple monitoring periods for sequential analyses and sequential signal identification",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file580-typeall-monitoring.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+                {
+                    "id": "PERIODID",
+                    "name": "Period ID",
+                    "sas_format": "3",
+                    "info": "Identifier for each monitoring period",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "STARTDATE",
+                    "name": "Index Start Date",
+                    "sas_format": "Date9",
+                    "info": "The date on which patients may begin contributing eligible index exposures/events. Data prior to STARTDATE may be used to determine enrollment, washout, and other cohort inclusion criteria.",
+                    "input_type": "Date",
+                    "values": []
+                },
+                {
+                    "id": "INDENDDATE",
+                    "name": "Index End Date",
+                    "sas_format": "Date9",
+                    "info": "Last day a patient can contribute an index date to the analysis. Users have the option to explicitly set the date in this field or use INDENDOPTIONS for a data driven approach to set the date.",
+                    "input_type": "Date",
+                    "values": []
+                },
+                {
+                    "id": "INDENDOPTIONS",
+                    "name": "Index End Date Options",
+                    "sas_format": "$10",
+                    "info": "Options for setting the last day a patient can contribute a qualifying index date.",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "FUPDRIVEN",
+                        "DATADRIVEN",
+                        " "
+                    ],
+					"value_map": {
+						"FUPDRIVEN": "Earliest of FUPENDDATE/CDPEND; program will only evaluate for values that have been specified by the user",
+                        "DATADRIVEN": "Query-dependent to support fixed risk window analyses",
+                        " ": "INDENDDATE will be used to explicitly specify date"
+					}
+                },
+                {
+                    "id": "FUPENDDATE",
+                    "name": "Follow-up End Date",
+                    "sas_format": "Date9",
+                    "info": "Last day a patient can contribute follow-up time to the analysis.",
+                    "input_type": "Date",
+                    "values": []
+                },
+                {
+                    "id": "CDPEND",
+                    "name": "Censoring Criteria",
+                    "sas_format": "$1",
+                    "info": "Whether to censor patient episodes based on Common Components database completeness date",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes, censor episodes based on Common Components data completeness date",
+                        "N": "No, do not censor episodes based on Common Components data completeness date"
+					}
+                }
+            ]
+        },
+		{
+			"id": "QRP_PARAMETERS",
+            "name": "QRP Parameters File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "Allows the user to specify QRP Reporting Parameters",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file522-typeall-mainparam.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "RUNID",
+                    "name": "Run Identifier",
+                    "sas_format": "$3",
+                    "info": "Run identifier for internal Sentinel Operations Center (SOC) identification and tracking",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PERIODIDSTART",
+                    "name": "Query Period Start",
+                    "sas_format": "3",
+                    "info": "PERIODIDSTART should correspond to the PERIODID value in the input MONITORINGFILE to identify at what time the QRP should begin execution",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "PERIODIDEND",
+                    "name": "Query Period End",
+                    "sas_format": "3",
+                    "info": "PERIODIDEND should correspond to the PERIODID value in the input MONITORINGFILE to identify at what time the QRP should end execution",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "ANALYSIS",
+                    "name": "Further Analysis",
+                    "sas_format": "$4",
+                    "info": "Indicates what, if any, additional analyses will be performed on the cohort after extraction",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TREE"
+					],
+					"value_map":{
+						" ": "No additional analyses requested",
+						"TREE": "Perform a signal idenfitication analysis"
+					}
+                },
+				{
+                    "id": "RUN_ENVELOPE",
+                    "name": "Run Envelope Macro",
+                    "sas_format": "3",
+                    "info": "Specifies the method for data cleaning with the envelope macro",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1,
+						2
+					],
+					"value_map":{
+						"0": "Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters",
+						"1": "Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters. Do not reclassify if encounter occurs on day of admission",
+						"2": "No reclassification"
+					}
+                },
+				{
+                    "id": "DISTINDEX",
+                    "name": "Distribution of Exposure or Outcome Codes Output",
+                    "sas_format": "$1",
+                    "info": "Indicates if an optional output file with the distribution of index-defining codes and/or outcome-defining codes will be output for this request",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map":{
+						"Y": "Generate and output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat",
+						"N": "Do not generate or output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat"
+					}
+                },
+				{
+                    "id": "FREEZEDATA",
+                    "name": "Save SCDM Data (freeze data)",
+                    "sas_format": "$1",
+                    "info": "Indicates if SCDM data for patients selected in the cohort(s) of interest will be saved in the dplocal folder for further processing",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"A",
+						"M",
+						"N"
+					],
+					"value_map":{
+						"Y": "Yes (excludes patients identified only in a secondary cohort when conducting a multiple events or overlap analysis, excludes patients without a concomitant use episode when conducting a concomitant use analysis)",
+						"A": "All (includes patients identified in secondary episodes when conducting a multiple events or overlap analysis, includes patients identified in both primary and secondary cohorts when conducting a concomitant use analysis)",
+						"M": "Matched population only (relevant in matched analyses only)",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "MONITORINGFILE",
+                    "name": "Monitoring File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the time period(s) for each data extraction",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MONITORINGFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MONITORINGFILE": "Include"
+					}
+                },
+				{
+                    "id": "COHORTFILE",
+                    "name": "Cohort File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the cohort identification strategy used and continuous enrollment requirements",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"COHORTFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"COHORTFILE": "Include"
+					}
+                },
+				{
+                    "id": "TYPE1FILE",
+                    "name": "Type 1 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a background rate calculation cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TYPE1FILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TYPE1FILE": "Include"
+					}
+                },
+				{
+                    "id": "TYPE2FILE",
+                    "name": "Type 2 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for an exposures and follow-up time cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TYPE2FILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TYPE2FILE": "Include"
+					}
+                },
+				{
+                    "id": "TYPE4FILE",
+                    "name": "Type 4 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a pregnancy episodes cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TYPE4FILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TYPE4FILE": "Include"
+					}
+                },
+				{
+                    "id": "TYPE5FILE",
+                    "name": "Type 5 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a medical product utilization cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TYPE5FILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TYPE5FILE": "Include"
+					}
+                },																
+				{
+                    "id": "COHORTCODES",
+                    "name": "Cohort Codes File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset listing codes used to define the cohort",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"COHORTCODES"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"COHORTCODES": "Include"
+					}
+                },
+				{
+                    "id": "INCLUSIONCODES",
+                    "name": "Inclusion/Exclusion Codes File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset listing codes used to define additional cohort inclusion and exclusion criteria",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"INCLUSIONCODES"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"INCLUSIONCODES": "Include"
+					}
+                },
+				{
+                    "id": "COVARIATECODES",
+                    "name": "Covariate Codes File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset listing codes used to define covariates",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"COVARIATECODES"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"COVARIATECODES": "Include"
+					}
+                },
+				{
+                    "id": "MFUFILE",
+                    "name": "Most Frequent Utilization File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset to request most frequent utilization assessment",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MFUFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MFUFILE": "Include"
+					}
+                },
+				{
+                    "id": "STOCKPILINGFILE",
+                    "name": "Stockpiling File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining how dispensings, days supplied, and amount supplied are handled by the QRP (if defaults should be modified)",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"STOCKPILINGFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"STOCKPILINGFILE": "Include"
+					}
+                },
+				{
+                    "id": "UTILFILE",
+                    "name": "Utilization File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the drug and medical utilization evaluation windows",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"UTILFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"UTILFILE": "Include"
+					}
+                },
+				{
+                    "id": "COMBOFILE",
+                    "name": "Combo File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset used to specify the algorithms used to define complex events (i.e., any event that cannot be defined as a simple list of codes, which requires temporal relationships or multiple criteria to be true to define an event)",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"COMBOFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"COMBOFILE": "Include"
+					}
+                },
+				{
+                    "id": "COMORBFILE",
+                    "name": "Comorbidity Score File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the Charlson/Elixhauser combined comorbidity score calculation and stratification parameters",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"COMORBFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"COMORBFILE": "Include"
+					}
+                },
+				{
+                    "id": "MODPREGDUR",
+                    "name": "Modified Pregnancy Duration File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the codes used to define pregnancy episode duration. Required for pregnancy episodes cohort identification strategy, Type 4 analysis",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MODPREGDUR"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MODPREGDUR": "Include"
+					}
+                },
+				{
+                    "id": "MICOHORTFILE",
+                    "name": "Mother-Infant Cohort File",
+                    "sas_format": "$32",
+                    "info": "Contains parameters to query the Mother-Infant Linkage Table and to specify criteria to build new pregnant exposure, pregnant comparator, and preganant unexposed cohorts",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MICOHORTFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MICOHORTFILE": "Include"
+					}
+                },
+				{
+                    "id": "USERSTRATA",
+                    "name": "User-defined Strata Levels File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset listing user-defined strata levels to include in output",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"USERSTRATA"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"USERSTRATA": "Include"
+					}
+                },
+				{
+                    "id": "OVERLAPFILE",
+                    "name": "Overlap File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters to assess overlap analysis",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"OVERLAPFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"OVERLAPFILE": "Include"
+					}
+                },
+				{
+                    "id": "OVERLAPFILE_ADHERE",
+                    "name": "Overlap Adherence File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining treatment adherence for an overlap analysis",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"OVERLAPFILE_ADHERE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"OVERLAPFILE_ADHERE": "Include"
+					}
+                },
+				{
+                    "id": "CONCFILE",
+                    "name": "Concomitant File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters to assess concomitant use",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"CONCFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"CONCFILE": "Include"
+					}
+                },
+				{
+                    "id": "MULTEVENTFILE",
+                    "name": "Multiple Events File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters to assess multiple events during requestor defined observation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MULTEVENTFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MULTEVENTFILE": "Include"
+					}
+                },
+				{
+                    "id": "MULTEVENTFILE_ADHERE",
+                    "name": "Multiple Events Adherence File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining treatment adherence for a multiple events analysis",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"MULTEVENTFILE_ADHERE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"MULTEVENTFILE_ADHERE": "Include"
+					}
+                },
+				{
+                    "id": "ITSFILE",
+                    "name": "Interrupted Time Series File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset used to perform Interrupted Time Series analysis",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"ITSFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"ITSFILE": "Include"
+					}
+                },
+				{
+                    "id": "METADATAFILE",
+                    "name": "Surveillance Metadata File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for prospective surveillance",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"METADATAFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"METADATAFILE": "Include"
+					}
+                },
+				{
+                    "id": "ICD10ICD9MAP",
+                    "name": "ICD-10-CM – ICD-9-CM Mapping Lookup Table File",
+                    "sas_format": "$32",
+                    "info": "Name of the input file containing the ICD-10-CM - ICD-9-CM lookup table that will be used in the request",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"ICD10ICD9MAP"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"ICD10ICD9MAP": "Include"
+					}
+                },
+				{
+                    "id": "TREELOOKUP",
+                    "name": "Tree Lookup Table File",
+                    "sas_format": "$32",
+                    "info": "Name of the input file containing the tree lookup table that will be used in the request",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TREELOOKUP"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TREELOOKUP": "Include"
+					}
+                },
+				{
+                    "id": "TREEFILE",
+                    "name": "TreeScan Parameter File",
+                    "sas_format": "$32",
+                    "info": "Name of the input file containing the Signal Identification specific parameters that will be used in the request",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"TREEFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"TREEFILE": "Include"
+					}
+                },
+				{
+                    "id": "DRUGCLASSFILE",
+                    "name": "Drug Class Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS lookup table containing a list of NDCs by unique generic name indicator and unique drug class indicator",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"DRUGCLASSFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"DRUGCLASSFILE": "Include"
+					}
+                },
+				{
+                    "id": "LABSCODEMAP",
+                    "name": "Lab Code Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS lookup table defining lab codes used to query the SCDM Laboratory Result table",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"LABSCODEMAP"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"LABSCODEMAP": "Include"
+					}
+                },
+				{
+                    "id": "ZIPFILE",
+                    "name": "Geography Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS lookup table defining ZIP codes, state codes, Health and Human Services region codes and Census Bureau region codes",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"ZIPFILE"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"ZIPFILE": "Include"
+					}
+                },
+				{
+                    "id": "PROFILE",
+                    "name": "Profile Output Generation",
+                    "sas_format": "$1",
+                    "info": "Specify whether to return an aggregated dataset of patients/episodes that contains unique covariate combination",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map":{
+						"Y": "Generate and output [RUNID]_profile_[PERIODID]",
+						"N": "Do not generate or output [RUNID]_profile_[PERIODID]"
+					}
+                },
+				{
+                    "id": "TYPE3FILE",
+                    "name": "Type 3 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a self-controlled risk interval design cohort identification strategy",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "TYPE6FILE",
+                    "name": "Type 6 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a manufacture level product utilization and switching patterns cohort identification strategy",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PSESTIMATIONFILE",
+                    "name": "PS Estimation File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for estimating a PS model",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PSMATCHFILE",
+                    "name": "PS Matching Analysis File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for a PS matching analysis",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "STRATIFICATIONFILE",
+                    "name": "PS Stratification Analysis File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for a PS stratification analysis",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "IPTWFILE",
+                    "name": "Inverse Probability of Treatment Weights File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for an inverse probability of treatment weights (IPTW) analysis",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "COVSTRATFILE",
+                    "name": "Covariate Stratification (CS) Analysis File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for a CS analysis",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PSCSSUBGROUPFILE",
+                    "name": "PS or CS Subgroup Analysis File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset describing parameters for Propensity Score/Covariate Stratification analyses with subgroups of the overall analysis group",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "DIAGNOSTICS",
+                    "name": "Return PS Estimation Model Diagnostics",
+                    "sas_format": "$32",
+                    "info": "Specifies if program should return three diagnostic output files from the proc logistic for each PS model",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "INDLEVEL",
+                    "name": "Indicator for Individual Level Output Return",
+                    "sas_format": "$32",
+                    "info": "Specifies whether to write individual level [RUNID]_adjusted_[PERIODID] files to the msoc subfolder",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "SURVEILLANCEMODE",
+                    "name": "Surveillance Strategy for Propensity Score Analyses or Multi-Factor Matching Analyses",
+                    "sas_format": "$32",
+                    "info": "Specifies the method for performing prospective surveillance when using propensity score adjustment in a variable time-at-risk design",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "TREATMENTPATHWAYS",
+                    "name": "Treatment Pathways",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset used to evaluate and characterize switch pattern",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "MODPREGDUR",
+            "name": "Modified Pregnancy Duration File",
+            "analysis_types": [
+                4
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "File used to calculate pregnancy episode duration and index date",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file600-type04-modpregdur.md",
+            "table_type": "group_code",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "STOCKGROUP",
+                    "name": "Stockgroup Name",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to a specific preterm/postterm codes within a given GROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CODECAT",
+                    "name": "Code Category",
+                    "sas_format": "$2",
+                    "info": "Type of each code category value included in the CODETYPE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"RX",
+						"DX",
+						"PX",
+						"LB"
+					],
+					"value_map": {
+						"RX": "Drug Code",
+						"DX": "Diagnosis code",
+						"PX": "Procedure code",
+						"LB": "Lab code"
+					}
+                },
+				{
+                    "id": "CODETYPE",
+                    "name": "Code Type",
+                    "sas_format": "$3",
+                    "info": "Type of each code value included in the CODE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ND",
+                        "SN",
+                        "SK",
+                        "DM",
+                        "DI",
+                        "RN",
+                        "AT",
+                        "CB",
+                        "09",
+                        "10",
+                        "11",
+                        "OT",
+                        "C4",
+                        "HC",
+                        "H3",
+                        "C2",
+                        "C3",
+                        "CV",
+                        "RE",
+                        "LO",
+                        "01N",
+                        "02N",
+                        "09N",
+                        "10N",
+                        "11N",
+                        "C4N",
+                        "HCN",
+                        "H3N",
+                        "C2N",
+                        "C3N",
+                        "NDN",
+                        "REN",
+                        "LON",
+                        "01C",
+                        "02C",
+                        "09C",
+                        "10C",
+                        "11C",
+                        "C4C",
+                        "HCC",
+                        "H3C",
+                        "C2C",
+                        "C3C",
+                        "NDC",
+                        "REC",
+                        "LOC"
+					]
+                },
+				{
+                    "id": "CODE",
+                    "name": "Code",
+                    "sas_format": "$14",
+                    "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CARESETTINGPRINCIPAL",
+                    "name": "Care Setting and Diagnosis Position",
+                    "sas_format": "$30",
+                    "info": "Defines the care setting and principal diagnosis position requirements for each code",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "IPP",
+                        "IPS",
+                        "IPX",
+						"IP*",
+                        "ISP",
+                        "ISS",
+                        "ISX",
+						"IS*",
+                        "ED*",
+                        "AV*",
+                        "OA*"
+                    ],
+                    "value_map": {
+                        "IPP": "Inpatient hospital stays, principal diagnoses",
+                        "IPS": "Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "Inpatient hospital stay, any diagnosis position",
+                        "ISP": "Non-acute institutional stays, principal diagnoses",
+                        "ISS": "Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "Non-acute institutional stays, any diagnosis position",
+                        "ED*": "Emergency department encounters",
+                        "AV*": "Ambulatory visits",
+                        "OA*": "Other ambulatory visits"
+                    }
+                },
+				{
+                    "id": "PRIORITYGROUP1",
+                    "name": "Priority Group 1",
+                    "sas_format": "3",
+                    "info": "Indicates if a code is a first priority code",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "No",
+						"1": "Yes"
+					}
+                },
+				{
+                    "id": "PRIORITYGROUP2",
+                    "name": "Priority Group 2",
+                    "sas_format": "3",
+                    "info": "Indicates if a code is a second priority code",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "No",
+						"1": "Yes"
+					}
+                },
+				{
+                    "id": "PRIORITY",
+                    "name": "Priority",
+                    "sas_format": "3",
+                    "info": "For members with several different codes in the same priority group, the priority is used to indicate which code will be kept to define the pregnancy episode start date and duration",
+                    "input_type": "numeric",
+                    "values": []
+                },
+				{
+                    "id": "DURATION",
+                    "name": "Duration",
+                    "sas_format": "3",
+                    "info": "Duration in days attached to the pregnancy episode when code indicating gestational age is selected",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "LABDATETYPE",
+                    "name": "Lab Date Selection Algorithm",
+                    "sas_format": "$3",
+                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "LABRESULT",
+                    "name": "Lab Result Values",
+                    "sas_format": "$30",
+                    "info": "Specifies the lab result value or lab result range for querying",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "TYPE1FILE",
+            "name": "Type 1 File",
+            "analysis_types": [
+                1
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "File used to parameterize Type 1 queries",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file530-type01-type1.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T1COHORTDEF",
+                    "name": "Type 1 Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Indicates how many index dates an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02"
+					],
+					"value_map": {
+						"01": "Cohort includes only the first valid index date per individual during the query period",
+						"02": "Cohort includes all valid index dates per individual during the query period"
+					}
+                },
+				{
+                    "id": "T1WASHPER",
+                    "name": "Type 1 Index Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of washout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CENSOR_DTH",
+                    "name": "Censor Enrollment on Death",
+                    "sas_format": "$1",
+                    "info": "Indicates if enrollment should be censored based on death date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "CENSOR_OUTPUT_CAT",
+                    "name": "Categories for Follow-up Time",
+                    "sas_format": "$40",
+                    "info": "Indicates ranges (in days) for stratification variable CENSDAYS_VALUE to categorize time to censor in output",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "OUTPUTDENOM",
+                    "name": "Output Denominator",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to calculate denominator variables DENNUMPTS and DENNUMMEMDAYS",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"M",
+						"N"
+					],
+					"value_map": {
+						"Y": "Calculate both DENNUMPTS and DENNUMMEMDAYS",
+						"M": "Calculate only DENNUMPTS",
+						"N": "Do not calculate DENNUMPTS or DENNUMMEMDAYS"
+					}
+                }
+			]
+		},
+		{
+			"id": "TYPE2FILE",
+            "name": "Type 2 File",
+            "analysis_types": [
+                2
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "File used to parameterize Type 2 queries",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file540-type02-type2.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T2COHORTDEF",
+                    "name": "Type 2 Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Indicates how many exposure periods an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02",
+						"03"
+					],
+					"value_map": {
+						"01": "Cohort includes only the first valid exposure episode during the query period",
+						"02": "Cohort includes all valid exposure episodes during the query period",
+						"03": "Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"
+					}
+                },
+				{
+                    "id": "T2WASHPER",
+                    "name": "Type 2 Exposure Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of washout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "POINT",
+                    "name": "Point Exposure",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to define exposure as a point exposure instead of building exposure episodes based on days supplied",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Define exposure as a point exposure",
+						"N": "Do not define exposure as a point exposure"
+					}
+                },
+				{
+                    "id": "EPISODEGAPTYPE",
+                    "name": "Treatment Episode Gap Type",
+                    "sas_format": "$1",
+                    "info": "Specifies the type of algorithm to use for the calculation of episode gaps",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"F",
+						"P"
+					],
+					"value_map": {
+						"F": "Fixed episode gap",
+						"P": "Percentage episode gap"
+					}
+                },
+				{
+                    "id": "EPISODEGAP",
+                    "name": "Exposure Episode Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days allowed between two consecutive claims to consider them as part of the same treatment episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EXPEXTPER",
+                    "name": "Exposure Episode Extension Period",
+                    "sas_format": "3",
+                    "info": "Extends the length of an exposure episode by specified number of days",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "MINEPISDUR",
+                    "name": "Minimum Exposure Episode Duration",
+                    "sas_format": "3",
+                    "info": "Rejects exposure episodes of fewer than MINEPISDUR days",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "MAXEPISDUR",
+                    "name": "Maximum Exposure Episode Duration",
+                    "sas_format": "3",
+                    "info": "Censors/truncates exposure episodes after a user-specified number of exposed days",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "MINDAYSUPP",
+                    "name": "Minimum Exposure Episode Days Supplied",
+                    "sas_format": "3",
+                    "info": "Rejects exposure episodes where less than MINDAYSUPP days supplied were used to create the exposure episode",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "T2CUMDOSEPER",
+                    "name": "Evaluation Period for Cumulative Dose",
+                    "sas_format": "3",
+                    "info": "Specifies look back window prior to index date when cumulative dose of index medication will be assessed",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "MINCUMDOSE",
+                    "name": "Minimum Cumulative Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the minimum cumulative dose of the index medication prior to index required to enter the cohort",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXCUMDOSE",
+                    "name": "Maximum Cumulative Dose",
+                    "sas_format": "8",
+                    "info": "Censors episodes once the patient's cumulative dose exceeds the MAXCUMDOSE value",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINCFDD",
+                    "name": "Minimum Current Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the minimum current filled daily dose of the index dispensing required to enter the cohort",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXCFDD",
+                    "name": "Maximum Current Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the maximum current filled daily dose of the index dispensing required to enter the cohort",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CENSOR_DTH",
+                    "name": "Censor Enrollment on Death",
+                    "sas_format": "$1",
+                    "info": "Indicates if enrollment should be censored based on death date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "T2FUPWASHPER",
+                    "name": "Type 2 HOI Washout Period",
+                    "sas_format": "3",
+                    "info": "The washout period is a period before an exposure episode during which an individual cannot have evidence of the HOI",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EVENTCOUNT",
+                    "name": "HOI Characterization De-duplication Process",
+                    "sas_format": "2",
+                    "info": "Users can use this field to determine how this characterization should count the number of HOI",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1,
+						2,
+						" "
+					],
+					"value_map": {
+						"0": "Count all occurrences of an HOI during an exposure episode",
+						"1": "De-duplicate occurrences of the same HOI code and code type on the same day",
+						"2": "De-duplicate occurrences of the same HOI GROUP on the same day",
+						" ": "HOI count is not relevant (for signal identification analyses)"
+					}
+                },
+				{
+                    "id": "BLACKOUTPER",
+                    "name": "HOI Blackout Period",
+                    "sas_format": "3",
+                    "info": "The HOI blackout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T2ATRISKSTART",
+                    "name": "Start of At-risk Period",
+                    "sas_format": "3",
+                    "info": "Indicates the risk window interval start, as days relative to the exposure start date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "FOLLOWUPTIME_OUTPUT_CAT",
+                    "name": "Categories for Follow-up Time",
+                    "sas_format": "$40",
+                    "info": "Indicates ranges (in days) for stratification variable CENSDAYS_VALUE to categorize follow-up time in output",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CENSOR_OUTPUT_CAT",
+                    "name": "Categories for Follow-up Time",
+                    "sas_format": "$40",
+                    "info": "Indicates ranges (in days) for stratification variable CENSDAYS_VALUE to categorize time to censor in output",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "NEVEREXPOSEDCOHORT",
+                    "name": "Never Exposed Cohort",
+                    "sas_format": "$1",
+                    "info": "Determines whether to create a never-exposed cohort",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"N"
+					],
+					"value_map": {
+						"N": "Do not create never-exposed cohort"
+					}
+                },
+				{
+                    "id": "AUTOPREV",
+                    "name": "Automatic Prevalent Cohort",
+                    "sas_format": "$1",
+                    "info": "Determines whether to automatically create a prevalent cohort, alongside a user-specified base cohort",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Automatically create a prevalent cohort",
+						"N": "Do not automatically create a prevalent cohort"
+					}
+                },
+				{
+                    "id": "REQDAYSAFTEPI",
+                    "name": "Minimum Post-Episode Days",
+                    "sas_format": "3",
+                    "info": "Optional parameter to specify the number of days a patient is required to be in the data after the episode end date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OUTPUTDENOM",
+                    "name": "Output Denominator",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to calculate denominator variables DENNUMPTS and DENNUMMEMDAYS",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"M",
+						"N"
+					],
+					"value_map": {
+						"Y": "Calculate both DENNUMPTS and DENNUMMEMDAYS",
+						"M": "Calculate only DENNUMPTS",
+						"N": "Do not calculate DENNUMPTS or DENNUMMEMDAYS"
+					}
+                }
+			]
+		},
+		{
+			"id": "TYPE4FILE",
+            "name": "Type 4 File",
+            "analysis_types": [
+                4
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "File used to parameterize Type 4 queries",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file560-type04-type4.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T4COHORTDEF",
+                    "name": "Type 4 Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Indicates how many pregnancy episodes an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"02"
+					],
+					"value_map": {
+						"02": "Cohort includes all valid pregnancy episodes during the query period"
+					}
+                },
+				{
+                    "id": "T4WASHPER",
+                    "name": "Type 4 Exposure Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of washout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "DEFAULTPREGDUR",
+                    "name": "User-defined Pregnancy Episode Length",
+                    "sas_format": "3",
+                    "info": "Default pregnancy duration in the absence of preterm/postterm codes within EPISODEGAP of delivery",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPISODEGAP",
+                    "name": "Preterm/Postterm Code Evaluation Window",
+                    "sas_format": "3",
+                    "info": "Sets the number of days around the delivery date where the program looks for evidence of preterm/postterm codes to calculate the length of the pregnancy episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EXPEXTPER2",
+                    "name": "Treatment Episode Gap Type",
+                    "sas_format": "3",
+                    "info": "Extends the length of an exposure episode by specified number of days",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "T4COHORTDEF2",
+                    "name": "Type 4 Medical Product Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Indicates how many medical product exposure periods an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02",
+						"99"
+					],
+					"value_map": {
+						"01": "Cohort includes first valid medical product exposure episodes during a pregnancy episode",
+						"02": "Cohort includes all valid medical product exposure episodes during a pregnancy episode",
+						"99": "Cohort includes last valid medical product exposure episodes during a pregnancy episode"
+					}
+                },
+				{
+                    "id": "T4WASHPER2",
+                    "name": "Type 4 Medical Product Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of washout period in days for medical products",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "POINT",
+                    "name": "Point Exposure",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to define exposure as a point exposure instead of building exposure episodes based on days supplied",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Define exposure as a point exposure",
+						"N": "Do not define exposure as a point exposure"
+					}
+                },
+				{
+                    "id": "EPISODEGAPTYPE2",
+                    "name": "Treatment Episode Gap Type",
+                    "sas_format": "$1",
+                    "info": "Specifies the type of algorithm to use for the calculation of episode gaps for medical product use",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"F",
+						"P"
+					],
+					"value_map": {
+						"F": "Fixed episode gap",
+						"P": "Percentage episode gap"
+					}
+                },
+				{
+                    "id": "EPISODEGAP2",
+                    "name": "Exposure Episode Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days allowed between two consecutive dispensings to consider them as part of the same medical product episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXEPISDUR2",
+                    "name": "Maximum MOI Exposure Episode Duration",
+                    "sas_format": "3",
+                    "info": "Censors/truncates medical product exposure episodes after a user-specified number of exposed days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "REMOVEMOISTART",
+                    "name": "Medical Product Removal Start Day",
+                    "sas_format": "3",
+                    "info": "Number of days, relative to pregnancy start date, to start interval where MOIs will not be counted",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "REMOVEMOIEND",
+                    "name": "Medical Product Removal End Day",
+                    "sas_format": "3",
+                    "info": "Number of days, relative to pregnancy start date, to end interval where MOIs will not be counted",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "REMOVEMOIADATE",
+                    "name": "Medical Product Delivery Date Removal",
+                    "sas_format": "$1",
+                    "info": "Indicator variable to exclude the delivery date from the MOI evaluation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Exclude the delivery date from the evaluation window when counting MOIs",
+						"N": "Do not exclude the delivery date from the evaluation window when counting MOIs"
+					}
+                },
+				{
+                    "id": "PREPREGDAYS",
+                    "name": "Pre-pregnancy MOI evaluation period",
+                    "sas_format": "3",
+                    "info": "Number of days prior to pregnancy start to start counting MOI episodes",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "GRACEDAYS",
+                    "name": "Maximum Infant Grace Period",
+                    "sas_format": "3",
+                    "info": "Optional parameter to specify the maximum number of days to allow between an infant's birth and enrollment start",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MIDAYSDIFF",
+                    "name": "Allowed Days Between Birth Date and Delivery Date",
+                    "sas_format": "3",
+                    "info": "Indicates the allowable number of days between infant birth date and delivery date used when selecting pregnancy episodes from MIL table",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "TYPE5FILE",
+            "name": "Type 5 File",
+            "analysis_types": [
+                5
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "File used to parameterize Type 5 queries",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file570-type05-type5.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T5COHORTDEF",
+                    "name": "Type 5 Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Indicates how many exposure periods an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"04"
+					],
+					"value_map": {
+						"04": "Cohort includes all valid exposure episodes during the query period"
+					}
+                },
+				{
+                    "id": "T5WASHPER",
+                    "name": "Type 5 Exposure Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of washout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPISODEGAPTYPE",
+                    "name": "Treatment Episode Gap Type",
+                    "sas_format": "$1",
+                    "info": "Specifies the type of algorithm to use for the calculation of episode gaps",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"F",
+						"P"
+					],
+					"value_map": {
+						"F": "Fixed episode gap",
+						"P": "Percentage episode gap"
+					}
+                },
+				{
+                    "id": "EPISODEGAP",
+                    "name": "Exposure Episode Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days allowed between two consecutive claims to consider them as part of the same treatment episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EXPEXTPER",
+                    "name": "Exposure Episode Extension Period",
+                    "sas_format": "3",
+                    "info": "Extends the length of an exposure episode by specified number of days",
+                    "input_type": "Numeric",
+                    "values": []
+				},
+				{
+                    "id": "CENSOR_DTH",
+                    "name": "Censor Enrollment on Death",
+                    "sas_format": "$1",
+                    "info": "Indicates if enrollment should be censored based on death date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "AFDD_OUTPUT_CAT",
+                    "name": "Average Filled Daily Dose Category",
+                    "sas_format": "$40",
+                    "info": "User-defined categories of average filled daily dose to output",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CUMDOSE_OUTPUT_CAT",
+                    "name": "Cumulative Dose Category",
+                    "sas_format": "$40",
+                    "info": "User-defined categories of cumulative dose to output",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CFDD_OUTPUT_CAT",
+                    "name": "Current Filled Daily Dose Category",
+                    "sas_format": "$40",
+                    "info": "User-defined categories of current filled daily dose to output",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "REPORTPARAMETERS",
+            "name": "Report Parameters File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "File used to request and customize a PDF 'leave behind' report",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file524-type0102040506-report_parameters.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "PARAMETER",
+                    "name": "Parameter",
+                    "sas_format": "$32",
+                    "info": "All report program parameters",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "REPORT1",
+                    "name": "Report 1 Values",
+                    "sas_format": "$32",
+                    "info": "Parameter values for report corresponding to Report 1",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "INCLUSIONCODES",
+            "name": "Inclusion/Exclusion Codes File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Contains the comprehensive set of codes used to define additional cohort inclusion/exclusion criteria",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file592-typeall-inclusion.md",
+            "table_type": "group_code",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "STOCKGROUP",
+                    "name": "Stockgroup Name",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to a specific inclusion/exclusion code/criterion within a given GROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CODECAT",
+                    "name": "Code Category",
+                    "sas_format": "$2",
+                    "info": "Type of each code category value included in the CODETYPE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"RX",
+						"DX",
+						"PX",
+						"LB",
+						"EN"
+					],
+					"value_map": {
+						"RX": "Drug Code",
+						"DX": "Diagnosis code",
+						"PX": "Procedure code",
+						"LB": "Lab code",
+						"EN": "Encounter"
+					}
+                },
+				{
+                    "id": "CODETYPE",
+                    "name": "Code Type",
+                    "sas_format": "$3",
+                    "info": "Type of each code value included in the CODE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ND",
+                        "SN",
+                        "SK",
+                        "DM",
+                        "DI",
+                        "RN",
+                        "AT",
+                        "CB",
+                        "09",
+                        "10",
+                        "11",
+                        "OT",
+                        "C4",
+                        "HC",
+                        "H3",
+                        "C2",
+                        "C3",
+                        "CV",
+                        "RE",
+                        "LO",
+                        "01N",
+                        "02N",
+                        "09N",
+                        "10N",
+                        "11N",
+                        "C4N",
+                        "HCN",
+                        "H3N",
+                        "C2N",
+                        "C3N",
+                        "NDN",
+                        "REN",
+                        "LON",
+                        "01C",
+                        "02C",
+                        "09C",
+                        "10C",
+                        "11C",
+                        "C4C",
+                        "HCC",
+                        "H3C",
+                        "C2C",
+                        "C3C",
+                        "NDC",
+                        "REC",
+                        "LOC",
+						"AD",
+						"DD"
+					]
+                },
+				{
+                    "id": "CODE",
+                    "name": "Code",
+                    "sas_format": "$14",
+                    "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "STRENGTH",
+                    "name": "Medical Product Strength",
+                    "sas_format": "8",
+                    "info": "A strength associated with each medical product dispensing",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "UNIT",
+                    "name": "Medical Product Unit",
+                    "sas_format": "$10",
+                    "info": "Unit with which strength is measured for each medical product dispensing",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "mg",
+                        "mEq",
+                        "IU",
+                        "mL",
+                        "mg/gm",
+                        "mg/mL",
+                        "mg/24hr",
+                        "mEq/gm",
+                        "mEq/mL",
+                        "IU/gm",
+                        "IU/mL",
+                        "mL/mL",
+                        "gm/100gm",
+                        "gm/100mL",
+                        "mEq/100gm",
+                        "mEq/100mL",
+                        "IU/100gm",
+                        "IU/100mL",
+                        "mL/100mL"
+                    ],
+                    "value_map": {
+                        "mg": "Mass per each (milligram)",
+                        "mEq": "Particles per each (milliequivalents)",
+                        "IU": "Standardized amount per each (international unit)",
+                        "mL": "Volume per each (milliliter)",
+                        "mg/gm": "Mass per mass (milligram per gram)",
+                        "mg/mL": "Mass per volume (milligram per milliliter)",
+                        "mg/24hr": "Mass per time (milligram per 24-hours)",
+                        "mEq/gm": "Particles per mass (milliequivalent per gram)",
+                        "mEq/ml": "Particles per volume (milliequivalent per milliliter)",
+                        "IU/gm": "Standardized amount per mass (international unit per gram)",
+                        "IU/mL": "Standardized amount per volume (international unit per milliliter)",
+                        "mL/mL": "Volume per volume (milliliter per milliliter)",
+                        "gm/100gm": "Mass per 100 mass (gram per 100 grams)",
+                        "gm/100mL": "Mass per 100 volume (gram per 100 milliliters)",
+                        "mEq/100gm": "Particles per mass (milliequivalent per 100 grams)",
+                        "mEq/100mL": "Particles per volume (milliequivalent per 100 milliliters)",
+                        "IU/100gm": "Standardized amount per mass (international unit per 100 grams)",
+                        "IU/100mL": "Standardized amount per volume (international unit per 100 milliliters)",
+                        "mL/100mL": "Volume per 100 volume (milliliter per 100 milliliters)"
+                    }
+                },
+				{
+                    "id": "CARESETTINGPRINCIPAL",
+                    "name": "Care Setting and Diagnosis Position",
+                    "sas_format": "$30",
+                    "info": "Defines the care setting and principal diagnosis position requirements for each code",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "IPP",
+                        "IPS",
+                        "IPX",
+						"IP*",
+                        "ISP",
+                        "ISS",
+                        "ISX",
+						"IS*",
+                        "ED*",
+                        "AV*",
+                        "OA*"
+                    ],
+                    "value_map": {
+                        "IPP": "Inpatient hospital stays, principal diagnoses",
+                        "IPS": "Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "Inpatient hospital stay, any diagnosis position",
+                        "ISP": "Non-acute institutional stays, principal diagnoses",
+                        "ISS": "Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "Non-acute institutional stays, any diagnosis position",
+                        "ED*": "Emergency department encounters",
+                        "AV*": "Ambulatory visits",
+                        "OA*": "Other ambulatory visits"
+                    }
+                },
+				{
+                    "id": "CONDINCLUSION",
+                    "name": "Condition Exclusion Indicator",
+                    "sas_format": "3",
+                    "info": "Indicates whether each criterion specified is for an inclusion or exclusion",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "Exclusion",
+						"1": "Inclusion"
+					}
+                },
+				{
+                    "id": "CONDLEVEL",
+                    "name": "Name of Inclusion/Exclusion Condition",
+                    "sas_format": "$30",
+                    "info": "User-defined name to represent a unique inclusion or exclusion criterion",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "SUBCONDLEVEL",
+                    "name": "Inclusion/Exclusion Sub-condition Name",
+                    "sas_format": "$30",
+                    "info": "User-defined name to represent unique inclusion or exclusion criteria within CONDLEVEL values",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "SUBCONDINCLUSION",
+                    "name": "Sub-condition Exclusion Indicator",
+                    "sas_format": "3",
+                    "info": "Indicates whether each SUBCONDLEVEL criterion is for an inclusion or exclusion",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "Exclusion",
+						"1": "Inclusion"
+					}
+                },
+				{
+                    "id": "CONDFROM",
+                    "name": "Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the evaluation period for each CODE value specified, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CONDTO",
+                    "name": "Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the evaluation period for each CODE value specified, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODEDAYS",
+                    "name": "Number of Instances for the Condition",
+                    "sas_format": "3",
+                    "info": "Sets the minimum number of times SUBCONDLEVEL should be found in the baseline period",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODESUPPLY",
+                    "name": "Forced Code Supply",
+                    "sas_format": "3",
+                    "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINRXDAYS",
+                    "name": "Minimum Days Covered in Inclusion/Exclusion Window",
+                    "sas_format": "3",
+                    "info": "Sets the minimum cumulative number of days covered by dispensing to require during the evaluation period within each SUBCONDLEVEL",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "DATEONLY",
+                    "name": "Lookback Period Definition",
+                    "sas_format": "$1",
+                    "info": "Indicates if lookback period to define inclusion/exclusion criteria looks for evidence of a date or evidence of an interval",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"N",
+						"Y"
+					],
+					"value_map": {
+						"N": "Lookback period should search for evidence of a date or an interval",
+						"Y": "Lookback period should search for evidence of a date only"
+					}
+                },
+				{
+                    "id": "MINCUMDOSE",
+                    "name": "Minimum Cumulative Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the minimum cumulative dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINAFDD",
+                    "name": "Minimum Average Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the minimum average filled daily dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXAFDD",
+                    "name": "Maximum Average Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the maximum average filled daily dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINCFDD",
+                    "name": "Minimum Current Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Indicates that only dispensings greater than or equal to the minimum current filled daily dose are considered in the lookback period to define inclusion/exclusion criteria",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXCFDD",
+                    "name": "Maximum Current Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Indicates that only dispensings less than or equal to the maximum current filled daily dose are considered in the lookback period to define inclusion/exclusion criteria",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODEPOP",
+                    "name": "Code Population Source",
+                    "sas_format": "$2",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "In queries restricting Mother-Infant pregnant cohorts, population source to query for code",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"M",
+						"I",
+						"MI"
+					],
+					"value_map": {
+						"M": "Look in mother claims only",
+						"I": "Look in infant claims only",
+						"MI": "Look in mother or infant claims"
+					}
+                },
+				{
+                    "id": "INDEXDATE",
+                    "name": "Index Date to Anchor Inclusion/Exclusion Criteria",
+                    "sas_format": "$13",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "Identifies which index date to use to define inclusion or exclusion criteria in queries restricting Mother-Infant pregnant cohorts",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"INDEXDT_EXP",
+						"INDEXDT_DELIV"
+					],
+					"value_map": {
+						"INDEXDT": "Index date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "Index date of delivery admission date"
+					}
+                },
+				{
+                    "id": "LABDATETYPE",
+                    "name": "Lab Date Selection Algorithm",
+                    "sas_format": "$3",
+                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "LABRESULT",
+                    "name": "Lab Result Values",
+                    "sas_format": "$30",
+                    "info": "Specifies the lab result value or lab result range for querying",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "COVARIATECODES",
+            "name": "Covariate Codes File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Used to evaluate the presence of covariates at baseline and for analytic adjustment",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file594-typeall-covariatecodes.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "STUDYNAME",
+                    "name": "Covariate Name",
+                    "sas_format": "$50",
+                    "info": "Unique name for each covariate defined in the file",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "STOCKGROUP",
+                    "name": "Stockgroup Name",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "COVARNUM",
+                    "name": "Covariate Number",
+                    "sas_format": "3",
+                    "info": "A numeric indicator for each covariate specified",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODECAT",
+                    "name": "Code Category",
+                    "sas_format": "$2",
+                    "info": "Type of each code category value included in the CODETYPE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"RX",
+						"DX",
+						"PX",
+						"CC",
+						"EN"
+					],
+					"value_map": {
+						"RX": "Drug Code",
+						"DX": "Diagnosis code",
+						"PX": "Procedure code",
+						"CC": "Combination of multiple COVARNUM values to define a covariate",
+						"EN": "Encounter"
+					}
+                },
+				{
+                    "id": "CODETYPE",
+                    "name": "Code Type",
+                    "sas_format": "$3",
+                    "info": "Type of each code value included in the CODE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ND",
+                        "SN",
+                        "SK",
+                        "DM",
+                        "DI",
+                        "RN",
+                        "AT",
+                        "CB",
+                        "09",
+                        "10",
+                        "11",
+                        "OT",
+                        "C4",
+                        "HC",
+                        "H3",
+                        "C2",
+                        "C3",
+                        "CV",
+                        "RE",
+                        "LO",
+						"AD",
+						"DD"
+					]
+                },
+				{
+                    "id": "CODE",
+                    "name": "Code",
+                    "sas_format": "$14",
+                    "info": "Drug code, diagnosis, and/or procedure code of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "STRENGTH",
+                    "name": "Medical Product Strength",
+                    "sas_format": "8",
+                    "info": "A strength associated with each medical product dispensing",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+                {
+                    "id": "UNIT",
+                    "name": "Medical Product Unit",
+                    "sas_format": "$10",
+                    "info": "Unit with which strength is measured for each medical product dispensing",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "mg",
+                        "mEq",
+                        "IU",
+                        "mL",
+                        "mg/gm",
+                        "mg/mL",
+                        "mg/24hr",
+                        "mEq/gm",
+                        "mEq/mL",
+                        "IU/gm",
+                        "IU/mL",
+                        "mL/mL",
+                        "gm/100gm",
+                        "gm/100mL",
+                        "mEq/100gm",
+                        "mEq/100mL",
+                        "IU/100gm",
+                        "IU/100mL",
+                        "mL/100mL"
+                    ],
+                    "value_map": {
+                        "mg": "Mass per each (milligram)",
+                        "mEq": "Particles per each (milliequivalents)",
+                        "IU": "Standardized amount per each (international unit)",
+                        "mL": "Volume per each (milliliter)",
+                        "mg/gm": "Mass per mass (milligram per gram)",
+                        "mg/mL": "Mass per volume (milligram per milliliter)",
+                        "mg/24hr": "Mass per time (milligram per 24-hours)",
+                        "mEq/gm": "Particles per mass (milliequivalent per gram)",
+                        "mEq/ml": "Particles per volume (milliequivalent per milliliter)",
+                        "IU/gm": "Standardized amount per mass (international unit per gram)",
+                        "IU/mL": "Standardized amount per volume (international unit per milliliter)",
+                        "mL/mL": "Volume per volume (milliliter per milliliter)",
+                        "gm/100gm": "Mass per 100 mass (gram per 100 grams)",
+                        "gm/100mL": "Mass per 100 volume (gram per 100 milliliters)",
+                        "mEq/100gm": "Particles per mass (milliequivalent per 100 grams)",
+                        "mEq/100mL": "Particles per volume (milliequivalent per 100 milliliters)",
+                        "IU/100gm": "Standardized amount per mass (international unit per 100 grams)",
+                        "IU/100mL": "Standardized amount per volume (international unit per 100 milliliters)",
+                        "mL/100mL": "Volume per 100 volume (milliliter per 100 milliliters)"
+                    }
+                },
+				{
+                    "id": "CARESETTINGPRINCIPAL",
+                    "name": "Care Setting and Diagnosis Position",
+                    "sas_format": "$30",
+                    "info": "Defines the care setting and principal diagnosis position requirements for each code",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "IPP",
+                        "IPS",
+                        "IPX",
+						"IP*",
+                        "ISP",
+                        "ISS",
+                        "ISX",
+						"IS*",
+                        "ED*",
+                        "AV*",
+                        "OA*"
+                    ],
+                    "value_map": {
+                        "IPP": "Inpatient hospital stays, principal diagnoses",
+                        "IPS": "Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "Inpatient hospital stay, any diagnosis position",
+                        "ISP": "Non-acute institutional stays, principal diagnoses",
+                        "ISS": "Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "Non-acute institutional stays, any diagnosis position",
+                        "ED*": "Emergency department encounters",
+                        "AV*": "Ambulatory visits",
+                        "OA*": "Other ambulatory visits"
+                    }
+                },
+				{
+                    "id": "COVFROM",
+                    "name": "Covariate Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the evaluation period for each CODE value specified, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "COVTO",
+                    "name": "Covariate Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the evaluation period for each CODE value specified, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "KEEP",
+                    "name": "Keep Variable",
+                    "sas_format": "3",
+                    "info": "Indicates if the variable is needed for additional analyses",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "No, do not keep for additional analyses",
+						"1": "Yes, keep for additional analyses"
+					}
+                },
+				{
+                    "id": "CODEDAYS",
+                    "name": "Number of instances for the condition",
+                    "sas_format": "3",
+                    "info": "Sets the minimum number of times COVARNUM should be found in the baseline period",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODESUPPLY",
+                    "name": "Forced Code Supply",
+                    "sas_format": "3",
+                    "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINRXDAYS",
+                    "name": "Minimum Days Covered in Covariate Window",
+                    "sas_format": "3",
+                    "info": "Sets the minimum cumulative number of days covered by dispensing to require during the evaluation period within each COVARNUM",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "DATEONLY",
+                    "name": "Lookback Period Definition",
+                    "sas_format": "$1",
+                    "info": "Indicates if lookback period to define covariates looks for evidence of a date or evidence of an interval",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"N",
+						"Y"
+					],
+					"value_map": {
+						"N": "Lookback period should search for evidence of a date or an interval",
+						"Y": "Lookback period should search for evidence of a date only"
+					}
+                },
+				{
+                    "id": "LABDATETYPE",
+                    "name": "Lab Date Selection Algorithm",
+                    "sas_format": "$3",
+                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "LABRESULT",
+                    "name": "Lab Result Values",
+                    "sas_format": "$30",
+                    "info": "Specifies the lab result value or lab result range for querying",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "MINAFDD",
+                    "name": "Minimum Average Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the minimum average filled daily dose of a medication to require during the evaluation period within each COVARNUM",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MAXAFDD",
+                    "name": "Maximum Average Filled Daily Dose",
+                    "sas_format": "8",
+                    "info": "Specifies the maximum average filled daily dose of a medication to require during the evaluation period within each COVARNUM",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "COMORBFILE",
+            "name": "Comorbidity Score File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "File used to calculate the Charlson/Elixhauser combined comorbidity score",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file596-typeall-comorbidity.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "COMORBFROM",
+                    "name": "Comorbidity Score Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the comorbidity score evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "COMORBTO",
+                    "name": "Comorbidity Score Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the comorbidity score evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CCIGROUP",
+                    "name": "Comorbidity Score Stratification Groups",
+                    "sas_format": "$20",
+                    "info": "The grouping to apply for stratification of the combined comorbidity scores",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "UTILIZATIONFILE",
+            "name": "Utilization File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "File used to calculate medical or drug utilization metrics",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file598-typeall-utilization.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "MEDUTILFROM",
+                    "name": "Medical Utilization Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the medical utilization evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MEDUTILTO",
+                    "name": "Medical Utilization Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the medical utilization evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "DRUGUTILFROM",
+                    "name": "Drug Utilization Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the drug utilization evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "DRUGUTILTO",
+                    "name": "Drug Utilization Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the drug utilization evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "STOCKPILINGFILE",
+            "name": "Stockpiling File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Used to instruct the Query Request Package (QRP) algorithm on how valid dispensings are selected and used by the stockpiling algorithm to create exposure episodes",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file599-typeall-stockpiling.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "STOCKGROUP",
+                    "name": "Stockgroup Name",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given GROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "SAMEDAY",
+                    "name": "Same Day Dispensing",
+                    "sas_format": "$2",
+                    "info": "Defines how same day dispensings are processed for dispensings in the same GROUP/STOCKGROUP",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"aa",
+						"an",
+						"ax",
+						"am",
+						"na",
+						"nn",
+						"nx",
+						"nm",
+						"xa",
+						"xn",
+						"xx",
+						"xm",
+						"ma",
+						"mn",
+						"mx",
+						"mm"
+					],
+					"value_map": {
+						"aa": "All days supplied and amount supplied values",
+						"an": "All days supplied and minimum amount supplied values",
+						"ax": "All days supplied and maximum amount supplied values",
+						"am": "All days supplied and mean amount supplied values",
+						"na": "Minimum days supplied and all amount supplied values",
+						"nn": "Minimum days supplied and minimum amount supplied values",
+						"nx": "Minimum days supplied and maximum amount supplied values",
+						"nm": "Minimum days supplied and mean amount supplied values",
+						"xa": "Maximum days supplied and all amount supplied values",
+						"xn": "Maximum days supplied and minimum amount supplied values",
+						"xx": "Maximum days supplied and maximum amount supplied values",
+						"xm": "Maximum days supplied and mean amount supplied values",
+						"ma": "Mean days supplied and all amount supplied values",
+						"mn": "Mean days supplied and minimum amount supplied values",
+						"mx": "Mean days supplied and maximum amount supplied values",
+						"mm": "Mean days supplied and mean amount supplied values"
+					}
+                },
+				{
+                    "id": "SUPRANGE",
+                    "name": "Allowable Days Supplied",
+                    "sas_format": "$40",
+                    "info": "Specifies the allowable range of days supplied values (variable RxSup in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "AMTRANGE",
+                    "name": "Allowable Amount Supplied",
+                    "sas_format": "$40",
+                    "info": "Specifies the allowable range of amount supplied values (variable RxAmt in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PERCENTDAYS",
+                    "name": "Overlap Percentage",
+                    "sas_format": "8",
+                    "info": "The maximum percentage overlap of previous dispensing's days supply allowed for pushing dispensing dates forward",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "MFUFILE",
+            "name": "Most Frequent Utilization File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "File used to request most frequent utilization assessment",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file610-typeall-mostfrequtil.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISNUM",
+                    "name": "Analysis Number",
+                    "sas_format": "3",
+                    "info": "Numeric indicator to define a unique analysis. A unique analysis can have multiple rows in this file if multiple combinations of CODECAT/CODETYPE are requested",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "TOPXX",
+                    "name": "Number of Codes to Return",
+                    "sas_format": "8",
+                    "info": "Number of codes to return in output, across all specified code types",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MFUFROM",
+                    "name": "Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the evaluation period to identify most frequent codes, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MFUTO",
+                    "name": "Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the evaluation period to identify most frequent codes, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CODECAT",
+                    "name": "Code Category",
+                    "sas_format": "$2",
+                    "info": "Type of each code category value included in the CODETYPE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"RX",
+						"DX",
+						"PX",
+						"LB"
+					],
+					"value_map": {
+						"RX": "Drug Code",
+						"DX": "Diagnosis code",
+						"PX": "Procedure code",
+						"LB": "Lab code"
+					}
+                },
+				{
+                    "id": "CODETYPE",
+                    "name": "Code Type",
+                    "sas_format": "$3",
+                    "info": "Type of each code value",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ND",
+                        "SN",
+                        "SK",
+                        "DM",
+                        "DI",
+                        "RN",
+                        "AT",
+                        "09",
+                        "10",
+                        "11",
+                        "OT",
+                        "C4",
+                        "HC",
+                        "H3",
+                        "C2",
+                        "C3",
+                        "RE",
+                        "LO",
+						"01N",
+                        "02N",
+                        "09N",
+                        "10N",
+                        "11N",
+                        "C4N",
+                        "HCN",
+                        "H3N",
+                        "C2N",
+                        "C3N",
+                        "NDN",
+                        "REN",
+                        "LON",
+                        "01C",
+                        "02C",
+                        "09C",
+                        "10C",
+                        "11C",
+                        "C4C",
+                        "HCC",
+                        "H3C",
+                        "C2C",
+                        "C3C",
+                        "NDC",
+                        "REC",
+                        "LOC"
+					]
+                },
+				{
+                    "id": "CARESETTINGPRINCIPAL",
+                    "name": "Care Setting and Diagnosis Position",
+                    "sas_format": "$30",
+                    "info": "Defines the care setting and principal diagnosis position requirements for each CODETYPE",
+                    "input_type": "MultiSelect",
+                    "values": [
+                        "IPP",
+                        "IPS",
+                        "IPX",
+						"IP*",
+                        "ISP",
+                        "ISS",
+                        "ISX",
+						"IS*",
+                        "ED*",
+                        "AV*",
+                        "OA*"
+                    ],
+                    "value_map": {
+                        "IPP": "Inpatient hospital stays, principal diagnoses",
+                        "IPS": "Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "Inpatient hospital stay, any diagnosis position",
+                        "ISP": "Non-acute institutional stays, principal diagnoses",
+                        "ISS": "Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "Non-acute institutional stays, any diagnosis position",
+                        "ED*": "Emergency department encounters",
+                        "AV*": "Ambulatory visits",
+                        "OA*": "Other ambulatory visits"
+                    }
+                },
+				{
+                    "id": "COUNTMETHOD",
+                    "name": "Counting Method",
+                    "sas_format": "$1",
+                    "info": "Indicates if the top most frequent codes are output or of the largest number of patients are output",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"C",
+						"P"
+					],
+					"value_map": {
+						"C": "The most frequent utilization output file produced is sorted by code counts",
+						"P": "The most frequent utilization output file produced is sorted by patient counts"
+					}
+                }
+			]
+		},
+		{
+			"id": "COMBOCODES",
+            "name": "Combo Codes Input File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": ["COMBO"],
+            "info": "One of two input files that together specify how combination items should be created",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file612-typeall-combocodes.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "RAWGROUP",
+                    "name": "Raw Record Group",
+                    "sas_format": "$30",
+                    "info": "Variable used to group different components that will define a combination item",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWSTOCKGROUP",
+                    "name": "Raw StockGroup Name",
+                    "sas_format": "$30",
+                    "info": "Variable used to identify stockgroups of different components within a given RAWGROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWCODETYPE",
+                    "name": "Raw Code Type",
+                    "sas_format": "$6",
+                    "info": "Type of each code value included in the RAWCODE field",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "DX09",
+						"DX10",
+						"DX11",
+						"PX09",
+						"PX10",
+						"PX11",
+						"PXC4",
+						"PXHC",
+						"PXH3",
+						"PXC2",
+						"PXC3",
+						"PXND",
+						"PXRE",
+						"RXND",
+						"EN01",
+						"EN02",
+						"EL01",
+						"EL02",
+						"EL03",
+						"LAB01N",
+						"LAB01C",
+						"LAB02N",
+						"LAB02C",
+						"LABC4N",
+						"LABC4C",
+						"DM01",
+						"DM02",
+						"DM03"
+                    ],
+					"value_map": {
+						"DX09": "ICD9-CM diagnosis code",
+						"DX10": "ICD10-CM diagnosis code",
+						"DX11": "ICD11-CM diagnosis code",
+						"PX09": "ICD9-CM procedure code",
+						"PX10": "ICD10-CM procedure code",
+						"PX11": "ICD11-CM procedure code",
+						"PXC4": "CPT-4 (i.e., HCPCS Level I) procedure code",
+						"PXHC": "HCPCS (i.e., HCPCS Level II) procedure code",
+						"PXH3": "HCPCS Level III procedure code",
+						"PXC2": "CPT Category II procedure code",
+						"PXC3": "CPT Category III procedure code",
+						"PXND": "11-digit NDC",
+						"PXRE": "Revenue code",
+						"RXND": "9 or 11-digit NDC",
+						"EN01": "when the user needs to extract encounter records based on encounter type (SCDM EncType). The user can use RAWCODE to further specify the minimum length of stay (LOS) to be applied when extracting encounter records. The user can use RAWCARESETTING (below) to specify requested encounter types",
+						"EN02": "When the user needs to extract encounter records based on Diagnosis Related Group (DRG). DRG codes must be supplied in the RAWCODE field",
+						"EL01": "If the user needs to extract eligibility records based on MedCov=Y only. The minimum enrollment length can be supplied using the RAWCODE field",
+						"EL02": "If the user wants to extract eligibility records based on DrugCov=Y only. The minimum enrollment length can be supplied using the RAWCODE field",
+						"EL03": "If the user wants to extract eligibility records based on DrugCov=Y and MedCov=Y. The minimum enrollment length can be supplied using the RAWCODE field",
+						"LAB01N": "If the user needs to extract laboratory results based on the Lab Code Lookup Table File and query quantitative results",
+						"LAB01C": "If the user needs to extract laboratory results based on the Lab Code Lookup Table File and query qualitative results",
+						"LAB02N": "If the user needs to extract laboratory results based on LOINCs and query quantitative results",
+						"LAB02C": "If the user needs to extract laboratory results based on LOINCs and query qualitative results",
+						"LABC4N": "If the user needs to extract laboratory results based on procedure codes and query quantitative results",
+						"LABC4C": "If the user needs to extract laboratory results based on procedure codes and query qualitative results",
+						"DM01": "If the user needs to extract only specific sex demographic criteria",
+						"DM02": "If the user needs to extract only specific race demographic criteria",
+						"DM03": "If the user needs to extract only specific Hispanic demographic criteria"
+					}
+                },
+				{
+                    "id": "RAWCODE",
+                    "name": "Raw Extraction Code",
+                    "sas_format": "$14",
+                    "info": "Code used to extract the raw record. The code will be defined in accordance with RAWCODETYPE",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWCARESETTING",
+                    "name": "Raw Record Code Setting",
+                    "sas_format": "$30",
+                    "info": "The encounter type(s) extracted for each raw record",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "E",
+                        "H",
+                        "I",
+						"O",
+						"U",
+						"IP",
+						"IS",
+						"ED",
+						"AV",
+						"OA"
+                    ],
+					"value_map": {
+						"E": "Emergency Department",
+                        "H": "Home",
+                        "I": "Inpatient",
+						"O": "Outpatient",
+						"U": "Unknown/missing",
+						"IP": "Inpatient hospital stays",
+						"IS": "Non-acute institutional stays",
+						"ED": "Emergency Department visits",
+						"AV": "Ambulatory visits",
+						"OA": "Other ambulatory visits"
+					}
+                },
+				{
+                    "id": "RAWPDX",
+                    "name": "Raw Record Principal Diagnosis",
+                    "sas_format": "$1",
+                    "info": "The principal discharge diagnosis flag (PDX) value extracted for each raw record",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "P",
+                        "S",
+                        "X"
+                    ],
+					"value_map": {
+						"P": "Principal",
+                        "S": "Secondary",
+                        "X": "Unable to Classify"
+					}
+                },
+				{
+                    "id": "LABDATETYPE",
+                    "name": "Raw Record Laboratory Date Type",
+                    "sas_format": "$3",
+                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
+                    "input_type": "String",
+                    "values": []
+                },
+                {
+                    "id": "LABRESULT",
+                    "name": "Raw Record Laboratory Result",
+                    "sas_format": "$30",
+                    "info": "Specifies the lab result value or lab result range for querying",
+                    "input_type": "String",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "COMBO",
+            "name": "Combo Input File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": ["COMBOCODES"],
+            "info": "One of two input files that together specify how combination items should be created",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file614-typeall-combo.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "COMBGROUP",
+                    "name": "Combination Group",
+                    "sas_format": "$40",
+                    "info": "Names the combo virtual record that is created",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "COMBORDER",
+                    "name": "Combination Order",
+                    "sas_format": "3",
+                    "info": "The order in which combination items are processed",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "COMBDESCR",
+                    "name": "Combination Description",
+                    "sas_format": "$50",
+                    "info": "Optional free text providing details for the CombGroup",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "COMBCODE",
+                    "name": "Combination Code",
+                    "sas_format": "$14",
+                    "info": "User-defined “code” that will appear on the final virtual record",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "COMBBEHAVIOR",
+                    "name": "Combination Code Behavior",
+                    "sas_format": "$2",
+                    "info": "Determines how the final virtual record will ultimately behave",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"DX",
+						"PX",
+						"RX"
+					],
+					"value_map": {
+						"DX": "The virtual record will behave like a diagnosis record",
+						"PX": "The virtual record will behave like a procedure record",
+						"RX": "The virtual record will behave like a dispensing record"
+					}
+                },
+				{
+                    "id": "COMBENCTYPE",
+                    "name": "Combination Encounter Type",
+                    "sas_format": "$2",
+                    "info": "Encounter Type assigned to the final virtual record",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"IP",
+						"IS",
+						"ED",
+						"AV",
+						"OA"
+					],
+					"value_map": {
+						"IP": "Inpatient Hospital Stay",
+						"IS": "Non-Acute Institutional Stay",
+						"ED": "Emergency Department",
+						"AV": "Ambulatory Visit",
+						"OA": "Other Ambulatory Visit"
+					}
+                },
+				{
+                    "id": "COMBPDX",
+                    "name": "Combination Principal Diagnosis",
+                    "sas_format": "$1",
+                    "info": "Principal Diagnosis Position (PDX) value to be included on the final virtual record",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"P",
+						"S",
+						"X"
+					],
+					"value_map": {
+						"P": "Principal",
+						"S": "Secondary",
+						"X": "Unable to classify"
+					}
+                },
+				{
+                    "id": "RAWGROUP",
+                    "name": "Raw Record Group",
+                    "sas_format": "$30",
+                    "info": "Variable used to group different components that will define a combination item",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWORDER",
+                    "name": "Raw Record Order",
+                    "sas_format": "3",
+                    "info": "Instructs the algorithm which order to apply the combination items in the two-by-two method",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "RAWEPITYPE",
+                    "name": "Raw Episode Creation Type",
+                    "sas_format": "3",
+                    "info": "Determines whether episodes of the combination item are created",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1,
+						2
+					],
+					"value_map": {
+						"0": "No episode of this combination item will be created",
+						"1": "Episodes of this combination item will be created by PATID and RAWGROUP",
+						"2": "Episodes will be created by PATID, RAWGROUP and RAWSTOCKGROUP"
+					}
+                },
+				{
+                    "id": "RAWEPIGAP",
+                    "name": "Raw Episode Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days allowed between two consecutive events to consider them as part of the same treatment episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "RAWEXCLUSION",
+                    "name": "Raw Record Exclusion",
+                    "sas_format": "3",
+                    "info": "Indicates whether the combination item is an exclusion criterion",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1
+					],
+					"value_map": {
+						"0": "The combination item is not an exclusion criterion",
+						"1": "The combination item is an exclusion criterion"
+					}
+                },
+				{
+                    "id": "RAWDAYSFROMSTARTDT",
+                    "name": "Raw Record Window from Start Date",
+                    "sas_format": "$30",
+                    "info": "Determines the interval of days in which a combination item (RAWORDER=N) must overlap the previous combination item (RAWORDER=N-1) ADate to be deemed a combination",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWDAYSFROMENDDT",
+                    "name": "Raw Record Window from End Date",
+                    "sas_format": "$30",
+                    "info": "Determines the interval of days in which a combination item (RAWORDER=N) must overlap the previous combination item (RAWORDER=N-1) EDate to be deemed a combination",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWDURAT",
+                    "name": "Raw Record Duration",
+                    "sas_format": "3",
+                    "info": "This parameter allows the user to add a fixed duration to a combination item raw record",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "RAWADATETYPE",
+                    "name": "Raw Record Start Date Type",
+                    "sas_format": "$10",
+                    "info": "Defines the ADate (virtual episode start date) to keep on the (interim or final) virtual record after having identified a valid combination of two (or more) items",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ADATEB",
+						"ADATEC",
+						"MINADATEBC",
+						"MAXADATEBC",
+						"EDATEB",
+						"EDATEC",
+						"MINEDATEBC",
+						"MAXEDATEBC",
+						"MINOVER",
+						"MAXOVER"
+					],
+					"value_map": {
+						"ADATEB": "The start date of the Base interval",
+						"ADATEC": "The start date of the Combined-to interval",
+						"MINADATEBC": "The minimum date between the Base and Combined-to start date",
+						"MAXADATEBC": "The maximum date between the Base and Combined-to start date",
+						"EDATEB": "The end date of the Base interval",
+						"EDATEC": "The end date of the Combined-to interval",
+						"MINEDATEBC": "The minimum date between the Base and Combined-to end date",
+						"MAXEDATEBC": "The maximum date between the Base and Combined-to end date",
+						"MINOVER": "The start of the overlapping period between Base and Combined-to interval",
+						"MAXOVER": "The end of the overlapping period between Base and Combined-to interval"
+					}
+                },
+				{
+                    "id": "RAWEDATETYPE",
+                    "name": "Raw Record End Date Type",
+                    "sas_format": "$10",
+                    "info": "Defines the EDate (virtual episode end date) to keep on the (interim) virtual record after having identified a valid combination of two (or more) items",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"ADATEB",
+						"ADATEC",
+						"MINADATEBC",
+						"MAXADATEBC",
+						"EDATEB",
+						"EDATEC",
+						"MINEDATEBC",
+						"MAXEDATEBC",
+						"MINOVER",
+						"MAXOVER"
+					],
+					"value_map": {
+						"ADATEB": "The start date of the Base interval",
+						"ADATEC": "The start date of the Combined-to interval",
+						"MINADATEBC": "The minimum date between the Base and Combined-to start date",
+						"MAXADATEBC": "The maximum date between the Base and Combined-to start date",
+						"EDATEB": "The end date of the Base interval",
+						"EDATEC": "The end date of the Combined-to interval",
+						"MINEDATEBC": "The minimum date between the Base and Combined-to end date",
+						"MAXEDATEBC": "The maximum date between the Base and Combined-to end date",
+						"MINOVER": "The start of the overlapping period between Base and Combined-to interval",
+						"MAXOVER": "The end of the overlapping period between Base and Combined-to interval"
+					}
+                }
+			]
+		},
+		{
+			"id": "COMBOSTOCK",
+            "name": "Combo Stockpiling Input File",
+            "analysis_types": [
+                1,
+                2,
+                4,
+                5
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Used to instruct the Combo Tool on how valid dispensings are selected and used by the stockpiling algorithm to create treatment episodes",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file616-typeall-combostockpiling.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "RAWGROUP",
+                    "name": "Raw Group Name",
+                    "sas_format": "$30",
+                    "info": "Standardized name used to refer to a RAWGROUP in the Combo Codes Input File",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "RAWSTOCKGROUP",
+                    "name": "Raw StockGroup Name",
+                    "sas_format": "$50",
+                    "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given RAWGROUP",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "SAMEDAY",
+                    "name": "Same Day Dispensing",
+                    "sas_format": "$2",
+                    "info": "Defines how same day dispensings are processed for dispensings in the same GROUP/STOCKGROUP",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"aa",
+						"an",
+						"ax",
+						"am",
+						"na",
+						"nn",
+						"nx",
+						"nm",
+						"xa",
+						"xn",
+						"xx",
+						"xm",
+						"ma",
+						"mn",
+						"mx",
+						"mm"
+					],
+					"value_map": {
+						"aa": "All days supplied and amount supplied values",
+						"an": "All days supplied and minimum amount supplied values",
+						"ax": "All days supplied and maximum amount supplied values",
+						"am": "All days supplied and mean amount supplied values",
+						"na": "Minimum days supplied and all amount supplied values",
+						"nn": "Minimum days supplied and minimum amount supplied values",
+						"nx": "Minimum days supplied and maximum amount supplied values",
+						"nm": "Minimum days supplied and mean amount supplied values",
+						"xa": "Maximum days supplied and all amount supplied values",
+						"xn": "Maximum days supplied and minimum amount supplied values",
+						"xx": "Maximum days supplied and maximum amount supplied values",
+						"xm": "Maximum days supplied and mean amount supplied values",
+						"ma": "Mean days supplied and all amount supplied values",
+						"mn": "Mean days supplied and minimum amount supplied values",
+						"mx": "Mean days supplied and maximum amount supplied values",
+						"mm": "Mean days supplied and mean amount supplied values"
+					}
+                },
+				{
+                    "id": "SUPRANGE",
+                    "name": "Allowable Days Supplied",
+                    "sas_format": "$40",
+                    "info": "Uses mean (amount supplied or days supplied) value for dispensings in the same GROUP/STOCKGROUP on the same day",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "AMTRANGE",
+                    "name": "Allowable Amount Supplied",
+                    "sas_format": "$40",
+                    "info": "Specifies the allowable range of amount supplied values (variable RxAmt in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PERCENTDAYS",
+                    "name": "Overlap Percentage",
+                    "sas_format": "8",
+                    "info": "The maximum percentage overlap of previous dispensing’s days supply allowed for pushing dispensing dates forward",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "CONCFILE",
+            "name": "Concomitant Use File",
+            "analysis_types": [
+                2
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "The Concomitant Use file allows users to specify GROUP values from a Type 2 analysis and perform additional analyses",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file544-type02-concfile.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Analysis Group",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate exposure of interest/reference (EOI/REF) pairs",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PRIMARY",
+                    "name": "Primary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the primary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "SECONDARY",
+                    "name": "Secondary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the secondary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "EXPORDER",
+                    "name": "Exposure Order Indicator",
+                    "sas_format": "$1",
+                    "info": "Indicates whether the order of primary and secondary exposure is relevant when creating valid concomitant treatment episodes (e.g., primary exposure must always be initiated before secondary exposure)",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"P",
+						"S",
+						"N"
+					],
+					"value_map": {
+						"P": "Always require primary exposure to be initiated before secondary exposure for concomitant episodes",
+						"S": "Restrict concomitant episodes to those where primary and secondary episodes are initiated on the same day",
+						"N": "Will not enforce order restriction"
+					}
+                },
+				{
+                    "id": "CONCFUPWASHPER",
+                    "name": "Concomitant Washout Period",
+                    "sas_format": "3",
+                    "info": "Length of event washout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CONCBLACKOUTPER",
+                    "name": "Concomitant Blackout Period",
+                    "sas_format": "3",
+                    "info": "The event blackout period in days",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CONCCOHORTDEF",
+                    "name": "Concomitant Cohort Definition",
+                    "sas_format": "$2",
+                    "info": "Defines whether to count the first eligible concomitant episode, or to count all concomitant episodes",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02"
+					],
+					"value_map": {
+						"01": "Count the first concomitant episode",
+						"02": "Count all concomitant episodes"
+					}
+                },
+				{
+                    "id": "CONCMINEPISDUR",
+                    "name": "Concomitant Episode Minimum Duration",
+                    "sas_format": "3",
+                    "info": "Minimum duration of concomitant episode. Episodes shorter than the value of CONCMINEPISDUR will be excluded from the analysis",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CONCEVENTCOUNT",
+                    "name": "Concomitant Event Count",
+                    "sas_format": "3",
+                    "info": "By design, individuals stop contributing days at risk during an exposure episode when an HOI occurs. HOIs/Days at-risk metrics reported allow individuals to contribute, at most, one HOI per episode. However, the Query Request Package (QRP) algorithm is able to characterize the number of total HOIs observed during valid treatment episodes. Users can use this field to determine how this characterization should count the number of HOIs",
+                    "input_type": "SingleSelect",
+                    "values": [
+						0,
+						1,
+						2
+					],
+					"value_map": {
+						"0": "Counts all occurrences of an HOI during an exposure episode",
+						"1": "De-duplicates occurrences of the same HOI code and code type on the same day",
+						"2": "De-duplicates occurrences of the same HOI GROUP on the same day"
+					}
+                },
+				{
+                    "id": "CREATEBASELINE",
+                    "name": "Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding ANALYSISGRP",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]
+		},
+		{
+			"id": "MULTEVENTFILE",
+            "name": "Multiple Events File",
+            "analysis_types": [
+                2
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Allows users to specify COHORTGRP values from a Type 2 analysis and perform additional analyses",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file545-type02-multeventfile.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Analysis Group",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate exposure of interest/reference (EOI/REF) pairs",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PRIMARY",
+                    "name": "Primary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the primary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "SECONDARY",
+                    "name": "Secondary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the secondary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "OBSFROM",
+                    "name": "Start of Observation Window",
+                    "sas_format": "3",
+                    "info": "Number of days from OBSFROMANCHOR to start observation window",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OBSTO",
+                    "name": "End of Observation Window",
+                    "sas_format": "3",
+                    "info": "Number of days from OBSTOANCHOR to end observation window",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OBSFROMANCHOR",
+                    "name": "Day 0 for Start of Observation Window",
+                    "sas_format": "$10",
+                    "info": "Defines point in time to calculate start of observation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Index",
+						"EpisodeEnd"
+					]
+                },
+				{
+                    "id": "OBSTOANCHOR",
+                    "name": "Day 0 for End of Observation Window",
+                    "sas_format": "$10",
+                    "info": "Defines point in time to calculate end of observation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Index",
+						"EpisodeEnd"
+					]
+                },
+				{
+                    "id": "EPISODENUM",
+                    "name": "Secondary Episode Number",
+                    "sas_format": "3",
+                    "info": "Defines which secondary episode to output time to secondary episode statistics",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINADHERENCE",
+                    "name": "Minimum Adherent Cutoff",
+                    "sas_format": "3",
+                    "info": "Defines the minimum number or percent of adherent episodes a patient must have in order for the patient to be considered adherent",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINADHERENCE_SCALE",
+                    "name": "Minimum Adherent Cutoff Scale",
+                    "sas_format": "$10",
+                    "info": "Defines the scale used (either count or percent) for determining whether a patient is considered adherent",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Percent",
+						"Count"
+					]
+                },
+				{
+                    "id": "FOLLOWUP_CAT",
+                    "name": "Primary Episode Categories",
+                    "sas_format": "$40",
+                    "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CREATEBASELINE",
+                    "name": "Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding ANALYSISGRP",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]
+		},
+		{
+			"id": "MULTEVENTFILE_ADHERE",
+            "name": "Multiple Events Adherence Definition File",
+            "analysis_types": [
+                2
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Allows users to specify multiple criteria to determine overall adherence for a Type 2 multiple events analysis",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file546-type02-multeventfile_adhere.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Analysis Group",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate exposure of interest/reference (EOI/REF) pairs",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "ADHERENCEID",
+                    "name": "Adherence ID",
+                    "sas_format": "3",
+                    "info": "Numeric identifier to identify adherence pattern",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPISODELENGTH_START",
+                    "name": "Primary Episode Start",
+                    "sas_format": "3",
+                    "info": "Minimum episode length",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPISODELENGTH_END",
+                    "name": "Primary Episode End",
+                    "sas_format": "3",
+                    "info": "Maximum episode length",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPICOUNT_START",
+                    "name": "Number of Secondary Episodes Start",
+                    "sas_format": "3",
+                    "info": "Minimum number of secondary episodes",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPICOUNT_END",
+                    "name": "Number of Secondary Episodes End",
+                    "sas_format": "3",
+                    "info": "Maximum number of secondary episodes",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPIGAP_START",
+                    "name": "Secondary Episode Gap Start",
+                    "sas_format": "3",
+                    "info": "Minimum allowable gap between secondary episodes that are within the observation window and/or the last secondary episode that is within the observation window and the primary episode end date (i.e., the last gap)",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPIGAP_END",
+                    "name": "Secondary Episode Gap End",
+                    "sas_format": "3",
+                    "info": "Maximum allowable gap between secondary episodes that are within the observation window and/or the last secondary episode that is within the observation window and the primary episode end date (i.e., the last gap)",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "TTEPI_START",
+                    "name": "Time to Secondary Episode Start",
+                    "sas_format": "3",
+                    "info": "Minimum time to EPISODENUM secondary episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "TTEPI_END",
+                    "name": "Time to Secondary Episode End",
+                    "sas_format": "3",
+                    "info": "Maximum time to EPISODENUM secondary episode",
+                    "input_type": "Numeric",
+                    "values": []
+                }
+			]
+		},
+		{
+			"id": "OVERLAPFILE",
+            "name": "Overlap File",
+            "analysis_types": [
+                2
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Characterizes an overlap of primary and secondary treatment episodes during the observation window",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file547-type02-overlapfile.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Analysis Group",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate exposure of interest/reference (EOI/REF) pairs",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "PRIMARY",
+                    "name": "Primary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the primary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "SECONDARY",
+                    "name": "Secondary Episode",
+                    "sas_format": "$40",
+                    "info": "COHORTGRP name of the secondary episode of interest",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
+                    "id": "OBSFROM",
+                    "name": "Start of Observation Window",
+                    "sas_format": "3",
+                    "info": "Number of days from OBSFROMANCHOR to start observation window",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OBSTO",
+                    "name": "End of Observation Window",
+                    "sas_format": "3",
+                    "info": "Number of days from OBSTOANCHOR to end observation window",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OBSFROMANCHOR",
+                    "name": "Day 0 for Start of Observation Window",
+                    "sas_format": "$10",
+                    "info": "Defines point in time to calculate start of observation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Index",
+						"EpisodeEnd"
+					]
+                },
+				{
+                    "id": "OBSTOANCHOR",
+                    "name": "Day 0 for End of Observation Window",
+                    "sas_format": "$10",
+                    "info": "Defines point in time to calculate end of observation window",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Index",
+						"EpisodeEnd"
+					]
+                },
+				{
+                    "id": "CUTOFFCAT",
+                    "name": "Cutoff Categories",
+                    "sas_format": "$50",
+                    "info": "Defines the categories to bin secondary and observation window overlap",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CUTOFFCAT_SCALE",
+                    "name": "Cutoff Category Scale",
+                    "sas_format": "$10",
+                    "info": "Defines the scale for CUTOFFCAT categories",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Percent",
+						"Days"
+					]
+                },
+				{
+                    "id": "MINADHERENCE",
+                    "name": "Minimum Adherent Cutoff",
+                    "sas_format": "3",
+                    "info": "Defines the minimum number or percent of adherent episodes a patient must have in order for the patient to be considered adherent",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MINADHERENCE_SCALE",
+                    "name": "Minimum Adherent Cutoff Scale",
+                    "sas_format": "$10",
+                    "info": "Defines the scale used (either count or percent) for determining whether a patient is considered adherent",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Percent",
+						"Count"
+					]
+                },
+				{
+                    "id": "FOLLOWUP_CAT",
+                    "name": "Primary Episode Categories",
+                    "sas_format": "$40",
+                    "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CREATEBASELINE",
+                    "name": "Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding ANALYSISGRP",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]
+		},
+		{
+			"id": "OVERLAPFILE_ADHERE",
+            "name": "Overlap Adherence Definition File",
+            "analysis_types": [
+                2
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Allows users to specify multiple criteria to determine overall adherence for a concomitant use analysis",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file548-type02-overlap_adhere.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Analysis Group",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate exposure of interest/reference (EOI/REF) pairs",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "ADHERENCEID",
+                    "name": "Adherence ID",
+                    "sas_format": "3",
+                    "info": "Numeric identifier to identify adherence pattern",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OVERLAP_START",
+                    "name": "Overlap Start",
+                    "sas_format": "3",
+                    "info": "Minimum overlap for adherence",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OVERLAP_END",
+                    "name": "Overlap End",
+                    "sas_format": "3",
+                    "info": "Maximum overlap for adherence",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OVERLAP_SCALE",
+                    "name": "Overlap Scale",
+                    "sas_format": "$7",
+                    "info": "Scale to define OVERLAP_START AND OVERLAP_END",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Percent",
+						"Days"
+					]
+                }
+			]
+		},
+		{
+			"id": "MICOHORTFILE",
+            "name": "Mother-Infant Cohort File",
+            "analysis_types": [
+                4
+            ],
+            "required": false,
+            "required_files": [],
+            "info": "Used to specify pregnancy episodes identification strategies (Type 4 analysis) that will create cohorts for further processing with the PSA or CS module or to describe pregnancy cohorts among pregnancies matched to an infant",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file606-type04-micohortfile.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "MILGRP",
+                    "name": "Mother-Infant Analysis Group",
+                    "sas_format": "$40",
+                    "info": "User defined name of group to use as prefix to name exposure and reference cohorts",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "GROUPNAME",
+                    "name": "Exposure Group",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to determine which CIDA cohort group to use to evaluate exposures and comparators",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "EXPMP",
+                    "name": "Medical Code for Exposure Group",
+                    "sas_format": "$5",
+                    "info": "Name of the MPn that links to the exposure group MPn in the T4_DEF variable in cohortcodes file",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CONTROLMP",
+                    "name": "Medical Code for Comparator Group",
+                    "sas_format": "$5",
+                    "info": "Name of the MPn that links to the comparator group MPn in the T4_DEF variable in cohortcodes file",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "CSEX",
+                    "name": "Linked Infant Cohort Sex",
+                    "sas_format": "$5",
+                    "info": "Optional parameter to restrict infant cohort to only specified Sex values",
+                    "input_type": "MultiSelect",
+                    "values": [
+						"F",
+						"M",
+						"O"
+					],
+					"value_map": {
+						"F": "Female",
+						"M": "Male",
+						"O": "Other"
+					}
+                },
+				{
+                    "id": "EXPOSUREUNIT",
+                    "name": "Exposure Time Definition",
+                    "sas_format": "$1",
+                    "info": "Type of time interval that defines the exposure time period",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"T",
+						"W"
+					],
+					"value_map": {
+						"T": "Trimester",
+						"W": "Gestational Weeks"
+					}
+                },
+				{
+                    "id": "EXPOSUREFROM",
+                    "name": "Exposure Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the evaluation period for exposure of interest and will be used in combination with EXPOSUREUNIT",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EXPOSURETO",
+                    "name": "Exposure Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the evaluation period for exposure of interest and will be used in combination with EXPOSUREUNIT",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OUTCOMEPOP",
+                    "name": "Outcome Population Strategy",
+                    "sas_format": "$2",
+                    "info": "Identifying outcomes in claims. Only relevant when conducting signal identification analyses or in conjunction with T4_FUP = “DEF” in COHORTCODES for inferential analyses",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"M",
+						"I",
+						"MI"
+					],
+					"value_map": {
+						"M": "Indicates should look in mother claims only",
+						"I": "Indicates should look in infant claims only",
+						"MI": "Indicates should look in mother and infant claims"
+					}
+                },
+				{
+                    "id": "INDEXDATE",
+                    "name": "Index Date for Covariates and PS Risk Set",
+                    "sas_format": "$13",
+                    "info": "Identifies which index date to use for evaluating covariate evaluation period, health service utilization intensity, comorbidity score, and propensity score risk-set creation",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"INDEXDT_EXP",
+						"INDEXDT_DELIV"
+					],
+					"value_map": {
+						"INDEXDT": "Index date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+					}
+                },
+				{
+                    "id": "OBSFROMANCHOR",
+                    "name": "Anchor Date to Start Outcome Follow-Up",
+                    "sas_format": "$15",
+                    "info": "Identifies which index date to use to anchor OUTCOMEFROM",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"INDEXDT_EXP",
+						"INDEXDT_DELIV"
+					],
+					"value_map": {
+						"INDEXDT": "Index date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+					}
+                },
+				{
+                    "id": "OBSTOANCHOR",
+                    "name": "Anchor Date to End Outcome Follow-Up",
+                    "sas_format": "$15",
+                    "info": "Identifies which index date to use to anchor OUTCOMETO",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"INDEXDT_EXP",
+						"INDEXDT_DELIV"
+					],
+					"value_map": {
+						"INDEXDT": "Index date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+					}
+                },
+				{
+				    "id": "OUTCOMEFROM",
+                    "name": "Outcome Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the evaluation period for outcome evaluation, relative to OUTCOMETOANCHOR",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OUTCOMETO",
+                    "name": "Outcome Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the evaluation period for outcome evaluation, relative to OUTCOMETOANCHOR",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CREATEBASELINE",
+                    "name": "Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding MILGRP",
+                    "input_type": "SingleSelect",
+                    "values": [
+                        "Y",
+                        "N"
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]
+		}
+    ]
+}

@@ -349,36 +349,88 @@
                         end;
                     run;
 
+                    %let totallabcovar = 0;
+                    %let labunitcovars=;
+                    %let checklabvars=;
+                    %if %length(&labcharacteristics) > 0 %then %do;
+                    /* Computations for lab covariates will only occur correctly for ones specified in
+                       the LABCHARACTERISTICS parameter. Other lab covariates will be carried through but 
+                       will not be included in final table 1 dataset */
+
+                        /* Count the number of lab covariates requested in LABCHARACTERISTICS parameter */
+                        %let totallabcovar = %sysfunc(countw(&labcharacteristics));
+                        /* Find and match all the lab unit related lab covariates, put in list */
+                        proc sql noprint;
+                            select distinct metvar 
+                            into :labunitcovars separated by ' ' 
+                            from _temp_mean_count
+                            where order=&b 
+                            %do i = 1 %to &totallabcovar;
+                                %let lab = %scan(&labcharacteristics,&i);
+                                %if &i = 1 %then %do; and %end; %else %do; or %end; 
+                                index(metvar,cats("N_","&lab","LBUNIT")) 
+                            %end; 
+                            ;
+
+                            /* Check if data actually has lab variables */
+                            select distinct metvar 
+                            into :checklabvars separated by ' '
+                            from _temp_mean_count
+                            where order=&b and prxmatch('/LBUNIT|LBRES/',metvar) > 0;
+                        quit;
+
+                        /* Count up the unique number of lab covariates with units to loop through later */
+                        %if %length(&labunitcovars) > 0 %then %let totallabunits = %sysfunc(countw(&labunitcovars));
+                        %else %let totallabunits = 0;
+                    %end;
+
+                    /* Assigns and extracts various rows from _temp_mean_count */
+                    %macro assigndataset(wherevalue=, var=, varname=, group=);
+                                _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
+                                where=(order=&b. and &wherevalue &group &switch_where )
+                                /*rename dp to &varname._&var*/
+                                %do d =1 %to %eval(&num_dp.);
+                                rename=dp&d.=&varname._&var.&d.
+                                %end; )
+                    %mend assigndataset;
+
 					/*only rows containing N_EPISODES and PATIENT - will become weights in final dataset*/
                     data _temp_totalcounts&b.&switch.; 
                         merge /*EOI*/
-                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                where=(order=&b. and metvar in ('N_EPISODES') &group1where. &switch_where )
-                                /*rename dp to n_episodes_exp*/
-                                %do d =1 %to %eval(&num_dp.);
-                                rename=dp&d.=n_episodes_exp&d.
-                                %end; )
-                            _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                              where=(order=&b. and metvar in ('PATIENT') &group1where. &switch_where)
-                               /*rename dp to n_patients_exp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_patients_exp&d.
-                               %end; )
+                            %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=exp, varname=n_episodes, group=&group1where)
+                            %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=exp, varname=n_patients, group=&group1where)
+
+                            /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
+                            %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
+                                %do labcount = 1 %to &totallabcovar;
+                                    %let lab = %scan(&labcharacteristics,&labcount);
+                                    %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=exp, varname=n_&lab, group=&group1where)
+                                %end;
+
+                                /* Loop through unique number of lab covariates with units for numeric labs */
+                                %do labunitcount = 1 %to &totallabunits;
+                                    %let labunitvar = %scan(&labunitcovars,&labunitcount);
+                                    %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=exp, varname=&labunitvar, group=&group1where)
+                                %end;
+                            %end; /* totallabcovar > 0 */
 
                             %if &createcompcolumns = Y %then %do;
                                /*REF*/
-                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                 where=(order=&b. and metvar in ('N_EPISODES') &group2where. ) 
-                               /*rename dp to n_episodes_comp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_episodes_comp&d.
-                               %end; )
-                               _temp_mean_count(keep=order group1 cohort metvar &Switch_s dp:
-                                where=(order=&b. and metvar in ('PATIENT') &group2where. )
-                               /*rename dp to n_patients_comp*/
-                               %do d =1 %to %eval(&num_dp.);
-                               rename=dp&d.=n_patients_comp&d.
-                               %end; )
+                                %assigndataset(wherevalue=%str(metvar in ("N_EPISODES")), var=comp, varname=n_episodes, group=&group2where)
+                                %assigndataset(wherevalue=%str(metvar in ("PATIENT")), var=comp, varname=n_patients, group=&group2where)
+
+                            /* If lab covariates are requested, loop through and assign covariate count for categorical labs */
+                               %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
+                                    %do labcount = 1 %to &totallabcovar;
+                                        %let lab = %scan(&labcharacteristics,&labcount);
+                                        %assigndataset(wherevalue=%str(upcase(metvar) = "&lab"), var=comp, varname=n_&lab, group=&group2where)
+                                    %end;
+                                    /* Loop through unique number of lab covariates with units for numeric labs */
+                                    %do labunitcount = 1 %to &totallabunits;
+                                        %let labunitvar = %scan(&labunitcovars,&labunitcount);
+                                        %assigndataset(wherevalue=%str(index(metvar,"&labunitvar")), var=comp, varname=&labunitvar, group=&group2where)
+                                    %end;
+                                %end; /* totallabcovar > 0 */
                             %end;
                                 ;
                        by order &Switch_s;
@@ -430,6 +482,17 @@
                         array &var.var2{&num_dp.} &var._w2_1-&var._w2_&num_dp.;
                         array nepis_&var.{&num_dp.} n_episodes_&var.1-n_episodes_&var.&num_dp.;
                         array npat_&var.{&num_dp.} n_patients_&var.1-n_patients_&var.&num_dp.;
+                        /* Store results for lab covariates in array - one array for categorical, one for continuous */
+                        %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
+                            %do labcount = 1 %to &totallabcovar;
+                                %let lab = %scan(&labcharacteristics,&labcount);
+                            array n&lab._&var.{&num_dp.} n_&lab._&var.1-n_&lab._&var.&num_dp.; 
+                            %end;
+                            %do labunitcount = 1 %to &totallabunits;
+                                %let labunitvar = %scan(&labunitcovars,&labunitcount);
+                            array &labunitvar._&var.{&num_dp.} &labunitvar._&var.1-&labunitvar._&var.&num_dp.; 
+                            %end;
+                        %end;
                         array &var.mean{&num_dp.} &var._mean1-&var._mean&num_dp.;
                         array &var.std{&num_dp.} &var._std1-&var._std&num_dp.;
                         array &var.s2{&num_dp.} &var._s2_1-&var._s2_&num_dp.;
@@ -445,6 +508,27 @@
                                 &var.var1(&var.) = npat_&var.(&var.);
                                 &var.var2(&var.) = npat_&var.(&var.);
                             end;
+                            /* Assign weights for lab covariates */
+                            %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do;
+                                %do labcount = 1 %to &totallabcovar;
+                                    %let lab = %scan(&labcharacteristics,&labcount);
+                                    else if prxmatch("/^N_&lab.$/",prxchange('s/(LBRES).*//',-1,metvar)) and vartype='dichotomous' then do; 
+                                        &var.var1(&var) = n&lab._&var.(&var);
+                                        &var.var2(&var.) = n&lab._&var.(&var);
+                                    end;
+                                %end;
+
+                                /* Extract the covar value and unit associated, store in separate macro variables */
+                                %do labunitcount = 1 %to &totallabunits;
+                                    %let labunitvar = %scan(&labunitcovars,&labunitcount);
+                                    %let labcovar = %scan(%sysfunc(prxchange(s/(LBUNIT).*//,-1,&labunitvar)),-1,%str(_));
+                                    %let labunit = %sysfunc(prxchange(s/^[^_]*_[^_]*_//,-1,&labunitvar));
+                                    else if metvar = cats("&labcovar","LBRES_","&labunit") and vartype='continuous' then do; 
+                                        &var.var1(&var) = &labunitvar._&var.(&var);
+                                        &var.var2(&var.) =&labunitvar._&var.(&var);
+                                    end;
+                                %end;
+                            %end;
                             else do;
                                 &var.var1(&var.) = nepis_&var.(&var.);
                                 &var.var2(&var.) = nepis_&var.(&var.);
@@ -536,7 +620,7 @@
                         drop i;
                         %end;
 
-                        drop n_episodes: n_patients:;
+                        drop n_episodes: n_patients: %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do; n_covar: %end;;
                     run;
 
                     /*use set to avoid missing var warnings*/

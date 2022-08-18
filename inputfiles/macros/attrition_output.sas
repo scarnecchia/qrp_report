@@ -76,6 +76,15 @@
             /* Assign macro variables for superscipts */
     		%assign_superscripts(type =title, order = -2);
     		%assign_superscripts(type =exclincl, order = 1);
+
+            proc datasets noprint nowarn lib = work;
+	          delete _footnotes;
+	         quit;
+        %end;
+        %if %eval(&num_fn.=0) %then %do;
+            /* Assign macro variables for superscipts */
+    		%assign_superscripts(type =title, order = );
+    		%assign_superscripts(type =exclincl, order = );
         %end;
 
         %if &destination = excel %then %do;

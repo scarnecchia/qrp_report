@@ -36,6 +36,8 @@
 *   -quarterfmt
 *   -nafmt
 *   -subgrouporderfmt
+*   -charlabfmt
+*   -charlabsort
 *
 *
 *  PARAMETERS:                                                                       
@@ -173,15 +175,17 @@
         "2"   = "Asian"
         "3"   = "Black or African American"
         "4"   = "Native Hawaiian or Other Pacific Islander"
-        "5"   = "White";
+        "5"   = "White"
+        "M"   = "Multi-racial";
 
         value $racesort     
         "1"   = 1
         "2"   = 2
         "3"   = 3
-        "4"   = 4
-        "0"   = 5
-        "5"   = 6;
+        "M"   = 4
+        "4"   = 5
+        "0"   = 6
+        "5"   = 7;
 
         /*Hispanic Format*/
         value $hispanicfmt
@@ -369,6 +373,23 @@
             'matchmethod' = 8
             'birth_type' = 9
             'periodid' = 10;
+
+        /* Format for character lab covariates and their categories */
+        value $charlabfmt
+        "BORDERLINE"='Borderline'
+        "NEGATIVE"='Negative'
+        "POSITIVE"='Positive'
+        "UNDETERMINED"='Undetermined'
+        "INVALID"='Invalid categorical result'
+        other='Other result';
+
+        value $charlabsort
+        "BORDERLINE" = 1
+        "NEGATIVE" = 2
+        "POSITIVE" = 3
+        "UNDETERMINED" = 4
+        /* Start|end unit displayed after UNDETERMINED, however sort computed when format is applied to capture each START value */ 
+        "INVALID" = 999999;
     run;
 
 /***************************************************************************************************

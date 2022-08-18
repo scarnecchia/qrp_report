@@ -79,7 +79,7 @@
                        dpstrat=Y,
                        groupvar=&grpvar.,
                        where =level in (&&&table._levelid), 
-                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "Multi-racial", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
                        varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
@@ -112,7 +112,7 @@
 	%if %index(&&&table._stratification,race) & "&collapse_vars." = "race" & &stratifybydp. = N %then %do;
         %collapse_vars(dataset=agg_&table._sum, 
                        groupvar=&grpvar.,
-                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "White", "Native Hawaiian or Other Pacific Islander"),
+                       list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "Multi-racial", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
                        varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
@@ -413,12 +413,6 @@
 		    on strip(a.&grpvar.) = strip(d.group)
 		  %end;;
         quit;
-		
-		proc sort data = &dsout.;
-		  by &dpvar. order level %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; 
-		     %if %index(&&&table._stratification,zip3) > 0 %then %do; zip3 %end;
-			 %if %index(&&&table._stratification,state) > 0 %then %do; sortorder_state %end;;
-		run;
     %mend;
 
     /*Overall*/

@@ -83,6 +83,7 @@
             select count(distinct baselinetablename) into: num_unique_baseline_tables
             from _temp_baseline_tablenames;
         quit;
+
         %put Extracting baseline tables: &baselinetables.;
 
         /*Loop through each baseline table, import, stack groups*/
@@ -102,12 +103,35 @@
                 call symputx('mergevar', mergevar);
             run;
 
+            /*If lab covariates specified, create comma separated list to ensure they exist in data */
+            %let checkbaselinelabvars=;
+            %if %length(&labcharacteristics) > 0 %then %do;
+                proc contents data = &infile noprint out=_labvarsname(keep=name);
+                run;
+
+                %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+                
+                /* Check to see if specified lab covariates exist */
+                proc sql noprint;
+                select name 
+                into :checkbaselinelabvars 
+                from _labvarsname
+                where upper(name) in (&labcharscomma);
+                quit;
+            %end;
+
             proc sql noprint;
                 create table _temp_baseline_tablenum&b. as
                 select x.*
                      , y.runid
                      , y.order
                      , y.cohort
+                    %if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;
+                        %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
+                        %let labvar = %scan(&labcharacteristics,&labvars);
+                        , n_episodes - &labvar as &labvar._notestrecord label="No test record"
+                        %end;
+                    %end;
                      %if "&mergevar" ne "analysisgrp" %then %do;
                      , y.analysisgrp
                      %end;
@@ -154,27 +178,33 @@
                     set _temp_baseline_stacked;
                     by order;
 
+                    /* Remove 0 from list and count */
+                    %let race_cats_nozero = %sysfunc(tranwrd(&race_cats,0,%str()));
+                    %let race_cats_count = %sysfunc(countw(&race_cats_nozero));
+
                     /*Recode*/
                     if first.order then do;
-                        %do c_r = 1 %to %eval(&race_cats -1);
-                        recode_&c_r. = 'N'; /*to track if another anchor switch or cohort collapsed*/
-        		        if 1 <= race_&c_r <= 10 then do;
-                            race_0 = sum(race_0, race_&c_r.);
+                        %do c_r = 1 %to &race_cats_count;
+                            %let race_value = %scan(&race_cats_nozero,&c_r);
+                        recode_&race_value. = 'N'; /*to track if another anchor switch or cohort collapsed*/
+        		        if 1 <= race_&race_value <= 10 then do;
+                            race_0 = sum(race_0, race_&race_value.);
                             /*set recoded value to special missing value to track in code and final table*/
-                            race_&c_r. = .R;
-                            recode_&c_r. = 'Y';
+                            race_&race_value. = .R;
+                            recode_&race_value. = 'Y';
                         end;
-                        retain recode_&c_r.;
+                        retain recode_&race_value.;
                         %end;             
                     end;
                     else do;
-                        %do c_r = 1 %to %eval(&race_cats -1);
-        		        if 1 <= race_&c_r <= 10 | recode_&c_r. = 'Y' then do;
-                            race_0 = sum(race_0, race_&c_r.);
+                        %do c_r = 1 %to &race_cats_count;
+                            %let race_value = %scan(&race_cats_nozero,&c_r);
+        		        if 1 <= race_&race_value <= 10 | recode_&race_value. = 'Y' then do;
+                            race_0 = sum(race_0, race_&race_value.);
                             /*set recoded value to special missing value to track in code and final table*/
-                            race_&c_r. = .R;
-                            recode_&c_r. = 'Y';
-                            retain recode_&c_r.;
+                            race_&race_value. = .R;
+                            recode_&race_value. = 'Y';
+                            retain recode_&race_value.;
                         end;
                         %end;
                         /*mark if comparator cohort*/
@@ -196,20 +226,22 @@
 
                        /*Determine if other cohort was recoded*/
                         if first.order then do;
-                            %do c_r = 1 %to %eval(&race_cats -1);
-                            recode_&c_r. = 'N';
-            		        if race_&c_r =.R then do;
-                                recode_&c_r. = 'Y';
+                            %do c_r = 1 %to &race_cats_count;
+                                %let race_value = %scan(&race_cats_nozero,&c_r);
+                            recode_&race_value. = 'N';
+            		        if race_&race_value =.R then do;
+                                recode_&race_value. = 'Y';
                             end;
-                            retain recode_&c_r.;
+                            retain recode_&race_value.;
                             %end;             
                         end;
                         else do;
-                            %do c_r = 1 %to %eval(&race_cats -1);
-            		        if recode_&c_r. = 'Y' then do;
-                                race_0 = sum(race_0, race_&c_r.);
+                            %do c_r = 1 %to &race_cats_count;
+                                %let race_value = %scan(&race_cats_nozero,&c_r);
+            		        if recode_&race_value. = 'Y' then do;
+                                race_0 = sum(race_0, race_&race_value.);
                                 /*set recoded value to special missing value to track in code and final table*/
-                                race_&c_r. = .R;
+                                race_&race_value. = .R;
                             end;
                             %end;
                         end;
@@ -247,7 +279,10 @@
 		%if &total_episodes. = 0 %then %do;
 		   data _temp_baseline_transposed;
 		     set _temp_baseline_transposed;
+             length _label_ $&baselinelabellength;
 			 if metvar = 'n_episodes' then metvar = 'N_episodes';
+             /* Initialize _label_ variable when there are no patients in the cohort */
+            _label_='';
 		   run;
 		%end;
 
@@ -264,6 +299,7 @@
         %end;
         %else %do;
             data &outdata.;
+                length metvar $32;
                 merge &outdata.
                       _temp_baseline_transposed(in=a);
                 by analysisgrp group1 runid order cohort metvar &switch_s;

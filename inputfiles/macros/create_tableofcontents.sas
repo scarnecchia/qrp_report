@@ -1394,8 +1394,15 @@
                         set &dataset_name.(where=(order = &order.));
                         if _n_ = 1 then do;
                         call symputx('grouplabel', grouplabel);
+                        /* Assign competing risk label */
+                        %if &reporttype = T6 and %sysfunc(prxmatch(m/F8|F9/i,&figure)) %then %do;
+                        call symputx('competingrisklabel',vlabel(competingrisk));
+                        %end;
                         end;
                     run;
+
+                    /* Unmask title for T6 F8 and F9 figures to resolve competing risk macro variable */
+                    %if &reporttype = T6 and %sysfunc(prxmatch(m/F8|F9/i,&figure)) %then %let title = %unquote(&title);
 
                     %tableletter();	
             		%addtotoc(tabnum=Figure &figurenum.&tableletter.,
@@ -1491,7 +1498,7 @@
             %end; /*T5*/
 
             /**********************************************************************************************
-             T6: 7 figures:
+             T6: 9 figures:
                 1) F1 (not yet implemented)
                 2) F2 (not yet implemented)
                 3) F3 (not yet implemented)
@@ -1499,6 +1506,8 @@
                 5) F5: t6plotb = Kaplan-Meier Estimate of Second Switch Not Occurring
                 6) F6: t6plota = Reasons for Censoring at First Switch Evaluation by Analysisgrp
                 7) F7: t6plotb = Reasons for Censoring at Second Switch Evaluation by Analysisgrp
+                8) F8: t6plota = Cumulative Incidence of First Switch Against Competing Risk by Analysisgrp
+                9) F9: t6plotb = Cumulative Incidence of Second Switch Against Competing Risk by Analysisgrp
             /***********************************************************************************************/
             %if &reporttype. = T6 %then %do;
                 /*F4 - F7: 1 figure per group*/
@@ -1514,6 +1523,12 @@
                 %if %sysfunc(prxmatch(m/F7/i,&figurelist.)) > 0 %then %do;
                     %figuretoc(figure=F7, title =Reasons for Censoring at Second Switch Evaluation Among, dataset_name = figureF7);
                 %end; /*figuref7*/
+                %if %sysfunc(prxmatch(m/F8/i,&figurelist.)) > 0 %then %do;
+                    %figuretoc(figure=F8, title =%nrstr(Cumulative Incidence of First Switch Accounting for &competingrisklabel. as a Competing Risk Among), dataset_name = figureF8);
+                %end; /*figuref8*/
+                %if %sysfunc(prxmatch(m/F9/i,&figurelist.)) > 0 %then %do;
+                    %figuretoc(figure=F9, title =%nrstr(Cumulative Incidence of Second Switch Accounting for &competingrisklabel. as a Competing Risk Among), dataset_name = figureF9);
+                %end; /*figuref9*/
             %end; /*T6*/
 
         %end; /*L1 figures*/
@@ -1672,25 +1687,11 @@
                 *reset tablecount; 
 				%let tablecount = 1;
 
-				/*loop through periodid*/
-                %do j = %eval(&look_start) %to %eval(&look_end);
-
-	                /*loop through each analysisgrp - dataset only exists if curve computed*/
-					%do loopcount = 1 %to &numl2comparisons.;   
-	                    data _null_;
-	                        set l2comparisonfile(where=(order=&loopcount.));
-			                call symputx('runid', runid);
-			                call symputx('analysisgrp', analysisgrp);
-	                    run;
-
-	                    proc sql noprint;
-	                        select distinct strip(file) into: pscsfile trimmed
-	                        from pscs_masterinputs
-	                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
-	                    quit;
-
-	                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile %then %do;
-
+				%let F3nobs = 0;
+				%let F4nobs = 0;
+				%let F5nobs = 0;
+				
+				%macro survivalcurvestoc(aggregated=, dpinparenthesis=, dpwhere=);		                	                    
 	                        /*assign labels*/
 	                        data _null_; 
 	                            set pscs_masterinputs(where=(analysisgrp="&analysisgrp." and missing(subgroup)));
@@ -1705,17 +1706,23 @@
 	                        %let outcomelabel = Event of Interest;
 	                        %let eoilabel = &grp1.;
 	                        %let reflabel = &grp0.;
+							%let AnalysisGroupLabel = &analysisgrp.;
+							%let PSEstimateGroupLabel = &psestimategrp.;
 
 	                        %isdata(dataset=labelfile);
 	                        %if %eval(&nobs.>0) %then %do;
 	                            data _null_;
 	                                set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid" and labeltype = "outcomelabel"))
 	                                    labelfile(in=b where=(group="&grp1." and runid = "&runid." and labeltype = "grouplabel"))
-	                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"));
-
+	                                    labelfile(in=c where=(group="&grp0." and runid = "&runid." and labeltype = "grouplabel"))
+										labelfile(in=d where=(group="&analysisgrp" and runid = "&runid" and labeltype = "grouplabel"))
+										labelfile(in=e where=(group="&psestimategrp" and runid = "&runid" and labeltype = "grouplabel"))
+									;
 	                                if a then call symputx('outcomelabel', label);
 	                                if b then call symputx('eoilabel', label);
 	                                if c then call symputx('reflabel', label);
+									if d then call symputx('AnalysisGroupLabel', label);
+									if e then call symputx('PSEstimateGroupLabel', label);
 	                            run;
 	                        %end;         
 
@@ -1748,19 +1755,20 @@
 
 		                        /*F3*/								
 		                        %isdata(dataset=figureF3_analysis&loopcount._&j.);
+								%let F3nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF3_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unadjusted Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Unadjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the Whole Population in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unadjusted Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1768,19 +1776,26 @@
 		                        %end;
 		                        /*F4*/
 		                        %isdata(dataset=figureF4_analysis&loopcount._&j.);
+								%let F4nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF4_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
 
+									%if &pscsfile. = psmatchfile %then %let pop=Conditional Matched Population after;
+									%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let pop=Weighted Population after;
+
 									%if &max_day. > 0 %then %do;
+										%if &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
+										%else %let cititle=; 
+
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Conditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Adjusted Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce conditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
@@ -1788,55 +1803,101 @@
 		                        %end;
 		                        /*F5*/
 		                        %isdata(dataset=figureF5_analysis&loopcount._&j.);
+								%let F5nobs = &nobs.;
 		                        %if %eval(&nobs.>0) %then %do;
 									%let max_day=0;
 									
 									proc sql noprint;
 										select max(day) into :max_day
 										from figureF5_analysis&loopcount._&j. 
-										where subgroup="&subgroup." and subgroupcat="&subgroupcat.";
+										where subgroup="&subgroup." and subgroupcat="&subgroupcat." and dpidsiteid="&dpwhere";
 									quit;
+
+									%let pop=Unconditional Matched Population after;
 
 									%if &max_day. > 0 %then %do;
 				                        %tableletter();	
 				                    	%addtotoc(tabnum=Figure &figurenum.&tableletter.,
-				                    			  caption=%quote(Unconditional Kaplan-Meier Estimate of &outcomelabel. Not Occurring Among &eoilabel. and &reflabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
+				                    			  caption=%quote(&aggregated.Adjusted Kaplan-Meier Estimate and 95% Confidence Interval of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop. &PSEstimateGroupLabel. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.));
 									%end;
 									%else %do;
 										 %put WARNING: (Sentinel) Insufficient data to produce unconditional Kaplan-Meier estimate for analysisgrp=&analysisgrp., subgroup=&SubGroup., subgroupcat=&SubgroupCat.. KM curves will not be produced.; 
 									%end;
 		                        %end;
 
-							%end; /*loop through numsubgroups */    
+							%end; /*loop through numsubgroups */     																		
+				%mend survivalcurvestoc;
+
+				/*loop through each analysisgrp - dataset only exists if curve computed*/
+				%do loopcount = 1 %to &numl2comparisons.; 
  
-							/* if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
-                  				the numerous permutations of situations that can lead to 1 figure */
-							%let countkm = 0;
-							proc sql noprint;
-			                    select count(caption) into: countkm
-			                    from tableofcontents
-			                    where index(tabnum, "Figure &figurenum.")>0;
-			                quit;
+					data _null_;
+                        set l2comparisonfile(where=(order=&loopcount.));
+		                call symputx('runid', runid);
+		                call symputx('analysisgrp', analysisgrp);
+						call symputx('kmrefpop',kmrefpop);
+                    run;
 
-			                %if %eval(&countkm.)=1 %then %do;
-			                    data tableofcontents;
-			                        set tableofcontents;
-			                        if index(tabnum, "Figure &figurenum.")>0 then do;
-			                        tabnum = "Figure &figurenum.";
-			                        end;
-			                    run;
-			                %end;     
+                    proc sql noprint;
+                        select distinct strip(file) into: pscsfile trimmed
+                        from pscs_masterinputs
+                        where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
+                    quit;
 
+                    %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
+
+						/*loop through periodid*/
+		                %do j = %eval(&look_start) %to %eval(&look_end);
+							%survivalcurvestoc( %if %eval(&num_dp.)=1 %then %do;
+					                            aggregated=,
+					                            %end;
+					                            %else %do;
+					                            aggregated=%str(Aggregated ),
+					                            %end;
+												dpinparenthesis=, dpwhere=ALL);
+
+							* Save number of observations for the aggregated curves for figurenum increment below;
+							%let F3nobsALL=&F3nobs.;
+							%let F4nobsALL=&F3nobs.;
+							%let F5nobsALL=&F3nobs.;
+
+							*Output separate table for each Data Partner - loop through each DP;
+		                	%if &stratifybydp. = Y %then %do;    
+			                    %do dps = 1 %to %eval(&num_dp.);
+			        		        %let maskedID = %scan(&masked_dplist,&dps); 
+			                        %survivalcurvestoc(aggregated=, dpinparenthesis=%str( (&maskedid.)), dpwhere=&maskedid.);
+			                    %end;
+		                	%end; /*DP stratification*/
+		                %end; /*loop through periodid*/  
+
+						/* if there is only 1 figure, rewrite figure # - this method is used instead of determining apriori b/c of 
+                  	   	   the numerous permutations of situations that can lead to 1 figure */
+						%let countkm = 0;
+						proc sql noprint;
+		                    select count(caption) into: countkm
+		                    from tableofcontents
+		                    where index(tabnum, "Figure &figurenum.")>0;
+		                quit;
+
+		                %if %eval(&countkm.)=1 %then %do;
+		                    data tableofcontents;
+		                        set tableofcontents;
+		                        if index(tabnum, "Figure &figurenum.")>0 then do;
+		                        tabnum = "Figure &figurenum.";
+		                        end;
+		                    run;
+		                %end;   
+
+						%if %eval(&F3nobsALL.>0) | %eval(&F4nobsALL.>0) | %eval(&F5nobsALL.>0) %then %do;
 							%let figurenum = %eval(&figurenum.+1); 
 							%let tablecount = 1;
 							%let tableletter =a; 
+						%end;
 
-	                    %end; /*only PSmatch or stratification*/						
-					%end; /*loop through numl2comparisons */
-                %end; /*loop through periodid*/                      
+                    %end; /*PSmatch, stratification or IPTW*/
+ 				%end; /*loop through numl2comparisons */
             %end; /*KM plots*/
         %end; /*L2 figures*/
-
     %end; /* Figure file */
 
 

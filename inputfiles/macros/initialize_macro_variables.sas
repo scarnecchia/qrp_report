@@ -86,9 +86,10 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
+    %let labcharacteristics=;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
@@ -127,6 +128,11 @@
     /*Age stratification format */
     %global agegroupfmt;
 
+    /* Race categories and race count - 0 not included in list because other categories get collapsed in RACE=0*/
+    %global racelist racecount;
+    %let racelist = 1 2 3 4 5 M;
+    %let racecount = %sysfunc(countw(&racelist));
+
     /*Output counter variables*/
     %global tableletter tablecount;
 
@@ -142,10 +148,12 @@
     %global numsummarystratcovars;
     %let numsummarystratcovars = 0;
 
-    /* baseline label covariate stratifications */
-    %global includecovars baselinelabellength;
+    /* baseline covariates */
+    %global includecovars baselinelabellength labcovars charlabslist;
     %let includecovars = N;
-    %let baselinelabellength = 70;
+    %let baselinelabellength = 80;
+    %let labcovars = ;
+    %let charlabslist = %str("missing");
 
 	/* Total number of unique stratifications by file type*/
 	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;

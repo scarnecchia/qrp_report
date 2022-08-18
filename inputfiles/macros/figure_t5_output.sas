@@ -71,7 +71,8 @@
         "2"   = "Asian"
         "3"   = "Black or African American"
         "4"   = "Native Hawaiian or Other Pacific Islander"
-        "5"   = "White";
+        "5"   = "White"
+        "M"   = "Multi-racial";
         run;
         %let t5figureformat = $racefmtsuper.;
     %end;
