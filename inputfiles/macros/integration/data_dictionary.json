@@ -1785,7 +1785,7 @@
 				{
                     "id": "EVENTCOUNT",
                     "name": "HOI Characterization De-duplication Process",
-                    "sas_format": "2",
+                    "sas_format": "3",
                     "info": "Users can use this field to determine how this characterization should count the number of HOI",
                     "input_type": "SingleSelect",
                     "values": [
@@ -3002,7 +3002,7 @@
 			]
 		},
 		{
-			"id": "UTILIZATIONFILE",
+			"id": "UTILFILE",
             "name": "Utilization File",
             "analysis_types": [
                 1,

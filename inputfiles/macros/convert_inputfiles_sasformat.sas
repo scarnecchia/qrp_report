@@ -65,10 +65,10 @@
         end;
         did =dclose(did);
         did = filename(fref);
-     run;
+    run;
 
-     %isdata(dataset=tmplib.filenames);
-     %if %eval(&nobs.>0) %then %do;
+    %isdata(dataset=tmplib.filenames);
+    %if %eval(&nobs.>0) %then %do;
 
         %let list_set= ;
         proc sql noprint;
@@ -85,7 +85,7 @@
             /*Note if file will be overwritten*/
             %isdata(dataset=tmplib.&inputfile.);
             %if %eval(&nobs.>0) %then %do;
-               %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten wiith contents of CSV file;
+                %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten wiith contents of CSV file;
             %end;
 
             proc import file ="&lib.&inputfile..csv"
@@ -104,7 +104,7 @@
             select input_files_parameters input_files;
         quit;
 
-        proc sql;
+        proc sql noprint;
             create table tmplib.format_values as
             select a.id, a.sas_format, b.id as inputfile,
                 case when index(lowcase(sas_format), 'date')>0 then cat(strip(a.id)," ",4)
@@ -140,45 +140,46 @@
 
         %let date_id = ;
         proc sql noprint;
-            select id_format into: sas_format 
-            separated by " " from &lib..format_values
-            where upcase(inputfile) = upcase("&parameter");
-
-    		select id into: sas_id
-            separated by " " from &lib..format_values
+            select id_format, id into 
+            :sas_format separated by " ", 
+            :sas_id separated by " " 
+            from &lib..format_values
             where upcase(inputfile) = upcase("&parameter");
 
             select id
             into :date_id separated by " "
             from &lib..format_values
             where upcase(inputfile) = upcase("&parameter") and index(lowcase(sas_format), 'date9')>0;
-         quit;
-
-        data &inputfile.;
-	       set &lib..&inputfile.;
-	       rename 
-	      %do var = 1 %to %sysfunc(countw(&sas_id));
-            %let current_var = %scan(&sas_id, &var);
-		    &current_var. = csv_&current_var.
-	      %end;;
-        run;
+        quit;
 
         data &lib..&inputfile.;
-            set &inputfile.;
-    	    length &sas_format.;
-            %do var = 1 %to %sysfunc(countw(&sas_id));
-              %let current_var = %scan(&sas_id, &var);
-    	      &current_var. = csv_&current_var.;
-    	    %end;
+            set  &lib..&inputfile. (rename =(%do var = 1 %to %sysfunc(countw(&sas_id));
+                                                 %let current_var = %scan(&sas_id, &var);
+                                                 &current_var. = csv_&current_var.
+                                             %end;)
+                                    );
+            length &sas_format.;
 
-            %if %length(&date_id.)>0 %then %do;
-            %do var = 1 %to %sysfunc(countw(&date_id));
-              %let current_var = %scan(&date_id, &var);
-    	      format &current_var. date9.;
-    	    %end;
+            %do var = 1 %to %sysfunc(countw(&sas_id));
+                %let current_var = %scan(&sas_id, &var);
+                &current_var. = csv_&current_var.;
             %end;
 
-    	    drop csv_:;
+            %if %length(&date_id.)>0 %then %do;
+                %do var = 1 %to %sysfunc(countw(&date_id));
+                    %let current_var = %scan(&date_id, &var);
+                    format &current_var. date9.;
+                %end;
+            %end;
+
+            /*clean up character variables*/
+            array charvars[*] $ _char_;
+            do i=1 to dim(charvars);
+                charvars{i}=strip(charvars{i});
+                if charvars{i}='.' then call missing(charvars{i});
+            end;
+
+            drop i csv_:;
         run;
 
         proc datasets nowarn noprint lib=work;
