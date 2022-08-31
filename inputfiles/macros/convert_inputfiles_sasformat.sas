@@ -9,8 +9,8 @@
 * PURPOSE:
 *  This file contains two macros:
 *
-*  Macro 1: convert_inputfiles determines if CSV input files exists, reads in as SAS datasets, and 
-*           reads in JSON data dictionary
+*  Macro 1: convert_inputfiles determines if CSV input files exists, reads in JSON data dictionary,
+*           and creates SAS syntax for data step
 *
 *  Program inputs: 
 *   - csv files 
@@ -24,7 +24,7 @@
 *   -json_lib       =   integration directory where the json files are located
 *
 *
-*  Macro 2: get_sas_format uses the format in the data dictionary to apply variable lengths
+*  Macro 2: get_sas_format uses the format in the data dictionary to read in CSV file and apply variable lengths
 *
 *  Program inputs: 
 *   - Raw SAS dataset
@@ -33,8 +33,9 @@
 *  Program outputs:
 *   - Formatting SAS datasets 
 *                                                                                                  
-*  PARAMETERS:                              
-*   -lib            =   inputfiles directory where the csv files are located
+*  PARAMETERS:    
+*   -path           =   inputfiles path 
+*   -lib            =   SAS libname where the csv files are located
 *   -inputfile      =   input file name
 *   -parameter      =   input parameter name
 *
@@ -70,31 +71,6 @@
     %isdata(dataset=tmplib.filenames);
     %if %eval(&nobs.>0) %then %do;
 
-        %let list_set= ;
-        proc sql noprint;
-            select fname into: list_set 
-            separated by " " from tmplib.filenames
-        quit;
-
-        %put &list_set;
-
-
-        %do f = 1 %to %sysfunc(countw(&list_set));
-            %let inputfile = %scan(&list_set, &f.);
-
-            /*Note if file will be overwritten*/
-            %isdata(dataset=tmplib.&inputfile.);
-            %if %eval(&nobs.>0) %then %do;
-                %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten wiith contents of CSV file;
-            %end;
-
-            proc import file ="&lib.&inputfile..csv"
-                out = tmplib.&inputfile.
-                dbms = csv
-                replace;
-            run;
-        %end;
-
         /*grab the json file information for sas_formats contents*/
         filename dd "&json_lib./data_dictionary.json";
         libname newlib JSON fileref=dd access=readonly;
@@ -106,10 +82,32 @@
 
         proc sql noprint;
             create table tmplib.format_values as
-            select a.id, a.sas_format, b.id as inputfile,
-                case when index(lowcase(sas_format), 'date')>0 then cat(strip(a.id)," ",4)
-                else cat(strip(a.id)," ",strip(a.sas_format)) 
-                end as id_format
+            select a.id, 
+                   a.sas_format,
+                   b.id as inputfile,
+
+                   /*format*/
+                    case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("format ",strip(a.id)," ",strip(a.sas_format), ".;")
+                    else ""
+                    end as format_statement,
+
+                   /*informat*/
+                    case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("informat ",strip(a.id)," ",strip(a.sas_format), ".;")
+                     when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')=0 then cat("informat ",strip(a.id)," ", "best.;")
+                     else ""
+                     end as informat_statement,
+
+                    /*length*/
+                    case when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')=0 then cat("length ",strip(a.id)," ",strip(a.sas_format), ";")
+                         when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')>0 then cat("length ",strip(a.id)," ", "4;")
+                    else ""
+                    end as length_statement,
+
+                    /*input statement*/
+                    case when index(sas_format,"$")>0 then cat(strip(a.id)," ","$")
+                    else strip(a.id) 
+                    end as input_statement
+
             from input_files_parameters as a left join input_files as b
             on a.ordinal_input_files = b.ordinal_input_files;
         quit;
@@ -126,7 +124,7 @@
 %mend convert_inputfiles;
 
 
-%macro get_sas_format(lib=, inputfile = , parameter=);
+%macro get_sas_format(path=, lib=, inputfile = , parameter=);
     /*check if input file is CSV*/
     %let applyformats= N;
    
@@ -138,54 +136,61 @@
     /*if CSV file, apply variable lengths*/
     %if &applyformats = Y %then %do;
 
-        %let date_id = ;
-        proc sql noprint;
-            select id_format, id into 
-            :sas_format separated by " ", 
-            :sas_id separated by " " 
-            from &lib..format_values
-            where upcase(inputfile) = upcase("&parameter");
+        /*Note if file will be overwritten*/
+        %isdata(dataset=&lib..&inputfile.);
+        %if %eval(&nobs.>0) %then %do;
+            %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten with contents of CSV file;
+        %end;
 
-            select id
-            into :date_id separated by " "
-            from &lib..format_values
-            where upcase(inputfile) = upcase("&parameter") and index(lowcase(sas_format), 'date9')>0;
+        /*import csv in order to acertain variable order for input statement*/
+        options obs=0;
+        proc import file ="&path./&inputfile..csv"
+            out = tmpfile
+            dbms = csv
+            replace;
+        run;
+        options obs=max;
+
+        proc contents data=tmpfile noprint out=tmpfilecontents; run;
+
+        proc sql noprint;
+            select format_statement, 
+                   informat_statement, 
+                   length_statement,  
+                   input_statement
+            into 
+                :format_statement separated by " ", 
+                :informat_statement separated by " ", 
+                :length_statement separated by " ",
+                :input_statement separated by " "
+            from (
+                  select x.*,
+                         y.varnum
+                  from tmplib.format_values(where=(upcase(inputfile) = upcase("&parameter"))) as x
+                  left join tmpfilecontents as y
+                  on upcase(x.id) = upcase(y.name)) as a
+            order by varnum;
         quit;
 
-        data &lib..&inputfile.;
-            set  &lib..&inputfile. (rename =(%do var = 1 %to %sysfunc(countw(&sas_id));
-                                                 %let current_var = %scan(&sas_id, &var);
-                                                 &current_var. = csv_&current_var.
-                                             %end;)
-                                    );
-            length &sas_format.;
+        /*create new input file*/
+		data &lib..&inputfile.;
+            &length_statement.;
 
-            %do var = 1 %to %sysfunc(countw(&sas_id));
-                %let current_var = %scan(&sas_id, &var);
-                &current_var. = csv_&current_var.;
-            %end;
+            infile "&path./&inputfile..csv"
+        	delimiter = ","
+        	missover 
+        	dsd
+        	firstobs=2;
 
-            %if %length(&date_id.)>0 %then %do;
-                %do var = 1 %to %sysfunc(countw(&date_id));
-                    %let current_var = %scan(&date_id, &var);
-                    format &current_var. date9.;
-                %end;
-            %end;
-
-            /*clean up character variables*/
-            array charvars[*] $ _char_;
-            do i=1 to dim(charvars);
-                charvars{i}=strip(charvars{i});
-                if charvars{i}='.' then call missing(charvars{i});
-            end;
-
-            drop i csv_:;
+            &format_statement.;
+            &informat_statement.;
+            input &input_statement.;
         run;
 
         proc datasets nowarn noprint lib=work;
-            delete &inputfile.;
+            delete tmpfile tmpfilecontents;
         quit;
-
+		
     %end; /*csv file exists*/
 
 %mend get_sas_format;
