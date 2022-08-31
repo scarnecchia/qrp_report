@@ -76,6 +76,11 @@
 		/* Add columns for Sentinel Views */
 		%if &reporttype = T2L2 and (&figure=F3 or &figure=F4 or &figure=F5) %then %do;
 		length monitoringperiod 3 analysis $13 analysisgrp eoi ref $40;
+		%if &analysis = Adjusted %then %do;
+			%if &figure = F4 and &pscsfile. = psmatchfile %then %let analysis=Conditional;
+			%else %if &figure = F5 and &pscsfile. = psmatchfile %then %let analysis=Unconditional;
+			%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let analysis=Weighted; 
+		%end;
 	    analysis="&analysis";
         analysisgrp="&analysisgrp";
         monitoringperiod=&monitoringperiod;
