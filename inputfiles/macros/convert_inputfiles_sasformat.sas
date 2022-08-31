@@ -93,7 +93,6 @@
 
                    /*informat*/
                     case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("informat ",strip(a.id)," ",strip(a.sas_format), ".;")
-                     when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')=0 then cat("informat ",strip(a.id)," ", "best.;")
                      else ""
                      end as informat_statement,
 
