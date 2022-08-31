@@ -30,27 +30,31 @@
 ***************************************************************************************************;
 * Initialize global macro variables and read in input files                                  
 ***************************************************************************************************;
+
+    %put =====> MACRO CALLED: create_report;
+
     /* If leave behind report runs then use reportid for log suffix */
     %if &leavebehindreport = Y %then %do;
     /* Start log */
        proc printto log="&output.qrp_report_log&reportid..log" new;
        run;
     %end;
+
 	%else %do;
-       proc printto log="&output.qrp_report_log.log" new;
-	%end;
-	
-    %put =====> MACRO CALLED: create_report;
-	
-	/* Need to retain work datasets from qrp for leave behind report.
+    /* Need to retain work datasets from qrp for leave behind report.
        Repdata is set to work directory when leave behind report is run,
 	   and data for qrp report is in the msocdata folder	*/
-	%if &leavebehindreport = N %then %do;
 	   proc datasets nowarn nolist lib=work kill; quit;
 	   proc datasets nowarn nolist lib=repdata kill; quit;
 	   proc datasets nowarn nolist lib=msocdata kill; quit; 
-	%end;
 
+        /*read in JSON file and determine if there are any CSV files*/
+        %convert_inputfiles(lib=&INFOLDER, JSON_LIB=&infolder.macros/integration);
+        %convert_inputfiles(lib=&REPORTROOT.inputfiles/, JSON_LIB=&input.macros/integration);
+
+       proc printto log="&output.qrp_report_log.log" new;
+	%end;
+	
     /*Initialize global macro variables*/
     %initialize_macro_variables();
 
@@ -253,10 +257,20 @@
 	%end;
 
 ***************************************************************************************************;
-*   Clean Work                                                                                 
+*   Clean directories                                                                                 
 ***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
+
+    /*remove filenames datasets if created*/
+    %if &leavebehindreport = N %then %do;
+    proc datasets nowarn nolist lib=input;
+        delete filenames format_values;
+    quit;
+    proc datasets nowarn nolist lib=infolder;
+        delete filenames format_values;
+    quit;
+    %end;
 
     /* End log */
     proc printto;
