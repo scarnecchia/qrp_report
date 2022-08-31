@@ -113,26 +113,37 @@
             run;
             %let &parameter. = &value.;
 
-            /*assign formats to input files that were initially CSV*/
-            %get_sas_format (%if &leavebehindreport = Y %then %do; lib=infolder, %end;
-                             %if &leavebehindreport = N %then %do; lib=input, %end;
+            /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
+            proc printto log=log;
+	        run;
+
+            %get_sas_format (%if &leavebehindreport = Y %then %do; path=&infolder., lib=infolder, %end;
+                             %if &leavebehindreport = N %then %do; path=&input., lib=input, %end;
                              inputfile = &value, parameter=&parameter);
-        %end;
-  
-        /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
-           dpfile is set to the work dpinfofile and reportdata is N. */
-        %if &leavebehindreport = Y %then %do;
-          %let stratifybydp = N;
-          %let report_destination = PDF;
-          %let dpfile = dpinfofile;
-        %end;
-        /* Set reportid suffix to missing when not a leave behind report */
-        %else %do;
-          %let reportid = ;
-          %let dpfile = input.&DPInfoFile.;
-          %global reportdata;
-          %let reportdata = Y;
-        %end;
+
+            /* Resume writing to log */
+            %if &leavebehindreport = Y %then %do;
+               proc printto log="&output.qrp_report_log&reportid..log";
+               run;
+            %end;
+            %else %do;
+                proc printto log="&output.qrp_report_log.log";
+            %end;
+
+            /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+                dpfile is set to the work dpinfofile and reportdata is N. */
+            %if &leavebehindreport = Y %then %do;
+                %let stratifybydp = N;
+                %let report_destination = PDF;
+                %let dpfile = dpinfofile;
+            %end;
+            /* Set reportid suffix to missing when not a leave behind report */
+            %else %do;
+                %let reportid = ;
+                %let dpfile = input.&DPInfoFile.;
+                %global reportdata;
+                %let reportdata = Y;
+            %end;
 
         /* Check if user specified COLLAPSE_VARS if report type is L2/Tree. Parameter only applicable for L1 reports */
         %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE3|TREE4/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
@@ -424,7 +435,21 @@
               end;
             run;
 
-            %get_sas_format (lib=infolder, inputfile = &value, parameter=&parameter);
+            /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
+            proc printto log=log;
+	        run;
+
+            %get_sas_format (path=&infolder., lib=infolder, inputfile = &value, parameter=&parameter);
+
+            /* Resume writing to log */
+            %if &leavebehindreport = Y %then %do;
+               proc printto log="&output.qrp_report_log&reportid..log";
+               run;
+            %end;
+            %else %do;
+                proc printto log="&output.qrp_report_log.log";
+            %end;
+
         %end;
       
      %end;
