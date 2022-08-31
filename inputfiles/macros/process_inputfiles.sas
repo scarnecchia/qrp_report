@@ -130,20 +130,22 @@
                 proc printto log="&output.qrp_report_log.log";
             %end;
 
-            /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
-                dpfile is set to the work dpinfofile and reportdata is N. */
-            %if &leavebehindreport = Y %then %do;
-                %let stratifybydp = N;
-                %let report_destination = PDF;
-                %let dpfile = dpinfofile;
-            %end;
-            /* Set reportid suffix to missing when not a leave behind report */
-            %else %do;
-                %let reportid = ;
-                %let dpfile = input.&DPInfoFile.;
-                %global reportdata;
-                %let reportdata = Y;
-            %end;
+        %end; /*createreport parameter loop*/
+
+        /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
+            dpfile is set to the work dpinfofile and reportdata is N. */
+        %if &leavebehindreport = Y %then %do;
+            %let stratifybydp = N;
+            %let report_destination = PDF;
+            %let dpfile = dpinfofile;
+        %end;
+        /* Set reportid suffix to missing when not a leave behind report */
+        %else %do;
+            %let reportid = ;
+            %let dpfile = input.&DPInfoFile.;
+            %global reportdata;
+            %let reportdata = Y;
+        %end;
 
         /* Check if user specified COLLAPSE_VARS if report type is L2/Tree. Parameter only applicable for L1 reports */
         %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE3|TREE4/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
