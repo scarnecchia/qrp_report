@@ -70,25 +70,106 @@
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
 
-    %if ^%index(&reporttype,TREE) %then %do;
+
+***************************************************************************************************;
+* Using requestID, create new folder for Sentinel Views output                                                
+***************************************************************************************************;
+
+    %if &OUTPUTVIEWSDATA. = Y %then %do;
+
+        /*Determine folder name - 5 token request ID.
+            If dpid or versionID tokens differ then:
+                DPID: use NSDP
+                versionID: use the latest version (i.e. if combining v01, v02, then use v02. if combining b01 and v01, use v01)
+            If any of the 1st 3 tokens differ, write a warning in the log (i.e. can't aggregate across workplans)*/
+
+        %if &leavebehindreport = Y %then %do;
+            %let viewsID = &ReqID;
+        %end;
+        %else %do;
+           proc sql noprint;
+                select distinct projid
+                into :viewsprojid separated by ' '
+                from output.dpinfo;
+
+                select distinct wptype
+                into :viewswptype separated by ' '
+                from output.dpinfo;
+
+                select distinct wpid
+                into :viewswpid separated by ' '
+                from output.dpinfo;
+
+                select distinct dpid
+                into :viewsdpid separated by ' '
+                from output.dpinfo;
+
+                select distinct dpversion
+                into :viewsdpversion separated by ' '
+                from output.dpinfo
+                order by dpversion;
+            quit;
+
+            %if %sysfunc(countw(&viewsprojid., ' '))>1 | %sysfunc(countw(&viewswptype., ' '))>1 | %sysfunc(countw(&viewswpid., ' '))>1 %then %do;
+                %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have different values. Sentinel Views datasets will reside in a folder that may not match workplan;
+                %let viewsprojid_wptype_wpid = %scan(&viewsprojid., 1)_%scan(&viewswptype., 1)_%scan(&viewswpid., 1);
+            %end;
+            %else %do;
+                %let viewsprojid_wptype_wpid = &viewsprojid._&viewswptype._&viewswpid;
+            %end;
+
+            %if %sysfunc(countw(&viewsdpid., ' '))>1 %then %do;
+                %let viewsdpid = nsdp;
+            %end;
+
+            %if %sysfunc(countw(&viewsdpversion., ' '))>1 %then %do;
+                %let viewsdpversion = %scan(&viewsdpversion., %sysfunc(countw(&viewsdpversion., ' ')));
+            %end;
+
+            %let viewsID = &viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.;
+        %end;
+                
+        /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
+        %if &leavebehindreport = Y %then %do;
+ 			proc printto log=log;
+			run;
+        %end;
+
+        options DLCREATEDIR ;
+        libname reqid "&output.&viewsID.";
+        options NODLCREATEDIR;
+
+        %if &leavebehindreport = Y %then %do;
+ 			proc printto log="&output.qrp_report_log&reportid..log";
+			run;
+        %end;
+
+    %end;
+
+    /*Drop requestID tokens from dpinfo file*/
+    data output.dpinfo;
+        set output.dpinfo(drop=projid wptype wpid dpid);
+    run;
 	
-***************************************************************************************************;
-*   Assign study start and end dates                                               
-***************************************************************************************************;
+    ***************************************************************************************************;
+    *   Assign study start and end dates                                               
+    ***************************************************************************************************;
 
-    %output_report_dates();
+    %if ^%index(&reporttype,TREE) %then %do;
 
-***************************************************************************************************;
-*   Create report formats and labels                                           
-***************************************************************************************************;
+        %output_report_dates();
 
-    %report_formats_labels();
+    ***************************************************************************************************;
+    *   Create report formats and labels                                           
+    ***************************************************************************************************;
 
-***************************************************************************************************;
-* Baseline tables                                                      
-***************************************************************************************************;
+        %report_formats_labels();
 
-    %baseline_driver();
+    ***************************************************************************************************;
+    * Baseline tables                                                      
+    ***************************************************************************************************;
+
+        %baseline_driver();
 
     %end;
 

@@ -119,11 +119,18 @@
 					data _signature; set &DPSITEID..&signaturefile.; 
 						format DP $6.;
 						DP = "&DPSITEID."; 	
-						where upcase(var) in ('VERID', 'REQID', 'MPVER', 'DPMINDATE', 'DPMAXDATE');
+						where upcase(var) in ('VERID', 'REQID', 'PROJID', 'WPTYPE', 'WPID', 'DPID', 'MPVER', 'DPMINDATE', 'DPMAXDATE');
 					run;	
 
-					proc transpose data = _signature out = _signature (drop = _NAME_ rename =(col1 = ReqID  col2 = DPversion col3 = QRPversion
-																							col4 = DPMINDATE col5 = DPMAXDATE));
+					proc transpose data = _signature out = _signature (drop = _NAME_ rename =(col1 = ReqID 
+                                                                                              col2 = PROJID
+                                                                                              col3 = WPTYPE
+                                                                                              col4 = WPID
+                                                                                              col5 = DPID
+                                                                                              col6 = DPversion 
+                                                                                              col7 = QRPversion
+																							  col8 = DPMINDATE 
+                                                                                              col9 = DPMAXDATE));
 						by DP;
 						var value;
 					run;
@@ -132,7 +139,7 @@
 
 					proc datasets nowarn noprint lib=work; delete _signature; quit;
 				%end;
-				%else %put NOTE: Signature file for "&DPSITEID." does not exist;
+				%else %put WARNING: (Sentinel) Signature file for "&DPSITEID." does not exist;
 				%end;
 			%end;
 		%end;
@@ -203,20 +210,27 @@
 				data _signature; set &DPSITEID..&signaturefile.; 
 					format DP $6.;
 					DP = "&DPSITEID."; 	
-					where upcase(var) in ('VERID', 'REQID', 'MPVER', 'DPMINDATE', 'DPMAXDATE');
-				run;	
+				    where upcase(var) in ('VERID', 'REQID', 'PROJID', 'WPTYPE', 'WPID', 'DPID', 'MPVER', 'DPMINDATE', 'DPMAXDATE');
+					run;	
 
-				proc transpose data = _signature out = _signature (drop = _NAME_ rename =(col1 = ReqID  col2 = DPversion col3 = QRPversion
-																						col4 = DPMINDATE col5 = DPMAXDATE));
-					by DP;
-					var value;
-				run;
+					proc transpose data = _signature out = _signature (drop = _NAME_ rename =(col1 = ReqID 
+                                                                                              col2 = PROJID
+                                                                                              col3 = WPTYPE
+                                                                                              col4 = WPID
+                                                                                              col5 = DPID
+                                                                                              col6 = DPversion 
+                                                                                              col7 = QRPversion
+																							  col8 = DPMINDATE 
+                                                                                              col9 = DPMAXDATE));
+						by DP;
+						var value;
+					run;
 
 				proc append data=_signature base=dpsignature force; run;
 
 				proc datasets nowarn noprint lib=work; delete _signature; quit;
 			%end;
-			%else %put NOTE: Signature file for "&DPSITEID." does not exist;
+			%else %put WARNING: (Sentinel) Signature file for "&DPSITEID." does not exist;
 			%end;
 
 			/*Modify DPlist if additional DPs will be assigned libname automatically*/
