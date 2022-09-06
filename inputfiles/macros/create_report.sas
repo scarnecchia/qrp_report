@@ -136,7 +136,7 @@
         %end;
 
         options DLCREATEDIR ;
-        libname views "&output.&viewsID.";
+        libname views "&output.&viewsID.&reportid.";
         options NODLCREATEDIR;
 
         %if &leavebehindreport = Y %then %do;
