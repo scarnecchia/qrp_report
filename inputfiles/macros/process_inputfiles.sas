@@ -86,14 +86,14 @@
         quit;
 
         /*Assign all parameters to macro variables*/
-        %do createreportparameter = 1 %to %eval(&numparms.);
+        %do createreportparameter = 1 %to %eval(&numparms.);		
             data _null_;
                 set &createreportfile;
                 if _n_ = &createreportparameter. then do;
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination','outputviewsdata') then call symputx("value",upcase(value));
                     if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
@@ -111,6 +111,7 @@
                     end;
                 end;
             run;
+
             %let &parameter. = &value.;
 
             /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
