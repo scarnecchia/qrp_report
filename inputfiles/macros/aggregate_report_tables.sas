@@ -127,6 +127,8 @@
 
     			%end; *runID;
     		  %end;*loop through DPs;
+
+    		  %output_datasets(dataset=&outfile., outlib=msocdata);
 			  
 			  %if &stratification. = Y %then %do;
 			     /* Identify stratification variables */
@@ -165,7 +167,7 @@
 				   into: strata1 -  :strata&&numstrata_&dataset.
 				   from stratavars_&outfile.;
 				 quit;			  
-			  
+				 
 			     /* Put stratification variables through formats to acquire full names */
                  data &outfile.;
                    set &outfile.(rename = (
@@ -226,10 +228,7 @@
 					 label sortorder&s. = "&&strata&s.._sort";
 				   %end;
                  run;
-			    
 	          %end;
-
-			  %output_datasets(dataset=&outfile., outlib=msocdata);
 			  
 			  /* If stratification by zip3 is requested, add state values */
               %if &stratification. = Y %then %do;
