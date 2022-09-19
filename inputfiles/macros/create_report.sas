@@ -76,7 +76,7 @@
 ***************************************************************************************************;
 
     %if &OUTPUTVIEWSDATA. = Y %then %do;
-
+	
         /*Determine folder name - 5 token request ID.
             If dpid or versionID tokens differ then:
                 DPID: use NSDP
@@ -128,7 +128,7 @@
 
             %let viewsID = &viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.;
         %end;
-                
+		
         /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
         %if &leavebehindreport = Y %then %do;
  			proc printto log=log;
@@ -325,6 +325,14 @@
         %aggregate_tree();
       %end;
     %end;
+
+***************************************************************************************************;
+* Produce Views output                                             
+***************************************************************************************************;
+
+    %if %UPCASE(&outputviewsdata)=Y %then %do;
+	  %l1_dataviz_convert;
+    %end;			
 
 /*************************************************************************************************/
 /* Run log checker                                                                               */
