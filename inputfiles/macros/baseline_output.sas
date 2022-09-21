@@ -125,10 +125,49 @@
 		%let covnotinpsorder = 19;
 		%let covnotinps_no =;
 		/*need to reorder the footnotes when covnotinps is populated because 
-		  footnote plaacement is determined by METVAR values listed in the parameter*/
+		  footnote placement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
 		%if %length(&covnotinps.) > 0 %then %do; 
 		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
+		%let covnotinps_noquotes = %sysfunc(translate(%superq(covnotinps),%str( ),%str(%")));
+
+			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
+			%let num_covnotinps_nolab=1;
+			%if &labcharacteristics ^= missing %then %do;
+				%create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+	  
+				proc sort data= covarname(keep=cov_varname where=(upcase(cov_varname) in (&labcharscomma))) out=labcovar(rename=cov_varname=cov);
+				by cov_varname;
+				run; 
+
+				data CovNotInPS;	
+				format cov $30.;	
+				do obs=1 by 1 until (cov=' ');
+					cov=lowcase(strip(scan("&covnotinps_noquotes",obs)));
+					if cov ne " " then output;
+				end;
+				drop obs;
+				run;
+
+				proc sort data=CovNotInPS;
+				by cov;
+				run;
+
+				data CovNotInPS;
+				merge CovNotInPS
+					  labcovar(in=b);
+				by cov;
+				NoLab=0;
+				if not b then NoLab=1;
+				run;
+				
+				proc sql noprint;
+				select sum(NoLab) into :num_covnotinps_nolab from CovNotInPS;
+				quit;
+
+				%put &=num_covnotinps_nolab;
+	        %end;
+		
 		  data _footnotes;
 		    length order 8;
 			format order 4.2;
@@ -200,6 +239,12 @@
                 %let covnotinpsorder = 17.7;
 			  end;
 			%end;
+			%else %if %eval(&num_covnotinps_nolab = 0) %then %do;
+              if order =19  then do; 
+                order = 20.1; 
+                %let covnotinpsorder = 20.1;
+			  end;
+			%end;
 		  run;
 
 		  proc sort data = _footnotes;
@@ -256,8 +301,13 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
-		   /* Lab characteristics specified */
-		   %if %quote(&labcharacteristics) ^= "missing" %then %do; 20 %end;
+		   /* Lab characteristics specified. For L2 reports, restrict to Unweighted cohort */
+		   %if (&reporttype. = T2L2 or &reporttype. = T4L2) and %index(&weight.,Unweighted) > 0 and (&ratio. eq F or %index(&table.,Adjusted) eq 0) %then %do;
+		   		%if &labcharacteristics. ^= missing %then %do; 20 %end;
+		   %end;
+		   %else %if (&reporttype. ne T2L2 and &reporttype. ne T4L2) %then %do;
+		   		%if &labcharacteristics. ^= missing %then %do; 20 %end;
+		   %end;
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
             or (type='type4' and order in (-2 
@@ -422,7 +472,7 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
-              %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+              %if &labcharacteristics. ^= missing %then %do; 
               if prxmatch('/^(Test record|No test record|Test records with missing or unknown units)$|Test record in/', strip(label)) then do;
               		call define(_col_,'style','style={indent=25}');
               end;
@@ -569,7 +619,7 @@
         run;
 
         /* Assign patient/episode label for lab footnote based on cohortdef value */
-        %if %quote(&labcharacteristics) ^= "missing" %then %do; 
+        %if &labcharacteristics. ^= missing %then %do; 
         	%if %sysfunc(prxmatch(/01|04/,&cohortdef)) %then %let patientepi = patients; 
         	%else %if %sysfunc(prxmatch(/02|03/,&cohortdef)) %then %let patientepi = episodes;
         %end;
@@ -894,6 +944,7 @@
 	                %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
 	                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	                  characteristiclabel =&characteristiclabel.,
+					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
 	                  grp1_label=&grp1_label.,
@@ -909,6 +960,7 @@
 	                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
 	                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	                  characteristiclabel =&characteristiclabel.,
+					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
 	                  grp1_label=&grp1_label.,
@@ -927,6 +979,7 @@
 	                    %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
 	                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	                      characteristiclabel =&characteristiclabel.,
+						  labcharacteristics = %quote(&labcharacteristics),
 	                      dpnum = &dpnum.,
 	                      numcolumns =&numcolumns.,
 	                      grp1_label=&grp1_label.,
