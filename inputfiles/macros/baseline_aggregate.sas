@@ -415,7 +415,7 @@
 		    %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
 		    %let labvar = %scan(&labcharacteristics,&labvars);
 				* Computation should be revised for Weighted cohort;
-				if index(_name_, "w") > 0 or index(metvar, "w2") > 0 then  &labvar._NOTESTRECORD = &labvar;
+				if index(_name_, "w") > 0 or index(_name_, "w2") > 0 then  &labvar._NOTESTRECORD = &labvar;
 		    	else &labvar._NOTESTRECORD = n_episodes - &labvar;
 		    %end;
 		    run;              
@@ -451,9 +451,10 @@
 			run;
 
 			data _temp_baseline_stacked(rename=label=_label_);
-			merge _temp_baseline_stacked
+			merge _temp_baseline_stacked(in=a)
 				  _labvarsname;
 			by metvar;
+			if a;
 			if index(metvar, "_NOTESTRECORD")>0 then do;
 				label="No test record";
 
