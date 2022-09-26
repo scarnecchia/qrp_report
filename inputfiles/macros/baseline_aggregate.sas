@@ -416,6 +416,7 @@
 		    %let labvar = %scan(&labcharacteristics,&labvars);
 				* Computation should be revised for Weighted cohort;
 				if index(_name_, "w") > 0 or index(_name_, "w2") > 0 then  &labvar._NOTESTRECORD = &labvar;
+				else if index(_name_, "std") > 0 then &labvar._NOTESTRECORD = 1 - &labvar;
 		    	else &labvar._NOTESTRECORD = n_episodes - &labvar;
 		    %end;
 		    run;              
