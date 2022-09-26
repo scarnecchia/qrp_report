@@ -334,6 +334,15 @@
 					
                     %isdata(dataset=weightdistribution);
                     %if &nobs > 0 %then %do;
+					  
+					  %let nobs=0;
+					  proc sql noprint;
+						  select count (*) into :nobs from weightdistribution
+					      where not missing(min) and not missing(max) and not missing(mean) and not missing(sd);
+					  quit;
+
+					  %if %eval(&nobs > 0) %then %do;
+
                       /*N, min, max */
                       proc means data=weightdistribution nway noprint;
                           var N min max;
@@ -390,6 +399,14 @@
                       run;
 				      
                       options mergenoby = warn;
+
+					  %end; /* rows with non missing data exist in weightdistribution */
+					  %else %do;
+						  data aggdistribution;
+						  format n min max mean sd best12.;
+						  call missing(of _all_);
+						  run;
+					  %end;
 					  
 					  data appendixsubgroup_&sub._&cat.;
 					    length dpidsiteid $10;
