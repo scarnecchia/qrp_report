@@ -1891,7 +1891,7 @@
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
         /* check lab covariates to see if they have the same sortorder values */
         proc sort data = baseline_aggregatefinal nodupkey dupout=lab_dups(where=(prxmatch('/LBRES|LBUNIT/',metvar))); 
-            by analysisgrp table weight sortorder1 sortorder2 sortorder3 sortorder4;
+            by analysisgrp table weight subgroup subgroupcat sortorder1 sortorder2 sortorder3 sortorder4;
         run;
 
             /* if there are rows, then there are unit labels with the same first letter that are the same length */
@@ -1906,7 +1906,7 @@
             run;
 
             proc sort data = lab_dups;
-                by analysisgrp table weight sortinglabel sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight subgroup subgroupcat sortinglabel sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             /* Increment the last sorting variable by observation number */
@@ -1917,17 +1917,17 @@
             run;
 
             proc sort data = lab_dups;
-                by analysisgrp table weight metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight subgroup subgroupcat metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             proc sort data = baseline_aggregatefinal;
-                by analysisgrp table weight metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight subgroup subgroupcat metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             /* put updated rows back in the main dataset */
             data baseline_aggregatefinal;
                 update baseline_aggregatefinal lab_dups;
-                by analysisgrp table weight metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight subgroup subgroupcat metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
             %end;
         %end;
