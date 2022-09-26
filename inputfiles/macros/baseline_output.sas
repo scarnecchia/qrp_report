@@ -133,7 +133,7 @@
 
 			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
 			%let num_covnotinps_nolab=1;
-			%if &labcharacteristics ^= missing %then %do;
+			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
 				%create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
 	  
 				proc sort data= covarname(keep=cov_varname where=(upcase(cov_varname) in (&labcharscomma))) out=labcovar(rename=cov_varname=cov);
@@ -303,10 +303,10 @@
 		   %if &comorbidscore = Y %then %do; 18 %end;
 		   /* Lab characteristics specified. For L2 reports, restrict to Unweighted cohort */
 		   %if (&reporttype. = T2L2 or &reporttype. = T4L2) and %index(&weight.,Unweighted) > 0 and (&ratio. eq F or %index(&table.,Adjusted) eq 0) %then %do;
-		   		%if &labcharacteristics. ^= missing %then %do; 20 %end;
+		   		%if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;
 		   %end;
 		   %else %if (&reporttype. ne T2L2 and &reporttype. ne T4L2) %then %do;
-		   		%if &labcharacteristics. ^= missing %then %do; 20 %end;
+		   		%if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;
 		   %end;
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
@@ -472,7 +472,7 @@
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
-              %if &labcharacteristics. ^= missing %then %do; 
+              %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
               if prxmatch('/^(Test record|No test record|Test records with missing or unknown units)$|Test record in/', strip(label)) then do;
               		call define(_col_,'style','style={indent=25}');
               end;
@@ -619,7 +619,7 @@
         run;
 
         /* Assign patient/episode label for lab footnote based on cohortdef value */
-        %if &labcharacteristics. ^= missing %then %do; 
+        %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
         	%if %sysfunc(prxmatch(/01|04/,&cohortdef)) %then %let patientepi = patients; 
         	%else %if %sysfunc(prxmatch(/02|03/,&cohortdef)) %then %let patientepi = episodes;
         %end;
