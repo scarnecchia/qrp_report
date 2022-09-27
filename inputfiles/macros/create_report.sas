@@ -111,7 +111,7 @@
             quit;
 
             %if %sysfunc(countw(&viewsprojid., ' '))>1 | %sysfunc(countw(&viewswptype., ' '))>1 | %sysfunc(countw(&viewswpid., ' '))>1 %then %do;
-                %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have different values. Sentinel Views datasets will reside in a folder that may not match workplan;
+                %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have incompatible values. Sentinel Views datasets will reside in a folder that may not match workplan;
                 %let viewsprojid_wptype_wpid = %scan(&viewsprojid., 1)_%scan(&viewswptype., 1)_%scan(&viewswpid., 1);
             %end;
             %else %do;
@@ -330,8 +330,8 @@
 * Produce Views output                                             
 ***************************************************************************************************;
 
-    %if %UPCASE(&outputviewsdata)=Y %then %do;
-	  %l1_dataviz_convert;
+    %if &outputviewsdata=Y %then %do;
+	  %l1_sentinel_views_convertdata;
     %end;			
 
 /*************************************************************************************************/
