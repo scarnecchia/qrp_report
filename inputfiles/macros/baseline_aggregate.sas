@@ -109,7 +109,7 @@
                 proc contents data = &infile noprint out=_labvarsname(keep=name);
                 run;
 
-                %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+                %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
                 
                 /* Check to see if specified lab covariates exist */
                 proc sql noprint;
@@ -390,7 +390,7 @@
 		    proc contents data = _temp_baseline_labcovars noprint out=_labvarsname(keep=name label);
 		    run;
 
-		    %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+		    %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
 		    
 		    /* Check to see if specified lab covariates exist */
 		    proc sql noprint;
