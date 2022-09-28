@@ -2,12 +2,10 @@
 *                                      SENTINEL PROGRAM
 ***************************************************************************************************
 *
-* PROGRAM: l1_dataviz_convert.sas
+* PROGRAM: l1_sentinel_views_convertdata.sas
 * CREATED (mm/dd/yyyy): 08/12/2021
-* LAST MODIFIED: 08/12/2021
-* VERSION: 1.0.0
 *
-* PURPOSE: Transform QRP_REPORT L1 MSOC folder data
+* PURPOSE: Transform QRP_REPORT L1 MSOCDATA folder data
 *
 * MAJOR STEPS:
 *
@@ -23,7 +21,7 @@
 *
 ***************************************************************************************************;
 
-%macro l1_dataviz_convert;
+%macro l1_sentinel_views_convertdata;
 
 	%let msocdatadsn=;
 	proc sql noprint;
@@ -32,74 +30,31 @@
         into :msocdatadsn separated by '@'
         from dictionary.tables 
         where libname = 'MSOCDATA';
-
-        select distinct lower(reqid)
-        into :reqid trimmed
-        from output.dpinfo;
     quit;
-	
+
     %do z = 1 %to %sysfunc(countw(&msocdatadsn,@));
-    	%let msocdata = %scan(&msocdatadsn,&z,@);
+
+    	%let out_table = %scan(&msocdatadsn,&z,@);
 
         /* Start checking to ensure certain variables exist in the data - If not, set them up to missing */
 
-    	%if %index(&msocdata,CIDA) and ^%index(&msocdata,CENSOR) and ^%index(&msocdata,FOLLOWUPTIME) %then %do;
+    	%if %index(&out_table,CIDA) and ^%index(&out_table,CENSOR) and ^%index(&out_table,FOLLOWUPTIME) %then %do;
 
-        %let dsid=%sysfunc(open(&msocdata));
-        %let check_age=%sysfunc(varnum(&dsid,agegroup));
-        %let check_sex=%sysfunc(varnum(&dsid,sex));
-        %let check_year=%sysfunc(varnum(&dsid,year));
-        %let check_month=%sysfunc(varnum(&dsid,month));
-        %let check_quarter=%sysfunc(varnum(&dsid,quarter));
-        %let check_zip3=%sysfunc(varnum(&dsid,zip3));
-        %let check_state=%sysfunc(varnum(&dsid,state));
-        %let check_hhs=%sysfunc(varnum(&dsid,hhs_reg));
-        %let check_cbreg=%sysfunc(varnum(&dsid,cb_reg));
-        %let check_zipuncertain=%sysfunc(varnum(&dsid,zip_uncertain));
-        %let check_race=%sysfunc(varnum(&dsid,race));
-        %let check_hispanic=%sysfunc(varnum(&dsid,hispanic));
-        %let rc=%sysfunc(close(&dsid));
-
-        /* if columns are missing, initialize them */
-        data &msocdata;
-            set &msocdata;
-            %if &check_age=0 %then %do;
-            agegroup='';
-            agegroupnum=.;
-            %end;
-            %if &check_sex=0 %then %do;
-            sex='';
-            %end;
-            %if &check_year=0 %then %do;
-            year=.;
-            %end;
-            %if &check_month=0 %then %do;
-            month=.;
-            %end;
-            %if &check_quarter=0 %then %do;
-            quarter=.;
-            %end;
-            %if &check_zip3=0 %then %do;
-            zip3='';
-            %end;
-            %if &check_state=0 %then %do;
-            state='';
-            %end;
-            %if &check_hhs=0 %then %do;
-            hhs_reg='';
-            %end;
-            %if &check_cbreg=0 %then %do;
-            cb_reg='';
-            %end;
-            %if &check_zipuncertain=0 %then %do;
-            zip_uncertain='';
-            %end;
-            %if &check_race=0 %then %do;
-            race='';
-            %end;
-            %if &check_hispanic=0 %then %do;
-            hispanic='';
-            %end;
+        data &out_table ;
+            set &out_table;
+			%if %varexist(msocdata.agg_t1_cida,agegroup)		=0 %then %do; agegroup		=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,agegroupnum)		=0 %then %do; agegroupnum	=. ; %end;
+			%if %varexist(msocdata.agg_t1_cida,sex)				=0 %then %do; sex			=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,year)			=0 %then %do; year			=. ; %end;
+			%if %varexist(msocdata.agg_t1_cida,month)			=0 %then %do; month			=. ; %end;
+			%if %varexist(msocdata.agg_t1_cida,quarter)			=0 %then %do; quarter		=. ; %end;
+			%if %varexist(msocdata.agg_t1_cida,zip3)			=0 %then %do; zip3			=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,state)			=0 %then %do; state			=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,hhs_reg)			=0 %then %do; hhs_reg		=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,cb_reg)			=0 %then %do; cb_reg		=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,zip_uncertain)	=0 %then %do; zip_uncertain	=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,race)			=0 %then %do; race			=''; %end;
+			%if %varexist(msocdata.agg_t1_cida,hispanic)		=0 %then %do; hispanic		=''; %end;      
         run;
 
     	%let covarlistcomma = ;
@@ -135,7 +90,7 @@
                    ,A.eps_wevents,A.all_events,A.followuptime 
                    %end;
                    %if %length(&covarlistcomma) > 0 %then %do; ,&covarlistcomma %end; ,b.levelvars 
-    		from &msocdata A 
+    		from &out_table A 
     		left join userstrata(where=(tableid="&tabletype")) B
     		on a.level = b.levelid;
 
@@ -196,7 +151,7 @@
             covar_label = catx(',',&covarlabel);
             covarn = catx(',',&covarn);
         %end;
-        requestid="&reqid";
+        requestid="&viewsID";
         if indexw(agegroup,"(*ESC*){unicode '2265'x}") then agegroup=tranwrd(agegroup,"(*ESC*){unicode '2265'x}",">=");
         rename levelvars=stratification_vars dpidsiteid=dpid;
         drop level %if %length(&covarlist) > 0 %then %do; &covarlistspace covar_label_: covarn_:%end;
@@ -207,23 +162,28 @@
         %put &=covarn;
 
     	%end; /* Cida table */
-
-    	%else %if %index(&msocdata,BASELINE) %then %do;
-
+		
+    	%else %if %index(&out_table,BASELINE) %then %do;
+				
     	%let baselinevarlist = ;
+
     	proc sql noprint;
             /* Get all baseline dataset variables */
             select distinct name, 'sum(a.'||name||') as '||name
-            into :baselinevarlist separated by ' ', :baselinecommalist separated by ','
+            into :baselinevarlist separated by ' ', :baselinecommalist separated by ',' 
             from dictionary.columns
-            where libname = 'MSOCDATA' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name);
-
+            where libname = 'MSOCDATA' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
+			%if %symexist(labcharscomma)=1 %then %do;
+				and upcase(name) not in (&labcharscomma)
+			%end;	
+			;			
+			
             %let contvars = std_Age std_COMORBIDSCORE std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
             %do i = 1 %to %sysfunc(countw(&contvars));
                 %let stdvar = %scan(&contvars,&i);
             select count(distinct dpidsiteid)
             into :&stdvar.dpnum
-            from &msocdata
+            from &out_table
             where not missing(&stdvar);
             %end;
 
@@ -249,51 +209,51 @@
                     sqrt(divide(sum((A.N_Episodes-1)*A.std_NumGeneric**2),sum(A.N_episodes-&std_NumGenericdpnum))) as std_NumGeneric, 
                     sqrt(divide(sum((A.N_Episodes-1)*A.std_NumClass**2),sum(A.N_episodes-&std_NumClassdpnum))) as std_NumClass, 
                     sqrt(divide(sum((A.N_Episodes-1)*A.std_NumRx**2),sum(A.N_episodes-&std_NumRxdpnum))) as std_NumRx
-            	   from &msocdata a
+            	   from &out_table a
             	   group by a.runid, a.group
             union corr all
             select b.* 
-            from &msocdata b;
+            from &out_table b;
         quit;
 
         /* Create temporary subsets to manipulate the data */
-        data _temp1(drop=patient n_episodes mean_: std_:) 
-             _temp2(keep=runid group dpid patient n_episodes)
-            _temp3(keep=runid group dpid mean_: std_:);
+        data _sub1_agg_base(drop=patient n_episodes mean_: std_:) 
+             _sub2_agg_base(keep=runid group dpid patient n_episodes)
+             _sub3_agg_base(keep=runid group dpid mean_: std_:);
             set agg_baseline(rename=(dpidsiteid=dpid)); 
         run;
 
-        proc sort data=_temp1;
+        proc sort data=_sub1_agg_base;
             by group runid dpid;
         run;
 
         /* Transpose all stratifications into one column */
-        proc transpose data = _temp1 out=_temp1; 
+        proc transpose data = _sub1_agg_base out=_sub1_agg_base; 
             by group runid dpid;
         run; 
 
-        proc sort data = _temp2;
+        proc sort data = _sub2_agg_base;
             by group runid dpid;
         run;
 
-        /* De-dupe continuous statistics */
-        proc sort data = _temp3 nodupkey out=_temp3;
+		/* De-dupe continuous statistics */
+        proc sort data = _sub3_agg_base nodupkey out=_sub3_agg_base;
             by group runid dpid;
         run;
 
         proc sql noprint;
             select distinct upper(medproduse), upper(healthchar), upper(UtilizationIntensity)
-            into :medproduse separated by ',', :healthchar separated ',', :UtilizationIntensity separated by ','
+            into :medproduse separated by ' ', :healthchar separated ' ', :UtilizationIntensity separated by ' '
             from input.&baselinefile;
         quit;
-
+		
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
 
-        data _temp;
+        data _sub1_2_agg_base;
             length _name_ $200 variable_subgroup $60;
-            merge _temp1 _temp2;
+            merge _sub1_agg_base _sub2_agg_base;
             by group runid dpid;
             variable_subgroup = 'Custom Variables';
             if upcase(_name_) in (&medproduse) then variable_subgroup = "Medical Product Use";
@@ -346,9 +306,9 @@
         %else %if %upcase(&reporttype) = T2L1 %then %do;
         data views.agg_t2_baseline;
         %end;
-            set _temp _temp3;
+            set _sub1_2_agg_base _sub3_agg_base;
         length requestid $40;
-        requestid="&reqid.";
+        requestid="&viewsID";
         if not missing(mean_age) then do;
             if missing(variable) then variable = "Custom Variables";
             variable_subgroup = "Health Service Utilization Intensity Metrics";
@@ -357,9 +317,9 @@
 		
         %end; /* baseline table */
 
-        %else %if %index(&msocdata,FOLLOWUPTIME) %then %do;
+        %else %if %index(&out_table,FOLLOWUPTIME) %then %do;
 
-        %let dsid=%sysfunc(open(&msocdata));
+        %let dsid=%sysfunc(open(&out_table));
         %let check_age=%sysfunc(varnum(&dsid,agegroup));
         %let check_sex=%sysfunc(varnum(&dsid,sex));
         %let check_year=%sysfunc(varnum(&dsid,year));
@@ -369,8 +329,8 @@
         %let rc=%sysfunc(close(&dsid));
 
         /* if columns are missing, initialize them */
-        data &msocdata;
-            set &msocdata;
+        data &out_table;
+            set &out_table;
             %if &check_age=0 %then %do;
             agegroup='';
             agegroupnum=.;
@@ -403,7 +363,7 @@
             select A.runid, A.dpidsiteid, A.group, A.Level, A.censdays_value, A.censdays_value_cat, A.sex, A.agegroup, A.event_flag, 
                    A.year, A.month, A.quarter, A.Episodes, A.cens_elig, A.cens_dth, A.cens_dpend, A.cens_qryend, A.cens_episend, 
                    A.cens_spec, A.cens_event, b.levelvars
-            from &msocdata A 
+            from &out_table A 
             left join userstrata(where=(tableid="&tabletype")) B
             on a.level = b.levelid
             order by A.runid, A.dpidsiteid, A.group, A.Level, A.censdays_value, A.censdays_value_cat, A.sex, A.agegroup, A.event_flag, 
@@ -426,13 +386,15 @@
         data views.agg_t2_followuptime;
             set agg_followuptime;
             length requestid $40;
-            requestid="&reqid";
+            requestid="&viewsID";
             rename levelvars=stratification_vars dpidsiteid=dpid;
             drop level;
         run; 
+
+		proc datasets nowarn nolist lib=work kill; quit;
 
         %end; /* End follow-up time datast */
 
     %end; /* Loop all tables */
 	
-%mend l1_dataviz_convert;
+%mend l1_sentinel_views_convertdata;
