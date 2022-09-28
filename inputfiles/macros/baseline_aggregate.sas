@@ -354,7 +354,12 @@
 			/* Get lab covariate labels from L1 baseline table variables */
 			%if %length(&labcharacteristics) > 0 %then %do;
 				data _temp_baseline_labcovars_&b.;
-				set &dpsiteid..&runid._baseline_&periodid.(obs=1);
+				%if %str("&reporttype") = %str("T4L2") %then %do;
+					set &dpsiteid..&runid._baseline_mi_&periodid.(obs=1);
+				%end;
+				%else %do;
+					set &dpsiteid..&runid._baseline_&periodid.(obs=1);
+				%end;				
 				run;
 			%end;
         %end;		
