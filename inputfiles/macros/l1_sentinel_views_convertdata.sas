@@ -173,9 +173,9 @@
             into :baselinevarlist separated by ' ', :baselinecommalist separated by ',' 
             from dictionary.columns
             where libname = 'MSOCDATA' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
-			%if %symexist(labcharscomma)=1 %then %do;
-				and upcase(name) not in (&labcharscomma)
-			%end;	
+				%if %symexist(labcharscomma)=1 %then %do;
+					and not prxmatch("m/%sysfunc( tranwrd(%nrbquote(%sysfunc(compbl(&labcovars))),%str( ),%str(|)) )/oi", name)>0
+				%end;	
 			;			
 			
             %let contvars = std_Age std_COMORBIDSCORE std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
@@ -215,7 +215,7 @@
             select b.* 
             from &out_table b;
         quit;
-
+		
         /* Create temporary subsets to manipulate the data */
         data _sub1_agg_base(drop=patient n_episodes mean_: std_:) 
              _sub2_agg_base(keep=runid group dpid patient n_episodes)
@@ -391,10 +391,13 @@
             drop level;
         run; 
 
-		proc datasets nowarn nolist lib=work kill; quit;
-
         %end; /* End follow-up time datast */
 
+		proc datasets nolist nowarn lib=work; 
+			delete _sub: cida_levelvars agg_cida agg_baseline followuptime_levelvars agg_followuptime;
+		quit;
+		
+	
     %end; /* Loop all tables */
 	
 %mend l1_sentinel_views_convertdata;
