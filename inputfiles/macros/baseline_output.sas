@@ -124,6 +124,8 @@
 		/* Select Footnotes */  
 		%let covnotinpsorder = 19;
 		%let covnotinps_no =;
+		%global covarlablabels;
+		%let covarlablabels=;
 		/*need to reorder the footnotes when covnotinps is populated because 
 		  footnote placement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
@@ -136,7 +138,7 @@
 			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
 				%create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
 	  
-				proc sort data= covarname(keep=cov_varname where=(upcase(cov_varname) in (&labcharscomma))) out=labcovar(rename=cov_varname=cov);
+				proc sort data= covarname(keep=studyname cov_varname where=(upcase(cov_varname) in (&labcharscomma))) out=labcovar(rename=cov_varname=cov);
 				by cov_varname;
 				run; 
 
@@ -165,9 +167,22 @@
 				select sum(NoLab) into :num_covnotinps_nolab from CovNotInPS;
 				quit;
 
+				proc sql noprint undo_policy=none;
+				create table CovNotInPS as 
+				select * from CovNotInPS
+				where upcase(cov) in (&Covnotinps.);
+				quit;
+
+				proc sql noprint;
+				select studyname into :covarlablabels separated by ' ' from CovNotInPS;
+				quit;
+
+				%create_comma_charlist(inlist=&covarlablabels, outlist=covarlablabels);
+
 				%put &=num_covnotinps_nolab;
+				%put &=covarlablabels;
 	        %end;
-		
+	
 		  data _footnotes;
 		    length order 8;
 			format order 4.2;
@@ -465,9 +480,12 @@
                   then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
 			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
+			  %if %length(&covnotinps.) > 0 and %length(&covnotinps.) > 0 %then %do;
+				else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
+			  %end;
               %if %length(&covnotinps.) > 0 %then %do;
 			    /*Comborbidscore already included in &super_comorbidscore*/
-                else if metvar in (&covnotinps.) and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
+                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
               %end;
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
