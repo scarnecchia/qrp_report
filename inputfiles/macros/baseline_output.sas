@@ -480,7 +480,7 @@
                   then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
 			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
-			  %if %length(&covnotinps.) > 0 and %length(&covnotinps.) > 0 %then %do;
+			  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
 				else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
 			  %end;
               %if %length(&covnotinps.) > 0 %then %do;
