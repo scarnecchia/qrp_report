@@ -301,13 +301,8 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
-		   /* Lab characteristics specified. For L2 reports, restrict to Unweighted cohort */
-		   %if (&reporttype. = T2L2 or &reporttype. = T4L2) and %index(&weight.,Unweighted) > 0 and (&ratio. eq F or %index(&table.,Adjusted) eq 0) %then %do;
-		   		%if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;
-		   %end;
-		   %else %if (&reporttype. ne T2L2 and &reporttype. ne T4L2) %then %do;
-		   		%if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;
-		   %end;
+		   /* Lab characteristics specified. */
+		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;		   
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
             or (type='type4' and order in (-2 
