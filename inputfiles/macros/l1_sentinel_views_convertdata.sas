@@ -1,17 +1,21 @@
-***************************************************************************************************
-*                                      SENTINEL PROGRAM
-***************************************************************************************************
+****************************************************************************************************
+*                                           PROGRAM OVERVIEW
+****************************************************************************************************
 *
 * PROGRAM: l1_sentinel_views_convertdata.sas
-* CREATED (mm/dd/yyyy): 08/12/2021
+* Created (mm/dd/yyyy): 08/12/2021
 *
+*--------------------------------------------------------------------------------------------------
 * PURPOSE: Transform QRP_REPORT L1 MSOCDATA folder data
 *
-* MAJOR STEPS:
 *
-* KEY DEPENDENCIES/CONSTRAINTS/CAVEATS:
+*  Program inputs: agg_t1_baseline, agg_t1_cida
 *
-* PROGRAMMING NOTES:
+*  Program outputs:  agg_t1_baseline, agg_t1_cida
+*
+*  PARAMETERS:
+*
+*  Programming Notes:
 *
 *
 *--------------------------------------------------------------------------------------------------
@@ -21,7 +25,12 @@
 *
 ***************************************************************************************************;
 
+
 %macro l1_sentinel_views_convertdata;
+
+	proc datasets library=views kill; run; quit;
+
+	proc copy in=msocdata out=views memtype=data; run;
 
 	%let msocdatadsn=;
 	proc sql noprint;
@@ -34,28 +43,30 @@
 
     %do z = 1 %to %sysfunc(countw(&msocdatadsn,@));
 
-    	%let out_table = %scan(&msocdatadsn,&z,@);
-
+    	%let msocdata = %scan(&msocdatadsn,&z,@);
+		%let out_table= views.%scan(&msocdata,2,.);
+	
         /* Start checking to ensure certain variables exist in the data - If not, set them up to missing */
 
     	%if %index(&out_table,CIDA) and ^%index(&out_table,CENSOR) and ^%index(&out_table,FOLLOWUPTIME) %then %do;
-
+			
         data &out_table ;
             set &out_table;
-			%if %varexist(msocdata.agg_t1_cida,agegroup)		=0 %then %do; agegroup		=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,agegroupnum)		=0 %then %do; agegroupnum	=. ; %end;
-			%if %varexist(msocdata.agg_t1_cida,sex)				=0 %then %do; sex			=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,year)			=0 %then %do; year			=. ; %end;
-			%if %varexist(msocdata.agg_t1_cida,month)			=0 %then %do; month			=. ; %end;
-			%if %varexist(msocdata.agg_t1_cida,quarter)			=0 %then %do; quarter		=. ; %end;
-			%if %varexist(msocdata.agg_t1_cida,zip3)			=0 %then %do; zip3			=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,state)			=0 %then %do; state			=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,hhs_reg)			=0 %then %do; hhs_reg		=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,cb_reg)			=0 %then %do; cb_reg		=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,zip_uncertain)	=0 %then %do; zip_uncertain	=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,race)			=0 %then %do; race			=''; %end;
-			%if %varexist(msocdata.agg_t1_cida,hispanic)		=0 %then %do; hispanic		=''; %end;      
+			%if %varexist(&out_table,agegroup)		=0 %then %do; agegroup		=''; %end;
+			%if %varexist(&out_table,agegroupnum)	=0 %then %do; agegroupnum	=. ; %end;
+			%if %varexist(&out_table,sex)			=0 %then %do; sex			=''; %end;
+			%if %varexist(&out_table,year)			=0 %then %do; year			=. ; %end;
+			%if %varexist(&out_table,month)			=0 %then %do; month			=. ; %end;
+			%if %varexist(&out_table,quarter)		=0 %then %do; quarter		=. ; %end;
+			%if %varexist(&out_table,zip3)			=0 %then %do; zip3			=''; %end;
+			%if %varexist(&out_table,state)			=0 %then %do; state			=''; %end;
+			%if %varexist(&out_table,hhs_reg)		=0 %then %do; hhs_reg		=''; %end;
+			%if %varexist(&out_table,cb_reg)			=0 %then %do; cb_reg		=''; %end;
+			%if %varexist(&out_table,zip_uncertain)	=0 %then %do; zip_uncertain	=''; %end;
+			%if %varexist(&out_table,race)			=0 %then %do; race			=''; %end;
+			%if %varexist(&out_table,hispanic)		=0 %then %do; hispanic		=''; %end;      
         run;
+		
 
     	%let covarlistcomma = ;
     	%let covarlist = ;
@@ -65,7 +76,7 @@
             select distinct 'a.'||name, name 
             into :covarlistcomma separated by ',', :covarlistspace separated by ' '
             from dictionary.columns 
-            where libname = 'MSOCDATA' and lower(memname) contains 'cida' 
+            where libname = 'VIEWS' and lower(memname) contains 'cida' 
             						   and lower(memname) not contains 'censor' 
                                        and lower(memname) not contains 'followuptime'
             						   and lower(name) like 'covar%';
@@ -172,10 +183,8 @@
             select distinct name, 'sum(a.'||name||') as '||name
             into :baselinevarlist separated by ' ', :baselinecommalist separated by ',' 
             from dictionary.columns
-            where libname = 'MSOCDATA' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
-				%if %symexist(labcharscomma)=1 %then %do;
-					and not prxmatch("m/%sysfunc( tranwrd(%nrbquote(%sysfunc(compbl(&labcovars))),%str( ),%str(|)) )/oi", name)>0
-				%end;	
+            where libname = 'VIEWS' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
+			and ^ prxmatch("m/n_covar|mean_covar|std_covar|lbres|lbunit/oi", name) ;
 			;			
 			
             %let contvars = std_Age std_COMORBIDSCORE std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
@@ -215,6 +224,7 @@
             select b.* 
             from &out_table b;
         quit;
+		
 		
         /* Create temporary subsets to manipulate the data */
         data _sub1_agg_base(drop=patient n_episodes mean_: std_:) 
@@ -392,12 +402,23 @@
         run; 
 
         %end; /* End follow-up time datast */
-
+		
 		proc datasets nolist nowarn lib=work; 
 			delete _sub: cida_levelvars agg_cida agg_baseline followuptime_levelvars agg_followuptime;
 		quit;
 		
-	
+						
     %end; /* Loop all tables */
+
+	proc sql noprint;
+		select memname into :dropfromviews separated by ' '
+		from dictionary.tables 
+		where libname = 'VIEWS'
+		and ^prxmatch("m/agg_t1_baseline|agg_t1_cida/oi", memname);
+	quit;
 	
+	proc datasets library=views nolist nowarn;
+    	delete &dropfromviews;
+	quit;	
+		
 %mend l1_sentinel_views_convertdata;
