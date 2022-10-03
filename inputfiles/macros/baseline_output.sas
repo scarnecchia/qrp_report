@@ -136,9 +136,11 @@
 			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
 			%let num_covnotinps_nolab=1;
 			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
-				%create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+				%let tempvarlabs=%upcase(&labcharacteristics);
+
+				%baseline_expand_parameters(var=tempvarlabs);
 	  
-				proc sort data= covarname(keep=studyname cov_varname where=(upcase(cov_varname) in (&labcharscomma))) out=labcovar(rename=cov_varname=cov);
+				proc sort data= covarname(keep=studyname cov_varname where=(upcase(cov_varname) in (&tempvarlabs))) out=labcovar(rename=cov_varname=cov);
 				by cov_varname;
 				run; 
 
