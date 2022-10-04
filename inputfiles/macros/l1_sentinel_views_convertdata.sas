@@ -9,13 +9,20 @@
 * PURPOSE: Transform QRP_REPORT L1 MSOCDATA folder data
 *
 *
-*  Program inputs: agg_t1_baseline, agg_t1_cida
+*  Program inputs: 
+*	input.[baselinefile]
+*	agg_baseline_[PeriodID]
+*	agg_[ReportType]_cida   
 *
-*  Program outputs:  agg_t1_baseline, agg_t1_cida
+*  Program outputs:  
+*	agg_[ReportType]_baseline
+*	agg_[ReportType]_cida
+*	agg_t2_followuptime
+
+*  PARAMETERS: 
+*	requestID: 5 Token Request ID
 *
-*  PARAMETERS:
-*
-*  Programming Notes:
+*  Programming Notes: Calls %baseline_expand_parameters macro 
 *
 *
 *--------------------------------------------------------------------------------------------------
@@ -25,17 +32,16 @@
 *
 ***************************************************************************************************;
 
+%macro l1_sentinel_views_convertdata(requestID);
 
-%macro l1_sentinel_views_convertdata;
+	proc datasets library=views kill nowarn nolist; run; quit;
 
-	proc datasets library=views kill; run; quit;
-
+	/* Datasets not converted to Sentinel Views will be deleted */
 	proc copy in=msocdata out=views memtype=data; run;
 
-	%let msocdatadsn=;
 	proc sql noprint;
 		/* Read in all datasets */
-        select catx('.','msocdata',memname) 
+        select memname 
         into :msocdatadsn separated by '@'
         from dictionary.tables 
         where libname = 'MSOCDATA';
@@ -43,9 +49,8 @@
 
     %do z = 1 %to %sysfunc(countw(&msocdatadsn,@));
 
-    	%let msocdata = %scan(&msocdatadsn,&z,@);
-		%let out_table= views.%scan(&msocdata,2,.);
-	
+		%let out_table= views.%scan(&msocdatadsn,&z,@);
+
         /* Start checking to ensure certain variables exist in the data - If not, set them up to missing */
 
     	%if %index(&out_table,CIDA) and ^%index(&out_table,CENSOR) and ^%index(&out_table,FOLLOWUPTIME) %then %do;
@@ -61,12 +66,11 @@
 			%if %varexist(&out_table,zip3)			=0 %then %do; zip3			=''; %end;
 			%if %varexist(&out_table,state)			=0 %then %do; state			=''; %end;
 			%if %varexist(&out_table,hhs_reg)		=0 %then %do; hhs_reg		=''; %end;
-			%if %varexist(&out_table,cb_reg)			=0 %then %do; cb_reg		=''; %end;
+			%if %varexist(&out_table,cb_reg)		=0 %then %do; cb_reg		=''; %end;
 			%if %varexist(&out_table,zip_uncertain)	=0 %then %do; zip_uncertain	=''; %end;
 			%if %varexist(&out_table,race)			=0 %then %do; race			=''; %end;
 			%if %varexist(&out_table,hispanic)		=0 %then %do; hispanic		=''; %end;      
         run;
-		
 
     	%let covarlistcomma = ;
     	%let covarlist = ;
@@ -162,7 +166,7 @@
             covar_label = catx(',',&covarlabel);
             covarn = catx(',',&covarn);
         %end;
-        requestid="&viewsID";
+        requestid="&requestID";
         if indexw(agegroup,"(*ESC*){unicode '2265'x}") then agegroup=tranwrd(agegroup,"(*ESC*){unicode '2265'x}",">=");
         rename levelvars=stratification_vars dpidsiteid=dpid;
         drop level %if %length(&covarlist) > 0 %then %do; &covarlistspace covar_label_: covarn_:%end;
@@ -184,7 +188,7 @@
             into :baselinevarlist separated by ' ', :baselinecommalist separated by ',' 
             from dictionary.columns
             where libname = 'VIEWS' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
-			and ^ prxmatch("m/n_covar|mean_covar|std_covar|lbres|lbunit/oi", name) ;
+			and ^ prxmatch("m/n_covar|mean_covar|std_covar|lbres|lbunit|notestrecord/oi", name) ;
 			;			
 			
             %let contvars = std_Age std_COMORBIDSCORE std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
@@ -224,8 +228,7 @@
             select b.* 
             from &out_table b;
         quit;
-		
-		
+
         /* Create temporary subsets to manipulate the data */
         data _sub1_agg_base(drop=patient n_episodes mean_: std_:) 
              _sub2_agg_base(keep=runid group dpid patient n_episodes)
@@ -256,7 +259,7 @@
             into :medproduse separated by ' ', :healthchar separated ' ', :UtilizationIntensity separated by ' '
             from input.&baselinefile;
         quit;
-		
+
         %baseline_expand_parameters(var =medproduse);
         %baseline_expand_parameters(var =healthchar);
         %baseline_expand_parameters(var =UtilizationIntensity);
@@ -318,7 +321,7 @@
         %end;
             set _sub1_2_agg_base _sub3_agg_base;
         length requestid $40;
-        requestid="&viewsID";
+        requestid="&requestID";
         if not missing(mean_age) then do;
             if missing(variable) then variable = "Custom Variables";
             variable_subgroup = "Health Service Utilization Intensity Metrics";
@@ -396,7 +399,7 @@
         data views.agg_t2_followuptime;
             set agg_followuptime;
             length requestid $40;
-            requestid="&viewsID";
+            requestid="&requestID";
             rename levelvars=stratification_vars dpidsiteid=dpid;
             drop level;
         run; 
@@ -406,10 +409,10 @@
 		proc datasets nolist nowarn lib=work; 
 			delete _sub: cida_levelvars agg_cida agg_baseline followuptime_levelvars agg_followuptime;
 		quit;
-		
-						
+	
     %end; /* Loop all tables */
 
+	/*Remove MSOCDATA datasets not converted to the Sentinel Views data dictionary*/
 	proc sql noprint;
 		select memname into :dropfromviews separated by ' '
 		from dictionary.tables 
