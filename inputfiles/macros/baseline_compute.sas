@@ -1867,21 +1867,24 @@
             drop agegroup agegroupnum;
         run;
 
+        /* Stack label datasets together */
+        data baseline_labels_stacked;
+            set baseline_labels:;
+        run;
+
         /* Merge in alphabetical sortorder into baseline labels dataset */
         %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
-            %do labelcounter = &switch_counter %to 0 %by -1;
             proc sql noprint undo_policy=none; 
-                create table baseline_labels&labelcounter. as 
+                create table baseline_labels_stacked as 
                 select a.*, b.alphabeticalorder as sortorder2 length=3
-                from baseline_labels&labelcounter.(drop=sortorder2) a 
+                from baseline_labels_stacked(drop=sortorder2) a 
                 left join covarname_baseline b
                 on a.cov_varname = b.cov_varname;
             quit;
-            %end;
         %end;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+            set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
 			* Delete lab labels for Weighted tables since not implemented yet.
 			  TODO: remove this line in the future when weighted tables are available;
