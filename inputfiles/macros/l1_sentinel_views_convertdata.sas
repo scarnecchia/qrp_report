@@ -6,25 +6,30 @@
 * Created (mm/dd/yyyy): 08/12/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: Transform QRP_REPORT L1 MSOCDATA folder data
-*
+* PURPOSE: Transform qrp_report Types 1 and 2 MSOCDATA folder datasets for use in the Sentinel Views
+*          KPI Studio Platform.
 *
 *  Program inputs: 
-*   infolder.userstrata_[ReportType]
-*	input.[baselinefile]
-*	agg_baseline_[PeriodID]
-*	agg_[ReportType]_cida   
+    Input files:
+*   - work.userstrata.sas7bdat
+*	- input.[baselinefile]
+*   MSOCDATA datasets
+*	- msocdata.agg_baseline_[PeriodID]
+*	- msocdata.agg_[ReportType]cida   
+*	- msocdata.agg_t2followuptime 
 *
 *  Program outputs:  
-*	agg_[ReportType]_baseline
-*	agg_[ReportType]_cida
-*	agg_t2_followuptime
-
+*	- agg_[ReportType]_baseline
+*	- agg_[ReportType]_cida
+*	- agg_t2_followuptime
+*
 *  PARAMETERS: 
-*	requestID: 5 Token Request ID
+*	requestID: 5 Token Request ID, defined in %create_report as &viewsID
 *
-*  Programming Notes: Calls %baseline_expand_parameters macro 
-*
+*  Programming Notes: 
+*   - This macro calls %baseline_expand_parameters macro 
+*   - summary and followup tables must be requested in the TABLEFILE in order to be available for
+*     inclusion in KPI studio
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
@@ -37,17 +42,19 @@
 
 	proc datasets library=views kill nowarn nolist; run; quit;
 
-	/* Datasets not converted to Sentinel Views will be deleted */
+	/* Copy all datasets from MSOCDATA to VIEWS folder for initial data processing */
+    /* Datasets not converted to Sentinel Views will be deleted */
 	proc copy in=msocdata out=views memtype=data; run;
 
+	/* Read in name of all datasets into macro variable &msocdatadsn */
 	proc sql noprint;
-		/* Read in all datasets */
         select memname 
         into :msocdatadsn separated by '@'
         from dictionary.tables 
         where libname = 'MSOCDATA';
     quit;
 
+    /*Loop through each table*/
     %do z = 1 %to %sysfunc(countw(&msocdatadsn,@));
 
 		%let out_table= views.%scan(&msocdatadsn,&z,@);
@@ -339,6 +346,8 @@
         %let check_month=%sysfunc(varnum(&dsid,month));
         %let check_quarter=%sysfunc(varnum(&dsid,quarter));
         %let check_eventflag=%sysfunc(varnum(&dsid,event_flag));
+        %let check_censdays=%sysfunc(varnum(&dsid,censdays_value));
+        %let check_censdayscat=%sysfunc(varnum(&dsid,censdays_value_cat));
         %let rc=%sysfunc(close(&dsid));
 
         /* if columns are missing, initialize them */
@@ -362,6 +371,12 @@
             %end;
             %if &check_eventflag=0 %then %do;
             event_flag='';
+            %end;
+            %if &check_censdays=0 %then %do;
+            censdays_value=.;
+            %end;
+            %if &check_censdayscat=0 %then %do;
+            censdays_value_cat='';
             %end;
         run;
 
@@ -417,7 +432,7 @@
 		select memname into :dropfromviews separated by ' '
 		from dictionary.tables 
 		where libname = 'VIEWS'
-		and ^prxmatch("m/agg_t1_baseline|agg_t1_cida/oi", memname);
+		and ^prxmatch("m/agg_t1_baseline|agg_t1_cida|agg_t2_cida|agg_t2_baseline|agg_t2_followuptime/oi", memname);
 	quit;
 	
 	proc datasets library=views nolist nowarn;
