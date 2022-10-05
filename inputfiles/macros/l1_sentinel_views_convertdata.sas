@@ -10,6 +10,7 @@
 *
 *
 *  Program inputs: 
+*   infolder.userstrata_[ReportType]
 *	input.[baselinefile]
 *	agg_baseline_[PeriodID]
 *	agg_[ReportType]_cida   
@@ -167,7 +168,6 @@
             covarn = catx(',',&covarn);
         %end;
         requestid="&requestID";
-        if indexw(agegroup,"(*ESC*){unicode '2265'x}") then agegroup=tranwrd(agegroup,"(*ESC*){unicode '2265'x}",">=");
         rename levelvars=stratification_vars dpidsiteid=dpid;
         drop level %if %length(&covarlist) > 0 %then %do; &covarlistspace covar_label_: covarn_:%end;
         ;
@@ -403,7 +403,7 @@
             rename levelvars=stratification_vars dpidsiteid=dpid;
             drop level;
         run; 
-
+	
         %end; /* End follow-up time datast */
 		
 		proc datasets nolist nowarn lib=work; 

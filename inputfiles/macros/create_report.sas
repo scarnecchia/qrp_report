@@ -87,29 +87,30 @@
             %let viewsID = &ReqID;
         %end;
         %else %do;
-           proc sql noprint;
-                select distinct projid
-                into :viewsprojid separated by ' '
-                from output.dpinfo;
 
-                select distinct wptype
-                into :viewswptype separated by ' '
-                from output.dpinfo;
+			proc summary data = output.dpinfo missing;
+				class projid wptype wpid dpid dpversion;
+				ways 1 ;
+				output out=unique;
+			run;
 
-                select distinct wpid
-                into :viewswpid separated by ' '
-                from output.dpinfo;
-
-                select distinct dpid
-                into :viewsdpid separated by ' '
-                from output.dpinfo;
-
-                select distinct dpversion
-                into :viewsdpversion separated by ' '
-                from output.dpinfo
-                order by dpversion;
-            quit;
-
+			proc sql noprint;
+			select projid, wptype, wpid, dpid, dpversion
+				into :viewsprojid separated by ' ',
+					:viewswptype separated by ' ',
+					:viewswpid separated by ' ',
+					:viewsdpid separated by ' ',
+					:viewsdpversion separated by ' ' 
+				from unique
+				order by dpversion;
+			quit;			
+		
+			%let viewsprojid=%cmpres(&viewsprojid);
+			%let viewswptype=%cmpres(&viewswptype);	
+			%let viewswpid=%cmpres(&viewswpid);
+			%let viewsdpid=%cmpres(&viewsdpid);
+			%let viewsdpversion=%cmpres(&viewsdpversion);
+		
             %if %sysfunc(countw(&viewsprojid., ' '))>1 | %sysfunc(countw(&viewswptype., ' '))>1 | %sysfunc(countw(&viewswpid., ' '))>1 %then %do;
                 %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have incompatible values. Sentinel Views datasets will reside in a folder that may not match workplan;
                 %let viewsprojid_wptype_wpid = %scan(&viewsprojid., 1)_%scan(&viewswptype., 1)_%scan(&viewswpid., 1);
@@ -125,8 +126,9 @@
             %if %sysfunc(countw(&viewsdpversion., ' '))>1 %then %do;
                 %let viewsdpversion = %scan(&viewsdpversion., %sysfunc(countw(&viewsdpversion., ' ')));
             %end;
-
-            %let viewsID = &viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.;
+	
+			%let viewsID = %sysfunc(compress(&viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.));
+	
         %end;
 		
         /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
