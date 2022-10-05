@@ -1475,7 +1475,7 @@
                 %baselinecomputemetrics(table=Switchstep_&switch_count., weight=Unweighted, dataout=baseline_aggregatetab&switch_count., labelout=baseline_labels&switch_count.);
             %end;
         %end;
-        
+     
         /*stack all tables*/
         data baseline_aggregate_prelabel;
             set baseline_aggregatetab:;
@@ -1827,6 +1827,9 @@
             end;
             
             if missing(label) then delete;
+			* For L2 weighted tables, delete Laboratory Characteristics since not implemented yet. 
+			  TODO: remove this line in the future when weighted tables are available;
+			if grouper="Laboratory Characteristics" and weight="Weighted" then delete;
 
             keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 sortorder3 sortorder4 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
@@ -1864,28 +1867,34 @@
             drop agegroup agegroupnum;
         run;
 
+        /* Stack label datasets together */
+        data baseline_labels_stacked;
+            set baseline_labels:;
+        run;
+
         /* Merge in alphabetical sortorder into baseline labels dataset */
         %if %str("&covarsort") = %str("A") and %quote(&labcharacteristics) ^= %str("missing") %then %do;
-            %do labelcounter = &switch_counter %to 0 %by -1;
             proc sql noprint undo_policy=none; 
-                create table baseline_labels&labelcounter. as 
+                create table baseline_labels_stacked as 
                 select a.*, b.alphabeticalorder as sortorder2 length=3
-                from baseline_labels&labelcounter.(drop=sortorder2) a 
+                from baseline_labels_stacked(drop=sortorder2) a 
                 left join covarname_baseline b
                 on a.cov_varname = b.cov_varname;
             quit;
-            %end;
         %end;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels:(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+            set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
+			* Delete lab labels for Weighted tables since not implemented yet.
+			  TODO: remove this line in the future when weighted tables are available;
+			if weight = "Weighted" and sortorder3=-1 then delete;
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
         /* check lab covariates to see if they have the same sortorder values */
         proc sort data = baseline_aggregatefinal nodupkey dupout=lab_dups(where=(prxmatch('/LBRES|LBUNIT/',metvar))); 
-            by sortorder1 sortorder2 sortorder3 sortorder4;
+            by analysisgrp table weight %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end; sortorder1 sortorder2 sortorder3 sortorder4;
         run;
 
             /* if there are rows, then there are unit labels with the same first letter that are the same length */
@@ -1900,7 +1909,7 @@
             run;
 
             proc sort data = lab_dups;
-                by sortinglabel sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end; sortinglabel sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             /* Increment the last sorting variable by observation number */
@@ -1911,17 +1920,17 @@
             run;
 
             proc sort data = lab_dups;
-                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end; metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             proc sort data = baseline_aggregatefinal;
-                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end; metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
 
             /* put updated rows back in the main dataset */
             data baseline_aggregatefinal;
                 update baseline_aggregatefinal lab_dups;
-                by metvar sortorder1 sortorder2 sortorder3 sortorder4;
+                by analysisgrp table weight %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end; metvar sortorder1 sortorder2 sortorder3 sortorder4;
             run;
             %end;
         %end;

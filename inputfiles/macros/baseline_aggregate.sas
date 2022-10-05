@@ -109,7 +109,7 @@
                 proc contents data = &infile noprint out=_labvarsname(keep=name);
                 run;
 
-                %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+                %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
                 
                 /* Check to see if specified lab covariates exist */
                 proc sql noprint;
@@ -350,7 +350,19 @@
                      &GROUPTABLE.(where=(runid="&runid.")) as y
                 where x.analysisgrp = y.group;
             quit;
-        %end;
+
+			/* Get lab covariate labels from L1 baseline table variables */
+			%if %length(&labcharacteristics) > 0 %then %do;
+				data _temp_baseline_labcovars_&b.;
+				%if %str("&reporttype") = %str("T4L2") %then %do;
+					set &dpsiteid..&runid._baseline_mi_&periodid.(obs=1);
+				%end;
+				%else %do;
+					set &dpsiteid..&runid._baseline_&periodid.(obs=1);
+				%end;				
+				run;
+			%end;
+        %end;		
 
         /*Stack baseline tables*/
         data _temp_baseline_stacked;
@@ -367,6 +379,99 @@
                 if comp_mean=. then comp_mean = 0;
             end;
         run;
+
+		/* If lab covariates specified, create comma separated list to ensure they exist in data */
+		%let checkbaselinelabvars=;
+		%if %length(&labcharacteristics) > 0 %then %do;
+			data _temp_baseline_labcovars;
+			set _temp_baseline_labcovars_:;
+			run;
+
+		    proc contents data = _temp_baseline_labcovars noprint out=_labvarsname(keep=name label);
+		    run;
+
+		    %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
+		    
+		    /* Check to see if specified lab covariates exist */
+		    proc sql noprint;
+		    select name 
+		    into :checkbaselinelabvars 
+		    from _labvarsname
+		    where upper(name) in (&labcharscomma);
+		    quit;
+		%end;
+
+		%if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;
+			
+			/* Compute Lab No Test Record observation */
+			proc sort data=_temp_baseline_stacked;
+			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
+			run;
+			
+			proc transpose data=_temp_baseline_stacked(where=(/* Restrict to Unweighted cohort */ weight="Unweighted" and vartype="dichotomous" and 
+															 (metvar in:("COVAR") or metvar="N_EPISODES")))
+						   out=_temp_baseline_stacked_trans;
+			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
+			id metvar;
+			run;
+
+			data _temp_baseline_stacked_trans;
+			set _temp_baseline_stacked_trans;	
+		    %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
+		    %let labvar = %scan(&labcharacteristics,&labvars);
+				* Computation should be revised for Weighted cohort;
+				if index(_name_, "w") > 0 or index(_name_, "w2") > 0 then  &labvar._NOTESTRECORD = &labvar;
+				else if index(_name_, "std") > 0 then &labvar._NOTESTRECORD = 1 - &labvar;
+		    	else &labvar._NOTESTRECORD = n_episodes - &labvar;
+		    %end;
+		    run;              
+
+			proc transpose data=_temp_baseline_stacked_trans
+						   out=_temp_baseline_stacked_trans(rename=_NAME_=metvar);
+			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
+			id _NAME_;
+			run;	
+
+			data _temp_baseline_stacked;		
+			set _temp_baseline_stacked
+				_temp_baseline_stacked_trans(where=(index(metvar, "_NOTESTRECORD") > 0));
+			run;
+
+			proc sort data=_temp_baseline_stacked;
+			by metvar;
+			run;
+
+			* Get lab covariate labels;
+			data _labvarsname;
+			set _labvarsname;
+			format metvar $30.;
+			name=upcase(name);
+			if index(name,"COVAR")>0;
+			metvar=tranwrd(name, "MEAN_", "");
+			metvar=strip(tranwrd(metvar, "STD_", ""));
+			drop name;
+			run;
+
+			proc sort nodupkey data=_labvarsname;
+			by metvar;
+			run;
+
+			data _temp_baseline_stacked(rename=label=_label_);
+			merge _temp_baseline_stacked(in=a)
+				  _labvarsname;
+			by metvar;
+			if a;
+			if index(metvar, "_NOTESTRECORD")>0 then do;
+				label="No test record";
+
+				* Computation should be revised in the future for Weighted cohort;
+				exp_S2=exp_std*(1-exp_std);
+				comp_S2=comp_std*(1-comp_std);		
+		        ad=exp_std-comp_std;        
+		        if sum(exp_S2,comp_S2)>0 then sd=(exp_std-comp_std)/sqrt((exp_S2+comp_S2)/2);
+			end;
+			run;		
+		%end;
 
         /*Add &DPNUMBER suffix to variables*/
         proc datasets library=work noprint;
