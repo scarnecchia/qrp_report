@@ -128,7 +128,11 @@
             %end;
 	
 			%let viewsID = %sysfunc(compress(&viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.));
-	
+
+            /*clean up*/
+            proc datasets nowarn nolist lib=work;
+                delete unique;
+            quit;
         %end;
 		
         /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
