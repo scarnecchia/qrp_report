@@ -448,7 +448,7 @@
 					 run;
 				   
 				     %addtotoc(tabnum= Appendix %upcase(&tableletter.), 
-				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
+				     	  	   caption = %bquote(Distribution of &weightdisttitle. Weights After Trimming for &analysisgrplabel. in the &database. from &startdateformatted. to &&enddate&periodid.formatted., by Data Partner (DP)&titlesuffix., Weight: &weightschemelong.),
 				     	  	   appendixtype = appendixWeightDist);                 
                   %end; /* subgroup */				
               
