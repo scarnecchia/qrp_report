@@ -632,8 +632,6 @@
 				run;
 			%end; /* Lab result/unit denominators */
 
-/*DMA; %if &table. eq Adjusted %then %abort cancel;*/
-
             data &dataout.&suffix.; 
                 missing R;
                 length metvar $32;
@@ -1442,7 +1440,7 @@
                 /*Removing FOLLOWUPTIME/EVENT rows*/
                 if index(MetVar,'FOLLOWUP') > 0 or index(MetVar,'EVENT') > 0 then delete;
             run;
-/*DMA; %if &table. eq Adjusted %then %abort cancel;*/
+
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
                                     covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
