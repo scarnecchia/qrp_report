@@ -401,46 +401,11 @@
 		    quit;
 		%end;
 
-		%if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;
-			
-			/* Compute Lab No Test Record observation */
-			proc sort data=_temp_baseline_stacked;
-			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
-			run;
-			
-			proc transpose data=_temp_baseline_stacked(where=(/* Restrict to Unweighted cohort */ weight="Unweighted" and vartype="dichotomous" and 
-															 (metvar in:("COVAR") or metvar="N_EPISODES")))
-						   out=_temp_baseline_stacked_trans;
-			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
-			id metvar;
-			run;
-
-			data _temp_baseline_stacked_trans;
-			set _temp_baseline_stacked_trans;	
-		    %do labvars = 1 %to %sysfunc(countw(&labcharacteristics));
-		    %let labvar = %scan(&labcharacteristics,&labvars);
-				* Computation should be revised for Weighted cohort;
-				if index(_name_, "w") > 0 or index(_name_, "w2") > 0 then  &labvar._NOTESTRECORD = &labvar;
-				else if index(_name_, "std") > 0 then &labvar._NOTESTRECORD = 1 - &labvar;
-		    	else &labvar._NOTESTRECORD = n_episodes - &labvar;
-		    %end;
-		    run;              
-
-			proc transpose data=_temp_baseline_stacked_trans
-						   out=_temp_baseline_stacked_trans(rename=_NAME_=metvar);
-			by analysisgrp group1 group2 table weight subgroup subgroupcat vartype runid order monitoringperiod;
-			id _NAME_;
-			run;	
-
-			data _temp_baseline_stacked;		
-			set _temp_baseline_stacked
-				_temp_baseline_stacked_trans(where=(index(metvar, "_NOTESTRECORD") > 0));
-			run;
-
+		%if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;		
 			proc sort data=_temp_baseline_stacked;
 			by metvar;
 			run;
-
+	
 			* Get lab covariate labels;
 			data _labvarsname;
 			set _labvarsname;
@@ -450,7 +415,7 @@
 			metvar=tranwrd(name, "MEAN_", "");
 			metvar=strip(tranwrd(metvar, "STD_", ""));
 			drop name;
-			run;
+			run;			
 
 			proc sort nodupkey data=_labvarsname;
 			by metvar;
@@ -461,15 +426,7 @@
 				  _labvarsname;
 			by metvar;
 			if a;
-			if index(metvar, "_NOTESTRECORD")>0 then do;
-				label="No test record";
-
-				* Computation should be revised in the future for Weighted cohort;
-				exp_S2=exp_std*(1-exp_std);
-				comp_S2=comp_std*(1-comp_std);		
-		        ad=exp_std-comp_std;        
-		        if sum(exp_S2,comp_S2)>0 then sd=(exp_std-comp_std)/sqrt((exp_S2+comp_S2)/2);
-			end;
+			if index(metvar, "_NOTESTRECORD")>0 then label="No test record";
 			run;		
 		%end;
 

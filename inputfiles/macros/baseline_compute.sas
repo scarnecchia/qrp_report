@@ -1827,10 +1827,7 @@
             end;
             
             if missing(label) then delete;
-			* For L2 weighted tables, delete Laboratory Characteristics since not implemented yet. 
-			  TODO: remove this line in the future when weighted tables are available;
-			if grouper="Laboratory Characteristics" and weight="Weighted" then delete;
-
+			
             keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 sortorder3 sortorder4 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                 %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
@@ -1886,9 +1883,6 @@
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
-			* Delete lab labels for Weighted tables since not implemented yet.
-			  TODO: remove this line in the future when weighted tables are available;
-			if weight = "Weighted" and sortorder3=-1 then delete;
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
