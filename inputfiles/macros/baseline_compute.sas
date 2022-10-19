@@ -1731,7 +1731,7 @@
                 /* For Numeric labs - Test record row */
                 if prxmatch('/^N_/',metvar) and prxmatch('/LBUNIT/',metvar) then do;
                     if strip(_label_) = 'UNKNOWN' then do; 
-                    %assignbaselinevars(label="Test records with missing or unknown units", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=999, sortorder4=999);
+                    %assignbaselinevars(label="Test record with missing or unknown units", grouper="Laboratory Characteristics", sortorder1=14, sortorder2=, sortorder3=999, sortorder4=999);
                     end;
                     else do;
                     %assignbaselinevars(label=cat("Test record in ",strip(_label_)), grouper="Laboratory Characteristics",sortorder1=14, sortorder2=, sortorder3=rank(strip(_label_)), sortorder4=rank(strip(_label_))+length(_label_));
