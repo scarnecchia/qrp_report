@@ -488,7 +488,7 @@
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
-              if prxmatch('/^(Test record|No test record|Test records with missing or unknown units)$|Test record in/', strip(label)) then do;
+              if prxmatch('/^(Test record|No test record|Test record with missing or unknown units)$|Test record in/', strip(label)) then do;
               		call define(_col_,'style','style={indent=25}');
               end;
               else if prxmatch('/^(Borderline|Negative|Positive|Invalid categorical result|Undetermined|Mean, standard deviation)$|\|/', strip(label)) then do; 
