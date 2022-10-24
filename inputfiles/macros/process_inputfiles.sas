@@ -176,6 +176,21 @@
     %end;
 
 /***************************************************************************************************
+*  	Check if only the appendixfile is requested                                                     
+***************************************************************************************************/
+ 	%let numfiles=0;
+	%let numappendixfile=0;
+	proc sql noprint;
+		select count(*) into :numfiles from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
+
+		select count(*) into :numappendixfile from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) = "appendixfile";
+	quit;
+
+	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
+
+/***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
 ***************************************************************************************************/
 
@@ -183,9 +198,11 @@
     /* User specified dpinfofile */
     %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
-        %put ERROR: (Sentinel) DPINFOFILE is missing.;
-        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
-        %abort;
+		%if &produceappendixfileonly. eq N %then %do;
+	        %put ERROR: (Sentinel) DPINFOFILE is missing.;
+	        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
+	        %abort;
+		%end;
     %end;
     %else %do;
         /*Number of DPs to include in report and list of DPs*/
@@ -257,6 +274,22 @@
             from output.dpinfo;
         quit;
     %end;
+
+/***************************************************************************************************
+*   Read in APPENDIXFILE if specified                                               
+***************************************************************************************************/
+    %if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
+        data appendixfile;
+            set input.&appendixfile.;
+            /*defensive*/
+            appendixtype = lowcase(appendixtype);
+            codestab = lowcase(codestab);
+            /*all files will default to .xlsx*/
+            if index(codesfile,'.') then codesfile=scan(codesfile,1,'.');
+        run;
+    %end;
+    
+	%if &produceappendixfileonly. = Y %then %goto cleanup;
     
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
@@ -809,20 +842,6 @@
         data _null_;
             set labelfile(where=(labeltype='censorlabel'));
             call symputx(cats(labelvar,'_label'), label);
-        run;
-    %end;
-
-/***************************************************************************************************
-*   Read in APPENDIXFILE if specified                                               
-***************************************************************************************************/
-    %if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
-        data appendixfile;
-            set input.&appendixfile.;
-            /*defensive*/
-            appendixtype = lowcase(appendixtype);
-            codestab = lowcase(codestab);
-            /*all files will default to .xlsx*/
-            if index(codesfile,'.') then codesfile=scan(codesfile,1,'.');
         run;
     %end;
     
@@ -2229,6 +2248,7 @@
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
+%cleanup:
 
      proc datasets noprint nowarn lib = work;
       delete _: inclusioncodes_shell;

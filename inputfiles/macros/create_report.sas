@@ -61,6 +61,9 @@
     /*read in input files and process input file parameters*/
     %process_inputfiles();
 
+	/*check if only appendixfile should be processed*/
+	%if &produceappendixfileonly. = Y %then %goto createtoc;
+
 ***************************************************************************************************;
 * Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
@@ -289,6 +292,7 @@
 ***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
+%createtoc:
 
     %create_tableofcontents();
 

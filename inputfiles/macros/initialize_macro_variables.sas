@@ -166,6 +166,10 @@
     %global unicode_list;
     %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
 
+	/* To determine if appendixfile only should be processed */
+	%global produceappendixfileonly;
+	%let produceappendixfileonly=N;
+
 	/* Leave behind report */
 	%global reportid dpfile logofile;
 
