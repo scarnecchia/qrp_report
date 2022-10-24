@@ -208,7 +208,7 @@
             ]
         },
         {
-            "id": "COHORTCODES",
+            "id": "COHORTCODESFILE",
             "name": "Cohort Codes File",
             "analysis_types": [
                 1,
@@ -1785,7 +1785,7 @@
 				{
                     "id": "EVENTCOUNT",
                     "name": "HOI Characterization De-duplication Process",
-                    "sas_format": "3",
+                    "sas_format": "2",
                     "info": "Users can use this field to determine how this characterization should count the number of HOI",
                     "input_type": "SingleSelect",
                     "values": [
@@ -3002,7 +3002,7 @@
 			]
 		},
 		{
-			"id": "UTILFILE",
+			"id": "UTILIZATIONFILE",
             "name": "Utilization File",
             "analysis_types": [
                 1,
@@ -3341,7 +3341,7 @@
 			]
 		},
 		{
-			"id": "COMBOFILECODES",
+			"id": "COMBOCODES",
             "name": "Combo Codes Input File",
             "analysis_types": [
                 1,
@@ -3350,7 +3350,7 @@
                 5
             ],
             "required": false,
-            "required_files": ["COMBOFILE"],
+            "required_files": ["COMBO"],
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file612-typeall-combocodes.md",
             "table_type": "generic",
@@ -3516,7 +3516,7 @@
 			]
 		},
 		{
-			"id": "COMBOFILE",
+			"id": "COMBO",
             "name": "Combo Input File",
             "analysis_types": [
                 1,
@@ -3525,7 +3525,7 @@
                 5
             ],
             "required": false,
-            "required_files": ["COMBOFILECODES"],
+            "required_files": ["COMBOCODES"],
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file614-typeall-combo.md",
             "table_type": "generic",
@@ -3765,7 +3765,7 @@
 			]
 		},
 		{
-			"id": "COMBOFILESTOCK",
+			"id": "COMBOSTOCK",
             "name": "Combo Stockpiling Input File",
             "analysis_types": [
                 1,
