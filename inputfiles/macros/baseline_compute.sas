@@ -577,13 +577,69 @@
                 quit;
             %end; /*collapse_vars = race and stratifybydp = N*/
 
+			/* If lab characteristics are requested, compute denominators for results/units to assign missing indicator */
+			%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+				data _lbdenom(rename=metvar=denomvar %do i = 1 %to &num_dp; rename=exp_mean&i.=exp_lbdenom&i. %if "&includecomp" = "Y" %then %do; rename=comp_mean&i.=comp_lbdenom&i. %end; %end;);
+				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+			                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+			                             %end;));
+				if index(metvar, "COVAR") > 0 and not (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar) or prxmatch('/NOTESTRECORD/',metvar)) then output;
+				if (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar)) and vartype="dichotomous" then do;;
+					metvar=tranwrd(metvar,"LBUNIT","LBRES");
+					output;
+				end;
+				keep analysisgrp table weight metvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;   
+					%do i = 1 %to &num_dp;
+						exp_mean&i. %if "&includecomp" = "Y" %then %do;	comp_mean&i.%end;
+					%end;;
+				run;
+
+				proc sort data=_lbdenom;
+				by analysisgrp table weight denomvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;;
+				run;
+
+				data &dataout.&suffix.; 
+				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+			                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+			                             %end;));
+				if prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar) then do;	
+					if vartype="continuous" then denomvar="N_" || strip(metvar);
+					else denomvar=substr(metvar, 3, index(metvar, "LBRES") + index(metvar,"LBUNIT")-3);
+				end;
+				else denomvar="";
+				run;
+
+				proc sort data=&dataout.&suffix.;
+				by analysisgrp table weight denomvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;;
+				run;
+
+				data &dataout.&suffix.;
+				merge &dataout.&suffix.(in=a)
+					  _lbdenom;
+				by analysisgrp table weight denomvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;;
+				if a;
+				drop denomvar;
+				run;
+
+				proc datasets nowarn noprint lib=work;
+		            delete _lbdenom;
+		        quit;
+			%end;
+			%else %do;
+				data &dataout.&suffix.; 
+				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+			                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+			                             %end;));
+				run;
+			%end; /* Lab result/unit denominators */
+
             data &dataout.&suffix.; 
                 missing R;
                 length metvar $32;
-                set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
-                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
-                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
-                             %end;));
+				set &dataout.&suffix.;
 
                 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
                     format subgroup subgroupcat $11.;
@@ -643,6 +699,14 @@
                     end;
                 %end;
 
+				/*Aggregate lab covariate denominators*/
+				%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+					agg_exp_lbdenom = sum(of exp_lbdenom1-exp_lbdenom&num_dp.);
+					%if "&includecomp" = "Y" %then %do;
+						agg_comp_lbdenom = sum(of comp_lbdenom1-comp_lbdenom&num_dp.);
+					%end;
+				%end;
+
                 /* Character variables - format exposed and comparison groups when DP stratification is requested */
                 %if "&stratifybydp" = "Y" %then %do;
                 %do i = 1 %to &num_dp;
@@ -674,15 +738,17 @@
                     end;
                     else do;
                         /* For lab categories, categorical labs get set to 0/NaN, numeric labs get set to 0.0/NaN */
-                        /* Controls lab specific formatting for dichotomous rows - will need changing in future */
-                        if &&&n_&table._episodes_exp&i > 0 and exp_mean&i = 0 and exp_w1_&i = 0 then do;
+                        /* Controls lab specific formatting for dichotomous rows */
+						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+                        if &&&n_&table._episodes_exp&i > 0 and exp_mean&i in (0,.) and exp_lbdenom&i in (0,.) then do;
                             if prxmatch("/(LBRES)/",metvar) then do; 
                                 exp_mean&i._char = '0';                        
                                 exp_std&i._char = 'NaN';     
                             end;  
-                        end;   
+                        end; 
+						%end; 
                         /*set to . if no patients in cohort*/
-                        if exp_mean&i = 0 and &&&n_&table._episodes_exp&i = 0 then do;
+                        if exp_mean&i in (0,.) and &&&n_&table._episodes_exp&i = 0 then do;
                             exp_mean&i._char = '.';
                             exp_std&i._char = '.';
                         end;
@@ -713,15 +779,17 @@
                     end;
                     else do;
                         /* For lab categories, categorical labs get set to 0/NaN, numeric labs get set to 0.0/NaN */
-                        /* Controls lab specific formatting for dichotomous rows - will need changing in future */
-                        if &&&n_&table._episodes_comp&i > 0 and comp_mean&i = 0 and comp_w1_&i = 0 then do;
+                        /* Controls lab specific formatting for dichotomous rows */
+						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+                        if &&&n_&table._episodes_comp&i > 0 and comp_mean&i in (0,.) and comp_lbdenom&i in (0,.) then do;
                             if prxmatch("/(LBRES)/",metvar) then do; 
                                 comp_mean&i._char = '0';                        
                                 comp_std&i._char = 'NaN';     
                             end;                    
                         end;
+						%end;
                         /*set to . if no patients in cohort*/
-                        if comp_mean&i = 0 and &&&n_&table._episodes_comp&i = 0 then do; 
+                        if comp_mean&i in (0,.) and &&&n_&table._episodes_comp&i = 0 then do; 
                             comp_mean&i._char = '.';
                             comp_std&i._char = '.';
                         end;
@@ -741,6 +809,20 @@
                     
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
+						/* Controls lab specific formatting for lab specific rows */
+						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+						if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBRES/',metvar) and 
+						   ((exp_mean&i = 0 and exp_std&i = 0) or (missing(exp_mean&i) and missing(exp_std&i))) then do;
+						    if exp_lbdenom&i. <= 0 then do; 
+						    exp_mean&i._char = 'NaN';
+						    exp_std&i._char = 'NaN';
+						    end;
+						    else if exp_lbdenom&i. > 0  then do;
+						    exp_mean&i._char = '0.0';
+						    exp_std&i._char = 'NaN';
+						    end;
+						end;
+						%end;
                     %end;
                     %else %do;
                     if exp_mean&i = 0 and missing(exp_std&i) and prxmatch('/LBRES/', metvar) then exp_std&i._char='NaN';
@@ -750,7 +832,7 @@
                         exp_mean&i._char = '0.0';
                         exp_std&i._char = 'NaN';
                         end;
-                        /* Controls lab specific formatting for lab specific rows - will need changing in future */
+                        /* Controls lab specific formatting for lab specific rows */
                         else if &&&n_&table._episodes_exp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if exp_w1_&i. <= 0 then do; 
                             exp_mean&i._char = 'NaN';
@@ -780,6 +862,20 @@
                     
                     %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                     if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
+						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+						/* Controls lab specific formatting for lab specific rows */
+						if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBRES/',metvar) and 
+						   ((comp_mean&i = 0 and comp_std&i = 0) or (missing(comp_mean&i) and missing(comp_std&i))) then do;
+						    if comp_lbdenom&i. <= 0 then do; 
+						    comp_mean&i._char = 'NaN';
+						    comp_std&i._char = 'NaN';
+						    end;
+						    else if comp_lbdenom&i. > 0 then do; 
+						    comp_mean&i._char = '0.0';
+						    comp_std&i._char = 'NaN';
+						    end;
+						end;
+						%end;
                     %end;
                     %else %do;
                     if comp_mean&i = 0 and missing(comp_std&i) and prxmatch('/LBRES/', metvar) then comp_std&i._char='NaN';
@@ -788,7 +884,7 @@
                         comp_mean&i._char = '0.0';
                         comp_std&i._char = 'NaN';
                         end;
-                        /* Controls lab specific formatting for continuous rows - will need changing in future */
+                        /* Controls lab specific formatting for continuous rows */
                         else if &&&n_&table._episodes_comp&i > 0 and prxmatch('/LBRES/',metvar) then do;
                             if comp_w1_&i. <= 0 then do; 
                             comp_mean&i._char = 'NaN';
@@ -1005,12 +1101,14 @@
                         %end;
                     end;
                     /* Calculate lab covariate percentages */
+					%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
                     else if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if missing(exp_mean0) or exp_mean0=0 then do;
-                            if agg_exp_w <= 0 then exp_std0_char = 'NaN';
+                            if prxmatch('/LBRES/',metvar) and agg_exp_lbdenom <= 0 then exp_std0_char = 'NaN';
+							if prxmatch('/LBUNIT/',metvar) and agg_exp_w <= 0 then exp_std0_char = 'NaN';
                             if total_exp_patients <= 0 then do;
                                 exp_mean0_char = '.'; 
                                 exp_std0_char = '.';
@@ -1021,7 +1119,8 @@
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if missing(comp_mean0) or comp_mean0=0 then do;
-                            if agg_comp_w <= 0 then exp_std0_char = 'NaN';
+                            if prxmatch('/LBRES/',metvar) and agg_comp_lbdenom <= 0 then comp_std0_char = 'NaN';
+							if prxmatch('/LBUNIT/',metvar) and agg_comp_w <= 0 then comp_std0_char = 'NaN';
                             if total_comp_patients <= 0 then do;
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
@@ -1029,6 +1128,7 @@
                         end;
                         %end;
                     end;
+					%end;
                     else do;
                         if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,agg_exp_w);
                         if missing(exp_mean0) then exp_std0 = .;
@@ -1144,13 +1244,17 @@
                     if ^missing(exp_mean_num) AND (agg_exp_w gt 0) then exp_mean0 = divide(exp_mean_num,agg_exp_w) ;
                     exp_mean0_char = compress(put(exp_mean0,comma12.1));
                     if exp_mean_num > 0 and agg_exp_w = 0 then exp_mean0_char = 'NaN';
-                    if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and missing(exp_mean0) and missing(agg_exp_w) then exp_mean0_char = 'NaN';
+					%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+                    if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and agg_exp_lbdenom = 0 then exp_mean0_char = 'NaN';
+					%end;
                     if missing(exp_mean_num) then exp_mean0_char = '.';
                     %if "&includecomp" = "Y" %then %do;
                     if ^missing(comp_mean_num) AND (agg_comp_w gt 0) then comp_mean0 = divide(comp_mean_num,agg_comp_w) ;
                     comp_mean0_char = compress(put(comp_mean0,comma12.1));
                     if comp_mean_num > 0 and agg_comp_w = 0 then comp_mean0_char = 'NaN';
-                    if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and missing(comp_mean0) and missing(agg_comp_w) then comp_mean0_char = 'NaN';
+					%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+                    if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and agg_comp_lbdenom = 0 then comp_mean0_char = 'NaN';
+					%end;
                     if missing(comp_mean_num) then comp_mean0_char = '.';
                     %end;            
 
@@ -1174,8 +1278,7 @@
                         if exp_mean0 > 0 and exp_std0 = 0 and agg_exp_w = 1 then exp_std0_char = 'NaN';
                         if exp_std_sum > 0 and total_exp_episodes - count = 0 then exp_std0_char = 'NaN';
                         if missing(exp_std_sum) then exp_std0_char = '.';
-                        if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and missing(exp_std0) and missing(agg_exp_w) then exp_std0_char = 'NaN';
-                        %if "&includecomp" = "Y" %then %do;
+						%if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_std_sum) AND (agg_comp_w gt 0) then comp_std0 = sqrt(divide(comp_std_sum,(agg_comp_w - count)));
                         comp_std0_char = compress(put(comp_std0,comma12.1));
                         if comp_mean0 = 0 and comp_std0 = 0 then comp_std0_char = 'NaN'; 
@@ -1183,9 +1286,15 @@
                         if comp_mean0 > 0 and comp_std0 = 0 and agg_comp_w = 1 then comp_std0_char='NaN';
                         if comp_std_sum > 0 and total_comp_episodes - count = 0 then comp_std0_char = 'NaN';
                         if missing(comp_std_sum) then comp_std0_char = '.';
-                        if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and missing(comp_std0) and missing(agg_comp_w) then comp_std0_char = 'NaN';
                         %end;
                     %end;
+
+					%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+						if prxmatch('/LBRES/',metvar) and total_exp_episodes > 0 and agg_exp_lbdenom = 0 then exp_std0_char = 'NaN';
+						%if "&includecomp" = "Y" %then %do;
+							if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and agg_comp_lbdenom = 0 then comp_std0_char = 'NaN';                        
+						%end;
+					%end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         ad0 = exp_mean0 - comp_mean0;
