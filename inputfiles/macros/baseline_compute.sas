@@ -622,6 +622,10 @@
 				if a;
 				drop denomvar;
 				run;
+
+				proc datasets nowarn noprint lib=work;
+		            delete _lbdenom;
+		        quit;
 			%end;
 			%else %do;
 				data &dataout.&suffix.; 
