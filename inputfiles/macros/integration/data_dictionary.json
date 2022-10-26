@@ -2950,21 +2950,6 @@
                     "values": []
                 },
 				{
-                    "id": "KEEP",
-                    "name": "Keep Variable",
-                    "sas_format": "3",
-                    "info": "Indicates if the variable is needed for additional analyses",
-                    "input_type": "SingleSelect",
-                    "values": [
-						0,
-						1
-					],
-					"value_map": {
-						"0": "No, do not keep for additional analyses",
-						"1": "Yes, keep for additional analyses"
-					}
-                },
-				{
                     "id": "CODEDAYS",
                     "name": "Number of instances for the condition",
                     "sas_format": "3",
