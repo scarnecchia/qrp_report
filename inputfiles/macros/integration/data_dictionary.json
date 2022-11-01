@@ -23,7 +23,7 @@
     ],
     "input_files": [
         {
-            "id": "COHORTFILE",
+            "id": "cohortfile",
             "name": "Cohort File",
             "analysis_types": [
                 "1",
@@ -119,7 +119,11 @@
                     "values": [
                         "Y",
                         "N"
-                    ]
+                    ],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
                 },
                 {
                     "id": "SEX",
@@ -208,7 +212,7 @@
             ]
         },
         {
-            "id": "COHORTCODESFILE",
+            "id": "cohortcodes",
             "name": "Cohort Codes File",
             "analysis_types": [
                 1,
@@ -220,7 +224,7 @@
             "required_files": [],
             "info": "Allows the user to specify codes used to define exposures, outcomes, outcome incidence criteria, and live births using a set of drug, procedure/diagnosis, evidence of all-cause death, cause of death codes, and lab result values",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file590-typeall-cohortcodes.md",
-            "table_type": "group_codes",
+            "table_type": "group_code",
             "row_source": [
 				"cohort"
 			],
@@ -543,7 +547,7 @@
             ]
         },
         {
-            "id": "MONITORINGFILE",
+            "id": "monitoringfile",
             "name": "Monitoring File",
             "analysis_types": [
                 "1",
@@ -627,7 +631,7 @@
             ]
         },
 		{
-			"id": "QRP_PARAMETERS",
+			"id": "qrp_parameters",
             "name": "QRP Parameters File",
             "analysis_types": [
                 1,
@@ -680,7 +684,7 @@
 					],
 					"value_map":{
 						" ": "No additional analyses requested",
-						"TREE": "Perform a signal idenfitication analysis"
+						"TREE": "Perform a signal identification analysis"
 					}
                 },
 				{
@@ -742,11 +746,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MONITORINGFILE"
+						"monitoringfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MONITORINGFILE": "Include"
+						"monitoringfile": "Include"
 					}
                 },
 				{
@@ -757,11 +761,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"COHORTFILE"
+						"cohortfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"COHORTFILE": "Include"
+						"cohortfile": "Include"
 					}
                 },
 				{
@@ -772,11 +776,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TYPE1FILE"
+						"type1file"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TYPE1FILE": "Include"
+						"type1file": "Include"
 					}
                 },
 				{
@@ -787,11 +791,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TYPE2FILE"
+						"type2file"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TYPE2FILE": "Include"
+						"type2file": "Include"
 					}
                 },
 				{
@@ -802,11 +806,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TYPE4FILE"
+						"type4file"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TYPE4FILE": "Include"
+						"type4file": "Include"
 					}
                 },
 				{
@@ -817,11 +821,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TYPE5FILE"
+						"type5file"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TYPE5FILE": "Include"
+						"type5file": "Include"
 					}
                 },																
 				{
@@ -832,11 +836,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"COHORTCODES"
+						"cohortcodes"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"COHORTCODES": "Include"
+						"cohortcodes": "Include"
 					}
                 },
 				{
@@ -847,11 +851,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"INCLUSIONCODES"
+						"inclusioncodes"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"INCLUSIONCODES": "Include"
+						"inclusioncodes": "Include"
 					}
                 },
 				{
@@ -862,11 +866,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"COVARIATECODES"
+						"covariatecodes"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"COVARIATECODES": "Include"
+						"covariatecodes": "Include"
 					}
                 },
 				{
@@ -877,11 +881,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MFUFILE"
+						"mfufile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MFUFILE": "Include"
+						"mfufile": "Include"
 					}
                 },
 				{
@@ -892,11 +896,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"STOCKPILINGFILE"
+						"stockpilingfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"STOCKPILINGFILE": "Include"
+						"stockpilingfile": "Include"
 					}
                 },
 				{
@@ -907,11 +911,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"UTILFILE"
+						"utilfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"UTILFILE": "Include"
+						"utilfile": "Include"
 					}
                 },
 				{
@@ -922,11 +926,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"COMBOFILE"
+						"combofile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"COMBOFILE": "Include"
+						"combofile": "Include"
 					}
                 },
 				{
@@ -937,11 +941,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"COMORBFILE"
+						"comorbfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"COMORBFILE": "Include"
+						"comorbfile": "Include"
 					}
                 },
 				{
@@ -952,11 +956,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MODPREGDUR"
+						"modpregdur"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MODPREGDUR": "Include"
+						"modpregdur": "Include"
 					}
                 },
 				{
@@ -967,11 +971,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MICOHORTFILE"
+						"micohortfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MICOHORTFILE": "Include"
+						"micohortfile": "Include"
 					}
                 },
 				{
@@ -982,11 +986,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"USERSTRATA"
+						"userstrata"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"USERSTRATA": "Include"
+						"userstrata": "Include"
 					}
                 },
 				{
@@ -997,11 +1001,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"OVERLAPFILE"
+						"overlapfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"OVERLAPFILE": "Include"
+						"overlapfile": "Include"
 					}
                 },
 				{
@@ -1012,11 +1016,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"OVERLAPFILE_ADHERE"
+						"overlapfile_adhere"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"OVERLAPFILE_ADHERE": "Include"
+						"overlapfile_adhere": "Include"
 					}
                 },
 				{
@@ -1027,11 +1031,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"CONCFILE"
+						"concfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"CONCFILE": "Include"
+						"concfile": "Include"
 					}
                 },
 				{
@@ -1042,11 +1046,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MULTEVENTFILE"
+						"multeventfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MULTEVENTFILE": "Include"
+						"multeventfile": "Include"
 					}
                 },
 				{
@@ -1057,11 +1061,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"MULTEVENTFILE_ADHERE"
+						"multeventfile_adhere"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"MULTEVENTFILE_ADHERE": "Include"
+						"multeventfile_adhere": "Include"
 					}
                 },
 				{
@@ -1072,11 +1076,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"ITSFILE"
+						"itsfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"ITSFILE": "Include"
+						"itsfile": "Include"
 					}
                 },
 				{
@@ -1087,11 +1091,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"METADATAFILE"
+						"metadatafile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"METADATAFILE": "Include"
+						"metadatafile": "Include"
 					}
                 },
 				{
@@ -1102,11 +1106,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"ICD10ICD9MAP"
+						"icd10icd9map"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"ICD10ICD9MAP": "Include"
+						"icd10icd9map": "Include"
 					}
                 },
 				{
@@ -1117,11 +1121,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TREELOOKUP"
+						"treelookup"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TREELOOKUP": "Include"
+						"treelookup": "Include"
 					}
                 },
 				{
@@ -1132,11 +1136,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"TREEFILE"
+						"treefile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"TREEFILE": "Include"
+						"treefile": "Include"
 					}
                 },
 				{
@@ -1147,11 +1151,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"DRUGCLASSFILE"
+						"drugclassfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"DRUGCLASSFILE": "Include"
+						"drugclassfile": "Include"
 					}
                 },
 				{
@@ -1162,11 +1166,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"LABSCODEMAP"
+						"labscodemap"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"LABSCODEMAP": "Include"
+						"labscodemap": "Include"
 					}
                 },
 				{
@@ -1177,11 +1181,11 @@
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"ZIPFILE"
+						"zipfile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"ZIPFILE": "Include"
+						"zipfile": "Include"
 					}
                 },
 				{
@@ -1298,7 +1302,93 @@
 			]
 		},
 		{
-			"id": "MODPREGDUR",
+			"id": "userstrata",
+            "name": "User-Defined Strata File",
+            "analysis_types": [
+                1,
+				2,
+				4,
+				5
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "Defines both the ouput tables that will be returned as well as the stratifications of each output table",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file626-typeall-strata.md",
+            "table_type": "generic",
+            "row_source": [],
+			"row_parameter": " ",
+			"all_groups_required": false,
+			"parameters": [
+				{
+					"id": "TABLEID",
+					"name": "Output Table Identifier",
+					"sas_format": "$30",
+					"info": "CIDA output table identifier for which strata applies.",
+					"input_type": "SingleSelect",
+					"values": [
+						{
+							"1": [
+								"t1cida",
+								"t1censor"
+							],
+							"2": [
+								"t2cida",
+								"t2cidaprev",
+								"t2cidafollowuptime",
+								"t2censor",
+								"t2censorprev",
+								"t2treeanalysis",
+								"t2multevent",
+								"t2multeventprev",
+								"t2epigap",
+								"t2epigapprev",
+								"t2overlap",
+								"t2overlapprev",
+								"t2conc",
+								"t2its",
+								"t2its",
+								"t2itsprev"
+							],
+							"4": [
+								"t4treeanalysis",
+								"t4elig",
+								"t4preg",
+								"t4nopreg",
+								"t4preggstwk",
+								"t4nopreggstwk"
+							],
+							"5": [
+								"t5disp",
+								"t5episdur",
+								"t5first",
+								"t5alleps",
+								"t5censor",
+								"t5gaps",
+								"t5dose"
+							]
+						}
+					]
+				},
+				{
+					"id": "LEVELID",
+					"name": "Strata Level Identifier",
+					"sas_format": "$3",
+					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
+					"input_type": "Numeric",
+					"values": []
+				},
+				{
+					"id": "LEVELVARS",
+					"name": "Strata Level Variables",
+					"sas_format": "$30",
+					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
+					"input_type": "String",
+					"values": []
+				}
+			]
+		},
+		{
+			"id": "modpregdur",
             "name": "Modified Pregnancy Duration File",
             "analysis_types": [
                 4
@@ -1510,7 +1600,7 @@
 			]
 		},
 		{
-			"id": "TYPE1FILE",
+			"id": "type1file",
             "name": "Type 1 File",
             "analysis_types": [
                 1
@@ -1600,7 +1690,7 @@
 			]
 		},
 		{
-			"id": "TYPE2FILE",
+			"id": "type2file",
             "name": "Type 2 File",
             "analysis_types": [
                 2
@@ -1785,7 +1875,7 @@
 				{
                     "id": "EVENTCOUNT",
                     "name": "HOI Characterization De-duplication Process",
-                    "sas_format": "2",
+                    "sas_format": "3",
                     "info": "Users can use this field to determine how this characterization should count the number of HOI",
                     "input_type": "SingleSelect",
                     "values": [
@@ -1889,7 +1979,7 @@
 			]
 		},
 		{
-			"id": "TYPE4FILE",
+			"id": "type4file",
             "name": "Type 4 File",
             "analysis_types": [
                 4
@@ -2087,7 +2177,7 @@
 			]
 		},
 		{
-			"id": "TYPE5FILE",
+			"id": "type5file",
             "name": "Type 5 File",
             "analysis_types": [
                 5
@@ -2205,7 +2295,7 @@
 			]
 		},
 		{
-			"id": "REPORTPARAMETERS",
+			"id": "reportparameters",
             "name": "Report Parameters File",
             "analysis_types": [
                 1,
@@ -2241,7 +2331,7 @@
 			]
 		},
 		{
-			"id": "INCLUSIONCODES",
+			"id": "inclusioncodes",
             "name": "Inclusion/Exclusion Codes File",
             "analysis_types": [
                 1,
@@ -2652,7 +2742,7 @@
 			]
 		},
 		{
-			"id": "COVARIATECODES",
+			"id": "covariatescodes",
             "name": "Covariate Codes File",
             "analysis_types": [
                 1,
@@ -2948,7 +3038,7 @@
 			]
 		},
 		{
-			"id": "COMORBFILE",
+			"id": "comorbfile",
             "name": "Comorbidity Score File",
             "analysis_types": [
                 1,
@@ -3002,7 +3092,7 @@
 			]
 		},
 		{
-			"id": "UTILIZATIONFILE",
+			"id": "utilfile",
             "name": "Utilization File",
             "analysis_types": [
                 1,
@@ -3064,7 +3154,7 @@
 			]
 		},
 		{
-			"id": "STOCKPILINGFILE",
+			"id": "stockpilingfile",
             "name": "Stockpiling File",
             "analysis_types": [
                 1,
@@ -3169,7 +3259,7 @@
 			]
 		},
 		{
-			"id": "MFUFILE",
+			"id": "mfufile",
             "name": "Most Frequent Utilization File",
             "analysis_types": [
                 1,
@@ -3341,7 +3431,7 @@
 			]
 		},
 		{
-			"id": "COMBOCODES",
+			"id": "combofilecodes",
             "name": "Combo Codes Input File",
             "analysis_types": [
                 1,
@@ -3350,7 +3440,7 @@
                 5
             ],
             "required": false,
-            "required_files": ["COMBO"],
+            "required_files": ["COMBOFILE"],
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file612-typeall-combocodes.md",
             "table_type": "generic",
@@ -3516,7 +3606,7 @@
 			]
 		},
 		{
-			"id": "COMBO",
+			"id": "combofile",
             "name": "Combo Input File",
             "analysis_types": [
                 1,
@@ -3525,7 +3615,7 @@
                 5
             ],
             "required": false,
-            "required_files": ["COMBOCODES"],
+            "required_files": ["COMBOFILECODES"],
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file614-typeall-combo.md",
             "table_type": "generic",
@@ -3765,7 +3855,7 @@
 			]
 		},
 		{
-			"id": "COMBOSTOCK",
+			"id": "combofilestock",
             "name": "Combo Stockpiling Input File",
             "analysis_types": [
                 1,
@@ -3868,7 +3958,7 @@
 			]
 		},
 		{
-			"id": "CONCFILE",
+			"id": "concfile",
             "name": "Concomitant Use File",
             "analysis_types": [
                 2
@@ -3997,7 +4087,7 @@
 			]
 		},
 		{
-			"id": "MULTEVENTFILE",
+			"id": "multeventfile",
             "name": "Multiple Events File",
             "analysis_types": [
                 2
@@ -4126,7 +4216,7 @@
 			]
 		},
 		{
-			"id": "MULTEVENTFILE_ADHERE",
+			"id": "multeventfile_adhere",
             "name": "Multiple Events Adherence Definition File",
             "analysis_types": [
                 2
@@ -4223,7 +4313,7 @@
 			]
 		},
 		{
-			"id": "OVERLAPFILE",
+			"id": "overlapfile",
             "name": "Overlap File",
             "analysis_types": [
                 2
@@ -4363,7 +4453,7 @@
 			]
 		},
 		{
-			"id": "OVERLAPFILE_ADHERE",
+			"id": "overlapfile_adhere",
             "name": "Overlap Adherence Definition File",
             "analysis_types": [
                 2
@@ -4423,7 +4513,7 @@
 			]
 		},
 		{
-			"id": "MICOHORTFILE",
+			"id": "micohortfile",
             "name": "Mother-Infant Cohort File",
             "analysis_types": [
                 4

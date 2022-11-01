@@ -109,7 +109,7 @@
                 proc contents data = &infile noprint out=_labvarsname(keep=name);
                 run;
 
-                %create_comma_charlist(inlist=&labcharacteristics, outlist=labcharscomma);
+                %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
                 
                 /* Check to see if specified lab covariates exist */
                 proc sql noprint;
@@ -350,7 +350,19 @@
                      &GROUPTABLE.(where=(runid="&runid.")) as y
                 where x.analysisgrp = y.group;
             quit;
-        %end;
+
+			/* Get lab covariate labels from L1 baseline table variables */
+			%if %length(&labcharacteristics) > 0 %then %do;
+				data _temp_baseline_labcovars_&b.;
+				%if %str("&reporttype") = %str("T4L2") %then %do;
+					set &dpsiteid..&runid._baseline_mi_&periodid.(obs=1);
+				%end;
+				%else %do;
+					set &dpsiteid..&runid._baseline_&periodid.(obs=1);
+				%end;				
+				run;
+			%end;
+        %end;		
 
         /*Stack baseline tables*/
         data _temp_baseline_stacked;
@@ -367,6 +379,56 @@
                 if comp_mean=. then comp_mean = 0;
             end;
         run;
+
+		/* If lab covariates specified, create comma separated list to ensure they exist in data */
+		%let checkbaselinelabvars=;
+		%if %length(&labcharacteristics) > 0 %then %do;
+			data _temp_baseline_labcovars;
+			set _temp_baseline_labcovars_:;
+			run;
+
+		    proc contents data = _temp_baseline_labcovars noprint out=_labvarsname(keep=name label);
+		    run;
+
+		    %create_comma_charlist(inlist=%qsysfunc(compress(&labcharacteristics,%str(%"))), outlist=labcharscomma);
+		    
+		    /* Check to see if specified lab covariates exist */
+		    proc sql noprint;
+		    select name 
+		    into :checkbaselinelabvars 
+		    from _labvarsname
+		    where upper(name) in (&labcharscomma);
+		    quit;
+		%end;
+
+		%if %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 %then %do;		
+			proc sort data=_temp_baseline_stacked;
+			by metvar;
+			run;
+	
+			* Get lab covariate labels;
+			data _labvarsname;
+			set _labvarsname;
+			format metvar $30.;
+			name=upcase(name);
+			if index(name,"COVAR")>0;
+			metvar=tranwrd(name, "MEAN_", "");
+			metvar=strip(tranwrd(metvar, "STD_", ""));
+			drop name;
+			run;			
+
+			proc sort nodupkey data=_labvarsname;
+			by metvar;
+			run;
+
+			data _temp_baseline_stacked(rename=label=_label_);
+			merge _temp_baseline_stacked(in=a)
+				  _labvarsname;
+			by metvar;
+			if a;
+			if index(metvar, "_NOTESTRECORD")>0 then label="No test record";
+			run;		
+		%end;
 
         /*Add &DPNUMBER suffix to variables*/
         proc datasets library=work noprint;

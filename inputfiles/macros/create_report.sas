@@ -30,27 +30,31 @@
 ***************************************************************************************************;
 * Initialize global macro variables and read in input files                                  
 ***************************************************************************************************;
+
+    %put =====> MACRO CALLED: create_report;
+
     /* If leave behind report runs then use reportid for log suffix */
     %if &leavebehindreport = Y %then %do;
     /* Start log */
        proc printto log="&output.qrp_report_log&reportid..log" new;
        run;
     %end;
+
 	%else %do;
-       proc printto log="&output.qrp_report_log.log" new;
-	%end;
-	
-    %put =====> MACRO CALLED: create_report;
-	
-	/* Need to retain work datasets from qrp for leave behind report.
+    /* Need to retain work datasets from qrp for leave behind report.
        Repdata is set to work directory when leave behind report is run,
 	   and data for qrp report is in the msocdata folder	*/
-	%if &leavebehindreport = N %then %do;
 	   proc datasets nowarn nolist lib=work kill; quit;
 	   proc datasets nowarn nolist lib=repdata kill; quit;
 	   proc datasets nowarn nolist lib=msocdata kill; quit; 
-	%end;
 
+        /*read in JSON file and determine if there are any CSV files*/
+        %convert_inputfiles(lib=&INFOLDER, JSON_LIB=&infolder.macros/integration);
+        %convert_inputfiles(lib=&REPORTROOT.inputfiles/, JSON_LIB=&input.macros/integration);
+
+       proc printto log="&output.qrp_report_log.log" new;
+	%end;
+	
     /*Initialize global macro variables*/
     %initialize_macro_variables();
 
@@ -66,25 +70,112 @@
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
 
-    %if ^%index(&reporttype,TREE) %then %do;
+
+***************************************************************************************************;
+* Using requestID, create new folder for Sentinel Views output                                                
+***************************************************************************************************;
+
+    %if &OUTPUTVIEWSDATA. = Y %then %do;
 	
-***************************************************************************************************;
-*   Assign study start and end dates                                               
-***************************************************************************************************;
+        /*Determine folder name - 5 token request ID.
+            If dpid or versionID tokens differ then:
+                DPID: use NSDP
+                versionID: use the latest version (i.e. if combining v01, v02, then use v02. if combining b01 and v01, use v01)
+            If any of the 1st 3 tokens differ, write a warning in the log (i.e. can't aggregate across workplans)*/
 
-    %output_report_dates();
+        %if &leavebehindreport = Y %then %do;
+            %let viewsID = &ReqID;
+        %end;
+        %else %do;
 
-***************************************************************************************************;
-*   Create report formats and labels                                           
-***************************************************************************************************;
+			proc summary data = output.dpinfo missing;
+				class projid wptype wpid dpid dpversion;
+				ways 1 ;
+				output out=unique;
+			run;
 
-    %report_formats_labels();
+			proc sql noprint;
+			select projid, wptype, wpid, dpid, dpversion
+				into :viewsprojid separated by ' ',
+					:viewswptype separated by ' ',
+					:viewswpid separated by ' ',
+					:viewsdpid separated by ' ',
+					:viewsdpversion separated by ' ' 
+				from unique
+				order by dpversion;
+			quit;			
+		
+			%let viewsprojid=%cmpres(&viewsprojid);
+			%let viewswptype=%cmpres(&viewswptype);	
+			%let viewswpid=%cmpres(&viewswpid);
+			%let viewsdpid=%cmpres(&viewsdpid);
+			%let viewsdpversion=%cmpres(&viewsdpversion);
+		
+            %if %sysfunc(countw(&viewsprojid., ' '))>1 | %sysfunc(countw(&viewswptype., ' '))>1 | %sysfunc(countw(&viewswpid., ' '))>1 %then %do;
+                %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have incompatible values. Sentinel Views datasets will reside in a folder that may not match workplan;
+                %let viewsprojid_wptype_wpid = %scan(&viewsprojid., 1)_%scan(&viewswptype., 1)_%scan(&viewswpid., 1);
+            %end;
+            %else %do;
+                %let viewsprojid_wptype_wpid = &viewsprojid._&viewswptype._&viewswpid;
+            %end;
 
-***************************************************************************************************;
-* Baseline tables                                                      
-***************************************************************************************************;
+            %if %sysfunc(countw(&viewsdpid., ' '))>1 %then %do;
+                %let viewsdpid = nsdp;
+            %end;
 
-    %baseline_driver();
+            %if %sysfunc(countw(&viewsdpversion., ' '))>1 %then %do;
+                %let viewsdpversion = %scan(&viewsdpversion., %sysfunc(countw(&viewsdpversion., ' ')));
+            %end;
+	
+			%let viewsID = %sysfunc(compress(&viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.));
+
+            /*clean up*/
+            proc datasets nowarn nolist lib=work;
+                delete unique;
+            quit;
+        %end;
+		
+        /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
+        %if &leavebehindreport = Y %then %do;
+ 			proc printto log=log;
+			run;
+        %end;
+
+        options DLCREATEDIR ;
+        libname views "&output.&viewsID.&reportid.";
+        options NODLCREATEDIR;
+
+        %if &leavebehindreport = Y %then %do;
+ 			proc printto log="&output.qrp_report_log&reportid..log";
+			run;
+        %end;
+
+    %end;
+
+    /*Drop requestID tokens from dpinfo file*/
+    data output.dpinfo;
+        set output.dpinfo(drop=projid wptype wpid dpid);
+    run;
+	
+    ***************************************************************************************************;
+    *   Assign study start and end dates                                               
+    ***************************************************************************************************;
+
+    %if ^%index(&reporttype,TREE) %then %do;
+
+        %output_report_dates();
+
+    ***************************************************************************************************;
+    *   Create report formats and labels                                           
+    ***************************************************************************************************;
+
+        %report_formats_labels();
+
+    ***************************************************************************************************;
+    * Baseline tables                                                      
+    ***************************************************************************************************;
+
+        %baseline_driver();
 
     %end;
 
@@ -241,6 +332,14 @@
       %end;
     %end;
 
+***************************************************************************************************;
+* Produce Views output                                             
+***************************************************************************************************;
+
+    %if &outputviewsdata=Y %then %do;
+	  %l1_sentinel_views_convertdata(&viewsID);
+    %end;			
+
 /*************************************************************************************************/
 /* Run log checker                                                                               */
 /*************************************************************************************************/
@@ -253,10 +352,20 @@
 	%end;
 
 ***************************************************************************************************;
-*   Clean Work                                                                                 
+*   Clean directories                                                                                 
 ***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
+
+    /*remove filenames datasets if created*/
+    %if &leavebehindreport = N %then %do;
+    proc datasets nowarn nolist lib=input;
+        delete filenames format_values;
+    quit;
+    proc datasets nowarn nolist lib=infolder;
+        delete filenames format_values;
+    quit;
+    %end;
 
     /* End log */
     proc printto;
