@@ -461,10 +461,10 @@
                              title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T5 %then %do;
                              title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
@@ -496,10 +496,10 @@
                              title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T5 %then %do;
                              title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
