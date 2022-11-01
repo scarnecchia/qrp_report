@@ -219,16 +219,27 @@
                     case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumGeneric*A.N_Episodes),sum(A.N_episodes)) end as mean_NumGeneric, 
                     case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumClass*A.N_Episodes),sum(A.N_episodes)) end as mean_NumClass, 
 					case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumRx*A.N_Episodes),sum(A.N_episodes)) end as mean_NumRx, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_Age**2),sum(A.N_episodes-&std_Agedpnum))) end as std_Age, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_COMORBIDSCORE**2),sum(A.N_episodes-&std_COMORBIDSCOREdpnum))) end as std_COMORBIDSCORE, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumAV**2),sum(A.N_episodes-&std_NUMAVdpnum))) end as std_NumAV, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumOA**2),sum(A.N_episodes-&std_NUMOAdpnum))) end as std_NumOA, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIP**2),sum(A.N_episodes-&std_NUMIPdpnum))) end as std_NumIP, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIS**2),sum(A.N_episodes-&std_NUMISdpnum))) end as std_NumIS, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumED**2),sum(A.N_episodes-&std_NUMEDdpnum))) end as std_NumED, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumGeneric**2),sum(A.N_episodes-&std_NumGenericdpnum))) end as std_NumGeneric, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumClass**2),sum(A.N_episodes-&std_NumClassdpnum))) end as std_NumClass, 
-                    case when sum(A.N_Episodes) = 0 then . else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumRx**2),sum(A.N_episodes-&std_NumRxdpnum))) end as std_NumRx
+
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_Age**2) = . or sum(A.N_episodes-&std_Agedpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_Age**2),sum(A.N_episodes-&std_Agedpnum))) end as std_Age, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_COMORBIDSCORE**2) = . or sum(A.N_episodes-&std_COMORBIDSCOREdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_COMORBIDSCORE**2),sum(A.N_episodes-&std_COMORBIDSCOREdpnum))) end as std_COMORBIDSCORE, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumAV**2) = . or sum(A.N_episodes-&std_NUMAVdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumAV**2),sum(A.N_episodes-&std_NUMAVdpnum))) end as std_NumAV, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumOA**2) = . or sum(A.N_episodes-&std_NUMOAdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumOA**2),sum(A.N_episodes-&std_NUMOAdpnum))) end as std_NumOA, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumIP**2) = . or sum(A.N_episodes-&std_NUMIPdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIP**2),sum(A.N_episodes-&std_NUMIPdpnum))) end as std_NumIP, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumIS**2) = . or sum(A.N_episodes-&std_NUMISdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIS**2),sum(A.N_episodes-&std_NUMISdpnum))) end as std_NumIS, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumED**2) = . or sum(A.N_episodes-&std_NUMEDdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumED**2),sum(A.N_episodes-&std_NUMEDdpnum))) end as std_NumED, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumGeneric**2) = . or sum(A.N_episodes-&std_NumGenericdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumGeneric**2),sum(A.N_episodes-&std_NumGenericdpnum))) end as std_NumGeneric, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumClass**2) = . or sum(A.N_episodes-&std_NumClassdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumClass**2),sum(A.N_episodes-&std_NumClassdpnum))) end as std_NumClass, 
+                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumRx**2) = . or sum(A.N_episodes-&std_NumRxdpnum) in (.,0) then . 
+                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumRx**2),sum(A.N_episodes-&std_NumRxdpnum))) end as std_NumRx
             	   from &out_table a
             	   group by a.runid, a.group
             union corr all
