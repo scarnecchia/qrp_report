@@ -155,6 +155,21 @@
         %end;
 
 /***************************************************************************************************
+*  	Check if only the appendixfile is requested                                                     
+***************************************************************************************************/
+ 	%let numfiles=0;
+	%let numappendixfile=0;
+	proc sql noprint;
+		select count(*) into :numfiles from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
+
+		select count(*) into :numappendixfile from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) = "appendixfile";
+	quit;
+
+	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
+
+/***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
 ***************************************************************************************************/
 
@@ -170,25 +185,10 @@
         - TREE2: tree aggregation for Type 2
         - TREE3: tree aggregation for Type 3
         - TREE4: tree aggregation for Type 4 */
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
         %abort;
     %end;
-
-/***************************************************************************************************
-*  	Check if only the appendixfile is requested                                                     
-***************************************************************************************************/
- 	%let numfiles=0;
-	%let numappendixfile=0;
-	proc sql noprint;
-		select count(*) into :numfiles from &createreportfile. 
-		where strip(value) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
-
-		select count(*) into :numappendixfile from &createreportfile. 
-		where strip(value) ne "" and lowcase(parameter) = "appendixfile";
-	quit;
-
-	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
