@@ -175,7 +175,7 @@
 
         %report_formats_labels();
 
-		%if &produceappendixfileonly. = Y %then %goto appendix;
+		%if &produceappendixfileonly. = Y %then %goto createtoc;
 
     ***************************************************************************************************;
     * Baseline tables                                                      
