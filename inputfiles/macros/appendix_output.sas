@@ -376,6 +376,8 @@
 ***************************************************************************************************;
 
     /*Put dpname into list for Appendix A*/
+	%if &produceappendixfileonly. = N %then %do;
+
     %let dpnamelist = ;
     %do a = 1 %to &num_dp.;
         data _null_;
@@ -420,6 +422,8 @@
         line "^{super 2}End Date represents the earliest of: (1) query end date, or (2) last day of the most recent month for which all of a Data Partner's data tables (enrollment, dispensing, etc.) have at least 80% of the record count relative to the prior month.";
         endcomp;
     run;
+
+	%end; /*produceappendixfileonly = N*/
 
 ***************************************************************************************************;
 * Geographic Appendices and Code List Appendices (Index defining codes, Exposure incidence defining 

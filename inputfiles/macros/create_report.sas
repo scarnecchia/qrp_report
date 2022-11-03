@@ -61,6 +61,9 @@
     /*read in input files and process input file parameters*/
     %process_inputfiles();
 
+	/*check if only appendixfile should be processed*/
+	%if &produceappendixfileonly. = Y %then %goto format_labels;
+
 ***************************************************************************************************;
 * Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
@@ -168,8 +171,11 @@
     ***************************************************************************************************;
     *   Create report formats and labels                                           
     ***************************************************************************************************;
+%format_labels:    
 
         %report_formats_labels();
+
+		%if &produceappendixfileonly. = Y %then %goto createtoc;
 
     ***************************************************************************************************;
     * Baseline tables                                                      
@@ -289,6 +295,7 @@
 ***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
+%createtoc:
 
     %create_tableofcontents();
 
