@@ -132,8 +132,7 @@
             %let analysisgrpweight = ;
             %let psestimategrp = ;
             %let stratavar = ;
-            %let analysisgrpweight = ;
-            %let individualreturn = N;
+            %let analysisgrpweight = ;            
             %let marginalweights = N;
             %let cat=0; /*indicator for subgroup categories*/
             %let subcategorization=; *the list of categorization;
@@ -148,13 +147,8 @@
             %let s10=;
             %let s00=;
 
-            /*KM curves*/
-            %let kmplotlist = ;
-
-            /*Use risk set or individual level return*/
-            %if "%upcase(&&&runid._indlevel)" = "Y" %then %do;  
-                %let individualreturn = Y;
-            %end;
+            /*List of analyses(Unadjusted/Conditional/Unconditional/Weighted) for which KM curves will be computed*/
+            %let kmplotlist = ;             
 
             /*extract names of eoi and ref groups and associated parameters for the analysisgrp*/
             %put extracting parameters from &pscsfile. for analysisgrp = &analysisgrp. and subgroup = "&subgroup.";
@@ -181,10 +175,8 @@
                     call symputx("stratavar", 'percentile');
                     call symputx("analysisgrpweight",strip(upcase(strataweight)));
                     call symputx('ormethod', 'cmh');
-                    call symputx('outputunconditional', 'N');
-                    /*set individualreturn to N*/
-                    if missing(strataweight)=0 then do;
-                        call symputx('individualreturn', 'N');
+                    call symputx('outputunconditional', 'N');                    
+                    if missing(strataweight)=0 then do;                        
                         call symputx('marginalweights', 'Y');
                     end;
                     else do;
@@ -194,10 +186,8 @@
 
                 %if &pscsfile. = iptwfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
-                    call symputx("analysisgrpweight",strip(upcase(ipweight)));
-                    /*set individualreturn to N*/
-                    if missing(ipweight)=0 then do;
-                        call symputx('individualreturn', 'N');
+                    call symputx("analysisgrpweight",strip(upcase(ipweight)));                    
+                    if missing(ipweight)=0 then do;                        
                         call symputx('marginalweights', 'Y');
                     end;
                 %end;
@@ -247,9 +237,9 @@
                 /*Defensive: kmrefpop only applies when &pscsfile. is psmatchfile*/
                 %if &pscsfile. ne psmatchfile & (&kmrefpop. = weighted | &kmrefpop. = both) %then %let kmrefpop = unweighted;
     
-                /*if kmrefpop = weighted or both - ensure individualreturn = Y and ensure analysis = VRM*/
+                /*if kmrefpop = weighted or both - ensure individual level data is returned and ensure analysis = VRM*/
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
-                    %if &individualreturn. = N %then %do;
+                    %if "%upcase(&&&runid._indlevel)" = "N" %then %do; 
                         %put WARNING: (Sentinel) Patient level data required to produce weighted KM curves. KMREFPOP will be set to Unweighted for &analysisgrp.;
                         %let kmrefpop = unweighted;
                     %end;
@@ -287,7 +277,7 @@
                                        %end;
                                        );
 
-                %if &individualreturn. = Y %then %do;
+                %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     /*[runid]_adjusted_&periodid.*/
                     %aggregate_l2_datasets(infile=&runid._adjusted_&periodid.,
                                            outfile=aggpl,
@@ -394,16 +384,15 @@
 
                 /*************************************************************************************
                 /* Type 2 tables
-                    %l2_effect_estimate_runlogithr = HR Logit model (risk set)                    
-                    %l2_effect_estimate_runrobusthr - Robust marginal sandwich estimator (risk set) 
+                    %l2_effect_estimate_runlogithr = HR Logit model                  
+                    %l2_effect_estimate_runrobusthr - Robust marginal sandwich estimator
                     %l2_effect_estimate_runrd_rs = Incidence rates, risk differences                  
 
                    Type 4 tables
-                    %l2_effect_estimate_runlogitor = OR Logit model or CMH (risk set)
-                    %l2_effect_estimate_runrd_rs = risk ratio, risk differences (risk set)
+                    %l2_effect_estimate_runlogitor = OR Logit model or CMH 
+                    %l2_effect_estimate_runrd_rs = risk ratio, risk differences
 
-                   Macro calls for risk metrics are the same for ReportType = T2L2 and T4L2 for risk set
-                   data.
+                   Macro calls for risk metrics are the same for ReportType = T2L2 and T4L2.
                 /**************************************************************************************/
 
                 /*Unadjusted*/
