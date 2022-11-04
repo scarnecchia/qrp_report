@@ -144,8 +144,8 @@
         data views.agg_t2_cida
        %end;
        ;
+        length requestid $40 covar_label covarn $200;
        	set agg_cida;
-        length requestid $40;
 
         covar_label='';
         covarn='';
@@ -160,7 +160,7 @@
               %do j = 1 %to %sysfunc(countw(&covars,%str( )));
                 %let covar = %scan(&covars,&j,%str( ));
                 %if %index(&covar,covar) %then %do;
-                length covarn_&i._&j covarn $200 covar_label_&i._&j covar_label $200;
+                length covarn_&i._&j $200 covar_label_&i._&j $200;
                     if &covar = 0 and levelvars = "&covars" then covar_label_&i._&j = catx('|',vlabel(&covar),'N');
                     else if &covar = 1 and levelvars = "&covars" then covar_label_&i._&j = catx('|',vlabel(&covar),'Y');
                     if not missing(&covar) and levelvars = "&covars" then covarn_&i._&j ="%upcase(&covar.)";
