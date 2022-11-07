@@ -9,12 +9,11 @@
 * PURPOSE: This program computes the odds ratio by executing a logistic regression or 
 *          Cochran-Mantel-Haenszel method on risk set level datasets
 *
-*  Program inputs: dataset cat_dp_rd or cat_dp_pl  
+*  Program inputs: dataset cat_dp_rd
 *
 *  Program outputs: logitEst 
 *
 *  PARAMETERS: 
-*   - individualreturn =  if Y then use dataset cat_dp_pl, if N use dataset cat_dp_rd
 *   - where = value used to subset input analytic dataset cat_dp_rd
 *   - analysis = used to create variable in order to label output
 *   - subgroupcat = used to create variable in order to  label output
@@ -33,8 +32,7 @@
 *
 ***************************************************************************************************;
 
-%macro l2_effect_estimate_runlogitor(individualreturn =, 
-                                     where=, 
+%macro l2_effect_estimate_runlogitor(where=, 
                                      analysis=,
                                      subgroupcat=,
                                      ormethod=,
@@ -55,7 +53,7 @@
     %let Expevlvl = 0;
     %let Unexpevlvl = 0;
 
-    %if "&individualreturn" = "N" & %index(&customizecolumns.,events) = 0 %then %do;
+    %if %index(&customizecolumns.,events) = 0 %then %do;
         data _sub1;
             set cat_dp_rd(where=(&where.));
 		    /* retain observations with non-missing counts only */
@@ -66,7 +64,7 @@
         %isdata(dataset=_sub1);
         %if %eval(&NOBS.>=1) %then %do;
             data _forest(drop=cntexp cntunexp);
-                set _sub1(keep=exp unexp evexp evunexp dp &classvars. &noclassvars. %if &pscsfile.=stratificationfile %then %do; percentile %end;);
+                set _sub1(keep=exp unexp evexp evunexp dp %if &pscsfile.=stratificationfile %then %do; percentile %end;);
 
                 length exposure event 3;
                 /* eoi group */
@@ -87,13 +85,7 @@
             run;
            
         %end; /* end do statement for creating person-level dataset */
-    %end; /* risk-level data */
-
-    %if "&individualreturn" = "Y" & %index(&customizecolumns.,events) = 0 %then %do;
-        data _forest;
-            set cat_dp_pl(keep=event dp dpidsiteid exposure subgroup analysisgrp subgroupcat &stratavar. &classvars. &noclassvars. where=(&where.));
-        run;
-    %end;
+    %end; /* risk-level data */    
   
     %isdata(dataset=_forest);
     %if %eval(&nobs.>=1) %then %do;
@@ -116,8 +108,8 @@
         %if "&ormethod" = "logit" %then %do;
             ods output ParameterEstimates=_oddsratio;
             proc genmod data=_forest descending; 
-                class exposure(ref='0') &classvars. dp;
-                model event=exposure &noclassvars. &classvars. dp /dist=bin;
+                class exposure(ref='0') dp;
+                model event=exposure dp /dist=bin;
             run;
         %end;
         %else %if "&ormethod" = "cmh" %then %do;
