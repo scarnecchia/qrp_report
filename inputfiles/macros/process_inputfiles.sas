@@ -93,8 +93,10 @@
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination','outputviewsdata') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination',
+                                              'outputviewsdata', 'jirakey') then call symputx("value",upcase(value));
                     if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
+                    if lowcase(parameter) in ('userid', 'studytitle') then call symputx("value",strip(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*default stratifybydp*/
@@ -804,6 +806,27 @@
                 end;
             %end;
          run;
+    %end;
+/***************************************************************************************************
+*   Create a stacked monitoring file for Sentinel Views                                
+***************************************************************************************************/
+
+    %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+        data monitoringfile_views;
+            set %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            infolder.&&&runid._monitoringfile(in=n&n.)
+            %end;
+        ;
+         retain periodid2 0;
+         format runid $6.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                periodid2+1;
+                end;
+            %end;
+        run;
     %end;
 
 /***************************************************************************************************
@@ -1884,7 +1907,8 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim reestimateps;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps %if &outputviewsdata = Y and &reporttype = T2L2 %then %do; stratvars %end;
+                     ;
             run;
 
             data psest_masterinputs;
@@ -1921,6 +1945,9 @@
                       ,pscs.ref
                       ,pscs.unconditional
                       ,pscs.pstrim
+                      %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+                      ,pscs.stratvars 
+                      %end;
                       ,lowcase(sub.subgroup) as subgroup
                       ,upcase(sub.subgroupcat) as subgroupcat
                       /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
@@ -1971,6 +1998,9 @@
                   ,pscs.subgroup
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
+                  %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+                  ,pscs.stratvars 
+                  %end;
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
