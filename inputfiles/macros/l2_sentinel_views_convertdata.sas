@@ -247,7 +247,7 @@
         select catx('.','repdata',memname) 
         into :repdatadsn separated by '@'
         from dictionary.tables 
-        where libname = 'REPDATA' and ^prxmatch('/appendix/i',memname);
+        where libname = 'REPDATA' and prxmatch('/^table\d|^figure\d/i',memname);
 
         select quote(analysisgrp)
         into :wheregroups separated by ','
