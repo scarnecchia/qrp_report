@@ -201,14 +201,12 @@
             from uniquepsest;
         quit;
 
-        %isdata(dataset=labelfile);
-
     proc sql noprint;
         /* Read in l2comparison for analysisgrp values and order values */
         create table analysistable as 
         select distinct a.runid, a.analysisgrp, a.order as sortingorder, b.weightingmethod, b.adjustmentmethod, b.modelparameters,
                coalescec(b.eoi,c.eoi) as exposure length=40, coalescec(b.ref,c.ref) as reference length=40, "" as design length=1
-               %if &nobs > 0 %then %do;
+               %if &labelfileexists = Y %then %do;
                ,case when not missing(d.label) then d.label else "ADD OUTCOME LABEL" end as outcome length=200 
                ,case when not missing(e.label) then e.label else e.group end as analysisgrouptitle length=200
                ,case when not missing(f.label) then f.label else f.group end as exposurelabel length=200
