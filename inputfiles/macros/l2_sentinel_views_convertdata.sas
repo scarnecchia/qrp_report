@@ -73,133 +73,114 @@
         quit;
 
 
-            data pscs_masterinputs_views;
-                length adjustmentmethod weightingmethod modelparameters $40;
-                set pscs_masterinputs(where=(missing(subgroup)));
-                if file = 'psmatchfile' then do;
-                    weightingmethod = '';
-                    adjustmentmethod = 'Propensity Score Matched';
-                    if upcase(ratio) = 'F' then modelparameters="Fixed Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
-                    if upcase(ratio) = 'V' then modelparameters="Variable Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
-                end;
-                if file = 'stratificationfile' then do;
-                    if not missing(strataweight) then do;
-                    weightingmethod = strataweight;
-                    adjustmentmethod = 'Propensity Score Stratum Weighted';
-                    end;
-                    else do;
-                    weightingmethod = '';
-                    adjustmentmethod = 'Propensity Score Stratified';
-                    end;
-                if not missing(percentiles) then modelparameters='Trimmed'||'; Percentiles= '||strip(put(percentiles,8.));
-                else modelparameters='';
-                end;
-                if file = 'covstratfile' then do;
-                    weightingmethod = '';
-                    adjustmentmethod = 'Covariate Stratified';
-                    do i = 1 to countw(stratvars);
-                        vars=scan(propcase(stratvars),i);
-                        if i = 1 then modelparameters = vars;
-                        else modelparameters=catx(',',modelparameters,vars);
-                    end;
-                end;
-                if file = 'iptwfile' then do;
-                    weightingmethod = ipweight;
-                    adjustmentmethod = 'Inverse Probability Treatment Weighted';
-                    modelparameters='Trimmed';
-                end;
-                if missing(covarnum) then covarnum = 0;
-            run;
-
-            data psest_masterinputs_views;
-               length tempvar class noclass $2000;
-               set psest_masterinputs;
-            /* Expand class and noclass covariates */
-            do i = 1 to countw(class,' ,');
-                word = scan(class,i,' ,');
-                if index(word,'-') = 0 then do;
-                    if i = 1 then do;
-                        tempvar=word;
-                    end;
-                    else do;
-                        tempvar=catx(' ',tempvar,word);
-                    end;
+        data pscs_masterinputs_views;
+            length adjustmentmethod weightingmethod modelparameters $40;
+            set pscs_masterinputs(where=(missing(subgroup)));
+            if file = 'psmatchfile' then do;
+                weightingmethod = '';
+                adjustmentmethod = 'Propensity Score Matched';
+                if upcase(ratio) = 'F' then modelparameters="Fixed Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
+                if upcase(ratio) = 'V' then modelparameters="Variable Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
+            end;
+            if file = 'stratificationfile' then do;
+                if not missing(strataweight) then do;
+                weightingmethod = strataweight;
+                adjustmentmethod = 'Propensity Score Stratum Weighted';
                 end;
                 else do;
-                    start=input(compress(scan(word,1,'-'),'','A'),8.);
-                    end=input(compress(scan(word,-1,'-'),'','A'),8.);
-                    do covar = start to end;
-                        if i = 1 and covar = start then do;
-                            tempvar=cats("COVAR",covar);
-                        end;
-                        else do; 
-                            tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                        end;
+                weightingmethod = '';
+                adjustmentmethod = 'Propensity Score Stratified';
+                end;
+            if not missing(percentiles) then modelparameters='Trimmed'||'; Percentiles= '||strip(put(percentiles,8.));
+            else modelparameters='';
+            end;
+            if file = 'covstratfile' then do;
+                weightingmethod = '';
+                adjustmentmethod = 'Covariate Stratified';
+                do i = 1 to countw(stratvars);
+                    vars=scan(propcase(stratvars),i);
+                    if i = 1 then modelparameters = vars;
+                    else modelparameters=catx(',',modelparameters,vars);
+                end;
+            end;
+            if file = 'iptwfile' then do;
+                weightingmethod = ipweight;
+                adjustmentmethod = 'Inverse Probability Treatment Weighted';
+                modelparameters='Trimmed';
+            end;
+            if missing(covarnum) then covarnum = 0;
+        run;
+
+        data psest_masterinputs_views;
+            length tempvar class noclass $2000;
+            set psest_masterinputs;
+        /* Expand class and noclass covariates */
+        do i = 1 to countw(class,' ,');
+            word = scan(class,i,' ,');
+            if index(word,'-') = 0 then do;
+                if i = 1 then do;
+                    tempvar=word;
+                end;
+                else do;
+                    tempvar=catx(' ',tempvar,word);
+                end;
+            end;
+            else do;
+                start=input(compress(scan(word,1,'-'),'','A'),8.);
+                end=input(compress(scan(word,-1,'-'),'','A'),8.);
+                do covar = start to end;
+                    if i = 1 and covar = start then do;
+                        tempvar=cats("COVAR",covar);
+                    end;
+                    else do; 
+                        tempvar=catx(' ',tempvar,cats("COVAR",covar));
                     end;
                 end;
             end;
-            class=tempvar;
-            do i = 1 to countw(noclass,' ,');
-                word = scan(noclass,i,' ,');
-                if index(word,'-') = 0 then do;
-                    if i = 1 then do;
-                        tempvar=word;
-                    end;
-                    else do;
-                        tempvar=catx(' ',tempvar,word);
-                    end;
+        end;
+        class=tempvar;
+        do i = 1 to countw(noclass,' ,');
+            word = scan(noclass,i,' ,');
+            if index(word,'-') = 0 then do;
+                if i = 1 then do;
+                    tempvar=word;
                 end;
                 else do;
-                    start=input(compress(scan(word,1,'-'),'','A'),8.);
-                    end=input(compress(scan(word,-1,'-'),'','A'),8.);
-                    do covar = start to end;
-                        if i = 1 and covar = start then do;
-                            tempvar=cats("COVAR",covar);
-                        end;
-                        else do; 
-                            tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                        end;
+                    tempvar=catx(' ',tempvar,word);
+                end;
+            end;
+            else do;
+                start=input(compress(scan(word,1,'-'),'','A'),8.);
+                end=input(compress(scan(word,-1,'-'),'','A'),8.);
+                do covar = start to end;
+                    if i = 1 and covar = start then do;
+                        tempvar=cats("COVAR",covar);
+                    end;
+                    else do; 
+                        tempvar=catx(' ',tempvar,cats("COVAR",covar));
                     end;
                 end;
             end;
-            noclass=tempvar;
-            drop tempvar start word end covar i;
-            run;
-
-        proc sort data=pscs_masterinputs_views nodupkey;
-            by runid covarnum analysisgrp;
+        end;
+        noclass=tempvar;
+        drop tempvar start word end covar i;
         run;
 
-        /* Find out which unadjusted tables are unique */
-        proc sql noprint;
-            create table uniquepsest as 
-            select distinct a.runid, a.analysisgrp, a.order, b.psestimategrp
-            from l2comparisonfile a 
-            inner join pscs_masterinputs_views b 
-            on a.analysisgrp = b.analysisgrp
-            order by runid, psestimategrp, order;
-        quit;
+    proc sort data=pscs_masterinputs_views nodupkey;
+        by runid covarnum analysisgrp;
+    run;
 
-        data uniquepsest;
-            set uniquepsest;
-            length unique_psestimate 3;
-             retain unique_psestimate;
-             by runid psestimategrp order;
-             unique_psestimate +1;
-             if missing(psestimategrp) or first.psestimategrp then unique_psestimate = 1;
-        run;
-
-        proc sort data = uniquepsest;
-            by order;
-        run;
+    proc sort data = l2comparisonfile out=uniquepsest;
+        by order;
+    run;
 
         /* Create analysisgrp, psestimategrp and unique_psestimate combination */
-        proc sql noprint;
-            select catx('|',catx('@',analysisgrp,psestimategrp),unique_psestimate)
-            into :combs
-            separated by '$'
-            from uniquepsest;
-        quit;
+    proc sql noprint;
+        select catx('|',catx('@',analysisgrp,psestimategrp),unique_psestimate)
+        into :combs
+        separated by '$'
+        from uniquepsest;
+    quit;
 
     proc sql noprint;
         /* Read in l2comparison for analysisgrp values and order values */
@@ -297,7 +278,7 @@
                     if upcase(metvar) = 'HISPANIC_Y' then metvar = 'HISPANIC_YES';
                     if upcase(metvar) = 'HISPANIC_N' then metvar = 'HISPANIC_NO';
                     if upcase(metvar) = 'HISPANIC_U' then metvar = 'HISPANIC_UNKNOWN';
-                /* Loop datasets and add on unique_psestimate and psestimategrp */
+                /* Add on unique_psestimate and psestimategrp */
                 %do n = 1 %to %sysfunc(countw(&combs,%str($)));
                     %let comb = %scan(&combs,&n,%str($));
                 if analysisgrp = "%scan(&comb,1,%str(@))" then do;
@@ -310,23 +291,26 @@
                 pscovariate='N';
                 %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
                     %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
-                if prxmatch('/AGE/',metvar) then do;
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
                     psmodelvars="%scan(&psmodelcomb,-1,%str(#))";
                     if prxmatch('/AGE/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
+                    if prxmatch('/AGEGROUP/',psmodelvars) then pscovariate='Y';
+                    if prxmatch('/RACE/',psmodelvars) then pscovariate='Y';
+                    if prxmatch('/YEAR/',psmodelvars) then pscovariate='Y';
+                    if prxmatch('/SEX/',psmodelvars) then pscovariate='Y';
+                    if prxmatch('/HISPANIC/',psmodelvars) then pscovariate='Y';
+                    if prxmatch('/COVAR*|^NUM*|COMORBID*/',metvar) > 0 then do; 
+                        do i = 1 to countw(psmodelvars);
+                            if metvar = scan(psmodelvars,i) then pscovariate = 'Y';
+                        end;
                     end;
-                end;
+                end;/* psestimategrp */
+                %end; /* m */
                 if prxmatch('/AGE\d/',metvar) > 0 then do;
                     COVARNUM=1001;
                     subgroupcat=tranwrd(substr(metvar,4,length(metvar)),'_','-');
                     /* add plus sign to subgroupcat for age group stratification */
                     if index(label,">=") then subgroupcat=cats(subgroupcat,'+');
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/AGE_CAT/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
-                    end;
                 end;
                 if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) > 0 then do;
                     COVARNUM=1012;
@@ -337,60 +321,25 @@
                     if prxmatch('/PACIFIC*/',metvar) > 0 then subgroupcat='4';
                     if prxmatch('/RACE*/',metvar) > 0 then subgroupcat='0';
                     if prxmatch('/WHITE/',metvar) > 0 then subgroupcat='5';
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/RACE/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
-                    end;
                 end;
                 if prxmatch('/YEAR*/',metvar) > 0 then do;
                     COVARNUM=1002;
                     subgroupcat=scan(metvar,-1,'_');
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/YEAR/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
-                    end;
                 end;
                 if prxmatch('/SEX*|FEMALE|MALE/',metvar) > 0 then do;
                     COVARNUM=1000;
                     if prxmatch('/^FEMALE/',metvar) > 0 then subgroupcat='F';
                     if prxmatch('/^MALE/',metvar) > 0 then subgroupcat='M';
                     if prxmatch('/SEX*/',metvar) > 0 then subgroupcat='O';
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/SEX/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
-                    end;
                 end;
                 if prxmatch('/HISPANIC*/',metvar) > 0 then do;
                     COVARNUM=1013;
                     subgroupcat=substr(scan(metvar,-1,'_'),1,1);
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/HISPANIC/',psmodelvars) then pscovariate='Y';
-                    else pscovariate='N';
-                    end;
                 end;
                 if prxmatch('/COVAR*/',metvar) > 0 then do;
                     COVARNUM=put(compress(metvar,'','A'),8.);
                     subgroupcat='';
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";;
-                    do i = 1 to countw(psmodelvars);
-                        if metvar = scan(psmodelvars,i) then pscovariate = 'Y';
-                    end;
-                    end;
                 end;
-                if prxmatch('/^NUM*|COMORBID*/',metvar) > 0 then do;
-                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                    do i = 1 to countw(psmodelvars);
-                        if strip(metvar) = scan(psmodelvars,i) then pscovariate = 'Y';
-                    end;
-                    end;
-                end;
-                %end; /* m */
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
