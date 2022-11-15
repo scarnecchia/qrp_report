@@ -278,229 +278,231 @@
             %let check_psdist=%sysfunc(varnum(&dsid,ps_cat));
             %let rc=%sysfunc(close(&dsid));
 
-        /* Check and ouput propensity score distribution datasets */
-        %if &check_psdist > 0 %then %do; 
-            %let psdistflag = 1;
-            data _psdist_&i;
-                set &dsn;
-            run;
-        %end;
-
-        %if &check_table1 > 0 %then %do;
-            data _table1_&dpcnt._&i.;
-                set &dsn(drop=subgroupcat);
-                length psmodelvars $2000 dp $5 unique_psestimate 3 subgroupcat psestimategrp $40;
-                table1order=_n_;
-                /* Change back standardized race/hispanic/sex values */
-                if upcase(metvar) = 'RACE_0' then metvar = 'RACE_UNKNOWN';
-                if upcase(metvar) = 'RACE_1' then metvar = 'AMERICANINDIAN';
-                if upcase(metvar) = 'RACE_2' then metvar = 'ASIAN';
-                if upcase(metvar) = 'RACE_3' then metvar = 'BLACK';
-                if upcase(metvar) = 'RACE_4' then metvar = 'PACIFICISLANDER';
-                if upcase(metvar) = 'RACE_5' then metvar = 'WHITE';
-                if upcase(metvar) = 'RACE_M' then metvar = 'MULTI';
-                if upcase(metvar) = 'SEX_M' then metvar = 'MALE';
-                if upcase(metvar) = 'SEX_F' then metvar = 'FEMALE';
-                if upcase(metvar) = 'SEX_O' then metvar = 'SEX_OTHER';
-                if upcase(metvar) = 'HISPANIC_Y' then metvar = 'HISPANIC_YES';
-                if upcase(metvar) = 'HISPANIC_N' then metvar = 'HISPANIC_NO';
-                if upcase(metvar) = 'HISPANIC_U' then metvar = 'HISPANIC_UNKNOWN';
-            /* Loop datasets and add on unique_psestimate and psestimategrp */
-            %do n = 1 %to %sysfunc(countw(&combs,%str($)));
-                %let comb = %scan(&combs,&n,%str($));
-            if analysisgrp = "%scan(&comb,1,%str(@))" then do;
-                unique_psestimate=%scan(&comb,-1,%str(|));
-                psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
-            end;
-            %end;
-            /* Change unicode value to symbol */
-            if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
-            pscovariate='N';
-            %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
-                %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
-            if prxmatch('/AGE/',metvar) then do;
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars="%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/AGE/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
+            %if &check_table1 > 0 %then %do;
+                data _table1_&dpcnt._&i.;
+                    set &dsn(drop=subgroupcat);
+                    length psmodelvars $2000 dp $5 unique_psestimate 3 subgroupcat psestimategrp $40;
+                    table1order=_n_;
+                    /* Change back standardized race/hispanic/sex values */
+                    if upcase(metvar) = 'RACE_0' then metvar = 'RACE_UNKNOWN';
+                    if upcase(metvar) = 'RACE_1' then metvar = 'AMERICANINDIAN';
+                    if upcase(metvar) = 'RACE_2' then metvar = 'ASIAN';
+                    if upcase(metvar) = 'RACE_3' then metvar = 'BLACK';
+                    if upcase(metvar) = 'RACE_4' then metvar = 'PACIFICISLANDER';
+                    if upcase(metvar) = 'RACE_5' then metvar = 'WHITE';
+                    if upcase(metvar) = 'RACE_M' then metvar = 'MULTI';
+                    if upcase(metvar) = 'SEX_M' then metvar = 'MALE';
+                    if upcase(metvar) = 'SEX_F' then metvar = 'FEMALE';
+                    if upcase(metvar) = 'SEX_O' then metvar = 'SEX_OTHER';
+                    if upcase(metvar) = 'HISPANIC_Y' then metvar = 'HISPANIC_YES';
+                    if upcase(metvar) = 'HISPANIC_N' then metvar = 'HISPANIC_NO';
+                    if upcase(metvar) = 'HISPANIC_U' then metvar = 'HISPANIC_UNKNOWN';
+                /* Loop datasets and add on unique_psestimate and psestimategrp */
+                %do n = 1 %to %sysfunc(countw(&combs,%str($)));
+                    %let comb = %scan(&combs,&n,%str($));
+                if analysisgrp = "%scan(&comb,1,%str(@))" then do;
+                    unique_psestimate=%scan(&comb,-1,%str(|));
+                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
                 end;
-            end;
-            if prxmatch('/AGE\d/',metvar) > 0 then do;
-                COVARNUM=1001;
-                subgroupcat=tranwrd(substr(metvar,4,length(metvar)),'_','-');
-                /* add plus sign to subgroupcat for age group stratification */
-                if index(label,">=") then subgroupcat=cats(subgroupcat,'+');
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/AGE_CAT/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
-                end;
-            end;
-            if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) > 0 then do;
-                COVARNUM=1012;
-                if prxmatch('/AMERICAN*/',metvar) > 0 then subgroupcat='1';
-                if prxmatch('/ASIAN/',metvar) > 0 then subgroupcat='2';
-                if prxmatch('/BLACK*/',metvar) > 0 then subgroupcat='3';
-                if prxmatch('/MULTI*/',metvar) > 0 then subgroupcat='M';
-                if prxmatch('/PACIFIC*/',metvar) > 0 then subgroupcat='4';
-                if prxmatch('/RACE*/',metvar) > 0 then subgroupcat='0';
-                if prxmatch('/WHITE/',metvar) > 0 then subgroupcat='5';
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/RACE/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
-                end;
-            end;
-            if prxmatch('/YEAR*/',metvar) > 0 then do;
-                COVARNUM=1002;
-                subgroupcat=scan(metvar,-1,'_');
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/YEAR/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
-                end;
-            end;
-            if prxmatch('/SEX*|FEMALE|MALE/',metvar) > 0 then do;
-                COVARNUM=1000;
-                if prxmatch('/^FEMALE/',metvar) > 0 then subgroupcat='F';
-                if prxmatch('/^MALE/',metvar) > 0 then subgroupcat='M';
-                if prxmatch('/SEX*/',metvar) > 0 then subgroupcat='O';
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/SEX/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
-                end;
-            end;
-            if prxmatch('/HISPANIC*/',metvar) > 0 then do;
-                COVARNUM=1013;
-                subgroupcat=substr(scan(metvar,-1,'_'),1,1);
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                if prxmatch('/HISPANIC/',psmodelvars) then pscovariate='Y';
-                else pscovariate='N';
-                end;
-            end;
-            if prxmatch('/COVAR*/',metvar) > 0 then do;
-                COVARNUM=put(compress(metvar,'','A'),8.);
-                subgroupcat='';
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";;
-                do i = 1 to countw(psmodelvars);
-                    if metvar = scan(psmodelvars,i) then pscovariate = 'Y';
-                end;
-                end;
-            end;
-            if prxmatch('/^NUM*|COMORBID*/',metvar) > 0 then do;
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
-                do i = 1 to countw(psmodelvars);
-                    if strip(metvar) = scan(psmodelvars,i) then pscovariate = 'Y';
-                end;
-                end;
-            end;
-            %end; /* m */
-            /* Remove lab covariate rows */
-            if grouper = "Laboratory Characteristics" then delete;
-            if &dpcnt. = 0 then dp = "agg";
-            else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
-            else if &dpcnt >= 10 then dp = "DP&dpcnt.";
-            rename table=type exp_mean&dpcnt=exp_mean exp_std&dpcnt=exp_std comp_mean&dpcnt=comp_mean comp_std&dpcnt.=comp_std
-                    sd&dpcnt=sd ad&dpcnt=ad;
-            drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char i psmodelvars;
-            run;
-
-            /* Join monitoring period when there are multiple runs */
-            %if &dupperiods > 1 %then %do;
-            proc sql noprint undo_policy=none;
-                create table _table1_&dpcnt._&i. as 
-                select 
-                B.label, B.grouper, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean, b.table1order,
-                B.comp_mean, B.exp_std, B.comp_std, B.ad, B.sd, b.subgroup, B.subgroupcat, B.dp, a.periodid2 as monitoringperiod, B.pscovariate, 
-                B.COVARNUM, B.unique_psestimate, B.psestimategrp
-                from monitoringperiod_lookup a right join _table1_&dpcnt._&i. b 
-                on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                order by table1order;
-            quit;
-            %end;
-        %end;
-
-        %if &check_table2 > 0 %then %do;
-
-            %let deletesubgroups=;
-            proc sql noprint; 
-                select distinct subgroup 
-                into :deletesubgroups separated by ' '
-                from &dsn;
-            quit; 
-
-            data _effectest_&i(drop=varlabel i);
-                set &dsn;
-                length varlabel $2000 covarnum_label $200;
-                COVARNUM=0;
-                catnum=0;
-                if ^missing(subgroup) then catnum=subgroupcatorder;
-                /* Remove overall rows from subgroup tables */
-                %if %length(&deletesubgroups) > 0 %then %do; 
-                if missing(subgroup) then delete;
                 %end;
-                if subgroup='sex' then COVARNUM=1000;
-                if subgroup='agegroup' then COVARNUM=1001;
-                if subgroup='year' then COVARNUM=1002;
-                if subgroup='periodid' then COVARNUM=1003;
-                if subgroup='race' then COVARNUM=1012;
-                if subgroup='hispanic' then COVARNUM=1013;
-                if subgroup='dpidsiteid' then COVARNUM=9000;
-                if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
-                if vtype(monitoringperiod) = 'C' then _monitoringperiod=input(monitoringperiod,8.);
-                else _monitoringperiod=MonitoringPeriod;
-                if COVARNUM in (1:999) then do;
-                    do i = 1 to countw("&covarnumlabels",'|');
-                        varlabel = scan("&covarnumlabels",i,'|');
-                        if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
-                    end; 
+                /* Change unicode value to symbol */
+                if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
+                pscovariate='N';
+                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
+                    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
+                if prxmatch('/AGE/',metvar) then do;
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars="%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/AGE/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
                 end;
-                drop MonitoringPeriod subgroup;
-                rename _monitoringperiod=monitoringperiod;
-            run;
-            %if &dupperiods > 1 %then %do;
-                proc sql noprint undo_policy=none;
-                    create table _effectest_&i. as 
-                    select B.medicalproduct, B.subgroupcat, B.analysisgrp, B.analysis, 
-                            a.periodid2 as monitoringperiod, B.COVARNUM, B.catnum, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
-                            B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
-                            B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
-                            B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
-                            B.analysisgrpsort, B.title, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
-                            B.LABEL, B.medicalproduct_labeled, B.COVARNUM_Label
-                    from monitoringperiod_lookup a right join _effectest_&i. b 
-                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
-                quit;
-            %end;
-        %end;
+                if prxmatch('/AGE\d/',metvar) > 0 then do;
+                    COVARNUM=1001;
+                    subgroupcat=tranwrd(substr(metvar,4,length(metvar)),'_','-');
+                    /* add plus sign to subgroupcat for age group stratification */
+                    if index(label,">=") then subgroupcat=cats(subgroupcat,'+');
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/AGE_CAT/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
+                end;
+                if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) > 0 then do;
+                    COVARNUM=1012;
+                    if prxmatch('/AMERICAN*/',metvar) > 0 then subgroupcat='1';
+                    if prxmatch('/ASIAN/',metvar) > 0 then subgroupcat='2';
+                    if prxmatch('/BLACK*/',metvar) > 0 then subgroupcat='3';
+                    if prxmatch('/MULTI*/',metvar) > 0 then subgroupcat='M';
+                    if prxmatch('/PACIFIC*/',metvar) > 0 then subgroupcat='4';
+                    if prxmatch('/RACE*/',metvar) > 0 then subgroupcat='0';
+                    if prxmatch('/WHITE/',metvar) > 0 then subgroupcat='5';
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/RACE/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
+                end;
+                if prxmatch('/YEAR*/',metvar) > 0 then do;
+                    COVARNUM=1002;
+                    subgroupcat=scan(metvar,-1,'_');
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/YEAR/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
+                end;
+                if prxmatch('/SEX*|FEMALE|MALE/',metvar) > 0 then do;
+                    COVARNUM=1000;
+                    if prxmatch('/^FEMALE/',metvar) > 0 then subgroupcat='F';
+                    if prxmatch('/^MALE/',metvar) > 0 then subgroupcat='M';
+                    if prxmatch('/SEX*/',metvar) > 0 then subgroupcat='O';
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/SEX/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
+                end;
+                if prxmatch('/HISPANIC*/',metvar) > 0 then do;
+                    COVARNUM=1013;
+                    subgroupcat=substr(scan(metvar,-1,'_'),1,1);
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    if prxmatch('/HISPANIC/',psmodelvars) then pscovariate='Y';
+                    else pscovariate='N';
+                    end;
+                end;
+                if prxmatch('/COVAR*/',metvar) > 0 then do;
+                    COVARNUM=put(compress(metvar,'','A'),8.);
+                    subgroupcat='';
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";;
+                    do i = 1 to countw(psmodelvars);
+                        if metvar = scan(psmodelvars,i) then pscovariate = 'Y';
+                    end;
+                    end;
+                end;
+                if prxmatch('/^NUM*|COMORBID*/',metvar) > 0 then do;
+                    if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
+                    psmodelvars = "%scan(&psmodelcomb,-1,%str(#))";
+                    do i = 1 to countw(psmodelvars);
+                        if strip(metvar) = scan(psmodelvars,i) then pscovariate = 'Y';
+                    end;
+                    end;
+                end;
+                %end; /* m */
+                /* Remove lab covariate rows */
+                if grouper = "Laboratory Characteristics" then delete;
+                if &dpcnt. = 0 then dp = "agg";
+                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+                rename table=type exp_mean&dpcnt=exp_mean exp_std&dpcnt=exp_std comp_mean&dpcnt=comp_mean comp_std&dpcnt.=comp_std
+                        sd&dpcnt=sd ad&dpcnt=ad;
+                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char i psmodelvars;
+                run;
 
-        %if &check_attrtable > 0 %then %do;
-            data _attrition_&i(keep=monitoringperiod analysisgrp medicalproduct level descr remaining excluded);
-                length analysisgrp medicalproduct $40;
-                set &dsn;
-                analysisgrp=scan(group,1,'@');
-                medicalproduct=scan(group,-1,'@');
-                rename report_descr = descr
-                       agg_remaining = remaining 
-                       agg_excluded = excluded;
-            run;
-            %if &dupperiods > 1 %then %do;
+                /* Join monitoring period when there are multiple runs */
+                %if &dupperiods > 1 %then %do;
                 proc sql noprint undo_policy=none;
-                    create table _attrition_&i. as 
-                    select B.analysisgrp, B.medicalproduct, B.descr, B.level, B.remaining, B.excluded, 
-                           a.periodid2 as monitoringperiod
-                    from monitoringperiod_lookup a right join _attrition_&i. b 
+                    create table _table1_&dpcnt._&i. as 
+                    select 
+                    B.label, B.grouper, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean, b.table1order,
+                    B.comp_mean, B.exp_std, B.comp_std, B.ad, B.sd, b.subgroup, B.subgroupcat, B.dp, a.periodid2 as monitoringperiod, B.pscovariate, 
+                    B.COVARNUM, B.unique_psestimate, B.psestimategrp
+                    from monitoringperiod_lookup a right join _table1_&dpcnt._&i. b 
                     on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                    order by analysisgrp, level, descr;
+                    order by table1order;
                 quit;
-            %end;
-        %end;
+                %end;
+            %end;/* Check table 1 */
 
-        %if &check_kmtable > 0 %then %do;
+        /* Only set in aggregate tables */
+        %if &dpcnt = 0 %then %do;
+            /* Check and output propensity score distribution datasets */
+            %if &check_psdist > 0 %then %do; 
+                %let psdistflag = 1;
+                data _psdist_&i;
+                    set &dsn;
+                run;
+            %end;
+
+            %if &check_table2 > 0 %then %do;
+
+                %let deletesubgroups=;
+                proc sql noprint; 
+                    select distinct subgroup 
+                    into :deletesubgroups separated by ' '
+                    from &dsn;
+                quit; 
+
+                data _effectest_&i(drop=varlabel i);
+                    set &dsn;
+                    length varlabel $2000 covarnum_label $200;
+                    COVARNUM=0;
+                    catnum=0;
+                    if ^missing(subgroup) then catnum=subgroupcatorder;
+                    /* Remove overall rows from subgroup tables */
+                    %if %length(&deletesubgroups) > 0 %then %do; 
+                    if missing(subgroup) then delete;
+                    %end;
+                    if subgroup='sex' then COVARNUM=1000;
+                    if subgroup='agegroup' then COVARNUM=1001;
+                    if subgroup='year' then COVARNUM=1002;
+                    if subgroup='periodid' then COVARNUM=1003;
+                    if subgroup='race' then COVARNUM=1012;
+                    if subgroup='hispanic' then COVARNUM=1013;
+                    if subgroup='dpidsiteid' then COVARNUM=9000;
+                    if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
+                    if vtype(monitoringperiod) = 'C' then _monitoringperiod=input(monitoringperiod,8.);
+                    else _monitoringperiod=MonitoringPeriod;
+                    if COVARNUM in (1:999) then do;
+                        do i = 1 to countw("&covarnumlabels",'|');
+                            varlabel = scan("&covarnumlabels",i,'|');
+                            if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
+                        end; 
+                    end;
+                    drop MonitoringPeriod subgroup;
+                    rename _monitoringperiod=monitoringperiod;
+                run;
+                %if &dupperiods > 1 %then %do;
+                    proc sql noprint undo_policy=none;
+                        create table _effectest_&i. as 
+                        select B.medicalproduct, B.subgroupcat, B.analysisgrp, B.analysis, 
+                                a.periodid2 as monitoringperiod, B.COVARNUM, B.catnum, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
+                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
+                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
+                                B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
+                                B.analysisgrpsort, B.title, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
+                                B.LABEL, B.medicalproduct_labeled, B.COVARNUM_Label
+                        from monitoringperiod_lookup a right join _effectest_&i. b 
+                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
+                    quit;
+                %end;
+            %end;
+
+            %if &check_attrtable > 0 %then %do;
+                data _attrition_&i(keep=monitoringperiod analysisgrp medicalproduct level descr remaining excluded);
+                    length analysisgrp medicalproduct $40;
+                    set &dsn;
+                    analysisgrp=scan(group,1,'@');
+                    medicalproduct=scan(group,-1,'@');
+                    rename report_descr = descr
+                           agg_remaining = remaining 
+                           agg_excluded = excluded;
+                run;
+                %if &dupperiods > 1 %then %do;
+                    proc sql noprint undo_policy=none;
+                        create table _attrition_&i. as 
+                        select B.analysisgrp, B.medicalproduct, B.descr, B.level, B.remaining, B.excluded, 
+                               a.periodid2 as monitoringperiod
+                        from monitoringperiod_lookup a right join _attrition_&i. b 
+                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
+                        order by analysisgrp, level, descr;
+                    quit;
+                %end;
+            %end;
+
+            %if &check_kmtable > 0 %then %do;
                 /* Check that at least one kmtable was created */
                 %let kmtableflag = 1;
 
@@ -545,21 +547,22 @@
                         end;
                     end;
                     if lr then h.output(dataset:"_km_&i");
-                run;
+                    run;
                 %if &dupperiods > 1 %then %do;
-                    proc sql noprint undo_policy=none feedback;
-                        create table _km_&i. as
-                        select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct,
-                        B.analysis, b.subgroup, b.subgroupcat, b.dpidsiteid, a.periodid2 as monitoringperiod
-                        from monitoringperiod_lookup a right join _km_&i. b
-                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                        order by time, atrisk, Km_estimate, analysisgrp, group, B.medicalproduct,
-                        B.analysis, a.periodid2;
-                    quit;
+                proc sql noprint undo_policy=none feedback;
+                    create table _km_&i. as
+                    select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct,
+                    B.analysis, b.subgroup, b.subgroupcat, b.dpidsiteid, a.periodid2 as monitoringperiod
+                    from monitoringperiod_lookup a right join _km_&i. b
+                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
+                    order by time, atrisk, Km_estimate, analysisgrp, group, B.medicalproduct,
+                    B.analysis, a.periodid2;
+                quit;
                 %end; /* dupperiods */
-        %end; /* Check KM table */
-        %end;
-    %end;
+            %end; /* Check KM table */
+        %end; /* dpcnt = 0 */
+        %end; /* dpcnt */
+    %end; /* i */
 
     /* Output all transformed tables to folder */
     data views.study;
