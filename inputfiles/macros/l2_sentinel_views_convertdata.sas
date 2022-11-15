@@ -189,9 +189,9 @@
                coalescec(b.eoi,c.eoi) as exposure length=40, coalescec(b.ref,c.ref) as reference length=40, "" as design length=1
                %if &labelfileexists = Y %then %do;
                ,case when not missing(d.label) then d.label else "ADD OUTCOME LABEL" end as outcome length=200 
-               ,case when not missing(e.label) then e.label else e.group end as analysisgrouptitle length=200
-               ,case when not missing(f.label) then f.label else f.group end as exposurelabel length=200
-               ,case when not missing(g.label) then g.label else g.group end as referencelabel length=200
+               ,case when not missing(e.label) then e.label else coalescec(e.group,a.analysisgrp) end as analysisgrouptitle length=200
+               ,case when not missing(f.label) then f.label else coalescec(f.group,b.eoi,c.eoi) end as exposurelabel length=200
+               ,case when not missing(g.label) then g.label else coalescec(g.group,b.ref,c.ref) end as referencelabel length=200
                %end;
                %else %do;
                ,a.analysisgrp as analysisgrouptitle length=200
@@ -232,17 +232,11 @@
     /* If only a CS analysis is defined, create a dummy value to loop at least once */
     %if %length(&psmodelvars) = 0 %then %let psmodelvars = dummypsgrp#dummycovar|;
 
-    data analysistable;
-        set analysistable;
-        if missing(analysisgrouptitle) then analysisgrouptitle=analysisgrp;
-        if missing(outcome) then outcome="ADD OUTCOME LABEL";
-    run;
-
     %if &dupperiods > 1 %then %do;
     proc sql noprint;
         create table monitoringperiod_lookup as 
         select a.runid, a.analysisgrp, b.periodid, b.periodid2
-        from analysistable a, monitoringfile b 
+        from analysistable a, monitoringfile_views b 
         where a.runid = b.runid;
     quit;
     %end;
@@ -262,7 +256,7 @@
             %if &check_table1 > 0 %then %do;
                 data _table1_&dpcnt._&i.;
                     set &dsn(drop=subgroupcat);
-                    length psmodelvars $2000 dp $5 unique_psestimate 3 subgroupcat psestimategrp $40;
+                    length dp $5 unique_psestimate 3 subgroupcat psestimategrp $40;
                     table1order=_n_;
                     /* Change back standardized race/hispanic/sex values */
                     if upcase(metvar) = 'RACE_0' then metvar = 'RACE_UNKNOWN';
@@ -291,19 +285,33 @@
                 pscovariate='N';
                 %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
                     %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
-                if psestimategrp = "%scan(&psmodelcomb,1,%str(#))" then do;
-                    psmodelvars="%scan(&psmodelcomb,-1,%str(#))";
-                    if prxmatch('/AGE/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/AGEGROUP/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/RACE/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/YEAR/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/SEX/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/HISPANIC/',psmodelvars) then pscovariate='Y';
-                    if prxmatch('/COVAR*|^NUM*|COMORBID*/',metvar) > 0 then do; 
-                        do i = 1 to countw(psmodelvars);
-                            if metvar = scan(psmodelvars,i) then pscovariate = 'Y';
-                        end;
-                    end;
+                    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
+                    %let psmodelvarsin = %scan(&psmodelcomb,-1,%str(#));
+                if psestimategrp = "&psestgrp" then do;
+                    %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
+                        %let psmodelvar = %scan(&psmodelvarsin,&z);
+                            %if &psmodelvar = AGE %then %do; 
+                            if prxmatch('/AGE/',metvar) then pscovariate = 'Y';
+                            %end;
+                            %if &psmodelvar = AGEGROUP %then %do; 
+                            if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
+                            %end;
+                            %if &psmodelvar = RACE %then %do; 
+                            if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) then pscovariate='Y';
+                            %end;
+                            %if &psmodelvar = SEX %then %do;
+                            if prxmatch('/SEX*|FEMALE|MALE/',metvar) then pscovariate = 'Y';
+                            %end;
+                            %if &psmodelvar = YEAR %then %do;
+                            if prxmatch('/YEAR*/',metvar) then pscovariate = 'Y';
+                            %end;
+                            %if &psmodelvar = HISPANIC %then %do;
+                            if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
+                            %end;
+                            %if %sysfunc(prxmatch(/COVAR*|^NUM*|COMORBID*/,&psmodelvar)) %then %do; 
+                            if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
+                            %end;
+                    %end;
                 end;/* psestimategrp */
                 %end; /* m */
                 if prxmatch('/AGE\d/',metvar) > 0 then do;
@@ -347,7 +355,7 @@
                 else if &dpcnt >= 10 then dp = "DP&dpcnt.";
                 rename table=type exp_mean&dpcnt=exp_mean exp_std&dpcnt=exp_std comp_mean&dpcnt=comp_mean comp_std&dpcnt.=comp_std
                         sd&dpcnt=sd ad&dpcnt=ad;
-                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char i psmodelvars;
+                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char;
                 run;
 
                 /* Join monitoring period when there are multiple runs */
@@ -402,16 +410,13 @@
                     if subgroup='hispanic' then COVARNUM=1013;
                     if subgroup='dpidsiteid' then COVARNUM=9000;
                     if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
-                    if vtype(monitoringperiod) = 'C' then _monitoringperiod=input(monitoringperiod,8.);
-                    else _monitoringperiod=MonitoringPeriod;
                     if COVARNUM in (1:999) then do;
                         do i = 1 to countw("&covarnumlabels",'|');
                             varlabel = scan("&covarnumlabels",i,'|');
                             if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
                         end; 
                     end;
-                    drop MonitoringPeriod subgroup;
-                    rename _monitoringperiod=monitoringperiod;
+                    drop subgroup;
                 run;
                 %if &dupperiods > 1 %then %do;
                     proc sql noprint undo_policy=none;
@@ -680,5 +685,9 @@
         set analysistable;
         drop runid;
     run;
-		
+
+    proc datasets library=work nolist nowarn;
+        delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
+        _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views uniquepsest; 
+    quit;		
 %mend l2_sentinel_views_convertdata;
