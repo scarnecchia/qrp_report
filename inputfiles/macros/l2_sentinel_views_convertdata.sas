@@ -246,10 +246,6 @@
         into :repdatadsn separated by '@'
         from dictionary.tables 
         where libname = 'REPDATA' and prxmatch('/^table\d|^figure\d/i',memname);
-
-        select quote(analysisgrp)
-        into :wheregroups separated by ','
-        from analysistable;
     quit;
 
     /* If only a CS analysis is defined, create a dummy value to loop at least once */
@@ -438,7 +434,7 @@
             quit; 
 
             data _effectest_&i(drop=varlabel i);
-                set &dsn(rename=(MonitoringPeriod=monitoringperiod));
+                set &dsn;
                 length varlabel $2000 covarnum_label $200;
                 COVARNUM=0;
                 catnum=0;

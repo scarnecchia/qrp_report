@@ -810,6 +810,10 @@
 *   Create a stacked monitoring file for Sentinel Views                                
 ***************************************************************************************************/
 
+    /* Create periodid2 variable when multiple runs are requested in query */
+    /* Views platform does not have a way of distinguishing multiple runids
+       so monitoring period variable is incremented as periodid2 to work around
+       limitation */
     %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
         data monitoringfile_views;
             set %do n = 1 %to &numrunid.;
