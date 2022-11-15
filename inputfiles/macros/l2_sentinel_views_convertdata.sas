@@ -223,7 +223,7 @@
         on a.analysisgrp = b.analysisgrp
         left join psest_masterinputs_views c 
         on b.psestimategrp = c.psestimategrp 
-        %if &nobs > 0 %then %do;
+        %if &labelfileexists = Y %then %do;
         left join labelfile(where=(labeltype='outcomelabel')) d 
         on d.group = a.analysisgrp 
         left join labelfile(where=(labeltype='grouplabel')) e 
