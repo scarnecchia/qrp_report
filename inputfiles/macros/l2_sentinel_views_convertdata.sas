@@ -61,10 +61,6 @@
             having count(*) > 1;
         quit;
 
-        proc sort data = monitoringfile_views;
-            by periodid startdate fupenddate indendoptions cdpend indenddate;
-        run;
-
         proc sql noprint;
             select distinct catx('@',covarnum,studyname)
             into :covarnumlabels 
