@@ -166,16 +166,12 @@
         by runid covarnum analysisgrp;
     run;
 
-    proc sort data = l2comparisonfile out=uniquepsest;
-        by order;
-    run;
-
-        /* Create analysisgrp, psestimategrp and unique_psestimate combination */
+    /* Create analysisgrp, psestimategrp and unique_psestimate combination */
     proc sql noprint;
         select catx('|',catx('@',analysisgrp,psestimategrp),unique_psestimate)
         into :combs
         separated by '$'
-        from uniquepsest;
+        from l2comparisonfile;
     quit;
 
     proc sql noprint;
@@ -684,6 +680,6 @@
 
     proc datasets library=work nolist nowarn;
         delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
-        _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views uniquepsest; 
+        _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views; 
     quit;		
 %mend l2_sentinel_views_convertdata;
