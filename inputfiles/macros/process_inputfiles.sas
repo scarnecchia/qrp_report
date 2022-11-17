@@ -121,7 +121,7 @@
 
             %get_sas_format (%if &leavebehindreport = Y %then %do; path=&infolder., lib=infolder, %end;
                              %if &leavebehindreport = N %then %do; path=&input., lib=input, %end;
-                             inputfile = &value, parameter=&parameter);
+                             inputfile = %bquote(&value), parameter=&parameter);
 
             /* Resume writing to log */
             %if &leavebehindreport = Y %then %do;

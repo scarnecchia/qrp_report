@@ -345,7 +345,7 @@
 
     %if &outputviewsdata=Y %then %do;
 	  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %l1_sentinel_views_convertdata(&viewsID);
-      %else %l2_sentinel_views_convertdata(queryid=&viewsID,jirakey=&jirakey,userid=&userid,studytitle=&studytitle);
+      %else %l2_sentinel_views_convertdata(queryid=&viewsID,jirakey=&jirakey,userid=&userid,studytitle=%bquote(&studytitle));
     %end;			
 
 /*************************************************************************************************/
