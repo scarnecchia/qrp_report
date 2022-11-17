@@ -47,7 +47,6 @@
 
         %let kmtableflag = ;
         %let psdistflag = ;
-        %let psdsn=;
         %let repdatadsn=;
         %let psmodelvars=;
 
@@ -252,18 +251,18 @@
                     table1order=_n_;
                     /* Change back standardized race/hispanic/sex values */
                     if upcase(metvar) = 'RACE_0' then metvar = 'RACE_UNKNOWN';
-                    if upcase(metvar) = 'RACE_1' then metvar = 'AMERICANINDIAN';
-                    if upcase(metvar) = 'RACE_2' then metvar = 'ASIAN';
-                    if upcase(metvar) = 'RACE_3' then metvar = 'BLACK';
-                    if upcase(metvar) = 'RACE_4' then metvar = 'PACIFICISLANDER';
-                    if upcase(metvar) = 'RACE_5' then metvar = 'WHITE';
-                    if upcase(metvar) = 'RACE_M' then metvar = 'MULTI';
-                    if upcase(metvar) = 'SEX_M' then metvar = 'MALE';
-                    if upcase(metvar) = 'SEX_F' then metvar = 'FEMALE';
-                    if upcase(metvar) = 'SEX_O' then metvar = 'SEX_OTHER';
-                    if upcase(metvar) = 'HISPANIC_Y' then metvar = 'HISPANIC_YES';
-                    if upcase(metvar) = 'HISPANIC_N' then metvar = 'HISPANIC_NO';
-                    if upcase(metvar) = 'HISPANIC_U' then metvar = 'HISPANIC_UNKNOWN';
+                    else if upcase(metvar) = 'RACE_1' then metvar = 'AMERICANINDIAN';
+                    else if upcase(metvar) = 'RACE_2' then metvar = 'ASIAN';
+                    else if upcase(metvar) = 'RACE_3' then metvar = 'BLACK';
+                    else if upcase(metvar) = 'RACE_4' then metvar = 'PACIFICISLANDER';
+                    else if upcase(metvar) = 'RACE_5' then metvar = 'WHITE';
+                    else if upcase(metvar) = 'RACE_M' then metvar = 'MULTI';
+                    else if upcase(metvar) = 'SEX_M' then metvar = 'MALE';
+                    else if upcase(metvar) = 'SEX_F' then metvar = 'FEMALE';
+                    else if upcase(metvar) = 'SEX_O' then metvar = 'SEX_OTHER';
+                    else if upcase(metvar) = 'HISPANIC_Y' then metvar = 'HISPANIC_YES';
+                    else if upcase(metvar) = 'HISPANIC_N' then metvar = 'HISPANIC_NO';
+                    else if upcase(metvar) = 'HISPANIC_U' then metvar = 'HISPANIC_UNKNOWN';
                 /* Add on unique_psestimate and psestimategrp */
                 %do n = 1 %to %sysfunc(countw(&combs,%str($)));
                     %let comb = %scan(&combs,&n,%str($));
@@ -283,25 +282,25 @@
                     %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
                         %let psmodelvar = %scan(&psmodelvarsin,&z);
                             %if &psmodelvar = AGE %then %do; 
-                            if prxmatch('/AGE/',metvar) then pscovariate = 'Y';
+                                if prxmatch('/AGE/',metvar) then pscovariate = 'Y';
                             %end;
                             %if &psmodelvar = AGEGROUP %then %do; 
-                            if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
+                                if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
                             %end;
                             %if &psmodelvar = RACE %then %do; 
-                            if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) then pscovariate='Y';
+                                if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) then pscovariate='Y';
                             %end;
                             %if &psmodelvar = SEX %then %do;
-                            if prxmatch('/SEX*|FEMALE|MALE/',metvar) then pscovariate = 'Y';
+                                if prxmatch('/SEX*|FEMALE|MALE/',metvar) then pscovariate = 'Y';
                             %end;
                             %if &psmodelvar = YEAR %then %do;
-                            if prxmatch('/YEAR*/',metvar) then pscovariate = 'Y';
+                                if prxmatch('/YEAR*/',metvar) then pscovariate = 'Y';
                             %end;
                             %if &psmodelvar = HISPANIC %then %do;
-                            if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
+                                if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
                             %end;
                             %if %sysfunc(prxmatch(/COVAR*|^NUM*|COMORBID*/,&psmodelvar)) %then %do; 
-                            if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
+                                if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
                             %end;
                     %end;
                 end;/* psestimategrp */
@@ -395,13 +394,13 @@
                     if missing(subgroup) then delete;
                     %end;
                     if subgroup='sex' then COVARNUM=1000;
-                    if subgroup='agegroup' then COVARNUM=1001;
-                    if subgroup='year' then COVARNUM=1002;
-                    if subgroup='periodid' then COVARNUM=1003;
-                    if subgroup='race' then COVARNUM=1012;
-                    if subgroup='hispanic' then COVARNUM=1013;
-                    if subgroup='dpidsiteid' then COVARNUM=9000;
-                    if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
+                    else if subgroup='agegroup' then COVARNUM=1001;
+                    else if subgroup='year' then COVARNUM=1002;
+                    else if subgroup='periodid' then COVARNUM=1003;
+                    else if subgroup='race' then COVARNUM=1012;
+                    else if subgroup='hispanic' then COVARNUM=1013;
+                    else if subgroup='dpidsiteid' then COVARNUM=9000;
+                    else if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
                     if COVARNUM in (1:999) then do;
                         do i = 1 to countw("&covarnumlabels",'|');
                             varlabel = scan("&covarnumlabels",i,'|');
@@ -633,15 +632,13 @@
         set _effectest_:;
     run;
 
+    /* Delete rows not relevant for Sentinel Views */
     data views.attrition;
-        set _attrition:;
-        /* Delete rows not relevant for Sentinel Views */
-        if index(level,'.') then delete;
-        if descr = 'Number of events in comparative analysis' then delete;
-        if descr = 'Number of episodes' then delete;
-        if descr = 'Number of members' then delete;
-        if descr = 'Excluded due to same-day initiation of both exposure groups' then delete;
-        if descr = 'Number of patients with a truncated inverse probability of treatment weight' then delete;
+        set _attrition:(where=(not missing(level) and descr not in('Number of events in comparative analysis',
+                                                                   'Number of episodes',
+                                                                   'Number of members' ,
+                                                                   'Excluded due to same-day initiation of both exposure groups',
+                                                                   'Number of patients with a truncated inverse probability of treatment weight')));
     run;
 
     /* Check if medicalproduct_labeled variable exists, if not, assign it values and a label */
