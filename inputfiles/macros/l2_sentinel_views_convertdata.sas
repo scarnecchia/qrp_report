@@ -282,7 +282,7 @@
                     %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
                         %let psmodelvar = %scan(&psmodelvarsin,&z);
                             %if &psmodelvar = AGE %then %do; 
-                                if prxmatch('/AGE/',metvar) then pscovariate = 'Y';
+                                if metvar = 'AGE' then pscovariate = 'Y';
                             %end;
                             %if &psmodelvar = AGEGROUP %then %do; 
                                 if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
