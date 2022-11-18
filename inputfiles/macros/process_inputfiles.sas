@@ -113,7 +113,9 @@
                 end;
             run;
 
-            %let &parameter. = &value.;
+            /* Mask special characters from studytitle parameter */
+            %if %lowcase(&parameter.) = studytitle %then %let value = %bquote(&value);
+            %else %let &parameter. = &value.;
 
             /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
             proc printto log=log;
@@ -121,7 +123,7 @@
 
             %get_sas_format (%if &leavebehindreport = Y %then %do; path=&infolder., lib=infolder, %end;
                              %if &leavebehindreport = N %then %do; path=&input., lib=input, %end;
-                             inputfile = %bquote(&value), parameter=&parameter);
+                             inputfile = &value, parameter=&parameter);
 
             /* Resume writing to log */
             %if &leavebehindreport = Y %then %do;
