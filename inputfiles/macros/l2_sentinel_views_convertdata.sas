@@ -417,8 +417,8 @@
                                 B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
                                 B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
                                 B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
-                                B.analysisgrpsort, B.title, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
-                                B.LABEL, B.medicalproduct_labeled, B.COVARNUM_Label
+                                B.analysisgrpsort, B.tabletitle as title, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
+                                %if &labelfileexists = Y %then %do; B.LABEL, B.medicalproduct_labeled, %end; B.COVARNUM_Label
                         from monitoringperiod_lookup a right join _effectest_&i. b 
                         on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
                     quit;
