@@ -50,7 +50,8 @@
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData;
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData
+            jirakey userid studytitle;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -76,6 +77,9 @@
     %let report_destination = ;
 	%let collapse_vars = ;
 	%let OutputViewsData = N;
+    %let jirakey = ;
+    %let userid = ;
+    %let studytitle = ;
 
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
