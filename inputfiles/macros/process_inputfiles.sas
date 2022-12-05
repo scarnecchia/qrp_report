@@ -1864,9 +1864,9 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11;
+                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11 stratvars $18;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
-                   ipweight, percentiles, unconditional, pstrim);
+                   ipweight, percentiles, unconditional, pstrim, stratvars);
             stop;
         run;
         data psest_masterinputs;
@@ -1912,8 +1912,7 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim reestimateps %if &outputviewsdata = Y and &reporttype = T2L2 %then %do; stratvars %end;
-                     ;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars;
             run;
 
             data psest_masterinputs;
@@ -1950,9 +1949,7 @@
                       ,pscs.ref
                       ,pscs.unconditional
                       ,pscs.pstrim
-                      %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
                       ,pscs.stratvars 
-                      %end;
                       ,lowcase(sub.subgroup) as subgroup
                       ,upcase(sub.subgroupcat) as subgroupcat
                       /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
@@ -2003,9 +2000,7 @@
                   ,pscs.subgroup
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
-                  %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
                   ,pscs.stratvars 
-                  %end;
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
