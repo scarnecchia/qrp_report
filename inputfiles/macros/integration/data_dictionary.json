@@ -10,6 +10,11 @@
             "name": "Type 2",
             "info": "Exposure and Follow-up Time"
         },
+		{
+            "id": "3",
+            "name": "Type 3",
+            "info": "Self-Controlled Risk Interval Design"
+        },
         {
             "id": "4",
             "name": "Type 4",
@@ -19,6 +24,11 @@
             "id": "5",
             "name": "Type 5",
             "info": "Medical Product Utilization"
+        },
+		{
+            "id": "6",
+            "name": "Type 6",
+            "info": "Manufacturer-level Product Utilization and Switching Patterns"
         }
     ],
     "input_files": [
@@ -28,8 +38,10 @@
             "analysis_types": [
                 "1",
                 "2",
+				"3",
                 "4",
-                "5"
+                "5",
+				"6"
             ],
             "required": true,
             "required_files": [],
@@ -100,14 +112,18 @@
                     "values": [
                         1,
                         2,
+						3,
                         4,
-                        5
+                        5,
+						6
                     ],
 					"value_map": {
 						"1": "Type 1 (background rate cohort identification strategy)",
                         "2": "Type 2 (exposures and follow-up time cohort identification strategy)",
+						"3": "Type 3 (self-controlled risk interval design)",
                         "4": "Type 4 (pregnancy episodes cohort identification strategy)",
-                        "5": "Type 5 (medical product utilization cohort identification strategy)"
+                        "5": "Type 5 (medical product utilization cohort identification strategy)",
+						"6": "Type 6 (manufacturer-level product utilization and switching patterns)"
 					}
                 },
                 {
@@ -215,10 +231,12 @@
             "id": "cohortcodes",
             "name": "Cohort Codes File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": true,
             "required_files": [],
@@ -552,8 +570,10 @@
             "analysis_types": [
                 "1",
                 "2",
+				"3",
                 "4",
-                "5"
+                "5",
+				"6"
             ],
             "required": true,
             "required_files": [],
@@ -634,10 +654,12 @@
 			"id": "qrp_parameters",
             "name": "QRP Parameters File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": true,
             "required_files": [],
@@ -799,6 +821,21 @@
 					}
                 },
 				{
+                    "id": "TYPE3FILE",
+                    "name": "Type 3 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a self-controlled risk interval design cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"type3file"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"type3file": "Include"
+					}
+                },
+				{
                     "id": "TYPE4FILE",
                     "name": "Type 4 File",
                     "sas_format": "$32",
@@ -826,6 +863,21 @@
 					"value_map":{
 						" ": "Exclude",
 						"type5file": "Include"
+					}
+                },
+				{
+                    "id": "TYPE6FILE",
+                    "name": "Type 6 File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining parameters required for a manufacture level product utilization and switching patterns cohort identification strategy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"type6file"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"type6file": "Include"
 					}
                 },																
 				{
@@ -1204,20 +1256,19 @@
 					}
                 },
 				{
-                    "id": "TYPE3FILE",
-                    "name": "Type 3 File",
+                    "id": "TREATMENTPATHWAYS",
+                    "name": "Treatment Pathways",
                     "sas_format": "$32",
-                    "info": "Name of the SAS dataset defining parameters required for a self-controlled risk interval design cohort identification strategy",
-                    "input_type": "String",
-                    "values": []
-                },
-				{
-                    "id": "TYPE6FILE",
-                    "name": "Type 6 File",
-                    "sas_format": "$32",
-                    "info": "Name of the SAS dataset defining parameters required for a manufacture level product utilization and switching patterns cohort identification strategy",
-                    "input_type": "String",
-                    "values": []
+                    "info": "Name of the SAS dataset used to evaluate and characterize switch pattern",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"treatmentpathways"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"treatmentpathways": "Include"
+					}
                 },
 				{
                     "id": "PSESTIMATIONFILE",
@@ -1290,14 +1341,6 @@
                     "info": "Specifies the method for performing prospective surveillance when using propensity score adjustment in a variable time-at-risk design",
                     "input_type": "String",
                     "values": []
-                },
-				{
-                    "id": "TREATMENTPATHWAYS",
-                    "name": "Treatment Pathways",
-                    "sas_format": "$32",
-                    "info": "Name of the SAS dataset used to evaluate and characterize switch pattern",
-                    "input_type": "String",
-                    "values": []
                 }
 			]
 		},
@@ -1305,10 +1348,12 @@
 			"id": "userstrata",
             "name": "User-Defined Strata File",
             "analysis_types": [
-                1,
-				2,
-				4,
-				5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": true,
             "required_files": [],
@@ -1391,7 +1436,7 @@
 			"id": "modpregdur",
             "name": "Modified Pregnancy Duration File",
             "analysis_types": [
-                4
+                "4"
             ],
             "required": true,
             "required_files": [],
@@ -1603,7 +1648,7 @@
 			"id": "type1file",
             "name": "Type 1 File",
             "analysis_types": [
-                1
+                "1"
             ],
             "required": true,
             "required_files": [],
@@ -1693,7 +1738,7 @@
 			"id": "type2file",
             "name": "Type 2 File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": true,
             "required_files": [],
@@ -1979,10 +2024,117 @@
 			]
 		},
 		{
+			"id": "type3file",
+            "name": "Type 3 File",
+            "analysis_types": [
+                "3"
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "In a self-controlled risk interval design strategy, users define an exposure of interest, specify a risk and control window relative to the exposure date, and examine the occurrence of HOIs during the risk and control windows.",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file550-type03-type3.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T3RISKFROM",
+                    "name": "Risk Window Interval Start",
+                    "sas_format": "3",
+                    "info": "Indicates the risk window interval start, as days relative to the exposure start date (i.e., day zero).",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3RISKTO",
+                    "name": "Risk Window Interval End",
+                    "sas_format": "3",
+                    "info": "Indicates the risk window interval end, as days relative to the exposure start date (i.e., day zero).",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3CTRLFROM",
+                    "name": "Control Window Interval Start",
+                    "sas_format": "3",
+                    "info": "Indicates the control window interval start, as days relative to the exposure start date (i.e., day zero).",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3CTRLTO",
+                    "name": "Control Window Interval End",
+                    "sas_format": "3",
+                    "info": "Indicates the control window interval end, as days relative to the exposure start date (i.e., day zero).",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3COHORTDEF",
+                    "name": "Allowed Number of Exposure Episodes per Individual for the Surveillance Activity",
+                    "sas_format": "$2",
+                    "info": "Indicates how many exposures or index dates ('day zeros') an individual can contribute to the query or the surveillance activity (and, by extension, the number of risk/control interval pairs or observation windows an individual can contribute).",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02",
+						"03"
+					],
+					"value_map": {
+						"01": "Cohort includes only the first exposure",
+						"02": "Cohort includes all exposures",
+						"03": "Cohort includes all exposure windows or index dates until an outcome occurs, including the index date with the associated outcome"
+					}
+                },
+				{
+                    "id": "T3WASHPER",
+                    "name": "Type 3 Exposure Washout Period",
+                    "sas_format": "3",
+                    "info": "Period before exposure during which an individual cannot have evidence of index-defining criteria",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3WASHPERFUP",
+                    "name": "Type 3 HOI Incidence Assessment Period",
+                    "sas_format": "3",
+                    "info": "Period before an HOI during which an individual cannot have evidence of HOI incidence-defining criteria",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T3CENSOR_DTH",
+                    "name": "Censor Evaluation Windows at Evidence of Death",
+                    "sas_format": "$1",
+                    "info": "Indicates if risk and evaluation windows should be censored based on death date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]	
+		},
+		{
 			"id": "type4file",
             "name": "Type 4 File",
             "analysis_types": [
-                4
+                "4"
             ],
             "required": true,
             "required_files": [],
@@ -2180,7 +2332,7 @@
 			"id": "type5file",
             "name": "Type 5 File",
             "analysis_types": [
-                5
+                "5"
             ],
             "required": true,
             "required_files": [],
@@ -2295,13 +2447,308 @@
 			]
 		},
 		{
+			"id": "type6file",
+            "name": "Type 6 File",
+            "analysis_types": [
+                "6"
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "The Type 6 file is required for evaluating manufacture level product utilization and switching patterns.",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file572-type06-type6.md",
+            "table_type": "group",
+            "row_source": [
+				"cohort"
+			],
+            "row_parameter": "GROUP",
+            "all_groups_required": true,
+            "parameters": [
+				{
+                    "id": "GROUP",
+                    "name": "Cohort Name",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts",
+                    "input_type": "RowParameter",
+                    "values": []
+                },
+				{
+                    "id": "T6COHORTDEF",
+                    "name": "Allowed Number of Exposure Episodes per Individual",
+                    "sas_format": "$2",
+                    "info": "Indicates how many exposure periods an individual can contribute",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02"
+					],
+					"value_map": {
+						"01": "Cohort includes only the first valid exposure episode during the query period",
+						"02": "Cohort includes all valid exposure episodes during the query period"
+					}
+                },
+				{
+                    "id": "T6WASHPER",
+                    "name": "Type 6 Exposure Washout Period",
+                    "sas_format": "3",
+                    "info": "Period before an exposure episode during which an individual cannot have evidence of index-defining criteria.",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "EPISODEGAPTYPE",
+                    "name": "Treatment Episode Gap Type",
+                    "sas_format": "$1",
+                    "info": "Specifies the type of algorithm to use for the calculation of episode gaps",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"F",
+						"P"
+					],
+					"value_map": {
+						"F": "Fixed episode gap",
+						"P": "Percentage episode gap"
+					}
+                },
+				{
+                    "id": "EPISODEGAP",
+                    "name": "Exposure Episode Gap",
+                    "sas_format": "3",
+                    "info": "Sets the number of days allowed between two consecutive claims to consider them as part of the same treatment episode",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "CENSOR_DTH",
+                    "name": "Censor Episodes at Evidence of Death",
+                    "sas_format": "$1",
+                    "info": "Indicates if a treatment episode should be censored based on death date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "UPTAKEDATE",
+                    "name": "Date for Product Uptake Computations",
+                    "sas_format": "$30",
+                    "info": "Indicates which date field to use for product uptake duration computations to first observed valid dispensing date",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"PRODUCTAPPROVALDATE",
+						"PRODUCTMARKETINGDATE",
+						"OTHERPRODUCTDATE",
+						"COMPUTEDSTARTMARKETINGDATE"
+					],
+					"value_map": {
+						"PRODUCTAPPROVALDATE": "Product Approval Date",
+						"PRODUCTMARKETINGDATE": "Product Marketing Date",
+						"OTHERPRODUCTDATE": "Other Product Date",
+						"COMPUTEDSTARTMARKETINGDATE": "Computed Start Marketing Date"
+					}
+                }
+			]
+		},		
+		{
+			"id": "treatmentpathways",
+            "name": "Treatment Pathways File",
+            "analysis_types": [
+                "6"
+            ],
+            "required": true,
+            "required_files": [],
+            "info": "Provides user-defined attributes to the identification and computation of switch pattern episodes. User will specify in this file which group products will be evaluated for switching patterns and the number of switch patterns (up to two allowed). Identification of episodes that qualify as a switch (or not) will be in accordance with user-specified overlap and gap thresholds in this file.",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file574-type06-treatmentpathways.md",
+            "table_type": "generic",
+            "row_source": [],
+            "row_parameter": "",
+            "all_groups_required": false,
+            "parameters": [
+				{
+                    "id": "ANALYSISGRP",
+                    "name": "Name of Switch Pattern",
+                    "sas_format": "$40",
+                    "info": "Name to differentiate switch patterns.",
+                    "input_type": "String",
+                    "values": []
+                },
+				{
+                    "id": "GROUP",
+                    "name": "Name of Cohort",
+                    "sas_format": "$40",
+                    "info": "Standardized name used to differentiate cohorts.",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["Cohort"]
+                },
+				{
+                    "id": "SWITCHCOHORTDEF",
+                    "name": "Allowed Number of Switch Pattern Episodes per Individual",
+                    "sas_format": "$2",
+                    "info": "Indicates how many switch pattern periods an individual can contribute.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"01",
+						"02"
+					],
+					"value_map": {
+						"01": "Only the first valid switch pattern episode during the query period",
+						"02": "All switch pattern episodes during the query period"
+					}
+                },
+				{
+                    "id": "SWITCHEVALSTEP",
+                    "name": "Switch Evaluation Step Value",
+                    "sas_format": "3",
+                    "info": "Value used to differentiate evaluation step. Note that each switch pattern (ANALYSISGRP) can support up to 2 evaluation steps.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"0",
+						"1",
+						"2"
+					],
+					"value_map": {
+						"0": "Switch pattern evaluation start",
+						"1": "First Evaluation",
+						"2": "Second Evaluation"
+					}
+                },
+				{
+                    "id": "GAPTOL",
+                    "name": "Gap Tolerance",
+                    "sas_format": "3",
+                    "info": "Value used to indicate allowable number of gap days in between treatment episodes identified in current and prior switch pattern evaluation steps, in order for treatment pattern to be identified as a switch.",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OVERLAPTOL",
+                    "name": "Overlap Tolerance",
+                    "sas_format": "3",
+                    "info": "Value used to indicate allowable number of overlap days OR percent (of prior evaluation step treatment episode) in between treatment episodes identified in current and prior switch pattern evaluation steps, in order for treatment pattern to be identified as a switch.",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "OVERLAPTYPE",
+                    "name": "Overlap Type",
+                    "sas_format": "$7",
+                    "info": "Value to denote whether value in Overlap Tolerance represents a days or a percent.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Days",
+						"Percent"
+					]
+                },
+				{
+                    "id": "SWITCHCOHORTINCLDATE",
+                    "name": "Switch Pattern Cohort Inclusion Date",
+                    "sas_format": "$30",
+                    "info": "Optional parameter that indicates which date to use for inclusion into the switch pattern cohort of interest as well as optionally as the index date of the treatment episode initiating the switch pattern.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"PRODUCTAPPROVALDATE",
+						"PRODUCTMARKETINGDATE",
+						"OTHERPRODUCTDATE",
+						"COMPUTEDSTARTMARKETINGDATE"
+					],
+					"value_map": {
+						"PRODUCTAPPROVALDATE": "Product Approval Date",
+						"PRODUCTMARKETINGDATE": "Product Marketing Date",
+						"OTHERPRODUCTDATE": "Other Product Date",
+						"COMPUTEDSTARTMARKETINGDATE": "Computed Start Marketing Date"
+					}
+                },
+				{
+                    "id": "SWITCHDATEUSE",
+                    "name": "Switch Pattern Cohort Inclusion Date Strategy Indicator",
+                    "sas_format": "$1",
+                    "info": "Indicates how the Switch Pattern Cohort Inclusion Date will be used.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"1",
+						"2"
+					],
+					"value_map": {
+						"1": "Switch Pattern Cohort Inclusion Date used only as switch cohort entry date. First treatment episode RxDate is used as index for computing time to first switch.",
+						"2": "Switch Pattern Cohort Inclusion Date used as switch cohort entry date AND as initial switch step index date for computing time to first switch."
+					}
+                },
+				{
+                    "id": "SWITCHGAPINCL",
+                    "name": "Computation of Switch Pattern Duration Includes Gaps",
+                    "sas_format": "$1",
+                    "info": "Indicator for whether gaps in treatment episodes that are included in a switch episode will be counted as part of the switch episode duration.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "SWITCHENRDAYS",
+                    "name": "Minimum Pre-index Enrollment Days for Inclusion/Exclusion Criteria in Switch Episodes",
+                    "sas_format": "3",
+                    "info": "Parameter to specify the number of days of continuous enrollment required before the index date for inclusion/exclusion criteria when evaluating switch episodes.",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "SWITCHREQDAYSAFTIND",
+                    "name": "Minimum Post-index Required Days for Inclusion/Exclusion Criteria in Switch Episodes",
+                    "sas_format": "3",
+                    "info": "Parameter to specify the number of days a patient is required to be in the data after the index date for inclusion/exclusion criteria when evaluating switch episodes.",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "KEEPINCLEXC",
+                    "name": "Apply Inclusion/Exclusion Criteria to Switch Patterns Cohort",
+                    "sas_format": "$1",
+                    "info": "Specifies whether to apply to the switch patterns cohort the inclusion/exclusion criteria that were applied to the product utilization cohort. If KEEPINCLEXC is specified, the inclusion/exclusion criteria are applied to the SWITCHEVALSTEP= 0 cohort.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                },
+				{
+                    "id": "CREATEBASELINE",
+                    "name": "Produce Baseline Table",
+                    "sas_format": "$1",
+                    "info": "Indicates whether to produce a baseline table for corresponding Analysis Group",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"Y",
+						"N"
+					],
+					"value_map": {
+						"Y": "Yes",
+						"N": "No"
+					}
+                }
+			]
+		},	
+		{
 			"id": "reportparameters",
             "name": "Report Parameters File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -2333,11 +2780,13 @@
 		{
 			"id": "inclusioncodes",
             "name": "Inclusion/Exclusion Codes File",
-            "analysis_types": [
-                1,
-                2,
-                4,
-                5
+			"analysis_types": [
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -2745,10 +3194,12 @@
 			"id": "covariatescodes",
             "name": "Covariate Codes File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3026,10 +3477,12 @@
 			"id": "comorbfile",
             "name": "Comorbidity Score File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3080,10 +3533,12 @@
 			"id": "utilfile",
             "name": "Utilization File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3142,10 +3597,12 @@
 			"id": "stockpilingfile",
             "name": "Stockpiling File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3247,10 +3704,12 @@
 			"id": "mfufile",
             "name": "Most Frequent Utilization File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3419,10 +3878,12 @@
 			"id": "combofilecodes",
             "name": "Combo Codes Input File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": ["COMBOFILE"],
@@ -3594,10 +4055,12 @@
 			"id": "combofile",
             "name": "Combo Input File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": ["COMBOFILECODES"],
@@ -3843,10 +4306,12 @@
 			"id": "combofilestock",
             "name": "Combo Stockpiling Input File",
             "analysis_types": [
-                1,
-                2,
-                4,
-                5
+                "1",
+                "2",
+				"3",
+                "4",
+                "5",
+				"6"
             ],
             "required": false,
             "required_files": [],
@@ -3946,7 +4411,7 @@
 			"id": "concfile",
             "name": "Concomitant Use File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": false,
             "required_files": [],
@@ -4075,7 +4540,7 @@
 			"id": "multeventfile",
             "name": "Multiple Events File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": false,
             "required_files": [],
@@ -4204,7 +4669,7 @@
 			"id": "multeventfile_adhere",
             "name": "Multiple Events Adherence Definition File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": false,
             "required_files": [],
@@ -4301,7 +4766,7 @@
 			"id": "overlapfile",
             "name": "Overlap File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": false,
             "required_files": [],
@@ -4441,7 +4906,7 @@
 			"id": "overlapfile_adhere",
             "name": "Overlap Adherence Definition File",
             "analysis_types": [
-                2
+                "2"
             ],
             "required": false,
             "required_files": [],
@@ -4501,7 +4966,7 @@
 			"id": "micohortfile",
             "name": "Mother-Infant Cohort File",
             "analysis_types": [
-                4
+                "4"
             ],
             "required": false,
             "required_files": [],
