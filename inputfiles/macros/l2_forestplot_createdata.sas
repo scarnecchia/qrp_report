@@ -58,7 +58,10 @@
                  est.analysisgrpsort, 
                  est.subgroup,
                  est.subgroupcatorder, 
-                 est.subgroupcatlabel,
+                 /*need to unformat agegroup so it can be formatted in the proc sgrender because of the possible unicode character*/
+                 case when subgroup = 'agegroup' then est.subgroupcat
+                    else est.subgroupcatlabel
+                    end as subgroupcatlabel,
                  est.subgroupcat, 
                  est.subgrouporder,
                  est.tabletitle,
@@ -114,7 +117,10 @@
                  est.analysisgrpsort, 
                  est.subgroup, 
                  est.subgroupcatorder, 
-                 est.subgroupcatlabel,
+                 /*need to unformat agegroup so it can be formatted in the proc sgrender because of the possible unicode character*/
+                 case when subgroup = 'agegroup' then est.subgroupcat
+                    else est.subgroupcatlabel
+                    end as subgroupcatlabel,
                  est.subgroupcat, 
                  est.subgrouporder,
                  est.sort1, 
