@@ -351,7 +351,7 @@
                                           runidvar=&runid.);    
                 %end;
 
-                %if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto enddriver;
+                %if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto nextloop;
 
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
                                 
@@ -663,48 +663,48 @@
     ***********************************************************************************************;
     * Merge together risk metrics, effect estimates and label/order info                 
     ***********************************************************************************************;
-    proc sql noprint;
-        create table l2_effectestimates_&periodid. as
-        select r.*, 
-              case when r.subgroup = 'dpidsiteid' then 1 /*also sorting by subgroupcat below*/ 
-              else pscs.subgroupcatorder
-              end as subgroupcatorder,
-              case when r.subgroup = 'dpidsiteid' then 1.5 /*to come after overall*/
-              else pscs.subgrouporder
-              end as subgrouporder,
-              case when r.subgroup = 'dpidsiteid' then 'Data Partner'
-              else pscs.tabletitle
-              end as tabletitle,
-              case when r.subgroup = 'dpidsiteid' then r.subgroupcat
-              else pscs.subgroupcatlabel
-              end as subgroupcatlabel,
-            %if "&reporttype." = "T2L2" %then %do;
-            HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
-            %end;
-            %else %if "&reporttype." = "T4L2" %then %do;
-            or_95ci, or, LCL, UCL, or_se, adjor_95ci, adjor, adjor_LCL, adjor_UCL
-            %end;
-        from rdest as r
-        /* left join b/c IPTW contains rows that do not have a computed HR*/
-        left join logitest as c
-        on r.monitoringperiod = c.monitoringperiod
-          and r.analysisgrp = c.analysisgrp
-          and r.subgroup = c.subgroup
-          and r.analysis=c.analysis
-          and r.subgroupcat = c.subgroupcat
-        left join pscs_masterinputs as pscs
-        on r.analysisgrp = pscs.analysisgrp and r.subgroup = pscs.subgroup and r.subgroupcat = pscs.subgroupcat;
-    quit;
+    %if ^%sysfunc(exist(input.&treeaggfile.)) %then %do; 
+        proc sql noprint;
+            create table l2_effectestimates_&periodid. as
+            select r.*, 
+                  case when r.subgroup = 'dpidsiteid' then 1 /*also sorting by subgroupcat below*/ 
+                  else pscs.subgroupcatorder
+                  end as subgroupcatorder,
+                  case when r.subgroup = 'dpidsiteid' then 1.5 /*to come after overall*/
+                  else pscs.subgrouporder
+                  end as subgrouporder,
+                  case when r.subgroup = 'dpidsiteid' then 'Data Partner'
+                  else pscs.tabletitle
+                  end as tabletitle,
+                  case when r.subgroup = 'dpidsiteid' then r.subgroupcat
+                  else pscs.subgroupcatlabel
+                  end as subgroupcatlabel,
+                %if "&reporttype." = "T2L2" %then %do;
+                HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
+                %end;
+                %else %if "&reporttype." = "T4L2" %then %do;
+                or_95ci, or, LCL, UCL, or_se, adjor_95ci, adjor, adjor_LCL, adjor_UCL
+                %end;
+            from rdest as r
+            /* left join b/c IPTW contains rows that do not have a computed HR*/
+            left join logitest as c
+            on r.monitoringperiod = c.monitoringperiod
+              and r.analysisgrp = c.analysisgrp
+              and r.subgroup = c.subgroup
+              and r.analysis=c.analysis
+              and r.subgroupcat = c.subgroupcat
+            left join pscs_masterinputs as pscs
+            on r.analysisgrp = pscs.analysisgrp and r.subgroup = pscs.subgroup and r.subgroupcat = pscs.subgroupcat;
+        quit;
 
-    proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
-        by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
-    run;
+        proc sort data=l2_effectestimates_&periodid. sortseq=linguistic(Numeric_Collation=ON);
+            by analysisgrpsort subgroup subgrouporder subgroupcatorder subgroupcat sort1 sort2;
+        run;
 
-%enddriver:
-
-    proc datasets lib=work nolist nowarn; 
-        delete rdest logitest _:; 
-    quit;
+        proc datasets lib=work nolist nowarn; 
+            delete rdest logitest _:; 
+        quit;
+    %end; /* Treeaggfile does not exist */
 
     %end; /*L2ComparisonFile input file exists*/
 
