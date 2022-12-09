@@ -532,6 +532,40 @@
             %end;
         run;
 
+		/*Verify code distribution module run, compare groupsfile.CODEDIST with qrp_parameters.DISTINDEX */
+		%let modifycodedist=N;	
+		
+		data _distindex(rename=(value=distindex));
+			length runid $3;
+			set sashelp.vmacro(keep=name value where=(name like '%_DISTINDEX' ));
+			runid=lowcase(scan(name,1,'_'));
+		run;
+	
+		proc sort data=_distindex; by runid; run;		
+		proc sort data=groupsfile; by runid order; run;		
+		
+		data groupsfile(drop=distindex);
+			merge groupsfile _distindex;
+			by runid;
+			if upcase(distindex)^='Y' and codedist^='' then do;
+				codedist='';
+				modifycodedist='Y';
+				call symput('modifycodedist','Y');
+			end;
+		run;		
+
+		%if &modifycodedist=Y %then %do;
+			data _null_;
+				set groupsfile;
+				by runid;
+				if _n_=1 then put "WARNING: (Sentinel) DISTINDEX is not set to Y for groups listed. CODEDIST will be set to missing.";
+				if modifycodedist='Y' then do;
+					if first.runid then put "          RunId " runid ": " group;
+					else put "                    : " group;
+				end;
+			run;
+		%end;
+
         /*Set max(order) value into NUMGROUPS*/
         proc sql noprint;
             select max(order) into :numgroups 
