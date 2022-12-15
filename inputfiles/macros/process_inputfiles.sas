@@ -556,16 +556,17 @@
 
 		%if &modifycodedist=Y %then %do;
 			data _null_;
-				set groupsfile;
+				length text1 text2 $250;
+				retain text1 text2;
+				set groupsfile(where=(modifycodedist='Y')) end=eof;
 				by runid;
-				if _n_=1 then put "WARNING: (Sentinel) DISTINDEX is not set to Y for groups listed. CODEDIST will be set to missing.";
-				if modifycodedist='Y' then do;
-					if first.runid then put "          RunId " runid ": " group;
-					else put "                    : " group;
-				end;
-			run;
+				if first.runid then text1=trim(runid)||":"||group; 
+				else text1=trim(text1)||","||group;
+				if last.runid then text2=trim(text2)||" "||text1;
+				if eof then put "WARNING: (Sentinel) CODEDIST will be set to missing. DISTINDEX not set to Y for ( " text2 ")";
+			run; 
 		%end;
-
+		
         /*Set max(order) value into NUMGROUPS*/
         proc sql noprint;
             select max(order) into :numgroups 
