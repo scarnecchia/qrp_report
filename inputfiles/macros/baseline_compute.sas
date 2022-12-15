@@ -1723,7 +1723,7 @@
                         %assignbaselinevars(label=put('M', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('M', sexsort.),1.));
                     %end;
                 end;
-                else if MetVar in ('SEX_O') and 'O' in (&sex.) then do;
+                else if MetVar in ('SEX_O') and (  'O' in (&sex.) or 'A' in (&sex.) or 'U' in (&sex.)  ) then do;				
                     %if %str("&reporttype") ne %str("T4L1") & %str("&reporttype") ne %str("T4L2") %then %do;
                     %assignbaselinevars(label=put('O', $sexfmt.), grouper="Demographic Characteristics", sortorder1 = 4, sortorder2=input(put('O', sexsort.),1.));
                     %end;
