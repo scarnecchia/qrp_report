@@ -536,7 +536,7 @@
 		/*Verify code distribution module run, compare groupsfile.CODEDIST with qrp_parameters.DISTINDEX */
 		%let modifycodedist=N;	
 		
-		data _distindex(rename=(value=distindex));
+		data _distindex(drop=name rename=(value=distindex));
 			length runid $5;
 			set sashelp.vmacro(keep=name value where=(name like '%_DISTINDEX' ));
 			runid=lowcase(scan(name,1,'_'));
