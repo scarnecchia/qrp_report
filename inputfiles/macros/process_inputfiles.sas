@@ -522,6 +522,7 @@
     %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
 
         data groupsfile;
+			length runid $5;
             set input.&groupsfile.;
             runid = lowcase(runid);
             group = lowcase(group);
@@ -535,8 +536,8 @@
 		/*Verify code distribution module run, compare groupsfile.CODEDIST with qrp_parameters.DISTINDEX */
 		%let modifycodedist=N;	
 		
-		data _distindex(rename=(value=distindex));
-			length runid $3;
+		data _distindex(drop=name rename=(value=distindex));
+			length runid $5;
 			set sashelp.vmacro(keep=name value where=(name like '%_DISTINDEX' ));
 			runid=lowcase(scan(name,1,'_'));
 		run;
@@ -545,28 +546,15 @@
 		proc sort data=groupsfile; by runid order; run;		
 		
 		data groupsfile(drop=distindex);
-			merge groupsfile _distindex;
+			merge groupsfile(in=in1) _distindex(in=in2);
 			by runid;
+			if in1 and in2;
 			if upcase(distindex)^='Y' and codedist^='' then do;
 				codedist='';
-				modifycodedist='Y';
-				call symput('modifycodedist','Y');
+				put "WARNING: (Sentinel) CODEDIST will be set to missing for " runid ": " group "because DISTINDEX not set to Y";		
 			end;
-		run;		
+		run;
 
-		%if &modifycodedist=Y %then %do;
-			data _null_;
-				length text1 text2 $250;
-				retain text1 text2;
-				set groupsfile(where=(modifycodedist='Y')) end=eof;
-				by runid;
-				if first.runid then text1=trim(runid)||":"||group; 
-				else text1=trim(text1)||","||group;
-				if last.runid then text2=trim(text2)||" "||text1;
-				if eof then put "WARNING: (Sentinel) CODEDIST will be set to missing. DISTINDEX not set to Y for ( " text2 ")";
-			run; 
-		%end;
-		
         /*Set max(order) value into NUMGROUPS*/
         proc sql noprint;
             select max(order) into :numgroups 
