@@ -385,11 +385,11 @@
                 /*************************************************************************************
                 /* Type 2 tables
                     %l2_effect_estimate_runlogithr = HR Logit model                  
-                    %l2_effect_estimate_runrobusthr - Robust marginal sandwich estimator
+                    %l2_effect_estimate_runrobustest - Robust marginal sandwich estimator
                     %l2_effect_estimate_runrd_rs = Incidence rates, risk differences                  
 
                    Type 4 tables
-                    %l2_effect_estimate_runlogitor = OR Logit model or CMH 
+                    %l2_effect_estimate_runrobustest - Robust marginal sandwich estimator
                     %l2_effect_estimate_runrd_rs = risk ratio, risk differences
 
                    Macro calls for risk metrics are the same for ReportType = T2L2 and T4L2.
@@ -442,7 +442,7 @@
                     - Unweighted (risk metrics)
                     - Weighted (Risk metrics and effect estimate)*/
                 %if &marginalweights. = Y %then %do;
-                %l2_effect_estimate_runrobusthr(where=analysis="Weighted", analysis="Weighted", subgroupcat=);
+                %l2_effect_estimate_runrobustest(where=analysis="Weighted", analysis="Weighted", subgroupcat=);
                 %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="", analysis= "Unweighted", subgroupcat = );
                 %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="", analysis= "Weighted", subgroupcat = );
                 %end;
@@ -512,7 +512,7 @@
                             - Unweighted (risk metrics)
                             - Weighted (Risk metrics and effect estimate)*/
                         %if &marginalweights. = Y %then %do;
-                        %l2_effect_estimate_runrobusthr(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
+                        %l2_effect_estimate_runrobustest(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
                                                      analysis= "Unweighted", subgroupcat = &dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
@@ -628,7 +628,7 @@
                         - Unweighted (risk metrics)
                         - Weighted (Risk metrics and effect estimate)*/
                     %if &marginalweights. = Y %then %do;
-                    %l2_effect_estimate_runrobusthr(where=analysis="Weighted", analysis="Weighted", subgroupcat=&subgroupcat.);
+                    %l2_effect_estimate_runrobustest(where=analysis="Weighted", analysis="Weighted", subgroupcat=&subgroupcat.);
                     %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="&subgroupcat.", analysis= "Unweighted", subgroupcat = &subgroupcat.);
                     %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="&subgroupcat.", analysis= "Weighted", subgroupcat = &subgroupcat.);
                     %end;
