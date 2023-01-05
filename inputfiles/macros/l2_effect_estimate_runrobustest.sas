@@ -230,6 +230,31 @@
 	    run; 
 	%end;
 
+	%if "&reporttype." = "T4L2" %then %do;
+		data est;
+		set est;
+
+		*Adjusted odds ratio variables. Will be removed when we also remove the selection probabilities functionality;
+	    adjor = .;
+	    adjor_lcl = .;
+	    adjor_ucl = .;
+	    adjor_95ci = 'NaN';
+		
+	  	label hr_95CI = "Odds Ratio (95% CI)";	  	
+		label HR_se = "StdErr of Coefficient";
+	    label HR = "Odds Ratio";	    
+	    label adjor = "Adjusted Odds Ratio";	    
+		label adjor_LCL = "Adjusted 95% LCL";
+    	label adjor_UCL = "Adjusted 95% UCL";
+		label adjor_95ci = "Adjusted Odds Ratio (95% CI)";
+
+		rename hr_95CI=or_95ci;
+		rename HR=or;
+		rename HR_se=or_se;
+
+		run;
+	%end;
+
 	proc datasets library=work nowarn noprint;
 	    append base= logitEst data=est force;
 	    delete est pest forest lag_: HR_EQ;
