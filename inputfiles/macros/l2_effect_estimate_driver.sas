@@ -134,6 +134,7 @@
             %let stratavar = ;
             %let analysisgrpweight = ;            
             %let marginalweights = N;
+			%let weightdistribution = N;
             %let cat=0; /*indicator for subgroup categories*/
             %let subcategorization=; *the list of categorization;
             %let subgroupvar=;
@@ -178,6 +179,7 @@
                     call symputx('outputunconditional', 'N');                    
                     if missing(strataweight)=0 then do;                        
                         call symputx('marginalweights', 'Y');
+						call symputx('weightdistribution', 'Y');
                     end;
                     else do;
                     call symputx('outputconditional', 'Y');
@@ -189,6 +191,7 @@
                     call symputx("analysisgrpweight",strip(upcase(ipweight)));                    
                     if missing(ipweight)=0 then do;                        
                         call symputx('marginalweights', 'Y');
+						call symputx('weightdistribution', 'Y');
                     end;
                 %end;
 
@@ -198,6 +201,10 @@
                     call symputx("stratavar", 'covarstrat');
                     call symputx('outputconditional', 'Y');
                 %end;
+
+				%if "&reporttype." = "T4L2" %then %do;
+					call symputx('marginalweights', 'Y');
+				%end;
             run;
 
             %if &pscsfile. = psmatchfile | &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %do;
@@ -302,27 +309,37 @@
                             odds=Exposureprobability/(1-Exposureprobability);
                             logodds=log(odds);
                         end;
-                    run;
-                    
-                    %if &marginalweights. = Y %then %do;
-                    %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
-                                           outfile=aggmw,
-                                           pscsfile=&pscsfile.,
-                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                           convrule=%quote(&convrule.),
-                                           convdata=&runid._estimates_&periodid.,
-                                           settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE));
-                                       
-                    %aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
-                                           outfile=aggwd,
-                                           pscsfile=&pscsfile.,
-                                           whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                           convrule=%quote(&convrule.),
-                                           convdata=&runid._estimates_&periodid.,
-                                           settomissvars=%str(n, min, max, mean, sd),
-                                           runidvar=&runid.);                      
-                    %end; /* aggregate weighted and marginalweights data */ 
+                    run;                                        
                 %end; /*aggregate risk set data*/
+
+				%if &marginalweights. = Y %then %do;
+	                %aggregate_l2_datasets(infile=&runid._marginalweights_&periodid.,
+	                                       outfile=aggmw,
+	                                       pscsfile=&pscsfile.,
+	                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+	                                       convrule=%quote(&convrule.),
+	                                       convdata=&runid._estimates_&periodid.,
+										   %if "&reporttype." = "T4L2" %then %do;
+										   settomissvars=%str(Followuptime,RiskSetID,RiskSetPop,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE)										   
+										   %end;
+										   %else %do;
+	                                       settomissvars=%str(Followuptime,RiskSetID,SumEC,SumC,SumE,SumUnE,SumSquareEC,SumSquareUnEC,SumSquareE,SumSquareUnE)
+										   %end;
+										   );
+                                   
+                         
+                %end; /* aggregate marginalweights data */ 
+
+				%if &weightdistribution. = Y %then %do;
+					%aggregate_l2_datasets(infile=&runid._weightdistribution_&periodid.,
+                                       outfile=aggwd,
+                                       pscsfile=&pscsfile.,
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
+                                       convrule=%quote(&convrule.),
+                                       convdata=&runid._estimates_&periodid.,
+                                       settomissvars=%str(n, min, max, mean, sd),
+                                       runidvar=&runid.);             
+				%end; /* aggregate weight distribution data */ 
 
                 /*if KM curves requested, aggregate survivaldata dataset*/
                 %if %str("&kmplotlist.") ne %str("") and %str(&reporttype) = T2L2 %then %do;
