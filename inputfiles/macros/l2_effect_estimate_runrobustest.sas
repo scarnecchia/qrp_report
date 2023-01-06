@@ -86,21 +86,24 @@
         		from forest;
         	quit;
 
-        	/* Get unique dps, loop through */
+        	/* Defensive: make sure the dataset does not exist for append below */
+			proc datasets library=work nowarn nolist;			    
+			    delete lag_final_get;
+			quit;
 
-        	%do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
-        		%let get_dp = %scan(&GET_DP_LIST, &j);
 
-            	/* When calculating the differences, we need to shift the rows up one so the correct rows are aligned */
+			%macro computedifferences(where=);
+				/* When calculating the differences, we need to shift the rows up one so the correct rows are aligned */
             	data lag_dp_get_&get_dp.;
-            		set forest(where=(dpidsiteid="&get_dp.") keep=dpidsiteid SumSquareE SumSquareUnE rename=(SumSquareE=lSumSqE SumSquareUnE=lSumSqUnE) firstobs=2);
+            		set forest(where=(&where.) keep=dpidsiteid SumSquareE SumSquareUnE %if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do; risksetpopnum %end;
+							   rename=(SumSquareE=lSumSqE SumSquareUnE=lSumSqUnE) firstobs=2);
             	run;
 
             	/* Merge dataset back onto itself starting at second row to calculate differences */
             	options mergenoby=nowarn;
             	data lag_ss_get_&get_dp.;
             	retain CumSum1E CumSum2E;
-            	merge forest(where=(dpidsiteid="&get_dp.")) lag_dp_get_&get_dp.(drop=dpidsiteid);
+            	merge forest(where=(&where.)) lag_dp_get_&get_dp.(drop=dpidsiteid);
             	if missing(lSumSqE) then lSumSqE = 0;
             	if missing(lSumSqUne) then lSumSqUne = 0;
             	SumSqEdiff=SumSquareE-lSumSqE;
@@ -111,12 +114,51 @@
             	CumSum2E+(sumC*S1/(S0**2));
             	run;
             	options mergenoby=warn;
-        	%end;
 
-        	/* Set data back together */
-        	data lag_final_get;
-        	set lag_ss_get:;
-        	run;
+				proc datasets library=work nowarn nolist;
+				    append base=lag_final_get data=lag_ss_get_&get_dp.;
+				    delete lag_dp_get_&get_dp. lag_ss_get_&get_dp.;
+				quit;
+			%mend computedifferences;
+
+
+			/* For T4L2 analyses, each "risksetpop" should  be treated as its own site */ 
+			%if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do;
+				proc sort data=forest; 
+				by dpidsiteid risksetpop;
+				run;
+
+				data forest;
+				set forest;				
+				by dpidsiteid risksetpop;
+				if first.dpidsiteid then risksetpopnum=0;
+				if first.risksetpop then risksetpopnum=risksetpopnum+1;				
+				retain risksetpopnum;
+				run;
+			%end;
+
+        	/* Get unique dps, loop through */
+        	%do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
+        		%let get_dp = %scan(&GET_DP_LIST, &j);
+
+				/* Process T4L2 distinct risksetpop as a separated site */
+				%if &reporttype eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do;
+					proc sql noprint;
+						select count(distinct risksetpopnum) into :numrisksetpop
+						from forest 
+						where dpidsiteid="&get_dp.";
+					quit;
+
+					%put &=numrisksetpop;
+
+					%do risksetpopnum = 1 %to &numrisksetpop.;
+						%computedifferences(where=%str(dpidsiteid="&get_dp." and risksetpopnum=&risksetpopnum.));
+					%end;
+				%end;
+            	%else %do;
+					%computedifferences(where=%str(dpidsiteid="&get_dp."));
+				%end;
+        	%end;
 
         	proc sql noprint ;
         	/* Calculate Q1-Q6 */
