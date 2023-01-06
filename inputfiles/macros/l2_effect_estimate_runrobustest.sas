@@ -46,6 +46,21 @@
         
         %if %eval(&sumec.>0) & %eval(&SumSquareUnEC.>0) & %index(&customizecolumns.,events) = 0 %then %do;
 
+			/* For T4L2 analyses, each "risksetpop" should  be treated as its own site => create risksetpopnum indicator. */ 
+			%if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do;
+				proc sort data=forest; 
+				by dpidsiteid risksetpop;
+				run;
+
+				data forest;
+				set forest;				
+				by dpidsiteid risksetpop;
+				if first.dpidsiteid then risksetpopnum=0;
+				if first.risksetpop then risksetpopnum=risksetpopnum+1;				
+				retain risksetpopnum;
+				run;
+			%end;
+           
             /* Need to sort by SumSquareE and SumSquareUnE for difference calculations later on */
             proc sort data = forest;
         		by descending SumSquareE descending SumSquareUnE;
@@ -119,23 +134,7 @@
 				    append base=lag_final_get data=lag_ss_get_&get_dp.;
 				    delete lag_dp_get_&get_dp. lag_ss_get_&get_dp.;
 				quit;
-			%mend computedifferences;
-
-
-			/* For T4L2 analyses, each "risksetpop" should  be treated as its own site */ 
-			%if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do;
-				proc sort data=forest; 
-				by dpidsiteid risksetpop;
-				run;
-
-				data forest;
-				set forest;				
-				by dpidsiteid risksetpop;
-				if first.dpidsiteid then risksetpopnum=0;
-				if first.risksetpop then risksetpopnum=risksetpopnum+1;				
-				retain risksetpopnum;
-				run;
-			%end;
+			%mend computedifferences;			
 
         	/* Get unique dps, loop through */
         	%do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
