@@ -228,6 +228,7 @@
             if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
                 HR_pvalue = 'N/A';
+				%if &reporttype = T4L2 %then %do; or_95ci = 'N/A'; %end;
             end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
