@@ -138,8 +138,7 @@
             %let cat=0; /*indicator for subgroup categories*/
             %let subcategorization=; *the list of categorization;
             %let subgroupvar=;
-            %let numsubcat=0;  /*store number of subgroups to loop through. 0 = overall analysis*/  
-            %let ormethod = logit; /*method for computing odds ratio*/
+            %let numsubcat=0;  /*store number of subgroups to loop through. 0 = overall analysis*/              
             %let hdps = N; /* indicator for hdps vars */
 
             /*probabilties for Type 4 ORs*/
@@ -161,21 +160,16 @@
                     call symputx("unconditional_distributed", upcase(unconditional));
                     call symputx("stratavar", 'matchid');
                     call symputx('ratio',upcase(ratio));
-                    call symputx('ceiling',put(ceiling, best.));
-                    /*type 4 fixed ratio match - conditional = N and unconditional = Y*/
-                    /*type 2 fixed ratio match - options defined by user below*/
-                    /*type 2 variable ratio match - conditional = Y and unconditional = N*/
-                    %if &reporttype. = T4L2 %then %do;
-                        if upcase(ratio) = "F" then call symputx('outputunconditional', 'Y');
-                    %end;
+                    call symputx('ceiling',put(ceiling, best.));                    
+                    /*fixed ratio match - options defined by user below*/
+                    /*variable ratio match - conditional = Y and unconditional = N*/                    
                     if upcase(ratio) = "V" then call symputx('outputconditional', 'Y');
                 %end;
 
                 %if &pscsfile. = stratificationfile %then %do;
                     call symputx("psestimategrp", lowcase(psestimategrp));
                     call symputx("stratavar", 'percentile');
-                    call symputx("analysisgrpweight",strip(upcase(strataweight)));
-                    call symputx('ormethod', 'cmh');
+                    call symputx("analysisgrpweight",strip(upcase(strataweight)));                    
                     call symputx('outputunconditional', 'N');                    
                     if missing(strataweight)=0 then do;                        
                         call symputx('marginalweights', 'Y');						
@@ -219,8 +213,8 @@
                 run;
             %end;
 
-            /*Set OutputConditional and OutputUnconditional parameters - only an option for PS Fixed Ratio Match for Type 2*/
-            %if &pscsfile. = psmatchfile & &ratio.= F & &reporttype. = T2L2 %then %do;
+            /*Set OutputConditional and OutputUnconditional parameters - only an option for PS Fixed Ratio Match*/
+            %if &pscsfile. = psmatchfile & &ratio.= F %then %do;
                 data _null_;
                     set l2comparisonfile(where=(order=&loopcount.));
                     call symputx('outputconditional', outputconditional);
@@ -422,9 +416,9 @@
                 %end;
 
                 /*Conditional - 
-                    *analysis conditioned on matchid (PS maching) - Type 2 only
-                    *analysis conditioned on percentile (PS stratification) - Type 2 and 4
-                    *analysis conditioned on covariate (Covariate stratification) - Type 2 and 4 */
+                    *analysis conditioned on matchid (PS maching)
+                    *analysis conditioned on percentile (PS stratification)
+                    *analysis conditioned on covariate (Covariate stratification) */
                 %if &outputconditional. = Y %then %do; 
                     %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="", 
                                                  analysis= "Conditional", 
