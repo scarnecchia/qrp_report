@@ -115,10 +115,13 @@
   /*-----------------------------------------------------------------------------------------------------------
     Loop through all logs looking for errors, warnings, and notes
     -----------------------------------------------------------------------------------------------------------*/
+
+	%let ls_plus = %eval(%sysfunc(getoption(LS))+10);	
+	
     %do f = 1 %to &num_logs.;
         %let logfile = %scan(&logname,&f.,' ');
-        data _input_log&f. (keep = logline_number logline logname macro level description);
-	      length firstword secondword $1000 logline $32767 logname $50 level 3 macro $250 description $25 logline_number 8;
+        data _input_log&f. (keep = logline_number logline logname macro level description);	      
+	      length firstword secondword logline $&ls_plus logname $50 level 3 macro $250 description $25 logline_number 8;		  
           infile "&logdir.&logfile.";
 		  retain macro description;
 		  input;
@@ -143,12 +146,12 @@
 		  else if index(firstword,"error") and index(secondword,"sentinel") then do;
 		    description = "Sentinel Error";
 			level = 2;
-		  end;
-		  else if index(firstword,"error") then do;
+		  end;		  
+		  else if prxmatch("/\berror\b|\berror:\b:/oi",firstword) > 0 then do;		  
 		    description = "SAS Error";
 			level = 1;
-		  end;
-		  else if index(firstword,"warning") then do;
+		  end;		  
+		  else if prxmatch("/\bwarning\b|\bwarning:\b:/oi",firstword) > 0 then do;		  
 		    description = "SAS Warning";
 			level = 3;
 		  end;
