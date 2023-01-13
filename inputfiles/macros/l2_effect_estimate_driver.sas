@@ -516,7 +516,7 @@
                         /*PS IPTW/Weighted Stratification analysis:
                             - Unweighted (risk metrics)
                             - Weighted (Risk metrics and effect estimate)*/
-                        %if &marginalweights. = Y %then %do;
+                        %if &outputweighted. = Y %then %do;
                         %l2_effect_estimate_runrobustest(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
                         %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
                                                      analysis= "Unweighted", subgroupcat = &dpname.);
