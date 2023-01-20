@@ -65,11 +65,35 @@
             proc sort data = forest;
         		by descending SumSquareE descending SumSquareUnE;
         	run;
-*DMA;
-data forest;
-set forest;
-HR=1.57;
-run;        	
+
+        	proc iml;
+        	/* Read in necessary variables for HR estimation */
+        	use forest;
+        	read all var {SUMEC SUMC SUME SUMUNE};
+        	close forest;
+
+        	/* Define function for summation process, need to declare SUM variables as global due to local scoping */
+        	start COX(HR) global(SUMEC,SUMC,SUME,SUMUNE);
+           		y=sum(SUMEC-SUMC#(SUME#HR)/(SUME#HR+SUMUNE));
+           		return(y);
+        	finish COX;
+
+        	/* Initial HR guess of 1 */
+        	HR=1;
+        	/* One equation being solved for */
+        	optn={1};
+
+        	/* Non-linear system that utilizes COX function to return optimized HR */
+        	call nlphqn(rc, Soln, "COX", HR, optn);
+        	/* Store solution in macro variable */
+        	call symputx("HR_SOL",Soln);
+        	quit;
+
+        	/* Add HR back to original dataset */
+        	data forest;
+        	set forest;
+        	HR=&HR_SOL;
+        	run;
 
         	proc sql noprint;
         		select distinct dpidsiteid
@@ -249,7 +273,7 @@ run;
 
 	%if "&reporttype." = "T4L2" %then %do;
 		data est;
-		set est;		
+		set est;
 		
 	  	label hr_95CI = "Odds Ratio (95% CI)";	  	
 		label HR_se = "StdErr of Coefficient";
