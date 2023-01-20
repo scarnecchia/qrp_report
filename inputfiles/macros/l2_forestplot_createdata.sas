@@ -106,11 +106,7 @@
                  %end;
                  %else %if "&reporttype." = "T4L2" %then %do;
                  est.or_95ci, 
-                 est.or, 
-                 est.adjor_95ci, 
-                 est.adjor, 
-                 est.adjor_LCL, 
-                 est.adjor_UCL,
+                 est.or,                  
                  %end;
                  est.LCL,
                  est.UCL, 
@@ -262,15 +258,7 @@
             end;
 
             end;
-          /* Set adjusted ORs if they have been requested */
-          %if "&reporttype." = "T4L2" %then %do;
-          if not missing(adjor) then do;
-          or_95ci=adjor_95ci;
-          or=adjor;
-          lcl=adjor_LCL;
-          ucl=adjor_UCL;
-          end;
-          %end;
+          
           %if "&reporttype" = "T2L2" %then %do;
           format HR LCL UCL 5.2; 
           %end;

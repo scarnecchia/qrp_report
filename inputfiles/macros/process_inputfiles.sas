@@ -1761,10 +1761,9 @@
 
 /***************************************************************************************************
 *   For L2 reports:
-     1: Read in L2ComparisonFile
-     2: For T4 reports: read in optional SelectionProbabilitiesFile
-     3: create master PS/CS input file dataset    
-     4. Add unique psestimategrp flag to the l2comparisonfile    
+     1: Read in L2ComparisonFile    
+     2: create master PS/CS input file dataset    
+     3. Add unique psestimategrp flag to the l2comparisonfile    
 ***************************************************************************************************/
 
     %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
@@ -1862,23 +1861,7 @@
              (%index(&customizecolumns.,sumevents) > 0 and %index(&customizecolumns.,include) > 0) %then %do;
             %put WARNING: (Sentinel) The following values for CUSTOMIZECOLUMNS have been specified: &customizecolumns..;
             %put WARNING: (Sentinel) Columns that have been included for display also may be redacted. Results may not appear as expected.;
-        %end;
-
-        /****************************/
-        /*SelectionProbabilitiesFile*/
-        /****************************/
-        %if %str("&reporttype") = %str("T4L2") %then %do;
-        %isdata(dataset=input.&SelectionProbabilitiesFile.);
-        %if %eval(&nobs.>0) %then %do;
-            data SelectionProbabilitiesFile;
-                set input.&SelectionProbabilitiesFile.;
-                /*defensive*/
-                analysisgrp=strip(lowcase(analysisgrp));
-                runid=strip(lowcase(runid));
-                value = upcase(value);
-            run;
-        %end;
-        %end;
+        %end;        
         
         /**********************************/
         /*Master PS/CS input file datasets*/

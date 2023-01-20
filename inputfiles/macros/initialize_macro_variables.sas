@@ -49,7 +49,7 @@
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
-            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
+            figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile
             TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData
             jirakey userid studytitle;
 
@@ -65,8 +65,7 @@
     %let labelfile = ;
     %let itsregressionfile = ;
     %let treeaggfile = ;
-    %let appendixfile = ;
-    %let selectionprobabilitiesfile = ;
+    %let appendixfile = ;    
     %let CodeDescriptionsFile = ;
     %let TableColumnsFile = ;
     %let DPInfoFile = ;

@@ -65,35 +65,11 @@
             proc sort data = forest;
         		by descending SumSquareE descending SumSquareUnE;
         	run;
-
-        	proc iml;
-        	/* Read in necessary variables for HR estimation */
-        	use forest;
-        	read all var {SUMEC SUMC SUME SUMUNE};
-        	close forest;
-
-        	/* Define function for summation process, need to declare SUM variables as global due to local scoping */
-        	start COX(HR) global(SUMEC,SUMC,SUME,SUMUNE);
-           		y=sum(SUMEC-SUMC#(SUME#HR)/(SUME#HR+SUMUNE));
-           		return(y);
-        	finish COX;
-
-        	/* Initial HR guess of 1 */
-        	HR=1;
-        	/* One equation being solved for */
-        	optn={1};
-
-        	/* Non-linear system that utilizes COX function to return optimized HR */
-        	call nlphqn(rc, Soln, "COX", HR, optn);
-        	/* Store solution in macro variable */
-        	call symputx("HR_SOL",Soln);
-        	quit;
-
-        	/* Add HR back to original dataset */
-        	data forest;
-        	set forest;
-        	HR=&HR_SOL;
-        	run;
+*DMA;
+data forest;
+set forest;
+HR=1.57;
+run;        	
 
         	proc sql noprint;
         		select distinct dpidsiteid
@@ -273,26 +249,15 @@
 
 	%if "&reporttype." = "T4L2" %then %do;
 		data est;
-		set est;
-
-		*Adjusted odds ratio variables. Will be removed when we also remove the selection probabilities functionality;
-	    adjor = .;
-	    adjor_lcl = .;
-	    adjor_ucl = .;
-	    adjor_95ci = 'NaN';
+		set est;		
 		
 	  	label hr_95CI = "Odds Ratio (95% CI)";	  	
 		label HR_se = "StdErr of Coefficient";
-	    label HR = "Odds Ratio";	    
-	    label adjor = "Adjusted Odds Ratio";	    
-		label adjor_LCL = "Adjusted 95% LCL";
-    	label adjor_UCL = "Adjusted 95% UCL";
-		label adjor_95ci = "Adjusted Odds Ratio (95% CI)";
+	    label HR = "Odds Ratio";	    	    
 
 		rename hr_95CI=or_95ci;
 		rename HR=or;
 		rename HR_se=or_se;
-
 		run;
 	%end;
 

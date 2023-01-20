@@ -139,13 +139,7 @@
             %let subcategorization=; *the list of categorization;
             %let subgroupvar=;
             %let numsubcat=0;  /*store number of subgroups to loop through. 0 = overall analysis*/              
-            %let hdps = N; /* indicator for hdps vars */
-
-            /*probabilties for Type 4 ORs*/
-            %let s11=;
-            %let s01=;
-            %let s10=;
-            %let s00=;
+            %let hdps = N; /* indicator for hdps vars */            
 
             /*List of analyses(Unadjusted/Conditional/Unconditional/Weighted) for which KM curves will be computed*/
             %let kmplotlist = ;             
@@ -371,21 +365,7 @@
                 %end;
                 %if &marginalweights. = Y %then %do;
                 %subsetdata(datain=aggmw, dataout=cat_dp_mw, subgroup=&subgroup., cat=&cat.);
-                %end;                
-                
-                /*Extract selectprobabilities parameters*/
-                %if %str("&reporttype") = %str("T4L2") %then %do;
-                    %isdata(dataset=SelectionProbabilitiesFile);
-                    %if %eval(&nobs.>0) %then %do;
-                    data _null_;
-                        set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup."));
-                        call symputx('s11', s11);
-                        call symputx('s01', s01);
-                        call symputx('s10', s10);
-                        call symputx('s00', s00);
-                    run;
-                    %end;
-                %end; 
+                %end;                                                
 
                 /*****************************************************************/
                 /* Execute macros to calculate effect estimates and risk metrics */
@@ -571,25 +551,7 @@
                     %end;
                     %if &marginalweights. = Y %then %do;
                     %subsetdata(datain=aggmw&sub., dataout=cat_dp_mw, subgroup=&subgroup., cat=&cat.);
-                    %end;
-
-                    /*Extract selectprobabilities parameters*/
-                    %if %str("&reporttype") = %str("T4L2") %then %do;
-                        %let s11 = ;
-                        %let s01 = ;
-                        %let s10 = ;
-                        %let s00 = ;
-                        %isdata(dataset=SelectionProbabilitiesFile);
-                        %if %eval(&nobs.>0) %then %do;
-                        data _null_;
-                            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = "&subgroup." and value = "&subgroupcat"));
-                            call symputx('s11', s11);
-                            call symputx('s01', s01);
-                            call symputx('s10', s10);
-                            call symputx('s00', s00);
-                        run;
-                        %end;
-                    %end;
+                    %end;                    
 
                     /***************************************************************************************/
                     /* Execute macros to calculate effect estimates and risk metrics for subgroup category */
@@ -685,7 +647,7 @@
                 HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
                 %end;
                 %else %if "&reporttype." = "T4L2" %then %do;
-                or_95ci, or, LCL, UCL, or_se, adjor_95ci, adjor, adjor_LCL, adjor_UCL
+                or_95ci, or, LCL, UCL, or_se
                 %end;
             from rdest as r
             /* left join b/c IPTW contains rows that do not have a computed HR*/
