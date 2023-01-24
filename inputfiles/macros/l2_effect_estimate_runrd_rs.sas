@@ -31,7 +31,7 @@
     %if %sysfunc(exist(cat_dp_rd)) > 0 %then %do; 
        * Aggregate data across DP;
        proc means data=cat_dp_rd nway noprint;
-           var Exp UnExp EVExp EVUnexp FUTimeExp FUTimeUnexp weight weighted_diff;
+           var Exp UnExp EVExp EVUnexp FUTimeExp FUTimeUnexp weight %if &reporttype. ne T4L2 %then %do; weighted_diff %end;;
            where &where.;
            ID subgroup;
            output out=forRD    sum(Exp)=N1
@@ -41,7 +41,8 @@
                                sum(FUTimeExp)=FuTime1
                                sum(FUTimeUnexp)=FuTime0
                                sum(weight)=weight
-                               sum(weighted_diff)=weighted_diff;
+                               %if &reporttype. ne T4L2 %then %do; sum(weighted_diff)=weighted_diff %end;
+							   ;
        run;
 	   
        *In case data is missing to eliminate e.r.r.o.r message;
@@ -73,8 +74,10 @@
            from forRD;
            select sum(weight) into :denom
            from forRD;
+		   %if &reporttype. ne T4L2 %then %do;
            select sum(weighted_diff) into :num
            from forRD;
+		   %end;
        quit;
     %end;
 	%else %do;
@@ -82,7 +85,7 @@
 	%end;
 	
     %if %eval(&nobs.>0) %THEN %DO;
-       %if %eval(&denom. <= 0) %then %do;
+       %if %eval(&denom. <= 0) or &reporttype. eq T4L2 %then %do;
             %let stratifiedratediff =.;
             %let lower =.;
             %let upper =.;
