@@ -302,18 +302,7 @@
 	        quit;
 
 	        %let titleend = %str(and &subgrouplabel);
-        %end;
-
-        %let s11 = ;
-        %if &reporttype = T4L2 %then %do;
-        %isdata(dataset=SelectionProbabilitiesFile);
-        %if &nobs > 0 %then %do; 
-            data _null_;			
-            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
-                call symputx('s11', s11);
-            run;
-        %end;
-        %end;
+        %end;        
 
         /**********************************************************************
             Output Results
@@ -356,10 +345,7 @@
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
                 RD_1000NUchar 
                 %end;
-                rrchar OR_95CI
-                %if %length(&s11) > 0 %then %do;
-                ADJOR_95CI
-                %end;
+                rrchar OR_95CI                
                 %end;
                 );
             
@@ -416,13 +402,7 @@
             define rrchar / order 'Risk Ratio'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-
-            %if %length(&s11) > 0 %then %do;
-            define ADJOR_95CI / order 'Odds Ratio Adjusted for Selection Bias^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];  
-            %end;
-
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];            
             %end;
 
             /*Add title*/
