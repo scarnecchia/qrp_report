@@ -551,8 +551,8 @@
 
             /* Add Footnotes */
             %if &num_fn > 0 %then %do;
-            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
-                                   nobreakspace=off font_size=&footfontsize.];
+            compute after / style=[background=white just=L foreground=black vjust=t bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.  height=1.75in];
             %do f = 1 %to &num_fn.;
             line "^{super &f.}&&fn&f.";
             %end;
