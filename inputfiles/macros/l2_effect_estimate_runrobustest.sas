@@ -110,7 +110,7 @@
 			%macro computedifferences(where=);
 				/* When calculating the differences, we need to shift the rows up one so the correct rows are aligned */
             	data lag_dp_get_&get_dp.;
-            		set forest(where=(&where.) keep=dpidsiteid SumSquareE SumSquareUnE %if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do; risksetpopnum %end;
+            		set forest(where=(&where.) keep=dpidsiteid SumSquareE SumSquareUnE %if %str(&analysis.) eq %str("Conditional") %then %do; risksetpopnum %end;
 							   rename=(SumSquareE=lSumSqE SumSquareUnE=lSumSqUnE) firstobs=2);
             	run;
 
@@ -137,27 +137,29 @@
 			%mend computedifferences;			
 
         	/* Get unique dps, loop through */
-        	%do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
-        		%let get_dp = %scan(&GET_DP_LIST, &j);
+			%if &reporttype. eq T4L2 %then %do;
+        	  %do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
+        	  	  %let get_dp = %scan(&GET_DP_LIST, &j);
 
-				/* Process T4L2 distinct risksetpop as a separated site */
-				%if &reporttype eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do;
-					proc sql noprint;
-						select count(distinct risksetpopnum) into :numrisksetpop
-						from forest 
-						where dpidsiteid="&get_dp.";
-					quit;
+				  /* Process T4L2 distinct risksetpop as a separated site */
+				  %if %str(&analysis.) eq %str("Conditional") %then %do;
+				  	  proc sql noprint;
+						  select count(distinct risksetpopnum) into :numrisksetpop
+						  from forest 
+						  where dpidsiteid="&get_dp.";
+					  quit;
 
-					%put &=numrisksetpop;
+					  %put &=numrisksetpop;
 
-					%do risksetpopnum = 1 %to &numrisksetpop.;
-						%computedifferences(where=%str(dpidsiteid="&get_dp." and risksetpopnum=&risksetpopnum.));
-					%end;
-				%end;
-            	%else %do;
-					%computedifferences(where=%str(dpidsiteid="&get_dp."));
-				%end;
-        	%end;
+					  %do risksetpopnum = 1 %to &numrisksetpop.;
+						  %computedifferences(where=%str(dpidsiteid="&get_dp." and risksetpopnum=&risksetpopnum.));
+					  %end;
+				  %end;
+            	  %else %do;
+					  %computedifferences(where=%str(dpidsiteid="&get_dp."));
+				  %end;
+        	  %end;
+			%end;
 
         	proc sql noprint ;
         	/* Calculate Q1-Q6 */
