@@ -106,35 +106,48 @@
 			    delete lag_final_get;
 			quit;
 
-
 			%macro computedifferences(where=);
-				/* When calculating the differences, we need to shift the rows up one so the correct rows are aligned */
-            	data lag_dp_get_&get_dp.;
-            		set forest(where=(&where.) keep=dpidsiteid SumSquareE SumSquareUnE %if &reporttype. eq T4L2 and %str(&analysis.) eq %str("Conditional") %then %do; risksetpopnum %end;
-							   rename=(SumSquareE=lSumSqE SumSquareUnE=lSumSqUnE) firstobs=2);
-            	run;
+                  /* When calculating the differences for non binary analyses, we need to shift the rows up one so the correct rows are aligned */                        
+                  %if &reporttype. ne T4L2 %then %do;
+                        data lag_dp_get_&get_dp.;
+                              set forest(where=(&where.) keep=dpidsiteid SumSquareE SumSquareUnE
+                                                  rename=(SumSquareE=lSumSqE SumSquareUnE=lSumSqUnE) firstobs=2);
+                        run;
 
-            	/* Merge dataset back onto itself starting at second row to calculate differences */
-            	options mergenoby=nowarn;
-            	data lag_ss_get_&get_dp.;
-            	retain CumSum1E CumSum2E;
-            	merge forest(where=(&where.)) lag_dp_get_&get_dp.(drop=dpidsiteid);
-            	if missing(lSumSqE) then lSumSqE = 0;
-            	if missing(lSumSqUne) then lSumSqUne = 0;
-            	SumSqEdiff=SumSquareE-lSumSqE;
-            	SumSqUnEdiff=SumSquareUnE-lSumSqUne;
-            	S0=(SumE*HR)+SumUnE;
-            	S1=(SumE*HR);
-            	CumSum1E+(sumC/S0);
-            	CumSum2E+(sumC*S1/(S0**2));
-            	run;
-            	options mergenoby=warn;
+                        /* Merge dataset back onto itself starting at second row to calculate differences */
+                        options mergenoby=nowarn;
+                        data lag_ss_get_&get_dp.;
+                        retain CumSum1E CumSum2E;
+                        merge forest(where=(&where.)) lag_dp_get_&get_dp.(drop=dpidsiteid);
+                        if missing(lSumSqE) then lSumSqE = 0;
+                        if missing(lSumSqUne) then lSumSqUne = 0;
+                        SumSqEdiff=SumSquareE-lSumSqE;
+                        SumSqUnEdiff=SumSquareUnE-lSumSqUne;
+                        S0=(SumE*HR)+SumUnE;
+                        S1=(SumE*HR);
+                        CumSum1E+(sumC/S0);
+                        CumSum2E+(sumC*S1/(S0**2));
+                        run;
+                        options mergenoby=warn;
+                  %end;
+                  /* For binary analyses, because there is only 1 risk set per condition, the cumulative sum will always equal the original sum */
+                  %else %do;
+                        data lag_ss_get_&get_dp.;
+                        set forest(where=(&where.));
+                        SumSqEdiff=SumSquareE;
+                        SumSqUnEdiff=SumSquareUnE;
+                        S0=(SumE*HR)+SumUnE;
+                        S1=(SumE*HR);
+                        CumSum1E+(sumC/S0);
+                        CumSum2E+(sumC*S1/(S0**2));
+                              run;
+                        %end;
 
-				proc datasets library=work nowarn nolist;
-				    append base=lag_final_get data=lag_ss_get_&get_dp.;
-				    delete lag_dp_get_&get_dp. lag_ss_get_&get_dp.;
-				quit;
-			%mend computedifferences;			
+                        proc datasets library=work nowarn nolist;
+                            append base=lag_final_get data=lag_ss_get_&get_dp.;
+                            delete lag_dp_get_&get_dp. lag_ss_get_&get_dp.;
+                        quit;
+            %mend computedifferences;			
 
         	/* Get unique dps, loop through */
         	%do j = 1 %to %sysfunc(countw(&GET_DP_LIST));
