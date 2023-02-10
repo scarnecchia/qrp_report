@@ -48,6 +48,7 @@
             "info": "User-visible description of the Cohort File",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file526-typeall-cohortfile.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
                 "cohort"
             ],
@@ -163,7 +164,7 @@
                 {
                     "id": "RACE",
                     "name": "Race",
-                    "sas_format": "$11",
+                    "sas_format": "$13",
                     "info": "Optional parameter to restrict cohort to only specified Race values",
                     "input_type": "MultiSelect",
                     "values": [
@@ -243,6 +244,7 @@
             "info": "Allows the user to specify codes used to define exposures, outcomes, outcome incidence criteria, and live births using a set of drug, procedure/diagnosis, evidence of all-cause death, cause of death codes, and lab result values",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file590-typeall-cohortcodes.md",
             "table_type": "group_code",
+			"import": true,
             "row_source": [
 				"cohort"
 			],
@@ -580,6 +582,7 @@
             "info": "Allows the user to specify a monitoring (query) period for descriptive and inferential analyses, and multiple monitoring periods for sequential analyses and sequential signal identification",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file580-typeall-monitoring.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -666,6 +669,7 @@
             "info": "Allows the user to specify QRP Reporting Parameters",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file522-typeall-mainparam.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": true,
@@ -986,18 +990,33 @@
 					}
                 },
 				{
-                    "id": "COMORBFILE",
-                    "name": "Comorbidity Score File",
+                    "id": "RISKSCOREFILE",
+                    "name": "Risk Score File",
                     "sas_format": "$32",
-                    "info": "Name of the SAS dataset defining the Charlson/Elixhauser combined comorbidity score calculation and stratification parameters",
+                    "info": "Name of the SAS dataset defining the risk scores being requested for the study",
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"comorbfile"
+						"riskscorefile"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"comorbfile": "Include"
+						"riskscorefile": "Include"
+					}
+                },
+				{
+                    "id": "RISKSCORECODES",
+                    "name": "Risk Score Codes File",
+                    "sas_format": "$32",
+                    "info": "Name of the SAS dataset defining the codes used to define risk scores. Required for any study requesting risk scores.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"riskscorecodes"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"riskscorecodes": "Include"
 					}
                 },
 				{
@@ -1360,6 +1379,7 @@
             "info": "Defines both the ouput tables that will be returned as well as the stratifications of each output table",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file626-typeall-strata.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
 			"row_parameter": " ",
 			"all_groups_required": false,
@@ -1394,6 +1414,11 @@
 								"t2its",
 								"t2itsprev"
 							],
+							"3": [
+								"t3cida",
+								"t3treeanalysis",
+								"t3treewkdays"
+							],
 							"4": [
 								"t4treeanalysis",
 								"t4elig",
@@ -1410,6 +1435,17 @@
 								"t5censor",
 								"t5gaps",
 								"t5dose"
+							],
+							"6": [
+								"t6counts",
+								"t6disp",
+								"t6episdur",
+								"t6censor",
+								"t6uptake",
+								"t6trend",
+								"t6switchepisdur",
+								"t6plota",
+								"t6plotb"
 							]
 						}
 					]
@@ -1443,6 +1479,7 @@
             "info": "File used to calculate pregnancy episode duration and index date",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file600-type04-modpregdur.md",
             "table_type": "group_code",
+			"import": true,
             "row_source": [
 				"cohort"
 			],
@@ -1655,6 +1692,7 @@
             "info": "File used to parameterize Type 1 queries",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file530-type01-type1.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -1745,6 +1783,7 @@
             "info": "File used to parameterize Type 2 queries",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file540-type02-type2.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -2034,6 +2073,7 @@
             "info": "In a self-controlled risk interval design strategy, users define an exposure of interest, specify a risk and control window relative to the exposure date, and examine the occurrence of HOIs during the risk and control windows.",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file550-type03-type3.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -2141,6 +2181,7 @@
             "info": "File used to parameterize Type 4 queries",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file560-type04-type4.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -2339,6 +2380,7 @@
             "info": "File used to parameterize Type 5 queries",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file570-type05-type5.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -2457,6 +2499,7 @@
             "info": "The Type 6 file is required for evaluating manufacture level product utilization and switching patterns.",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file572-type06-type6.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -2564,6 +2607,7 @@
             "info": "Provides user-defined attributes to the identification and computation of switch pattern episodes. User will specify in this file which group products will be evaluated for switching patterns and the number of switch patterns (up to two allowed). Identification of episodes that qualify as a switch (or not) will be in accordance with user-specified overlap and gap thresholds in this file.",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file574-type06-treatmentpathways.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": "",
             "all_groups_required": false,
@@ -2755,6 +2799,7 @@
             "info": "File used to request and customize a PDF 'leave behind' report",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file524-type0102040506-report_parameters.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -2793,6 +2838,7 @@
             "info": "Contains the comprehensive set of codes used to define additional cohort inclusion/exclusion criteria",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file592-typeall-inclusion.md",
             "table_type": "group_code",
+			"import": true,
             "row_source": [
 				"cohort"
 			],
@@ -3153,23 +3199,43 @@
 					}
                 },
 				{
-                    "id": "INDEXDATE",
-                    "name": "Index Date to Anchor Inclusion/Exclusion Criteria",
-                    "sas_format": "$13",
+                    "id": "CONDFROMANCHOR",
+                    "name": "Anchor Date to Start Condition Evaluation",
+                    "sas_format": "$12",
 					"analysis_types": [
 						"4"
 					],
-                    "info": "Identifies which index date to use to define inclusion or exclusion criteria in queries restricting Mother-Infant pregnant cohorts",
+                    "info": "(Only for Type 4) Identifies the index date to use as an anchor for the start of the inclusion or exclusion criteria.",
                     "input_type": "SingleSelect",
                     "values": [
 						"INDEXDT",
 						"INDEXDT_EXP",
-						"INDEXDT_DELIV"
+						"EPISODEENDDT"
 					],
 					"value_map": {
-						"INDEXDT": "Index date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
-						"INDEXDT_DELIV": "Index date of delivery admission date"
+						"INDEXDT": "Estimated date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
+						"EPISODEENDDT": "Date of pregnancy outcome"
+					}
+                },
+				{
+                    "id": "CONDTOANCHOR",
+                    "name": "Anchor Date to End Condition Evaluation",
+                    "sas_format": "$12",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "(Only for Type 4) Identifies the index date to use as an anchor for the end of the inclusion or exclusion criteria.",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"INDEXDT_EXP",
+						"EPISODEENDDT"
+					],
+					"value_map": {
+						"INDEXDT": "Estimated date of pregnancy start",
+						"INDEXDT_EXP": "First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
+						"EPISODEENDDT": "Date of pregnancy outcome"
 					}
                 },
 				{
@@ -3191,7 +3257,7 @@
 			]
 		},
 		{
-			"id": "covariatescodes",
+			"id": "covariatecodes",
             "name": "Covariate Codes File",
             "analysis_types": [
                 "1",
@@ -3206,6 +3272,7 @@
             "info": "Used to evaluate the presence of covariates at baseline and for analytic adjustment",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file594-typeall-covariatecodes.md",
             "table_type": "generic",
+			"import": true,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -3474,8 +3541,8 @@
 			]
 		},
 		{
-			"id": "comorbfile",
-            "name": "Comorbidity Score File",
+			"id": "riskscorefile",
+            "name": "Risk Score File",
             "analysis_types": [
                 "1",
                 "2",
@@ -3486,46 +3553,88 @@
             ],
             "required": false,
             "required_files": [],
-            "info": "File used to calculate the Charlson/Elixhauser combined comorbidity score",
-            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file596-typeall-comorbidity.md",
-            "table_type": "group",
-            "row_source": [
-				"cohort"
-			],
-            "row_parameter": "GROUP",
-            "all_groups_required": true,
+            "info": "File used to define risk scores being requested for the study",
+            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file596-typeall-riskscore.md",
+            "table_type": "generic",
+			"import": false,
+            "row_source": [],
+            "row_parameter": " ",
+            "all_groups_required": false,
             "parameters": [
 				{
-                    "id": "GROUP",
-                    "name": "Cohort Name",
-                    "sas_format": "$40",
-                    "info": "Standardized name used to differentiate cohorts",
-                    "input_type": "RowParameter",
-                    "values": []
-                },
-				{
-                    "id": "COMORBFROM",
-                    "name": "Comorbidity Score Evaluation Period Start",
-                    "sas_format": "3",
-                    "info": "Defines the start of the comorbidity score evaluation period, relative to Index Date",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "COMORBTO",
-                    "name": "Comorbidity Score Evaluation Period End",
-                    "sas_format": "3",
-                    "info": "Defines the end of the comorbidity score evaluation period, relative to Index Date",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "CCIGROUP",
-                    "name": "Comorbidity Score Stratification Groups",
+                    "id": "RISKSCORE",
+                    "name": "Risk Score",
                     "sas_format": "$20",
-                    "info": "The grouping to apply for stratification of the combined comorbidity scores",
-                    "input_type": "String",
+                    "info": "Defines risk score being requested",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"COMORBIDSCORE",
+						"HASBLED",
+						"CHA2DS2VASC",
+						"OBSCOMORB",
+						"ADCSI",
+						"FRAILTY"
+					],
+					"value_map": {
+						"COMORBIDSCORE": "Charlson/Elixhauser Comorbidity Index",
+						"HASBLED": "HAS-BLED Score",
+						"CHA2DS2VASC": "CHA2DS2-VASc Score",
+						"OBSCOMORB": "Obstetric Comorbidity Score",
+						"ADCSI": "Adapted Diabetes Complications Severity Index",
+						"FRAILTY": "Frailty Index"
+					}
+                },
+				{
+                    "id": "RISKFROM",
+                    "name": "Risk Score Evaluation Period Start",
+                    "sas_format": "3",
+                    "info": "Defines the start of the risk score evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
                     "values": []
+                },
+				{
+                    "id": "RISKTO",
+                    "name": "Risk Score Evaluation Period End",
+                    "sas_format": "3",
+                    "info": "Defines the end of the risk score evaluation period, relative to Index Date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "RISKFROMANCHOR",
+                    "name": "Anchor Date to Start Risk Score Evaluation",
+                    "sas_format": "$12",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "(Only for Type 4) Identifies the index date to use as an anchor for the start of the risk score evaluation",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"EPISODEENDDT"
+					],
+					"value_map": {
+						"INDEXDT": "Estimated date of pregnancy start",
+						"EPISODEENDDT": "Date of pregnancy outcome"
+					}
+                },
+				{
+                    "id": "RISKTOANCHOR",
+                    "name": "Anchor Date to End Risk Score Evaluation",
+                    "sas_format": "$12",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "(Only for Type 4) Identifies the index date to use as an anchor for the end of the risk score evaluation",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"INDEXDT",
+						"EPISODEENDDT"
+					],
+					"value_map": {
+						"INDEXDT": "Estimated date of pregnancy start",
+						"EPISODEENDDT": "Date of pregnancy outcome"
+					}
                 }
 			]
 		},
@@ -3545,6 +3654,7 @@
             "info": "File used to calculate medical or drug utilization metrics",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file598-typeall-utilization.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
@@ -3609,11 +3719,12 @@
             "info": "Used to instruct the Query Request Package (QRP) algorithm on how valid dispensings are selected and used by the stockpiling algorithm to create exposure episodes",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file599-typeall-stockpiling.md",
             "table_type": "group",
+			"import": false,
             "row_source": [
 				"cohort"
 			],
             "row_parameter": "GROUP",
-            "all_groups_required": true,
+            "all_groups_required": false,
             "parameters": [
 				{
                     "id": "GROUP",
@@ -3716,6 +3827,7 @@
             "info": "File used to request most frequent utilization assessment",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file610-typeall-mostfrequtil.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -3890,6 +4002,7 @@
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file612-typeall-combocodes.md",
             "table_type": "generic",
+			"import": true,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4067,6 +4180,7 @@
             "info": "One of two input files that together specify how combination items should be created",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file614-typeall-combo.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4318,6 +4432,7 @@
             "info": "Used to instruct the Combo Tool on how valid dispensings are selected and used by the stockpiling algorithm to create treatment episodes",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file616-typeall-combostockpiling.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4418,6 +4533,7 @@
             "info": "The Concomitant Use file allows users to specify GROUP values from a Type 2 analysis and perform additional analyses",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file544-type02-concfile.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4547,6 +4663,7 @@
             "info": "Allows users to specify COHORTGRP values from a Type 2 analysis and perform additional analyses",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file545-type02-multeventfile.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4676,6 +4793,7 @@
             "info": "Allows users to specify multiple criteria to determine overall adherence for a Type 2 multiple events analysis",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file546-type02-multeventfile_adhere.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4773,6 +4891,7 @@
             "info": "Characterizes an overlap of primary and secondary treatment episodes during the observation window",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file547-type02-overlapfile.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4913,6 +5032,7 @@
             "info": "Allows users to specify multiple criteria to determine overall adherence for a concomitant use analysis",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file548-type02-overlap_adhere.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": false,
@@ -4973,6 +5093,7 @@
             "info": "Used to specify pregnancy episodes identification strategies (Type 4 analysis) that will create cohorts for further processing with the PSA or CS module or to describe pregnancy cohorts among pregnancies matched to an infant",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file606-type04-micohortfile.md",
             "table_type": "generic",
+			"import": false,
             "row_source": [],
             "row_parameter": " ",
             "all_groups_required": true,
