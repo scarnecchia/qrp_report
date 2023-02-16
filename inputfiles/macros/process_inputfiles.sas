@@ -635,37 +635,99 @@
      run;
 
 /***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+    %if ^%index(&reporttype,TREE) %then %do;
+        %let typenum = %substr(&reporttype,2,1);
+
+         data master_typefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._type&typenum.file(in=n&n.)
+            %end;
+         ;
+         format runid $5.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+    
+         %if &typenum. = 2 %then %do;
+         /*assign macro variable if BASECOHORT is specified*/
+         if missing(basecohort) = 0 then call symputx('basecohortused', 'Y');
+         %end;
+         run;
+
+/***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
-    data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
-        stop;
-    run;
+        data inclusioncodes_shell;
+            length runid $5 group $40 condlevel $30;
+            call missing(runid, group, condlevel);
+            stop;
+        run;
 
-    data master_inclusioncodes;
-        set 
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        infolder.&&&runid._inclusioncodes(in=n&n)
-        %end;
-        %else %do;
-        inclusioncodes_shell
-        %end;
-        %end;
-        ;
-        format runid $5.;
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        if n&n. then do;
-        runid = "&&id&n.";
-        end;
-        %end;
-        %end;
-    run;
+        data master_inclusioncodes;
+            set 
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            infolder.&&&runid._inclusioncodes(in=n&n)
+            %end;
+            %else %do;
+            inclusioncodes_shell
+            %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+            %end;
+            %end;
+        run;
+
+        /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
+        %if &basecohortused. = Y %then %do;
+            /*build set and group assignment statements*/
+            %let inclusionsetstatement = ;
+            %let inclusioninstatement = ;
+
+            proc sql noprint;
+                select count(*) into: numoutcomecohorts 
+                from master_typefile(where=(missing(basecohort)=0));
+            quit;
+
+            %do bc = 1 %to %eval(&numoutcomecohorts.);
+                data _null_;
+                    set master_typefile(where=(missing(basecohort)=0));
+                    if _n_ = &bc. then do;
+                        call symputx('runid', strip(runid));
+                        call symputx('cohort', strip(group));
+                        call symputx('basecohort', strip(basecohort));
+                    end;
+                run;
+
+                %let inclusionsetstatement = &inclusionsetstatement. master_inclusioncodes(in=a&bc. where=(runid="&runid." and group = "&basecohort."));
+                %let inclusioninstatement = &inclusioninstatement. %str(if a&bc. then do; group ="&cohort"; end;) ;
+            %end;
+
+            /*add inclusion codes for outcome cohorts*/
+            data master_inclusioncodes;
+                set master_inclusioncodes
+                    &inclusionsetstatement.;
+                &inclusioninstatement.;
+            run;
+
+        %end; /*Type 2 when basecohort specified*/
+
+    %end; /*REPORTTYPE ne TREEX*/
 
 /*******************************************************************************************************
 *   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
@@ -808,28 +870,6 @@
         run;
     %end;
 
-
-/***************************************************************************************************
-*   Create a combined type file for all runs                                        
-***************************************************************************************************/
-
-    %if ^%index(&reporttype,TREE) %then %do;
-        %let typenum = %substr(&reporttype,2,1);
-
-         data master_typefile;
-         set %do n = 1 %to &numrunid.;
-                %let runid=&&id&n..;
-                infolder.&&&runid._type&typenum.file(in=n&n.)
-            %end;
-         ;
-         format runid $5.;
-            %do n = 1 %to &numrunid.;
-                if n&n. then do;
-                runid = "&&id&n.";
-                end;
-            %end;
-         run;
-    %end;
 /***************************************************************************************************
 *   Create a stacked monitoring file for Sentinel Views                                
 ***************************************************************************************************/
