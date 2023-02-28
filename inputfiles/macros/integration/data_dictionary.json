@@ -1799,6 +1799,14 @@
                     "values": []
                 },
 				{
+                    "id": "BASECOHORT",
+                    "name": "Base Cohort",
+                    "sas_format": "$40",
+                    "info": "Cohort that will be used as a basis for building additional cohorts that vary only by outcome",
+                    "input_type": "SingleSelectGroup",
+                    "values": ["COHORT"]
+                },
+				{
                     "id": "T2COHORTDEF",
                     "name": "Type 2 Cohort Definition",
                     "sas_format": "$2",
