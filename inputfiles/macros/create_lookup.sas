@@ -38,6 +38,7 @@
 	          description  length = $575 format = $575.;
 
 	   /* Footnotes for in Type 4 tables - applied to multiple tables*/
+	   type = "type4"; order = -3;  description = "Results are not output since enrollment was not required during this time period of given pregnancy episode examined."; output;
       type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
       type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
 
@@ -135,7 +136,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be during the query period"; report_descr = "Pregnancy episode recorded during the query period"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the pre-delivery enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
