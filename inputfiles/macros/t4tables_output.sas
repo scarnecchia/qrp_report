@@ -126,8 +126,7 @@
                     order by order;
                 quit; 
                 %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
-                %if &columnsuperscript_flag = N %then %let label = %scan(%str(&columnstatementlabels.),&v., |||);
-                %else %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
+                %if &columnsuperscript_flag = Y %then %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
                 %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
             %end;
         %end;
