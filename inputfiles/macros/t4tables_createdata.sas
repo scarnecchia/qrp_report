@@ -284,10 +284,7 @@
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
-    		select a.* ,case when missing(b.t4pregenrdays) then 0 
-    					else b.t4pregenrdays 
-    					end as t4pregenrdays
-    			, c.prepregdays
+    		select a.* , b.t4pregenrdays, c.prepregdays
     		from &dsin a 
     		left join master_cohortfile b 
     		on a.group = b.cohortgrp
@@ -356,7 +353,7 @@
 			                    	end;
 			                    %end;
 		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|
-		                								anyt1|onlyt1|sumrawcntanyt1|sumadjcntanyt1|
+		                								allt|anyt1|onlyt1|sumrawcntanyt1|sumadjcntanyt1|
 		                								sumrawcntonlyt1|sumadjcntonlyt1/i,&&formula&vv.)) %then %do;
 		                		    if lowcase(group) = "&t4group" and 0 < t4pregenrdays <= 90 then do; 
 		                		    &&var&vv.._char = 'N/A';
@@ -387,7 +384,7 @@
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
 		                        if lowcase(group) = "&t4group" then do; 
-		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) <= abs(gestwk) and gestwk < 0 then do;
+		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
 		                        		&&var&vv.._char = 'N/A';
 		                        		&&var&vv. = .;
 		                        		&&var&vv.._ss=1;
@@ -400,6 +397,11 @@
 		                        end;
 		                        %end;
 		                    %end;
+		                    if lowcase(group) = "&t4group" and missing(t4pregenrdays) then do;
+		                    		&&var&vv.._char = 'N/A';
+		                        	&&var&vv. = .;
+		                        	&&var&vv.._ss=1;
+		                    end;
 	                %end;
                 /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per week for gestational week data, % cannot be computed*/
                 %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
