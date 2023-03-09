@@ -284,7 +284,10 @@
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
-    		select a.* ,b.t4pregenrdays, c.prepregdays
+    		select a.* ,case when missing(b.t4pregenrdays) then 0 
+    					else b.t4pregenrdays 
+    					end as t4pregenrdays
+    			, c.prepregdays
     		from &dsin a 
     		left join master_cohortfile b 
     		on a.group = b.cohortgrp
@@ -384,7 +387,7 @@
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
 		                        if lowcase(group) = "&t4group" then do; 
-		                        	if t4pregenrdays < 0 and int(t4pregenrdays/7) <= gestwk and gestwk < 0 then do;
+		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) <= abs(gestwk) and gestwk < 0 then do;
 		                        		&&var&vv.._char = 'N/A';
 		                        		&&var&vv. = .;
 		                        		&&var&vv.._ss=1;
