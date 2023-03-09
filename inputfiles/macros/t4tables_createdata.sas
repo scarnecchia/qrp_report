@@ -359,14 +359,14 @@
 			                        &&var&vv.._ss=1;
 			                    	end;
 		                		%end;
-		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt1|onlyt1|anyt2|onlyt2|sumrawcntanyt1|sumadjcntanyt1|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonlyt2|sumadjcntonlyt2/i,&&formula&vv.)) %then %do;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|allt|anyt1|onlyt1|anyt2|onlyt2|sumrawcntanyt1|sumadjcntanyt1|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonlyt2|sumadjcntonlyt2/i,&&formula&vv.)) %then %do;
 		                			if lowcase(group) = "&t4group" and 90 < t4pregenrdays <= 180 then do; 
 		                		    &&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
 			                        &&var&vv.._ss=1;
 			                        end;
 			                    %end;
-			                    %if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|anyt1|onlyt1|anyt2|onlyt2|anyt3|onlyt3|sumrawcntanyt1|sumadjcntanyt1|sumrawcntonlyt1|sumadjcntonlyt1|sumrawcntonlyt2|sumadjcntonlyt2|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonly3|sumadjcntonlyt3|sumrawcntanyt3|sumadjcntanyt3/i,&&formula&vv.)) %then %do;
+			                    %if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|allt|anyt1|onlyt1|anyt2|onlyt2|anyt3|onlyt3|sumrawcntanyt1|sumadjcntanyt1|sumrawcntonlyt1|sumadjcntonlyt1|sumrawcntonlyt2|sumadjcntonlyt2|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonly3|sumadjcntonlyt3|sumrawcntanyt3|sumadjcntanyt3/i,&&formula&vv.)) %then %do;
 		                			if lowcase(group) = "&t4group" and t4pregenrdays > 180 then do;   
 			                        &&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
