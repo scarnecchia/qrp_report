@@ -284,10 +284,12 @@
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
-    		select a.* ,b.t4pregenrdays 
+    		select a.* ,b.t4pregenrdays, c.prepregdays
     		from &dsin a 
     		left join master_cohortfile b 
     		on a.group = b.cohortgrp
+    		left join master_typefile c 
+    		on a.group = c.group 
     		%if &dataset = preggestwk %then %do;
     		order by %if %length(&dpvar) %then %do; &dpvar, %end; group, moiname, pregflg ,gestwk_char
     		%end;
@@ -343,28 +345,35 @@
                 	%do i = 1 %to %sysfunc(countw(&cohort_list));
                 		%let t4group = %scan(&cohort_list,&i);
                 			%if &dataset = preg %then %do;
-		                		%if %sysfunc(prxmatch(m/usepre/i,&&formula&vv.)) %then %do; 
-		                			if lowcase(group) = "&t4group" and t4pregenrdays <= 0 then do; 
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre/i,&&formula&vv.)) %then %do; 
+		                			if lowcase(group) = "&t4group" and (-1*prepregdays) < t4pregenrdays <= 0 then do;
 		                		   	&&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
 			                        &&var&vv.._ss=1;
 			                    	end;
 			                    %end;
-		                		%if %sysfunc(prxmatch(m/usepre|anyt1|onlyt1/i,&&formula&vv.)) %then %do;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|
+		                								anyt1|onlyt1|sumrawcntanyt1|sumadjcntanyt1|
+		                								sumrawcntonlyt1|sumadjcntonlyt1/i,&&formula&vv.)) %then %do;
 		                		    if lowcase(group) = "&t4group" and 0 < t4pregenrdays <= 90 then do; 
 		                		    &&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
 			                        &&var&vv.._ss=1;
 			                    	end;
 		                		%end;
-		                		%if %sysfunc(prxmatch(m/usepre|anyt1|onlyt1|anyt2|onlyt2/i,&&formula&vv.)) %then %do;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt1|onlyt1|anyt2|onlyt2|
+		                							    sumrawcntanyt1|sumadjcntanyt1|sumrawcntanyt2|sumadjcntanyt2|
+		                							    sumrawcntonlyt2|sumadjcntonlyt2/i,&&formula&vv.)) %then %do;
 		                			if lowcase(group) = "&t4group" and 90 < t4pregenrdays <= 180 then do; 
 		                		    &&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
 			                        &&var&vv.._ss=1;
 			                        end;
 			                    %end;
-			                    %if %sysfunc(prxmatch(m/usepre|anyt1|onlyt1|anyt2|onlyt2|anyt3|onlyt3/i,&&formula&vv.)) %then %do;
+			                    %if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|anyt1|onlyt1|anyt2|onlyt2|anyt3|onlyt3|
+			                    						sumrawcntanyt1|sumadjcntanyt1|sumrawcntonlyt1|sumadjcntonlyt1|
+			                    						sumrawcntonlyt2|sumadjcntonlyt2|sumrawcntanyt2|sumadjcntanyt2|
+			                    						sumrawcntonly3|sumadjcntonlyt3|sumrawcntanyt3|sumadjcntanyt3/i,&&formula&vv.)) %then %do;
 		                			if lowcase(group) = "&t4group" and t4pregenrdays > 180 then do;   
 			                        &&var&vv.._char = 'N/A';
 			                        &&var&vv. = .;
@@ -375,12 +384,12 @@
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
 		                        if lowcase(group) = "&t4group" then do; 
-		                        	if t4pregenrdays < 0 and int((t4pregenrdays/7)-1) <= gestwk then do;
+		                        	if t4pregenrdays < 0 and int(t4pregenrdays/7) <= gestwk and gestwk < 0 then do;
 		                        		&&var&vv.._char = 'N/A';
 		                        		&&var&vv. = .;
 		                        		&&var&vv.._ss=1;
 			                        end;
-		                        	else if t4pregenrdays >= 0 and int((t4pregenrdays/7)+1) >= gestwk then do;
+		                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
 		                        		&&var&vv.._char = 'N/A';
 		                        		&&var&vv. = .;
 		                        		&&var&vv.._ss=1;

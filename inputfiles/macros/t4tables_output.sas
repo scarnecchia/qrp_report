@@ -171,8 +171,10 @@
             %let varlabel = %scan(&definestatementlabels., &v.,%str(|||));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
             %let varsmallcell = %lowcase(%scan(&varsmallcells., &v.,%str( )));
-			
-		   define &varname. / display "&varlabel"
+            %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
+
+		   define &varname. / display %if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; "&varlabel.&super_column." %end;
+                                      %else %do; "&varlabel" %end;
                  style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
 				 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
         %end;
