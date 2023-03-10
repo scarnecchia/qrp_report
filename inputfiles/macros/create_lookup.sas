@@ -136,7 +136,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be during the query period"; report_descr = "Pregnancy episode recorded during the query period"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the enrollment criterion"; report_descr = "Had sufficient continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the enrollment criterion"; report_descr = "Had sufficient pre-delivery continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;
