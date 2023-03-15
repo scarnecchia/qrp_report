@@ -263,12 +263,6 @@
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
 		
-		/* Sort by dpid group moiname gestational week per preg/nopreg dataset. 
-		   This is needed for retain statement in prep_t4tables */
-		proc sort data = _agg_t4moi;
-		  by dpidsiteid group moiname pregflg gestwk_char;
-        run;
-		
 		/*Determine the minimum gestional week for each group and assign to a macro variable*/
         proc sql noprint undo_policy=none;
            select distinct group into: group_list separated by ' '
@@ -287,9 +281,24 @@
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
     %macro prep_t4tables (dsin =, dsout =, dpvar = );	
+    	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
+    	proc sql noprint undo_policy=none;
+    		create table &dsin as 
+    		select a.* , b.t4pregenrdays, c.prepregdays
+    		from &dsin a 
+    		left join master_cohortfile b 
+    		on a.group = b.cohortgrp
+    		left join master_typefile c 
+    		on a.group = c.group 
+    		%if &dataset = preggestwk %then %do;
+    		order by %if %length(&dpvar) %then %do; &dpvar, %end; group, moiname, pregflg ,gestwk_char
+    		%end;
+    		;
+    		select distinct group into: cohort_list separated by ' ' from &dsin;
+    	quit;
+
 	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end;);
 	     set &dsin.;
-		 
 		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
 		 %if &dataset. = preggestwk %then %do;
 		   by &dpvar. group moiname pregflg gestwk_char;
@@ -332,15 +341,69 @@
                         &&var&vv. = .;
                     end;
                 %end;
-                /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per weeek for gestational week data, % cannot be computed*/
+                /* check each group and the pregnancy enrollment value value - set to N/A based on enrollment value */
+                	%do i = 1 %to %sysfunc(countw(&cohort_list));
+                		%let t4group = %scan(&cohort_list,&i);
+                			%if &dataset = preg %then %do;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre/i,&&formula&vv.)) %then %do; 
+		                			if lowcase(group) = "&t4group" and (-1*prepregdays) < t4pregenrdays <= 0 then do;
+		                		   	&&var&vv.._char = 'N/A';
+			                        &&var&vv. = .;
+			                        &&var&vv.._ss=1;
+			                    	end;
+			                    %end;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|allt|anyt1|onlyt1|sumrawcntanyt1|sumadjcntanyt1|sumrawcntonlyt1|sumadjcntonlyt1/i,&&formula&vv.)) %then %do;
+		                		    if lowcase(group) = "&t4group" and 0 < t4pregenrdays <= 90 then do; 
+		                		    &&var&vv.._char = 'N/A';
+			                        &&var&vv. = .;
+			                        &&var&vv.._ss=1;
+			                    	end;
+		                		%end;
+		                		%if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|allt|anyt1|onlyt1|anyt2|onlyt2|sumrawcntanyt1|sumadjcntanyt1|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonlyt2|sumadjcntonlyt2/i,&&formula&vv.)) %then %do;
+		                			if lowcase(group) = "&t4group" and 90 < t4pregenrdays <= 180 then do; 
+		                		    &&var&vv.._char = 'N/A';
+			                        &&var&vv. = .;
+			                        &&var&vv.._ss=1;
+			                        end;
+			                    %end;
+			                    %if %sysfunc(prxmatch(m/usepre|sumrawcntpre|sumadjcntpre|anyt\b|anyt\/episodes\b|allt|anyt1|onlyt1|anyt2|onlyt2|anyt3|onlyt3|sumrawcntanyt1|sumadjcntanyt1|sumrawcntonlyt1|sumadjcntonlyt1|sumrawcntonlyt2|sumadjcntonlyt2|sumrawcntanyt2|sumadjcntanyt2|sumrawcntonly3|sumadjcntonlyt3|sumrawcntanyt3|sumadjcntanyt3/i,&&formula&vv.)) %then %do;
+		                			if lowcase(group) = "&t4group" and t4pregenrdays > 180 then do;   
+			                        &&var&vv.._char = 'N/A';
+			                        &&var&vv. = .;
+			                        &&var&vv.._ss=1;
+			                    	end;
+		                    	%end;
+		                    %end;
+		                    %if &dataset = preggestwk %then %do;
+		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
+		                        if lowcase(group) = "&t4group" then do; 
+		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
+		                        		&&var&vv.._char = 'N/A';
+		                        		&&var&vv. = .;
+		                        		&&var&vv.._ss=1;
+			                        end;
+		                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
+		                        		&&var&vv.._char = 'N/A';
+		                        		&&var&vv. = .;
+		                        		&&var&vv.._ss=1;
+		                        	end;
+		                        end;
+		                        %end;
+		                    %end;
+		                    if lowcase(group) = "&t4group" and missing(t4pregenrdays) then do;
+		                    		&&var&vv.._char = 'N/A';
+		                        	&&var&vv. = .;
+		                        	&&var&vv.._ss=1;
+		                    end;
+	                %end;
+                /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per week for gestational week data, % cannot be computed*/
                 %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
                     if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
                 %end;
             end;
 	     %end;
 	   run;
-	   
-	   
+
         /* transpose Data for gestwk from a long dataset (1 row per week) to a wide dataset (1 column per week) */
         %if &dataset. = preggestwk %then %do;
             /*Transpose both numeric and character vars*/
@@ -355,6 +418,12 @@
                    by &dpvar. group moiname pregflg den_episodes_wk1;
                    id gestwk_char;
                    var &&var&va.._char;
+                run;
+
+                proc transpose data = &dsin suffix = &&var&va.._ss out = &dsin._tran_&va._ss  (drop =_name_);
+                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   id gestwk_char;
+                   var &&var&va.._ss;
                 run;
             %end;
 		 

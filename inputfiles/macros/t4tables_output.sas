@@ -25,6 +25,7 @@
 *   - varlist = List of column names
 *   - varwidths = list of variable widths
 *   - varsmallcells = List of small cell count highlighting indicators for each column
+*   - varsuperscripts = Y/N indicator on whether columns will get superscript for footnote
 *   - columnstatementlabels = List of column headers to include in COLUMNS statement
 *   - definestatementlabels = List of column headers to include in DEFINE statement
 *   - spanningheader = Header that spans the top of entire table
@@ -50,6 +51,7 @@
                        varlist=, 
                        varwidths=, 
                        varsmallcells=,
+                       varsuperscripts=,
                        columnstatementlabels=,
                        definestatementlabels=,
                        spanningheader=);
@@ -65,7 +67,8 @@
           %if &table.=T5 %then %do;
            %if &nonpreg. = Y %then %do; 3 %end;
             %else %do; 4 %end;
-           %end; )
+           %end; 
+           %if %index(&varsuperscripts,Y) %then %do; 5 %end;)
           or (type='type4' and order in (-2 %if &nonpreg. = Y %then %do; -1 %end;))
          )));
        by order;
@@ -85,10 +88,12 @@
 
 	%assign_superscripts(type=title, order = -2 -1);
 	%assign_superscripts(type=exposure, order = 1 2 3 4);
+    %assign_superscripts(type=column, order = 5);
 
     /*Save dataset to repdata folder*/
     %isdata(dataset=repdata.table&tabnum.);
     %if %eval(&nobs.<1) %then %do;
+
         /*list of numeric variables*/
         %let varlistnochar = %sysfunc(tranwrd(&varlist., _char, %str()));
 
@@ -120,6 +125,8 @@
                     where table="&table" and columnlabel = "&label."
                     order by order;
                 quit; 
+                %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
+                %if &columnsuperscript_flag = Y %then %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
                 %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
             %end;
         %end;
@@ -164,10 +171,13 @@
             %let varlabel = %scan(&definestatementlabels., &v.,%str(|||));
 			%let varwidth = %lowcase(%scan(&varwidths., &v.,%str( )));
             %let varsmallcell = %lowcase(%scan(&varsmallcells., &v.,%str( )));
-			
-		   define &varname. / display "&varlabel"
+            %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
+
+            /* add conditional logic to resolve superscript on specific tables, and adjust height so superscript doesn't break cell formatting */
+		   define &varname. / display %if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; "&varlabel.&super_column." %end;
+                                      %else %do; "&varlabel" %end;
                  style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
-				 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
+				 style(header)=[%if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; height=.5in %end; just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
         %end;
 
 		/* Add title */
