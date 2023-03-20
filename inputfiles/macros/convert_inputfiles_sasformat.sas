@@ -157,8 +157,7 @@
             replace;
         run;
 
-        %if %length(&dynamic_format_list) > 0 %then %do;
-            %do i = 1 %to %sysfunc(countw(&dynamic_format_list));
+        %if %length(&dynamic_format_list) > 0 %then %do i = 1 %to %sysfunc(countw(&dynamic_format_list));
                 %let format_variable = %scan(&dynamic_format_list,&i);
                 %varlength(var = &format_variable, indata = tmpfile);
 
@@ -174,7 +173,6 @@
                     full_inputfile_name = "&inputfile";
                     end;
                 run;
-            %end; /* i */
         %end; /* %length(&dynamic_format_list) > 0 */
 
         proc contents data=tmpfile noprint out=tmpfilecontents; run;
