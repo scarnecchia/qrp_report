@@ -129,10 +129,10 @@
             %if %sysfunc(exist(tmplib.format_values)) %then %do;
                 %let inputvarlist=;
                 proc sql noprint;
-                    select catx('@',full_inputfile_name,id,max(sas_format))
+                    select catx('@',full_inputfile_name,id,sas_format)
                     into :inputvarlist separated by ' '
                     from 
-                    (select b.id, a.sas_format, a.full_inputfile_name 
+                    (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
                         from tmplib.format_values a
                         inner join 
                          (select id, count(*) as id_counts
@@ -140,6 +140,7 @@
                             group by id) b
                     on a.id = b.id 
                     where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                    group by b.id
                     )
                 quit;
 
@@ -152,6 +153,7 @@
                         data infolder.&inputfile;
                             length &inputvar &varformat;
                             format &inputvar &varformat..;
+                            informat &inputvar &varformat..;
                             set infolder.&inputfile;
                         run;
                     %end;
@@ -159,6 +161,7 @@
                         data input.&inputfile;
                             length &inputvar &varformat;
                             format &inputvar &varformat..;
+                            informat &inputvar &varformat..;
                             set input.&inputfile;
                         run;
                     %end;

@@ -228,7 +228,7 @@
                 {
                     "id": "AGESTRAT",
                     "name": "Age Groups",
-                    "sas_format": "$100",
+                    "sas_format": " ",
                     "info": "Age group categories for reporting. Specifying this parameter will (1) restrict to certain age groups and (2) specify how age groups will be stratified in result tables",
                     "input_type": "String",
                     "values": []
@@ -459,7 +459,7 @@
                 {
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -548,7 +548,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -1483,7 +1483,7 @@
 				{
 					"id": "LEVELVARS",
 					"name": "Strata Level Variables",
-					"sas_format": "$30",
+					"sas_format": " ",
 					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
 					"input_type": "String",
 					"values": []
@@ -1609,7 +1609,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -1696,7 +1696,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -2495,7 +2495,7 @@
 				{
                     "id": "AFDD_OUTPUT_CAT",
                     "name": "Average Filled Daily Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of average filled daily dose to output",
                     "input_type": "String",
                     "values": []
@@ -2503,7 +2503,7 @@
 				{
                     "id": "CUMDOSE_OUTPUT_CAT",
                     "name": "Cumulative Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of cumulative dose to output",
                     "input_type": "String",
                     "values": []
@@ -2511,7 +2511,7 @@
 				{
                     "id": "CFDD_OUTPUT_CAT",
                     "name": "Current Filled Daily Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of current filled daily dose to output",
                     "input_type": "String",
                     "values": []
@@ -2999,7 +2999,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -3047,7 +3047,7 @@
 				{
                     "id": "CONDLEVEL",
                     "name": "Name of Inclusion/Exclusion Condition",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "User-defined name to represent a unique inclusion or exclusion criterion",
                     "input_type": "String",
                     "values": []
@@ -3055,7 +3055,7 @@
 				{
                     "id": "SUBCONDLEVEL",
                     "name": "Inclusion/Exclusion Sub-condition Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "User-defined name to represent unique inclusion or exclusion criteria within CONDLEVEL values",
                     "input_type": "String",
                     "values": []
@@ -3241,7 +3241,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -3413,7 +3413,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -3509,7 +3509,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -3931,7 +3931,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each CODETYPE",
                     "input_type": "MultiSelect",
                     "values": [
@@ -4149,7 +4149,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Raw Record Laboratory Result",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -4196,7 +4196,7 @@
 				{
                     "id": "COMBDESCR",
                     "name": "Combination Description",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Optional free text providing details for the CombGroup",
                     "input_type": "String",
                     "values": []
@@ -4752,7 +4752,7 @@
 				{
                     "id": "FOLLOWUP_CAT",
                     "name": "Primary Episode Categories",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
                     "input_type": "String",
                     "values": []
@@ -4953,7 +4953,7 @@
 				{
                     "id": "CUTOFFCAT",
                     "name": "Cutoff Categories",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Defines the categories to bin secondary and observation window overlap",
                     "input_type": "String",
                     "values": []
@@ -4991,7 +4991,7 @@
 				{
                     "id": "FOLLOWUP_CAT",
                     "name": "Primary Episode Categories",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
                     "input_type": "String",
                     "values": []
