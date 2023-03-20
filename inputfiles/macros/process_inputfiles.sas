@@ -127,6 +127,7 @@
 
              /* Assign the maximum length to duplicate variable names if a format values table exists */
             %if %sysfunc(exist(tmplib.format_values)) %then %do;
+                %let inputvarlist=;
                 proc sql noprint;
                     select catx('@',full_inputfile_name,id,max(sas_format))
                     into :inputvarlist separated by ' '
@@ -142,7 +143,7 @@
                     )
                 quit;
 
-                %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+                %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
                     %let inputcombo = %scan(&inputvarlist,&x,%str( ));
                     %let inputfile = %scan(&inputcombo,1,%str(@));
                     %let inputvar = %scan(&inputcombo,2,%str(@));
