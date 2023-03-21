@@ -85,7 +85,7 @@
             select a.id, 
                    a.sas_format,
                    b.id as inputfile,
-                   '' as full_inputfile_name length=$32,
+                   '' as full_inputfile_name format=$32. length=32,
                                      
                    /*format*/
                     case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("format ",strip(a.id)," ",strip(a.sas_format), ".;")
