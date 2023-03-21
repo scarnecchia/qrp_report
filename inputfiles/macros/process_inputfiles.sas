@@ -534,6 +534,43 @@
             %end;
 
         %end;
+
+        /***************************************************************************************************
+         * Assign the maximum length to duplicate variable names if a format values table exists 
+         **************************************************************************************************/
+        %if %sysfunc(exist(tmplib.format_values)) %then %do;
+            %let inputvarlist=;
+            proc sql noprint;
+                select catx('@',full_inputfile_name,id,sas_format)
+                into :inputvarlist separated by ' '
+                from 
+                (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                    from tmplib.format_values a
+                    inner join 
+                     (select id, count(*) as id_counts
+                        from tmplib.format_values 
+                        group by id) b
+                on a.id = b.id 
+                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                group by b.id
+                )
+            quit;
+
+            %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+                %let inputcombo = %scan(&inputvarlist,&x,%str( ));
+                %let inputfile = %scan(&inputcombo,1,%str(@));
+                %let inputvar = %scan(&inputcombo,2,%str(@));
+                %let varformat = %scan(&inputcombo,3,%str(@));
+
+                    data infolder.&inputfile;
+                        length &inputvar &varformat;
+                        format &inputvar &varformat..;
+                        informat &inputvar &varformat..;
+                        set infolder.&inputfile;
+                    run;
+                    
+            %end; /*x*/
+        %end;/* tmplib.format_values exists */
       
      %end;
 
