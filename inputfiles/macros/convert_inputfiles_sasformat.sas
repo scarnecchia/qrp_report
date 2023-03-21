@@ -85,7 +85,8 @@
             select a.id, 
                    a.sas_format,
                    b.id as inputfile,
-
+                   '' as full_inputfile_name length=$32,
+                                     
                    /*format*/
                     case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("format ",strip(a.id)," ",strip(a.sas_format), ".;")
                     else ""
@@ -164,7 +165,6 @@
                 /* This will assign the format for each inputfile/variable combo */
                 data tmplib.format_values;
                     set tmplib.format_values;
-                    length full_inputfile_name $32;
                     if upcase(inputfile) = "%upcase(&parameter)" and id = "&format_variable" and missing(sas_format) then do; 
                     sas_format="$&&&format_variable._len";
                     format_statement="format &format_variable $&&&format_variable._len..;";
