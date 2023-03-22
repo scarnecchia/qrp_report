@@ -17,8 +17,8 @@
 *   -repdata.table&tablenum.&tableletter.
 * 
 *  PARAMETERS:
-*   -tabletype - patient - Output patient level attrition table
-*              - episode - Output episode level attrition table                                                                     
+*   -tabletype - patient - Output patient-level attrition table
+*              - episode - Output episode-level attrition table                                                                     
 *            
 *  Programming Notes:         
 *                                                                           
@@ -31,12 +31,21 @@
 ***************************************************************************************************;
 
 %macro attrition_output(tabletype=);
-
+/*jolene*/ options mprint symbolgen macrogen;
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
+	    proc sql noprint;
+	      select claim_level
+	      into :claim_level_t
+	      from agg_&tabletype._attrition&attrperiodid;
+	    quit;
+		
         /*assign footnotes*/
-        %if %index(&reporttype,T4) > 0 %then %let num_fn = 1; %else %let num_fn = 0;
+        %if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) 
+          %then %do; %let num_fn = 2; %end;
+		%else %if %index(&reporttype,T4) %then %do; %let num_fn = 1; %end;
+        %else %let num_fn = 0;
         %let exclincl = N;
         %let milexcl = N;
         %let claim_level_descr = &tabletype.;
@@ -57,15 +66,31 @@
             %end;
         run;
 
+		
+	  %let claim_level_t = %lowcase(&claim_level_t.);
+
         %if %eval(&num_fn.>0) %then %do;
+
+		     proc sort data =lookup.lookup_footnotes out = lookup_footnotes; 
+              by order;
+			run;
+
             data _footnotes;
                length footnote_order 3; 
-               set lookup.lookup_footnotes (where = (type = "attrition" 
+               set lookup_footnotes (where = (
+			        /*only need the title footnote when attrition contains both member and episode*/
+                    %if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) %then %do;
+					  (type = "attrition")
+					%end;
+					%else  %do;
+                      (type = "attrition" and order > 0)
+					%end;
                     %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;
+					
                ));
                by order;
                footnote_order = _n_;
-            run;
+            run;      
 
             proc sql noprint;
               select description into: fn1 - :fn&num_fn.
@@ -74,7 +99,11 @@
             quit;
 
             /* Assign macro variables for superscipts */
-    		%assign_superscripts(type =title, order = -2);
+			%if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) %then %do;
+              %assign_superscripts(type =title_me, order =  -3);
+    		%end;
+			%else %do; %assign_superscripts(type =title_me, order = ); %end;
+			%assign_superscripts(type =title, order = -2);
     		%assign_superscripts(type =exclincl, order = 1);
 
             proc datasets noprint nowarn lib = work;
@@ -83,6 +112,7 @@
         %end;
         %if %eval(&num_fn.=0) %then %do;
             /* Assign macro variables for superscipts */
+		    %assign_superscripts(type =title_me, order = );
     		%assign_superscripts(type =title, order = );
     		%assign_superscripts(type =exclincl, order = );
         %end;
@@ -131,7 +161,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.&super_title.";
+            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype))-Level&super_title_me. Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.&super_title.";
             endcomp;
 
           
@@ -247,8 +277,8 @@
             %if %eval(&num_fn > 0) %then %do;
                 compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize];
     		    %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
-    		    %end;
+			     line "^{super &f.}&&fn&f.";
+				%end;
                 endcomp;
             %end;
             %else %do;

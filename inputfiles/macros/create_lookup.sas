@@ -69,6 +69,7 @@
 	   type = "effectest"; order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 
        /* Footnotes for attrition table */
+	   type = "attrition"; order = -3;  description = 'Cohorts are formed by first evaluating enrollment and demographic requirements as well as index events among members, then evaluating index dates, pre-index history, and post-index follow-up among %sysfunc(lowcase(&claim_level_descr.)). Because of this, the number remaining often increases from the member- to episode-level steps.'; output;
 	   type = "attrition"; order = 1;  description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
 	   
 	   /* Footnotes for KM/CDF figures */
