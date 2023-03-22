@@ -85,7 +85,8 @@
             select a.id, 
                    a.sas_format,
                    b.id as inputfile,
-
+                   '' as full_inputfile_name format=$32. length=32,
+                                     
                    /*format*/
                     case when index(lowcase(sas_format), 'date')>0 or index(sas_format, '$')>0 then cat("format ",strip(a.id)," ",strip(a.sas_format), ".;")
                     else ""
@@ -97,7 +98,7 @@
                      end as informat_statement,
 
                     /*length*/
-                    case when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')=0 then cat("length ",strip(a.id)," ",strip(a.sas_format), ";")
+                    case when not missing(sas_format) and index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')=0 then cat("length ",strip(a.id)," ",strip(a.sas_format), ";")
                          when index(sas_format, '$')=0 and index(lowcase(sas_format), 'date')>0 then cat("length ",strip(a.id)," ", "4;")
                     else ""
                     end as length_statement,
@@ -141,14 +142,38 @@
             %put NOTE: (Sentinel) Inputfile &inputfile already exists as a SAS dataset and will be overwritten with contents of CSV file;
         %end;
 
+        /* Store the relevant inputfile variables that need dynamic length assigned */
+        %let dynamic_format_list =;
+        proc sql noprint;
+            select id
+            into :dynamic_format_list separated by ' '
+            from tmplib.format_values
+            where upcase(inputfile)="%upcase(&parameter)" and missing(sas_format);
+        quit;
+
         /*import csv in order to acertain variable order for input statement*/
-        options obs=0;
         proc import file ="&path./&inputfile..csv"
             out = tmpfile
             dbms = csv
             replace;
         run;
-        options obs=max;
+
+        %if %length(&dynamic_format_list) > 0 %then %do i = 1 %to %sysfunc(countw(&dynamic_format_list));
+                %let format_variable = %scan(&dynamic_format_list,&i);
+                %varlength(var = &format_variable, indata = tmpfile);
+
+                /* This will assign the format for each inputfile/variable combo */
+                data tmplib.format_values;
+                    set tmplib.format_values;
+                    if upcase(inputfile) = "%upcase(&parameter)" and id = "&format_variable" and missing(sas_format) then do; 
+                    sas_format="$&&&format_variable._len";
+                    format_statement="format &format_variable $&&&format_variable._len..;";
+                    informat_statement="informat &format_variable $&&&format_variable._len..;";
+                    input_statement="&format_variable $";
+                    full_inputfile_name = "&inputfile";
+                    end;
+                run;
+        %end; /* %length(&dynamic_format_list) > 0 */
 
         proc contents data=tmpfile noprint out=tmpfilecontents; run;
 

@@ -2,33 +2,33 @@
     "types": [
         {
             "id": "1",
-            "name": "Type 1",
-            "info": "Background Rates"
+            "name": "Background Rates (Type 1)",
+            "info": "The background rate cohort identification strategy identifies prevalent or incident use of an event of interest (i.e., exposure to a medical product or occurrence of an HOI) during the user-defined query period"
         },
         {
             "id": "2",
-            "name": "Type 2",
-            "info": "Exposure and Follow-up Time"
+            "name": "Exposure and Follow-Up Time (Type 2)",
+            "info": "The exposures and follow-up time cohort creation strategy defines episodes of new use of a medical product of interest and evaluates the occurrence of health outcomes of interest (HOIs)"
         },
 		{
             "id": "3",
-            "name": "Type 3",
-            "info": "Self-Controlled Risk Interval Design"
+            "name": "Self-Controlled Risk Interval Design (Type 3)",
+            "info": "The self-controlled risk interval (SCRI) design cohort identification strategy defines new use of a medical product of interest, identifies a risk and control window relative to exposure, and examines the occurrence of Health Outcomes of Interest (HOIs)"
         },
         {
             "id": "4",
-            "name": "Type 4",
-            "info": "Pregnancy"
+            "name": "Pregnancy Episodes and Medical Product Use (Type 4)",
+            "info": "The pregnancy episodes cohort identification strategy is used to create a pregnant cohort and identify new use of a medical product of interest and evaluates the occurrence of health outcomes of interest (HOIs) in mothers or infants"
         },
         {
             "id": "5",
-            "name": "Type 5",
-            "info": "Medical Product Utilization"
+            "name": "Medical Product Utilization (Type 5)",
+            "info": "The medical product utilization cohort identification strategy is used to characterize patterns of drug use. This strategy creates episodes of medical product exposure and outputs metrics characterizing patient use and dispensing patterns"
         },
 		{
             "id": "6",
-            "name": "Type 6",
-            "info": "Manufacturer-level Product Utilization and Switching Patterns"
+            "name": "Manufacturer-Level Product Utilization and Switching Patterns (Type 6)",
+            "info": "The manufacturer-level product utilization and switching patterns cohort identification strategy is used to characterize patterns of drug use at the manufacturer-level"
         }
     ],
     "input_files": [
@@ -45,7 +45,7 @@
             ],
             "required": true,
             "required_files": [],
-            "info": "User-visible description of the Cohort File",
+            "info": "Used to define enrollment and demographic requirements, select the type of cohort identification strategy for the request, and indicate if extraction should be restricted to individuals for whom medical records may be requested",
             "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file526-typeall-cohortfile.md",
             "table_type": "group",
 			"import": false,
@@ -92,7 +92,15 @@
                     "id": "ENRDAYS",
                     "name": "Pre-Index Enrollment",
                     "sas_format": "3",
-                    "info": "Specifies the number of days of continuous enrollment required before the index date",
+                    "info": "For non-pregnancy queries, specifies the number of days of continuous enrollment required before the index date",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "T4PREGENRDAYS",
+                    "name": "Maternal Enrollment Days",
+                    "sas_format": "3",
+                    "info": "(For pregnancy queries) Specifies the number of days of continuous enrollment required before or after the last menstruel period through the pregnancy outcome",
                     "input_type": "Numeric",
                     "values": []
                 },
@@ -111,20 +119,34 @@
                     "info": "Indicates cohort identification strategy to be performed",
                     "input_type": "SingleSelect",
                     "values": [
-                        1,
-                        2,
-						3,
-                        4,
-                        5,
-						6
+                       {
+							"1": [
+								"1"
+							],
+							"2": [
+								"2"
+							],
+							"3": [
+								"3"
+							],
+							"4": [
+								"4"
+							],
+							"5": [
+								"5"
+							],
+							"6": [
+								"6"
+							]
+						}
                     ],
 					"value_map": {
-						"1": "Type 1 (background rate cohort identification strategy)",
-                        "2": "Type 2 (exposures and follow-up time cohort identification strategy)",
-						"3": "Type 3 (self-controlled risk interval design)",
-                        "4": "Type 4 (pregnancy episodes cohort identification strategy)",
-                        "5": "Type 5 (medical product utilization cohort identification strategy)",
-						"6": "Type 6 (manufacturer-level product utilization and switching patterns)"
+						"1": "Type 1",
+                        "2": "Type 2",
+						"3": "Type 3",
+                        "4": "Type 4",
+                        "5": "Type 5",
+						"6": "Type 6"
 					}
                 },
                 {
@@ -205,8 +227,8 @@
                 },
                 {
                     "id": "AGESTRAT",
-                    "name": "Age groups",
-                    "sas_format": "$100",
+                    "name": "Age Groups",
+                    "sas_format": " ",
                     "info": "Age group categories for reporting. Specifying this parameter will (1) restrict to certain age groups and (2) specify how age groups will be stratified in result tables",
                     "input_type": "String",
                     "values": []
@@ -262,7 +284,7 @@
                 {
                     "id": "STOCKGROUP",
                     "name": "Stockpiling Group",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP.",
                     "input_type": "String",
                     "values": []
@@ -437,7 +459,7 @@
                 {
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -454,17 +476,17 @@
                         "OA*"
                     ],
                     "value_map": {
-                        "IPP": "Inpatient hospital stays, principal diagnoses",
-                        "IPS": "Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "Inpatient hospital stay, any diagnosis position",
-                        "ISP": "Non-acute institutional stays, principal diagnoses",
-                        "ISS": "Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "Non-acute institutional stays, any diagnosis position",
-                        "ED*": "Emergency department encounters",
-                        "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits"
+                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
+                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
+                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
+                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
+                        "ED*": "(ED*) Emergency department encounters",
+                        "AV*": "(AV*) Ambulatory visits",
+                        "OA*": "(OA*) Other ambulatory visits"
                     }
                 },
                 {
@@ -487,9 +509,9 @@
                         "NOT"
                     ],
 					"value_map": {
-						"DEF": "Code should be used to identify the cohort HOI/concomitant episode event",
-                        "IOC": "Code should be used to assess cohort HOI incidence/concomitant event only",
-                        "NOT": "Code should not be used to define cohort HOI/concomitant event or incidence"
+						"DEF": "(DEF) Code should be used to identify the cohort HOI/concomitant episode event",
+                        "IOC": "(IOC) Code should be used to assess cohort HOI incidence/concomitant event only",
+                        "NOT": "(NOT) Code should not be used to define cohort HOI/concomitant event or incidence"
 					}
                 },
                 {
@@ -511,8 +533,8 @@
                         "N"
                     ],
 					"value_map": {
-						"Y": "Lookback period should search for evidence of a date or an interval",
-						"N": "Lookback period should search for evidence of a date only"
+						"Y": "(Y) Lookback period should search for evidence of a date or an interval",
+						"N": "(N) Lookback period should search for evidence of a date only"
 					}
                 },
                 {
@@ -526,7 +548,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -623,8 +645,8 @@
                         " "
                     ],
 					"value_map": {
-						"FUPDRIVEN": "Earliest of FUPENDDATE/CDPEND; program will only evaluate for values that have been specified by the user",
-                        "DATADRIVEN": "Query-dependent to support fixed risk window analyses",
+						"FUPDRIVEN": "(FUPDRIVEN) Earliest of FUPENDDATE/CDPEND; program will only evaluate for values that have been specified by the user",
+                        "DATADRIVEN": "(DATADRIVEN) Query-dependent to support fixed risk window analyses",
                         " ": "INDENDDATE will be used to explicitly specify date"
 					}
                 },
@@ -720,19 +742,19 @@
                     "info": "Specifies the method for data cleaning with the envelope macro",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1,
-						2
+						"0",
+						"1",
+						"2"
 					],
 					"value_map":{
-						"0": "Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters",
-						"1": "Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters. Do not reclassify if encounter occurs on day of admission",
-						"2": "No reclassification"
+						"0": "(0) Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters",
+						"1": "(1) Reclassify institutional stay, outpatient, emergency department, and other ambulatory encounters that occur during an inpatient stay as inpatient encounters. Do not reclassify if encounter occurs on day of admission",
+						"2": "(2) No reclassification"
 					}
                 },
 				{
                     "id": "DISTINDEX",
-                    "name": "Distribution of Exposure or Outcome Codes Output",
+                    "name": "Distribution of Codes Output",
                     "sas_format": "$1",
                     "info": "Indicates if an optional output file with the distribution of index-defining codes and/or outcome-defining codes will be output for this request",
                     "input_type": "SingleSelect",
@@ -741,13 +763,13 @@
 						"N"
 					],
 					"value_map":{
-						"Y": "Generate and output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat",
-						"N": "Do not generate or output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat"
+						"Y": "(Y) Generate and output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat",
+						"N": "(N) Do not generate or output distribution files [RUNID]_distindex.sas7bdat and [RUNID]_distindexmax.sas7bdat"
 					}
                 },
 				{
                     "id": "FREEZEDATA",
-                    "name": "Save SCDM Data (freeze data)",
+                    "name": "Save SCDM Data (Freeze Data)",
                     "sas_format": "$1",
                     "info": "Indicates if SCDM data for patients selected in the cohort(s) of interest will be saved in the dplocal folder for further processing",
                     "input_type": "SingleSelect",
@@ -1270,8 +1292,8 @@
 						"N"
 					],
 					"value_map":{
-						"Y": "Generate and output [RUNID]_profile_[PERIODID]",
-						"N": "Do not generate or output [RUNID]_profile_[PERIODID]"
+						"Y": "(Y) Generate and output [RUNID]_profile_[PERIODID]",
+						"N": "(N) Do not generate or output [RUNID]_profile_[PERIODID]"
 					}
                 },
 				{
@@ -1461,7 +1483,7 @@
 				{
 					"id": "LEVELVARS",
 					"name": "Strata Level Variables",
-					"sas_format": "$30",
+					"sas_format": " ",
 					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
 					"input_type": "String",
 					"values": []
@@ -1497,7 +1519,7 @@
 				{
                     "id": "STOCKGROUP",
                     "name": "Stockgroup Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to a specific preterm/postterm codes within a given GROUP",
                     "input_type": "String",
                     "values": []
@@ -1587,7 +1609,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -1604,17 +1626,17 @@
                         "OA*"
                     ],
                     "value_map": {
-                        "IPP": "Inpatient hospital stays, principal diagnoses",
-                        "IPS": "Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "Inpatient hospital stay, any diagnosis position",
-                        "ISP": "Non-acute institutional stays, principal diagnoses",
-                        "ISS": "Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "Non-acute institutional stays, any diagnosis position",
-                        "ED*": "Emergency department encounters",
-                        "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits"
+                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
+                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
+                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
+                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
+                        "ED*": "(ED*) Emergency department encounters",
+                        "AV*": "(AV*) Ambulatory visits",
+                        "OA*": "(OA*) Other ambulatory visits"
                     }
                 },
 				{
@@ -1624,8 +1646,8 @@
                     "info": "Indicates if a code is a first priority code",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1
+						"0",
+						"1"
 					],
 					"value_map": {
 						"0": "No",
@@ -1639,8 +1661,8 @@
                     "info": "Indicates if a code is a second priority code",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1
+						"0",
+						"1"
 					],
 					"value_map": {
 						"0": "No",
@@ -1674,7 +1696,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -1709,7 +1731,7 @@
                 },
 				{
                     "id": "T1COHORTDEF",
-                    "name": "Type 1 Cohort Definition",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many index dates an individual can contribute",
                     "input_type": "SingleSelect",
@@ -1718,13 +1740,13 @@
 						"02"
 					],
 					"value_map": {
-						"01": "Cohort includes only the first valid index date per individual during the query period",
-						"02": "Cohort includes all valid index dates per individual during the query period"
+						"01": "(01) Cohort includes only the first valid index date per individual during the query period",
+						"02": "(02) Cohort includes all valid index dates per individual during the query period"
 					}
                 },
 				{
                     "id": "T1WASHPER",
-                    "name": "Type 1 Index Washout Period",
+                    "name": "Index Washout Period",
                     "sas_format": "3",
                     "info": "Length of washout period in days",
                     "input_type": "Numeric",
@@ -1765,9 +1787,9 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Calculate both DENNUMPTS and DENNUMMEMDAYS",
-						"M": "Calculate only DENNUMPTS",
-						"N": "Do not calculate DENNUMPTS or DENNUMMEMDAYS"
+						"Y": "(Y) Calculate both DENNUMPTS and DENNUMMEMDAYS",
+						"M": "(M) Calculate only DENNUMPTS",
+						"N": "(N) Do not calculate DENNUMPTS or DENNUMMEMDAYS"
 					}
                 }
 			]
@@ -1808,7 +1830,7 @@
                 },
 				{
                     "id": "T2COHORTDEF",
-                    "name": "Type 2 Cohort Definition",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many exposure periods an individual can contribute",
                     "input_type": "SingleSelect",
@@ -1818,14 +1840,14 @@
 						"03"
 					],
 					"value_map": {
-						"01": "Cohort includes only the first valid exposure episode during the query period",
-						"02": "Cohort includes all valid exposure episodes during the query period",
-						"03": "Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"
+						"01": "(01) Cohort includes only the first valid exposure episode during the query period",
+						"02": "(02) Cohort includes all valid exposure episodes during the query period",
+						"03": "(03) Cohort includes all valid exposure episodes during the query period until an outcome of interest occurs"
 					}
                 },
 				{
                     "id": "T2WASHPER",
-                    "name": "Type 2 Exposure Washout Period",
+                    "name": "Exposure Washout Period",
                     "sas_format": "3",
                     "info": "Length of washout period in days",
                     "input_type": "Numeric",
@@ -1842,8 +1864,8 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Define exposure as a point exposure",
-						"N": "Do not define exposure as a point exposure"
+						"Y": "(Y) Define exposure as a point exposure",
+						"N": "(N) Do not define exposure as a point exposure"
 					}
                 },
 				{
@@ -1857,8 +1879,8 @@
 						"P"
 					],
 					"value_map": {
-						"F": "Fixed episode gap",
-						"P": "Percentage episode gap"
+						"F": "Fixed",
+						"P": "Percentage"
 					}
                 },
 				{
@@ -1971,15 +1993,15 @@
                     "info": "Users can use this field to determine how this characterization should count the number of HOI",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1,
-						2,
+						"0",
+						"1",
+						"2",
 						" "
 					],
 					"value_map": {
-						"0": "Count all occurrences of an HOI during an exposure episode",
-						"1": "De-duplicate occurrences of the same HOI code and code type on the same day",
-						"2": "De-duplicate occurrences of the same HOI GROUP on the same day",
+						"0": "(0) Count all occurrences of an HOI during an exposure episode",
+						"1": "(1) De-duplicate occurrences of the same HOI code and code type on the same day",
+						"2": "(2) De-duplicate occurrences of the same HOI GROUP on the same day",
 						" ": "HOI count is not relevant (for signal identification analyses)"
 					}
                 },
@@ -2002,7 +2024,7 @@
 				{
                     "id": "FOLLOWUPTIME_OUTPUT_CAT",
                     "name": "Categories for Follow-up Time",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Indicates ranges (in days) for stratification variable CENSDAYS_VALUE to categorize follow-up time in output",
                     "input_type": "String",
                     "values": []
@@ -2010,7 +2032,7 @@
 				{
                     "id": "CENSOR_OUTPUT_CAT",
                     "name": "Categories for Follow-up Time",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Indicates ranges (in days) for stratification variable CENSDAYS_VALUE to categorize time to censor in output",
                     "input_type": "String",
                     "values": []
@@ -2025,7 +2047,7 @@
 						"N"
 					],
 					"value_map": {
-						"N": "Do not create never-exposed cohort"
+						"N": "(N) Do not create never-exposed cohort"
 					}
                 },
 				{
@@ -2039,8 +2061,8 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Automatically create a prevalent cohort",
-						"N": "Do not automatically create a prevalent cohort"
+						"Y": "(Y) Automatically create a prevalent cohort",
+						"N": "(N) Do not automatically create a prevalent cohort"
 					}
                 },
 				{
@@ -2063,9 +2085,9 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Calculate both DENNUMPTS and DENNUMMEMDAYS",
-						"M": "Calculate only DENNUMPTS",
-						"N": "Do not calculate DENNUMPTS or DENNUMMEMDAYS"
+						"Y": "(Y) Calculate both DENNUMPTS and DENNUMMEMDAYS",
+						"M": "(M) Calculate only DENNUMPTS",
+						"N": "(N) Do not calculate DENNUMPTS or DENNUMMEMDAYS"
 					}
                 }
 			]
@@ -2130,7 +2152,7 @@
                 },
 				{
                     "id": "T3COHORTDEF",
-                    "name": "Allowed Number of Exposure Episodes per Individual for the Surveillance Activity",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many exposures or index dates ('day zeros') an individual can contribute to the query or the surveillance activity (and, by extension, the number of risk/control interval pairs or observation windows an individual can contribute).",
                     "input_type": "SingleSelect",
@@ -2140,14 +2162,14 @@
 						"03"
 					],
 					"value_map": {
-						"01": "Cohort includes only the first exposure",
-						"02": "Cohort includes all exposures",
-						"03": "Cohort includes all exposure windows or index dates until an outcome occurs, including the index date with the associated outcome"
+						"01": "(01) Cohort includes only the first exposure",
+						"02": "(02) Cohort includes all exposures",
+						"03": "(03) Cohort includes all exposure windows or index dates until an outcome occurs, including the index date with the associated outcome"
 					}
                 },
 				{
                     "id": "T3WASHPER",
-                    "name": "Type 3 Exposure Washout Period",
+                    "name": "Exposure Washout Period",
                     "sas_format": "3",
                     "info": "Period before exposure during which an individual cannot have evidence of index-defining criteria",
                     "input_type": "Numeric",
@@ -2155,7 +2177,7 @@
                 },
 				{
                     "id": "T3WASHPERFUP",
-                    "name": "Type 3 HOI Incidence Assessment Period",
+                    "name": "HOI Incidence Assessment Period",
                     "sas_format": "3",
                     "info": "Period before an HOI during which an individual cannot have evidence of HOI incidence-defining criteria",
                     "input_type": "Numeric",
@@ -2206,7 +2228,7 @@
                 },
 				{
                     "id": "T4COHORTDEF",
-                    "name": "Type 4 Cohort Definition",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many pregnancy episodes an individual can contribute",
                     "input_type": "SingleSelect",
@@ -2214,12 +2236,12 @@
 						"02"
 					],
 					"value_map": {
-						"02": "Cohort includes all valid pregnancy episodes during the query period"
+						"02": "(02) Cohort includes all valid pregnancy episodes during the query period"
 					}
                 },
 				{
                     "id": "T4WASHPER",
-                    "name": "Type 4 Exposure Washout Period",
+                    "name": "Exposure Washout Period",
                     "sas_format": "3",
                     "info": "Length of washout period in days",
                     "input_type": "Numeric",
@@ -2227,7 +2249,7 @@
                 },
 				{
                     "id": "DEFAULTPREGDUR",
-                    "name": "User-defined Pregnancy Episode Length",
+                    "name": "Pregnancy Episode Length",
                     "sas_format": "3",
                     "info": "Default pregnancy duration in the absence of preterm/postterm codes within EPISODEGAP of delivery",
                     "input_type": "Numeric",
@@ -2251,7 +2273,7 @@
 				},
 				{
                     "id": "T4COHORTDEF2",
-                    "name": "Type 4 Medical Product Cohort Definition",
+                    "name": "Medical Product Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many medical product exposure periods an individual can contribute",
                     "input_type": "SingleSelect",
@@ -2261,14 +2283,14 @@
 						"99"
 					],
 					"value_map": {
-						"01": "Cohort includes first valid medical product exposure episodes during a pregnancy episode",
-						"02": "Cohort includes all valid medical product exposure episodes during a pregnancy episode",
-						"99": "Cohort includes last valid medical product exposure episodes during a pregnancy episode"
+						"01": "(01) Cohort includes first valid medical product exposure episodes during a pregnancy episode",
+						"02": "(02) Cohort includes all valid medical product exposure episodes during a pregnancy episode",
+						"99": "(99) Cohort includes last valid medical product exposure episodes during a pregnancy episode"
 					}
                 },
 				{
                     "id": "T4WASHPER2",
-                    "name": "Type 4 Medical Product Washout Period",
+                    "name": "Medical Product Washout Period",
                     "sas_format": "3",
                     "info": "Length of washout period in days for medical products",
                     "input_type": "Numeric",
@@ -2285,8 +2307,8 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Define exposure as a point exposure",
-						"N": "Do not define exposure as a point exposure"
+						"Y": "(Y) Define exposure as a point exposure",
+						"N": "(N) Do not define exposure as a point exposure"
 					}
                 },
 				{
@@ -2300,8 +2322,8 @@
 						"P"
 					],
 					"value_map": {
-						"F": "Fixed episode gap",
-						"P": "Percentage episode gap"
+						"F": "Fixed",
+						"P": "Percentage"
 					}
                 },
 				{
@@ -2347,8 +2369,8 @@
 						"N"
 					],
 					"value_map": {
-						"Y": "Exclude the delivery date from the evaluation window when counting MOIs",
-						"N": "Do not exclude the delivery date from the evaluation window when counting MOIs"
+						"Y": "(Y) Exclude the delivery date from the evaluation window when counting MOIs",
+						"N": "(N) Do not exclude the delivery date from the evaluation window when counting MOIs"
 					}
                 },
 				{
@@ -2405,7 +2427,7 @@
                 },
 				{
                     "id": "T5COHORTDEF",
-                    "name": "Type 5 Cohort Definition",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many exposure periods an individual can contribute",
                     "input_type": "SingleSelect",
@@ -2413,12 +2435,12 @@
 						"04"
 					],
 					"value_map": {
-						"04": "Cohort includes all valid exposure episodes during the query period"
+						"04": "(04) Cohort includes all valid exposure episodes during the query period"
 					}
                 },
 				{
                     "id": "T5WASHPER",
-                    "name": "Type 5 Exposure Washout Period",
+                    "name": "Exposure Washout Period",
                     "sas_format": "3",
                     "info": "Length of washout period in days",
                     "input_type": "Numeric",
@@ -2435,8 +2457,8 @@
 						"P"
 					],
 					"value_map": {
-						"F": "Fixed episode gap",
-						"P": "Percentage episode gap"
+						"F": "Fixed",
+						"P": "Percentage"
 					}
                 },
 				{
@@ -2473,7 +2495,7 @@
 				{
                     "id": "AFDD_OUTPUT_CAT",
                     "name": "Average Filled Daily Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of average filled daily dose to output",
                     "input_type": "String",
                     "values": []
@@ -2481,7 +2503,7 @@
 				{
                     "id": "CUMDOSE_OUTPUT_CAT",
                     "name": "Cumulative Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of cumulative dose to output",
                     "input_type": "String",
                     "values": []
@@ -2489,7 +2511,7 @@
 				{
                     "id": "CFDD_OUTPUT_CAT",
                     "name": "Current Filled Daily Dose Category",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "User-defined categories of current filled daily dose to output",
                     "input_type": "String",
                     "values": []
@@ -2524,7 +2546,7 @@
                 },
 				{
                     "id": "T6COHORTDEF",
-                    "name": "Allowed Number of Exposure Episodes per Individual",
+                    "name": "Cohort Definition",
                     "sas_format": "$2",
                     "info": "Indicates how many exposure periods an individual can contribute",
                     "input_type": "SingleSelect",
@@ -2533,13 +2555,13 @@
 						"02"
 					],
 					"value_map": {
-						"01": "Cohort includes only the first valid exposure episode during the query period",
-						"02": "Cohort includes all valid exposure episodes during the query period"
+						"01": "(01) Cohort includes only the first valid exposure episode during the query period",
+						"02": "(02) Cohort includes all valid exposure episodes during the query period"
 					}
                 },
 				{
                     "id": "T6WASHPER",
-                    "name": "Type 6 Exposure Washout Period",
+                    "name": "Exposure Washout Period",
                     "sas_format": "3",
                     "info": "Period before an exposure episode during which an individual cannot have evidence of index-defining criteria.",
                     "input_type": "Numeric",
@@ -2556,8 +2578,8 @@
 						"P"
 					],
 					"value_map": {
-						"F": "Fixed episode gap",
-						"P": "Percentage episode gap"
+						"F": "Fixed",
+						"P": "Percentage"
 					}
                 },
 				{
@@ -2647,8 +2669,8 @@
 						"02"
 					],
 					"value_map": {
-						"01": "Only the first valid switch pattern episode during the query period",
-						"02": "All switch pattern episodes during the query period"
+						"01": "(01) Only the first valid switch pattern episode during the query period",
+						"02": "(02) All switch pattern episodes during the query period"
 					}
                 },
 				{
@@ -2663,9 +2685,9 @@
 						"2"
 					],
 					"value_map": {
-						"0": "Switch pattern evaluation start",
-						"1": "First Evaluation",
-						"2": "Second Evaluation"
+						"0": "(0) Switch pattern evaluation start",
+						"1": "(1) First Evaluation",
+						"2": "(2) Second Evaluation"
 					}
                 },
 				{
@@ -2725,8 +2747,8 @@
 						"2"
 					],
 					"value_map": {
-						"1": "Switch Pattern Cohort Inclusion Date used only as switch cohort entry date. First treatment episode RxDate is used as index for computing time to first switch.",
-						"2": "Switch Pattern Cohort Inclusion Date used as switch cohort entry date AND as initial switch step index date for computing time to first switch."
+						"1": "(1) Switch Pattern Cohort Inclusion Date used only as switch cohort entry date. First treatment episode RxDate is used as index for computing time to first switch.",
+						"2": "(2) Switch Pattern Cohort Inclusion Date used as switch cohort entry date AND as initial switch step index date for computing time to first switch."
 					}
                 },
 				{
@@ -2777,7 +2799,7 @@
                 },
 				{
                     "id": "CREATEBASELINE",
-                    "name": "Produce Baseline Table",
+                    "name": "Baseline Table",
                     "sas_format": "$1",
                     "info": "Indicates whether to produce a baseline table for corresponding Analysis Group",
                     "input_type": "SingleSelect",
@@ -2792,44 +2814,6 @@
                 }
 			]
 		},	
-		{
-			"id": "reportparameters",
-            "name": "Report Parameters File",
-            "analysis_types": [
-                "1",
-                "2",
-                "4",
-                "5",
-				"6"
-            ],
-            "required": false,
-            "required_files": [],
-            "info": "File used to request and customize a PDF 'leave behind' report",
-            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file524-type0102040506-report_parameters.md",
-            "table_type": "generic",
-			"import": false,
-            "row_source": [],
-            "row_parameter": " ",
-            "all_groups_required": false,
-            "parameters": [
-				{
-                    "id": "PARAMETER",
-                    "name": "Parameter",
-                    "sas_format": "$32",
-                    "info": "All report program parameters",
-                    "input_type": "String",
-                    "values": []
-                },
-				{
-                    "id": "REPORT1",
-                    "name": "Report 1 Values",
-                    "sas_format": "$32",
-                    "info": "Parameter values for report corresponding to Report 1",
-                    "input_type": "String",
-                    "values": []
-                }
-			]
-		},
 		{
 			"id": "inclusioncodes",
             "name": "Inclusion/Exclusion Codes File",
@@ -2864,7 +2848,7 @@
 				{
                     "id": "STOCKGROUP",
                     "name": "Stockgroup Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to a specific inclusion/exclusion code/criterion within a given GROUP",
                     "input_type": "String",
                     "values": []
@@ -3015,7 +2999,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -3032,17 +3016,17 @@
                         "OA*"
                     ],
                     "value_map": {
-                        "IPP": "Inpatient hospital stays, principal diagnoses",
-                        "IPS": "Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "Inpatient hospital stay, any diagnosis position",
-                        "ISP": "Non-acute institutional stays, principal diagnoses",
-                        "ISS": "Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "Non-acute institutional stays, any diagnosis position",
-                        "ED*": "Emergency department encounters",
-                        "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits"
+                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
+                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
+                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
+                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
+                        "ED*": "(ED*) Emergency department encounters",
+                        "AV*": "(AV*) Ambulatory visits",
+                        "OA*": "(OA*) Other ambulatory visits"
                     }
                 },
 				{
@@ -3052,18 +3036,18 @@
                     "info": "Indicates whether each criterion specified is for an inclusion or exclusion",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1
+						"0",
+						"1"
 					],
 					"value_map": {
-						"0": "Exclusion",
-						"1": "Inclusion"
+						"0": "(0) Exclusion",
+						"1": "(1) Inclusion"
 					}
                 },
 				{
                     "id": "CONDLEVEL",
                     "name": "Name of Inclusion/Exclusion Condition",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "User-defined name to represent a unique inclusion or exclusion criterion",
                     "input_type": "String",
                     "values": []
@@ -3071,7 +3055,7 @@
 				{
                     "id": "SUBCONDLEVEL",
                     "name": "Inclusion/Exclusion Sub-condition Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "User-defined name to represent unique inclusion or exclusion criteria within CONDLEVEL values",
                     "input_type": "String",
                     "values": []
@@ -3083,12 +3067,12 @@
                     "info": "Indicates whether each SUBCONDLEVEL criterion is for an inclusion or exclusion",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1
+						"0",
+						"1"
 					],
 					"value_map": {
-						"0": "Exclusion",
-						"1": "Inclusion"
+						"0": "(0) Exclusion",
+						"1": "(1) Inclusion"
 					}
                 },
 				{
@@ -3142,8 +3126,8 @@
 						"Y"
 					],
 					"value_map": {
-						"N": "Lookback period should search for evidence of a date or an interval",
-						"Y": "Lookback period should search for evidence of a date only"
+						"N": "(N) Lookback period should search for evidence of a date or an interval",
+						"Y": "(Y) Lookback period should search for evidence of a date only"
 					}
                 },
 				{
@@ -3201,9 +3185,9 @@
 						"MI"
 					],
 					"value_map": {
-						"M": "Look in mother claims only",
-						"I": "Look in infant claims only",
-						"MI": "Look in mother or infant claims"
+						"M": "(M) Look in mother claims only",
+						"I": "(I) Look in infant claims only",
+						"MI": "(MI) Look in mother or infant claims"
 					}
                 },
 				{
@@ -3221,9 +3205,9 @@
 						"EPISODEENDDT"
 					],
 					"value_map": {
-						"INDEXDT": "Estimated date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
-						"EPISODEENDDT": "Date of pregnancy outcome"
+						"INDEXDT": " (INDEXDT) Estimated date of pregnancy start",
+						"INDEXDT_EXP": "(INDEXDT_EXP) First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
+						"EPISODEENDDT": "(EPISODEENDDT) Date of pregnancy outcome"
 					}
                 },
 				{
@@ -3241,9 +3225,9 @@
 						"EPISODEENDDT"
 					],
 					"value_map": {
-						"INDEXDT": "Estimated date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
-						"EPISODEENDDT": "Date of pregnancy outcome"
+						"INDEXDT": " (INDEXDT) Estimated date of pregnancy start",
+						"INDEXDT_EXP": "(INDEXDT_EXP) First date of dispensing or diagnosis or procedure code of drug or comparator of interest",
+						"EPISODEENDDT": "(EPISODEENDDT) Date of pregnancy outcome"
 					}
                 },
 				{
@@ -3257,7 +3241,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -3288,7 +3272,7 @@
 				{
                     "id": "STUDYNAME",
                     "name": "Covariate Name",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Unique name for each covariate defined in the file",
                     "input_type": "String",
                     "values": []
@@ -3296,7 +3280,7 @@
 				{
                     "id": "STOCKGROUP",
                     "name": "Stockgroup Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP",
                     "input_type": "String",
                     "values": []
@@ -3429,7 +3413,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
                     "values": [
@@ -3446,17 +3430,17 @@
                         "OA*"
                     ],
                     "value_map": {
-                        "IPP": "Inpatient hospital stays, principal diagnoses",
-                        "IPS": "Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "Inpatient hospital stay, any diagnosis position",
-                        "ISP": "Non-acute institutional stays, principal diagnoses",
-                        "ISS": "Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "Non-acute institutional stays, any diagnosis position",
-                        "ED*": "Emergency department encounters",
-                        "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits"
+                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
+                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
+                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
+                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
+                        "ED*": "(ED*) Emergency department encounters",
+                        "AV*": "(AV*) Ambulatory visits",
+                        "OA*": "(OA*) Other ambulatory visits"
                     }
                 },
 				{
@@ -3510,8 +3494,8 @@
 						"Y"
 					],
 					"value_map": {
-						"N": "Lookback period should search for evidence of a date or an interval",
-						"Y": "Lookback period should search for evidence of a date only"
+						"N": "(N) Lookback period should search for evidence of a date or an interval",
+						"Y": "(Y) Lookback period should search for evidence of a date only"
 					}
                 },
 				{
@@ -3525,7 +3509,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Lab Result Values",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -3622,8 +3606,8 @@
 						"EPISODEENDDT"
 					],
 					"value_map": {
-						"INDEXDT": "Estimated date of pregnancy start",
-						"EPISODEENDDT": "Date of pregnancy outcome"
+						"INDEXDT": "(INDEXDT) Estimated date of pregnancy start",
+						"EPISODEENDDT": "(EPISODEENDDT) Date of pregnancy outcome"
 					}
                 },
 				{
@@ -3640,8 +3624,8 @@
 						"EPISODEENDDT"
 					],
 					"value_map": {
-						"INDEXDT": "Estimated date of pregnancy start",
-						"EPISODEENDDT": "Date of pregnancy outcome"
+						"INDEXDT": "(INDEXDT) Estimated date of pregnancy start",
+						"EPISODEENDDT": "(EPISODEENDDT) Date of pregnancy outcome"
 					}
                 }
 			]
@@ -3745,7 +3729,7 @@
 				{
                     "id": "STOCKGROUP",
                     "name": "Stockgroup Name",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given GROUP",
                     "input_type": "String",
                     "values": []
@@ -3775,22 +3759,22 @@
 						"mm"
 					],
 					"value_map": {
-						"aa": "All days supplied and amount supplied values",
-						"an": "All days supplied and minimum amount supplied values",
-						"ax": "All days supplied and maximum amount supplied values",
-						"am": "All days supplied and mean amount supplied values",
-						"na": "Minimum days supplied and all amount supplied values",
-						"nn": "Minimum days supplied and minimum amount supplied values",
-						"nx": "Minimum days supplied and maximum amount supplied values",
-						"nm": "Minimum days supplied and mean amount supplied values",
-						"xa": "Maximum days supplied and all amount supplied values",
-						"xn": "Maximum days supplied and minimum amount supplied values",
-						"xx": "Maximum days supplied and maximum amount supplied values",
-						"xm": "Maximum days supplied and mean amount supplied values",
-						"ma": "Mean days supplied and all amount supplied values",
-						"mn": "Mean days supplied and minimum amount supplied values",
-						"mx": "Mean days supplied and maximum amount supplied values",
-						"mm": "Mean days supplied and mean amount supplied values"
+						"aa": "(aa) All days supplied and amount supplied values",
+						"an": "(an) All days supplied and minimum amount supplied values",
+						"ax": "(ax) All days supplied and maximum amount supplied values",
+						"am": "(am) All days supplied and mean amount supplied values",
+						"na": "(na) Minimum days supplied and all amount supplied values",
+						"nn": "(nn) Minimum days supplied and minimum amount supplied values",
+						"nx": "(nx) Minimum days supplied and maximum amount supplied values",
+						"nm": "(nm) Minimum days supplied and mean amount supplied values",
+						"xa": "(xa) Maximum days supplied and all amount supplied values",
+						"xn": "(xn) Maximum days supplied and minimum amount supplied values",
+						"xx": "(xx) Maximum days supplied and maximum amount supplied values",
+						"xm": "(xm) Maximum days supplied and mean amount supplied values",
+						"ma": "(ma) Mean days supplied and all amount supplied values",
+						"mn": "(mn) Mean days supplied and minimum amount supplied values",
+						"mx": "(mx) Mean days supplied and maximum amount supplied values",
+						"mm": "(mm) Mean days supplied and mean amount supplied values"
 					}
                 },
 				{
@@ -3947,7 +3931,7 @@
 				{
                     "id": "CARESETTINGPRINCIPAL",
                     "name": "Care Setting and Diagnosis Position",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each CODETYPE",
                     "input_type": "MultiSelect",
                     "values": [
@@ -3964,17 +3948,17 @@
                         "OA*"
                     ],
                     "value_map": {
-                        "IPP": "Inpatient hospital stays, principal diagnoses",
-                        "IPS": "Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "Inpatient hospital stay, any diagnosis position",
-                        "ISP": "Non-acute institutional stays, principal diagnoses",
-                        "ISS": "Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "Non-acute institutional stays, any diagnosis position",
-                        "ED*": "Emergency department encounters",
-                        "AV*": "Ambulatory visits",
-                        "OA*": "Other ambulatory visits"
+                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
+                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
+                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
+						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
+                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
+                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
+                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
+						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
+                        "ED*": "(ED*) Emergency department encounters",
+                        "AV*": "(AV*) Ambulatory visits",
+                        "OA*": "(OA*) Other ambulatory visits"
                     }
                 },
 				{
@@ -3988,8 +3972,8 @@
 						"P"
 					],
 					"value_map": {
-						"C": "The most frequent utilization output file produced is sorted by code counts",
-						"P": "The most frequent utilization output file produced is sorted by patient counts"
+						"C": "(C) The most frequent utilization output file produced is sorted by code counts",
+						"P": "(P) The most frequent utilization output file produced is sorted by patient counts"
 					}
                 }
 			]
@@ -4025,8 +4009,8 @@
                 },
 				{
                     "id": "RAWSTOCKGROUP",
-                    "name": "Raw StockGroup Name",
-                    "sas_format": "$30",
+                    "name": "Raw Stockgroup Name",
+                    "sas_format": " ",
                     "info": "Variable used to identify stockgroups of different components within a given RAWGROUP",
                     "input_type": "String",
                     "values": []
@@ -4125,16 +4109,16 @@
 						"OA"
                     ],
 					"value_map": {
-						"E": "Emergency Department",
-                        "H": "Home",
-                        "I": "Inpatient",
-						"O": "Outpatient",
-						"U": "Unknown/missing",
-						"IP": "Inpatient hospital stays",
-						"IS": "Non-acute institutional stays",
-						"ED": "Emergency Department visits",
-						"AV": "Ambulatory visits",
-						"OA": "Other ambulatory visits"
+						"E": "(E) Emergency Department",
+                        "H": "(H) Home",
+                        "I": "(I) Inpatient",
+						"O": "(O) Outpatient",
+						"U": "(U) Unknown/missing",
+						"IP": "(IP) Inpatient hospital stays",
+						"IS": "(IS) Non-acute institutional stays",
+						"ED": "(ED) Emergency Department visits",
+						"AV": "(AV) Ambulatory visits",
+						"OA": "(OA) Other ambulatory visits"
 					}
                 },
 				{
@@ -4149,9 +4133,9 @@
                         "X"
                     ],
 					"value_map": {
-						"P": "Principal",
-                        "S": "Secondary",
-                        "X": "Unable to Classify"
+						"P": "(P) Principal",
+                        "S": "(S) Secondary",
+                        "X": "(X) Unable to Classify"
 					}
                 },
 				{
@@ -4165,7 +4149,7 @@
                 {
                     "id": "LABRESULT",
                     "name": "Raw Record Laboratory Result",
-                    "sas_format": "$30",
+                    "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
                     "values": []
@@ -4212,7 +4196,7 @@
 				{
                     "id": "COMBDESCR",
                     "name": "Combination Description",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Optional free text providing details for the CombGroup",
                     "input_type": "String",
                     "values": []
@@ -4237,9 +4221,9 @@
 						"RX"
 					],
 					"value_map": {
-						"DX": "The virtual record will behave like a diagnosis record",
-						"PX": "The virtual record will behave like a procedure record",
-						"RX": "The virtual record will behave like a dispensing record"
+						"DX": "(DX) The virtual record will behave like a diagnosis record",
+						"PX": "(PX) The virtual record will behave like a procedure record",
+						"RX": "(RX) The virtual record will behave like a dispensing record"
 					}
                 },
 				{
@@ -4256,11 +4240,11 @@
 						"OA"
 					],
 					"value_map": {
-						"IP": "Inpatient Hospital Stay",
-						"IS": "Non-Acute Institutional Stay",
-						"ED": "Emergency Department",
-						"AV": "Ambulatory Visit",
-						"OA": "Other Ambulatory Visit"
+						"IP": "(IP) Inpatient Hospital Stay",
+						"IS": "(IS) Non-Acute Institutional Stay",
+						"ED": "(ED) Emergency Department",
+						"AV": "(AV) Ambulatory Visit",
+						"OA": "(OA) Other Ambulatory Visit"
 					}
                 },
 				{
@@ -4275,9 +4259,9 @@
 						"X"
 					],
 					"value_map": {
-						"P": "Principal",
-						"S": "Secondary",
-						"X": "Unable to classify"
+						"P": "(P) Principal",
+						"S": "(S) Secondary",
+						"X": "(X) Unable to classify"
 					}
                 },
 				{
@@ -4303,14 +4287,14 @@
                     "info": "Determines whether episodes of the combination item are created",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1,
-						2
+						"0",
+						"1",
+						"2"
 					],
 					"value_map": {
-						"0": "No episode of this combination item will be created",
-						"1": "Episodes of this combination item will be created by PATID and RAWGROUP",
-						"2": "Episodes will be created by PATID, RAWGROUP and RAWSTOCKGROUP"
+						"0": "(0) No episode of this combination item will be created",
+						"1": "(1) Episodes of this combination item will be created by PATID and RAWGROUP",
+						"2": "(2) Episodes will be created by PATID, RAWGROUP and RAWSTOCKGROUP"
 					}
                 },
 				{
@@ -4328,12 +4312,12 @@
                     "info": "Indicates whether the combination item is an exclusion criterion",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1
+						"0",
+						"1"
 					],
 					"value_map": {
-						"0": "The combination item is not an exclusion criterion",
-						"1": "The combination item is an exclusion criterion"
+						"0": "(0) The combination item is not an exclusion criterion",
+						"1": "(1) The combination item is an exclusion criterion"
 					}
                 },
 				{
@@ -4456,7 +4440,7 @@
 				{
                     "id": "RAWSTOCKGROUP",
                     "name": "Raw StockGroup Name",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given RAWGROUP",
                     "input_type": "String",
                     "values": []
@@ -4486,22 +4470,22 @@
 						"mm"
 					],
 					"value_map": {
-						"aa": "All days supplied and amount supplied values",
-						"an": "All days supplied and minimum amount supplied values",
-						"ax": "All days supplied and maximum amount supplied values",
-						"am": "All days supplied and mean amount supplied values",
-						"na": "Minimum days supplied and all amount supplied values",
-						"nn": "Minimum days supplied and minimum amount supplied values",
-						"nx": "Minimum days supplied and maximum amount supplied values",
-						"nm": "Minimum days supplied and mean amount supplied values",
-						"xa": "Maximum days supplied and all amount supplied values",
-						"xn": "Maximum days supplied and minimum amount supplied values",
-						"xx": "Maximum days supplied and maximum amount supplied values",
-						"xm": "Maximum days supplied and mean amount supplied values",
-						"ma": "Mean days supplied and all amount supplied values",
-						"mn": "Mean days supplied and minimum amount supplied values",
-						"mx": "Mean days supplied and maximum amount supplied values",
-						"mm": "Mean days supplied and mean amount supplied values"
+						"aa": "(aa) All days supplied and amount supplied values",
+						"an": "(an) All days supplied and minimum amount supplied values",
+						"ax": "(ax) All days supplied and maximum amount supplied values",
+						"am": "(am) All days supplied and mean amount supplied values",
+						"na": "(na) Minimum days supplied and all amount supplied values",
+						"nn": "(nn) Minimum days supplied and minimum amount supplied values",
+						"nx": "(nx) Minimum days supplied and maximum amount supplied values",
+						"nm": "(nm) Minimum days supplied and mean amount supplied values",
+						"xa": "(xa) Maximum days supplied and all amount supplied values",
+						"xn": "(xn) Maximum days supplied and minimum amount supplied values",
+						"xx": "(xx) Maximum days supplied and maximum amount supplied values",
+						"xm": "(xm) Maximum days supplied and mean amount supplied values",
+						"ma": "(ma) Mean days supplied and all amount supplied values",
+						"mn": "(mn) Mean days supplied and minimum amount supplied values",
+						"mx": "(mx) Mean days supplied and maximum amount supplied values",
+						"mm": "(mm) Mean days supplied and mean amount supplied values"
 					}
                 },
 				{
@@ -4582,9 +4566,9 @@
 						"N"
 					],
 					"value_map": {
-						"P": "Always require primary exposure to be initiated before secondary exposure for concomitant episodes",
-						"S": "Restrict concomitant episodes to those where primary and secondary episodes are initiated on the same day",
-						"N": "Will not enforce order restriction"
+						"P": "(P) Always require primary exposure to be initiated before secondary exposure for concomitant episodes",
+						"S": "(S) Restrict concomitant episodes to those where primary and secondary episodes are initiated on the same day",
+						"N": "(N) Will not enforce order restriction"
 					}
                 },
 				{
@@ -4614,8 +4598,8 @@
 						"02"
 					],
 					"value_map": {
-						"01": "Count the first concomitant episode",
-						"02": "Count all concomitant episodes"
+						"01": "(01) Count the first concomitant episode",
+						"02": "(02) Count all concomitant episodes"
 					}
                 },
 				{
@@ -4633,14 +4617,14 @@
                     "info": "By design, individuals stop contributing days at risk during an exposure episode when an HOI occurs. HOIs/Days at-risk metrics reported allow individuals to contribute, at most, one HOI per episode. However, the Query Request Package (QRP) algorithm is able to characterize the number of total HOIs observed during valid treatment episodes. Users can use this field to determine how this characterization should count the number of HOIs",
                     "input_type": "SingleSelect",
                     "values": [
-						0,
-						1,
-						2
+						"0",
+						"1",
+						"2"
 					],
 					"value_map": {
-						"0": "Counts all occurrences of an HOI during an exposure episode",
-						"1": "De-duplicates occurrences of the same HOI code and code type on the same day",
-						"2": "De-duplicates occurrences of the same HOI GROUP on the same day"
+						"0": "(0) Counts all occurrences of an HOI during an exposure episode",
+						"1": "(1) De-duplicates occurrences of the same HOI code and code type on the same day",
+						"2": "(2) De-duplicates occurrences of the same HOI GROUP on the same day"
 					}
                 },
 				{
@@ -4768,7 +4752,7 @@
 				{
                     "id": "FOLLOWUP_CAT",
                     "name": "Primary Episode Categories",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
                     "input_type": "String",
                     "values": []
@@ -4969,7 +4953,7 @@
 				{
                     "id": "CUTOFFCAT",
                     "name": "Cutoff Categories",
-                    "sas_format": "$50",
+                    "sas_format": " ",
                     "info": "Defines the categories to bin secondary and observation window overlap",
                     "input_type": "String",
                     "values": []
@@ -5007,7 +4991,7 @@
 				{
                     "id": "FOLLOWUP_CAT",
                     "name": "Primary Episode Categories",
-                    "sas_format": "$40",
+                    "sas_format": " ",
                     "info": "Stratification variable. Categorizes length of the primary episode variable in user-defined ranges",
                     "input_type": "String",
                     "values": []
@@ -5119,8 +5103,8 @@
                     "name": "Exposure Group",
                     "sas_format": "$40",
                     "info": "Standardized name used to determine which CIDA cohort group to use to evaluate exposures and comparators",
-                    "input_type": "String",
-                    "values": []
+                    "input_type": "SingleSelectGroup",
+                    "values": ["Cohort"]
                 },
 				{
                     "id": "EXPMP",
@@ -5198,9 +5182,9 @@
 						"MI"
 					],
 					"value_map": {
-						"M": "Indicates should look in mother claims only",
-						"I": "Indicates should look in infant claims only",
-						"MI": "Indicates should look in mother and infant claims"
+						"M": "(M) Indicates should look in mother claims only",
+						"I": "(I) Indicates should look in infant claims only",
+						"MI": "(MI) Indicates should look in mother and infant claims"
 					}
                 },
 				{
@@ -5215,9 +5199,9 @@
 						"INDEXDT_DELIV"
 					],
 					"value_map": {
-						"INDEXDT": "Index date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
-						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+						"INDEXDT": "(INDEXDT) Index date of pregnancy start",
+						"INDEXDT_EXP": "(INDEXDT_EXP) First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "(INDEXDT_DELIV) Index date of delivery admission date (or infant birth date for a matched infant cohort)"
 					}
                 },
 				{
@@ -5232,9 +5216,9 @@
 						"INDEXDT_DELIV"
 					],
 					"value_map": {
-						"INDEXDT": "Index date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
-						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+						"INDEXDT": "(INDEXDT) Index date of pregnancy start",
+						"INDEXDT_EXP": "(INDEXDT_EXP) First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "(INDEXDT_DELIV) Index date of delivery admission date (or infant birth date for a matched infant cohort)"
 					}
                 },
 				{
@@ -5249,9 +5233,9 @@
 						"INDEXDT_DELIV"
 					],
 					"value_map": {
-						"INDEXDT": "Index date of pregnancy start",
-						"INDEXDT_EXP": "First date of dispensing or procedure code of drug or comparator of interest/exposure",
-						"INDEXDT_DELIV": "Index date of delivery admission date (or infant birth date for a matched infant cohort)"
+						"INDEXDT": "(INDEXDT) Index date of pregnancy start",
+						"INDEXDT_EXP": "(INDEXDT_EXP) First date of dispensing or procedure code of drug or comparator of interest/exposure",
+						"INDEXDT_DELIV": "(INDEXDT_DELIV) Index date of delivery admission date (or infant birth date for a matched infant cohort)"
 					}
                 },
 				{
