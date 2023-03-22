@@ -31,7 +31,6 @@
 ***************************************************************************************************;
 
 %macro attrition_output(tabletype=);
-/*jolene*/ options mprint symbolgen macrogen;
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
