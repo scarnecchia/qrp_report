@@ -130,7 +130,6 @@
 		  footnote placement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
 		%if %length(&covnotinps.) > 0 %then %do; 
-		%let covnotinps_no = %sysfunc(compbl(%sysfunc(tranwrd(%quote(&covnotinps), %str(,), %str()))));
 		%let covnotinps_noquotes = %sysfunc(translate(%superq(covnotinps),%str( ),%str(%")));
 
 			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
@@ -190,47 +189,47 @@
 			format order 4.2;
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
 			/*birth_enroll or enroll_diff*/
-            %if %index(%trim(&covnotinps_no.), BIRTH_ENROLL) > 0  %then %do;
+            %if %index(%trim(&covnotinps), BIRTH_ENROLL) > 0  %then %do;
               if order = 19 then order = 14.2;
 			  %let covnotinpsorder = 14.2;
 			%end;
-			%else %if %index(%trim(&covnotinps_no.), ENROLL_DIFF) > 0  %then %do;
+			%else %if %index(%trim(&covnotinps), ENROLL_DIFF) > 0  %then %do;
               if order = 19 then order = 14.3;
 			  %let covnotinpsorder = 14.3;
 			%end;
             /*age*/
-            %else %if %index(%trim(&covnotinps_no.), AGE) > 0  %then %do;
+            %else %if %index(%trim(&covnotinps), AGE) > 0  %then %do;
               if order = 19 then order = 14.4;
 			  %let covnotinpsorder = 14.4;
 			%end;
 		    /*sex*/
-            %else %if %index(%trim(&covnotinps_no.), SEX) > 0 %then %do;
+            %else %if %index(%trim(&covnotinps), SEX) > 0 %then %do;
               if order = 19  then order = 14.5;
 			  %let covnotinpsorder = 14.5;
 			%end;
 		    /*race*/
-            %else %if %index(%trim(&covnotinps_no.), RACE) > 0 %then %do;
+            %else %if %index(%trim(&covnotinps), RACE) > 0 %then %do;
               if order = 19  then do; 
                 order = 16.3; 
                 %let covnotinpsorder = 16.3;
 			  end;
 			%end;
     	    /*hispanic*/
-            %else %if %index(%trim(&covnotinps_no.), HISPANIC) > 0 %then %do;
+            %else %if %index(%trim(&covnotinps), HISPANIC) > 0 %then %do;
 			 if order =19  then do; 
                 order = 16.4; 
                 %let covnotinpsorder = 16.4;
 			  end;
 			%end;
 		    /*year*/
-			%else %if %index(%trim(&covnotinps_no.), YEAR) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps), YEAR) > 0 %then %do;
              if order =19  then do; 
                 order = 16.5; 
                 %let covnotinpsorder = 16.5;
 			  end;
 			%end;
 			/*prepostind*/
-			%else %if %index(%trim(&covnotinps_no.), PREPOSTIND) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps), PREPOSTIND) > 0 %then %do;
              if order =19  then do; 
                 order = 16.6; 
                 %let covnotinpsorder = 16.6;
@@ -238,19 +237,19 @@
 			%end;
 
 		    /*gestational age*/
-			%else %if %index(%trim(&covnotinps_no.), GA_) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps), GA_) > 0 %then %do;
               if order =19  then do; 
                 order = 17.5; 
                 %let covnotinpsorder = 17.5;
 			  end;
 			%end;
-			%else %if %index(%trim(&covnotinps_no.), ADJUSTEDDISP_) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps), ADJUSTEDDISP_) > 0 %then %do;
               if order =19  then do; 
                 order = 17.6; 
                 %let covnotinpsorder = 17.6;
 			  end;
 			%end;
-			%else %if %index(%trim(&covnotinps_no.), EXP_) > 0 %then %do;
+			%else %if %index(%trim(&covnotinps), EXP_) > 0 %then %do;
               if order =19  then do; 
                 order = 17.7; 
                 %let covnotinpsorder = 17.7;
@@ -357,7 +356,7 @@
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =gestage, order =17);
 		%assign_superscripts(type =comorbidscore, order =18 
-          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps_no.), COMORBIDSCORE) > 0 %then %do;
+          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps), COMORBIDSCORE) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		%assign_superscripts(type =labcovar, order =20);
@@ -747,10 +746,7 @@
             run;
         %end;
 
-		%if %length(&covnotinps.) > 0 %then %do;
-			%create_comma_charlist(inlist=&covnotinps., outlist=covnotinps1);
-            %let covnotinps = &covnotinps1.;
-		%end;
+		%if %length(&covnotinps.) > 0 %then %baseline_expand_parameters(var=covnotinps);
 
         /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
         - 1 monitoring period
