@@ -123,14 +123,12 @@
 
 		/* Select Footnotes */  
 		%let covnotinpsorder = 19;
-		%let covnotinps_no =;
 		%global covarlablabels;
 		%let covarlablabels=;
 		/*need to reorder the footnotes when covnotinps is populated because 
 		  footnote placement is determined by METVAR values listed in the parameter*/
 		/* L2 covnotinps specified */
 		%if %length(&covnotinps.) > 0 %then %do; 
-		%let covnotinps_noquotes = %sysfunc(translate(%superq(covnotinps),%str( ),%str(%")));
 
 			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
 			%let num_covnotinps_nolab=1;
@@ -146,7 +144,7 @@
 				data CovNotInPS;	
 				format cov $30.;	
 				do obs=1 by 1 until (cov=' ');
-					cov=lowcase(strip(scan("&covnotinps_noquotes",obs)));
+					cov=lowcase(strip(scan(tranwrd(symget('covnotinps'),'"',""),obs)));
 					if cov ne " " then output;
 				end;
 				drop obs;
