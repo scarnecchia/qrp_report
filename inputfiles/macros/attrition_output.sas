@@ -40,6 +40,7 @@
 	      from agg_&tabletype._attrition&attrperiodid;
 	    quit;
 		
+		%let claim_level_t = &claim_level_t %lowcase(&tabletype.);
         /*assign footnotes*/
         %if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) 
           %then %do; %let num_fn = 2; %end;
