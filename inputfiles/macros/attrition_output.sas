@@ -35,7 +35,7 @@
     %tableletter();
 
 	    proc sql noprint;
-	      select claim_level
+	      select lower(claim_level)
 	      into :claim_level_t
 	      from agg_&tabletype._attrition&attrperiodid;
 	    quit;
@@ -64,9 +64,6 @@
             monitoringperiod=&j;
             %end;
         run;
-
-		
-	  %let claim_level_t = %lowcase(&claim_level_t.);
 
         %if %eval(&num_fn.>0) %then %do;
 
