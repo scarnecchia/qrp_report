@@ -173,6 +173,51 @@
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
+ * Assign the maximum length to duplicate variable names if a format values table exists 
+ **************************************************************************************************/
+    %if %sysfunc(exist(tmplib.format_values)) %then %do;
+        %let inputvarlist=;
+        proc sql noprint;
+            select catx('@',full_inputfile_name,id,sas_format)
+            into :inputvarlist separated by ' '
+            from 
+            (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                from tmplib.format_values a
+                inner join 
+                 (select id, count(*) as id_counts
+                    from tmplib.format_values 
+                    group by id) b
+            on a.id = b.id 
+            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+            group by b.id
+            )
+        quit;
+
+        %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+            %let inputcombo = %scan(&inputvarlist,&x,%str( ));
+            %let inputfile = %scan(&inputcombo,1,%str(@));
+            %let inputvar = %scan(&inputcombo,2,%str(@));
+            %let varformat = %scan(&inputcombo,3,%str(@));
+            %if &leavebehindreport = Y %then %do;
+                data infolder.&inputfile;
+                    length &inputvar &varformat;
+                    format &inputvar &varformat..;
+                    informat &inputvar &varformat..;
+                    set infolder.&inputfile;
+                run;
+            %end;
+            %else %do;
+                data input.&inputfile;
+                    length &inputvar &varformat;
+                    format &inputvar &varformat..;
+                    informat &inputvar &varformat..;
+                    set input.&inputfile;
+                run;
+            %end;
+        %end; /*x*/
+    %end;/* tmplib.format_values exists */
+
+/***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
 ***************************************************************************************************/
 
@@ -397,7 +442,7 @@
             &&id&n.._metadatafile &&id&n.._treelookup &&id&n.._icd10icd9map &&id&n.._treefile &&id&n.._psestimationfile &&id&n.._itsfile
             &&id&n.._psmatchfile &&id&n.._stratificationfile &&id&n.._iptwfile &&id&n.._covstratfile &&id&n.._diagnostics &&id&n.._indlevel
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
-            &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
+            &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
             &&id&n.._pscssubgroupfile;
@@ -434,7 +479,6 @@
         %let &&id&n.._stockpilingfile      = ;
         %let &&id&n.._utilfile             = ;
         %let &&id&n.._combofile            = ;
-        %let &&id&n.._comorbfile           = ;
         %let &&id&n.._drugclassfile        = ;
         %let &&id&n.._pregdur              = ;
         %let &&id&n.._micohortfile         = ;
@@ -490,6 +534,43 @@
             %end;
 
         %end;
+
+        /***************************************************************************************************
+         * Assign the maximum length to duplicate variable names if a format values table exists 
+         **************************************************************************************************/
+        %if %sysfunc(exist(tmplib.format_values)) %then %do;
+            %let inputvarlist=;
+            proc sql noprint;
+                select catx('@',full_inputfile_name,id,sas_format)
+                into :inputvarlist separated by ' '
+                from 
+                (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                    from tmplib.format_values a
+                    inner join 
+                     (select id, count(*) as id_counts
+                        from tmplib.format_values 
+                        group by id) b
+                on a.id = b.id 
+                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                group by b.id
+                )
+            quit;
+
+            %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+                %let inputcombo = %scan(&inputvarlist,&x,%str( ));
+                %let inputfile = %scan(&inputcombo,1,%str(@));
+                %let inputvar = %scan(&inputcombo,2,%str(@));
+                %let varformat = %scan(&inputcombo,3,%str(@));
+
+                    data infolder.&inputfile;
+                        length &inputvar &varformat;
+                        format &inputvar &varformat..;
+                        informat &inputvar &varformat..;
+                        set infolder.&inputfile;
+                    run;
+                    
+            %end; /*x*/
+        %end;/* tmplib.format_values exists */
       
      %end;
 
@@ -636,37 +717,99 @@
      run;
 
 /***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+    %if ^%index(&reporttype,TREE) %then %do;
+        %let typenum = %substr(&reporttype,2,1);
+
+         data master_typefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._type&typenum.file(in=n&n.)
+            %end;
+         ;
+         format runid $5.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+    
+         %if &typenum. = 2 %then %do;
+         /*assign macro variable if BASECOHORT is specified*/
+         if missing(basecohort) = 0 then call symputx('basecohortused', 'Y');
+         %end;
+         run;
+
+/***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
-    data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
-        stop;
-    run;
+        data inclusioncodes_shell;
+            length runid $5 group $40 condlevel $30;
+            call missing(runid, group, condlevel);
+            stop;
+        run;
 
-    data master_inclusioncodes;
-        set 
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        infolder.&&&runid._inclusioncodes(in=n&n)
-        %end;
-        %else %do;
-        inclusioncodes_shell
-        %end;
-        %end;
-        ;
-        format runid $5.;
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        if n&n. then do;
-        runid = "&&id&n.";
-        end;
-        %end;
-        %end;
-    run;
+        data master_inclusioncodes;
+            set 
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            infolder.&&&runid._inclusioncodes(in=n&n)
+            %end;
+            %else %do;
+            inclusioncodes_shell
+            %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+            %end;
+            %end;
+        run;
+
+        /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
+        %if &basecohortused. = Y %then %do;
+            /*build set and group assignment statements*/
+            %let inclusionsetstatement = ;
+            %let inclusioninstatement = ;
+
+            proc sql noprint;
+                select count(*) into: numoutcomecohorts 
+                from master_typefile(where=(missing(basecohort)=0));
+            quit;
+
+            %do bc = 1 %to %eval(&numoutcomecohorts.);
+                data _null_;
+                    set master_typefile(where=(missing(basecohort)=0));
+                    if _n_ = &bc. then do;
+                        call symputx('runid', strip(runid));
+                        call symputx('cohort', strip(group));
+                        call symputx('basecohort', strip(basecohort));
+                    end;
+                run;
+
+                %let inclusionsetstatement = &inclusionsetstatement. master_inclusioncodes(in=a&bc. where=(runid="&runid." and group = "&basecohort."));
+                %let inclusioninstatement = &inclusioninstatement. %str(if a&bc. then do; group ="&cohort"; end;) ;
+            %end;
+
+            /*add inclusion codes for outcome cohorts*/
+            data master_inclusioncodes;
+                set master_inclusioncodes
+                    &inclusionsetstatement.;
+                &inclusioninstatement.;
+            run;
+
+        %end; /*Type 2 when basecohort specified*/
+
+    %end; /*REPORTTYPE ne TREEX*/
 
 /*******************************************************************************************************
 *   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
@@ -809,28 +952,6 @@
         run;
     %end;
 
-
-/***************************************************************************************************
-*   Create a combined type file for all runs                                        
-***************************************************************************************************/
-
-    %if ^%index(&reporttype,TREE) %then %do;
-        %let typenum = %substr(&reporttype,2,1);
-
-         data master_typefile;
-         set %do n = 1 %to &numrunid.;
-                %let runid=&&id&n..;
-                infolder.&&&runid._type&typenum.file(in=n&n.)
-            %end;
-         ;
-         format runid $5.;
-            %do n = 1 %to &numrunid.;
-                if n&n. then do;
-                runid = "&&id&n.";
-                end;
-            %end;
-         run;
-    %end;
 /***************************************************************************************************
 *   Create a stacked monitoring file for Sentinel Views                                
 ***************************************************************************************************/

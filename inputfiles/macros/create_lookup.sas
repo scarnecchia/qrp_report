@@ -105,10 +105,11 @@
 	   type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
        /* Footnotes for type 4 MOI tables */
-       type = "t4l1moi"; order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
+      type = "t4l1moi"; order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
 	   type = "t4l1moi"; order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
 	   type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
 	   type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
+	   type = "t4l1moi"; order = 5;  description = "Results are not output since enrollment was not required during this time period of given pregnancy episode examined."; output;
 
      run; 
 
@@ -136,7 +137,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must be during the query period"; report_descr = "Pregnancy episode recorded during the query period"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the pre-index enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the pre-delivery enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
+		claim_level = "Episode"; descr = "Exclusion - Live birth deliveries must satisfy the enrollment criterion"; report_descr = "Had sufficient pre-delivery continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the HOI-defined enrollment criterion"; report_descr = "Had sufficient pre-index continuous enrollment"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying all exclusion and inclusion criteria"; report_descr = "Met inclusion and exclusion criteria"; output;

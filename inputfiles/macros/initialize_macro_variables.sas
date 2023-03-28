@@ -35,10 +35,11 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum;
+    %global runidlist numrunid typenum basecohortused;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
+    %let basecohortused = N;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
