@@ -34,15 +34,8 @@
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
-	    proc sql noprint;
-	      select lower(claim_level)
-	      into :claim_level_t
-	      from agg_&tabletype._attrition&attrperiodid;
-	    quit;
-		
-		%let claim_level_t = &claim_level_t %lowcase(&tabletype.);
         /*assign footnotes*/
-        %if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) 
+        %if %lowcase(&tabletype.) = episode 
           %then %do; %let num_fn = 2; %end;
 		%else %if %index(&reporttype,T4) %then %do; %let num_fn = 1; %end;
         %else %let num_fn = 0;
@@ -76,7 +69,7 @@
                length footnote_order 3; 
                set lookup_footnotes (where = (
 			        /*only need the title footnote when attrition contains both member and episode*/
-                    %if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) %then %do;
+                    %if %lowcase(&tabletype.) = episode  %then %do;
 					  (type = "attrition")
 					%end;
 					%else  %do;
@@ -96,7 +89,7 @@
             quit;
 
             /* Assign macro variables for superscipts */
-			%if (%index(&claim_level_t., member) and %index(&claim_level_t., episode)) or %index(&claim_level_t., mil) %then %do;
+			%if %lowcase(&tabletype.) = episode  %then %do;
               %assign_superscripts(type =title_me, order =  -3);
     		%end;
 			%else %do; %assign_superscripts(type =title_me, order = ); %end;
