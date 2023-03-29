@@ -1211,7 +1211,7 @@
                 end;
 
                 /*Aggregate continuous variables*/
-                if lowcase(vartype) = 'continuous' and metvar ne 'MAHALANOBIS' then do;
+                if lowcase(vartype) = 'continuous' then do;
                     count = 0;
                     exp_mean_num = 0; 
                     exp_std_sum = 0; /*Weighted sum for std calculation in the exposed group*/
@@ -1338,7 +1338,6 @@
                         ad&i._char = strip(compress(put(ad&i., 8.3)));
                         sd&i._char = strip(compress(put(sd&i., 8.3)));
                 
-                        if metvar ne 'MAHALANOBIS' then do;
                           if metvar in ('N_EPISODES', 'TOTAL_WEIGHTED', 'PATIENT') then do;
                                 ad&i._char = 'N/A';
                                 sd&i._char = 'N/A';
@@ -1358,7 +1357,6 @@
                                 sd&i._char = '.';
                           end;
                           end;
-                        end;
                     %end;
                 %end;
 
