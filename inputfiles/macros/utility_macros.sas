@@ -125,7 +125,7 @@
     %let super_&type. =;
     
 	%isdata(dataset=_footnotes);
-    %if %eval(&nobs.>0) %then %do;
+    %if %eval(&nobs.>0) and "&order" ne "" %then %do;
 	    proc sql noprint;
 	      select cat('^{Super ',footnote_order,'}') into: super_&type. separated by '^{Super ,}'
 	      from _footnotes where order in (&order.);

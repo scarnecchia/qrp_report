@@ -69,6 +69,7 @@
 	   type = "effectest"; order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 
        /* Footnotes for attrition table */
+	   type = "attrition"; order = -3;  description = 'Cohorts are formed by first evaluating enrollment and demographic requirements as well as index events among members, then evaluating index dates, pre-index history, and post-index follow-up among %sysfunc(lowcase(&claim_level_descr.)). Because of this, the number remaining often increases from the member- to episode-level steps.'; output;
 	   type = "attrition"; order = 1;  description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
 	   
 	   /* Footnotes for KM/CDF figures */
@@ -108,7 +109,7 @@
 	   type = "t4l1moi"; order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
 	   type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
 	   type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
-	   type = "t4l1moi"; order = 5;  description = "Results are not output since enrollment was not required during this time period of given pregnancy episode examined."; output;
+	   type = "t4l1moi"; order = 5;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;
 
      run; 
 
