@@ -34,11 +34,11 @@
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
-        /*assign footnotes*/
-        %if %lowcase(&tabletype.) = episode 
-          %then %do; %let num_fn = 2; %end;
-		%else %if %index(&reporttype,T4) %then %do; %let num_fn = 1; %end;
-        %else %let num_fn = 0;
+        /*initialize macro variables for footnotes*/
+        %let num_fn = 0;
+        %if %lowcase(&tabletype.) = episode %then %let num_fn = 1;
+        %if %index(&reporttype,T4) %then %let num_fn = 2;
+
         %let exclincl = N;
         %let milexcl = N;
         %let claim_level_descr = &tabletype.;
@@ -49,10 +49,11 @@
                 call symputx('num_fn', %eval(&num_fn.+1));
                 if claim_level = 'MIL' then call symputx('milexcl', 'Y'); /*to mark which row to apply superscript*/
                 if claim_level ne 'MIL' then call symputx('exclincl', 'Y');
-                %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
-                %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
-                %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
             end;
+            %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
+            %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
+            %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
+
             %if %index(&reporttype,T2L2) %then %do;
             length monitoringperiod 3;
             monitoringperiod=&j;
