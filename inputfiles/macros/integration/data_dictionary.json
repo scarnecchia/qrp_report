@@ -3561,7 +3561,6 @@
                     "input_type": "SingleSelect",
                     "values": [
 						"COMORBIDSCORE",
-						"HASBLED",
 						"CHA2DS2VASC",
 						"OBSCOMORB",
 						"ADCSI",
@@ -3569,7 +3568,6 @@
 					],
 					"value_map": {
 						"COMORBIDSCORE": "Charlson/Elixhauser Comorbidity Index",
-						"HASBLED": "HAS-BLED Score",
 						"CHA2DS2VASC": "CHA2DS2-VASc Score",
 						"OBSCOMORB": "Obstetric Comorbidity Score",
 						"ADCSI": "Adapted Diabetes Complications Severity Index",
