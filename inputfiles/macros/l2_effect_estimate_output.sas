@@ -345,7 +345,7 @@
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
                 RD_1000NUchar 
                 %end;
-                rrchar OR_95CI                
+                RR_95CI                
                 %end;
                 );
             
@@ -399,9 +399,7 @@
             define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %end;
-            define rrchar / order 'Risk Ratio'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
+            define RR_95CI / order 'Risk Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];            
             %end;
 

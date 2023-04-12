@@ -292,9 +292,9 @@
 		label HR_se = "StdErr of Coefficient";
 	    label HR = "Odds Ratio";	    	    
 
-		rename hr_95CI=or_95ci;
-		rename HR=or;
-		rename HR_se=or_se;
+		rename hr_95CI=rr_95ci;
+		rename HR=rr;
+		rename HR_se=rr_se;
 		run;
 	%end;
 

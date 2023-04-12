@@ -45,11 +45,11 @@
         %let ForestUpperCI = UCL;
         %end;
         %else %if "&reporttype." = "T4L2" %then %do;
-        %let ForestRatioTitle = Odds Ratios (OR);
-        %let ForestRatioFoot = Odds ratio;
-        %let ForestRatioLabel = OR (95% CI);
-        %let ForestCI95 = OR_95CI;
-        %let ForestPointEst = OR;
+        %let ForestRatioTitle = Risk Ratios (RR);
+        %let ForestRatioFoot = Risk ratio;
+        %let ForestRatioLabel = RR (95% CI);
+        %let ForestCI95 = RR_95CI;
+        %let ForestPointEst = RR;
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
         %end; 
