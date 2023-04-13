@@ -16,7 +16,7 @@
 *	- subgroupcat = subgroup category
 * 
 *  Program outputs:                                                                                                                                       
-*	- est: the dataset containing the hazard/odds ratios and 95% Confidence Intervals
+*	- est: the dataset containing the hazard/risk ratios and 95% Confidence Intervals
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -288,9 +288,9 @@
 		data est;
 		set est;
 		
-	  	label hr_95CI = "Odds Ratio (95% CI)";	  	
+	  	label hr_95CI = "Risk Ratio (95% CI)";	  	
 		label HR_se = "StdErr of Coefficient";
-	    label HR = "Odds Ratio";	    	    
+	    label HR = "Risk Ratio";	    	    
 
 		rename hr_95CI=rr_95ci;
 		rename HR=rr;
