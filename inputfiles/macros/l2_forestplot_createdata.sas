@@ -105,8 +105,8 @@
                  est.HR, 
                  %end;
                  %else %if "&reporttype." = "T4L2" %then %do;
-                 est.or_95ci, 
-                 est.or,                  
+                 est.rr_95ci, 
+                 est.rr,                  
                  %end;
                  est.LCL,
                  est.UCL, 
@@ -270,7 +270,7 @@
                                                HR_95ci HR  
                                                %end;
                                                %else %if "&reporttype." = "T4L2" %then %do;
-                                               or_95ci or
+                                               rr_95ci rr
                                                %end;
                                                LCL UCL id file
                                                );

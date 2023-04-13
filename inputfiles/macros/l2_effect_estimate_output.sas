@@ -225,11 +225,11 @@
         data repdata.table&tablenum.&tableletter;
             set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
             %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
-            if analysis = "Unweighted" then do;
+              if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
                 HR_pvalue = 'N/A';
-				%if &reporttype = T4L2 %then %do; or_95ci = 'N/A'; %end;
-            end;
+				%if &reporttype = T4L2 %then %do; rr_95ci = 'N/A'; %end;
+		      end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
             %if &look_start ^= &look_end %then %do;
@@ -345,7 +345,7 @@
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
                 RD_1000NUchar 
                 %end;
-                rrchar OR_95CI                
+                RR_95CI                
                 %end;
                 );
             
@@ -399,9 +399,7 @@
             define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %end;
-            define rrchar / order 'Risk Ratio'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
+            define RR_95CI / order 'Risk Ratio^n (95% Confidence Interval)'
                 style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];            
             %end;
 

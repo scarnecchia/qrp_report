@@ -1657,7 +1657,7 @@
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
-	            %else %let ForestRatioTitle = Odds Ratios (OR);
+	            %else %let ForestRatioTitle = Risk Ratios (RR);
 
 				%let tableletter=a;
 				%let tablecount = 1;

@@ -64,7 +64,7 @@ proc template;
     lineextent=data)
     yAxisOpts=(reverse=true display=none) wallDisplay=none;
 
-    /* Odds Ratio plot */
+    /* Risk Ratio plot */
     /*    referenceLine y=ref / lineAttrs=(thickness=15 color=_bandColor);*/
     scatterPlot y=obsId x=&pointest / markerAttrs=(symbol=squareFilled color=black)
     xErrorLower=&lowerci xErrorUpper=&upperci errorBarCapShape=none errorbarattrs=(color=black);
