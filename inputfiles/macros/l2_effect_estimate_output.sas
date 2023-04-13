@@ -225,11 +225,10 @@
         data repdata.table&tablenum.&tableletter;
             set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
             %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
-            if analysis = "Unweighted" then do;
+              if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
                 HR_pvalue = 'N/A';
-				%if &reporttype = T4L2 %then %do; or_95ci = 'N/A'; %end;
-            end;
+		      end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
             %if &look_start ^= &look_end %then %do;
