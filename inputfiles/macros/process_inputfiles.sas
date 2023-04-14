@@ -93,7 +93,8 @@
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination','outputviewsdata') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination',
+                                              'outputviewsdata', 'jirakey') then call symputx("value",upcase(value));
                     if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
@@ -112,6 +113,8 @@
                 end;
             run;
 
+            /* Mask special characters from studytitle parameter */
+            %if %lowcase(&parameter.) = studytitle %then %let value = %bquote(&value);
             %let &parameter. = &value.;
 
             /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
@@ -155,6 +158,66 @@
         %end;
 
 /***************************************************************************************************
+*  	Check if only the appendixfile is requested                                                     
+***************************************************************************************************/
+ 	%let numfiles=0;
+	%let numappendixfile=0;
+	proc sql noprint;
+		select count(*) into :numfiles from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
+
+		select count(*) into :numappendixfile from &createreportfile. 
+		where strip(value) ne "" and lowcase(parameter) = "appendixfile";
+	quit;
+
+	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
+
+/***************************************************************************************************
+ * Assign the maximum length to duplicate variable names if a format values table exists 
+ **************************************************************************************************/
+    %if %sysfunc(exist(tmplib.format_values)) %then %do;
+        %let inputvarlist=;
+        proc sql noprint;
+            select catx('@',full_inputfile_name,id,sas_format)
+            into :inputvarlist separated by ' '
+            from 
+            (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                from tmplib.format_values a
+                inner join 
+                 (select id, count(*) as id_counts
+                    from tmplib.format_values 
+                    group by id) b
+            on a.id = b.id 
+            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+            group by b.id
+            )
+        quit;
+
+        %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+            %let inputcombo = %scan(&inputvarlist,&x,%str( ));
+            %let inputfile = %scan(&inputcombo,1,%str(@));
+            %let inputvar = %scan(&inputcombo,2,%str(@));
+            %let varformat = %scan(&inputcombo,3,%str(@));
+            %if &leavebehindreport = Y %then %do;
+                data infolder.&inputfile;
+                    length &inputvar &varformat;
+                    format &inputvar &varformat..;
+                    informat &inputvar &varformat..;
+                    set infolder.&inputfile;
+                run;
+            %end;
+            %else %do;
+                data input.&inputfile;
+                    length &inputvar &varformat;
+                    format &inputvar &varformat..;
+                    informat &inputvar &varformat..;
+                    set input.&inputfile;
+                run;
+            %end;
+        %end; /*x*/
+    %end;/* tmplib.format_values exists */
+
+/***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
 ***************************************************************************************************/
 
@@ -170,7 +233,7 @@
         - TREE2: tree aggregation for Type 2
         - TREE3: tree aggregation for Type 3
         - TREE4: tree aggregation for Type 4 */
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 %then %do;
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
         %abort;
     %end;
@@ -183,9 +246,11 @@
     /* User specified dpinfofile */
     %isdata(dataset=&dpfile.);
     %if %eval(&nobs.=0) %then %do; 
-        %put ERROR: (Sentinel) DPINFOFILE is missing.;
-        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
-        %abort;
+		%if &produceappendixfileonly. eq N %then %do;
+	        %put ERROR: (Sentinel) DPINFOFILE is missing.;
+	        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
+	        %abort;
+		%end;
     %end;
     %else %do;
         /*Number of DPs to include in report and list of DPs*/
@@ -257,6 +322,22 @@
             from output.dpinfo;
         quit;
     %end;
+
+/***************************************************************************************************
+*   Read in APPENDIXFILE if specified                                               
+***************************************************************************************************/
+    %if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
+        data appendixfile;
+            set input.&appendixfile.;
+            /*defensive*/
+            appendixtype = lowcase(appendixtype);
+            codestab = lowcase(codestab);
+            /*all files will default to .xlsx*/
+            if index(codesfile,'.') then codesfile=scan(codesfile,1,'.');
+        run;
+    %end;
+    
+	%if &produceappendixfileonly. = Y %then %goto cleanup;
     
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
@@ -361,7 +442,7 @@
             &&id&n.._metadatafile &&id&n.._treelookup &&id&n.._icd10icd9map &&id&n.._treefile &&id&n.._psestimationfile &&id&n.._itsfile
             &&id&n.._psmatchfile &&id&n.._stratificationfile &&id&n.._iptwfile &&id&n.._covstratfile &&id&n.._diagnostics &&id&n.._indlevel
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
-            &&id&n.._utilfile &&id&n.._combofile &&id&n.._comorbfile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
+            &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
             &&id&n.._pscssubgroupfile;
@@ -398,7 +479,6 @@
         %let &&id&n.._stockpilingfile      = ;
         %let &&id&n.._utilfile             = ;
         %let &&id&n.._combofile            = ;
-        %let &&id&n.._comorbfile           = ;
         %let &&id&n.._drugclassfile        = ;
         %let &&id&n.._pregdur              = ;
         %let &&id&n.._micohortfile         = ;
@@ -454,6 +534,43 @@
             %end;
 
         %end;
+
+        /***************************************************************************************************
+         * Assign the maximum length to duplicate variable names if a format values table exists 
+         **************************************************************************************************/
+        %if %sysfunc(exist(tmplib.format_values)) %then %do;
+            %let inputvarlist=;
+            proc sql noprint;
+                select catx('@',full_inputfile_name,id,sas_format)
+                into :inputvarlist separated by ' '
+                from 
+                (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                    from tmplib.format_values a
+                    inner join 
+                     (select id, count(*) as id_counts
+                        from tmplib.format_values 
+                        group by id) b
+                on a.id = b.id 
+                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                group by b.id
+                )
+            quit;
+
+            %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
+                %let inputcombo = %scan(&inputvarlist,&x,%str( ));
+                %let inputfile = %scan(&inputcombo,1,%str(@));
+                %let inputvar = %scan(&inputcombo,2,%str(@));
+                %let varformat = %scan(&inputcombo,3,%str(@));
+
+                    data infolder.&inputfile;
+                        length &inputvar &varformat;
+                        format &inputvar &varformat..;
+                        informat &inputvar &varformat..;
+                        set infolder.&inputfile;
+                    run;
+                    
+            %end; /*x*/
+        %end;/* tmplib.format_values exists */
       
      %end;
 
@@ -486,6 +603,7 @@
     %if %sysfunc(exist(input.&groupsfile.)) ne 0 %then %do;
 
         data groupsfile;
+			length runid $5;
             set input.&groupsfile.;
             runid = lowcase(runid);
             group = lowcase(group);
@@ -495,6 +613,28 @@
             includenegativetime = upcase(includenegativetime);
             %end;
         run;
+
+		/*Verify code distribution module run, compare groupsfile.CODEDIST with qrp_parameters.DISTINDEX */
+		%let modifycodedist=N;	
+		
+		data _distindex(drop=name rename=(value=distindex));
+			length runid $5;
+			set sashelp.vmacro(keep=name value where=(name like '%_DISTINDEX' ));
+			runid=lowcase(scan(name,1,'_'));
+		run;
+	
+		proc sort data=_distindex; by runid; run;		
+		proc sort data=groupsfile; by runid order; run;		
+		
+		data groupsfile(drop=distindex);
+			merge groupsfile(in=in1) _distindex(in=in2);
+			by runid;
+			if in1 and in2;
+			if upcase(distindex)^='Y' and codedist^='' then do;
+				codedist='';
+				put "WARNING: (Sentinel) CODEDIST will be set to missing for " runid ": " group "because DISTINDEX not set to Y";		
+			end;
+		run;
 
         /*Set max(order) value into NUMGROUPS*/
         proc sql noprint;
@@ -577,37 +717,99 @@
      run;
 
 /***************************************************************************************************
+*   Create a combined type file for all runs                                        
+***************************************************************************************************/
+
+    %if ^%index(&reporttype,TREE) %then %do;
+        %let typenum = %substr(&reporttype,2,1);
+
+         data master_typefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._type&typenum.file(in=n&n.)
+            %end;
+         ;
+         format runid $5.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+    
+         %if &typenum. = 2 %then %do;
+         /*assign macro variable if BASECOHORT is specified*/
+         if missing(basecohort) = 0 then call symputx('basecohortused', 'Y');
+         %end;
+         run;
+
+/***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
-    data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
-        stop;
-    run;
+        data inclusioncodes_shell;
+            length runid $5 group $40 condlevel $30;
+            call missing(runid, group, condlevel);
+            stop;
+        run;
 
-    data master_inclusioncodes;
-        set 
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        infolder.&&&runid._inclusioncodes(in=n&n)
-        %end;
-        %else %do;
-        inclusioncodes_shell
-        %end;
-        %end;
-        ;
-        format runid $5.;
-        %do n = 1 %to &numrunid.;
-        %let runid =&&id&n..;
-        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-        if n&n. then do;
-        runid = "&&id&n.";
-        end;
-        %end;
-        %end;
-    run;
+        data master_inclusioncodes;
+            set 
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            infolder.&&&runid._inclusioncodes(in=n&n)
+            %end;
+            %else %do;
+            inclusioncodes_shell
+            %end;
+            %end;
+            ;
+            format runid $5.;
+            %do n = 1 %to &numrunid.;
+            %let runid =&&id&n..;
+            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+            %end;
+            %end;
+        run;
+
+        /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
+        %if &basecohortused. = Y %then %do;
+            /*build set and group assignment statements*/
+            %let inclusionsetstatement = ;
+            %let inclusioninstatement = ;
+
+            proc sql noprint;
+                select count(*) into: numoutcomecohorts 
+                from master_typefile(where=(missing(basecohort)=0));
+            quit;
+
+            %do bc = 1 %to %eval(&numoutcomecohorts.);
+                data _null_;
+                    set master_typefile(where=(missing(basecohort)=0));
+                    if _n_ = &bc. then do;
+                        call symputx('runid', strip(runid));
+                        call symputx('cohort', strip(group));
+                        call symputx('basecohort', strip(basecohort));
+                    end;
+                run;
+
+                %let inclusionsetstatement = &inclusionsetstatement. master_inclusioncodes(in=a&bc. where=(runid="&runid." and group = "&basecohort."));
+                %let inclusioninstatement = &inclusioninstatement. %str(if a&bc. then do; group ="&cohort"; end;) ;
+            %end;
+
+            /*add inclusion codes for outcome cohorts*/
+            data master_inclusioncodes;
+                set master_inclusioncodes
+                    &inclusionsetstatement.;
+                &inclusioninstatement.;
+            run;
+
+        %end; /*Type 2 when basecohort specified*/
+
+    %end; /*REPORTTYPE ne TREEX*/
 
 /*******************************************************************************************************
 *   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
@@ -750,27 +952,30 @@
         run;
     %end;
 
-
 /***************************************************************************************************
-*   Create a combined type file for all runs                                        
+*   Create a stacked monitoring file for Sentinel Views                                
 ***************************************************************************************************/
 
-    %if ^%index(&reporttype,TREE) %then %do;
-        %let typenum = %substr(&reporttype,2,1);
-
-         data master_typefile;
-         set %do n = 1 %to &numrunid.;
-                %let runid=&&id&n..;
-                infolder.&&&runid._type&typenum.file(in=n&n.)
+    /* Create periodid2 variable when multiple runs are requested in query */
+    /* Views platform does not have a way of distinguishing multiple runids
+       so monitoring period variable is incremented as periodid2 to work around
+       limitation */
+    %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+        data monitoringfile_views;
+            set %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            infolder.&&&runid._monitoringfile(in=n&n.)
             %end;
-         ;
-         format runid $5.;
+        ;
+         retain periodid2 0;
+         format runid $6.;
             %do n = 1 %to &numrunid.;
                 if n&n. then do;
                 runid = "&&id&n.";
+                periodid2+1;
                 end;
             %end;
-         run;
+        run;
     %end;
 
 /***************************************************************************************************
@@ -809,20 +1014,6 @@
         data _null_;
             set labelfile(where=(labeltype='censorlabel'));
             call symputx(cats(labelvar,'_label'), label);
-        run;
-    %end;
-
-/***************************************************************************************************
-*   Read in APPENDIXFILE if specified                                               
-***************************************************************************************************/
-    %if %sysfunc(exist(input.&appendixfile.)) ne 0 %then %do;
-        data appendixfile;
-            set input.&appendixfile.;
-            /*defensive*/
-            appendixtype = lowcase(appendixtype);
-            codestab = lowcase(codestab);
-            /*all files will default to .xlsx*/
-            if index(codesfile,'.') then codesfile=scan(codesfile,1,'.');
         run;
     %end;
     
@@ -1691,10 +1882,9 @@
 
 /***************************************************************************************************
 *   For L2 reports:
-     1: Read in L2ComparisonFile
-     2: For T4 reports: read in optional SelectionProbabilitiesFile
-     3: create master PS/CS input file dataset    
-     4. Add unique psestimategrp flag to the l2comparisonfile    
+     1: Read in L2ComparisonFile    
+     2: create master PS/CS input file dataset    
+     3. Add unique psestimategrp flag to the l2comparisonfile    
 ***************************************************************************************************/
 
     %if &reporttype = T2L2 | &reporttype = T4L2 %then %do;
@@ -1792,23 +1982,7 @@
              (%index(&customizecolumns.,sumevents) > 0 and %index(&customizecolumns.,include) > 0) %then %do;
             %put WARNING: (Sentinel) The following values for CUSTOMIZECOLUMNS have been specified: &customizecolumns..;
             %put WARNING: (Sentinel) Columns that have been included for display also may be redacted. Results may not appear as expected.;
-        %end;
-
-        /****************************/
-        /*SelectionProbabilitiesFile*/
-        /****************************/
-        %if %str("&reporttype") = %str("T4L2") %then %do;
-        %isdata(dataset=input.&SelectionProbabilitiesFile.);
-        %if %eval(&nobs.>0) %then %do;
-            data SelectionProbabilitiesFile;
-                set input.&SelectionProbabilitiesFile.;
-                /*defensive*/
-                analysisgrp=strip(lowcase(analysisgrp));
-                runid=strip(lowcase(runid));
-                value = upcase(value);
-            run;
-        %end;
-        %end;
+        %end;        
         
         /**********************************/
         /*Master PS/CS input file datasets*/
@@ -1817,9 +1991,9 @@
         /*Create shell table*/
         data pscs_masterinputs;
             length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
-                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11;
+                   caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup subgroupcat $11 stratvars $18;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
-                   ipweight, percentiles, unconditional, pstrim);
+                   ipweight, percentiles, unconditional, pstrim, stratvars);
             stop;
         run;
         data psest_masterinputs;
@@ -1865,7 +2039,7 @@
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim reestimateps;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars;
             run;
 
             data psest_masterinputs;
@@ -1902,6 +2076,7 @@
                       ,pscs.ref
                       ,pscs.unconditional
                       ,pscs.pstrim
+                      ,pscs.stratvars 
                       ,lowcase(sub.subgroup) as subgroup
                       ,upcase(sub.subgroupcat) as subgroupcat
                       /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
@@ -1952,6 +2127,7 @@
                   ,pscs.subgroup
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
+                  ,pscs.stratvars 
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
@@ -2229,6 +2405,7 @@
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
+%cleanup:
 
      proc datasets noprint nowarn lib = work;
       delete _: inclusioncodes_shell;

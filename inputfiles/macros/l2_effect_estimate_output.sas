@@ -225,10 +225,11 @@
         data repdata.table&tablenum.&tableletter;
             set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
             %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
-            if analysis = "Unweighted" then do;
+              if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
                 HR_pvalue = 'N/A';
-            end;
+				%if &reporttype = T4L2 %then %do; rr_95ci = 'N/A'; %end;
+		      end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
             %if &look_start ^= &look_end %then %do;
@@ -301,18 +302,7 @@
 	        quit;
 
 	        %let titleend = %str(and &subgrouplabel);
-        %end;
-
-        %let s11 = ;
-        %if &reporttype = T4L2 %then %do;
-        %isdata(dataset=SelectionProbabilitiesFile);
-        %if &nobs > 0 %then %do; 
-            data _null_;			
-            set SelectionProbabilitiesFile(where=(analysisgrp="&analysisgrp." and runid = "&runid" and subgroup = &subgroup.));
-                call symputx('s11', s11);
-            run;
-        %end;
-        %end;
+        %end;        
 
         /**********************************************************************
             Output Results
@@ -355,10 +345,7 @@
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
                 RD_1000NUchar 
                 %end;
-                rrchar OR_95CI
-                %if %length(&s11) > 0 %then %do;
-                ADJOR_95CI
-                %end;
+                RR_95CI                
                 %end;
                 );
             
@@ -412,16 +399,8 @@
             define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
                 style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %end;
-            define rrchar / order 'Risk Ratio'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            define OR_95CI / order 'Odds Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-
-            %if %length(&s11) > 0 %then %do;
-            define ADJOR_95CI / order 'Odds Ratio Adjusted for Selection Bias^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];  
-            %end;
-
+            define RR_95CI / order 'Risk Ratio^n (95% Confidence Interval)'
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];            
             %end;
 
             /*Add title*/
@@ -570,8 +549,8 @@
 
             /* Add Footnotes */
             %if &num_fn > 0 %then %do;
-            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
-                                   nobreakspace=off font_size=&footfontsize.];
+            compute after / style=[background=white just=L foreground=black vjust=t bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.  height=1.75in];
             %do f = 1 %to &num_fn.;
             line "^{super &f.}&&fn&f.";
             %end;

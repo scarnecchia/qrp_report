@@ -17,8 +17,8 @@
 *   -repdata.table&tablenum.&tableletter.
 * 
 *  PARAMETERS:
-*   -tabletype - patient - Output patient level attrition table
-*              - episode - Output episode level attrition table                                                                     
+*   -tabletype - patient - Output patient-level attrition table
+*              - episode - Output episode-level attrition table                                                                     
 *            
 *  Programming Notes:         
 *                                                                           
@@ -31,12 +31,14 @@
 ***************************************************************************************************;
 
 %macro attrition_output(tabletype=);
-
     %if &&attrition_&tabletype > 0 %then %do;
     %tableletter();
 
-        /*assign footnotes*/
-        %if %index(&reporttype,T4) > 0 %then %let num_fn = 1; %else %let num_fn = 0;
+        /*initialize macro variables for footnotes*/
+        %let num_fn = 0;
+        %if %lowcase(&tabletype.) = episode %then %let num_fn = 1;
+        %if %index(&reporttype,T4) %then %let num_fn = 2;
+
         %let exclincl = N;
         %let milexcl = N;
         %let claim_level_descr = &tabletype.;
@@ -47,10 +49,11 @@
                 call symputx('num_fn', %eval(&num_fn.+1));
                 if claim_level = 'MIL' then call symputx('milexcl', 'Y'); /*to mark which row to apply superscript*/
                 if claim_level ne 'MIL' then call symputx('exclincl', 'Y');
-                %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
-                %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
-                %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
             end;
+            %if %index(&reporttype,T4) %then %do; call symputx('claim_level_descr', 'Pregnancy episodes'); %end;
+            %else %if &tabletype = episode %then %do; call symputx('claim_level_descr', 'Episodes'); %end;
+            %else %if &tabletype = patient %then %do; call symputx('claim_level_descr', 'Patients'); %end;
+
             %if %index(&reporttype,T2L2) %then %do;
             length monitoringperiod 3;
             monitoringperiod=&j;
@@ -58,14 +61,27 @@
         run;
 
         %if %eval(&num_fn.>0) %then %do;
+
+		     proc sort data =lookup.lookup_footnotes out = lookup_footnotes; 
+              by order;
+			run;
+
             data _footnotes;
                length footnote_order 3; 
-               set lookup.lookup_footnotes (where = (type = "attrition" 
+               set lookup_footnotes (where = (
+			        /*only need the title footnote when attrition contains both member and episode*/
+                    %if %lowcase(&tabletype.) = episode  %then %do;
+					  (type = "attrition")
+					%end;
+					%else  %do;
+                      (type = "attrition" and order > 0)
+					%end;
                     %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;
+					
                ));
                by order;
                footnote_order = _n_;
-            run;
+            run;      
 
             proc sql noprint;
               select description into: fn1 - :fn&num_fn.
@@ -74,7 +90,11 @@
             quit;
 
             /* Assign macro variables for superscipts */
-    		%assign_superscripts(type =title, order = -2);
+			%if %lowcase(&tabletype.) = episode  %then %do;
+              %assign_superscripts(type =title_me, order =  -3);
+    		%end;
+			%else %do; %assign_superscripts(type =title_me, order = ); %end;
+			%assign_superscripts(type =title, order = -2);
     		%assign_superscripts(type =exclincl, order = 1);
 
             proc datasets noprint nowarn lib = work;
@@ -83,6 +103,7 @@
         %end;
         %if %eval(&num_fn.=0) %then %do;
             /* Assign macro variables for superscipts */
+		    %assign_superscripts(type =title_me, order = );
     		%assign_superscripts(type =title, order = );
     		%assign_superscripts(type =exclincl, order = );
         %end;
@@ -131,7 +152,7 @@
             /*Add title*/
             compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=black borderbottomcolor=black
                                            borderbottomwidth=&bordersize tagattr="wrap:no" cellheight=.3in];
-            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype)) Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.&super_title.";
+            line "Table &tablenum.&tableletter.. Summary of %sysfunc(propcase(&tabletype))-Level&super_title_me. Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.&super_title.";
             endcomp;
 
           
@@ -247,8 +268,8 @@
             %if %eval(&num_fn > 0) %then %do;
                 compute after / style=[just=L borderbottomcolor=white bordertopcolor=black vjust=T fontsize=&footfontsize. bordertopwidth = &bordersize];
     		    %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
-    		    %end;
+			     line "^{super &f.}&&fn&f.";
+				%end;
                 endcomp;
             %end;
             %else %do;

@@ -772,10 +772,10 @@
                     caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
                     %end;
                     %if &table. = T3 %then %do;
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling));
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
                     %end;
                     %if &table. = T4 %then %do;
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                     %end;
                     %if &table. = T5 %then %do;
                     caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
@@ -797,10 +797,10 @@
                         caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
                         %end;
                         %if &table. = T3 %then %do;
-                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling));
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
                         %end;
                         %if &table. = T4 %then %do;
-                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling));
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                         %end;             
                         %if &table. = T5 %then %do;
                         caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
@@ -1657,7 +1657,7 @@
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
-	            %else %let ForestRatioTitle = Odds Ratios (OR);
+	            %else %let ForestRatioTitle = Risk Ratios (RR);
 
 				%let tableletter=a;
 				%let tablecount = 1;
@@ -1906,8 +1906,10 @@
     /*****************/
 
     /*Appendix A*/
-    %addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
-	
+	%if &produceappendixfileonly. = N %then %do;
+    	%addtotoc(tabnum=Appendix A, caption=Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.);
+	%end;
+
 	/* The remaining appendices are created in appendix_driver.sas */
 	
     /*********************/

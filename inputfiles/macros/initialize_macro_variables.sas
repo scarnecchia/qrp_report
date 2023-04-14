@@ -35,10 +35,11 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum;
+    %global runidlist numrunid typenum basecohortused;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
+    %let basecohortused = N;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -49,8 +50,9 @@
 
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
-            figurefile labelfile itsregressionfile treeaggfile appendixfile selectionprobabilitiesfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData;
+            figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData
+            jirakey userid studytitle;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -64,8 +66,7 @@
     %let labelfile = ;
     %let itsregressionfile = ;
     %let treeaggfile = ;
-    %let appendixfile = ;
-    %let selectionprobabilitiesfile = ;
+    %let appendixfile = ;    
     %let CodeDescriptionsFile = ;
     %let TableColumnsFile = ;
     %let DPInfoFile = ;
@@ -76,6 +77,9 @@
     %let report_destination = ;
 	%let collapse_vars = ;
 	%let OutputViewsData = N;
+    %let jirakey = ;
+    %let userid = ;
+    %let studytitle = ;
 
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
@@ -165,6 +169,10 @@
     /*figure specific variables*/
     %global unicode_list;
     %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
+
+	/* To determine if appendixfile only should be processed */
+	%global produceappendixfileonly;
+	%let produceappendixfileonly=N;
 
 	/* Leave behind report */
 	%global reportid dpfile logofile;

@@ -56,6 +56,8 @@
 
     %put =====> MACRO CALLED: report_formats_labels ;
 
+	%if &produceappendixfileonly. = Y %then %goto appendicesformats;
+
 /***************************************************************************************************
 *  Create demographic variable formats                                            
 ***************************************************************************************************/
@@ -417,28 +419,6 @@
     run;
 
 /***************************************************************************************************
-*  Create the formats for use with the Diagnosis and Procedure appendices output                                                         
-***************************************************************************************************/
-	proc format;
-		value $pxfmt	
-			"09" = "ICD-9-CM"
-			"10" = "ICD-10-PCS"
-			"C4" = "CPT-4"
-			"HC" = "HCPCS"
-			"H3" = "HCPCS"
-			"C2" = "CPT-2"	
-			"C3" = "CPT-3"	
-			"ND" = "NDC"		
-			"RE" = "RE";
-		value $dxfmt
-			"09" = "ICD-9-CM"
-			"10" = "ICD-10-CM"; 
-		value $cc1fmt
-			"DX" = "Diagnosis"
-			"PX" = "Procedure";
-	run;
-
-/***************************************************************************************************
 * Assign L2 subgroups title, order, and labels                                                       
 ***************************************************************************************************/
     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 %then %do;
@@ -540,5 +520,30 @@
         run;
     %end;
 	
+
+/***************************************************************************************************
+*  Create the formats for use with the Diagnosis and Procedure appendices output                                                         
+***************************************************************************************************/
+%appendicesformats:
+
+	proc format;
+		value $pxfmt	
+			"09" = "ICD-9-CM"
+			"10" = "ICD-10-PCS"
+			"C4" = "CPT-4"
+			"HC" = "HCPCS"
+			"H3" = "HCPCS"
+			"C2" = "CPT-2"	
+			"C3" = "CPT-3"	
+			"ND" = "NDC"		
+			"RE" = "RE";
+		value $dxfmt
+			"09" = "ICD-9-CM"
+			"10" = "ICD-10-CM"; 
+		value $cc1fmt
+			"DX" = "Diagnosis"
+			"PX" = "Procedure";
+	run;
+
 %mend report_formats_labels;
 	

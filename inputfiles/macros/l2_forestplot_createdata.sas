@@ -58,7 +58,10 @@
                  est.analysisgrpsort, 
                  est.subgroup,
                  est.subgroupcatorder, 
-                 est.subgroupcatlabel,
+                 /*need to unformat agegroup so it can be formatted in the proc sgrender because of the possible unicode character*/
+                 case when subgroup = 'agegroup' then est.subgroupcat
+                    else est.subgroupcatlabel
+                    end as subgroupcatlabel,
                  est.subgroupcat, 
                  est.subgrouporder,
                  est.tabletitle,
@@ -102,19 +105,18 @@
                  est.HR, 
                  %end;
                  %else %if "&reporttype." = "T4L2" %then %do;
-                 est.or_95ci, 
-                 est.or, 
-                 est.adjor_95ci, 
-                 est.adjor, 
-                 est.adjor_LCL, 
-                 est.adjor_UCL,
+                 est.rr_95ci, 
+                 est.rr,                  
                  %end;
                  est.LCL,
                  est.UCL, 
                  est.analysisgrpsort, 
                  est.subgroup, 
                  est.subgroupcatorder, 
-                 est.subgroupcatlabel,
+                 /*need to unformat agegroup so it can be formatted in the proc sgrender because of the possible unicode character*/
+                 case when subgroup = 'agegroup' then est.subgroupcat
+                    else est.subgroupcatlabel
+                    end as subgroupcatlabel,
                  est.subgroupcat, 
                  est.subgrouporder,
                  est.sort1, 
@@ -256,15 +258,7 @@
             end;
 
             end;
-          /* Set adjusted ORs if they have been requested */
-          %if "&reporttype." = "T4L2" %then %do;
-          if not missing(adjor) then do;
-          or_95ci=adjor_95ci;
-          or=adjor;
-          lcl=adjor_LCL;
-          ucl=adjor_UCL;
-          end;
-          %end;
+          
           %if "&reporttype" = "T2L2" %then %do;
           format HR LCL UCL 5.2; 
           %end;
@@ -276,7 +270,7 @@
                                                HR_95ci HR  
                                                %end;
                                                %else %if "&reporttype." = "T4L2" %then %do;
-                                               or_95ci or
+                                               rr_95ci rr
                                                %end;
                                                LCL UCL id file
                                                );

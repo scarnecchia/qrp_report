@@ -100,6 +100,8 @@
         define caption / order=data  ' ' style(column)=[just=L];
     run;
 
+	%if &produceappendixfileonly. = Y %then %goto appendix;	
+
 ***************************************************************************************************;
 * Baseline tables                                                      
 ***************************************************************************************************;
@@ -417,17 +419,51 @@
                 end;
             run;
 
-             proc sql noprint;
+            /* Output dataset only with superscript flags */
+            proc contents data = final_t4&datasuffix out=_t4vars_ss(keep=name where=(index(name,'_ss'))) noprint;
+            run;
+
+            proc sql noprint;
+                select name 
+                into :superscript_vars separated by ' '
+                from _t4vars_ss;
+            quit;
+
+            /* Get number of non-missing observations for each superscript column */
+            proc univariate data=final_t4&datasuffix outtable=_miss_ss&datasuffix(keep=_var_ _nobs_) noprint;
+                var &superscript_vars;
+            run;
+
+            /* Only keep non-missing flag values */
+            proc sql noprint;
+                select _var_ into :non_missing_vars separated by ' '
+                from _miss_ss&datasuffix
+                where _nobs_>0;
+            quit;
+
+            /* flag each column to determine whether it gets a superscript */
+            data tablecolumns;
+                set tablecolumns;
+                columnsuperscript = 'N';
+                %do i = 1 %to %sysfunc(countw(&non_missing_vars));
+                    %let non_missing_var = %scan(&non_missing_vars,&i);
+                    if columnname = "%scan(&non_missing_var,1,%str(_))" then columnsuperscript = 'Y';
+                %end;
+            run;
+    
+            proc sql noprint;
                 select cats(columnname,'_char') 
                       ,cats(columnwidth,'in')
                       ,smallcellyn
                       ,columnlabel
                       ,columnheader
+                      ,columnsuperscript
                 into :outvarlist separated by ' ',
                      :outwidths separated by ' ',
                      :outsmallcells separated by ' ',
                      :columnlabels separated by '|||',
-                     :columnheaders separated by '|||'
+                     :columnheaders separated by '|||',
+                     :columnsuperscripts separated by '|||'
                 from tablecolumns
                 where table="&table"
                 order by &gestwkorder. order;
@@ -437,7 +473,6 @@
                 from tablecolumns
                 where table="&table";
                 %end;
-                quit;
             quit; 
                 
             %if &stratifybydp = Y %then %let tablecount=1;
@@ -461,10 +496,10 @@
                              title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T5 %then %do;
                              title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
@@ -476,6 +511,7 @@
                              varlist = &outvarlist,
                              varwidths = %bquote(&outwidths.),
                              varsmallcells = &outsmallcells,
+                             varsuperscripts = &columnsuperscripts,
                              columnstatementlabels = %quote(&columnlabels.),
                              definestatementlabels = %quote(&columnheaders.),
                              spanningheader = %quote(&spanningheader.));
@@ -496,10 +532,10 @@
                              title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
                              %end;
                              %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Stockpiling),
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
                              %end;
                              %if &table. = T5 %then %do;
                              title=%quote(Pregnancy Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
@@ -511,6 +547,7 @@
                              varlist = &outvarlist,
                              varwidths = %bquote(&outwidths.),
                              varsmallcells = &outsmallcells,
+                             varsuperscripts = &columnsuperscripts,
                              columnstatementlabels = %quote(&columnlabels.),
                              definestatementlabels = %quote(&columnheaders.),
                              spanningheader = %quote(&spanningheader.));
@@ -895,6 +932,7 @@
 ***************************************************************************************************;
 * Appendices                                                                                
 ***************************************************************************************************;
+%appendix:
 
     %appendix_output();
 

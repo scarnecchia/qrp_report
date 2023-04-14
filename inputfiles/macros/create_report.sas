@@ -61,6 +61,9 @@
     /*read in input files and process input file parameters*/
     %process_inputfiles();
 
+	/*check if only appendixfile should be processed*/
+	%if &produceappendixfileonly. = Y %then %goto format_labels;
+
 ***************************************************************************************************;
 * Create concatenated libname for each DP and output DP metadata                                                      
 ***************************************************************************************************;
@@ -168,8 +171,11 @@
     ***************************************************************************************************;
     *   Create report formats and labels                                           
     ***************************************************************************************************;
+%format_labels:    
 
         %report_formats_labels();
+
+		%if &produceappendixfileonly. = Y %then %goto createtoc;
 
     ***************************************************************************************************;
     * Baseline tables                                                      
@@ -289,6 +295,7 @@
 ***************************************************************************************************;
 *   Compile table of contents                                            
 ***************************************************************************************************;
+%createtoc:
 
     %create_tableofcontents();
 
@@ -337,7 +344,8 @@
 ***************************************************************************************************;
 
     %if &outputviewsdata=Y %then %do;
-	  %l1_sentinel_views_convertdata(&viewsID);
+	  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %l1_sentinel_views_convertdata(&viewsID);
+      %else %l2_sentinel_views_convertdata(queryid=&viewsID,jirakey=&jirakey,userid=&userid,studytitle=%bquote(&studytitle));
     %end;			
 
 /*************************************************************************************************/

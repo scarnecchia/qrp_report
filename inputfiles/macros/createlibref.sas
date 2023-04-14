@@ -67,7 +67,14 @@
 		proc sql noprint;
 			select lowcase(name) into: versions separated by ' '
 			from files_and_folders
-			where substr(upcase(name),1,1) = 'V' or substr(upcase(name),1,1) = 'B';
+			where substr(upcase(name),1,1) in ('V', 'B', 'T')
+			order by case substr(upcase(name),1,1)
+                     when 'V' then 3
+                     when 'B' then 2
+                     when 'T' then 1
+                     else .
+                     end desc,
+                     name desc;
 		quit;
 		%put &versions;
 
