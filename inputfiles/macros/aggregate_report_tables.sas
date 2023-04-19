@@ -286,7 +286,7 @@
              %let type = %substr(&reporttype.,2,1);
           %end;
 		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
-		  %if %str("&reporttype") = %str("TREE3") %then %do;
+		  %if %str("&reporttype") = %str("TREE3") and %sysfunc(findw(&datasetlist, t3treewkdays)) %then %do;
 		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end; /*TREE3*/
 		%end; /*TREEAGGFILE exists*/
