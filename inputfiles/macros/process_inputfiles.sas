@@ -2250,6 +2250,12 @@
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
                                 codedays,
+								%if %index(&reporttype,T4) > 0 %then %do;								
+								codepop,
+								/* codepop2 will be used to compute codepop for cc covariates*/
+								codepop as codepop2 format $6. length=6,
+								code,
+								%end;
                                 codetype,
                                 codecat
                 from infolder.&&&runid._covariatecodes.;
@@ -2259,6 +2265,47 @@
                 from studylen
                 where lower(name)='studyname';
             quit;
+
+			%if %index(&reporttype,T4) > 0 %then %do;
+				/* Determine codepop value for cc covariates if any */
+				data Covarname_cc;
+				set Covarname_&runid.;
+				where upcase(codecat)="CC";
+				code=compress(code,"andornotANDORNOT()");
+				run;
+
+				proc sql noprint;
+				select distinct covarnum into :cc_covars separated by " " 
+				from Covarname_cc;
+				quit;
+
+				%isdata(dataset=Covarname_cc);
+				%if %eval(&nobs.>0) %then %do;
+					%do cc_cov=1 %to %sysfunc(countw(&cc_covars.));
+						%let cc_covar=%scan(&cc_covars., &cc_cov.);
+
+						proc sql noprint;
+							select code into :cc_covarlist 
+							from Covarname_cc
+							where covarnum=&cc_covar.; 
+
+							select distinct codepop into :cc_codepop separated by " " 
+							from Covarname_&runid.
+							where covarnum in (&cc_covarlist.); 
+						quit;
+
+						data Covarname_&runid.;
+						set Covarname_&runid.; 
+						if covarnum=&cc_covar. then do;
+							codepop2="&cc_codepop";
+							if index(codepop2, "M")>0 and index(codepop2, "I")>0 then codepop="MI";
+							else if index(codepop2, "M")>0 then codepop="M";
+							else if index(codepop2, "I")>0 then codepop="I";
+						end;
+						run;
+					%end; /* loop through cc covariates */
+				%end; /* Covarname_cc contains data */
+			%end; /* T4 report type */
 
             /* Need to set maximum studyname length across all runs */
             %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
@@ -2306,7 +2353,7 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         by runid covarnum;
     run;  
     %end;
