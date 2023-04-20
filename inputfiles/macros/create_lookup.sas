@@ -61,6 +61,9 @@
 	   type = "baseline";  order = 18; description = "The Combined Comorbidity Score is calculated based on comorbidities observed during a requester-defined window around the exposure episode start date. (Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A Combined Comorbidity Score Predicted Mortality in Elderly Patients Better Than Existing Scores. J Clin Epidemiol. 2011;64(7):749-759; Sun JW, Rogers JR, Her Q, Welch EC, Panozzo CA, Toh S, Gagne JJ. Adaptation and Validation of the Combined Comorbidity Score for ICD-10-CM. Med Care. 2017;55(12):1046-1051)"; output;
 	   type = "baseline";  order = 19; description = "Covariate not included in the propensity score logistic regression model."; output;
 	   type = "baseline"; order = 20;  description = "Only the laboratory result closest to the index date in the user-defined evaluation window is described. The number of &patientepi with a given categorical result value, or the mean numerical result value among those reported in given unit, is shown indented and italicized below the Romanized number of unique &patientepi with or without a test record."; output;
+	   type = "baseline"; order = 21; description = "In non-pregnant patients, characteristics evaluated using only infant claims are not output."; output;
+	   type = "baseline"; order = 22; description = "Characteristics were evaluated only in infant claims."; output;
+	   type = "baseline"; order = 23; description = "Characteristics were evaluated in mother and infant claims."; output;
 
 	   /* Footnotes for L2 effect estimates table */	  
 	   type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
