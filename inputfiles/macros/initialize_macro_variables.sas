@@ -81,6 +81,10 @@
     %let userid = ;
     %let studytitle = ;
 
+    /* Type 3 Tree weekdays dataset variable */
+    %global t3treewkdaysdset;
+    %let t3treewkdaysdset = ;
+
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
