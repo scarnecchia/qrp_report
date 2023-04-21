@@ -229,7 +229,7 @@
             define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
 
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
-			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&apptitle.";
             endcomp;
             compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
