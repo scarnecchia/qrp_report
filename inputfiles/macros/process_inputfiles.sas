@@ -1285,6 +1285,14 @@
                     on strata2.tableid = table.dataset and strata2.levelvars = table.levelid3
                     order by table.n;
                 quit;
+
+                %let t3treewkdaysdset = ;
+                %if &reporttype = TREE3 %then %do;
+                data _null_;
+                    set userstrata(keep=tableid);
+                    if lowcase(tableid) = 't3treewkdays' then call symputx('t3treewkdaysdset','t3treewkdays');
+                run;
+                %end;
    
                 /*Assign stratificationorder to maintain default stratification order of tables*/
                 /*Assign macro variable DATASETLIST for list of datasets*/
@@ -1292,7 +1300,7 @@
                     select distinct strip(lowcase(dataset)) into: tdatasetlist separated by ' '
                     from tablefile(where=(missing(dataset)=0))
                 quit;
-                %let datasetlist = &tdatasetlist.;
+                %let datasetlist = &tdatasetlist. &t3treewkdaysdset.;
                 %let tdatasetlistnum = %sysfunc(countw(&tdatasetlist.));
 
                 /*Loop through for all datasets*/
