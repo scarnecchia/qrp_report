@@ -2026,7 +2026,7 @@
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
-														%if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
+														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
