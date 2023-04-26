@@ -324,14 +324,52 @@
             run;
         %end;
         
-        /* Add cohortdef and comorbidscore to baselinefile */
+        /* Initialize variables related to risk scores */
+		%let riskscoreslist=;
+		%let riskscoreslist_quoted=;
+		%let riskscoreslabels=;
+		%let riskscorecats=;
+		%let riskscores_with_cats=;
+
+		%isdata(dataset=riskscorefile);
+		%if %eval(&nobs.>0) %then %do;		    
+			proc sql noprint;
+			    select distinct riskscore into :riskscoreslist separated by " "
+			    from riskscorefile where runid="&runid." order by riskscore;
+
+				select distinct label into :riskscoreslabels separated by "|"
+			    from riskscorefile where runid="&runid." order by riskscore;
+
+				select distinct riskscorecat into :riskscorecats separated by "|"
+			    from riskscorefile where runid="&runid." order by riskscore;
+
+				select distinct riskscore into :riskscores_with_cats separated by " "
+			    from riskscorefile where runid="&runid." and strip(riskscorecat) ne "" order by riskscore;
+			quit;
+
+			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
+			%create_comma_charlist(inlist=&riskscores_with_cats, outlist=riskscores_with_cats);
+		%end; 
+
+        /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length comorbidscore gestationalage $1 cohortdef $5;
+          length ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB gestationalage $1 cohortdef $5;
           set baselinefile;
-          if order=&b. then do;
-            if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
-              then comorbidscore = "Y";
-              else comorbidscore = "N";
+          if order=&b. then do;	
+		  	/* Initialize standard risk scores variable indicators */
+		  	ADCSI="N";
+			CHA2DS2VASC="N";
+			COMORBIDSCORE="N";
+			FRAILTY="N";
+			HASBLED="N";
+			OBSCOMORB="N";
+			PEDCOMORB="N";
+			%if %length(&riskscoreslist.) > 0 %then %do;
+				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
+					if index(upcase(healthchar),"&riskscore.") > 0 or index(upcase(medproduse),"&riskscore.") or index(upcase(utilizationintensity),"&riskscore.") then &riskscore. = "Y";		              
+				%end;
+			%end;             		
             if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
               else gestationalage = "N";
             cohortdef = "&cohortdef.";
