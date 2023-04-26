@@ -329,6 +329,7 @@
 		%let riskscoreslist_quoted=;
 		%let riskscoreslabels=;
 		%let riskscorecats=;
+		%global riskscores_with_cats;
 		%let riskscores_with_cats=;
 
 		%isdata(dataset=riskscorefile);
@@ -1932,22 +1933,47 @@
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
-            else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) then do;   
+           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) or
+					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;   
                 /*Assign grouper and sortorder1*/
-                if metvar in (&healthchar.) then do;
+                if metvar in (&healthchar.) or
+					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
                 %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
-                if metvar in (&medproduse.) then do;
+                if metvar in (&medproduse.) or
+					(substr(metvar,1,index(metvar,"_")-1) in (&medproduse.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
                 %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
-                if metvar in (&UtilizationIntensity.) then do;
+                if metvar in (&UtilizationIntensity.) or
+					(substr(metvar,1,index(metvar,"_")-1) in (&UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
                 %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
-                end;
+                end;                
+				
+				/* Riskscores */
+				%if %length(&riskscoreslist.) > 0 %then %do;
+					%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+						%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 
-                /*Assign labels and sortorder2*/
-                if metvar = 'COMORBIDSCORE' then do;
-                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
-                end;
+						if metvar="&riskscore." then do;
+							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore.);
+						end;
+
+						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
+						
+						%if %length(&riskscorecat.) > 0 %then %do;
+							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
+								if metvar="&riskscore._CAT&rskscorecat." then do;
+									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=0, sortorder3=&rskscorecat.);		
+								end;
+							%end;
+						%end;
+					%end;
+				%end;
+
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
                 end;
@@ -2027,6 +2053,21 @@
 				%end;
                 ;
         run;
+
+		/* If risk score categories are output then add header for each score */
+		%if %length(&riskscores_with_cats.) > 0 %then %do;
+			data baseline_aggregatelabels;
+			set baseline_aggregatelabels
+				baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=b);
+			if b then do;
+				label=strip(label) || " categories";
+				metvar="";
+				sortorder2=0;
+				sortorder3=0;
+				sortorder4=0;
+			end;
+			run;
+		%end;
 
         /*Merge in agefmtsort to correctly update sortorder*/
         proc sql noprint;
