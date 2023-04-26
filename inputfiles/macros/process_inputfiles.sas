@@ -2449,6 +2449,67 @@
     %assigncovarlabels(dataset=tablefile, var=tablesub);
     %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
 
+
+/***************************************************************************************************
+*  Create stacked dataset containing riskscores data for all runs                                            
+***************************************************************************************************/
+	%do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        %if %sysfunc(exist(infolder.&&&runid._riskscorefile.))=1 %then %do;
+
+            /* Get riskscorecat length per runid */
+            proc contents data = infolder.&&&runid._riskscorefile. out=riskscorecatlen(keep=name length) noprint;
+            run;
+
+            proc sql noprint;    
+                create table _riskscorefile_&runid. as 
+                select distinct riskscore, 
+                                strip(riskscorecat) as riskscorecat, 
+                                "&runid" as runid length=5                                 							
+                from infolder.&&&runid._riskscorefile.;
+
+                select length
+                into: MAXLEN_RISKSCORECAT trimmed
+                from riskscorecatlen
+                where lower(name)='riskscorecat';
+            quit;
+
+
+            /* Need to set maximum riskscorecat length across all runs */          
+            %if %sysfunc(exist(riskscorefile))=0 %then %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set _riskscorefile_&runid.;
+                run;     
+            %end;
+            %else %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set riskscorefile _riskscorefile_&runid.;
+                run;     
+            %end;
+
+			/* Assign labels for standard risk scores */ 
+			data riskscorefile;
+			set riskscorefile;
+			format label $70.;
+			if upcase(riskscore) = "ADCSI" then label="Adapted Diabetes Complications Severity Index (aDCSI)";
+			else if upcase(riskscore) = "CHA2DS2VASC" then label="CHA2DS2-VASc score";
+			else if upcase(riskscore) = "COMORBIDSCORE" then label="Charlson/Elixhauser combined comorbidity score";
+			else if upcase(riskscore) = "FRAILTY" then label="Claims-Based frailty index";
+			else if upcase(riskscore) = "HASBLED" then label="HAS-BLED score";
+			else if upcase(riskscore) = "OBSCOMORB" then label="Obstetric comorbidity index";
+			else if upcase(riskscore) = "PEDCOMORB" then label="Pediatric comorbidity index";
+			else label=riskscore;			
+			run;
+
+			/*Delete temporary dataset*/
+		    proc datasets nowarn noprint nolist lib=work; 
+		    	delete riskscorecatlen _riskscorefile_:; 
+		    quit; 
+        %end;
+    %end;  
+
 /***************************************************************************************************
 *   Clean up                                                
 ***************************************************************************************************/
