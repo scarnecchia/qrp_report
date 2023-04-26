@@ -339,6 +339,8 @@
                     COVARNUM=put(compress(metvar,'','A'),8.);
                     subgroupcat='';
                 end;
+                /* Remove categorical risk scores */
+                if index(metvar,'_CAT') then delete;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
