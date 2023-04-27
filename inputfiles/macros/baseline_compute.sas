@@ -335,16 +335,16 @@
 		%isdata(dataset=riskscorefile);
 		%if %eval(&nobs.>0) %then %do;		    
 			proc sql noprint;
-			    select distinct riskscore into :riskscoreslist separated by " "
+			    select riskscore into :riskscoreslist separated by " "
 			    from riskscorefile where runid="&runid." order by riskscore;
 
-				select distinct label into :riskscoreslabels separated by "|"
+				select label into :riskscoreslabels separated by "|"
 			    from riskscorefile where runid="&runid." order by riskscore;
 
-				select distinct riskscorecat into :riskscorecats separated by "|"
+				select riskscorecat into :riskscorecats separated by "|"
 			    from riskscorefile where runid="&runid." order by riskscore;
 
-				select distinct riskscore into :riskscores_with_cats separated by " "
+				select riskscore into :riskscores_with_cats separated by " "
 			    from riskscorefile where runid="&runid." and strip(riskscorecat) ne "" order by riskscore;
 			quit;
 
@@ -369,6 +369,7 @@
 				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
 					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 					if index(upcase(healthchar),"&riskscore.") > 0 or index(upcase(medproduse),"&riskscore.") or index(upcase(utilizationintensity),"&riskscore.") then &riskscore. = "Y";		              
+					else &riskscore. = "N";
 				%end;
 			%end;             		
             if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
