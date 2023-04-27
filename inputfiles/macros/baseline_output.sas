@@ -284,8 +284,10 @@
 			%let fn_i_covar=N;
 			%let fn_mi_covar=N;
 
+			%let table1_dataset=table1;
+
 			* For each footnote, indentify the first row where the superscript should appear;
-			data repdata.table1&tableletter.;
+			data table1;
 			set repdata.table1&tableletter.;
 
 			fn_covnotinps=.;
@@ -332,7 +334,7 @@
 			end;
 			run;
 
-			proc means data=repdata.table1&tableletter. nway noprint;
+			proc means data=table1 nway noprint;
 			var fn_covnotinps fn_comorbidscore fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
 			output out=_fnmin(drop=_:) min=;
 			run;
@@ -359,6 +361,7 @@
 			%put &=fn_i_covar;
 			%put &=fn_mi_covar;
 		%end;
+		%else %let table1_dataset=repdata.table1&tableletter.;
 
 		data _footnotes;
 		   length footnote_order 3; 
@@ -484,8 +487,8 @@
 			%end;
 			run;
 
-			data repdata.table1&tableletter.;
-			set repdata.table1&tableletter.;
+			data table1;
+			set table1;
 			%if &fn_covnotinps. ne N %then %do;	
 				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
 			%end;
@@ -509,8 +512,8 @@
 			run;
 
 			* Build dynamic superscript and add them to the label;
-			data repdata.table1&tableletter.;
-			set repdata.table1&tableletter.;
+			data table1;
+			set table1;
 			* Because a covariate can have more than 1 superscript, we need to sort them in ascending order;
 			array fn[5] $32 _temporary_;
 			call missing(of fn[*]);
@@ -591,7 +594,7 @@
         %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
-        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
+        proc report data=&table1_dataset. nofs nowd spanrows split='*'
             style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
