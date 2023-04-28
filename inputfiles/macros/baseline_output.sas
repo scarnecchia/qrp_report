@@ -349,9 +349,18 @@
 			%if &fn_mi_covar. ne N %then %do; 		call symputx("fn_mi_covar",fn_mi_covar); 			%end;
 			run;
 
-			* Because fn_covnotinps default order (19) is prior to fn_labcovar (20) we need to push it forward if they were computed the same value;  
+			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
 			%if &fn_covnotinps. ne N and &fn_labcovar. ne N %then %do;
-				%if &fn_covnotinps. eq &fn_labcovar. %then %let fn_covnotinps=&fn_labcovar..1;
+				%if &fn_covnotinps. eq &fn_labcovar. %then %let fn_covnotinps=&fn_labcovar..1;				
+			%end;
+			%if &fn_nopreg_i_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_nopreg_i_covar. eq &fn_labcovar. %then %let fn_nopreg_i_covar=&fn_labcovar..1;			
+			%end;
+			%if &fn_i_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_i_covar. eq &fn_labcovar. %then %let fn_i_covar=&fn_labcovar..1;				
+			%end;
+			%if &fn_mi_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_mi_covar. eq &fn_labcovar. %then %let fn_mi_covar=&fn_labcovar..1;				
 			%end;
 
 			%put &=fn_covnotinps;
