@@ -526,11 +526,11 @@
 			* Because a covariate can have more than 1 superscript, we need to sort them in ascending order;
 			array fn[5] $32 _temporary_;
 			call missing(of fn[*]);
-			fn[1]=fn_covnotinps;
-			fn[2]=fn_comorbidscore;
-			fn[3]=fn_nopreg_i_covar;
-			fn[4]=fn_i_covar;
-			fn[5]=fn_mi_covar;
+			fn[1]=put(fn_covnotinps, best.);
+			fn[2]=put(fn_comorbidscore, best.);
+			fn[3]=put(fn_nopreg_i_covar, best.);
+			fn[4]=put(fn_i_covar, best.);
+			fn[5]=put(fn_mi_covar, best.);
 			call sortc(of fn[*]);
 
 			length superscript $50;
