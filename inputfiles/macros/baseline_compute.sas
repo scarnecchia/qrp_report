@@ -326,6 +326,7 @@
         
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
+		%global riskscoreslist_quoted;
 		%let riskscoreslist_quoted=;
 		%let riskscoreslabels=;
 		%let riskscorecats=;
