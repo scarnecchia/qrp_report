@@ -1916,15 +1916,20 @@
 				/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
 				%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
 					if codepop="I" then do;
-						comp_mean0=.;
-						comp_std0=.;
-						comp_mean0_char="N/A";
-						comp_std0_char="N/A";
-						%if "&computebalance." = "Y" %then %do;
-							ad0=.;
-							sd0=.;
-							ad0_char="N/A";
-							sd0_char="N/A";
+						%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+						%else %let numloop=0;
+
+                		%do dploop = 0 %to &numloop.;
+							comp_mean&dploop.=.;
+							comp_std&dploop.=.;
+							comp_mean&dploop._char="N/A";
+							comp_std&dploop._char="N/A";
+							%if "&computebalance." = "Y" %then %do;
+								ad&dploop.=.;
+								sd&dploop.=.;
+								ad&dploop._char="N/A";
+								sd&dploop._char="N/A";
+							%end;
 						%end;
 					end;
 				%end;
@@ -2016,15 +2021,20 @@
 					/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
 					%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
 						if codepop="I" then do;
-							comp_mean0=.;
-							comp_std0=.;
-							comp_mean0_char="N/A";
-							comp_std0_char="N/A";
-							%if "&computebalance." = "Y" %then %do;
-								ad0=.;
-								sd0=.;
-								ad0_char="N/A";
-								sd0_char="N/A";
+							%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+							%else %let numloop=0;
+
+                			%do dploop = 0 %to &numloop.;
+								comp_mean&dploop.=.;
+								comp_std&dploop.=.;
+								comp_mean&dploop._char="N/A";
+								comp_std&dploop._char="N/A";
+								%if "&computebalance." = "Y" %then %do;
+									ad&dploop.=.;
+									sd&dploop.=.;
+									ad&dploop._char="N/A";
+									sd&dploop._char="N/A";
+								%end;
 							%end;
 						end;
 					%end;

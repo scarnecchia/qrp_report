@@ -1110,7 +1110,15 @@
             %put The reporting code will abort;
             %abort;
         %end;
-        
+
+        /* Type 3 tree weekdays table is not requested through tablefile
+            and will be stored and processed independently */
+        %if &reporttype = TREE3 %then %do;
+            data _null_;
+                set userstrata(keep=tableid);
+                if lowcase(tableid) = 't3treewkdays' then call symputx('t3treewkdaysdset','t3treewkdays');
+            run;
+        %end;
     %end;
 
     /*Read in TableFile, alphabetize variables, and assign title*/
