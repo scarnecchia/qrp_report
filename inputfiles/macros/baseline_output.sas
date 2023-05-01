@@ -117,12 +117,16 @@
 				%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
 				subgroup subgroupcat
 				%end;
+				%if %index(&reporttype,T4) > 0 %then %do;
+				codepop
+				%end;
                 ;
             run;
         %end;
 
 		/* Select Footnotes */  
 		%let covnotinpsorder = 19;
+		%let fn_labcovar = 20;
 		%global covarlablabels;
 		%let covarlablabels=;
 		/*need to reorder the footnotes when covnotinps is populated because 
@@ -266,6 +270,108 @@
 		  run;
         %end;
 
+		* For type 4 reports, process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I);
+		%if %index(&reporttype,T4) > 0 %then %do;
+			/* Because the order of the following footnotes can change and because there can be 
+			   many diferent combination of superscripts involving them, we must reassess order 
+			   and assign superscript dynamically for each covariate
+			*/
+
+			%let fn_covnotinps=N;
+			%let fn_comorbidscore=N;
+			%let fn_labcovar=N;
+			%let fn_nopreg_i_covar=N;
+			%let fn_i_covar=N;
+			%let fn_mi_covar=N;
+
+			%let table1_dataset=table1;
+
+			* For each footnote, indentify the first row where the superscript should appear;
+			data table1;
+			set repdata.table1&tableletter.;
+
+			fn_covnotinps=.;
+			fn_comorbidscore=.;
+			fn_labcovar=.;
+			fn_nopreg_i_covar=.;
+			fn_i_covar=.;
+			fn_mi_covar=.;
+
+			%if %length(&covnotinps.) > 0 %then %do;		
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covnotinps.)) 
+					%if %length(&covarlablabels.) > 0 %then %do; 
+				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
+					%end;
+				then do;
+					fn_covnotinps=_N_;
+					call symput("fn_covnotinps","Y");
+				end;		
+			%end;
+			%if &comorbidscore = Y %then %do;
+				if metvar ="COMORBIDSCORE" then do;
+					fn_comorbidscore=_N_;
+					call symput("fn_comorbidscore","Y");
+				end;
+			%end;
+			%if %str("&labcharacteristics.") ^= %str("missing") %then %do;
+				if grouper="Laboratory Characteristics" and metvar="" then do;
+					fn_labcovar=_N_;
+					call symput("fn_labcovar","Y");
+				end;	
+			%end;
+			if codepop="I" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
+				fn_i_covar=_N_;
+				call symput("fn_i_covar","Y");
+
+				%if &includenonpregnant. eq Y %then %do;
+					fn_nopreg_i_covar=_N_;
+					call symput("fn_nopreg_i_covar","Y");
+				%end;
+			end;
+			if codepop="MI" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
+				fn_mi_covar=_N_;
+				call symput("fn_mi_covar","Y");
+			end;
+			run;
+
+			proc means data=table1 nway noprint;
+			var fn_covnotinps fn_comorbidscore fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
+			output out=_fnmin(drop=_:) min=;
+			run;
+
+			data _null_;
+			set _fnmin;
+			%if &fn_covnotinps. ne N %then %do; 	call symputx('fn_covnotinps',fn_covnotinps); 		%end;
+			%if &fn_comorbidscore. ne N %then %do; 	call symputx("fn_comorbidscore",fn_comorbidscore); 	%end;
+			%if &fn_labcovar. ne N %then %do; 		call symputx("fn_labcovar",fn_labcovar); 			%end;
+			%if &fn_nopreg_i_covar. ne N %then %do; call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);%end;
+			%if &fn_i_covar. ne N %then %do; 		call symputx("fn_i_covar",fn_i_covar); 				%end;
+			%if &fn_mi_covar. ne N %then %do; 		call symputx("fn_mi_covar",fn_mi_covar); 			%end;
+			run;
+
+			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
+			%if &fn_covnotinps. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_covnotinps. eq &fn_labcovar. %then %let fn_covnotinps=&fn_labcovar..1;				
+			%end;
+			%if &fn_nopreg_i_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_nopreg_i_covar. eq &fn_labcovar. %then %let fn_nopreg_i_covar=&fn_labcovar..1;			
+			%end;
+			%if &fn_i_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_i_covar. eq &fn_labcovar. %then %let fn_i_covar=&fn_labcovar..1;				
+			%end;
+			%if &fn_mi_covar. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_mi_covar. eq &fn_labcovar. %then %let fn_mi_covar=&fn_labcovar..1;				
+			%end;
+
+			%put &=fn_covnotinps;
+			%put &=fn_comorbidscore;
+			%put &=fn_labcovar;
+			%put &=fn_nopreg_i_covar;
+			%put &=fn_i_covar;
+			%put &=fn_mi_covar;
+		%end;
+		%else %let table1_dataset=repdata.table1&tableletter.;
+
 		data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
@@ -316,7 +422,15 @@
 		   /* Comorbidscore is specified */
 		   %if &comorbidscore = Y %then %do; 18 %end;
 		   /* Lab characteristics specified. */
-		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;		   
+		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;		
+		   %if %index(&reporttype,T4) > 0 %then %do;
+			  /* Non pregnant cohort with infant covariates */
+			  %if &fn_nopreg_i_covar. ne N %then %do; 21 %end;
+			  /*Infant covariates */
+			  %if &fn_i_covar. ne N %then %do; 22 %end;
+			  /* Mother and Infant covariates */
+			  %if &fn_mi_covar. ne N %then %do; 23 %end;
+		   %end; 
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
             or (type='type4' and order in (-2 
@@ -325,7 +439,108 @@
                 ));
 		  by order;
 		  footnote_order = _n_;
+
+		  %if %index(&reporttype,T4) > 0 %then %do;
+			* Overwrite original order with dynamically computed order;
+			order_orig=order;
+
+			%if &fn_covnotinps. ne N %then %do;	
+				* if &covnotinpsorder. < 18 then the footnote order does not need to be reassessed;
+				if order >=18 and order=&covnotinpsorder. then order=&fn_covnotinps.; 				
+			%end;
+			%if &fn_comorbidscore. ne N %then %do; 
+				if order=18 then order=&fn_comorbidscore.; 		
+			%end;
+			%if &fn_labcovar. ne N %then %do; 
+				if order=20 then order=&fn_labcovar.; 		
+			%end;
+			%if &fn_nopreg_i_covar. ne N %then %do; 
+				if order=21 then order=&fn_nopreg_i_covar.;				
+			%end;
+			%if &fn_i_covar. ne N %then %do; 
+				if order=22 then order=&fn_i_covar.; 		
+			%end;
+			%if &fn_mi_covar. ne N %then %do; 
+				if order=23 then order=&fn_mi_covar.; 		
+			%end;
+		  %end;
 	    run;
+
+		%if %index(&reporttype,T4) > 0 %then %do;
+			* Compute new superscript and footnote values based on dynamic values;
+			proc sort data=_footnotes;
+			by order order_orig;
+			run;
+
+			data _footnotes;
+			set _footnotes;
+			footnote_order = _n_;
+
+			%if &fn_covnotinps. ne N %then %do;	
+				if order_orig >=18 and order_orig=&covnotinpsorder. then call symputx("fn_covnotinps",footnote_order);
+			%end;
+			%if &fn_comorbidscore. ne N %then %do; 
+				if order_orig=18 then call symputx("fn_comorbidscore",footnote_order);
+			%end;
+			%if &fn_labcovar. ne N %then %do; 
+				if order_orig=20 then call symputx("fn_labcovar",order);
+			%end;
+			%if &fn_nopreg_i_covar. ne N %then %do; 
+				if order_orig=21 then call symputx("fn_nopreg_i_covar",footnote_order);
+			%end;
+			%if &fn_i_covar. ne N %then %do; 
+				if order_orig=22 then call symputx("fn_i_covar",footnote_order);
+			%end;
+			%if &fn_mi_covar. ne N %then %do; 
+				if order_orig=23 then call symputx("fn_mi_covar",footnote_order);
+			%end;
+			run;
+
+			data table1;
+			set table1;
+			%if &fn_covnotinps. ne N %then %do;	
+				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
+			%end;
+			%if &fn_comorbidscore. ne N %then %do; 
+				if fn_comorbidscore ne . then fn_comorbidscore=&fn_comorbidscore.;
+			%end;
+			%if &fn_labcovar. eq N %then %do;
+				call symputx("fn_labcovar",20);
+			%end;
+			drop fn_labcovar;
+			%if &fn_nopreg_i_covar. ne N %then %do; 
+				if fn_nopreg_i_covar ne . then fn_nopreg_i_covar=&fn_nopreg_i_covar.;
+			%end;
+			%if &fn_i_covar. ne N %then %do; 
+				if fn_i_covar ne . then fn_i_covar=&fn_i_covar.;
+			%end;
+			%if &fn_mi_covar. ne N %then %do; 
+				if fn_mi_covar ne . then fn_mi_covar=&fn_mi_covar.;
+			%end;	
+
+			run;
+
+			* Build dynamic superscript and add them to the label;
+			data table1;
+			set table1;
+			* Because a covariate can have more than 1 superscript, we need to sort them in ascending order;
+			array fn[5] $32 _temporary_;
+			call missing(of fn[*]);
+			fn[1]=put(fn_covnotinps, best.);
+			fn[2]=put(fn_comorbidscore, best.);
+			fn[3]=put(fn_nopreg_i_covar, best.);
+			fn[4]=put(fn_i_covar, best.);
+			fn[5]=put(fn_mi_covar, best.);
+			call sortc(of fn[*]);
+
+			length superscript $50;
+			superscript = catx(',',of fn[*]);
+			superscript=compress(strip(tranwrd(superscript,".,","")),".");
+			if superscript ne "" then superscript="^{super" || strip(superscript) || "}";
+			label=strip(label) || strip(superscript);
+			drop codepop fn_: superscript;
+			run;
+		%end;
 
         /*Set first word for SDthreshold footnote*/
 		%if %str(&sdthreshold.) ne %str() %then %do;
@@ -339,7 +554,7 @@
 		  
 		  select description into: fn1 - :fn&num_fn.
 		  from _footnotes
-		  order by order;
+		  order by order %if %index(&reporttype,T4) > 0 %then %do; , order_orig %end;;
 		quit;
 
  
@@ -357,7 +572,7 @@
           %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps), COMORBIDSCORE) > 0 %then %do;
             &covnotinpsorder. %end;);
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
-		%assign_superscripts(type =labcovar, order =20);
+		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
 
 		
         /*determine optimal report formatting*/
@@ -388,7 +603,7 @@
         %if %eval(&numcolumns.=6) %then %let width = 1;
         %end;
         ods proclabel = "Table 1&tableletter.";
-        proc report data=repdata.table1&tableletter. nofs nowd spanrows split='*'
+        proc report data=&table1_dataset. nofs nowd spanrows split='*'
             style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
@@ -463,7 +678,10 @@
             compute label;
 
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");
-			  else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
+			  /* For type 4 the superscript is already in the label */
+			  %if %index(&reporttype,T4) = 0 %then %do;
+			  	else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
+			  %end;
 			  %if %length(&covnotinps.) > 0 %then %do;
 			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
                   then label = "Gestational age&super_gestage. at delivery&super_covar.";
@@ -474,13 +692,16 @@
                   then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
 			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
-			  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
-				else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
+			  /* For type 4 the superscripts are already in the labels */
+			  %if %index(&reporttype,T4) = 0 %then %do;
+				  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
+					else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
+				  %end;
+	              %if %length(&covnotinps.) > 0 %then %do;
+				    /*Comborbidscore already included in &super_comorbidscore*/
+	                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
+	              %end;
 			  %end;
-              %if %length(&covnotinps.) > 0 %then %do;
-			    /*Comborbidscore already included in &super_comorbidscore*/
-                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
-              %end;
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
@@ -520,7 +741,7 @@
             endcomp;
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
-			                        height=1.75in bordertopwidth = &bordersize];
+			                        height=2.0in bordertopwidth = &bordersize];
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
@@ -535,7 +756,7 @@
 
         /*clean up*/
         proc datasets nowarn noprint lib=work;
-            delete _footnotes;
+            delete _footnotes  _fnmin;
         quit;
 
     %mend baseline_procreport;

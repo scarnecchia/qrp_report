@@ -1445,7 +1445,8 @@
 
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
-                                    covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
+                                    covarname(in=b keep=cov_varname studyname %if %index(&reporttype,T4) > 0 %then %do;
+									codepop %end; where=(upcase(cov_varname) in (&labcharacteristics))) 
                                 %end;;
                 length analysisgrp $40 table weight $30;
                 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
@@ -1871,6 +1872,27 @@
                     %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ' ','e'), sortorder3=, sortorder4=);
                     %end;
                 end;
+
+				/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
+				%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
+					if codepop="I" then do;
+						%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+						%else %let numloop=0;
+
+                		%do dploop = 0 %to &numloop.;
+							comp_mean&dploop.=.;
+							comp_std&dploop.=.;
+							comp_mean&dploop._char="N/A";
+							comp_std&dploop._char="N/A";
+							%if "&computebalance." = "Y" %then %do;
+								ad&dploop.=.;
+								sd&dploop.=.;
+								ad&dploop._char="N/A";
+								sd&dploop._char="N/A";
+							%end;
+						%end;
+					end;
+				%end;
             end;
             %end;
 
@@ -1930,6 +1952,27 @@
                     covarorderlist = tranwrd(resolve('&healthchar. &medproduse. &UtilizationIntensity'), '"', "");                     
                     %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(metvar), ' ','e'));
                     %end;
+
+					/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
+					%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
+						if codepop="I" then do;
+							%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+							%else %let numloop=0;
+
+                			%do dploop = 0 %to &numloop.;
+								comp_mean&dploop.=.;
+								comp_std&dploop.=.;
+								comp_mean&dploop._char="N/A";
+								comp_std&dploop._char="N/A";
+								%if "&computebalance." = "Y" %then %do;
+									ad&dploop.=.;
+									sd&dploop.=.;
+									ad&dploop._char="N/A";
+									sd&dploop._char="N/A";
+								%end;
+							%end;
+						end;
+					%end;
                 end;
             end;
             
@@ -1951,6 +1994,9 @@
                 %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
                 subgroup subgroupcat
                 %end;
+				%if %index(&reporttype,T4) > 0 %then %do;
+				codepop
+				%end;
                 ;
         run;
 
@@ -1989,7 +2035,8 @@
 
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
-                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
+                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
+														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;
