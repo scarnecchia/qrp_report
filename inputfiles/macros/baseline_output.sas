@@ -763,9 +763,9 @@
               line text $Varying. num; 
             endcomp;
 
-            /*Indent demographic header lines and lab covariate record lines*/
+            
             compute label;
-
+			  /*Add static superscripts to labels*/
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  
 			  %if %length(&covnotinps.) > 0 %then %do;
 			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
@@ -785,7 +785,17 @@
 	              %if %length(&covnotinps.) > 0 %then %do;				   
 	                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "&super_covar.");
 	              %end;
-			  %end;			  
+			  %end;
+
+			  /*Indent demographic header lines, riskscore category lines and lab covariate record lines*/			
+			  %if %length(&riskscoreslist.) > 0 %then %do;
+				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));
+					%let riskscorename=%upcase(%scan(&riskscoreslist., &rskscore., %str( )));
+					if prxmatch("/&riskscorename._CAT*/",metvar) > 0 then do;
+						call define(_col_,'style','style={indent=25}');
+					end;
+				%end;
+			  %end; 
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
