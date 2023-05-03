@@ -1940,23 +1940,23 @@
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
-           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) or
-					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;   
+           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do;
+					or (substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;   
                 /*Assign grouper and sortorder1*/
-                if metvar in (&healthchar.) or
+                if metvar in (&healthchar.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
-                if metvar in (&medproduse.) or
+                if metvar in (&medproduse.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&medproduse.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
-                if metvar in (&UtilizationIntensity.) or
+                if metvar in (&UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&UtilizationIntensity.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
                 end;                
 				
