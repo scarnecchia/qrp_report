@@ -335,16 +335,16 @@
 		%if %eval(&nobs.>0) %then %do;		    
 			proc sql noprint;
 			    select riskscore into :riskscoreslist separated by " "
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select label into :riskscoreslabels separated by "|"
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select riskscorecat into :riskscorecats separated by "|"
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select riskscore into :riskscores_with_cats separated by " "
-			    from riskscorefile where runid="&runid." and strip(riskscorecat) ne "" order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by riskscore;
 			quit;
 
 			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
@@ -1964,7 +1964,7 @@
 						%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 
 						if metvar="&riskscore." then do;
-							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore.);
+							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=-1);
 						end;
 
 						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
@@ -1972,7 +1972,7 @@
 						%if %length(&riskscorecat.) > 0 %then %do;
 							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
 								if metvar="&riskscore._CAT&rskscorecat." then do;
-									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=0, sortorder3=&rskscorecat.);		
+									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
 								end;
 							%end;
 						%end;
@@ -2072,8 +2072,6 @@
 			if b then do;
 				label=strip(label) || " categories";
 				metvar="";
-				sortorder2=0;
-				sortorder3=0;
 				sortorder4=0;
 			end;
 			run;
