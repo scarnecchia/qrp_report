@@ -326,11 +326,9 @@
         
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
-		%global riskscoreslist_quoted;
 		%let riskscoreslist_quoted=;
 		%let riskscoreslabels=;
 		%let riskscorecats=;
-		%global riskscores_with_cats;
 		%let riskscores_with_cats=;
 
 		%isdata(dataset=riskscorefile);
