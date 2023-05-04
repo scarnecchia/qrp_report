@@ -676,7 +676,7 @@
             %let headerheight = .3;
         %end;
         %else %if %eval(&numcolumns.=6) %then %do;
-            %let labelwidth = 3.5;
+            %let labelwidth = 3;
             %let width = .85;
             %let linebreak = ^n;
             %let headerheight = .45;
