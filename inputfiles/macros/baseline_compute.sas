@@ -334,7 +334,7 @@
 		%isdata(dataset=riskscorefile);
 		%if %eval(&nobs.>0) %then %do;		    
 			proc sql noprint;
-			    select riskscore into :riskscoreslist separated by " "
+			    select upcase(riskscore) into :riskscoreslist separated by " "
 			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select label into :riskscoreslabels separated by "|"
@@ -343,7 +343,7 @@
 				select riskscorecat into :riskscorecats separated by "|"
 			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
-				select riskscore into :riskscores_with_cats separated by " "
+				select upcase(riskscore) into :riskscores_with_cats separated by " "
 			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by riskscore;
 			quit;
 
