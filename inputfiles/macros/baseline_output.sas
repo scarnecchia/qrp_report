@@ -629,8 +629,8 @@
 			length superscript $50;
 			superscript = catx(',',of fn[*]);
 			superscript=compress(strip(tranwrd(superscript,".,","")),".");
-			if superscript ne "" then superscript="^{super" || strip(superscript) || "}";
-			label=strip(label) || strip(superscript);			
+			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
+			label=catt(label, superscript);			
 			run;
 		%end;
 
