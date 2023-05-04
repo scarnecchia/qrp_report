@@ -373,11 +373,9 @@
 
 			data _null_;
 			set _fnmin;
-			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
-				%if &fn_comorbidscore. ne N %then %do; 	
-					%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
-					call symputx("fn_&riskscorename.",fn_&riskscorename.); 	
-				%end;
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));				
+				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+				call symputx("fn_&riskscorename.",fn_&riskscorename.); 					
 			%end;
 			%if &fn_comorbidscore_2. ne N %then %do; 	call symputx('fn_comorbidscore_2',fn_comorbidscore_2); 	%end;	
 			%if &fn_covnotinps. ne N %then %do; 		call symputx('fn_covnotinps',fn_covnotinps); 			%end;			
