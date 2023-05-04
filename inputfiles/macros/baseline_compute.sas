@@ -326,27 +326,25 @@
         
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
-		%global riskscoreslist_quoted;
 		%let riskscoreslist_quoted=;
 		%let riskscoreslabels=;
 		%let riskscorecats=;
-		%global riskscores_with_cats;
 		%let riskscores_with_cats=;
 
 		%isdata(dataset=riskscorefile);
 		%if %eval(&nobs.>0) %then %do;		    
 			proc sql noprint;
 			    select riskscore into :riskscoreslist separated by " "
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select label into :riskscoreslabels separated by "|"
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select riskscorecat into :riskscorecats separated by "|"
-			    from riskscorefile where runid="&runid." order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
 
 				select riskscore into :riskscores_with_cats separated by " "
-			    from riskscorefile where runid="&runid." and strip(riskscorecat) ne "" order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by riskscore;
 			quit;
 
 			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
@@ -1940,23 +1938,23 @@
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
-           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) or
-					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;   
+           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do;
+					or (substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;   
                 /*Assign grouper and sortorder1*/
-                if metvar in (&healthchar.) or
+                if metvar in (&healthchar.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
-                if metvar in (&medproduse.) or
+                if metvar in (&medproduse.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&medproduse.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
-                if metvar in (&UtilizationIntensity.) or
+                if metvar in (&UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
 					(substr(metvar,1,index(metvar,"_")-1) in (&UtilizationIntensity.) and 
-					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) then do;
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
                 end;                
 				
@@ -1966,7 +1964,7 @@
 						%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 
 						if metvar="&riskscore." then do;
-							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore.);
+							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=-1);
 						end;
 
 						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
@@ -1974,7 +1972,7 @@
 						%if %length(&riskscorecat.) > 0 %then %do;
 							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
 								if metvar="&riskscore._CAT&rskscorecat." then do;
-									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=0, sortorder3=&rskscorecat.);		
+									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
 								end;
 							%end;
 						%end;
@@ -2074,8 +2072,6 @@
 			if b then do;
 				label=strip(label) || " categories";
 				metvar="";
-				sortorder2=0;
-				sortorder3=0;
 				sortorder4=0;
 			end;
 			run;

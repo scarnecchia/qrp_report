@@ -496,6 +496,7 @@
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
         %let &&id&n.._pscssubgroupfile     = ;
+		%let &&id&n.._riskscorefile        = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
