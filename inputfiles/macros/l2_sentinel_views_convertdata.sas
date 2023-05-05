@@ -68,12 +68,10 @@
             from covarname;
 
             %if %sysfunc(exist(riskscorefile)) %then %do;
-                select cats(riskscore,'_CAT')
+                select distinct cats(riskscore,'_CAT')
                 into :riskscore_regex separated by '|'
                 from riskscorefile;
             %end;
-        %end;
-
         quit;
 
 
@@ -349,7 +347,9 @@
                     subgroupcat='';
                 end;
                 /* Remove categorical risk scores */
+                %if %length(&riskscore_regex) > 0 %then %do;
                 if prxmatch("/&riskscore_regex/",metvar) then delete;
+                %end;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
