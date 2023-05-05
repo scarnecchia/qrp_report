@@ -350,6 +350,8 @@
                 %if %length(&riskscore_regex) > 0 %then %do;
                 if prxmatch("/&riskscore_regex/i",metvar) then delete;
                 %end;
+                /* Remove risk score labels */
+                if grouper in ("Health Characteristics" "Health Service Utilization Intensity Metrics" "Medical Product Use") and missing(metvar) then delete;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
