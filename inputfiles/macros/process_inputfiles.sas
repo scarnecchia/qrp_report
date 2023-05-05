@@ -445,7 +445,7 @@
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile;
+            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -496,6 +496,7 @@
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
         %let &&id&n.._pscssubgroupfile     = ;
+		%let &&id&n.._riskscorefile        = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
@@ -2258,6 +2259,12 @@
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
                                 codedays,
+								%if %index(&reporttype,T4) > 0 %then %do;								
+								codepop,
+								/* codepop2 will be used to compute codepop for cc covariates*/
+								codepop as codepop2 format $6. length=6,
+								code,
+								%end;
                                 codetype,
                                 codecat
                 from infolder.&&&runid._covariatecodes.;
@@ -2267,6 +2274,47 @@
                 from studylen
                 where lower(name)='studyname';
             quit;
+
+			%if %index(&reporttype,T4) > 0 %then %do;
+				/* Determine codepop value for cc covariates if any */
+				data Covarname_cc;
+				set Covarname_&runid.;
+				where upcase(codecat)="CC";
+				code=compress(code,"andornotANDORNOT()");
+				run;
+
+				proc sql noprint;
+				select distinct covarnum into :cc_covars separated by " " 
+				from Covarname_cc;
+				quit;
+
+				%isdata(dataset=Covarname_cc);
+				%if %eval(&nobs.>0) %then %do;
+					%do cc_cov=1 %to %sysfunc(countw(&cc_covars.));
+						%let cc_covar=%scan(&cc_covars., &cc_cov.);
+
+						proc sql noprint;
+							select code into :cc_covarlist 
+							from Covarname_cc
+							where covarnum=&cc_covar.; 
+
+							select distinct codepop into :cc_codepop separated by " " 
+							from Covarname_&runid.
+							where covarnum in (&cc_covarlist.); 
+						quit;
+
+						data Covarname_&runid.;
+						set Covarname_&runid.; 
+						if covarnum=&cc_covar. then do;
+							codepop2="&cc_codepop";
+							if index(codepop2, "M")>0 and index(codepop2, "I")>0 then codepop="MI";
+							else if index(codepop2, "M")>0 then codepop="M";
+							else if index(codepop2, "I")>0 then codepop="I";
+						end;
+						run;
+					%end; /* loop through cc covariates */
+				%end; /* Covarname_cc contains data */
+			%end; /* T4 report type */
 
             /* Need to set maximum studyname length across all runs */
             %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
@@ -2314,7 +2362,7 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         by runid covarnum;
     run;  
     %end;
@@ -2409,6 +2457,67 @@
     %mend;
     %assigncovarlabels(dataset=tablefile, var=tablesub);
     %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
+
+
+/***************************************************************************************************
+*  Create stacked dataset containing riskscores data for all runs                                            
+***************************************************************************************************/
+	%do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        %if %sysfunc(exist(infolder.&&&runid._riskscorefile.))=1 %then %do;
+
+            /* Get riskscorecat length per runid */
+            proc contents data = infolder.&&&runid._riskscorefile. out=riskscorecatlen(keep=name length) noprint;
+            run;
+
+            proc sql noprint;    
+                create table _riskscorefile_&runid. as 
+                select distinct riskscore, 
+                                strip(riskscorecat) as riskscorecat, 
+                                "&runid" as runid length=5                                 							
+                from infolder.&&&runid._riskscorefile.;
+
+                select length
+                into: MAXLEN_RISKSCORECAT trimmed
+                from riskscorecatlen
+                where lower(name)='riskscorecat';
+            quit;
+
+
+            /* Need to set maximum riskscorecat length across all runs */          
+            %if %sysfunc(exist(riskscorefile))=0 %then %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set _riskscorefile_&runid.;
+                run;     
+            %end;
+            %else %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set riskscorefile _riskscorefile_&runid.;
+                run;     
+            %end;
+
+			/* Assign labels for standard risk scores */ 
+			data riskscorefile;
+			set riskscorefile;
+			format label $70.;
+			if upcase(riskscore) = "ADCSI" then label="Adapted Diabetes Complications Severity Index (aDCSI)";
+			else if upcase(riskscore) = "CHA2DS2VASC" then label="CHA^{sub 2}DS^{sub 2}-VASc score";
+			else if upcase(riskscore) = "COMORBIDSCORE" then label="Combined comorbidity score";
+			else if upcase(riskscore) = "FRAILTY" then label="Claims-Based frailty index";
+			else if upcase(riskscore) = "HASBLED" then label="HAS-BLED score";
+			else if upcase(riskscore) = "OBSCOMORB" then label="Obstetric comorbidity index";
+			else if upcase(riskscore) = "PEDCOMORB" then label="Pediatric comorbidity index";
+			else label=riskscore;			
+			run;
+
+			/*Delete temporary dataset*/
+		    proc datasets nowarn noprint nolist lib=work; 
+		    	delete riskscorecatlen _riskscorefile_:; 
+		    quit; 
+        %end;
+    %end;  
 
 /***************************************************************************************************
 *   Clean up                                                
