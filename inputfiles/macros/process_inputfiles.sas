@@ -2483,6 +2483,7 @@
                 where lower(name)='riskscorecat';
             quit;
 
+			%if %eval(&MAXLEN_RISKSCORECAT. < 7) %then %let MAXLEN_RISKSCORECAT=7;
 
             /* Need to set maximum riskscorecat length across all runs */          
             %if %sysfunc(exist(riskscorefile))=0 %then %do;
@@ -2509,7 +2510,8 @@
 			else if upcase(riskscore) = "HASBLED" then label="HAS-BLED score";
 			else if upcase(riskscore) = "OBSCOMORB" then label="Obstetric comorbidity index";
 			else if upcase(riskscore) = "PEDCOMORB" then label="Pediatric comorbidity index";
-			else label=riskscore;			
+			else label=riskscore;		
+			if strip(riskscorecat) = "" then riskscorecat="missing";	
 			run;
 
 			/*Delete temporary dataset*/

@@ -344,7 +344,7 @@
 			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
 
 				select upcase(riskscore) into :riskscores_with_cats separated by " "
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by label;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "missing" order by label;
 			quit;
 
 			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
@@ -1969,7 +1969,7 @@
 
 						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
 						
-						%if %length(&riskscorecat.) > 0 %then %do;
+						%if %str("&riskscorecat.") ne %str("missing") %then %do;
 							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
 								if metvar="&riskscore._CAT&rskscorecat." then do;
 									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
