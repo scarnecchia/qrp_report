@@ -324,14 +324,53 @@
             run;
         %end;
         
-        /* Add cohortdef and comorbidscore to baselinefile */
+        /* Initialize variables related to risk scores */
+		%let riskscoreslist=;
+		%let riskscoreslist_quoted=;
+		%let riskscoreslabels=;
+		%let riskscorecats=;
+		%let riskscores_with_cats=;
+
+		%isdata(dataset=riskscorefile);
+		%if %eval(&nobs.>0) %then %do;		    
+			proc sql noprint;
+			    select upcase(riskscore) into :riskscoreslist separated by " "
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select label into :riskscoreslabels separated by "|"
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select riskscorecat into :riskscorecats separated by "|"
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select upcase(riskscore) into :riskscores_with_cats separated by " "
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by label;
+			quit;
+
+			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
+			%create_comma_charlist(inlist=&riskscores_with_cats, outlist=riskscores_with_cats);
+		%end; 
+
+        /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length comorbidscore gestationalage $1 cohortdef $5;
+          length ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB gestationalage $1 cohortdef $5;
           set baselinefile;
-          if order=&b. then do;
-            if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
-              then comorbidscore = "Y";
-              else comorbidscore = "N";
+          if order=&b. then do;	
+		  	/* Initialize standard risk scores variable indicators */
+		  	ADCSI="N";
+			CHA2DS2VASC="N";
+			COMORBIDSCORE="N";
+			FRAILTY="N";
+			HASBLED="N";
+			OBSCOMORB="N";
+			PEDCOMORB="N";
+			%if %length(&riskscoreslist.) > 0 %then %do;
+				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
+					if index(upcase(healthchar),"&riskscore.") > 0 or index(upcase(medproduse),"&riskscore.") or index(upcase(utilizationintensity),"&riskscore.") then &riskscore. = "Y";		              
+					else &riskscore. = "N";
+				%end;
+			%end;             		
             if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
               else gestationalage = "N";
             cohortdef = "&cohortdef.";
@@ -1899,22 +1938,47 @@
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
-            else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) then do;   
+           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do;
+					or (substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;   
                 /*Assign grouper and sortorder1*/
-                if metvar in (&healthchar.) then do;
+                if metvar in (&healthchar.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
-                if metvar in (&medproduse.) then do;
+                if metvar in (&medproduse.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&medproduse.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
-                if metvar in (&UtilizationIntensity.) then do;
+                if metvar in (&UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
-                end;
+                end;                
+				
+				/* Riskscores */
+				%if %length(&riskscoreslist.) > 0 %then %do;
+					%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+						%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 
-                /*Assign labels and sortorder2*/
-                if metvar = 'COMORBIDSCORE' then do;
-                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
-                end;
+						if metvar="&riskscore." then do;
+							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=-1);
+						end;
+
+						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
+						
+						%if %length(&riskscorecat.) > 0 %then %do;
+							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
+								if metvar="&riskscore._CAT&rskscorecat." then do;
+									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
+								end;
+							%end;
+						%end;
+					%end;
+				%end;
+
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
                 end;
@@ -1999,6 +2063,19 @@
 				%end;
                 ;
         run;
+
+		/* If risk score categories are output then add header for each score */
+		%if %length(&riskscores_with_cats.) > 0 %then %do;
+			data baseline_aggregatelabels;
+			set baseline_aggregatelabels
+				baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=b);
+			if b then do;
+				label=strip(label) || " categories";
+				metvar="";
+				sortorder4=0;
+			end;
+			run;
+		%end;
 
         /*Merge in agefmtsort to correctly update sortorder*/
         proc sql noprint;

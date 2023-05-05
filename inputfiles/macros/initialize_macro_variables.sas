@@ -95,10 +95,12 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
     %let labcharacteristics=;
+	%let riskscoreslist_quoted=;
+	%let riskscores_with_cats=;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
