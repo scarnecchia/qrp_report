@@ -335,16 +335,16 @@
 		%if %eval(&nobs.>0) %then %do;		    
 			proc sql noprint;
 			    select upcase(riskscore) into :riskscoreslist separated by " "
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
 
 				select label into :riskscoreslabels separated by "|"
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
 
 				select riskscorecat into :riskscorecats separated by "|"
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
 
 				select upcase(riskscore) into :riskscores_with_cats separated by " "
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by riskscore;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by label;
 			quit;
 
 			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
