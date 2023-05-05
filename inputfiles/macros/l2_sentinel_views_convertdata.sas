@@ -348,7 +348,7 @@
                 end;
                 /* Remove categorical risk scores */
                 %if %length(&riskscore_regex) > 0 %then %do;
-                if prxmatch("/&riskscore_regex/",metvar) then delete;
+                if prxmatch("/&riskscore_regex/i",metvar) then delete;
                 %end;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
