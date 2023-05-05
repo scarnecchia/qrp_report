@@ -49,6 +49,7 @@
         %let psdistflag = ;
         %let repdatadsn=;
         %let psmodelvars=;
+        %let riskscore_regex=;
 
         /* Check to see if same periods were specified */
         %let dupperiods=0;
@@ -65,6 +66,14 @@
             into :covarnumlabels 
             separated by '|'
             from covarname;
+
+            %if %sysfunc(exist(riskscorefile)) %then %do;
+                select cats(riskscore,'_CAT')
+                into :riskscore_regex separated by '|'
+                from riskscorefile;
+            %end;
+        %end;
+
         quit;
 
 
@@ -340,7 +349,7 @@
                     subgroupcat='';
                 end;
                 /* Remove categorical risk scores */
-                if index(metvar,'_CAT') then delete;
+                if prxmatch("/&riskscore_regex/",metvar) then delete;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
