@@ -95,12 +95,13 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
     %let labcharacteristics=;
 	%let riskscoreslist_quoted=;
 	%let riskscores_with_cats=;
+	%let riskscorelibrary=ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;

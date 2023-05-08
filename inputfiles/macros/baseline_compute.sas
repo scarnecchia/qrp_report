@@ -353,17 +353,14 @@
 
         /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB gestationalage $1 cohortdef $5;
+          length &riskscorelibrary. gestationalage $1 cohortdef $5;
           set baselinefile;
           if order=&b. then do;	
 		  	/* Initialize standard risk scores variable indicators */
-		  	ADCSI="N";
-			CHA2DS2VASC="N";
-			COMORBIDSCORE="N";
-			FRAILTY="N";
-			HASBLED="N";
-			OBSCOMORB="N";
-			PEDCOMORB="N";
+		    %do rskscore=1 %to %sysfunc(countw(&riskscorelibrary., ' '));
+				%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));
+				&riskscore. = "N";
+			%end;		  	
 			%if %length(&riskscoreslist.) > 0 %then %do;
 				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
 					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));

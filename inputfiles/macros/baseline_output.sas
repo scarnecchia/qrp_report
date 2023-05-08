@@ -272,7 +272,7 @@
 
 		%global standard_riskscores_withfn_clist;
 		%let standard_riskscores_withfn_clist=;
-		%let standard_riskscores_withfn = ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB /* No footnote available for PEDCOMORB */;
+		%let standard_riskscores_withfn = &riskscorelibrary.;
 		%create_comma_charlist(inlist=&standard_riskscores_withfn, outlist=standard_riskscores_withfn_clist);
 		%let riskscore_footnotes=N;
 		%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
@@ -900,13 +900,10 @@
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
 				call symputx('cohortdef',cohortdef);
-				call symputx('ADCSI',ADCSI);
-				call symputx('CHA2DS2VASC',CHA2DS2VASC);
-				call symputx('COMORBIDSCORE',COMORBIDSCORE);
-				call symputx('FRAILTY',FRAILTY);
-				call symputx('HASBLED',HASBLED);
-				call symputx('OBSCOMORB',OBSCOMORB);
-				call symputx('PEDCOMORB',PEDCOMORB);
+				%do rskscore=1 %to %sysfunc(countw(&riskscorelibrary., ' '));
+					%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));					
+					call symputx("&riskscore.",&riskscore.);
+				%end;				
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
 				call symputx('unique_psestimate_orig',unique_psestimate);
