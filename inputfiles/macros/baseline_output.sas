@@ -291,8 +291,7 @@
 
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				%let fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=N;
-			%end;			
-			%let fn_comorbidscore_2=N; /* Comorbidscore has a two footnotes */
+			%end;						
 			%let fn_covnotinps=N;			
 			%let fn_labcovar=N;
 			%let fn_nopreg_i_covar=N;
@@ -307,8 +306,7 @@
 
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=.;
-			%end;			
-			fn_comorbidscore_2=.; /* Comorbidscore has a two footnotes */
+			%end;						
 			fn_covnotinps=.;			
 			fn_labcovar=.;
 			fn_nopreg_i_covar=.;
@@ -322,11 +320,7 @@
 					%if &&&riskscorename. = Y %then %do;
 						if metvar ="&riskscorename." then do;
 							fn_&riskscorename=_N_;
-							call symput("fn_&riskscorename.","Y");
-							if metvar="COMORBIDSCORE" then do;
-								fn_comorbidscore_2=_N_;
-								call symput("fn_comorbidscore_2","Y"); 
-							end;
+							call symput("fn_&riskscorename.","Y");							
 						end;
 					%end;
 				%end;
@@ -367,7 +361,7 @@
 
 			proc means data=table1 nway noprint;
 			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
-				fn_comorbidscore_2 fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
+				fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
@@ -377,7 +371,6 @@
 				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 				call symputx("fn_&riskscorename.",fn_&riskscorename.); 					
 			%end;
-			%if &fn_comorbidscore_2. ne N %then %do; 	call symputx('fn_comorbidscore_2',fn_comorbidscore_2); 	%end;	
 			%if &fn_covnotinps. ne N %then %do; 		call symputx('fn_covnotinps',fn_covnotinps); 			%end;			
 			%if &fn_labcovar. ne N %then %do; 			call symputx("fn_labcovar",fn_labcovar); 				%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 	call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);	%end;
@@ -450,7 +443,9 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   /* Comorbidscore is specified */
-		   %if &COMORBIDSCORE = Y %then %do; 18 24 %end;
+		   %if &COMORBIDSCORE = Y %then %do; 18 %end;
+		   /* PEDCOMORB score is specified */
+		   %if &PEDCOMORB = Y %then %do; 24 %end;
 		   /* HASBLED score is specified */
 		   %if &HASBLED = Y %then %do; 25 %end;
 		   /* CHA2DS2VASC score is specified */
@@ -491,8 +486,8 @@
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order=18 then order=&fn_comorbidscore.; 		
 			%end;
-			%if &fn_comorbidscore_2. ne N %then %do; 
-				if order=24 then order=&fn_comorbidscore_2.; 		
+			%if &fn_pedcomorb. ne N %then %do; 
+				if order=24 then order=&fn_pedcomorb.; 		
 			%end;
 			%if &fn_hasbled. ne N %then %do; 
 				if order=25 then order=&fn_hasbled.; 		
@@ -540,8 +535,8 @@
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order_orig=18 then call symputx("fn_comorbidscore",footnote_order);
 			%end;
-			%if &fn_comorbidscore_2. ne N %then %do; 
-				if order_orig=24 then call symputx("fn_comorbidscore_2",footnote_order);
+			%if &fn_pedcomorb. ne N %then %do; 
+				if order_orig=24 then call symputx("fn_pedcomorb",footnote_order);
 			%end;
 			%if &fn_hasbled. ne N %then %do; 
 				if order_orig=25 then call symputx("fn_hasbled",footnote_order);
@@ -581,10 +576,7 @@
 					if fn_&riskscorename ne . then fn_&riskscorename=&&fn_&riskscorename.;
 				%end;
 			%end;
-
-			%if &fn_comorbidscore_2. ne N %then %do;	
-				if fn_comorbidscore_2 ne . then fn_comorbidscore_2=&fn_comorbidscore_2.;
-			%end;
+			
 			%if &fn_covnotinps. ne N %then %do;	
 				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
 			%end;			
@@ -606,7 +598,7 @@
 
 			* Build dynamic superscript and add them to the label;
 			%let num_riskscores = %sysfunc(countw(&standard_riskscores_withfn., ' '));
-			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 5);
+			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 4);
 
 			data table1;
 			set table1;
@@ -616,12 +608,11 @@
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 				fn[&rskscore.]=put(fn_&riskscorename., best.);
-			%end;
-			fn[&num_riskscores. + 1]=put(fn_comorbidscore_2, best.);
-			fn[&num_riskscores. + 2]=put(fn_covnotinps, best.);
-			fn[&num_riskscores. + 3]=put(fn_nopreg_i_covar, best.);
-			fn[&num_riskscores. + 4]=put(fn_i_covar, best.);
-			fn[&num_riskscores. + 5]=put(fn_mi_covar, best.);			
+			%end;			
+			fn[&num_riskscores. + 1]=put(fn_covnotinps, best.);
+			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
+			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
+			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);			
 			call sortc(of fn[*]);
 
 			length superscript $50;
