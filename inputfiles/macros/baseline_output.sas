@@ -270,15 +270,29 @@
 		  run;
         %end;
 
-		* For type 4 reports, process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I);
-		%if %index(&reporttype,T4) > 0 %then %do;
+		%global standard_riskscores_withfn_clist;
+		%let standard_riskscores_withfn_clist=;
+		%let standard_riskscores_withfn = &riskscorelibrary.;
+		%create_comma_charlist(inlist=&standard_riskscores_withfn, outlist=standard_riskscores_withfn_clist);
+		%let riskscore_footnotes=N;
+		%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+			%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+			%if &&&riskscorename. = Y %then %let riskscore_footnotes=Y;
+		%end;
+
+		/* Process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I) for type 4 reports
+		   Process additional footnotes related to generalized riskscores if they are requested
+		 */
+		%if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			/* Because the order of the following footnotes can change and because there can be 
 			   many diferent combination of superscripts involving them, we must reassess order 
 			   and assign superscript dynamically for each covariate
 			*/
 
-			%let fn_covnotinps=N;
-			%let fn_comorbidscore=N;
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+				%let fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=N;
+			%end;						
+			%let fn_covnotinps=N;			
 			%let fn_labcovar=N;
 			%let fn_nopreg_i_covar=N;
 			%let fn_i_covar=N;
@@ -290,13 +304,27 @@
 			data table1;
 			set repdata.table1&tableletter.;
 
-			fn_covnotinps=.;
-			fn_comorbidscore=.;
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+				fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=.;
+			%end;						
+			fn_covnotinps=.;			
 			fn_labcovar=.;
 			fn_nopreg_i_covar=.;
 			fn_i_covar=.;
 			fn_mi_covar=.;
 
+			%if &riskscore_footnotes. eq Y %then %do; 
+				%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+					%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+
+					%if &&&riskscorename. = Y %then %do;
+						if metvar ="&riskscorename." then do;
+							fn_&riskscorename=_N_;
+							call symput("fn_&riskscorename.","Y");							
+						end;
+					%end;
+				%end;
+			%end;
 			%if %length(&covnotinps.) > 0 %then %do;		
 				if (grouper ne "Laboratory Characteristics" and metvar in (&covnotinps.)) 
 					%if %length(&covarlablabels.) > 0 %then %do; 
@@ -306,47 +334,48 @@
 					fn_covnotinps=_N_;
 					call symput("fn_covnotinps","Y");
 				end;		
-			%end;
-			%if &comorbidscore = Y %then %do;
-				if metvar ="COMORBIDSCORE" then do;
-					fn_comorbidscore=_N_;
-					call symput("fn_comorbidscore","Y");
-				end;
-			%end;
+			%end;			
 			%if %str("&labcharacteristics.") ^= %str("missing") %then %do;
 				if grouper="Laboratory Characteristics" and metvar="" then do;
 					fn_labcovar=_N_;
 					call symput("fn_labcovar","Y");
 				end;	
 			%end;
-			if codepop="I" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
-				fn_i_covar=_N_;
-				call symput("fn_i_covar","Y");
+			* For type 4 reports, process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I);
+			%if %index(&reporttype,T4) > 0 %then %do;
+				if codepop="I" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
+					fn_i_covar=_N_;
+					call symput("fn_i_covar","Y");
 
-				%if &includenonpregnant. eq Y %then %do;
-					fn_nopreg_i_covar=_N_;
-					call symput("fn_nopreg_i_covar","Y");
-				%end;
-			end;
-			if codepop="MI" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
-				fn_mi_covar=_N_;
-				call symput("fn_mi_covar","Y");
-			end;
+					%if &includenonpregnant. eq Y %then %do;
+						fn_nopreg_i_covar=_N_;
+						call symput("fn_nopreg_i_covar","Y");
+					%end;
+				end;
+				if codepop="MI" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
+					fn_mi_covar=_N_;
+					call symput("fn_mi_covar","Y");
+				end;
+			%end;
 			run;
 
 			proc means data=table1 nway noprint;
-			var fn_covnotinps fn_comorbidscore fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
+			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
+				fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
 			data _null_;
 			set _fnmin;
-			%if &fn_covnotinps. ne N %then %do; 	call symputx('fn_covnotinps',fn_covnotinps); 		%end;
-			%if &fn_comorbidscore. ne N %then %do; 	call symputx("fn_comorbidscore",fn_comorbidscore); 	%end;
-			%if &fn_labcovar. ne N %then %do; 		call symputx("fn_labcovar",fn_labcovar); 			%end;
-			%if &fn_nopreg_i_covar. ne N %then %do; call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);%end;
-			%if &fn_i_covar. ne N %then %do; 		call symputx("fn_i_covar",fn_i_covar); 				%end;
-			%if &fn_mi_covar. ne N %then %do; 		call symputx("fn_mi_covar",fn_mi_covar); 			%end;
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));				
+				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+				call symputx("fn_&riskscorename.",fn_&riskscorename.); 					
+			%end;
+			%if &fn_covnotinps. ne N %then %do; 		call symputx('fn_covnotinps',fn_covnotinps); 			%end;			
+			%if &fn_labcovar. ne N %then %do; 			call symputx("fn_labcovar",fn_labcovar); 				%end;
+			%if &fn_nopreg_i_covar. ne N %then %do; 	call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);	%end;
+			%if &fn_i_covar. ne N %then %do; 			call symputx("fn_i_covar",fn_i_covar); 					%end;
+			%if &fn_mi_covar. ne N %then %do; 			call symputx("fn_mi_covar",fn_mi_covar); 				%end;
 			run;
 
 			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
@@ -361,15 +390,8 @@
 			%end;
 			%if &fn_mi_covar. ne N and &fn_labcovar. ne N %then %do;
 				%if &fn_mi_covar. eq &fn_labcovar. %then %let fn_mi_covar=&fn_labcovar..1;				
-			%end;
-
-			%put &=fn_covnotinps;
-			%put &=fn_comorbidscore;
-			%put &=fn_labcovar;
-			%put &=fn_nopreg_i_covar;
-			%put &=fn_i_covar;
-			%put &=fn_mi_covar;
-		%end;
+			%end;			
+		%end; /* Type 4 report or riskscore footnotes required */
 		%else %let table1_dataset=repdata.table1&tableletter.;
 
 		data _footnotes;
@@ -420,7 +442,20 @@
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
 		   /* Comorbidscore is specified */
-		   %if &comorbidscore = Y %then %do; 18 %end;
+		   /* Comorbidscore is specified */
+		   %if &COMORBIDSCORE = Y %then %do; 18 %end;
+		   /* PEDCOMORB score is specified */
+		   %if &PEDCOMORB = Y %then %do; 24 %end;
+		   /* HASBLED score is specified */
+		   %if &HASBLED = Y %then %do; 25 %end;
+		   /* CHA2DS2VASC score is specified */
+		   %if &CHA2DS2VASC = Y %then %do; 26 %end;
+		   /* OBSCOMORB score is specified */
+		   %if &OBSCOMORB = Y %then %do; 27 %end;
+		   /* ADCSI score is specified */
+		   %if &ADCSI = Y %then %do; 28 %end;
+		   /* FRAILTY score is specified */
+		   %if &FRAILTY = Y %then %do; 29 %end;
 		   /* Lab characteristics specified. */
 		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;		
 		   %if %index(&reporttype,T4) > 0 %then %do;
@@ -440,7 +475,7 @@
 		  by order;
 		  footnote_order = _n_;
 
-		  %if %index(&reporttype,T4) > 0 %then %do;
+		  %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;
 
@@ -450,6 +485,24 @@
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order=18 then order=&fn_comorbidscore.; 		
+			%end;
+			%if &fn_pedcomorb. ne N %then %do; 
+				if order=24 then order=&fn_pedcomorb.; 		
+			%end;
+			%if &fn_hasbled. ne N %then %do; 
+				if order=25 then order=&fn_hasbled.; 		
+			%end;
+			%if &fn_cha2ds2vasc. ne N %then %do; 
+				if order=26 then order=&fn_cha2ds2vasc.; 		
+			%end;
+			%if &fn_obscomorb. ne N %then %do; 
+				if order=27 then order=&fn_obscomorb.; 		
+			%end;
+			%if &fn_adcsi. ne N %then %do; 
+				if order=28 then order=&fn_adcsi.; 		
+			%end;
+			%if &fn_frailty. ne N %then %do; 
+				if order=29 then order=&fn_frailty.; 		
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
 				if order=20 then order=&fn_labcovar.; 		
@@ -466,7 +519,7 @@
 		  %end;
 	    run;
 
-		%if %index(&reporttype,T4) > 0 %then %do;
+		%if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			* Compute new superscript and footnote values based on dynamic values;
 			proc sort data=_footnotes;
 			by order order_orig;
@@ -481,6 +534,24 @@
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order_orig=18 then call symputx("fn_comorbidscore",footnote_order);
+			%end;
+			%if &fn_pedcomorb. ne N %then %do; 
+				if order_orig=24 then call symputx("fn_pedcomorb",footnote_order);
+			%end;
+			%if &fn_hasbled. ne N %then %do; 
+				if order_orig=25 then call symputx("fn_hasbled",footnote_order);
+			%end;
+			%if &fn_cha2ds2vasc. ne N %then %do; 
+				if order_orig=26 then call symputx("fn_cha2ds2vasc",footnote_order);
+			%end;
+			%if &fn_obscomorb. ne N %then %do; 
+				if order_orig=27 then call symputx("fn_obscomorb",footnote_order);
+			%end;
+			%if &fn_adcsi. ne N %then %do; 
+				if order_orig=28 then call symputx("fn_adcsi",footnote_order);
+			%end;
+			%if &fn_frailty. ne N %then %do; 
+				if order_orig=29 then call symputx("fn_frailty",footnote_order);
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
 				if order_orig=20 then call symputx("fn_labcovar",order);
@@ -498,12 +569,17 @@
 
 			data table1;
 			set table1;
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+
+				%if &&fn_&riskscorename. ne N %then %do; 
+					if fn_&riskscorename ne . then fn_&riskscorename=&&fn_&riskscorename.;
+				%end;
+			%end;
+			
 			%if &fn_covnotinps. ne N %then %do;	
 				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
-			%end;
-			%if &fn_comorbidscore. ne N %then %do; 
-				if fn_comorbidscore ne . then fn_comorbidscore=&fn_comorbidscore.;
-			%end;
+			%end;			
 			%if &fn_labcovar. eq N %then %do;
 				call symputx("fn_labcovar",20);
 			%end;
@@ -521,24 +597,29 @@
 			run;
 
 			* Build dynamic superscript and add them to the label;
+			%let num_riskscores = %sysfunc(countw(&standard_riskscores_withfn., ' '));
+			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 4);
+
 			data table1;
 			set table1;
 			* Because a covariate can have more than 1 superscript, we need to sort them in ascending order;
-			array fn[5] $32 _temporary_;
+			array fn[&num_dynamic_footnotes.] $32 _temporary_;
 			call missing(of fn[*]);
-			fn[1]=put(fn_covnotinps, best.);
-			fn[2]=put(fn_comorbidscore, best.);
-			fn[3]=put(fn_nopreg_i_covar, best.);
-			fn[4]=put(fn_i_covar, best.);
-			fn[5]=put(fn_mi_covar, best.);
+			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
+				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
+				fn[&rskscore.]=put(fn_&riskscorename., best.);
+			%end;			
+			fn[&num_riskscores. + 1]=put(fn_covnotinps, best.);
+			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
+			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
+			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);			
 			call sortc(of fn[*]);
 
 			length superscript $50;
 			superscript = catx(',',of fn[*]);
 			superscript=compress(strip(tranwrd(superscript,".,","")),".");
-			if superscript ne "" then superscript="^{super" || strip(superscript) || "}";
-			label=strip(label) || strip(superscript);
-			drop codepop fn_: superscript;
+			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
+			label=catt(label, superscript);			
 			run;
 		%end;
 
@@ -554,7 +635,7 @@
 		  
 		  select description into: fn1 - :fn&num_fn.
 		  from _footnotes
-		  order by order %if %index(&reporttype,T4) > 0 %then %do; , order_orig %end;;
+		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
 		quit;
 
  
@@ -567,10 +648,7 @@
 		%assign_superscripts(type =stdev, order =14);
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
-		%assign_superscripts(type =gestage, order =17);
-		%assign_superscripts(type =comorbidscore, order =18 
-          %if %length(&covnotinps.) > 0 and %index(%trim(&covnotinps), COMORBIDSCORE) > 0 %then %do;
-            &covnotinpsorder. %end;);
+		%assign_superscripts(type =gestage, order =17);		
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
 
@@ -674,14 +752,10 @@
               line text $Varying. num; 
             endcomp;
 
-            /*Indent demographic header lines and lab covariate record lines*/
+            
             compute label;
-
-              if index(label,'Race') > 0 then label = catt(label,"&super_race.");
-			  /* For type 4 the superscript is already in the label */
-			  %if %index(&reporttype,T4) = 0 %then %do;
-			  	else if index(label,'Charlson/Elixhauser') > 0 then label = catt(label,"&super_comorbidscore.");
-			  %end;
+			  /*Add static superscripts to labels*/
+              if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  
 			  %if %length(&covnotinps.) > 0 %then %do;
 			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
                   then label = "Gestational age&super_gestage. at delivery&super_covar.";
@@ -692,16 +766,25 @@
                   then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
 			  %end;
 			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
-			  /* For type 4 the superscripts are already in the labels */
-			  %if %index(&reporttype,T4) = 0 %then %do;
+			  /* For type 4 or when riskscores are requested the superscripts are already in the labels */
+			  %if %index(&reporttype,T4) = 0 and &riskscore_footnotes. eq N %then %do;
 				  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
 					else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
 				  %end;
-	              %if %length(&covnotinps.) > 0 %then %do;
-				    /*Comborbidscore already included in &super_comorbidscore*/
-	                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar ne 'COMORBIDSCORE' then label = catt(label, "&super_covar.");
+	              %if %length(&covnotinps.) > 0 %then %do;				   
+	                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "&super_covar.");
 	              %end;
 			  %end;
+
+			  /*Indent demographic header lines, riskscore category lines and lab covariate record lines*/			
+			  %if %length(&riskscoreslist.) > 0 %then %do;
+				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));
+					%let riskscorename=%upcase(%scan(&riskscoreslist., &rskscore., %str( )));
+					if prxmatch("/&riskscorename._CAT*/",metvar) > 0 then do;
+						call define(_col_,'style','style={indent=25}');
+					end;
+				%end;
+			  %end; 
               if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
@@ -741,7 +824,7 @@
             endcomp;
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
-			                        height=2.0in bordertopwidth = &bordersize];
+			                        height=3.0in bordertopwidth = &bordersize];
 			  %do f = 1 %to &num_fn.;
                 line "^{super &f.}&&fn&f.";
 			  %end;
@@ -808,7 +891,10 @@
                 call symputx('runid', runid);
                 call symputx('cohort', cohort);
 				call symputx('cohortdef',cohortdef);
-				call symputx('comorbidscore',comorbidscore);
+				%do rskscore=1 %to %sysfunc(countw(&riskscorelibrary., ' '));
+					%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));					
+					call symputx("&riskscore.",&riskscore.);
+				%end;				
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
 				call symputx('unique_psestimate_orig',unique_psestimate);
@@ -850,6 +936,16 @@
                 end;
             end;
         run;
+
+		/* Get list of riskscores that will be output */
+		%let riskscoreslist=;
+		%isdata(dataset=riskscorefile);
+		%if %eval(&nobs.>0) %then %do;
+			proc sql noprint;
+			    select distinct riskscore into :riskscoreslist separated by " "
+			    from riskscorefile where runid="&runid.";
+			quit;
+		%end;
 
         /* Assign patient/episode label for lab footnote based on cohortdef value */
         %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 

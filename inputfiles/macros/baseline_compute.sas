@@ -344,7 +344,7 @@
 			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
 
 				select upcase(riskscore) into :riskscores_with_cats separated by " "
-			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "" order by label;
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "missing" order by label;
 			quit;
 
 			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
@@ -353,17 +353,14 @@
 
         /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB gestationalage $1 cohortdef $5;
+          length &riskscorelibrary. gestationalage $1 cohortdef $5;
           set baselinefile;
           if order=&b. then do;	
 		  	/* Initialize standard risk scores variable indicators */
-		  	ADCSI="N";
-			CHA2DS2VASC="N";
-			COMORBIDSCORE="N";
-			FRAILTY="N";
-			HASBLED="N";
-			OBSCOMORB="N";
-			PEDCOMORB="N";
+		    %do rskscore=1 %to %sysfunc(countw(&riskscorelibrary., ' '));
+				%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));
+				&riskscore. = "N";
+			%end;		  	
 			%if %length(&riskscoreslist.) > 0 %then %do;
 				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
 					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
@@ -1969,7 +1966,7 @@
 
 						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
 						
-						%if %length(&riskscorecat.) > 0 %then %do;
+						%if %str("&riskscorecat.") ne %str("missing") %then %do;
 							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
 								if metvar="&riskscore._CAT&rskscorecat." then do;
 									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
