@@ -28,7 +28,7 @@
 ***************************************************************************************************;
 
  /* Define libname for location of templatefiles folder */
-  libname lookup "C:\Case\GIT\sentinel\qrp_report\inputfiles\macros\lookuptables";
+  libname lookup "";
   options noquotelenmax;
   
   %macro create_lookup();
