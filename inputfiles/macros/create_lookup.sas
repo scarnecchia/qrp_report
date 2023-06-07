@@ -28,7 +28,7 @@
 ***************************************************************************************************;
 
  /* Define libname for location of templatefiles folder */
-  libname lookup "";
+  libname lookup "C:\Case\GIT\sentinel\qrp_report\inputfiles\macros\lookuptables";
   options noquotelenmax;
   
   %macro create_lookup();
@@ -39,7 +39,7 @@
 
 	   /* Footnotes for in Type 4 tables - applied to multiple tables*/
       type = "type4"; order = -2;  description = "Pregnancy is defined as a pregnancy that resulted in a live birth delivery identified using the method specified in the overview section of this report."; output;
-      type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without delivery codes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
+      type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without live birth deliveries or non-live birth outcomes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
 
 	   /* Footnotes for baseline table */
       type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
