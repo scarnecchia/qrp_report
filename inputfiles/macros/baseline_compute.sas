@@ -1830,7 +1830,7 @@
                     %assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NA', prepostindsort.),1.));
                     end;
                     if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
                     end;
                 end; 
                 else if metvar in (&exposurechar.) then do;      
