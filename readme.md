@@ -15,7 +15,7 @@ The Sentinel QRP Reporting Tool is a SAS® program that is designed to run again
 
 ### Requirements
 * To execute your own customized analysis with the QRP Reporting Tool, you must
-properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse/files/atoc-inputfiles.md)</b></u>
+properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/pages/SENTINEL/sentinel-routine-querying-tool-report-documentation/master/browse/file3000-inputfiles.html)</b></u>
 for details)
 * Output tables from the msoc folder of the Sentinel routine querying tools. The
 output tables can be found in their relevant tables of contents below:
