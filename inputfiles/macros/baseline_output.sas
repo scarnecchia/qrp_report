@@ -125,8 +125,8 @@
         %end;
 
 		/* Select Footnotes */  
-		%let covnotinpsorder = 19;
-		%let fn_labcovar = 20;
+		%let covnotinpsorder = 20;
+		%let fn_labcovar = 21;
 		%global covarlablabels;
 		%let covarlablabels=;
 		/*need to reorder the footnotes when covnotinps is populated because 
@@ -192,47 +192,47 @@
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
 			/*birth_enroll or enroll_diff*/
             %if %index(%trim(&covnotinps), BIRTH_ENROLL) > 0  %then %do;
-              if order = 19 then order = 14.2;
+              if order = 20 then order = 14.2;
 			  %let covnotinpsorder = 14.2;
 			%end;
 			%else %if %index(%trim(&covnotinps), ENROLL_DIFF) > 0  %then %do;
-              if order = 19 then order = 14.3;
+              if order = 20 then order = 14.3;
 			  %let covnotinpsorder = 14.3;
 			%end;
             /*age*/
             %else %if %index(%trim(&covnotinps), AGE) > 0  %then %do;
-              if order = 19 then order = 14.4;
+              if order = 20 then order = 14.4;
 			  %let covnotinpsorder = 14.4;
 			%end;
 		    /*sex*/
             %else %if %index(%trim(&covnotinps), SEX) > 0 %then %do;
-              if order = 19  then order = 14.5;
+              if order = 20  then order = 14.5;
 			  %let covnotinpsorder = 14.5;
 			%end;
 		    /*race*/
             %else %if %index(%trim(&covnotinps), RACE) > 0 %then %do;
-              if order = 19  then do; 
+              if order = 20  then do; 
                 order = 16.3; 
                 %let covnotinpsorder = 16.3;
 			  end;
 			%end;
     	    /*hispanic*/
             %else %if %index(%trim(&covnotinps), HISPANIC) > 0 %then %do;
-			 if order =19  then do; 
+			 if order =20  then do; 
                 order = 16.4; 
                 %let covnotinpsorder = 16.4;
 			  end;
 			%end;
 		    /*year*/
 			%else %if %index(%trim(&covnotinps), YEAR) > 0 %then %do;
-             if order =19  then do; 
+             if order =20  then do; 
                 order = 16.5; 
                 %let covnotinpsorder = 16.5;
 			  end;
 			%end;
 			/*prepostind*/
 			%else %if %index(%trim(&covnotinps), PREPOSTIND) > 0 %then %do;
-             if order =19  then do; 
+             if order =20  then do; 
                 order = 16.6; 
                 %let covnotinpsorder = 16.6;
 			  end;
@@ -240,27 +240,27 @@
 
 		    /*gestational age*/
 			%else %if %index(%trim(&covnotinps), GA_) > 0 %then %do;
-              if order =19  then do; 
-                order = 17.5; 
-                %let covnotinpsorder = 17.5;
+              if order =20  then do; 
+                order = 18.5; 
+                %let covnotinpsorder = 18.5;
 			  end;
 			%end;
 			%else %if %index(%trim(&covnotinps), ADJUSTEDDISP_) > 0 %then %do;
-              if order =19  then do; 
-                order = 17.6; 
-                %let covnotinpsorder = 17.6;
+              if order =20  then do; 
+                order = 18.6; 
+                %let covnotinpsorder = 18.6;
 			  end;
 			%end;
 			%else %if %index(%trim(&covnotinps), EXP_) > 0 %then %do;
-              if order =19  then do; 
-                order = 17.7; 
-                %let covnotinpsorder = 17.7;
+              if order =20  then do; 
+                order = 18.7; 
+                %let covnotinpsorder = 18.7;
 			  end;
 			%end;
 			%else %if %eval(&num_covnotinps_nolab = 0) %then %do;
-              if order =19  then do; 
-                order = 20.1; 
-                %let covnotinpsorder = 20.1;
+              if order =20  then do; 
+                order = 21.1; 
+                %let covnotinpsorder = 21.1;
 			  end;
 			%end;
 		  run;
@@ -297,6 +297,8 @@
 			%let fn_nopreg_i_covar=N;
 			%let fn_i_covar=N;
 			%let fn_mi_covar=N;
+			%let fn_nonlive=N;
+			%let fn_gestage=N;
 
 			%let table1_dataset=table1;
 
@@ -312,6 +314,8 @@
 			fn_nopreg_i_covar=.;
 			fn_i_covar=.;
 			fn_mi_covar=.;
+			fn_nonlive=.;
+			fn_gestage=.;
 
 			%if &riskscore_footnotes. eq Y %then %do; 
 				%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
@@ -341,7 +345,7 @@
 					call symput("fn_labcovar","Y");
 				end;	
 			%end;
-			* For type 4 reports, process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I);
+			* For type 4 reports, process additional footnotes related to gestational age, non live birth outcomes and mother-infant or infant covariates (CODEPOP= MI or I);
 			%if %index(&reporttype,T4) > 0 %then %do;
 				if codepop="I" and (grouper ne "Laboratory Characteristics" or (grouper="Laboratory Characteristics" and metvar="")) then do;
 					fn_i_covar=_N_;
@@ -356,12 +360,20 @@
 					fn_mi_covar=_N_;
 					call symput("fn_mi_covar","Y");
 				end;
+				if upcase(metvar) in ("GA_BIRTH" "GA_FIRST") then do;
+					fn_gestage=_N_;
+					call symput("fn_gestage","Y");
+				end;
+				if upcase(metvar) = "PREPOSTIND_NA" then do;
+					fn_nonlive=_N_;
+					call symput("fn_nonlive","Y");
+				end;
 			%end;
 			run;
 
 			proc means data=table1 nway noprint;
 			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
-				fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar;
+				fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
@@ -376,6 +388,8 @@
 			%if &fn_nopreg_i_covar. ne N %then %do; 	call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);	%end;
 			%if &fn_i_covar. ne N %then %do; 			call symputx("fn_i_covar",fn_i_covar); 					%end;
 			%if &fn_mi_covar. ne N %then %do; 			call symputx("fn_mi_covar",fn_mi_covar); 				%end;
+			%if &fn_gestage. ne N %then %do; 			call symputx("fn_gestage",fn_gestage); 					%end;
+			%if &fn_nonlive. ne N %then %do; 			call symputx("fn_nonlive",fn_nonlive);	 				%end;
 			run;
 
 			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
@@ -403,8 +417,10 @@
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
 		   %end;
+		   /* T4 L1 or L2 non live birth outcomes requested*/
+		   %if %index(&reporttype,T4) > 0 and &nonlivefn. = Y %then %do; 17 %end;
 		   /* T4 L1 or L2 gestational age specified*/
-		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 17 %end;
+		   %if %index(&reporttype,T4) > 0 and &gestationalage. = Y %then %do; 18 %end;
 		   /* if race is collapsed in table*/
            %if &collapse_vars. = race %then %do; 16 %end; 
 		   /* T1, T2L1, T6 when cohortdef is not 01 and T4L1 when a non-MIL */
@@ -443,28 +459,28 @@
 		   %end;
 		   /* Comorbidscore is specified */
 		   /* Comorbidscore is specified */
-		   %if &COMORBIDSCORE = Y %then %do; 18 %end;
+		   %if &COMORBIDSCORE = Y %then %do; 19 %end;
 		   /* PEDCOMORB score is specified */
-		   %if &PEDCOMORB = Y %then %do; 24 %end;
+		   %if &PEDCOMORB = Y %then %do; 25 %end;
 		   /* HASBLED score is specified */
-		   %if &HASBLED = Y %then %do; 25 %end;
+		   %if &HASBLED = Y %then %do; 26 %end;
 		   /* CHA2DS2VASC score is specified */
-		   %if &CHA2DS2VASC = Y %then %do; 26 %end;
+		   %if &CHA2DS2VASC = Y %then %do; 27 %end;
 		   /* OBSCOMORB score is specified */
-		   %if &OBSCOMORB = Y %then %do; 27 %end;
+		   %if &OBSCOMORB = Y %then %do; 28 %end;
 		   /* ADCSI score is specified */
-		   %if &ADCSI = Y %then %do; 28 %end;
+		   %if &ADCSI = Y %then %do; 29 %end;
 		   /* FRAILTY score is specified */
-		   %if &FRAILTY = Y %then %do; 29 %end;
+		   %if &FRAILTY = Y %then %do; 30 %end;
 		   /* Lab characteristics specified. */
-		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 20 %end;		
+		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 21 %end;		
 		   %if %index(&reporttype,T4) > 0 %then %do;
 			  /* Non pregnant cohort with infant covariates */
-			  %if &fn_nopreg_i_covar. ne N %then %do; 21 %end;
+			  %if &fn_nopreg_i_covar. ne N %then %do; 22 %end;
 			  /*Infant covariates */
-			  %if &fn_i_covar. ne N %then %do; 22 %end;
+			  %if &fn_i_covar. ne N %then %do; 23 %end;
 			  /* Mother and Infant covariates */
-			  %if &fn_mi_covar. ne N %then %do; 23 %end;
+			  %if &fn_mi_covar. ne N %then %do; 24 %end;
 		   %end; 
 		   ))
             %if %index(&reporttype,T4) > 0 %then %do;
@@ -479,42 +495,47 @@
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;
 
-			%if &fn_covnotinps. ne N %then %do;	
-				* if &covnotinpsorder. < 18 then the footnote order does not need to be reassessed;
-				if order >=18 and order=&covnotinpsorder. then order=&fn_covnotinps.; 				
+			%if &fn_covnotinps. ne N %then %do;					
+				if order=&covnotinpsorder. then order=&fn_covnotinps.; 				
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
-				if order=18 then order=&fn_comorbidscore.; 		
+				if order=19 then order=&fn_comorbidscore.; 		
 			%end;
 			%if &fn_pedcomorb. ne N %then %do; 
-				if order=24 then order=&fn_pedcomorb.; 		
+				if order=25 then order=&fn_pedcomorb.; 		
 			%end;
 			%if &fn_hasbled. ne N %then %do; 
-				if order=25 then order=&fn_hasbled.; 		
+				if order=26 then order=&fn_hasbled.; 		
 			%end;
 			%if &fn_cha2ds2vasc. ne N %then %do; 
-				if order=26 then order=&fn_cha2ds2vasc.; 		
+				if order=27 then order=&fn_cha2ds2vasc.; 		
 			%end;
 			%if &fn_obscomorb. ne N %then %do; 
-				if order=27 then order=&fn_obscomorb.; 		
+				if order=28 then order=&fn_obscomorb.; 		
 			%end;
 			%if &fn_adcsi. ne N %then %do; 
-				if order=28 then order=&fn_adcsi.; 		
+				if order=29 then order=&fn_adcsi.; 		
 			%end;
 			%if &fn_frailty. ne N %then %do; 
-				if order=29 then order=&fn_frailty.; 		
+				if order=30 then order=&fn_frailty.; 		
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order=20 then order=&fn_labcovar.; 		
+				if order=21 then order=&fn_labcovar.; 		
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
-				if order=21 then order=&fn_nopreg_i_covar.;				
+				if order=22 then order=&fn_nopreg_i_covar.;				
 			%end;
 			%if &fn_i_covar. ne N %then %do; 
-				if order=22 then order=&fn_i_covar.; 		
+				if order=23 then order=&fn_i_covar.; 		
 			%end;
 			%if &fn_mi_covar. ne N %then %do; 
-				if order=23 then order=&fn_mi_covar.; 		
+				if order=24 then order=&fn_mi_covar.; 		
+			%end;
+			%if &fn_gestage. ne N %then %do; 
+				if order=18 then order=&fn_gestage.; 		
+			%end;
+			%if &fn_nonlive. ne N %then %do; 
+				if order=17 then order=&fn_nonlive.; 		
 			%end;
 		  %end;
 	    run;
@@ -530,40 +551,46 @@
 			footnote_order = _n_;
 
 			%if &fn_covnotinps. ne N %then %do;	
-				if order_orig >=18 and order_orig=&covnotinpsorder. then call symputx("fn_covnotinps",footnote_order);
+				if order_orig=&covnotinpsorder. then call symputx("fn_covnotinps",footnote_order);
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
-				if order_orig=18 then call symputx("fn_comorbidscore",footnote_order);
+				if order_orig=19 then call symputx("fn_comorbidscore",footnote_order);
 			%end;
 			%if &fn_pedcomorb. ne N %then %do; 
-				if order_orig=24 then call symputx("fn_pedcomorb",footnote_order);
+				if order_orig=25 then call symputx("fn_pedcomorb",footnote_order);
 			%end;
 			%if &fn_hasbled. ne N %then %do; 
-				if order_orig=25 then call symputx("fn_hasbled",footnote_order);
+				if order_orig=26 then call symputx("fn_hasbled",footnote_order);
 			%end;
 			%if &fn_cha2ds2vasc. ne N %then %do; 
-				if order_orig=26 then call symputx("fn_cha2ds2vasc",footnote_order);
+				if order_orig=27 then call symputx("fn_cha2ds2vasc",footnote_order);
 			%end;
 			%if &fn_obscomorb. ne N %then %do; 
-				if order_orig=27 then call symputx("fn_obscomorb",footnote_order);
+				if order_orig=28 then call symputx("fn_obscomorb",footnote_order);
 			%end;
 			%if &fn_adcsi. ne N %then %do; 
-				if order_orig=28 then call symputx("fn_adcsi",footnote_order);
+				if order_orig=29 then call symputx("fn_adcsi",footnote_order);
 			%end;
 			%if &fn_frailty. ne N %then %do; 
-				if order_orig=29 then call symputx("fn_frailty",footnote_order);
+				if order_orig=30 then call symputx("fn_frailty",footnote_order);
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order_orig=20 then call symputx("fn_labcovar",order);
+				if order_orig=21 then call symputx("fn_labcovar",order);
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
-				if order_orig=21 then call symputx("fn_nopreg_i_covar",footnote_order);
+				if order_orig=22 then call symputx("fn_nopreg_i_covar",footnote_order);
 			%end;
 			%if &fn_i_covar. ne N %then %do; 
-				if order_orig=22 then call symputx("fn_i_covar",footnote_order);
+				if order_orig=23 then call symputx("fn_i_covar",footnote_order);
 			%end;
 			%if &fn_mi_covar. ne N %then %do; 
-				if order_orig=23 then call symputx("fn_mi_covar",footnote_order);
+				if order_orig=24 then call symputx("fn_mi_covar",footnote_order);
+			%end;
+			%if &fn_gestage. ne N %then %do; 
+				if order_orig=18 then call symputx("fn_gestage",footnote_order);
+			%end;
+			%if &fn_nonlive. ne N %then %do; 
+				if order_orig=17 then call symputx("fn_nonlive",footnote_order);
 			%end;
 			run;
 
@@ -581,7 +608,7 @@
 				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
 			%end;			
 			%if &fn_labcovar. eq N %then %do;
-				call symputx("fn_labcovar",20);
+				call symputx("fn_labcovar",21);
 			%end;
 			drop fn_labcovar;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
@@ -593,12 +620,17 @@
 			%if &fn_mi_covar. ne N %then %do; 
 				if fn_mi_covar ne . then fn_mi_covar=&fn_mi_covar.;
 			%end;	
-
+			%if &fn_gestage. ne N %then %do; 
+				if fn_gestage ne . then fn_gestage=&fn_gestage.;
+			%end;
+			%if &fn_nonlive. ne N %then %do; 
+				if fn_nonlive ne . then fn_nonlive=&fn_nonlive.;
+			%end;
 			run;
 
 			* Build dynamic superscript and add them to the label;
 			%let num_riskscores = %sysfunc(countw(&standard_riskscores_withfn., ' '));
-			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 4);
+			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 6);
 
 			data table1;
 			set table1;
@@ -612,7 +644,9 @@
 			fn[&num_riskscores. + 1]=put(fn_covnotinps, best.);
 			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
-			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);			
+			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
+			fn[&num_riskscores. + 5]=put(fn_gestage, best.);
+			fn[&num_riskscores. + 6]=put(fn_nonlive, best.);		
 			call sortc(of fn[*]);
 
 			length superscript $50;
@@ -642,13 +676,14 @@
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =title, order =-2 -1);
 		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11 );
-		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 18 );
+		%assign_superscripts(type =max_cell_width, order =4 5 6 7 8 9 10 19 );
 		%assign_superscripts(type =switch1, order =12);
 		%assign_superscripts(type =switch2, order =13);
 		%assign_superscripts(type =stdev, order =14);
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
-		%assign_superscripts(type =gestage, order =17);		
+		%assign_superscripts(type =nonlive, order =17);	
+		%assign_superscripts(type =gestage, order =18);		
 		%assign_superscripts(type =covar, order =&covnotinpsorder.);
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
 
@@ -755,17 +790,7 @@
             
             compute label;
 			  /*Add static superscripts to labels*/
-              if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  
-			  %if %length(&covnotinps.) > 0 %then %do;
-			    else if metvar in (&covnotinps.) and metvar eq 'GA_BIRTH' and label = "Gestational age at delivery"
-                  then label = "Gestational age&super_gestage. at delivery&super_covar.";
-			  %end;
-			  else if label = "Gestational age at delivery" then label = "Gestational age&super_gestage. at delivery";
-			  %if %length(&covnotinps.) > 0 %then %do;
-			    else if metvar in (&covnotinps.) and metvar eq 'GA_FIRST' and label = "Gestational age of first exposure (weeks)"
-                  then label = "Gestational age&super_gestage. of first exposure (weeks)&super_covar.";
-			  %end;
-			  else if label = "Gestational age of first exposure (weeks)" then label = "Gestational age&super_gestage. of first exposure (weeks)";
+              if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  			  
 			  /* For type 4 or when riskscores are requested the superscripts are already in the labels */
 			  %if %index(&reporttype,T4) = 0 and &riskscore_footnotes. eq N %then %do;
 				  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
@@ -895,6 +920,7 @@
 					%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));					
 					call symputx("&riskscore.",&riskscore.);
 				%end;				
+				call symputx('nonlivefn',nonlivefn);
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
 				call symputx('unique_psestimate_orig',unique_psestimate);
