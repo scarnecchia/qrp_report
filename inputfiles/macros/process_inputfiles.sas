@@ -700,6 +700,8 @@
 	            runid = "&&id&n.";
 	            end;
 	        %end;
+		 preg_outcome=upcase(preg_outcome);
+		 preg_outcomecat=upcase(preg_outcomecat);
 	     run;
 	%end;
 
