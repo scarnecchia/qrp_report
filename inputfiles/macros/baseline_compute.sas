@@ -255,11 +255,19 @@
 		/* Check if cohortgrp contains non live birth outcomes */
 		%if %index(&reporttype.,T4) %then %do;
 			%let nonliveoutcomes=N;
+			%let nonliveoutcomeslist=;
+
+			proc sql noprint;
+			select distinct preg_outcome into :nonliveoutcomeslist separated by " "
+			from master_pregnancymeta
+			where runid="&runid." and preg_outcomecat="NONLIVE";
+			quit;
+
+			%create_comma_charlist(inlist=&nonliveoutcomeslist, outlist=nonliveoutcomeslist1);
 
 			data _null_;
 			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
-			if index(code, "SB") > 0 or index(code, "ECT") > 0 or index(code, "SA") > 0 or 
-			   index(code, "AB") > 0 or index(code, "TRO") > 0 then call symputx('nonliveoutcomes', "Y");			
+			if code in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y");			
 			run;
 		%end;
 
