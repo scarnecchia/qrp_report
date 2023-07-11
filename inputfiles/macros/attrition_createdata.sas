@@ -524,7 +524,7 @@
 	  	/* Overwrite cell values for T4 analyses */
 	  	%if %index(&reporttype,T4) %then %do;
 	  	if report_descr = 'Total number of claims with cohort-identifying codes during the query period' then 
-	  	   report_descr = 'Total number of live birth deliveries during the query period';
+	  	   report_descr = 'Total number of pregnancy outcomes during the query period';
 	  	%end;
 	  	if int(level) ^= level then level = int(level)+0.1;
 	  	%if %index(&reporttype,L2) %then %do;
