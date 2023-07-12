@@ -653,7 +653,15 @@
 			superscript = catx(',',of fn[*]);
 			superscript=compress(strip(tranwrd(superscript,".,","")),".");
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
-			label=catt(label, superscript);			
+			if label = "Gestational age at delivery" then do;
+				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
+				if fn_covnotinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super", strip(put(fn_covnotinps, best.)), "}");
+			end;	
+			else if label = "Gestational age of first exposure (weeks)" then do;
+				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
+				if fn_covnotinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super", strip(put(fn_covnotinps, best.)), "}");
+			end;
+			else label=catt(label, superscript);			
 			run;
 		%end;
 
