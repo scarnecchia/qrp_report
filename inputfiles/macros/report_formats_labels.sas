@@ -262,16 +262,22 @@
 		
         /* Preterm/Postterm status format */
         value $prepostindfmt
-        "PRE" = "Pre-Term (0-258 days)"
-        "TERM" = "Term (259-280 days)"
-        "POST" = "Post-Term (281-301 days)"
-        "NONE" = "Unknown Term";
+        "PRE" = "Preterm: less than 37 weeks"
+        "EARL" = "Early term: 37 0/7 weeks through 38 6/7 weeks"
+		"FULL" = "Full term: 39 0/7 weeks through 40 6/7 weeks"
+		"LATE" = "Late term: 41 0/7 weeks through 41 6/7 weeks"
+        "POST" = "Postterm: 42 0/7 weeks and beyond"
+        "NONE" = "Unknown Term"
+		"NA" = "N/A";
 
         value $prepostindsort
         "PRE" = 1
-        "TERM" = 2
-        "POST" = 3
-        "NONE" = 4;
+        "EARL" = 2
+        "FULL" = 3
+		"LATE" = 4
+		"POST" = 5
+        "NONE" = 6
+		"NA" = 7;
 
         /* Birth Type format */
         value $birth_typefmt

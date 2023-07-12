@@ -445,7 +445,7 @@
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile;
+            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -497,6 +497,9 @@
         %let &&id&n.._itsfile              = ;
         %let &&id&n.._pscssubgroupfile     = ;
 		%let &&id&n.._riskscorefile        = ;
+		%let &&id&n.._pregnancycodes  	   = ;
+		%let &&id&n.._pregnancymeta  	   = ;
+		%let &&id&n.._pregnancyduration    = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
@@ -681,6 +684,27 @@
 
     %end;
  
+/***************************************************************************************************
+*   Create a combined pregnancymeta for all runs                                                
+***************************************************************************************************/
+	%if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) > 0	%then %do; 
+	     data master_pregnancymeta;
+	     set %do n = 1 %to &numrunid.;
+	            %let runid=&&id&n..;
+	            infolder.&&&runid._pregnancymeta(in=n&n.)
+	        %end;
+	     ;
+	     format runid $6.;
+	        %do n = 1 %to &numrunid.;
+	            if n&n. then do;
+	            runid = "&&id&n.";
+	            end;
+	        %end;
+		 preg_outcome=upcase(preg_outcome);
+		 preg_outcomecat=upcase(preg_outcomecat);
+	     run;
+	%end;
+
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
 ***************************************************************************************************/
