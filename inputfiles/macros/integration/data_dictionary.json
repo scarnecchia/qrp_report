@@ -3574,14 +3574,10 @@
                     "info": "In queries restricting Mother-Infant pregnant cohorts, population source to query for code",
                     "input_type": "SingleSelect",
                     "values": [
-						"M",
-						"I",
-						"MI"
+						"M"
 					],
 					"value_map": {
-						"M": "(M) Look in mother claims only",
-						"I": "(I) Look in infant claims only",
-						"MI": "(MI) Look in mother or infant claims"
+						"M": "(M) Look in mother claims only"
 					}
                 },
 				{
