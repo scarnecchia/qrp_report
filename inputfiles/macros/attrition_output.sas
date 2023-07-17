@@ -190,7 +190,7 @@
                 %end;
                 num=100;
             end;
-            else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
+            else if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do; 
                 %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required post-index follow-up'; 
                 %end;
