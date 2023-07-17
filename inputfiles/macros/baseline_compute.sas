@@ -252,6 +252,30 @@
             run;
         %end;
 
+		/* Check if cohortgrp contains non live birth outcomes */
+		%if %index(&reporttype.,T4) %then %do;
+			%let nonliveoutcomes=N;
+			%let nonliveoutcomeslist=;
+
+			proc sql noprint;
+			select distinct preg_outcome into :nonliveoutcomeslist separated by " "
+			from master_pregnancymeta
+			where runid="&runid." and preg_outcomecat="NONLIVE";
+			quit;
+
+			%create_comma_charlist(inlist=&nonliveoutcomeslist, outlist=nonliveoutcomeslist1);
+
+			data _null_;
+			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
+			i=1;
+			do while(scan(code, i, " ") ne "");
+				code2=upcase(scan(code, i, " "));
+				if code2 in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 							
+				i=i+1; 
+			end;									
+			run;
+		%end;
+
         /*Extract agegroup, sex, race, and hispanic requirements*/
         data _tempcohort;
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
@@ -353,7 +377,7 @@
 
         /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length &riskscorelibrary. gestationalage $1 cohortdef $5;
+          length &riskscorelibrary. gestationalage nonliveoutcomes nonlivefn $1 cohortdef $5;
           set baselinefile;
           if order=&b. then do;	
 		  	/* Initialize standard risk scores variable indicators */
@@ -370,6 +394,15 @@
 			%end;             		
             if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
               else gestationalage = "N";
+			%if %index(&reporttype.,T4) %then %do;
+				nonliveoutcomes="&nonliveoutcomes";
+				if index(upcase(pregnancychar),'PREPOSTIND_NA') > 0 and nonliveoutcomes eq "Y" then nonlivefn="Y";
+				else nonlivefn="N";
+			%end;
+			%else %do;
+				nonliveoutcomes="N";
+				nonlivefn="N";
+			%end;
             cohortdef = "&cohortdef.";
           end;
         run;
@@ -1811,8 +1844,14 @@
                     if MetVar= 'PREPOSTIND_PRE' then do;
                     %assignbaselinevars(label=put('PRE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('PRE', prepostindsort.),1.));
                     end;
-                    if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label=put('TERM', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('TERM', prepostindsort.),1.));
+                    if MetVar= 'PREPOSTIND_EARL' then do;
+                    %assignbaselinevars(label=put('EARL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('EARL', prepostindsort.),1.));
+                    end;
+					if MetVar= 'PREPOSTIND_FULL' then do;
+                    %assignbaselinevars(label=put('FULL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('FULL', prepostindsort.),1.));
+                    end;
+					if MetVar= 'PREPOSTIND_LATE' then do;
+                    %assignbaselinevars(label=put('LATE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('LATE', prepostindsort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
                     %assignbaselinevars(label=put('POST', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('POST', prepostindsort.),1.));
@@ -1820,8 +1859,17 @@
                     if MetVar= 'PREPOSTIND_NONE' then do;
                     %assignbaselinevars(label=put('NONE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NONE', prepostindsort.),1.));
                     end;
+					if MetVar= 'PREPOSTIND_NA' then do;
+						%if &nonliveoutcomes. eq Y %then %do;
+	                    	%assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NA', prepostindsort.),1.));							
+						%end;
+						%else %do;
+							/* Delete row if non live birth outcomes were not requested */
+							delete;
+						%end;
+                    end;
                     if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
                     end;
                 end; 
                 else if metvar in (&exposurechar.) then do;      
