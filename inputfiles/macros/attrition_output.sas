@@ -238,7 +238,7 @@
                 text='Members with required pre-index history'; 
                 num=100;
             end;
-            else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
+            else if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do; 
                 text='Members with required post-index follow-up'; 
                 num=100;
             end;
