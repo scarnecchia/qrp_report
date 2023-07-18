@@ -550,7 +550,7 @@
 	  		episodecountchar = 'N/A';
 	  	end;
 	    %if %index(&reporttype,T4) %then %do; /*last row is # of matched non-pregnant episodes, so need to take 2nd to last row*/
-        if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do;
+        if report_descr = 'Had sufficient post-index continuous enrollmen' then do;
         %end;
         %else %do;
 	  	if last.claim_level and claim_level = 'Episode' then do;
@@ -581,8 +581,8 @@
 	  		report_descr = "Number of episodes";
 	  		%end;
 	  		%if %index(&reporttype,T4) %then %do;
-	  		level=27.5;
-	  		%end;
+	  		level=29.5;
+            %end;
 	  		%else %do;
 	  		level=99;
 	  		%end;
