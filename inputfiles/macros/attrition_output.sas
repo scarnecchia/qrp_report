@@ -140,7 +140,7 @@
                         if report_descr = 'Met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
                     %end;
                     %if &milexcl = Y %then %do;
-                        if report_descr = 'Linked mother met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
+                        if report_descr = 'Mother met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
                     %end;
                 %end;
             endcomp;
@@ -165,7 +165,7 @@
                 num=100;
             end;
 			else if report_descr = 'Had any cohort-defining claim during the query period' or
-                    report_descr = 'Had a live birth delivery claim during the query period' then do; 
+                    report_descr = 'Had a pregnancy outcome claim during the query period' then do; 
                 text='Members with a valid index event'; 
                 num=100;
             end;
@@ -173,8 +173,8 @@
                 text='Cohort episodes with a valid index date'; 
                 num=100;
             end;
-            else if report_descr = 'Total number of live birth deliveries during the query period' then do; 
-                text='Live birth deliveries with a valid index date'; 
+            else if report_descr = 'Total number of pregnancy outcomes during the query period' then do; 
+                text='Pregnancy outcomes with a valid index date'; 
                 num=100;
             end;				
             else if report_descr = 'Pregnancy episodes met initial cohort eligibility requirements' then do; 
@@ -190,7 +190,7 @@
                 %end;
                 num=100;
             end;
-            else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
+            else if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do; 
                 %if %index(&reporttype,T4) %then %do;
                 text='Pregnancy episodes with required post-index follow-up'; 
                 %end;
@@ -238,7 +238,7 @@
                 text='Members with required pre-index history'; 
                 num=100;
             end;
-            else if report_descr = 'Had sufficient post-index continuous enrollment' then do; 
+            else if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do; 
                 text='Members with required post-index follow-up'; 
                 num=100;
             end;
