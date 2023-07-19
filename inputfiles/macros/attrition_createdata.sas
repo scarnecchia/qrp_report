@@ -224,7 +224,7 @@
 		order by a.runid, a.dpidsiteid, a.group, a.level, a.claim_level, a.descr, a.remaining, a.excluded;
 	quit;
 	%end;
-	
+
 	/* Join only required groups to attrition table */
     proc sql noprint;
    		create table all_attrition_groups as 
@@ -371,7 +371,7 @@
              lookup_attrition b 
         on a.claim_level = b.claim_level and a.descr = b.descr;
 
-        /* Sum across all DPs */
+/* Sum across all DPs */
 		create table all_attrition_agg as 
 		select distinct runid, group, report_descr, level, claim_level, t%substr(&reporttype,2,1)cohortdef,
              sum(remaining) as agg_remaining, sum(excluded) as agg_excluded
@@ -550,7 +550,7 @@
 	  		episodecountchar = 'N/A';
 	  	end;
 	    %if %index(&reporttype,T4) %then %do; /*last row is # of matched non-pregnant episodes, so need to take 2nd to last row*/
-        if report_descr = 'Had sufficient post-index continuous enrollment' then do;
+        if report_descr = 'Had sufficient continuous enrollment post pregnancy outcome' then do;
         %end;
         %else %do;
 	  	if last.claim_level and claim_level = 'Episode' then do;

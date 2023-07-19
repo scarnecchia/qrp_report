@@ -170,7 +170,7 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must meet HOI incidence criterion"; report_descr = "Met event incidence criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode satisfying the post-index enrollment and available data criteria"; report_descr = "Had sufficient post-index continuous enrollment"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must satisfy the post-index enrollment and available data criteria"; report_descr = "Had sufficient post-index continuous enrollment"; output;
-		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the post-delivery enrollment and available data criteria"; report_descr = "Had sufficient continuous enrollment post pregnancy outcome"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must satisfy the post-pregnancy outcome enrollment and available data criteria"; report_descr = "Had sufficient continuous enrollment post pregnancy outcome"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode with at least minimum days supplied"; report_descr = "Had minimum days' supply on index date"; output;
 		claim_level = "Episode"; descr = "Exclusion - Cohort episodes must have at least minimum days supplied"; report_descr = "Met minimum days' supply criteria"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one cohort episode with at least minimum days duration"; report_descr = "Had index episode of at least required length"; output;
