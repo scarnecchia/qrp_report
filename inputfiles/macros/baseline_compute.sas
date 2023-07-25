@@ -252,7 +252,7 @@
             run;
         %end;
 
-		/* Check if cohortgrp contains non live birth outcomes */
+		/* Check if cohortgrp contains non live and/or mixed birth outcomes */
 		%if %index(&reporttype.,T4) %then %do;
 			%let nonliveoutcomes=N;
 			%let nonliveoutcomeslist=;
@@ -260,7 +260,7 @@
 			proc sql noprint;
 			select distinct preg_outcome into :nonliveoutcomeslist separated by " "
 			from master_pregnancymeta
-			where runid="&runid." and preg_outcomecat="NONLIVE";
+			where runid="&runid." and preg_outcomecat in ("NONLIVE" "MIX");
 			quit;
 
 			%create_comma_charlist(inlist=&nonliveoutcomeslist, outlist=nonliveoutcomeslist1);
@@ -1864,7 +1864,7 @@
 	                    	%assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NA', prepostindsort.),1.));							
 						%end;
 						%else %do;
-							/* Delete row if non live birth outcomes were not requested */
+							/* Delete row if non live birth and/or mixed outcomes were not requested */
 							delete;
 						%end;
                     end;
