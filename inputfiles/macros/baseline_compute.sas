@@ -1715,10 +1715,11 @@
         %mend;
 
         data baseline_aggregatelabels;
-            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3 sortorder3 sortorder4 8
-                   %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
-                   codepop $2
-                   %end;;
+            length metvar $32 label $&baselinelabellength grouper $60 sortorder1 sortorder2 3 sortorder3 sortorder4 8;
+            %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+              length codepop $2;
+			  call missing(codepop);
+            %end;
 
             /* Initialize sortorder3 and sortorder4 */
             sortorder3=.;
