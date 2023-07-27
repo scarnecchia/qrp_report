@@ -1729,6 +1729,10 @@
             %else %do;
                 set baseline_aggregate_prelabel;
                 length covarlabel $&baselinelabellength;
+				%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+                  length codepop $2;
+			      call missing(codepop);
+                %end;
                 call missing(covarlabel);
             %end;
 
