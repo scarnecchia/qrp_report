@@ -129,15 +129,11 @@
 		%let fn_labcovar = 21;
 		%global covarlablabels;
 		%let covarlablabels=;
-		/*need to reorder the footnotes when covinps
- is populated because 
-		  footnote placement is determined by METVAR values listed in the parameter*/
-		/* L2 covinps
- specified */
+		/*need to reorder the footnotes when covinps is populated because footnote placement is determined by METVAR values listed in the parameter*/
+		/* L2 covinps specified */
 		%if %length(&covinps) > 0 %then %do; 
 
-			* Check if all covariates specified in &covinps
- are in &labcharacteristics. If this is the case we need to push the footnote further;
+			* Check if all covariates specified in &covinps are in &labcharacteristics. If this is the case we need to push the footnote further;
 			%let num_covinps_nolab=1;
 			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
 				%let tempvarlabs=%upcase(&labcharacteristics);
@@ -461,7 +457,6 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* Comorbidscore is specified */
 		   /* Comorbidscore is specified */
 		   %if &COMORBIDSCORE = Y %then %do; 19 %end;
 		   /* PEDCOMORB score is specified */
