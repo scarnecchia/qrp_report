@@ -1832,7 +1832,7 @@
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
         %let chk_baselinegroupnum = ;
-        %let chk_covnotinps=;
+        %let chk_covinps=;
 
         /* Check whether order values are the same across different run IDs */
         proc sql noprint;
@@ -1895,7 +1895,7 @@
              abort;
            end;
            if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
-           if not missing(covnotinps) then call symputx('chk_covnotinps', covnotinps);
+           if not missing(covinps) then call symputx('chk_covinps', covinps);
         run;
         %end; /* m */
         
@@ -1905,9 +1905,9 @@
          %abort;
         %end;
 
-        /* Check if covnotinps has been specifed for L1 requests*/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covnotinps) > 0 %then %do;
-         %put WARNING: (Sentinel) covnotinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
+        /* Check if covinps has been specifed for L1 requests*/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covinps) > 0 %then %do;
+         %put WARNING: (Sentinel) covinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
         %end;
 
      %end; /* baselinefile */

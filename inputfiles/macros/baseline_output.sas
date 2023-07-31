@@ -125,17 +125,20 @@
         %end;
 
 		/* Select Footnotes */  
-		%let covnotinpsorder = 20;
+		%let covinpsorder = 20;
 		%let fn_labcovar = 21;
 		%global covarlablabels;
 		%let covarlablabels=;
-		/*need to reorder the footnotes when covnotinps is populated because 
+		/*need to reorder the footnotes when covinps
+ is populated because 
 		  footnote placement is determined by METVAR values listed in the parameter*/
-		/* L2 covnotinps specified */
-		%if %length(&covnotinps.) > 0 %then %do; 
+		/* L2 covinps
+ specified */
+		%if %length(&covinps) > 0 %then %do; 
 
-			* Check if all covariates specified in &covnotinps are in &labcharacteristics. If this is the case we need to push the footnote further;
-			%let num_covnotinps_nolab=1;
+			* Check if all covariates specified in &covinps
+ are in &labcharacteristics. If this is the case we need to push the footnote further;
+			%let num_covinps_nolab=1;
 			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
 				%let tempvarlabs=%upcase(&labcharacteristics);
 
@@ -145,44 +148,45 @@
 				by cov_varname;
 				run; 
 
-				data CovNotInPS;	
+				data covinps;	
 				format cov $30.;	
 				do obs=1 by 1 until (cov=' ');
-					cov=lowcase(strip(scan(tranwrd(symget('covnotinps'),'"',""),obs)));
+					cov=lowcase(strip(scan(tranwrd(symget('covinps'),'"',""),obs)));
 					if cov ne " " then output;
 				end;
 				drop obs;
 				run;
 
-				proc sort data=CovNotInPS;
+				proc sort data=covinps;
 				by cov;
 				run;
 
-				data CovNotInPS;
-				merge CovNotInPS
-					  labcovar(in=b);
+				data covinps;
+				merge covinps
+				      labcovar(in=b);
 				by cov;
 				NoLab=0;
 				if not b then NoLab=1;
 				run;
 				
 				proc sql noprint;
-				select sum(NoLab) into :num_covnotinps_nolab from CovNotInPS;
+				select sum(NoLab) into :num_covinps_nolab from covinps;
 				quit;
 
 				proc sql noprint undo_policy=none;
-				create table CovNotInPS as 
-				select * from CovNotInPS
-				where upcase(cov) in (&Covnotinps.);
+				create table covinps as 
+				select * from covinps
+
+				where upcase(cov) in (&covinps.);
 				quit;
 
 				proc sql noprint;
-				select studyname into :covarlablabels separated by ' ' from CovNotInPS;
+				select studyname into :covarlablabels separated by ' ' from covinps;
 				quit;
 
 				%create_comma_charlist(inlist=&covarlablabels, outlist=covarlablabels);
 
-				%put &=num_covnotinps_nolab;
+				%put &=num_covinps_nolab;
 				%put &=covarlablabels;
 	        %end;
 	
@@ -191,76 +195,76 @@
 			format order 4.2;
 		    set lookup.lookup_footnotes (where = (type = "baseline"));
 			/*birth_enroll or enroll_diff*/
-            %if %index(%trim(&covnotinps), BIRTH_ENROLL) > 0  %then %do;
+            %if %index(%trim(&covinps), BIRTH_ENROLL) > 0  %then %do;
               if order = 20 then order = 14.2;
-			  %let covnotinpsorder = 14.2;
+			  %let covinpsorder = 14.2;
 			%end;
-			%else %if %index(%trim(&covnotinps), ENROLL_DIFF) > 0  %then %do;
+			%else %if %index(%trim(&covinps), ENROLL_DIFF) > 0  %then %do;
               if order = 20 then order = 14.3;
-			  %let covnotinpsorder = 14.3;
+			  %let covinpsorder = 14.3;
 			%end;
             /*age*/
-            %else %if %index(%trim(&covnotinps), AGE) > 0  %then %do;
+            %else %if %index(%trim(&covinps), AGE) > 0  %then %do;
               if order = 20 then order = 14.4;
-			  %let covnotinpsorder = 14.4;
+			  %let covinpsorder = 14.4;
 			%end;
 		    /*sex*/
-            %else %if %index(%trim(&covnotinps), SEX) > 0 %then %do;
+            %else %if %index(%trim(&covinps), SEX) > 0 %then %do;
               if order = 20  then order = 14.5;
-			  %let covnotinpsorder = 14.5;
+			  %let covinpsorder = 14.5;
 			%end;
 		    /*race*/
-            %else %if %index(%trim(&covnotinps), RACE) > 0 %then %do;
+            %else %if %index(%trim(&covinps), RACE) > 0 %then %do;
               if order = 20  then do; 
                 order = 16.3; 
-                %let covnotinpsorder = 16.3;
+                %let covinpsorder = 16.3;
 			  end;
 			%end;
     	    /*hispanic*/
-            %else %if %index(%trim(&covnotinps), HISPANIC) > 0 %then %do;
+            %else %if %index(%trim(&covinps), HISPANIC) > 0 %then %do;
 			 if order =20  then do; 
                 order = 16.4; 
-                %let covnotinpsorder = 16.4;
+                %let covinpsorder = 16.4;
 			  end;
 			%end;
 		    /*year*/
-			%else %if %index(%trim(&covnotinps), YEAR) > 0 %then %do;
+			%else %if %index(%trim(&covinps), YEAR) > 0 %then %do;
              if order =20  then do; 
                 order = 16.5; 
-                %let covnotinpsorder = 16.5;
+                %let covinpsorder = 16.5;
 			  end;
 			%end;
 			/*prepostind*/
-			%else %if %index(%trim(&covnotinps), PREPOSTIND) > 0 %then %do;
+			%else %if %index(%trim(&covinps), PREPOSTIND) > 0 %then %do;
              if order =20  then do; 
                 order = 16.6; 
-                %let covnotinpsorder = 16.6;
+                %let covinpsorder = 16.6;
 			  end;
 			%end;
 
 		    /*gestational age*/
-			%else %if %index(%trim(&covnotinps), GA_) > 0 %then %do;
+			%else %if %index(%trim(&covinps), GA_) > 0 %then %do;
               if order =20  then do; 
                 order = 18.5; 
-                %let covnotinpsorder = 18.5;
+                %let covinpsorder = 18.5;
 			  end;
 			%end;
-			%else %if %index(%trim(&covnotinps), ADJUSTEDDISP_) > 0 %then %do;
+			%else %if %index(%trim(&covinps), ADJUSTEDDISP_) > 0 %then %do;
               if order =20  then do; 
                 order = 18.6; 
-                %let covnotinpsorder = 18.6;
+                %let covinpsorder = 18.6;
 			  end;
 			%end;
-			%else %if %index(%trim(&covnotinps), EXP_) > 0 %then %do;
+			%else %if %index(%trim(&covinps), EXP_) > 0 %then %do;
               if order =20  then do; 
                 order = 18.7; 
-                %let covnotinpsorder = 18.7;
+                %let covinpsorder = 18.7;
 			  end;
 			%end;
-			%else %if %eval(&num_covnotinps_nolab = 0) %then %do;
+			%else %if %eval(&num_covinps_nolab = 0) %then %do;
               if order =20  then do; 
                 order = 21.1; 
-                %let covnotinpsorder = 21.1;
+                %let covinpsorder = 21.1;
 			  end;
 			%end;
 		  run;
@@ -292,7 +296,7 @@
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				%let fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=N;
 			%end;						
-			%let fn_covnotinps=N;			
+			%let fn_covinps=N;			
 			%let fn_labcovar=N;
 			%let fn_nopreg_i_covar=N;
 			%let fn_i_covar=N;
@@ -309,7 +313,7 @@
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				fn_%scan(&standard_riskscores_withfn., &rskscore., %str( ))=.;
 			%end;						
-			fn_covnotinps=.;			
+			fn_covinps=.;			
 			fn_labcovar=.;
 			fn_nopreg_i_covar=.;
 			fn_i_covar=.;
@@ -329,14 +333,14 @@
 					%end;
 				%end;
 			%end;
-			%if %length(&covnotinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covnotinps.)) 
+			%if %length(&covinps.) > 0 %then %do;		
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) 
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
 					%end;
 				then do;
-					fn_covnotinps=_N_;
-					call symput("fn_covnotinps","Y");
+					fn_covinps=_N_;
+					call symput("fn_covinps","Y");
 				end;		
 			%end;			
 			%if %str("&labcharacteristics.") ^= %str("missing") %then %do;
@@ -373,7 +377,7 @@
 
 			proc means data=table1 nway noprint;
 			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
-				fn_covnotinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive;
+				fn_covinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
@@ -383,7 +387,7 @@
 				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 				call symputx("fn_&riskscorename.",fn_&riskscorename.); 					
 			%end;
-			%if &fn_covnotinps. ne N %then %do; 		call symputx('fn_covnotinps',fn_covnotinps); 			%end;			
+			%if &fn_covinps. ne N %then %do; 		call symputx('fn_covinps',fn_covinps); 			%end;			
 			%if &fn_labcovar. ne N %then %do; 			call symputx("fn_labcovar",fn_labcovar); 				%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 	call symputx("fn_nopreg_i_covar",fn_nopreg_i_covar);	%end;
 			%if &fn_i_covar. ne N %then %do; 			call symputx("fn_i_covar",fn_i_covar); 					%end;
@@ -393,8 +397,8 @@
 			run;
 
 			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
-			%if &fn_covnotinps. ne N and &fn_labcovar. ne N %then %do;
-				%if &fn_covnotinps. eq &fn_labcovar. %then %let fn_covnotinps=&fn_labcovar..1;				
+			%if &fn_covinps. ne N and &fn_labcovar. ne N %then %do;
+				%if &fn_covinps. eq &fn_labcovar. %then %let fn_covinps=&fn_labcovar..1;				
 			%end;
 			%if &fn_nopreg_i_covar. ne N and &fn_labcovar. ne N %then %do;
 				%if &fn_nopreg_i_covar. eq &fn_labcovar. %then %let fn_nopreg_i_covar=&fn_labcovar..1;			
@@ -411,8 +415,8 @@
 		data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
-		   %if %length(&covnotinps.) > 0 %then %do; 
-		     set _footnotes (where =  ((type = "baseline" and order in (14 &covnotinpsorder. 15
+		   %if %length(&covinps.) > 0 %then %do; 
+		     set _footnotes (where =  ((type = "baseline" and order in (14 &covinpsorder. 15
 		   %end;
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
@@ -495,8 +499,8 @@
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;
 
-			%if &fn_covnotinps. ne N %then %do;					
-				if order=&covnotinpsorder. then order=&fn_covnotinps.; 				
+			%if &fn_covinps. ne N %then %do;					
+				if order=&covinpsorder. then order=&fn_covinps.; 				
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order=19 then order=&fn_comorbidscore.; 		
@@ -550,8 +554,8 @@
 			set _footnotes;
 			footnote_order = _n_;
 
-			%if &fn_covnotinps. ne N %then %do;	
-				if order_orig=&covnotinpsorder. then call symputx("fn_covnotinps",footnote_order);
+			%if &fn_covinps. ne N %then %do;	
+				if order_orig=&covinpsorder. then call symputx("fn_covinps",footnote_order);
 			%end;
 			%if &fn_comorbidscore. ne N %then %do; 
 				if order_orig=19 then call symputx("fn_comorbidscore",footnote_order);
@@ -604,8 +608,8 @@
 				%end;
 			%end;
 			
-			%if &fn_covnotinps. ne N %then %do;	
-				if fn_covnotinps ne . then fn_covnotinps=&fn_covnotinps.;
+			%if &fn_covinps. ne N %then %do;	
+				if fn_covinps ne . then fn_covinps=&fn_covinps.;
 			%end;			
 			%if &fn_labcovar. eq N %then %do;
 				call symputx("fn_labcovar",21);
@@ -641,7 +645,7 @@
 				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 				fn[&rskscore.]=put(fn_&riskscorename., best.);
 			%end;			
-			fn[&num_riskscores. + 1]=put(fn_covnotinps, best.);
+			fn[&num_riskscores. + 1]=put(fn_covinps, best.);
 			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
@@ -655,11 +659,11 @@
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
 			if label = "Gestational age at delivery" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
-				if fn_covnotinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super", strip(put(fn_covnotinps, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super", strip(put(fn_covinps, best.)), "}");
 			end;	
 			else if label = "Gestational age of first exposure (weeks)" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
-				if fn_covnotinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super", strip(put(fn_covnotinps, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super", strip(put(fn_covinps, best.)), "}");
 			end;
 			else label=catt(label, superscript);			
 			run;
@@ -692,7 +696,7 @@
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =nonlive, order =17);	
 		%assign_superscripts(type =gestage, order =18);		
-		%assign_superscripts(type =covar, order =&covnotinpsorder.);
+		%assign_superscripts(type =covar, order =&covinpsorder.);
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
 
 		
@@ -801,11 +805,11 @@
               if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  			  
 			  /* For type 4 or when riskscores are requested the superscripts are already in the labels */
 			  %if %index(&reporttype,T4) = 0 and &riskscore_footnotes. eq N %then %do;
-				  %if %length(&covnotinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
+				  %if %length(&covinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
 					else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
 				  %end;
-	              %if %length(&covnotinps.) > 0 %then %do;				   
-	                else if metvar in (&covnotinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "&super_covar.");
+	              %if %length(&covinps.) > 0 %then %do;				   
+	                else if metvar in (&covinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "&super_covar.");
 	              %end;
 			  %end;
 
@@ -890,7 +894,7 @@
         %let includecomp = N;
         %let computebalance =N;
         %let maxswitch = 0;
-        %let covnotinps = ;
+        %let covinps= ;
 
         /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
         %let ratio = F;
@@ -937,7 +941,7 @@
                 if missing(labcharacteristics) then call symputx('labcharacteristics',"missing");
                 else call symputx('labcharacteristics', labcharacteristics);
                 %if %str("&reporttype") = %str("T2L2") | %str("&reporttype") = %str("T4L2") %then %do;	
-                if missing(covnotinps)=0 then call symputx('covnotinps', strip(upcase(covnotinps)));
+                if missing(covinps)=0 then call symputx('covinps', strip(upcase(covinps)));
                 call symputx('computebalance', 'Y');
                 %end;
                 %else %do;
@@ -1037,14 +1041,14 @@
             run;
             %end;
 
-			/*Defensive check for sdthreshold and covnotinps parameters*/
+			/*Defensive check for sdthreshold and covinpsparameters*/
 			%if %eval(&unique_psestimate.) ne 1 %then %do;
 				proc sql noprint;
 				create table baseline_unique_check as
 				select a.analysisgrp,
 					   a.psestimategrp,
 					   a.sdthreshold,
-					   a.covnotinps
+					   a.covinps
 				from baselinefile as a
 				left join pscs_masterinputs as b
 				on a.analysisgrp = b.analysisgrp and
@@ -1058,14 +1062,14 @@
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 
-				select count (distinct covnotinps) into :covnotinps_count trimmed
+				select count (distinct covinps) into :covinps_count trimmed
 				from baseline_unique_check
 				where psestimategrp = "&psestimategrp";
 				quit;
 
-				%if %eval(&sdthreshold_count. > 1) or %eval(&covnotinps_count. > 1) %then %do;
-					%put WARNING: (Sentinel) SDTHRESHOLD or covnotinps value differs across analyses that share the same psestimategrp.;
-					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &covnotinps_count covnotinps distinct value(s);
+				%if %eval(&sdthreshold_count. > 1) or %eval(&covinps_count. > 1) %then %do;
+					%put WARNING: (Sentinel) SDTHRESHOLD or covinpsvalue differs across analyses that share the same psestimategrp.;
+					%put PSESTIMATEGRP=&psestimategrp has &sdthreshold_count SDTHRESHOLD distinct value(s) and &covinps_count covinpsdistinct value(s);
 					
 					/* If multiple values are detected for a same psestimategrp, assign the first available value for this psestimategrp (already sorted by order)*/
 					data _null_;
@@ -1073,7 +1077,7 @@
 					if _N_=1;
 					if missing(sdthreshold) then call symputx('sdthreshold', '');
 	                else call symputx('sdthreshold', sdthreshold);
-					call symputx('covnotinps', strip(upcase(covnotinps)));
+					call symputx('covinps', strip(upcase(covinps)));
 					run;
 				%end;
 			%end;
@@ -1095,7 +1099,7 @@
             run;
         %end;
 
-		%if %length(&covnotinps.) > 0 %then %baseline_expand_parameters(var=covnotinps);
+		%if %length(&covinps.) > 0 %then %baseline_expand_parameters(var=covinps);
 
         /*For L1 tables, determine if only 1 baseline table and set &tablecount to 0. Will occur if all the following are true:
         - 1 monitoring period
