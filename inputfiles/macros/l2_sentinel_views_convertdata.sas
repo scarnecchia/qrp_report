@@ -71,6 +71,10 @@
                 select distinct cats(riskscore,'_CAT')
                 into :riskscore_regex separated by '|'
                 from riskscorefile;
+
+				select distinct riskscore
+				into :riskscorelist separated by '|'
+				from riskscorefile;
             %end;
         quit;
 
@@ -306,9 +310,15 @@
                             %if &psmodelvar = HISPANIC %then %do;
                                 if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
                             %end;
-                            %if %sysfunc(prxmatch(/COVAR*|^NUM*|COMORBID*/,&psmodelvar)) %then %do; 
+                            %if %sysfunc(prxmatch(/COVAR*|^NUM*/,&psmodelvar)) %then %do; 
                                 if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
                             %end;
+							%if %sysfunc(exist(riskscorefile)) %then %do;
+								%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
+									%let score = %scan(&riskscorelist,&scorenum);
+									if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';
+								%end;
+							%end;
                     %end;
                 end;/* psestimategrp */
                 %end; /* m */
