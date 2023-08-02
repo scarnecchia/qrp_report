@@ -203,6 +203,48 @@
                 %let covinpsorder = 18.7;
 			  end;
 			%end;
+			%else %if %index(%trim(&covinps), COMORBIDSCORE) > 0 %then %do;
+              if order =20  then do; 
+                order = 19.1; 
+                %let covinpsorder = 19.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), PEDCOMORB) > 0 %then %do;
+              if order =20  then do; 
+                order = 25.1; 
+                %let covinpsorder = 25.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), HASBLED) > 0 %then %do;
+              if order =20  then do; 
+                order = 26.1; 
+                %let covinpsorder = 26.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), CHA2DS2VASC) > 0 %then %do;
+              if order =20  then do; 
+                order = 27.1; 
+                %let covinpsorder = 27.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), OBSCOMORB) > 0 %then %do;
+              if order =20  then do; 
+                order = 28.1; 
+                %let covinpsorder = 28.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), ADCSI) > 0 %then %do;
+              if order =20  then do; 
+                order = 29.1; 
+                %let covinpsorder = 29.1;
+			  end;
+			%end;
+			%else %if %index(%trim(&covinps), FRAILTY) > 0 %then %do;
+              if order =20  then do; 
+                order = 30.1; 
+                %let covinpsorder = 30.1;
+			  end;
+			%end;
 			%else %if %eval(&num_covinps_nolab = 0) %then %do;
               if order =20  then do; 
                 order = 21.1; 
@@ -585,6 +627,7 @@
 				fn[&rskscore.]=put(fn_&riskscorename., best.);
 			%end;		
 
+			fn[&num_riskscores. + 1]=put(fn_covinps, best.);
 			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
@@ -593,7 +636,7 @@
 			call sortc(of fn[*]);
 
 			length superscript $50;
-			if not missing(fn_covinps) then do; 
+/* 			if not missing(fn_covinps) then do; 
 				if N(of fn[*]) = 0 then do;
 					superscript = '*';
 				end;
@@ -601,11 +644,11 @@
 					superscript = catt('*',',', compress(catx(',', of fn[*]),'.,'));
 				end;
 			end;
-			else do;
+			else do; */
 			superscript = catx(',',of fn[*]);
 			superscript=compress(strip(tranwrd(superscript,".,","")),".");
-			end;
-			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
+/* 			end;
+ */			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
 			if label = "Gestational age at delivery" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
 				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
@@ -632,21 +675,9 @@
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
 
-		  %if %length(&covinps) > 0 %then %do; 
-		  select description into: fn0
-		  from _footnotes
-		  where description = 'Covariate included in the propensity score logistic regression model.';
-
-		  select description into: fn1 - :fn&num_fn.
-		  from _footnotes 
-		  where description ^= 'Covariate included in the propensity score logistic regression model.'
-		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
-		  %end;
-		  %else %do; 
 		  select description into: fn1 - :fn&num_fn.
 		  from _footnotes
 		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
-		  %end;
 		quit;
 
  
@@ -829,13 +860,8 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=3.0in bordertopwidth = &bordersize];
-			  %do f = 0 %to &num_fn.;
-			  				%if %length(&covinps) > 0 and &f = 0 %then %do;
-			  				    line "^{super *}&&fn&f.";
-			  				%end;
-			  				%else %do;
-                		line "^{super &f.}&&fn&f.";
-                %end;
+			  %do f = 1 %to &num_fn.;
+            line "^{super &f.}&&fn&f.";
 			  %end;
             endcomp;
 
