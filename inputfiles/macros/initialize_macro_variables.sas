@@ -101,7 +101,7 @@
     %let labcharacteristics=;
 	%let riskscoreslist_quoted=;
 	%let riskscores_with_cats=;
-	%let riskscorelibrary=ADCSI CHA2DS2VASC COMORBIDSCORE FRAILTY HASBLED OBSCOMORB PEDCOMORB;
+	%let riskscorelibrary=ADCSI CHA2DS2VASC CCI FRAILTY HASBLED OBSCOMORB PEDCOMORB;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;
