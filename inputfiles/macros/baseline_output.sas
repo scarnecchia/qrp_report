@@ -132,60 +132,6 @@
 		/*need to reorder the footnotes when covinps is populated because footnote placement is determined by METVAR values listed in the parameter*/
 		/* L2 covinps specified */
 		%if %length(&covinps) > 0 %then %do; 
-
-			* Check if all covariates specified in &covinps are in &labcharacteristics. If this is the case we need to push the footnote further;
-			%let num_covinps_nolab=1;
-			%if %str("&labcharacteristics") ^= %str("missing") %then %do;
-				%let tempvarlabs=%upcase(&labcharacteristics);
-
-				%baseline_expand_parameters(var=tempvarlabs);
-	  
-				proc sort data= covarname(keep=studyname cov_varname where=(upcase(cov_varname) in (&tempvarlabs))) out=labcovar(rename=cov_varname=cov);
-				by cov_varname;
-				run; 
-
-				data covinps;	
-				format cov $30.;	
-				do obs=1 by 1 until (cov=' ');
-					cov=lowcase(strip(scan(tranwrd(symget('covinps'),'"',""),obs)));
-					if cov ne " " then output;
-				end;
-				drop obs;
-				run;
-
-				proc sort data=covinps;
-				by cov;
-				run;
-
-				data covinps;
-				merge covinps
-				      labcovar(in=b);
-				by cov;
-				NoLab=0;
-				if not b then NoLab=1;
-				run;
-				
-				proc sql noprint;
-				select sum(NoLab) into :num_covinps_nolab from covinps;
-				quit;
-
-				proc sql noprint undo_policy=none;
-				create table covinps as 
-				select * from covinps
-
-				where upcase(cov) in (&covinps.);
-				quit;
-
-				proc sql noprint;
-				select studyname into :covarlablabels separated by ' ' from covinps;
-				quit;
-
-				%create_comma_charlist(inlist=&covarlablabels, outlist=covarlablabels);
-
-				%put &=num_covinps_nolab;
-				%put &=covarlablabels;
-	        %end;
-	
 		  data _footnotes;
 		    length order 8;
 			format order 4.2;
@@ -330,7 +276,7 @@
 				%end;
 			%end;
 			%if %length(&covinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) 
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.) or (missing(metvar) and upcase(label) in (&covinps) and upcase(label)^='AGE')) 
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
 					%end;
@@ -493,7 +439,6 @@
 		  %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;
-
 			%if &fn_covinps. ne N %then %do;					
 				if order=&covinpsorder. then order=&fn_covinps.; 				
 			%end;
@@ -548,7 +493,6 @@
 			data _footnotes;
 			set _footnotes;
 			footnote_order = _n_;
-
 			%if &fn_covinps. ne N %then %do;	
 				if order_orig=&covinpsorder. then call symputx("fn_covinps",footnote_order);
 			%end;
@@ -639,8 +583,8 @@
 			%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 				%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 				fn[&rskscore.]=put(fn_&riskscorename., best.);
-			%end;			
-			fn[&num_riskscores. + 1]=put(fn_covinps, best.);
+			%end;		
+
 			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
@@ -649,18 +593,32 @@
 			call sortc(of fn[*]);
 
 			length superscript $50;
+			if not missing(fn_covinps) then do; 
+				if N(of fn[*]) = 0 then do;
+					superscript = '*';
+				end;
+				else if N(of fn[*]) > 0 then do; 
+					superscript = catt('*',',', compress(catx(',', of fn[*]),'.,'));
+				end;
+			end;
+			else do;
 			superscript = catx(',',of fn[*]);
 			superscript=compress(strip(tranwrd(superscript,".,","")),".");
+			end;
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
 			if label = "Gestational age at delivery" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super", strip(put(fn_covinps, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
 			end;	
 			else if label = "Gestational age of first exposure (weeks)" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super", strip(put(fn_covinps, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super *}");
 			end;
 			else label=catt(label, superscript);			
+			run;
+
+			data output.testing;
+				set table1;
 			run;
 		%end;
 
@@ -673,10 +631,22 @@
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
-		  
+
+		  %if %length(&covinps) > 0 %then %do; 
+		  select description into: fn0
+		  from _footnotes
+		  where description = 'Covariate included in the propensity score logistic regression model.';
+
+		  select description into: fn1 - :fn&num_fn.
+		  from _footnotes 
+		  where description ^= 'Covariate included in the propensity score logistic regression model.'
+		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+		  %end;
+		  %else %do; 
 		  select description into: fn1 - :fn&num_fn.
 		  from _footnotes
 		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+		  %end;
 		quit;
 
  
@@ -715,6 +685,8 @@
 		
         %if %length(&pregnancylabel.)>0 %then %let cohortheaderlabel = Cohort;
         %else %let cohortheaderlabel = Medical Product;
+
+			  options mprint mlogic symbolgen source2;
 
         %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen" flow="1:400");
@@ -857,8 +829,13 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=3.0in bordertopwidth = &bordersize];
-			  %do f = 1 %to &num_fn.;
-                line "^{super &f.}&&fn&f.";
+			  %do f = 0 %to &num_fn.;
+			  				%if %length(&covinps) > 0 and &f = 0 %then %do;
+			  				    line "^{super *}&&fn&f.";
+			  				%end;
+			  				%else %do;
+                		line "^{super &f.}&&fn&f.";
+                %end;
 			  %end;
             endcomp;
 
