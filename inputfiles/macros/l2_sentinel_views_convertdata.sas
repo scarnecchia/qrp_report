@@ -68,13 +68,9 @@
             from covarname;
 
             %if %sysfunc(exist(riskscorefile)) %then %do;
-                select distinct cats(riskscore,'_CAT')
-                into :riskscore_regex separated by '|'
-                from riskscorefile;
-
-				select distinct riskscore
-				into :riskscorelist separated by '|'
-				from riskscorefile;
+                select distinct cats(riskscore,'_CAT'), riskscore
+	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+	            from riskscorefile;
             %end;
         quit;
 
