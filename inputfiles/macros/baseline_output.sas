@@ -129,92 +129,51 @@
 		%let fn_labcovar = 21;
 		%global covarlablabels;
 		%let covarlablabels=;
-		/*need to reorder the footnotes when covinps is populated because footnote placement is determined by METVAR values listed in the parameter*/
-		/* L2 covinps specified */
-		%if %length(&covinps) > 0 %then %do; 
-		  data _footnotes;
-		    length order 8;
-			format order 4.2;
-		    set lookup.lookup_footnotes (where = (type = "baseline"));
-			/*birth_enroll or enroll_diff*/
-            %if %index(%trim(&covinps), BIRTH_ENROLL) > 0  %then %do;
-              if order = 20 then order = 14.2;
-			  %let covinpsorder = 14.2;
-			%end;
-			%else %if %index(%trim(&covinps), ENROLL_DIFF) > 0  %then %do;
-              if order = 20 then order = 14.3;
-			  %let covinpsorder = 14.3;
-			%end;
-            /*age*/
-            %else %if %index(%trim(&covinps), AGE) > 0  %then %do;
-              if order = 20 then order = 14.4;
-			  %let covinpsorder = 14.4;
-			%end;
-		    /*sex*/
-            %else %if %index(%trim(&covinps), SEX) > 0 %then %do;
-              if order = 20  then order = 14.5;
-			  %let covinpsorder = 14.5;
-			%end;
-		    /*race*/
-            %else %if %index(%trim(&covinps), RACE) > 0 %then %do;
-              if order = 20  then do; 
-                order = 16.3; 
-                %let covinpsorder = 16.3;
-			  end;
-			%end;
-    	    /*hispanic*/
-            %else %if %index(%trim(&covinps), HISPANIC) > 0 %then %do;
-			 if order =20  then do; 
-                order = 16.4; 
-                %let covinpsorder = 16.4;
-			  end;
-			%end;
-		    /*year*/
-			%else %if %index(%trim(&covinps), YEAR) > 0 %then %do;
-             if order =20  then do; 
-                order = 16.5; 
-                %let covinpsorder = 16.5;
-			  end;
-			%end;
-			/*prepostind*/
-			%else %if %index(%trim(&covinps), PREPOSTIND) > 0 %then %do;
-             if order =20  then do; 
-                order = 16.6; 
-                %let covinpsorder = 16.6;
-			  end;
-			%end;
+		/* Get labels for lab covariates specified in covinps */
+		%if %length(&covinps.) > 0 and %str("&labcharacteristics") ^= %str("missing") %then %do;		
+				%let tempvarlabs=%upcase(&labcharacteristics);
 
-		    /*gestational age*/
-			%else %if %index(%trim(&covinps), GA_) > 0 %then %do;
-              if order =20  then do; 
-                order = 18.5; 
-                %let covinpsorder = 18.5;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), ADJUSTEDDISP_) > 0 %then %do;
-              if order =20  then do; 
-                order = 18.6; 
-                %let covinpsorder = 18.6;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), EXP_) > 0 %then %do;
-              if order =20  then do; 
-                order = 18.7; 
-                %let covinpsorder = 18.7;
-			  end;
-			%end;
-			%else %if %eval(&num_covinps_nolab = 0) %then %do;
-              if order =20  then do; 
-                order = 21.1; 
-                %let covinpsorder = 21.1;
-			  end;
-			%end;
-		  run;
+				%baseline_expand_parameters(var=tempvarlabs);
+	  
+				proc sort data= covarname(keep=studyname cov_varname where=(upcase(cov_varname) in (&tempvarlabs))) out=labcovar(rename=cov_varname=cov);
+				by cov_varname;
+				run; 
 
-		  proc sort data = _footnotes;
-		    by order;
-		  run;
-        %end;
+				data covinps;	
+				format cov $30.;	
+				do obs=1 by 1 until (cov=' ');
+					cov=lowcase(strip(scan(tranwrd(symget('covinps'),'"',""),obs)));
+					if cov ne " " then output;
+				end;
+				drop obs;
+				run;
+
+				proc sort data=covinps;
+				by cov;
+				run;
+
+				data covinps;
+				merge covinps
+					  labcovar(in=b);
+				by cov;
+				NoLab=0;
+				if not b then NoLab=1;
+				run;
+
+				proc sql noprint undo_policy=none;
+				create table covinps as 
+				select * from covinps
+				where upcase(cov) in (&covinps.);
+				quit;
+
+				proc sql noprint;
+				select studyname into :covarlablabels separated by ' ' from covinps where NoLab=0;
+				quit;
+
+				%create_comma_charlist(inlist=&covarlablabels, outlist=covarlablabels);
+
+				%put &=covarlablabels;
+	    %end;
 
 		%global standard_riskscores_withfn_clist;
 		%let standard_riskscores_withfn_clist=;
@@ -276,7 +235,7 @@
 				%end;
 			%end;
 			%if %length(&covinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.) or (missing(metvar) and upcase(label) in (&covinps) and upcase(label)^='AGE')) 
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) or (missing(metvar) and upcase(label) in (&covinps) and upcase(label)^='AGE') 
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
 					%end;
@@ -354,11 +313,12 @@
 		%end; /* Type 4 report or riskscore footnotes required */
 		%else %let table1_dataset=repdata.table1&tableletter.;
 
-		data _footnotes;
+		data _footnotes
+			 _onlycovinps;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 		   %if %length(&covinps.) > 0 %then %do; 
-		     set _footnotes (where =  ((type = "baseline" and order in (14 &covinpsorder. 15
+		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (14 &covinpsorder. 15
 		   %end;
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
@@ -438,50 +398,50 @@
 
 		  %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			* Overwrite original order with dynamically computed order;
-			order_orig=order;
-			%if &fn_covinps. ne N %then %do;					
-				if order=&covinpsorder. then order=&fn_covinps.; 				
-			%end;
+			order_orig=order;			
 			%if &fn_comorbidscore. ne N %then %do; 
-				if order=19 then order=&fn_comorbidscore.; 		
+				if order_orig=19 then order=&fn_comorbidscore.; 		
 			%end;
 			%if &fn_pedcomorb. ne N %then %do; 
-				if order=25 then order=&fn_pedcomorb.; 		
+				if order_orig=25 then order=&fn_pedcomorb.; 		
 			%end;
 			%if &fn_hasbled. ne N %then %do; 
-				if order=26 then order=&fn_hasbled.; 		
+				if order_orig=26 then order=&fn_hasbled.; 		
 			%end;
 			%if &fn_cha2ds2vasc. ne N %then %do; 
-				if order=27 then order=&fn_cha2ds2vasc.; 		
+				if order_orig=27 then order=&fn_cha2ds2vasc.; 		
 			%end;
 			%if &fn_obscomorb. ne N %then %do; 
-				if order=28 then order=&fn_obscomorb.; 		
+				if order_orig=28 then order=&fn_obscomorb.; 		
 			%end;
 			%if &fn_adcsi. ne N %then %do; 
-				if order=29 then order=&fn_adcsi.; 		
+				if order_orig=29 then order=&fn_adcsi.; 		
 			%end;
 			%if &fn_frailty. ne N %then %do; 
-				if order=30 then order=&fn_frailty.; 		
+				if order_orig=30 then order=&fn_frailty.; 		
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order=21 then order=&fn_labcovar.; 		
+				if order_orig=21 then order=&fn_labcovar.; 		
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
-				if order=22 then order=&fn_nopreg_i_covar.;				
+				if order_orig=22 then order=&fn_nopreg_i_covar.;				
 			%end;
 			%if &fn_i_covar. ne N %then %do; 
-				if order=23 then order=&fn_i_covar.; 		
+				if order_orig=23 then order=&fn_i_covar.; 		
 			%end;
 			%if &fn_mi_covar. ne N %then %do; 
-				if order=24 then order=&fn_mi_covar.; 		
+				if order_orig=24 then order=&fn_mi_covar.; 		
 			%end;
 			%if &fn_gestage. ne N %then %do; 
 				if order=18 then order=&fn_gestage.; 		
 			%end;
 			%if &fn_nonlive. ne N %then %do; 
-				if order=17 then order=&fn_nonlive.; 		
+				if order_orig=17 then order=&fn_nonlive.; 		
 			%end;
 		  %end;
+
+		  if description = 'Covariate included in the propensity score logistic regression model.' then output _onlycovinps;
+    	  else output _footnotes;
 	    run;
 
 		%if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
@@ -625,26 +585,20 @@
     %end;
 
     %if %length(&covinps) > 0 %then %do;
-    	data _onlycovinps _otherrows;
-    		set _footnotes;
-    		if description = 'Covariate included in the propensity score logistic regression model.' then output _onlycovinps;
-    		else output _otherrows;
-    	run;
-    	
     	data _footnotes;
 	    	set _onlycovinps
-	    	    _otherrows;
+	    	    _footnotes;
 	    	new_order = _n_;
-   	  run;
+   	  	run;
 
-			proc sql noprint;
-			  select count(order) into: num_fn trimmed
-			  from _footnotes;
+		proc sql noprint;
+		  select count(order) into: num_fn trimmed
+		  from _footnotes;
 
-			  select description into: fn1 - :fn&num_fn.
-			  from _footnotes
-			  order by new_order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
-			quit;
+		  select description into: fn1 - :fn&num_fn.
+		  from _footnotes
+		  order by new_order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+		quit;
     %end;
     %else %do;
 		proc sql noprint;
