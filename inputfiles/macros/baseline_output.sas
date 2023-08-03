@@ -203,48 +203,6 @@
                 %let covinpsorder = 18.7;
 			  end;
 			%end;
-			%else %if %index(%trim(&covinps), COMORBIDSCORE) > 0 %then %do;
-              if order =20  then do; 
-                order = 19.1; 
-                %let covinpsorder = 19.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), PEDCOMORB) > 0 %then %do;
-              if order =20  then do; 
-                order = 25.1; 
-                %let covinpsorder = 25.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), HASBLED) > 0 %then %do;
-              if order =20  then do; 
-                order = 26.1; 
-                %let covinpsorder = 26.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), CHA2DS2VASC) > 0 %then %do;
-              if order =20  then do; 
-                order = 27.1; 
-                %let covinpsorder = 27.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), OBSCOMORB) > 0 %then %do;
-              if order =20  then do; 
-                order = 28.1; 
-                %let covinpsorder = 28.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), ADCSI) > 0 %then %do;
-              if order =20  then do; 
-                order = 29.1; 
-                %let covinpsorder = 29.1;
-			  end;
-			%end;
-			%else %if %index(%trim(&covinps), FRAILTY) > 0 %then %do;
-              if order =20  then do; 
-                order = 30.1; 
-                %let covinpsorder = 30.1;
-			  end;
-			%end;
 			%else %if %eval(&num_covinps_nolab = 0) %then %do;
               if order =20  then do; 
                 order = 21.1; 
@@ -627,7 +585,6 @@
 				fn[&rskscore.]=put(fn_&riskscorename., best.);
 			%end;		
 
-			fn[&num_riskscores. + 1]=put(fn_covinps, best.);
 			fn[&num_riskscores. + 2]=put(fn_nopreg_i_covar, best.);
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
@@ -636,7 +593,7 @@
 			call sortc(of fn[*]);
 
 			length superscript $50;
-/* 			if not missing(fn_covinps) then do; 
+			if not missing(fn_covinps) then do; 
 				if N(of fn[*]) = 0 then do;
 					superscript = '*';
 				end;
@@ -644,11 +601,11 @@
 					superscript = catt('*',',', compress(catx(',', of fn[*]),'.,'));
 				end;
 			end;
-			else do; */
-			superscript = catx(',',of fn[*]);
-			superscript=compress(strip(tranwrd(superscript,".,","")),".");
-/* 			end;
- */			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
+			else do;
+				superscript = catx(',',of fn[*]);
+				superscript=compress(strip(tranwrd(superscript,".,","")),".");
+			end;
+			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
 			if label = "Gestational age at delivery" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
 				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
@@ -659,18 +616,37 @@
 			end;
 			else label=catt(label, superscript);			
 			run;
-
-			data output.testing;
-				set table1;
-			run;
 		%end;
 
         /*Set first word for SDthreshold footnote*/
 		%if %str(&sdthreshold.) ne %str() %then %do;
              %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
              %else %let covar_characteristic = Characteristics;
-        %end;
+    %end;
 
+    %if %length(&covinps) > 0 %then %do;
+    	data _onlycovinps _otherrows;
+    		set _footnotes;
+    		if description = 'Covariate included in the propensity score logistic regression model.' then output _onlycovinps;
+    		else output _otherrows;
+    	run;
+    	
+    	data _footnotes;
+	    	set _onlycovinps
+	    	    _otherrows;
+	    	new_order = _n_;
+   	  run;
+
+			proc sql noprint;
+			  select count(order) into: num_fn trimmed
+			  from _footnotes;
+
+			  select description into: fn1 - :fn&num_fn.
+			  from _footnotes
+			  order by new_order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+			quit;
+    %end;
+    %else %do;
 		proc sql noprint;
 		  select count(order) into: num_fn trimmed
 		  from _footnotes;
@@ -679,6 +655,7 @@
 		  from _footnotes
 		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
 		quit;
+		%end;
 
  
 		/* Assign macro variables for superscipts */
@@ -716,8 +693,6 @@
 		
         %if %length(&pregnancylabel.)>0 %then %let cohortheaderlabel = Cohort;
         %else %let cohortheaderlabel = Medical Product;
-
-			  options mprint mlogic symbolgen source2;
 
         %if &destination. = excel %then %do;
         ods excel options(sheet_name="Table 1&tableletter." tab_color = "lightgreen" flow="1:400");
@@ -860,9 +835,22 @@
 			/* Add Footnotes */
 			compute after / style=[just=L nobreakspace=off borderbottomcolor=white bordertopcolor=black  vjust=T fontsize=&footfontsize.
 			                        height=3.0in bordertopwidth = &bordersize];
+			  %if %length(&covinps) > 0 %then %do;
 			  %do f = 1 %to &num_fn.;
-            line "^{super &f.}&&fn&f.";
+			  	%if &f = 1 %then %do;
+			  		line "^{super *}&&fn&f.";
+			  	%end;
+			  	%else %do;
+            line "^{super %eval(&f.-1)}&&fn&f.";
+          %end;
 			  %end;
+			  %end;
+			  %else %do;
+			  	%do f = 1 %to &num_fn.;
+			  	  line "^{super &f.)}&&fn&f.";
+			  	%end;
+			  %end;
+
             endcomp;
 
             *Remove collapsed rows;
