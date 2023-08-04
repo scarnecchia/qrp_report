@@ -363,8 +363,8 @@
 		   /* 2nd Switch */
 		     %if %eval(&maxswitch=2) %then %do; 13 %end;
 		   %end;
-		   /* Comorbidscore is specified */
-		   %if &COMORBIDSCORE = Y %then %do; 19 %end;
+		   /* CCI is specified */
+		   %if &CCI = Y %then %do; 19 %end;
 		   /* PEDCOMORB score is specified */
 		   %if &PEDCOMORB = Y %then %do; 25 %end;
 		   /* HASBLED score is specified */
@@ -399,8 +399,8 @@
 		  %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;			
-			%if &fn_comorbidscore. ne N %then %do; 
-				if order_orig=19 then order=&fn_comorbidscore.; 		
+			%if &fn_CCI. ne N %then %do; 
+				if order_orig=19 then order=&fn_CCI.; 		
 			%end;
 			%if &fn_pedcomorb. ne N %then %do; 
 				if order_orig=25 then order=&fn_pedcomorb.; 		
@@ -456,8 +456,8 @@
 			%if &fn_covinps. ne N %then %do;	
 				if order_orig=&covinpsorder. then call symputx("fn_covinps",footnote_order);
 			%end;
-			%if &fn_comorbidscore. ne N %then %do; 
-				if order_orig=19 then call symputx("fn_comorbidscore",footnote_order);
+			%if &fn_CCI. ne N %then %do; 
+				if order_orig=19 then call symputx("fn_CCI",footnote_order);
 			%end;
 			%if &fn_pedcomorb. ne N %then %do; 
 				if order_orig=25 then call symputx("fn_pedcomorb",footnote_order);

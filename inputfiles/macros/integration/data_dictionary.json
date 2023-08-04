@@ -3413,18 +3413,22 @@
                     "info": "Defines risk score being requested",
                     "input_type": "SingleSelect",
                     "values": [
-						"COMORBIDSCORE",
+						"CCI",
 						"CHA2DS2VASC",
+						"HASBLED",
 						"OBSCOMORB",
 						"ADCSI",
-						"FRAILTY"
+						"FRAILTY", 
+						"PEDCOMORB"
 					],
 					"value_map": {
-						"COMORBIDSCORE": "Charlson/Elixhauser Comorbidity Index",
+						"CCI": "Charlson/Elixhauser Comorbidity Index",
 						"CHA2DS2VASC": "CHA2DS2-VASc Score",
+						"HASBLED": "HAS-BLED Score",
 						"OBSCOMORB": "Obstetric Comorbidity Score",
 						"ADCSI": "Adapted Diabetes Complications Severity Index",
-						"FRAILTY": "Frailty Index"
+						"FRAILTY": "Frailty Index",
+						"PEDCOMORB": "Pediatric Comorbidity Score"
 					}
                 },
 				{

@@ -2528,7 +2528,7 @@
 			format label $70.;
 			if upcase(riskscore) = "ADCSI" then label="Adapted Diabetes Complications Severity Index (aDCSI)";
 			else if upcase(riskscore) = "CHA2DS2VASC" then label="CHA^{sub 2}DS^{sub 2}-VASc score";
-			else if upcase(riskscore) = "COMORBIDSCORE" then label="Combined comorbidity score";
+			else if upcase(riskscore) = "CCI" then label="Combined comorbidity score";
 			else if upcase(riskscore) = "FRAILTY" then label="Claims-Based frailty index";
 			else if upcase(riskscore) = "HASBLED" then label="HAS-BLED score";
 			else if upcase(riskscore) = "OBSCOMORB" then label="Obstetric comorbidity index";
