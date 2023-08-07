@@ -435,6 +435,7 @@
             run;
 
             /* Only keep non-missing flag values */
+			%let non_missing_vars=;
             proc sql noprint;
                 select _var_ into :non_missing_vars separated by ' '
                 from _miss_ss&datasuffix
@@ -445,10 +446,12 @@
             data tablecolumns;
                 set tablecolumns;
                 columnsuperscript = 'N';
-                %do i = 1 %to %sysfunc(countw(&non_missing_vars));
-                    %let non_missing_var = %scan(&non_missing_vars,&i);
-                    if columnname = "%scan(&non_missing_var,1,%str(_))" then columnsuperscript = 'Y';
-                %end;
+				%if %str(&non_missing_vars) ne %str() %then %do;
+	                %do i = 1 %to %sysfunc(countw(&non_missing_vars));
+	                    %let non_missing_var = %scan(&non_missing_vars,&i);
+	                    if columnname = "%scan(&non_missing_var,1,%str(_))" then columnsuperscript = 'Y';
+	                %end;
+				%end;
             run;
     
             proc sql noprint;
