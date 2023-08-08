@@ -2529,7 +2529,7 @@
 			riskscore = upcase(riskscore);
 			if riskscore = "ADCSI" then label="Adapted Diabetes Complications Severity Index (aDCSI)";
 			else if riskscore = "CHA2DS2VASC" then label="CHA^{sub 2}DS^{sub 2}-VASc score";
-			else if riskscore = "COMORBIDSCORE" then label="Combined comorbidity score";
+			else if riskscore = "CCI" then label="Combined comorbidity score";
 			else if riskscore = "FRAILTY" then label="Claims-Based frailty index";
 			else if riskscore = "HASBLED" then label="HAS-BLED score";
 			else if riskscore = "OBSCOMORB" then label="Obstetric comorbidity index";
