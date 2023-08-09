@@ -313,6 +313,9 @@
 								%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
 									%let score = %scan(&riskscorelist,&scorenum);
 									if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';
+									/*due to length restrictions, recode ADCSI label and remove SAS specific coding for CHA2DS2VASC*/
+									if metvar = "ADCSI" then label = "Adapted Diabetes Complications Severity Index";
+								    if metvar = "CHA2DS2VASC" then label="CHA2DS2-VASc score";
 								%end;
 							%end;
                     %end;
