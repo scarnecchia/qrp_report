@@ -317,7 +317,7 @@
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 		   %if %length(&covinps.) > 0 %then %do; 
-		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (14 15 20
+		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (0 14 15
 		   %end;
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
@@ -580,34 +580,21 @@
              %else %let covar_characteristic = Characteristics;
     %end;
 
-    %if %length(&covinps) > 0 %then %do;
-    	data _footnotes;
-	    	set _onlycovinps
-	    	    _footnotes;
-	    	new_order = _n_;
-   	  	run;
+	data _footnotes;
+    set _onlycovinps
+        _footnotes;    
+    run;
 
-		proc sql noprint;
-		  select count(order) into: num_fn trimmed
-		  from _footnotes;
+	proc sql noprint;
+	  select count(order) into: num_fn trimmed
+	  from _footnotes;
 
-		  select description into: fn1 - :fn&num_fn.
-		  from _footnotes
-		  order by new_order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
-		quit;
-    %end;
-    %else %do;
-		proc sql noprint;
-		  select count(order) into: num_fn trimmed
-		  from _footnotes;
+	  select description into: fn1 - :fn&num_fn.
+	  from _footnotes
+	  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+	quit;
 
-		  select description into: fn1 - :fn&num_fn.
-		  from _footnotes
-		  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
-		quit;
-		%end;
-
- 
+    
 		/* Assign macro variables for superscipts */
 		%assign_superscripts(type =title, order =-2 -1);
 		%assign_superscripts(type =character, order =1 2 4 5 6 7 8 9 10 11 );
