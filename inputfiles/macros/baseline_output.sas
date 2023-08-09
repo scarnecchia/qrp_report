@@ -124,8 +124,7 @@
             run;
         %end;
 
-		/* Select Footnotes */  
-		%let covinpsorder = 20;
+		/* Select Footnotes */  		
 		%let fn_labcovar = 21;
 		%global covarlablabels;
 		%let covarlablabels=;
@@ -318,7 +317,7 @@
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 		   %if %length(&covinps.) > 0 %then %do; 
-		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (14 &covinpsorder. 15
+		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (14 15 20
 		   %end;
 		   %else %do;
 	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
@@ -452,10 +451,7 @@
 
 			data _footnotes;
 			set _footnotes;
-			footnote_order = _n_;
-			%if &fn_covinps. ne N %then %do;	
-				if order_orig=&covinpsorder. then call symputx("fn_covinps",footnote_order);
-			%end;
+			footnote_order = _n_;			
 			%if &fn_CCI. ne N %then %do; 
 				if order_orig=19 then call symputx("fn_CCI",footnote_order);
 			%end;
@@ -622,8 +618,7 @@
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =nonlive, order =17);	
-		%assign_superscripts(type =gestage, order =18);		
-		%assign_superscripts(type =covar, order =&covinpsorder.);
+		%assign_superscripts(type =gestage, order =18);				
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
 
 		
@@ -733,10 +728,10 @@
 			  /* For type 4 or when riskscores are requested the superscripts are already in the labels */
 			  %if %index(&reporttype,T4) = 0 and &riskscore_footnotes. eq N %then %do;
 				  %if %length(&covinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
-					else if upcase(label) in (&covarlablabels.) then label = catt(label, "&super_covar.");
+					else if upcase(label) in (&covarlablabels.) then label = catt(label, "^{Super *}");
 				  %end;
 	              %if %length(&covinps.) > 0 %then %do;				   
-	                else if metvar in (&covinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "&super_covar.");
+	                else if metvar in (&covinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "^{Super *}");
 	              %end;
 			  %end;
 
