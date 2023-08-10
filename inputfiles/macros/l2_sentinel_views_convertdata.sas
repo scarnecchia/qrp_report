@@ -68,9 +68,9 @@
             from covarname;
 
             %if %sysfunc(exist(riskscorefile)) %then %do;
-                select distinct cats(riskscore,'_CAT')
-                into :riskscore_regex separated by '|'
-                from riskscorefile;
+                select distinct cats(riskscore,'_CAT'), riskscore
+	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+	            from riskscorefile;
             %end;
         quit;
 
@@ -306,9 +306,18 @@
                             %if &psmodelvar = HISPANIC %then %do;
                                 if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
                             %end;
-                            %if %sysfunc(prxmatch(/COVAR*|^NUM*|COMORBID*/,&psmodelvar)) %then %do; 
+                            %if %sysfunc(prxmatch(/COVAR*|^NUM*/,&psmodelvar)) %then %do; 
                                 if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
                             %end;
+							%if %sysfunc(exist(riskscorefile)) %then %do;
+								%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
+									%let score = %scan(&riskscorelist,&scorenum);
+									if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';
+									/*due to length restrictions, recode ADCSI label and remove SAS specific coding for CHA2DS2VASC*/
+									if metvar = "ADCSI" then label = "Adapted Diabetes Complications Severity Index";
+								    if metvar = "CHA2DS2VASC" then label="CHA2DS2-VASc score";
+								%end;
+							%end;
                     %end;
                 end;/* psestimategrp */
                 %end; /* m */
