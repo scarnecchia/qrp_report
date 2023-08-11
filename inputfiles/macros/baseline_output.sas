@@ -308,8 +308,7 @@
 		by order;
 		run;
 
-		data _footnotes
-			 _onlycovinps;
+		data _footnotes;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */		  
 		   set _footnotes (where =  ((type = "baseline" and order in (14 15		   		   	          
@@ -427,10 +426,7 @@
 			%end;
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then order=&fn_nonlive.; 		
-			%end;		  
-
-		  if description = 'Covariate included in the propensity score logistic regression model.' then output _onlycovinps;
-    	  else output _footnotes;
+			%end;		  		  
 	    run;
 		
 			* Compute new superscript and footnote values based on dynamic values;
@@ -440,7 +436,7 @@
 
 			data _footnotes;
 			set _footnotes;
-			footnote_order = _n_;			
+			footnote_order = _n_ %if %length(&covinps.) > 0 %then %do; -1 %end;;			
 			%if &fn_CCI. ne N %then %do; 
 				if order_orig=19 then call symputx("fn_CCI",footnote_order);
 			%end;
@@ -566,12 +562,7 @@
 		%if %str(&sdthreshold.) ne %str() %then %do;
              %if %index(&reporttype,L2) %then %let covar_characteristic = Covariates;
              %else %let covar_characteristic = Characteristics;
-    %end;
-
-	data _footnotes;
-    set _onlycovinps
-        _footnotes;    
-    run;
+    %end;	
 
 	proc sql noprint;
 	  select count(order) into: num_fn trimmed
