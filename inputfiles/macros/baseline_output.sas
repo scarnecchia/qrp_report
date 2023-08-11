@@ -311,13 +311,9 @@
 		data _footnotes
 			 _onlycovinps;
 		   length footnote_order 3; 
-		   /* Always displayed across all types */
-		   %if %length(&covinps.) > 0 %then %do; 
-		     set _footnotes (where =  ((type = "baseline" and order in (-4 14 15
-		   %end;
-		   %else %do;
-	         set _footnotes (where = ((type = "baseline" and order in (14 15   
-		   %end;
+		   /* Always displayed across all types */		  
+		   set _footnotes (where =  ((type = "baseline" and order in (14 15		   		   	          
+		   %if %length(&covinps.) > 0 %then %do; -4 %end;
 		   /* T4 L1 or L2 non live birth outcomes requested*/
 		   %if %index(&reporttype,T4) > 0 and &nonlivefn. = Y %then %do; 17 %end;
 		   /* T4 L1 or L2 gestational age specified*/
