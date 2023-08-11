@@ -304,15 +304,19 @@
 				%if &fn_mi_covar. eq &fn_labcovar. %then %let fn_mi_covar=&fn_labcovar..1;				
 			%end;					
 
+		proc sort data=lookup.lookup_footnotes out=_footnotes;
+		by order;
+		run;
+
 		data _footnotes
 			 _onlycovinps;
 		   length footnote_order 3; 
 		   /* Always displayed across all types */
 		   %if %length(&covinps.) > 0 %then %do; 
-		     set lookup.lookup_footnotes (where =  ((type = "baseline" and order in (0 14 15
+		     set _footnotes (where =  ((type = "baseline" and order in (-4 14 15
 		   %end;
 		   %else %do;
-	         set lookup.lookup_footnotes (where = ((type = "baseline" and order in (14 15   
+	         set _footnotes (where = ((type = "baseline" and order in (14 15   
 		   %end;
 		   /* T4 L1 or L2 non live birth outcomes requested*/
 		   %if %index(&reporttype,T4) > 0 and &nonlivefn. = Y %then %do; 17 %end;
@@ -762,7 +766,7 @@
 			  %end;
 			  %else %do;
 			  	%do f = 1 %to &num_fn.;
-			  	  line "^{super &f.)}&&fn&f.";
+			  	  line "^{super &f.}&&fn&f.";
 			  	%end;
 			  %end;
 

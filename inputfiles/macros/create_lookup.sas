@@ -42,7 +42,7 @@
       type = "type4"; order = -1;  description = "The non-pregnancy cohort includes patients without live birth deliveries or non-live birth outcomes during the pregnancy episode of the matched pregnant patient, who met all inclusion/exclusion criteria and were the same integer age on the last date of the matched pregnant patient's pregnancy episode."; output;
 
 	   /* Footnotes for baseline table */
-	  type = "baseline";  order = 0; description = "Covariate included in the propensity score logistic regression model."; output;	   
+	  type = "baseline";  order = -4; description = "Covariate included in the propensity score logistic regression model."; output;	   
       type = "baseline";  order = 1;  description = "All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients."; output;
 	  type = "baseline";  order = 2;  description = "&covar_characteristic. in blue show a standardized difference greater than &sdthreshold.."; output;
 	  type = "baseline";  order = 4;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after propensity score (PS) stratum weighting and should not be interpreted as a description of the unweighted population. Treated/control patients are weighted by the proportion of the total patient population included in their PS stratum divided by the proportion of the total treated/control patient population included in their PS stratum."; output;
