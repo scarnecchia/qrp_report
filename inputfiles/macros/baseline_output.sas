@@ -173,21 +173,15 @@
 
 				%put &=covarlablabels;
 	    %end;
-
-		%global standard_riskscores_withfn_clist;
-		%let standard_riskscores_withfn_clist=;
-		%let standard_riskscores_withfn = &riskscorelibrary.;
-		%create_comma_charlist(inlist=&standard_riskscores_withfn, outlist=standard_riskscores_withfn_clist);
+		
+		%let standard_riskscores_withfn = &riskscorelibrary.;		
 		%let riskscore_footnotes=N;
 		%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
 			%let riskscorename=%upcase(%scan(&standard_riskscores_withfn., &rskscore., %str( )));
 			%if &&&riskscorename. = Y %then %let riskscore_footnotes=Y;
 		%end;
 
-		/* Process additional footnotes related to mother-infant or infant covariates (CODEPOP= MI or I) for type 4 reports
-		   Process additional footnotes related to generalized riskscores if they are requested
-		 */
-		%if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
+	
 			/* Because the order of the following footnotes can change and because there can be 
 			   many diferent combination of superscripts involving them, we must reassess order 
 			   and assign superscript dynamically for each covariate
@@ -308,9 +302,7 @@
 			%end;
 			%if &fn_mi_covar. ne N and &fn_labcovar. ne N %then %do;
 				%if &fn_mi_covar. eq &fn_labcovar. %then %let fn_mi_covar=&fn_labcovar..1;				
-			%end;			
-		%end; /* Type 4 report or riskscore footnotes required */
-		%else %let table1_dataset=repdata.table1&tableletter.;
+			%end;					
 
 		data _footnotes
 			 _onlycovinps;
@@ -394,8 +386,7 @@
                 ));
 		  by order;
 		  footnote_order = _n_;
-
-		  %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
+		  
 			* Overwrite original order with dynamically computed order;
 			order_orig=order;			
 			%if &fn_CCI. ne N %then %do; 
@@ -436,14 +427,12 @@
 			%end;
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then order=&fn_nonlive.; 		
-			%end;
-		  %end;
+			%end;		  
 
 		  if description = 'Covariate included in the propensity score logistic regression model.' then output _onlycovinps;
     	  else output _footnotes;
 	    run;
-
-		%if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do;
+		
 			* Compute new superscript and footnote values based on dynamic values;
 			proc sort data=_footnotes;
 			by order order_orig;
@@ -571,8 +560,7 @@
 				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super *}");
 			end;
 			else label=catt(label, superscript);			
-			run;
-		%end;
+			run;		
 
         /*Set first word for SDthreshold footnote*/
 		%if %str(&sdthreshold.) ne %str() %then %do;
@@ -591,7 +579,7 @@
 
 	  select description into: fn1 - :fn&num_fn.
 	  from _footnotes
-	  order by order %if %index(&reporttype,T4) > 0 or &riskscore_footnotes. eq Y %then %do; , order_orig %end;;
+	  order by order, order_orig;
 	quit;
 
     
@@ -711,16 +699,7 @@
             
             compute label;
 			  /*Add static superscripts to labels*/
-              if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  			  
-			  /* For type 4 or when riskscores are requested the superscripts are already in the labels */
-			  %if %index(&reporttype,T4) = 0 and &riskscore_footnotes. eq N %then %do;
-				  %if %length(&covinps.) > 0 and %length(&covarlablabels.) > 0 %then %do;
-					else if upcase(label) in (&covarlablabels.) then label = catt(label, "^{Super *}");
-				  %end;
-	              %if %length(&covinps.) > 0 %then %do;				   
-	                else if metvar in (&covinps.) and upcase(label) ne "TEST RECORD" and metvar not in (&standard_riskscores_withfn_clist.) then label = catt(label, "^{Super *}");
-	              %end;
-			  %end;
+              if index(label,'Race') > 0 then label = catt(label,"&super_race.");			  			  			  
 
 			  /*Indent demographic header lines, riskscore category lines and lab covariate record lines*/			
 			  %if %length(&riskscoreslist.) > 0 %then %do;
