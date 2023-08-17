@@ -386,7 +386,7 @@
                 {
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
                     "values": []
@@ -2771,7 +2771,7 @@
 				{
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
                     "values": []
@@ -3185,7 +3185,7 @@
 				{
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, diagnosis, and/or procedure code of interest",
                     "input_type": "String",
                     "values": []
@@ -3948,7 +3948,7 @@
 				{
                     "id": "RAWCODE",
                     "name": "Raw Extraction Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Code used to extract the raw record. The code will be defined in accordance with RAWCODETYPE",
                     "input_type": "String",
                     "values": []
@@ -4067,7 +4067,7 @@
 				{
                     "id": "COMBCODE",
                     "name": "Combination Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "User-defined “code” that will appear on the final virtual record",
                     "input_type": "String",
                     "values": []
