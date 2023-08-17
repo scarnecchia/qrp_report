@@ -509,7 +509,11 @@
           end;
         run;
 
-        /*if CSV files, assign SAS format*/
+        /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
+		%if &leavebehindreport. ne Y %then %do;
+		libname tmplib "&INFOLDER";
+		%end;
+
         %isdata(dataset=qrp_parameters);
         %do p = 1 %to &nobs.;
 
@@ -537,6 +541,11 @@
             %end;
 
         %end;
+
+		/*restore tmplib to its original location*/
+		%if &leavebehindreport. ne Y %then %do;
+		libname tmplib "&REPORTROOT.inputfiles/";
+		%end;
 
         /***************************************************************************************************
          * Assign the maximum length to duplicate variable names if a format values table exists 
