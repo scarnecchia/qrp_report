@@ -1282,18 +1282,18 @@
 					}
                 },
 				{
-                    "id": "LABSCODEMAP",
+                    "id": "LABCODESMAP",
                     "name": "Lab Code Lookup Table",
                     "sas_format": "$32",
                     "info": "Name of the SAS lookup table defining lab codes used to query the SCDM Laboratory Result table",
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"labscodemap"
+						"labcodesmap"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"labscodemap": "Include"
+						"labcodesmap": "Include"
 					}
                 },
 				{

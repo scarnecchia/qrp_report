@@ -450,7 +450,7 @@
             &&id&n.._psmatchfile &&id&n.._stratificationfile &&id&n.._iptwfile &&id&n.._covstratfile &&id&n.._diagnostics &&id&n.._indlevel
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._micohortfile
-            &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
+            &&id&n.._surveillancemode &&id&n.._labcodesmap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
             &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration;
                   
@@ -489,7 +489,7 @@
         %let &&id&n.._drugclassfile        = ;        
         %let &&id&n.._micohortfile         = ;
         %let &&id&n.._surveillancemode     = ;
-        %let &&id&n.._labscodemap          = ;
+        %let &&id&n.._labcodesmap          = ;
         %let &&id&n.._zipfile              = ;
         %let &&id&n.._run_envelope         = ;
         %let &&id&n.._distindex            = ;
