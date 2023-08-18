@@ -173,22 +173,28 @@
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
- * Assign the maximum length to duplicate variable names if a format values table exists 
+ * Assign the maximum length to duplicate character variable names if a format values table exists 
  **************************************************************************************************/
     %if %sysfunc(exist(tmplib.format_values)) %then %do;
+		/* Get character variables length to make sure the max function below works correctly */
+		data tmplib.format_values;
+		set tmplib.format_values;
+		if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
+		run;
+
         %let inputvarlist=;
         proc sql noprint;
-            select catx('@',full_inputfile_name,id,sas_format)
+            select catx('@',full_inputfile_name,id,char_var_length)
             into :inputvarlist separated by ' '
             from 
-            (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+            (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
                 from tmplib.format_values a
                 inner join 
                  (select id, count(*) as id_counts
                     from tmplib.format_values 
                     group by id) b
             on a.id = b.id 
-            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
             group by b.id
             )
         quit;
@@ -197,7 +203,8 @@
             %let inputcombo = %scan(&inputvarlist,&x,%str( ));
             %let inputfile = %scan(&inputcombo,1,%str(@));
             %let inputvar = %scan(&inputcombo,2,%str(@));
-            %let varformat = %scan(&inputcombo,3,%str(@));
+            %let varformat = $%scan(&inputcombo,3,%str(@));
+			
             %if &leavebehindreport = Y %then %do;
                 data infolder.&inputfile;
                     length &inputvar &varformat;
@@ -548,22 +555,28 @@
 		%end;
 
         /***************************************************************************************************
-         * Assign the maximum length to duplicate variable names if a format values table exists 
+         * Assign the maximum length to duplicate character variable names if a format values table exists 
          **************************************************************************************************/
         %if %sysfunc(exist(tmplib.format_values)) %then %do;
+			/* Get character variables length to make sure the max function below works correctly */
+			data tmplib.format_values;
+			set tmplib.format_values;
+			if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
+			run;
+
             %let inputvarlist=;
             proc sql noprint;
-                select catx('@',full_inputfile_name,id,sas_format)
+                select catx('@',full_inputfile_name,id,char_var_length)
                 into :inputvarlist separated by ' '
                 from 
-                (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
                     from tmplib.format_values a
                     inner join 
                      (select id, count(*) as id_counts
                         from tmplib.format_values 
                         group by id) b
                 on a.id = b.id 
-                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
                 group by b.id
                 )
             quit;
@@ -572,8 +585,8 @@
                 %let inputcombo = %scan(&inputvarlist,&x,%str( ));
                 %let inputfile = %scan(&inputcombo,1,%str(@));
                 %let inputvar = %scan(&inputcombo,2,%str(@));
-                %let varformat = %scan(&inputcombo,3,%str(@));
-
+                %let varformat = $%scan(&inputcombo,3,%str(@));
+				
                     data infolder.&inputfile;
                         length &inputvar &varformat;
                         format &inputvar &varformat..;
