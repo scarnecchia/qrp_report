@@ -15,6 +15,7 @@
 *   - %convert_categories() macro converts categories to mathematical expression
 *	- %output_datasets() macro output SAS datasets  
 *   - %nonrep() macro removes repeated words in macro variable
+*	- %varlength macro gets a variable length and type
 *
 *  Program inputs:                                                                                   
 *   -
@@ -194,7 +195,7 @@
 	%end;
 %mend output_datasets;
 
-*Removes repeated words in a macro variable;
+*Macro to remove repeated words in a macro variable;
 %macro nonrep(invar= , outvar= );
     %global &outvar;
     %let long = ;
@@ -207,3 +208,24 @@
     %end;
     %let &outvar = &long.;
 %mend;
+
+*Macro to get variable length and type;
+%macro varlength (var = , indata = );
+	%global &var._len &var._typ;
+	
+	proc contents noprint data=&indata. out=var_length_contents;
+    run;
+	
+	proc sql noprint;
+	  select length 
+	        ,type  
+		into: &var._len trimmed
+		     ,:&var._typ
+	  from var_length_contents
+      where lowcase(name) = "%lowcase(&var.)";
+	quit;
+	
+	proc datasets noprint lib = work;
+	  delete var_length_contents;
+	quit;
+%mend varlength;
