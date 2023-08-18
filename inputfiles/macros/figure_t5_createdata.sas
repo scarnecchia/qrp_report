@@ -85,6 +85,7 @@
             by runid group;
         end;
         length mntsfromstart 4;
+		if missing(maxmonths) then maxmonths = 1; /*defensive when there are 0 patients in cohort*/
         do mntsfromstart = 1 to maxmonths;
             output;
         end;
