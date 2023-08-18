@@ -406,22 +406,43 @@
 						  format n min max mean sd best12.;
 						  call missing(of _all_);
 						  run;
-					  %end;
-					  
-					  data appendixsubgroup_&sub._&cat.;
-					    length dpidsiteid $10;
-                        set aggdistribution(in=a) 
-					   	    weightdistribution;
-                        if a then do;
-						  dpidsiteid="Aggregated";
-						  subgroup = "&subgroup.";
-						  subgroupcat = "&subgroupcat.";
-						  periodid = "&periodid";
-						  analysisgrp = "&analysisgrp.";
-						end;
-					  run;
-						
+					  %end;					  					  						
 					%end; /* Nobs > 0 weightdistribution */
+					%else %do;
+						data weightdistribution;
+						set aggwd(where=(analysisgrp="&analysisgrp." and runid="&runid" and periodid=&periodid. and subgroup = "" and subgroupcat = ""));
+						subgroup = "&subgroup";
+						subgroupcat = "&subgroupcat.";
+						N=.;
+						min=.;
+						max=.;
+						mean=.;
+						sd=.;
+						keep analysisgrp subgroup subgroupcat dpidsiteid N min max mean sd periodid;
+						run;
+
+						proc sort data = weightdistribution nodupkey;
+						by periodid dpidsiteid subgroup subgroupcat;
+						run;
+
+						data aggdistribution;
+						format n min max mean sd best12.;
+						call missing(of _all_);
+						run;
+				    %end; /* Nobs = 0 weightdistribution */
+
+					data appendixsubgroup_&sub._&cat.;
+					length dpidsiteid $10;
+					set aggdistribution(in=a) 
+					    weightdistribution;
+					if a then do;
+					  dpidsiteid="Aggregated";
+					  subgroup = "&subgroup.";
+					  subgroupcat = "&subgroupcat.";
+					  periodid = "&periodid";
+					  analysisgrp = "&analysisgrp.";
+					end;
+					run;
                   %end; /* Subgroup Categorization */
 	
                   
