@@ -75,7 +75,7 @@
 	   /* Footnotes for L2 effect estimates table */	  
 	  type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
 	  type = "effectest"; order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-	  type = "effectest"; order = 3;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
+	  type = "effectest"; order = 3;  description = "Gestational age categories based on algorithm-derived pregnancy duration."; output;
 	  type = "effectest"; order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 
        /* Footnotes for attrition table */
