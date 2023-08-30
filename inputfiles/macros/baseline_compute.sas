@@ -1873,7 +1873,7 @@
 						%end;
                     end;
                     if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
+                    %assignbaselinevars(label="Gestational age at pregnancy outcome (weeks)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
                     end;
                 end; 
                 else if metvar in (&exposurechar.) then do;      

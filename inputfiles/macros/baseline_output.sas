@@ -547,7 +547,7 @@
 				superscript=compress(strip(tranwrd(superscript,".,","")),".");
 			end;
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
-			if label = "Gestational age at delivery" then do;
+			if label = "Gestational age at pregnancy outcome (weeks)" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
 				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
 			end;	
