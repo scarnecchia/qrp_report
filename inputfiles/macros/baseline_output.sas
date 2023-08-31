@@ -842,8 +842,8 @@
 
                 %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                 if cohort in ('preg', 'nopreg') then do;
-                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                    else call symput('pregnancylabel', ' Pregnancy Cohort');
+                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnant Cohort and Non-Pregnant Cohort');
+                    else call symput('pregnancylabel', ' Pregnant Cohort');
                 end;
                 call symputx('includenonpregnant', upcase(includenonpregnant));
                 %end;
