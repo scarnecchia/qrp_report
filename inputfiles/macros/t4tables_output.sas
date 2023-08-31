@@ -59,7 +59,9 @@
     /*Assign footnotes*/
     data _footnotes;
        length footnote_order 3; 
-       set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0
+       set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0	   	  
+	   	  %if &T2Columns.=Y %then %do; 6 %end;
+		  %if &T3Columns.=Y %then %do; 7 %end;
           %if &table.=T1 %then %do;
            %if &nonpreg. = Y %then %do; 1 %end;
             %else %do; 2 %end;
@@ -88,7 +90,9 @@
 
 	%assign_superscripts(type=title, order = -2 -1);
 	%assign_superscripts(type=exposure, order = 1 2 3 4);
-    %assign_superscripts(type=column, order = 5);
+    %assign_superscripts(type=column, order = 5);	
+	%assign_superscripts(type=T2column, order = 6);
+	%assign_superscripts(type=T3column, order = 7);
 
     /*Save dataset to repdata folder*/
     %isdata(dataset=repdata.table&tabnum.);
@@ -127,6 +131,16 @@
                 quit; 
                 %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
                 %if &columnsuperscript_flag = Y %then %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
+
+				%if %index(%upcase(&label.),SECOND) %then %do;
+					%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T2column.,^{Super }))};		
+					%else %let label=&label.&super_T2column.;
+				%end;
+				%else %if %index(%upcase(&label.),THIRD) %then %do;
+					%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T3column.,^{Super }))};
+					%else %let label=&label.&super_T3column.;
+				%end;
+
                 %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
             %end;
         %end;
@@ -134,7 +148,7 @@
     %else %do;
         %let columnstatement = &varlist;
     %end;
-     
+  
     /*Write to report*/
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table &tabnum." tab_color='green' flow="1:400");

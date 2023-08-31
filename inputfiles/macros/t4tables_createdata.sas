@@ -452,6 +452,13 @@
            run;
         %end; /*gestational week table transpose*/
 		
+	   	/* Check if columns related to 2nd/3rd trimesters are requested */
+	    %global T2Columns T3Columns;
+		%let T2Columns=N;
+		%let T3Columns=N;
+		%if %index(%upcase(&sumcolumns.), ANYT2) | %index(%upcase(&sumcolumns.), ONLYT2) %then %let T2Columns=Y;
+		%if %index(%upcase(&sumcolumns.), ANYT3) | %index(%upcase(&sumcolumns.), ONLYT3) %then %let T3Columns=Y;
+
 	   /* Apply labels */
        proc sql noprint;
          create table &dsout. as
