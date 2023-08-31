@@ -1399,7 +1399,7 @@ libname tempfl "";
        table = "T1"; Column = "anyt1";                 ColumnLabel = "Use in First Trimester";                         ColumnFormat = "comma14.0";  order = 5;  IncludeinReport = "Y"; columnwidth=.9; output; 
        table = "T1"; Column = "anyt1/episodes";        ColumnLabel = "Use in First Trimester";                         ColumnFormat = "percent8.1"; order = 6;  IncludeinReport = "Y"; columnwidth=.7; output;    
        table = "T1"; Column = "anyt2";                 ColumnLabel = "Use in Second Trimester";                        ColumnFormat = "comma14.0";  order = 7;  IncludeinReport = "Y"; columnwidth=.9; output; 
-       table = "T1"; Column = "anyt2/episodes";        ColumnLabel = "Use in Second Trimester";                        ColumnFormat = "percent8.1"; order = 8;  IncludeinReport = "Y"; columnwidth=.7; output; 
+       table = "T1"; Column = "anyt2/episodes_2trim";  ColumnLabel = "Use in Second Trimester";                        ColumnFormat = "percent8.1"; order = 8;  IncludeinReport = "Y"; columnwidth=.7; output; 
        table = "T1"; Column = "anyt3";                 ColumnLabel = "Use in Third Trimester";                         ColumnFormat = "comma14.0";  order = 9;  IncludeinReport = "Y"; columnwidth=.9; output; 
        table = "T1"; Column = "anyt3/episodes_3trim";  ColumnLabel = "Use in Third Trimester";                         ColumnFormat = "percent8.1"; order = 10; IncludeinReport = "Y"; columnwidth=.7; output; 
        table = "T1"; Column = "allt";                  ColumnLabel = "Use in All Trimesters";                          ColumnFormat = "comma14.0";  order = 11; IncludeinReport = "Y"; columnwidth=.9; output; 
@@ -1407,7 +1407,7 @@ libname tempfl "";
        table = "T1"; Column = "onlyt1";                ColumnLabel = "Use Only During First Trimester";                ColumnFormat = "comma14.0";  order = 13; IncludeinReport = "Y"; columnwidth=.9; output; 
        table = "T1"; Column = "onlyt1/episodes";       ColumnLabel = "Use Only During First Trimester";                ColumnFormat = "percent8.1"; order = 14; IncludeinReport = "Y"; columnwidth=.7; output; 
        table = "T1"; Column = "onlyt2";                ColumnLabel = "Use Only During Second Trimester";               ColumnFormat = "comma14.0";  order = 15; IncludeinReport = "Y"; columnwidth=.9; output; 
-       table = "T1"; Column = "onlyt2/episodes";       ColumnLabel = "Use Only During Second Trimester";               ColumnFormat = "percent8.1"; order = 16; IncludeinReport = "Y"; columnwidth=.7; output; 
+       table = "T1"; Column = "onlyt2/episodes_2trim"; ColumnLabel = "Use Only During Second Trimester";               ColumnFormat = "percent8.1"; order = 16; IncludeinReport = "Y"; columnwidth=.7; output; 
        table = "T1"; Column = "onlyt3";                ColumnLabel = "Use Only During Third Trimester";                ColumnFormat = "comma14.0";  order = 17; IncludeinReport = "Y"; columnwidth=.9; output; 
        table = "T1"; Column = "onlyt3/episodes_3trim"; ColumnLabel = "Use Only During Third Trimester";                ColumnFormat = "percent8.1"; order = 18; IncludeinReport = "Y"; columnwidth=.7; output; 
                                                  
