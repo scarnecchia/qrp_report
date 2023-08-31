@@ -120,6 +120,8 @@
 	  type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
 	  type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
 	  type = "t4l1moi"; order = 5;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;
+	  type = "t4l1moi"; order = 6;  description = "Assessing medical product use in the second trimester requires a pregnancy to continue to the second trimester (i.e. pregnancy was not terminated in the first trimester); the denominator is the total number of pregnancy episodes that progress to the second trimester."; output;
+	  type = "t4l1moi"; order = 7;  description = "Assessing medical product use in the third trimester requires a pregnancy to continue to the third trimester. The denominator is the total number of pregnancy episodes that progress to the third trimester."; output;
 
      run; 
 
