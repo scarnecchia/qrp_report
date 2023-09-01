@@ -89,6 +89,9 @@
             %let baselinegroupnum = ;
             %let pregnancylabel = ;
             %let includenonpregnant = N;
+            %let live_preg_outcomes = 'PREG_OUTCOME_LB' 'PREG_OUTCOME_MIL' 'PREG_OUTCOME_UNC';
+            %let nonlive_preg_outcomes = 'PREG_OUTCOME_SB' 'PREG_OUTCOME_SA' 'PREG_OUTCOME_TRO' 'PREG_OUTCOME_AB' 'PREG_OUTCOME_ECT';
+            %let preg_outcome_descr=;
 
             /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
             %let ratio = F;
@@ -113,8 +116,34 @@
 					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
-                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                        else call symput('pregnancylabel', ' Pregnancy Cohort');
+                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnant Cohort and Non-Pregnant Cohort');
+                         else if upcase(pregnancychar) in (&live_preg_outcomes) and 
+                            ^upcase(pregnancychar) in (&nonlive_preg_outcomes) then call symputx('pregnancylabel',' Live Birth Delivery Cohort');
+                    else if upcase(pregnancychar) in (&nonlive_preg_outcomes) and 
+                            ^upcase(pregnancychar) in (&live_preg_outcomes) then do;
+                                count=0;
+                                substring="PREG_OUTCOME_SB PREG_OUTCOME_SA PREG_OUTCOME_TRO PREG_OUTCOME_AB PREG_OUTCOME_ECT";
+                                do i = 1 to countw(substring);
+                                    count + count(upcase(pregnancychar), strip(scan(substring,i)),'i');
+                                end;
+                                if count > 1 then call symput('pregnancylabel',' Non-live Birth Outcomes Cohort');
+                                else if count = 1 then do;
+                                    rc = dosubl(cats("proc sql noprint;
+                                                  select descr into :preg_outcome_descr from master_pregnancymeta 
+                                                  where catt('PREG_OUTCOME_',upcase(preg_outcome) =", substring, ";quit;"));
+                                    call symputx('pregnancylabel', cat("&preg_outcome_descr",' Cohort'));
+                                end;
+                    end;
+                    else if upcase(pregnancychar) in ('PREG_OUTCOME_MIX') and 
+                        ^upcase(pregnancychar) in (&live_preg_outcomes) and 
+                        ^upcase(pregnancychar) in (&nonlive_preg_outcomes) then do; 
+                            rc = dosubl("proc sql noprint;
+                                              select descr into :preg_outcome_descr from master_pregnancymeta 
+                                              where upcase(preg_outcome) = MIX; 
+                                         quit;");
+                        call symputx('pregnancylabel', cat("&preg_outcome_descr",' Cohort'));
+                    end;
+                        else call symput('pregnancylabel', ' Pregnant Cohort');
                     end;
                     call symputx('includenonpregnant', upcase(includenonpregnant));
                     %end;
