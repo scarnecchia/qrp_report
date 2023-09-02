@@ -89,9 +89,11 @@
             %let baselinegroupnum = ;
             %let pregnancylabel = ;
             %let includenonpregnant = N;
-            %let live_preg_outcomes = 'PREG_OUTCOME_LB' 'PREG_OUTCOME_MIL' 'PREG_OUTCOME_UNC';
-            %let nonlive_preg_outcomes = 'PREG_OUTCOME_SB' 'PREG_OUTCOME_SA' 'PREG_OUTCOME_TRO' 'PREG_OUTCOME_AB' 'PREG_OUTCOME_ECT';
+            %let live_preg_outcomes = PREG_OUTCOME_LB|PREG_OUTCOME_MIL|PREG_OUTCOME_UNC;
+            %let nonlive_preg_outcomes = PREG_OUTCOME_SB|PREG_OUTCOME_SA|PREG_OUTCOME_TRO|PREG_OUTCOME_AB|PREG_OUTCOME_ECT;
             %let preg_outcome_descr=;
+            %let pregoutcomelabel=;
+            %let preg_outcome_var=;
 
             /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
             %let ratio = F;
@@ -106,6 +108,12 @@
             %let psestimategrp = ;
             %let unadjusted = ;
 
+            proc sql noprint;
+                select scan(upcase(pregnancychar),-1,'_') into :preg_outcome_var trimmed 
+                from baselinefile
+                where prxmatch('/PREG_OUTCOME_.*/i',pregnancychar) and order=&b;
+            quit;
+
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
@@ -116,32 +124,36 @@
 					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
-                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnant Cohort and Non-Pregnant Cohort');
-                         else if upcase(pregnancychar) in (&live_preg_outcomes) and 
-                            ^upcase(pregnancychar) in (&nonlive_preg_outcomes) then call symputx('pregnancylabel',' Live Birth Delivery Cohort');
-                    else if upcase(pregnancychar) in (&nonlive_preg_outcomes) and 
-                            ^upcase(pregnancychar) in (&live_preg_outcomes) then do;
+                    if prxmatch("/&live_preg_outcomes/i",pregnancychar) and ^prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) 
+                    then call symputx('pregoutcomelabel',' Live Birth Delivery Cohort');
+                    else if prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) and 
+                            ^prxmatch("/&live_preg_outcomes/i",pregnancychar) then do;
                                 count=0;
                                 substring="PREG_OUTCOME_SB PREG_OUTCOME_SA PREG_OUTCOME_TRO PREG_OUTCOME_AB PREG_OUTCOME_ECT";
                                 do i = 1 to countw(substring);
                                     count + count(upcase(pregnancychar), strip(scan(substring,i)),'i');
                                 end;
-                                if count > 1 then call symput('pregnancylabel',' Non-live Birth Outcomes Cohort');
+                                if count > 1 then call symput('pregoutcomelabel',' Non-live Birth Outcomes Cohort');
                                 else if count = 1 then do;
-                                    rc = dosubl(cats("proc sql noprint;
-                                                  select descr into :preg_outcome_descr from master_pregnancymeta 
-                                                  where catt('PREG_OUTCOME_',upcase(preg_outcome) =", substring, ";quit;"));
-                                    call symputx('pregnancylabel', cat("&preg_outcome_descr",' Cohort'));
+                                    rc = dosubl("proc sql noprint;
+                                                    select descr into :preg_outcome_descr trimmed
+                                                    from master_pregnancymeta 
+                                                    where upcase(preg_outcome) = (select strip(scan(upcase(pregnancychar),-1,'_'))
+                                                                                        from baselinefile 
+                                                                                        where prxmatch('/PREG_OUTCOME_/i',pregnancychar) and order=&b);
+                                                quit;");
+                                    call symputx('pregoutcomelabel', cat(symget('preg_outcome_descr'),' Cohort'));
                                 end;
                     end;
-                    else if upcase(pregnancychar) in ('PREG_OUTCOME_MIX') and 
-                        ^upcase(pregnancychar) in (&live_preg_outcomes) and 
-                        ^upcase(pregnancychar) in (&nonlive_preg_outcomes) then do; 
-                            rc = dosubl("proc sql noprint;
-                                              select descr into :preg_outcome_descr from master_pregnancymeta 
-                                              where upcase(preg_outcome) = MIX; 
-                                         quit;");
-                        call symputx('pregnancylabel', cat("&preg_outcome_descr",' Cohort'));
+                    else if prxmatch('/PREG_OUTCOME_MIX/i',pregnancychar) and 
+                        ^prxmatch("/&live_preg_outcomes/i",pregnancychar) and 
+                        ^prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) then do; 
+                            rc = dosubl('proc sql noprint;
+                                              select descr into :preg_outcome_descr trimmed
+                                              from master_pregnancymeta 
+                                              where upcase(preg_outcome) = "MIX"; 
+                                         quit;');
+                        call symputx('pregoutcomelabel', cat(symget('preg_outcome_descr'),' Cohort'));
                     end;
                         else call symput('pregnancylabel', ' Pregnant Cohort');
                     end;
@@ -155,8 +167,7 @@
                         call symputx('analysisgrp2',analysisgrp);
                     end;
                 end;
-            run;
-         
+            run;         
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
