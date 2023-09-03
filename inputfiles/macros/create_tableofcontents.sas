@@ -92,8 +92,6 @@
             %let live_preg_outcomes = PREG_OUTCOME_LB|PREG_OUTCOME_MIL|PREG_OUTCOME_UNC;
             %let nonlive_preg_outcomes = PREG_OUTCOME_SB|PREG_OUTCOME_SA|PREG_OUTCOME_TRO|PREG_OUTCOME_AB|PREG_OUTCOME_ECT;
             %let preg_outcome_descr=;
-            %let pregoutcomelabel=;
-            %let preg_outcome_var=;
 
             /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
             %let ratio = F;
@@ -108,12 +106,6 @@
             %let psestimategrp = ;
             %let unadjusted = ;
 
-            proc sql noprint;
-                select scan(upcase(pregnancychar),-1,'_') into :preg_outcome_var trimmed 
-                from baselinefile
-                where prxmatch('/PREG_OUTCOME_.*/i',pregnancychar) and order=&b;
-            quit;
-
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
@@ -124,8 +116,12 @@
 					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
-                    if prxmatch("/&live_preg_outcomes/i",pregnancychar) and ^prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) 
-                    then call symputx('pregoutcomelabel',' Live Birth Delivery Cohort');
+                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnant Cohort and Non-Pregnant Cohort');
+                        else call symput('pregnancylabel', ' Pregnant Cohort');
+                    if prxmatch("/&live_preg_outcomes/i",pregnancychar) and ^prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) then do;
+                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel',' Live Birth Delivery Cohort and Non-Pregnant Cohort');
+                        else call symputx('pregnancylabel',' Live Birth Delivery Cohort');
+                    end;
                     else if prxmatch("/&nonlive_preg_outcomes/i",pregnancychar) and 
                             ^prxmatch("/&live_preg_outcomes/i",pregnancychar) then do;
                                 count=0;
@@ -133,7 +129,10 @@
                                 do i = 1 to countw(substring);
                                     count + count(upcase(pregnancychar), strip(scan(substring,i)),'i');
                                 end;
-                                if count > 1 then call symput('pregoutcomelabel',' Non-live Birth Outcomes Cohort');
+                                if count > 1 then do;
+                                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel',' Non-live Birth Outcomes Cohort and Non-Pregnant Cohort');
+                                    else call symput('pregnancylabel',' Non-live Birth Outcomes Cohort');
+                                end;
                                 else if count = 1 then do;
                                     rc = dosubl("proc sql noprint;
                                                     select descr into :preg_outcome_descr trimmed
@@ -142,7 +141,8 @@
                                                                                         from baselinefile 
                                                                                         where prxmatch('/PREG_OUTCOME_/i',pregnancychar) and order=&b);
                                                 quit;");
-                                    call symputx('pregoutcomelabel', cat(symget('preg_outcome_descr'),' Cohort'));
+                                    call symputx('pregnancylabel', cat('%str( )', symget('preg_outcome_descr'),' Cohort'));
+                                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', cat('%str( )', symget('preg_outcome_descr'),' Cohort and Non-Pregnant Cohort'));
                                 end;
                     end;
                     else if prxmatch('/PREG_OUTCOME_MIX/i',pregnancychar) and 
@@ -152,16 +152,17 @@
                                               select descr into :preg_outcome_descr trimmed
                                               from master_pregnancymeta 
                                               where upcase(preg_outcome) = "MIX"; 
-                                         quit;');
-                        call symputx('pregoutcomelabel', cat(symget('preg_outcome_descr'),' Cohort'));
+                                         quit;
+                                         ');
+                        call symputx('pregnancylabel', cat('%str( )', symget('preg_outcome_descr'),' Cohort'));
+                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', cat('%str( )', symget('preg_outcome_descr'), ' Cohort and Non-Pregnant Cohort'));
                     end;
-                        else call symput('pregnancylabel', ' Pregnant Cohort');
                     end;
                     call symputx('includenonpregnant', upcase(includenonpregnant));
                     %end;
                     if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 end;
-                /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
+                /*if baselinegroupnum is specified,  2nd row will exist in the file*/
                 if _n_ = 2 then do;
                     if missing(baselinegroupnum)=0 then do;
                         call symputx('analysisgrp2',analysisgrp);
