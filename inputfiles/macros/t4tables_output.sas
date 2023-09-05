@@ -55,8 +55,17 @@
                        columnstatementlabels=,
                        definestatementlabels=,
                        spanningheader=);
-
+	
     /*Assign footnotes*/
+	%let T2Columns=N;
+	%let T3Columns=N;
+	%if &table. = T1 %then %do;
+	data _null_;
+	set &dataset.;
+	if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
+	if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
+	run;
+	%end;
     data _footnotes;
        length footnote_order 3; 
        set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0	   	  
@@ -107,6 +116,16 @@
                          %if %index(&dataset., _dps_) %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
+
+			/* Remove trimester counts from group label if table is not T1 */
+			%if &table. ne T1 %then %do;			
+			do strng=1 to countw(grouplabel,",");
+			substring=scan(grouplabel,strng,",");
+			end;
+			if index(grouplabel, "2nd trimester") > 0 or index(grouplabel, "3rd trimester") > 0 then 
+				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), substring);
+			drop strng substring;
+			%end;
     	run;
     %end;
 
@@ -132,15 +151,16 @@
                 %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
                 %if &columnsuperscript_flag = Y %then %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
 
-				%if %index(%upcase(&label.),SECOND) %then %do;
-					%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T2column.,^{Super }))};		
-					%else %let label=&label.&super_T2column.;
+				%if &table.=T1 %then %do;
+					%if %index(%upcase(&label.),SECOND) %then %do;
+						%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T2column.,^{Super }))};		
+						%else %let label=&label.&super_T2column.;
+					%end;
+					%else %if %index(%upcase(&label.),THIRD) %then %do;
+						%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T3column.,^{Super }))};
+						%else %let label=&label.&super_T3column.;
+					%end;
 				%end;
-				%else %if %index(%upcase(&label.),THIRD) %then %do;
-					%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T3column.,^{Super }))};
-					%else %let label=&label.&super_T3column.;
-				%end;
-
                 %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
             %end;
         %end;

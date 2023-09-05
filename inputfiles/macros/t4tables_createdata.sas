@@ -298,7 +298,7 @@
     		select distinct group into: cohort_list separated by ' ' from &dsin;
     	quit;
 
-	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. den_&episode_var._2trim den_&episode_var._3trim %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end;);
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end; %else %do; den_&episode_var._2trim den_&episode_var._3trim %end;);
 	     set &dsin.;
 		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
 		 %if &dataset. = preggestwk %then %do;
@@ -452,8 +452,7 @@
            run;
         %end; /*gestational week table transpose*/
 		
-	   	/* Check if columns related to 2nd/3rd trimesters are requested */
-	    %global T2Columns T3Columns;
+	   	/* Check if columns related to 2nd/3rd trimesters are requested */	    
 		%let T2Columns=N;
 		%let T3Columns=N;
 		%if %index(%upcase(&sumcolumns.), ANYT2) | %index(%upcase(&sumcolumns.), ONLYT2) %then %let T2Columns=Y;
