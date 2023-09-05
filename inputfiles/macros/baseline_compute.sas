@@ -1888,10 +1888,7 @@
 							/* Delete row if non live birth and/or mixed outcomes were not requested */
 							delete;
 						%end;
-                    end;
-					if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
-                    end;
+                    end;					
 
 					/* Pregnancy outcomes */
 					%if %length(&preg_outcome_list.) > 0 %then %do;
@@ -1899,10 +1896,14 @@
 							%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
 
 							if metvar="&preg_outcome." then do;
-								 %assignbaselinevars(label="%scan(&preg_outcome_labels., &outcome., %str(|))", grouper="Pregnancy Outcome", sortorder1=9, sortorder2=9, sortorder3=&outcome.);
+								 %assignbaselinevars(label="%scan(&preg_outcome_labels., &outcome., %str(|))", grouper="Pregnancy Characteristics", sortorder1=9, sortorder2=8, sortorder3=&outcome.);
 							end;		
 						%end;
-					%end;                    
+					%end;     
+
+					if MetVar= 'GA_BIRTH' then do;
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=9);
+                    end; 
                 end; 
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
@@ -2140,6 +2141,23 @@
 				%end;
                 ;
         run;
+
+		/* If pregnancy outcomes are output then add subheader */
+		%if %length(&preg_outcome_list.) > 0 %then %do;
+		data baseline_aggregatelabels;
+		set baseline_aggregatelabels
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar="PATIENT") in=b);
+		if b then do;
+			grouper="Pregnancy Characteristics";
+			label="Pregnancy Outcome";			
+			sortorder1=9;
+			sortorder2=8;
+			sortorder3=0;  
+			sortorder4=0;
+			metvar="";	
+		end;
+		run;      
+		%end;
 
 		/* If risk score categories are output then add header for each score */
 		%if %length(&riskscores_with_cats.) > 0 %then %do;
