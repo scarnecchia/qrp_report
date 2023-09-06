@@ -349,21 +349,15 @@
         %end;
 
 
-		/* Initialize variables related to pregnancy outcomes */
-		%let preg_outcome_list=;
-		%let preg_outcome_labels=;
-
+		/* Restrict pregnancy outcome list to outcomes specified in pregnancychar parameter */
+		%let preg_outcome_list=;		
 		%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
-
 			proc sql noprint;
 			    select catt("PREG_OUTCOME_",upcase(preg_outcome)) into :preg_outcome_list separated by "|"
 			    from master_pregnancymeta where runid="&runid." and catt("PREG_OUTCOME_",upcase(preg_outcome)) in (&pregnancychar.) order by descr;
 
-				select descr into :preg_outcome_labels separated by "|"
-			    from master_pregnancymeta where runid="&runid." and catt("PREG_OUTCOME_",upcase(preg_outcome)) in (&pregnancychar.) order by descr;
 			quit;
 		%end;
-
 
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
@@ -1896,7 +1890,7 @@
 							%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
 
 							if metvar="&preg_outcome." then do;
-								 %assignbaselinevars(label="%scan(&preg_outcome_labels., &outcome., %str(|))", grouper="Pregnancy Characteristics", sortorder1=9, sortorder2=8, sortorder3=&outcome.);
+								 %assignbaselinevars(label=put("&preg_outcome", $pregoutcomefmt.), grouper="Pregnancy Characteristics", sortorder1=9, sortorder2=8, sortorder3=put("&preg_outcome", $pregoutcomesort.));
 							end;		
 						%end;
 					%end;     
