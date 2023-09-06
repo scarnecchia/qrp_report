@@ -55,7 +55,51 @@
                        columnstatementlabels=,
                        definestatementlabels=,
                        spanningheader=);
-	
+
+
+	/* Determine the pregnant cohort header based on pregnancy outcomes used to define the cohort */
+	proc sql noprint;
+	create table _outcomes as
+	select distinct a.group, 
+				    b.code
+	from &dataset. as a 
+	join Master_cohortcodes as b on a.group=b.group
+	where b.codecat="PO";
+	quit;
+
+	data _outcomes;
+	set _outcomes;
+	i=1;
+	do while(scan(code, i, " ") ne "");
+		code2=upcase(scan(code, i, " "));	
+		output;
+		i=i+1; 
+	end;
+	drop i code;
+	rename code2=code;									
+	run;
+
+	proc sql noprint undo_policy=none;
+	create table _outcomes as
+	select distinct a.preg_outcome, 
+					a.preg_outcomecat,
+				    a.descr
+	from Master_pregnancymeta as a 
+	join _outcomes as b on a.preg_outcome=b.code;
+
+	select count(distinct preg_outcomecat) into :num_unique_preg_outcomecat from _outcomes;
+	select count(distinct preg_outcome) into :num_unique_preg_outcome from _outcomes;
+	select distinct upcase(preg_outcomecat) into :unique_preg_outcomecat separated by "|" from _outcomes; 
+	select distinct descr into :unique_descr separated by "|" from _outcomes; 
+	quit;
+
+	%if &num_unique_preg_outcomecat. eq 1 %then %do;
+		%if %upcase(&unique_preg_outcomecat.) eq LIVE %then %let preg_cohort_header=Live Birth Delivery Cohort;
+		%else %if &num_unique_preg_outcome. eq 1 %then %let preg_cohort_header=&unique_descr. Cohort;
+		%else %let preg_cohort_header=Non-Live Birth Delivery Cohort;
+	%end;
+	%else %let preg_cohort_header=Pregnant Cohort;
+
     /*Assign footnotes*/
 	%let T2Columns=N;
 	%let T3Columns=N;
@@ -117,15 +161,20 @@
                          %if &includeheaderrow. =Y %then %do; header %end;
                          %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
 
-			/* Remove trimester counts from group label if table is not T1 */
-			%if &table. ne T1 %then %do;			
-			do strng=1 to countw(grouplabel,",");
-			substring=scan(grouplabel,strng,",");
+			/* Remove trimester counts from group label if table is not T1 or if observations are related to non-pregnant cohort */	
+			grouplabel2=tranwrd(grouplabel," trimester,","|");	
+			do strng=1 to countw(grouplabel2,"|");
+			substring=scan(grouplabel2,strng,"|");
 			end;
-			if index(grouplabel, "2nd trimester") > 0 or index(grouplabel, "3rd trimester") > 0 then 
+			%if &table. ne T1 %then %do;
+			if index(grouplabel, "episodes reach the 2nd trimester") > 0 or index(grouplabel, "episodes reach the 3rd trimester") > 0 then 
 				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), substring);
-			drop strng substring;
 			%end;
+			%else %do;
+			if pregflg = "N" and (index(grouplabel, "episodes reach the 2nd trimester") > 0 or index(grouplabel, "episodes reach the 3rd trimester") > 0) then 
+				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), substring);			
+			%end;
+			drop strng substring grouplabel2;			
     	run;
     %end;
 
@@ -223,10 +272,10 @@
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
         compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $100;
-            if pregflg = 'Y' then text = "Pregnancy Episodes Ending in Live-Birth Delivery";
+            length text $200;
+            if pregflg = 'Y' then text = "&preg_cohort_header.";
             else text = "All Matched Non-Pregnant Episodes";
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;
@@ -234,9 +283,9 @@
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $100;
+            length text $200;
             text = header;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;
@@ -249,18 +298,18 @@
              %else %do;
                 style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
              %end;
-            length text $100;
+            length text $200;
             text = grouplabel;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
 
         /*MOI header*/
         %if &includemoiheaderrow. = Y %then %do;
         compute before moiheader / style=[fontstyle=italic indent=.15in backgroundcolor=white just=L bordertopcolor=white borderbottomcolor=white];
-            length text $100;
+            length text $200;
             text = moiheader;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;
