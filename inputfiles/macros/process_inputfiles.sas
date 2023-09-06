@@ -763,6 +763,42 @@
      run;
 
 /***************************************************************************************************
+*   Create a pregnancy outcome label dataset                                            
+***************************************************************************************************/
+    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0  %then %do; 
+        data _po_codes;
+            set master_cohortcodes(where=(upcase(codecat) = 'PO'));
+            i=1;
+            do while(scan(code, i, " ") ne "");
+                code2=upcase(scan(code, i, " "));           
+                output;
+                i=i+1; 
+            end;
+            drop i code;
+            rename code2=code;
+        run;
+
+        proc sql noprint;
+            create table pregnancy_outcome_labels as 
+            select distinct a.runid, a.group, a.order, b.code 
+            from input.&baselinefile as a 
+            left join _po_codes as b
+            on a.runid = b.runid and a.group = b.group
+            order by a.runid, a.group, a.order;
+        quit;
+
+        proc transpose data = pregnancy_outcome_labels out=temp_preg_labels;
+            var code;
+            by runid group order;
+        run;
+
+        data pregnancy_outcome_labels(keep=runid group order code);
+            set temp_preg_labels;
+            code=catx(' ', of col:);
+        run;
+    %end;
+
+/***************************************************************************************************
 *   Create a combined type file for all runs                                        
 ***************************************************************************************************/
 

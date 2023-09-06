@@ -190,6 +190,14 @@
         data baselinefile;
             set baselinefile_:;
         run;
+        /* Add pregnancy outcome codes to baseline file to conditionally determine labels */
+        proc sql noprint undo_policy=none;
+            create table baselinefile as 
+            select a.*, b.code
+            from baselinefile a 
+            left join pregnancy_outcome_labels b 
+            on a.runid = b.runid and a.order = b.order;
+        quit;
     %end;
 
     /*T6: cohort is 'switch' and mergevar = 'analysisgrp'*/
@@ -281,7 +289,7 @@
 			%end;
 
 			proc datasets nowarn noprint lib= work;
-			  delete alldptable1_&periodid.;
+			  delete alldptable1_&periodid. pregnancy_outcome_labels;
 			quit;
 
             proc sort data=_temp_mean_count;

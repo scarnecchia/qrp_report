@@ -95,13 +95,15 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary live_preg_outcomes nonlive_preg_outcomes;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
     %let labcharacteristics=;
 	%let riskscoreslist_quoted=;
 	%let riskscores_with_cats=;
 	%let riskscorelibrary=ADCSI CHA2DS2VASC CCI FRAILTY HASBLED OBSCOMORB PEDCOMORB;
+    %let live_preg_outcomes = LB|MIL|UNC;
+    %let nonlive_preg_outcomes = SB|SA|TRO|AB|ECT;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;

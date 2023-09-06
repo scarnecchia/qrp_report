@@ -348,23 +348,6 @@
             run;
         %end;
 
-
-		/* Initialize variables related to pregnancy outcomes */
-		%let preg_outcome_list=;
-		%let preg_outcome_labels=;
-
-		%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
-
-			proc sql noprint;
-			    select catt("PREG_OUTCOME_",upcase(preg_outcome)) into :preg_outcome_list separated by "|"
-			    from master_pregnancymeta where runid="&runid." and catt("PREG_OUTCOME_",upcase(preg_outcome)) in (&pregnancychar.) order by descr;
-
-				select descr into :preg_outcome_labels separated by "|"
-			    from master_pregnancymeta where runid="&runid." and catt("PREG_OUTCOME_",upcase(preg_outcome)) in (&pregnancychar.) order by descr;
-			quit;
-		%end;
-
-
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
 		%let riskscoreslist_quoted=;
@@ -1891,18 +1874,7 @@
                     end;
                     if MetVar= 'GA_BIRTH' then do;
                     %assignbaselinevars(label="Gestational age at pregnancy outcome (weeks)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
-                    end;
-
-					/* Pregnancy outcomes */
-					%if %length(&preg_outcome_list.) > 0 %then %do;
-						%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
-							%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
-
-							if metvar="&preg_outcome." then do;
-								 %assignbaselinevars(label="%scan(&preg_outcome_labels., &outcome., %str(|))", grouper="Pregnancy Outcome", sortorder1=9, sortorder2=9, sortorder3=&outcome.);
-							end;		
-						%end;
-					%end;                    
+                    end;               
                 end; 
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
