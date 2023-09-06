@@ -116,12 +116,13 @@
                     if cohort in ('preg', 'nopreg') then do;
                         if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnant Cohort and Non-Pregnant Cohort');
                         else call symput('pregnancylabel', ' Pregnant Cohort');
-                    if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) then do;
+                    if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
                         if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel',' Live Birth Delivery Cohort and Non-Pregnant Cohort');
                         else call symputx('pregnancylabel',' Live Birth Delivery Cohort');
                     end;
                     else if prxmatch("/&nonlive_preg_outcomes/i",code) and 
-                            ^prxmatch("/&live_preg_outcomes/i",code) then do;
+                            ^prxmatch("/&live_preg_outcomes/i",code) and 
+                            ^prxmatch("/MIX/i",code) then do;
                                 count=0;
                                 substring="SB SA TRO AB ECT";
                                 do i = 1 to countw(substring);
