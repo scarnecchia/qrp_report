@@ -2135,35 +2135,39 @@
 				%end;
                 ;
         run;
+		
 
-		/* If pregnancy outcomes are output then add subheader */
-		%if %length(&preg_outcome_list.) > 0 %then %do;
+		%if %length(&preg_outcome_list.) > 0 | %length(&riskscores_with_cats.) > 0 %then %do;
 		data baseline_aggregatelabels;
 		set baseline_aggregatelabels
-			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar="PATIENT") in=b);
-		if b then do;
-			grouper="Pregnancy Characteristics";
-			label="Pregnancy Outcome";			
-			sortorder1=9;
-			sortorder2=8;
-			sortorder3=0;  
-			sortorder4=0;
-			metvar="";	
-		end;
-		run;      
+		/* If pregnancy outcomes are output then add subheader */
+		%if %length(&preg_outcome_list.) > 0 %then %do;
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar="PATIENT") in=b)
 		%end;
-
 		/* If risk score categories are output then add header for each score */
 		%if %length(&riskscores_with_cats.) > 0 %then %do;
-			data baseline_aggregatelabels;
-			set baseline_aggregatelabels
-				baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=b);
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=c)
+		%end;
+		;
+		%if %length(&preg_outcome_list.) > 0 %then %do;
 			if b then do;
-				label=strip(label) || " categories";
-				metvar="";
-				sortorder4=0;
+			grouper="Pregnancy Characteristics";
+			label="Pregnancy Outcome";
+			sortorder1=9;
+			sortorder2=8;
+			sortorder3=0;
+			sortorder4=0;
+			metvar="";
 			end;
-			run;
+		%end;
+		%if %length(&riskscores_with_cats.) > 0 %then %do;
+			if c then do;
+			label=strip(label) || " categories";
+			metvar="";
+			sortorder4=0;
+			end;
+		%end;
+		run;
 		%end;
 
         /*Merge in agefmtsort to correctly update sortorder*/
