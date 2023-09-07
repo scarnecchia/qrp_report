@@ -302,7 +302,7 @@
                         "LB",
                         "AN",
                         "DT",
-                        "MI",
+                        "PO",
                         "EN",
                         "DH",
                         "CD"
@@ -314,7 +314,7 @@
                         "LB": "Lab Code",
                         "AN": "Target age anniversary",
                         "DT": "Fixed calendar date",
-                        "MI": "Mother-Infant Linkage Table code",
+                        "PO": "Pregnancy outcome",
                         "EN": "Encounter",
                         "DH": "Death",
                         "CD": "Cause of Death"
@@ -386,7 +386,7 @@
                 {
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
                     "values": []
@@ -1042,21 +1042,6 @@
 					}
                 },
 				{
-                    "id": "MODPREGDUR",
-                    "name": "Modified Pregnancy Duration File",
-                    "sas_format": "$32",
-                    "info": "Name of the SAS dataset defining the codes used to define pregnancy episode duration. Required for pregnancy episodes cohort identification strategy, Type 4 analysis",
-                    "input_type": "SingleSelect",
-                    "values": [
-						" ",
-						"modpregdur"
-					],
-					"value_map":{
-						" ": "Exclude",
-						"modpregdur": "Include"
-					}
-                },
-				{
                     "id": "MICOHORTFILE",
                     "name": "Mother-Infant Cohort File",
                     "sas_format": "$32",
@@ -1069,6 +1054,51 @@
 					"value_map":{
 						" ": "Exclude",
 						"micohortfile": "Include"
+					}
+                },
+				{
+                    "id": "PREGNANCYCODES",
+                    "name": "Pregnancy Codes Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Lookup table defining pregnancy outcomes and the codes used to define them",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"pregnancycodes"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"pregnancycodes": "Include"
+					}
+                },
+				{
+                    "id": "PREGNANCYMETA",
+                    "name": "Pregnancy Metadata Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Lookup table defining metadata pertaining to pregnancy outcomes",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"pregnancymeta"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"pregnancymeta": "Include"
+					}
+                },
+				{
+                    "id": "PREGNANCYDURATION",
+                    "name": "Pregnancy Duration Lookup Table",
+                    "sas_format": "$32",
+                    "info": "Lookup table defining the algorithm and codes used to calculate pregnancy episode duration and date of start of pregnancy",
+                    "input_type": "SingleSelect",
+                    "values": [
+						" ",
+						"pregnancyduration"
+					],
+					"value_map":{
+						" ": "Exclude",
+						"pregnancyduration": "Include"
 					}
                 },
 				{
@@ -1252,18 +1282,18 @@
 					}
                 },
 				{
-                    "id": "LABSCODEMAP",
+                    "id": "LABCODESMAP",
                     "name": "Lab Code Lookup Table",
                     "sas_format": "$32",
                     "info": "Name of the SAS lookup table defining lab codes used to query the SCDM Laboratory Result table",
                     "input_type": "SingleSelect",
                     "values": [
 						" ",
-						"labscodemap"
+						"labcodesmap"
 					],
 					"value_map":{
 						" ": "Exclude",
-						"labscodemap": "Include"
+						"labcodesmap": "Include"
 					}
                 },
 				{
@@ -1488,219 +1518,6 @@
 					"input_type": "String",
 					"values": []
 				}
-			]
-		},
-		{
-			"id": "modpregdur",
-            "name": "Modified Pregnancy Duration File",
-            "analysis_types": [
-                "4"
-            ],
-            "required": true,
-            "required_files": [],
-            "info": "File used to calculate pregnancy episode duration and index date",
-            "documentation_link": "https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/file600-type04-modpregdur.md",
-            "table_type": "group_code",
-			"import": true,
-            "row_source": [
-				"cohort"
-			],
-            "row_parameter": "GROUP",
-            "all_groups_required": false,
-            "parameters": [
-				{
-                    "id": "GROUP",
-                    "name": "Cohort Name",
-                    "sas_format": "$40",
-                    "info": "Standardized name used to differentiate cohorts",
-                    "input_type": "RowParameter",
-                    "values": []
-                },
-				{
-                    "id": "STOCKGROUP",
-                    "name": "Stockgroup Name",
-                    "sas_format": " ",
-                    "info": "Standardized name used to refer to a specific preterm/postterm codes within a given GROUP",
-                    "input_type": "String",
-                    "values": []
-                },
-				{
-                    "id": "CODECAT",
-                    "name": "Code Category",
-                    "sas_format": "$2",
-                    "info": "Type of each code category value included in the CODETYPE field",
-                    "input_type": "SingleSelect",
-                    "values": [
-						"RX",
-						"DX",
-						"PX",
-						"LB"
-					],
-					"value_map": {
-						"RX": "Drug Code",
-						"DX": "Diagnosis code",
-						"PX": "Procedure code",
-						"LB": "Lab code"
-					}
-                },
-				{
-                    "id": "CODETYPE",
-                    "name": "Code Type",
-                    "sas_format": "$3",
-                    "info": "Type of each code value included in the CODE field",
-                    "input_type": "SingleSelect",
-                    "values": [
-						"ND",
-                        "SN",
-                        "SK",
-                        "DM",
-                        "DI",
-                        "RN",
-                        "AT",
-                        "CB",
-                        "09",
-                        "10",
-                        "11",
-                        "OT",
-                        "C4",
-                        "HC",
-                        "H3",
-                        "C2",
-                        "C3",
-                        "CV",
-                        "RE",
-                        "LO",
-                        "01N",
-                        "02N",
-                        "09N",
-                        "10N",
-                        "11N",
-                        "C4N",
-                        "HCN",
-                        "H3N",
-                        "C2N",
-                        "C3N",
-                        "NDN",
-                        "REN",
-                        "LON",
-                        "01C",
-                        "02C",
-                        "09C",
-                        "10C",
-                        "11C",
-                        "C4C",
-                        "HCC",
-                        "H3C",
-                        "C2C",
-                        "C3C",
-                        "NDC",
-                        "REC",
-                        "LOC"
-					]
-                },
-				{
-                    "id": "CODE",
-                    "name": "Code",
-                    "sas_format": "$14",
-                    "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
-                    "input_type": "String",
-                    "values": []
-                },
-				{
-                    "id": "CARESETTINGPRINCIPAL",
-                    "name": "Care Setting and Diagnosis Position",
-                    "sas_format": " ",
-                    "info": "Defines the care setting and principal diagnosis position requirements for each code",
-                    "input_type": "MultiSelect",
-                    "values": [
-                        "IPP",
-                        "IPS",
-                        "IPX",
-						"IP*",
-                        "ISP",
-                        "ISS",
-                        "ISX",
-						"IS*",
-                        "ED*",
-                        "AV*",
-                        "OA*"
-                    ],
-                    "value_map": {
-                        "IPP": "(IPP) Inpatient hospital stays, principal diagnoses",
-                        "IPS": "(IPS) Inpatient hospital stays, secondary diagnoses",
-                        "IPX": "(IPX) Inpatient hospital stays, unclassified diagnoses",
-						"IP*": "(IP*) Inpatient hospital stay, any diagnosis position",
-                        "ISP": "(ISP) Non-acute institutional stays, principal diagnoses",
-                        "ISS": "(ISS) Non-acute institutional stays, secondary diagnoses",
-                        "ISX": "(ISX) Non-acute institutional stays, unclassified diagnosis",
-						"IS*": "(IS*) Non-acute institutional stays, any diagnosis position",
-                        "ED*": "(ED*) Emergency department encounters",
-                        "AV*": "(AV*) Ambulatory visits",
-                        "OA*": "(OA*) Other ambulatory visits"
-                    }
-                },
-				{
-                    "id": "PRIORITYGROUP1",
-                    "name": "Priority Group 1",
-                    "sas_format": "3",
-                    "info": "Indicates if a code is a first priority code",
-                    "input_type": "SingleSelect",
-                    "values": [
-						"0",
-						"1"
-					],
-					"value_map": {
-						"0": "No",
-						"1": "Yes"
-					}
-                },
-				{
-                    "id": "PRIORITYGROUP2",
-                    "name": "Priority Group 2",
-                    "sas_format": "3",
-                    "info": "Indicates if a code is a second priority code",
-                    "input_type": "SingleSelect",
-                    "values": [
-						"0",
-						"1"
-					],
-					"value_map": {
-						"0": "No",
-						"1": "Yes"
-					}
-                },
-				{
-                    "id": "PRIORITY",
-                    "name": "Priority",
-                    "sas_format": "3",
-                    "info": "For members with several different codes in the same priority group, the priority is used to indicate which code will be kept to define the pregnancy episode start date and duration",
-                    "input_type": "numeric",
-                    "values": []
-                },
-				{
-                    "id": "DURATION",
-                    "name": "Duration",
-                    "sas_format": "3",
-                    "info": "Duration in days attached to the pregnancy episode when code indicating gestational age is selected",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "LABDATETYPE",
-                    "name": "Lab Date Selection Algorithm",
-                    "sas_format": "$3",
-                    "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
-                    "input_type": "String",
-                    "values": []
-                },
-                {
-                    "id": "LABRESULT",
-                    "name": "Lab Result Values",
-                    "sas_format": " ",
-                    "info": "Specifies the lab result value or lab result range for querying",
-                    "input_type": "String",
-                    "values": []
-                }
 			]
 		},
 		{
@@ -2240,30 +2057,6 @@
 					}
                 },
 				{
-                    "id": "T4WASHPER",
-                    "name": "Exposure Washout Period",
-                    "sas_format": "3",
-                    "info": "Length of washout period in days",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "DEFAULTPREGDUR",
-                    "name": "Pregnancy Episode Length",
-                    "sas_format": "3",
-                    "info": "Default pregnancy duration in the absence of preterm/postterm codes within EPISODEGAP of delivery",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "EPISODEGAP",
-                    "name": "Preterm/Postterm Code Evaluation Window",
-                    "sas_format": "3",
-                    "info": "Sets the number of days around the delivery date where the program looks for evidence of preterm/postterm codes to calculate the length of the pregnancy episode",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
                     "id": "EXPEXTPER2",
                     "name": "Treatment Episode Gap Type",
                     "sas_format": "3",
@@ -2380,6 +2173,50 @@
                     "info": "Number of days prior to pregnancy start to start counting MOI episodes",
                     "input_type": "Numeric",
                     "values": []
+                },
+				{
+                    "id": "BIRTHTYPES",
+                    "name": "Birth Types",
+                    "sas_format": "$15",
+                    "info": "Identifies which mother-infant linkage (MIL) records will be used to identify live births",
+                    "input_type": "MultiSelect",
+                    "values": [
+						"0",
+						"1",
+						"2",
+						"3",
+						"4",
+						"5",
+						"8",
+						"9"
+					],
+					"value_map": {
+						"0": "Unspecified number of live births",
+						"1": "One live birth",
+						"2": "Two live births",
+						"3": "Three live births",
+						"4": "Four live births",
+						"5": "Five live births",
+						"8": "Multiple live births, unspecified number",
+						"9": "Conflicting code(s) for number of live births"
+					}
+                },
+				{
+                    "id": "LINKAGESTATUS",
+                    "name": "Linkage Status",
+                    "sas_format": "$1",
+                    "info": "Identifies whether MIL records used to identify a pregnant cohort should include linked or unlinked mothers, or both",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"A",
+						"L",
+						"U"
+					],
+					"value_map": {
+						"A": "(A) Include all mothers from the MIL table",
+						"L": "(L) Only include linked mothers from the MIL table",
+						"U": "(U) Only include unlinked mothers from the MIL table" 
+					}
                 },
 				{
                     "id": "GRACEDAYS",
@@ -2934,7 +2771,7 @@
 				{
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
                     "values": []
@@ -3348,7 +3185,7 @@
 				{
                     "id": "CODE",
                     "name": "Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Drug code, diagnosis, and/or procedure code of interest",
                     "input_type": "String",
                     "values": []
@@ -3476,6 +3313,22 @@
                     "values": []
                 },
 				{
+                    "id": "CODEPOP",
+                    "name": "Source Population",
+                    "sas_format": "$2",
+					"analysis_types": [
+						"4"
+					],
+                    "info": "In queries restricting Mother-Infant pregnant cohorts, population source to query for code",
+                    "input_type": "SingleSelect",
+                    "values": [
+						"M"
+					],
+					"value_map": {
+						"M": "(M) Look in mother claims only"
+					}
+                },
+				{
                     "id": "MINRXDAYS",
                     "name": "Minimum Days Covered in Covariate Window",
                     "sas_format": "3",
@@ -3560,18 +3413,22 @@
                     "info": "Defines risk score being requested",
                     "input_type": "SingleSelect",
                     "values": [
-						"COMORBIDSCORE",
+						"CCI",
 						"CHA2DS2VASC",
+						"HASBLED",
 						"OBSCOMORB",
 						"ADCSI",
-						"FRAILTY"
+						"FRAILTY", 
+						"PEDCOMORB"
 					],
 					"value_map": {
-						"COMORBIDSCORE": "Charlson/Elixhauser Comorbidity Index",
+						"CCI": "Charlson/Elixhauser Comorbidity Index",
 						"CHA2DS2VASC": "CHA2DS2-VASc Score",
+						"HASBLED": "HAS-BLED Score",
 						"OBSCOMORB": "Obstetric Comorbidity Score",
 						"ADCSI": "Adapted Diabetes Complications Severity Index",
-						"FRAILTY": "Frailty Index"
+						"FRAILTY": "Frailty Index",
+						"PEDCOMORB": "Pediatric Comorbidity Score"
 					}
                 },
 				{
@@ -3625,6 +3482,14 @@
 						"INDEXDT": "(INDEXDT) Estimated date of pregnancy start",
 						"EPISODEENDDT": "(EPISODEENDDT) Date of pregnancy outcome"
 					}
+                },
+				{
+                    "id": "RISKSCORECAT",
+                    "name": "Risk Score Categories",
+                    "sas_format": " ",
+                    "info": "The categorical groupings for a risk score",
+                    "input_type": "String",
+                    "values": []
                 }
 			]
 		},
@@ -4083,7 +3948,7 @@
 				{
                     "id": "RAWCODE",
                     "name": "Raw Extraction Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "Code used to extract the raw record. The code will be defined in accordance with RAWCODETYPE",
                     "input_type": "String",
                     "values": []
@@ -4202,7 +4067,7 @@
 				{
                     "id": "COMBCODE",
                     "name": "Combination Code",
-                    "sas_format": "$14",
+                    "sas_format": " ",
                     "info": "User-defined “code” that will appear on the final virtual record",
                     "input_type": "String",
                     "values": []

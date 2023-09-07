@@ -173,22 +173,28 @@
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
- * Assign the maximum length to duplicate variable names if a format values table exists 
+ * Assign the maximum length to duplicate character variable names if a format values table exists 
  **************************************************************************************************/
     %if %sysfunc(exist(tmplib.format_values)) %then %do;
+		/* Get character variables length to make sure the max function below works correctly */
+		data tmplib.format_values;
+		set tmplib.format_values;
+		if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
+		run;
+
         %let inputvarlist=;
         proc sql noprint;
-            select catx('@',full_inputfile_name,id,sas_format)
+            select catx('@',full_inputfile_name,id,char_var_length)
             into :inputvarlist separated by ' '
             from 
-            (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+            (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
                 from tmplib.format_values a
                 inner join 
                  (select id, count(*) as id_counts
                     from tmplib.format_values 
                     group by id) b
             on a.id = b.id 
-            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
             group by b.id
             )
         quit;
@@ -197,7 +203,8 @@
             %let inputcombo = %scan(&inputvarlist,&x,%str( ));
             %let inputfile = %scan(&inputcombo,1,%str(@));
             %let inputvar = %scan(&inputcombo,2,%str(@));
-            %let varformat = %scan(&inputcombo,3,%str(@));
+            %let varformat = $%scan(&inputcombo,3,%str(@));
+			
             %if &leavebehindreport = Y %then %do;
                 data infolder.&inputfile;
                     length &inputvar &varformat;
@@ -442,10 +449,10 @@
             &&id&n.._metadatafile &&id&n.._treelookup &&id&n.._icd10icd9map &&id&n.._treefile &&id&n.._psestimationfile &&id&n.._itsfile
             &&id&n.._psmatchfile &&id&n.._stratificationfile &&id&n.._iptwfile &&id&n.._covstratfile &&id&n.._diagnostics &&id&n.._indlevel
             &&id&n.._cohortcodes &&id&n.._inclusioncodes &&id&n.._covariatecodes &&id&n.._profile &&id&n.._mfufile &&id&n.._stockpilingfile
-            &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._pregdur &&id&n.._micohortfile
-            &&id&n.._surveillancemode &&id&n.._labscodemap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
+            &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._micohortfile
+            &&id&n.._surveillancemode &&id&n.._labcodesmap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile;
+            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -479,11 +486,10 @@
         %let &&id&n.._stockpilingfile      = ;
         %let &&id&n.._utilfile             = ;
         %let &&id&n.._combofile            = ;
-        %let &&id&n.._drugclassfile        = ;
-        %let &&id&n.._pregdur              = ;
+        %let &&id&n.._drugclassfile        = ;        
         %let &&id&n.._micohortfile         = ;
         %let &&id&n.._surveillancemode     = ;
-        %let &&id&n.._labscodemap          = ;
+        %let &&id&n.._labcodesmap          = ;
         %let &&id&n.._zipfile              = ;
         %let &&id&n.._run_envelope         = ;
         %let &&id&n.._distindex            = ;
@@ -496,6 +502,10 @@
         %let &&id&n.._multeventfile_adhere = ;
         %let &&id&n.._itsfile              = ;
         %let &&id&n.._pscssubgroupfile     = ;
+		%let &&id&n.._riskscorefile        = ;
+		%let &&id&n.._pregnancycodes  	   = ;
+		%let &&id&n.._pregnancymeta  	   = ;
+		%let &&id&n.._pregnancyduration    = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
@@ -506,7 +516,11 @@
           end;
         run;
 
-        /*if CSV files, assign SAS format*/
+        /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
+		%if &leavebehindreport. ne Y %then %do;
+		libname tmplib "&INFOLDER";
+		%end;
+
         %isdata(dataset=qrp_parameters);
         %do p = 1 %to &nobs.;
 
@@ -535,23 +549,34 @@
 
         %end;
 
+		/*restore tmplib to its original location*/
+		%if &leavebehindreport. ne Y %then %do;
+		libname tmplib "&REPORTROOT.inputfiles/";
+		%end;
+
         /***************************************************************************************************
-         * Assign the maximum length to duplicate variable names if a format values table exists 
+         * Assign the maximum length to duplicate character variable names if a format values table exists 
          **************************************************************************************************/
         %if %sysfunc(exist(tmplib.format_values)) %then %do;
+			/* Get character variables length to make sure the max function below works correctly */
+			data tmplib.format_values;
+			set tmplib.format_values;
+			if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
+			run;
+
             %let inputvarlist=;
             proc sql noprint;
-                select catx('@',full_inputfile_name,id,sas_format)
+                select catx('@',full_inputfile_name,id,char_var_length)
                 into :inputvarlist separated by ' '
                 from 
-                (select b.id, max(a.sas_format) as sas_format, a.full_inputfile_name 
+                (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
                     from tmplib.format_values a
                     inner join 
                      (select id, count(*) as id_counts
                         from tmplib.format_values 
                         group by id) b
                 on a.id = b.id 
-                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.sas_format)
+                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
                 group by b.id
                 )
             quit;
@@ -560,8 +585,8 @@
                 %let inputcombo = %scan(&inputvarlist,&x,%str( ));
                 %let inputfile = %scan(&inputcombo,1,%str(@));
                 %let inputvar = %scan(&inputcombo,2,%str(@));
-                %let varformat = %scan(&inputcombo,3,%str(@));
-
+                %let varformat = $%scan(&inputcombo,3,%str(@));
+				
                     data infolder.&inputfile;
                         length &inputvar &varformat;
                         format &inputvar &varformat..;
@@ -680,6 +705,27 @@
 
     %end;
  
+/***************************************************************************************************
+*   Create a combined pregnancymeta for all runs                                                
+***************************************************************************************************/
+	%if %sysfunc(prxmatch(m/T4L1|T4L2/i,&reporttype.)) > 0	%then %do; 
+	     data master_pregnancymeta;
+	     set %do n = 1 %to &numrunid.;
+	            %let runid=&&id&n..;
+	            infolder.&&&runid._pregnancymeta(in=n&n.)
+	        %end;
+	     ;
+	     format runid $6.;
+	        %do n = 1 %to &numrunid.;
+	            if n&n. then do;
+	            runid = "&&id&n.";
+	            end;
+	        %end;
+		 preg_outcome=upcase(preg_outcome);
+		 preg_outcomecat=upcase(preg_outcomecat);
+	     run;
+	%end;
+
 /***************************************************************************************************
 *   Create a combined cohortfile for all runs                                                
 ***************************************************************************************************/
@@ -1110,7 +1156,15 @@
             %put The reporting code will abort;
             %abort;
         %end;
-        
+
+        /* Type 3 tree weekdays table is not requested through tablefile
+            and will be stored and processed independently */
+        %if &reporttype = TREE3 %then %do;
+            data _null_;
+                set userstrata(keep=tableid);
+                if lowcase(tableid) = 't3treewkdays' then call symputx('t3treewkdaysdset','t3treewkdays');
+            run;
+        %end;
     %end;
 
     /*Read in TableFile, alphabetize variables, and assign title*/
@@ -1800,7 +1854,7 @@
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
         %let chk_baselinegroupnum = ;
-        %let chk_covnotinps=;
+        %let chk_covinps=;
 
         /* Check whether order values are the same across different run IDs */
         proc sql noprint;
@@ -1863,7 +1917,7 @@
              abort;
            end;
            if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
-           if not missing(covnotinps) then call symputx('chk_covnotinps', covnotinps);
+           if not missing(covinps) then call symputx('chk_covinps', covinps);
         run;
         %end; /* m */
         
@@ -1873,9 +1927,9 @@
          %abort;
         %end;
 
-        /* Check if covnotinps has been specifed for L1 requests*/
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covnotinps) > 0 %then %do;
-         %put WARNING: (Sentinel) covnotinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
+        /* Check if covinps has been specifed for L1 requests*/
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covinps) > 0 %then %do;
+         %put WARNING: (Sentinel) covinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
         %end;
 
      %end; /* baselinefile */
@@ -2250,6 +2304,12 @@
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
                                 codedays,
+								%if %index(&reporttype,T4) > 0 %then %do;								
+								codepop,
+								/* codepop2 will be used to compute codepop for cc covariates*/
+								codepop as codepop2 format $6. length=6,
+								code,
+								%end;
                                 codetype,
                                 codecat
                 from infolder.&&&runid._covariatecodes.;
@@ -2259,6 +2319,47 @@
                 from studylen
                 where lower(name)='studyname';
             quit;
+
+			%if %index(&reporttype,T4) > 0 %then %do;
+				/* Determine codepop value for cc covariates if any */
+				data Covarname_cc;
+				set Covarname_&runid.;
+				where upcase(codecat)="CC";
+				code=compress(code,"andornotANDORNOT()");
+				run;
+
+				proc sql noprint;
+				select distinct covarnum into :cc_covars separated by " " 
+				from Covarname_cc;
+				quit;
+
+				%isdata(dataset=Covarname_cc);
+				%if %eval(&nobs.>0) %then %do;
+					%do cc_cov=1 %to %sysfunc(countw(&cc_covars.));
+						%let cc_covar=%scan(&cc_covars., &cc_cov.);
+
+						proc sql noprint;
+							select code into :cc_covarlist 
+							from Covarname_cc
+							where covarnum=&cc_covar.; 
+
+							select distinct codepop into :cc_codepop separated by " " 
+							from Covarname_&runid.
+							where covarnum in (&cc_covarlist.); 
+						quit;
+
+						data Covarname_&runid.;
+						set Covarname_&runid.; 
+						if covarnum=&cc_covar. then do;
+							codepop2="&cc_codepop";
+							if index(codepop2, "M")>0 and index(codepop2, "I")>0 then codepop="MI";
+							else if index(codepop2, "M")>0 then codepop="M";
+							else if index(codepop2, "I")>0 then codepop="I";
+						end;
+						run;
+					%end; /* loop through cc covariates */
+				%end; /* Covarname_cc contains data */
+			%end; /* T4 report type */
 
             /* Need to set maximum studyname length across all runs */
             %if &baselinelabellength < &MAXLEN_STUDYNAME. %then %let baselinelabellength = &MAXLEN_STUDYNAME.;           
@@ -2306,7 +2407,7 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname);
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         by runid covarnum;
     run;  
     %end;
@@ -2401,6 +2502,70 @@
     %mend;
     %assigncovarlabels(dataset=tablefile, var=tablesub);
     %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
+
+
+/***************************************************************************************************
+*  Create stacked dataset containing riskscores data for all runs                                            
+***************************************************************************************************/
+	%do r = 1 %to %eval(&numrunid.);
+        %let runid = %scan(&runidlist., &r.);
+        %if %sysfunc(exist(infolder.&&&runid._riskscorefile.))=1 %then %do;
+
+            /* Get riskscorecat length per runid */
+            proc contents data = infolder.&&&runid._riskscorefile. out=riskscorecatlen(keep=name length) noprint;
+            run;
+
+            proc sql noprint;    
+                create table _riskscorefile_&runid. as 
+                select distinct riskscore, 
+                                strip(riskscorecat) as riskscorecat, 
+                                "&runid" as runid length=5                                 							
+                from infolder.&&&runid._riskscorefile.;
+
+                select length
+                into: MAXLEN_RISKSCORECAT trimmed
+                from riskscorecatlen
+                where lower(name)='riskscorecat';
+            quit;
+
+			%if %eval(&MAXLEN_RISKSCORECAT. < 7) %then %let MAXLEN_RISKSCORECAT=7;
+
+            /* Need to set maximum riskscorecat length across all runs */          
+            %if %sysfunc(exist(riskscorefile))=0 %then %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set _riskscorefile_&runid.;
+                run;     
+            %end;
+            %else %do;
+                data riskscorefile;
+                    length riskscorecat $&MAXLEN_RISKSCORECAT.;
+                    set riskscorefile _riskscorefile_&runid.;
+                run;     
+            %end;
+			
+			/* Assign labels for standard risk scores */ 
+			data riskscorefile;
+			set riskscorefile;
+			format label $70.;
+			riskscore = upcase(riskscore);
+			if riskscore = "ADCSI" then label="Adapted Diabetes Complications Severity Index (aDCSI)";
+			else if riskscore = "CHA2DS2VASC" then label="CHA^{sub 2}DS^{sub 2}-VASc score";
+			else if riskscore = "CCI" then label="Combined comorbidity score";
+			else if riskscore = "FRAILTY" then label="Claims-Based frailty index";
+			else if riskscore = "HASBLED" then label="HAS-BLED score";
+			else if riskscore = "OBSCOMORB" then label="Obstetric comorbidity index";
+			else if riskscore = "PEDCOMORB" then label="Pediatric comorbidity index";
+			else label=riskscore;		
+			if strip(riskscorecat) = "" then riskscorecat="missing";	
+			run;
+
+			/*Delete temporary dataset*/
+		    proc datasets nowarn noprint nolist lib=work; 
+		    	delete riskscorecatlen _riskscorefile_:; 
+		    quit; 
+        %end;
+    %end;  
 
 /***************************************************************************************************
 *   Clean up                                                

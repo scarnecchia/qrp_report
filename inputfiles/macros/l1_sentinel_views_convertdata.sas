@@ -198,7 +198,7 @@
 			and ^ prxmatch("m/n_covar|mean_covar|std_covar|lbres|lbunit|notestrecord/oi", name) ;
 			;			
 			
-            %let contvars = std_Age std_COMORBIDSCORE std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
+            %let contvars = std_Age std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
             %do i = 1 %to %sysfunc(countw(&contvars));
                 %let stdvar = %scan(&contvars,&i);
             select count(distinct dpidsiteid)
@@ -210,7 +210,6 @@
             create table agg_baseline as 
             select  A.runid, A.group, 'AGGR' as dpidsiteid, sum(A.patient) as patient, &baselinecommalist, sum(A.N_episodes) as n_episodes, 
             		case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_Age*A.N_Episodes),sum(A.N_episodes)) end as mean_Age, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_COMORBIDSCORE*N_Episodes),sum(N_episodes)) end as mean_COMORBIDSCORE, 
                     case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumAV*A.N_Episodes),sum(A.N_episodes)) end as mean_NumAV, 
                     case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumOA*A.N_Episodes),sum(A.N_episodes)) end as mean_NumOA,
 					case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumIP*A.N_Episodes),sum(A.N_episodes)) end as mean_NumIP, 
@@ -222,8 +221,6 @@
 
                     case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_Age**2) = . or sum(A.N_episodes-&std_Agedpnum) in (.,0) then . 
                     else sqrt(divide(sum((A.N_Episodes-1)*A.std_Age**2),sum(A.N_episodes-&std_Agedpnum))) end as std_Age, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_COMORBIDSCORE**2) = . or sum(A.N_episodes-&std_COMORBIDSCOREdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_COMORBIDSCORE**2),sum(A.N_episodes-&std_COMORBIDSCOREdpnum))) end as std_COMORBIDSCORE, 
                     case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumAV**2) = . or sum(A.N_episodes-&std_NUMAVdpnum) in (.,0) then . 
                     else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumAV**2),sum(A.N_episodes-&std_NUMAVdpnum))) end as std_NumAV, 
                     case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumOA**2) = . or sum(A.N_episodes-&std_NUMOAdpnum) in (.,0) then . 

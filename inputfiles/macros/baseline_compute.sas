@@ -252,6 +252,30 @@
             run;
         %end;
 
+		/* Check if cohortgrp contains non live and/or mixed birth outcomes */
+		%if %index(&reporttype.,T4) %then %do;
+			%let nonliveoutcomes=N;
+			%let nonliveoutcomeslist=;
+
+			proc sql noprint;
+			select distinct preg_outcome into :nonliveoutcomeslist separated by " "
+			from master_pregnancymeta
+			where runid="&runid." and preg_outcomecat in ("NONLIVE" "MIX");
+			quit;
+
+			%create_comma_charlist(inlist=&nonliveoutcomeslist, outlist=nonliveoutcomeslist1);
+
+			data _null_;
+			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
+			i=1;
+			do while(scan(code, i, " ") ne "");
+				code2=upcase(scan(code, i, " "));
+				if code2 in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 							
+				i=i+1; 
+			end;									
+			run;
+		%end;
+
         /*Extract agegroup, sex, race, and hispanic requirements*/
         data _tempcohort;
             set master_cohortfile(where=(runid="&runid." and cohortgrp="&cohortgrp"));
@@ -324,16 +348,61 @@
             run;
         %end;
         
-        /* Add cohortdef and comorbidscore to baselinefile */
+        /* Initialize variables related to risk scores */
+		%let riskscoreslist=;
+		%let riskscoreslist_quoted=;
+		%let riskscoreslabels=;
+		%let riskscorecats=;
+		%let riskscores_with_cats=;
+
+		%isdata(dataset=riskscorefile);
+		%if %eval(&nobs.>0) %then %do;		    
+			proc sql noprint;
+			    select upcase(riskscore) into :riskscoreslist separated by " "
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select label into :riskscoreslabels separated by "|"
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select riskscorecat into :riskscorecats separated by "|"
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) order by label;
+
+				select upcase(riskscore) into :riskscores_with_cats separated by " "
+			    from riskscorefile where runid="&runid." and upcase(riskscore) in (&healthchar. &medproduse. &UtilizationIntensity.) and strip(riskscorecat) ne "missing" order by label;
+			quit;
+
+			%create_comma_charlist(inlist=&riskscoreslist, outlist=riskscoreslist_quoted);
+			%create_comma_charlist(inlist=&riskscores_with_cats, outlist=riskscores_with_cats);
+		%end; 
+
+        /* Add cohortdef and variables that requires a footnote to baselinefile */
         data baselinefile;
-          length comorbidscore gestationalage $1 cohortdef $5;
+          length &riskscorelibrary. gestationalage nonliveoutcomes nonlivefn $1 cohortdef $5;
           set baselinefile;
-          if order=&b. then do;
-            if index(upcase(healthchar),'COMORBIDSCORE') > 0 or index(upcase(medproduse),'COMORBIDSCORE') or index(upcase(utilizationintensity),'COMORBIDSCORE')
-              then comorbidscore = "Y";
-              else comorbidscore = "N";
+          if order=&b. then do;	
+		  	/* Initialize standard risk scores variable indicators */
+		    %do rskscore=1 %to %sysfunc(countw(&riskscorelibrary., ' '));
+				%let riskscore=%scan(&riskscorelibrary., &rskscore., %str( ));
+				&riskscore. = "N";
+			%end;		  	
+			%if %length(&riskscoreslist.) > 0 %then %do;
+				%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+					%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
+					if index(upcase(healthchar),"&riskscore.") > 0 or index(upcase(medproduse),"&riskscore.") or index(upcase(utilizationintensity),"&riskscore.") then &riskscore. = "Y";		              
+					else &riskscore. = "N";
+				%end;
+			%end;             		
             if index(upcase(pregnancychar),'GA_BIRTH') > 0 or index(upcase(exposurechar),'GA_FIRST') > 0 then gestationalage = "Y";
               else gestationalage = "N";
+			%if %index(&reporttype.,T4) %then %do;
+				nonliveoutcomes="&nonliveoutcomes";
+				if index(upcase(pregnancychar),'PREPOSTIND_NA') > 0 and nonliveoutcomes eq "Y" then nonlivefn="Y";
+				else nonlivefn="N";
+			%end;
+			%else %do;
+				nonliveoutcomes="N";
+				nonlivefn="N";
+			%end;
             cohortdef = "&cohortdef.";
           end;
         run;
@@ -1445,7 +1514,8 @@
 
             data &labelout&suffix.;
                 set init_labels %if %quote(&labcharacteristics) ^= %str("missing") %then %do; 
-                                    covarname(in=b keep=cov_varname studyname where=(upcase(cov_varname) in (&labcharacteristics))) 
+                                    covarname(in=b keep=cov_varname studyname %if %index(&reporttype,T4) > 0 %then %do;
+									codepop %end; where=(upcase(cov_varname) in (&labcharacteristics))) 
                                 %end;;
                 length analysisgrp $40 table weight $30;
                 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
@@ -1659,6 +1729,10 @@
             %else %do;
                 set baseline_aggregate_prelabel;
                 length covarlabel $&baselinelabellength;
+				%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
+                  length codepop $2;
+			      call missing(codepop);
+                %end;
                 call missing(covarlabel);
             %end;
 
@@ -1774,8 +1848,14 @@
                     if MetVar= 'PREPOSTIND_PRE' then do;
                     %assignbaselinevars(label=put('PRE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('PRE', prepostindsort.),1.));
                     end;
-                    if MetVar= 'PREPOSTIND_TERM' then do;
-                    %assignbaselinevars(label=put('TERM', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('TERM', prepostindsort.),1.));
+                    if MetVar= 'PREPOSTIND_EARL' then do;
+                    %assignbaselinevars(label=put('EARL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('EARL', prepostindsort.),1.));
+                    end;
+					if MetVar= 'PREPOSTIND_FULL' then do;
+                    %assignbaselinevars(label=put('FULL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('FULL', prepostindsort.),1.));
+                    end;
+					if MetVar= 'PREPOSTIND_LATE' then do;
+                    %assignbaselinevars(label=put('LATE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('LATE', prepostindsort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
                     %assignbaselinevars(label=put('POST', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('POST', prepostindsort.),1.));
@@ -1783,8 +1863,17 @@
                     if MetVar= 'PREPOSTIND_NONE' then do;
                     %assignbaselinevars(label=put('NONE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NONE', prepostindsort.),1.));
                     end;
+					if MetVar= 'PREPOSTIND_NA' then do;
+						%if &nonliveoutcomes. eq Y %then %do;
+	                    	%assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NA', prepostindsort.),1.));							
+						%end;
+						%else %do;
+							/* Delete row if non live birth and/or mixed outcomes were not requested */
+							delete;
+						%end;
+                    end;
                     if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=5);
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
                     end;
                 end; 
                 else if metvar in (&exposurechar.) then do;      
@@ -1871,28 +1960,74 @@
                     %assignbaselinevars(label=, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(prxchange('s/^[^_]*_//',-1,prxchange('s/(LBRES|LBUNIT|_NOTESTRECORD).*//i',-1,metvar))), ' ','e'), sortorder3=, sortorder4=);
                     %end;
                 end;
+
+				/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
+				%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
+					if codepop="I" then do;
+						%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+						%else %let numloop=0;
+
+                		%do dploop = 0 %to &numloop.;
+							comp_mean&dploop.=.;
+							comp_std&dploop.=.;
+							comp_mean&dploop._char="N/A";
+							comp_std&dploop._char="N/A";
+							%if "&computebalance." = "Y" %then %do;
+								ad&dploop.=.;
+								sd&dploop.=.;
+								ad&dploop._char="N/A";
+								sd&dploop._char="N/A";
+							%end;
+						%end;
+					end;
+				%end;
             end;
             %end;
 
             /*********************************************************************************************/
             /* Medical Product Use, Health Characteristics, Health Service Utilization Intensity Metrics */
             /*********************************************************************************************/
-            else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) then do;   
+           else if metvar in (&healthchar. &medproduse. &UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do;
+					or (substr(metvar,1,index(metvar,"_")-1) in (&healthchar. &medproduse. &UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;   
                 /*Assign grouper and sortorder1*/
-                if metvar in (&healthchar.) then do;
+                if metvar in (&healthchar.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&healthchar.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Characteristics", sortorder1 = 12, sortorder2=);
                 end;
-                if metvar in (&medproduse.) then do;
+                if metvar in (&medproduse.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&medproduse.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Medical Product Use", sortorder1 = 13, sortorder2=);
                 end;
-                if metvar in (&UtilizationIntensity.) then do;
+                if metvar in (&UtilizationIntensity.) %if %length(&riskscoreslist_quoted.) > 0 %then %do; or
+					(substr(metvar,1,index(metvar,"_")-1) in (&UtilizationIntensity.) and 
+					 substr(metvar,1,index(metvar,"_")-1) in (&riskscoreslist_quoted.)) %end; then do;
                 %assignbaselinevars(label=, grouper="Health Service Utilization Intensity Metrics", sortorder1 = 15, sortorder2=);
-                end;
+                end;                
+				
+				/* Riskscores */
+				%if %length(&riskscoreslist.) > 0 %then %do;
+					%do rskscore=1 %to %sysfunc(countw(&riskscoreslist., ' '));	
+						%let riskscore=%scan(&riskscoreslist., &rskscore., %str( ));
 
-                /*Assign labels and sortorder2*/
-                if metvar = 'COMORBIDSCORE' then do;
-                %assignbaselinevars(label="Charlson/Elixhauser combined comorbidity score", grouper=, sortorder1 =, sortorder2=0);
-                end;
+						if metvar="&riskscore." then do;
+							 %assignbaselinevars(label="%scan(&riskscoreslabels., &rskscore., %str(|))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=-1);
+						end;
+
+						%let riskscorecat = %scan(&riskscorecats., &rskscore., %str(|));
+						
+						%if %str("&riskscorecat.") ne %str("missing") %then %do;
+							%do rskscorecat=1 %to %sysfunc(countw(&riskscorecat., ' '));
+								if metvar="&riskscore._CAT&rskscorecat." then do;
+									%assignbaselinevars(label="%scan(&riskscorecat., &rskscorecat., %str( ))", grouper=, sortorder1 =, sortorder2=-1, sortorder3=&rskscore., sortorder4=&rskscorecat.);		
+								end;
+							%end;
+						%end;
+					%end;
+				%end;
+
                 if metvar = 'NUMAV' then do;
                 %assignbaselinevars(label="Mean number of ambulatory encounters", grouper=, sortorder1 =, sortorder2=2000);
                 end;
@@ -1930,6 +2065,27 @@
                     covarorderlist = tranwrd(resolve('&healthchar. &medproduse. &UtilizationIntensity'), '"', "");                     
                     %assignbaselinevars(label=covarlabel, grouper=, sortorder1 =, sortorder2=findw(covarorderlist, compress(metvar), ' ','e'));
                     %end;
+
+					/* Set non-pregnant cohort values to N/A where codepop=I (covariates only evaluated in infant)*/
+					%if %index(&reporttype,T4) > 0 and &includenonpregnant. eq Y %then %do;
+						if codepop="I" then do;
+							%if "&stratifybydp" = "Y" %then %let numloop=&num_dp;
+							%else %let numloop=0;
+
+                			%do dploop = 0 %to &numloop.;
+								comp_mean&dploop.=.;
+								comp_std&dploop.=.;
+								comp_mean&dploop._char="N/A";
+								comp_std&dploop._char="N/A";
+								%if "&computebalance." = "Y" %then %do;
+									ad&dploop.=.;
+									sd&dploop.=.;
+									ad&dploop._char="N/A";
+									sd&dploop._char="N/A";
+								%end;
+							%end;
+						end;
+					%end;
                 end;
             end;
             
@@ -1951,8 +2107,24 @@
                 %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
                 subgroup subgroupcat
                 %end;
+				%if %index(&reporttype,T4) > 0 %then %do;
+				codepop
+				%end;
                 ;
         run;
+
+		/* If risk score categories are output then add header for each score */
+		%if %length(&riskscores_with_cats.) > 0 %then %do;
+			data baseline_aggregatelabels;
+			set baseline_aggregatelabels
+				baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=b);
+			if b then do;
+				label=strip(label) || " categories";
+				metvar="";
+				sortorder4=0;
+			end;
+			run;
+		%end;
 
         /*Merge in agefmtsort to correctly update sortorder*/
         proc sql noprint;
@@ -1989,7 +2161,8 @@
 
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
-                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;);
+                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
+														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;);
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;

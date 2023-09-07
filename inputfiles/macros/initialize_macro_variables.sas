@@ -81,6 +81,10 @@
     %let userid = ;
     %let studytitle = ;
 
+    /* Type 3 Tree weekdays dataset variable */
+    %global t3treewkdaysdset;
+    %let t3treewkdaysdset = ;
+
     /*tablefile and figurefile variables*/
     %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
@@ -91,10 +95,13 @@
     %let includegroupinfigure = ;
 
     /*baseline table variables*/
-    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics;
+    %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary;
     %let numbaselinetablegrp =0;
     %let numprofilecovarstoinclude=0;
     %let labcharacteristics=;
+	%let riskscoreslist_quoted=;
+	%let riskscores_with_cats=;
+	%let riskscorelibrary=ADCSI CHA2DS2VASC CCI FRAILTY HASBLED OBSCOMORB PEDCOMORB;
 
 	/*groupsfile table variables*/
     %global output_code_distribution numgroups discardnegativetimegroups requestedfigs;

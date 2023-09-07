@@ -49,6 +49,7 @@
         %let psdistflag = ;
         %let repdatadsn=;
         %let psmodelvars=;
+        %let riskscore_regex=;
 
         /* Check to see if same periods were specified */
         %let dupperiods=0;
@@ -65,6 +66,12 @@
             into :covarnumlabels 
             separated by '|'
             from covarname;
+
+            %if %sysfunc(exist(riskscorefile)) %then %do;
+                select distinct cats(riskscore,'_CAT'), riskscore
+	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+	            from riskscorefile;
+            %end;
         quit;
 
 
@@ -299,9 +306,18 @@
                             %if &psmodelvar = HISPANIC %then %do;
                                 if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
                             %end;
-                            %if %sysfunc(prxmatch(/COVAR*|^NUM*|COMORBID*/,&psmodelvar)) %then %do; 
+                            %if %sysfunc(prxmatch(/COVAR*|^NUM*/,&psmodelvar)) %then %do; 
                                 if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
                             %end;
+							%if %sysfunc(exist(riskscorefile)) %then %do;
+								%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
+									%let score = %scan(&riskscorelist,&scorenum);
+									if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';
+									/*due to length restrictions, recode ADCSI label and remove SAS specific coding for CHA2DS2VASC*/
+									if metvar = "ADCSI" then label = "Adapted Diabetes Complications Severity Index";
+								    if metvar = "CHA2DS2VASC" then label="CHA2DS2-VASc score";
+								%end;
+							%end;
                     %end;
                 end;/* psestimategrp */
                 %end; /* m */
@@ -339,6 +355,12 @@
                     COVARNUM=put(compress(metvar,'','A'),8.);
                     subgroupcat='';
                 end;
+                /* Remove categorical risk scores */
+                %if %length(&riskscore_regex) > 0 %then %do;
+                if prxmatch("/&riskscore_regex/i",metvar) then delete;
+                %end;
+                /* Remove risk score labels */
+                if grouper in ("Health Characteristics" "Health Service Utilization Intensity Metrics" "Medical Product Use") and missing(metvar) then delete;
                 /* Remove lab covariate rows */
                 if grouper = "Laboratory Characteristics" then delete;
                 if &dpcnt. = 0 then dp = "agg";
