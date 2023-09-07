@@ -701,7 +701,7 @@
 					end;
 				%end;
 			  %end; 
-              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
+              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|PREG_OUTCOME*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 

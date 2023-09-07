@@ -15,7 +15,7 @@ The Sentinel QRP Reporting Tool is a SAS® program that is designed to run again
 
 ### Requirements
 * To execute your own customized analysis with the QRP Reporting Tool, you must
-properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse/files/atoc-inputfiles.md)</b></u>
+properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/pages/SENTINEL/sentinel-routine-querying-tool-report-documentation/master/browse/file3000-inputfiles.html)</b></u>
 for details)
 * Output tables from the msoc folder of the Sentinel routine querying tools. The
 output tables can be found in their relevant tables of contents below:
@@ -52,7 +52,7 @@ output tables can be found in their relevant tables of contents below:
 * The underlying aggregated report datasets are saved in a folder called "reportdata" within the "output" folder.
 
 ### Compatability
-Version 2.1.0 of the QRP reporting tool is designed to be compatible with QRP 12.1.0 and later. To determine which version of the tool is compatible with older versions of QRP, use the table below:
+Version 2.2.0 of the QRP reporting tool is designed to be compatible with QRP 12.2.0 and later. To determine which version of the tool is compatible with older versions of QRP, use the table below:
 
  <table style="width:100%">
   <tr>
@@ -60,7 +60,11 @@ Version 2.1.0 of the QRP reporting tool is designed to be compatible with QRP 12
     <th> QRP Report Version</th>
   </tr>
     <tr>
-    <td>12.1.0-current</td>
+    <td>12.2.0-current</td>
+    <td>2.2.0</td>
+  </tr>
+  <tr>
+    <td>12.1.0</td>
     <td>2.1.0</td>
   </tr>
   <tr>
