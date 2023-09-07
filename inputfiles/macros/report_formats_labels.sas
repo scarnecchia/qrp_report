@@ -150,6 +150,25 @@
         delete _agefmt;
     quit;
 
+	/* Initialize variables for pregnancy outcomes format */
+	%let preg_outcome_list=;
+	%let preg_outcome_labels=;
+
+	%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
+		/* Remove duplicate that can exist if more than 1 run is specified */
+		proc sort nodupkey data=master_pregnancymeta(keep=preg_outcome descr) out=_outcomes;
+		by preg_outcome;
+		run;
+
+		proc sql noprint;
+		    select catt("PREG_OUTCOME_",upcase(preg_outcome)) into :preg_outcome_list separated by "|"
+		    from _outcomes order by descr;
+
+			select descr into :preg_outcome_labels separated by "|"
+		    from _outcomes order by descr;
+		quit;
+	%end;
+
     /***************************/
     /* MASTER FORMAT STATEMENT */
     /***************************/
@@ -278,6 +297,23 @@
 		"POST" = 5
         "NONE" = 6
 		"NA" = 7;
+
+		/* Pregnancy outcome format */
+		%if %length(&preg_outcome_list.) > 0 %then %do;
+			value $pregoutcomefmt
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
+				"&preg_outcome." = "%scan(&preg_outcome_labels., &outcome., %str(|))"						
+			%end;
+			;
+
+			value $pregoutcomesort
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
+				"&preg_outcome." = &outcome.						
+			%end;
+			;
+		%end;   
 
         /* Birth Type format */
         value $birth_typefmt
