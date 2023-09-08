@@ -527,7 +527,7 @@
                  - Agegroup => Age Group
                  - Hispanic => Hispanic Origin
                  - Periodid => Monitoring Period
-                 - Prepostind => Gestational age categories
+                 - Prepostind => Gestational Age Categories
                  - Matchmethod => Match Method
                  - Birthtype => Birth Type
 
@@ -540,7 +540,7 @@
                 if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
                 if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
                 if index(tabletitle, 'Periodid')>0 then tabletitle =tranwrd(tabletitle, 'Periodid', 'Monitoring Period');
-                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Gestational age categories');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Gestational Age Categories');
                 if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Matchmethod', 'Match Method');
                 if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Birthtype', 'Birth Type');
                 if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
