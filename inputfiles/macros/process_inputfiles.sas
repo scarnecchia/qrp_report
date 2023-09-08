@@ -826,7 +826,7 @@
             merge preg_labels
                   temp_preg_labels;
             by runid group order;
-            length preg_outcome_label $60;
+            length preg_outcome_label $85;
             if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
                 if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Live Birth Delivery Cohort and Non-Pregnant Cohort';
                 else preg_outcome_label='%str( )Live Birth Delivery Cohort';
