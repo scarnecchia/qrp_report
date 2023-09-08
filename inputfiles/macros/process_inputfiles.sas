@@ -827,8 +827,8 @@
                   temp_preg_labels;
             by runid group order;
             if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
-                if upcase(includenonpregnant) = 'Y' then preg_outcome_label=' Live Birth Delivery Cohort and Non-Pregnant Cohort';
-                else preg_outcome_label=' Live Birth Delivery Cohort';
+                if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Live Birth Delivery Cohort and Non-Pregnant Cohort';
+                else preg_outcome_label='%str( )Live Birth Delivery Cohort';
             end;
             else if prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
                 count=0;
@@ -837,8 +837,8 @@
                     count + count(upcase(code), strip(scan(substring,i,"|")),'i');
                 end;
                 if count > 1 then do;
-                    if upcase(includenonpregnant) = 'Y' then preg_outcome_label=' Non-live Birth Outcomes Cohort and Non-Pregnant Cohort';
-                    else preg_outcome_label=' Non-live Birth Outcomes Cohort';
+                    if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Non-live Birth Outcomes Cohort and Non-Pregnant Cohort';
+                    else preg_outcome_label='%str( )Non-live Birth Outcomes Cohort';
                 end;
                 else if count = 1 then do;
                     %if %length(&single_nonlive_orders) > 0 %then %do b = 1 %to %sysfunc(countw(&single_nonlive_orders));
@@ -868,8 +868,8 @@
                 else preg_outcome_label=cat('%str( )', symget('preg_outcome_descr'),' Cohort');
              end;
              else do;
-                if upcase(includenonpregnant) = 'Y' then preg_outcome_label=' Pregnant Cohort and Non-Pregnant Cohort';
-                else preg_outcome_label=' Pregnant Cohort';
+                if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Pregnant Cohort and Non-Pregnant Cohort';
+                else preg_outcome_label='%str( )Pregnant Cohort';
              end;
              drop _name_ count substring i code col: rc;
         run;
