@@ -119,7 +119,7 @@
                     %end;
                     if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 end;
-                /*if baselinegroupnum is specified,  2nd row will exist in the file*/
+                /*if baselinegroupnum is specified, a 2nd row will exist in the file*/
                 if _n_ = 2 then do;
                     if missing(baselinegroupnum)=0 then do;
                         call symputx('analysisgrp2',analysisgrp);
