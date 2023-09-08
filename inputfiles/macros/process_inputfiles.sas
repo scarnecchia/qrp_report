@@ -765,7 +765,19 @@
 /***************************************************************************************************
 *   Create a pregnancy outcome label dataset                                            
 ***************************************************************************************************/
-    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0  %then %do; 
+    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0  and %sysfunc(exist(input.&baselinefile)) %then %do; 
+        proc sql noprint;
+            select distinct upper(preg_outcome)
+            into :live_preg_outcomes separated by '|'
+            from master_pregnancymeta
+            where upper(preg_outcomecat) = 'LIVE';
+
+            select distinct upper(preg_outcome)
+            into :nonlive_preg_outcomes separated by '|'
+            from master_pregnancymeta
+            where upper(preg_outcomecat) = 'NONLIVE';
+        quit; 
+
         data _po_codes;
             set master_cohortcodes(where=(upcase(codecat) = 'PO'));
             i=1;
@@ -792,9 +804,74 @@
             by runid group order;
         run;
 
-        data pregnancy_outcome_labels(keep=runid group order code);
+        data temp_preg_labels;
             set temp_preg_labels;
             code=catx(' ', of col:);
+        run;
+
+        %let single_nonlive_orders =;
+        proc sql noprint;
+            select distinct order 
+            into :single_nonlive_orders
+            separated by ' '
+            from temp_preg_labels
+            where countw(code) = 1 and prxmatch("/&nonlive_preg_outcomes/", code);
+        quit;
+
+        proc sort data = input.&baselinefile out=preg_labels;
+            by runid group order;
+        run;
+
+        data preg_labels;
+            merge preg_labels
+                  temp_preg_labels;
+            by runid group order;
+            if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
+                if upcase(includenonpregnant) = 'Y' then preg_outcome_label='Live Birth Delivery Cohort and Non-Pregnant Cohort';
+                else preg_outcome_label='Live Birth Delivery Cohort';
+            end;
+            else if prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
+                count=0;
+                substring="&nonlive_preg_outcomes";
+                do i = 1 to countw(substring,"|");
+                    count + count(upcase(code), strip(scan(substring,i,"|")),'i');
+                end;
+                if count > 1 then do;
+                    if upcase(includenonpregnant) = 'Y' then preg_outcome_label='Non-live Birth Outcomes Cohort and Non-Pregnant Cohort';
+                    else preg_outcome_label='Non-live Birth Outcomes Cohort';
+                end;
+                else if count = 1 then do;
+                    %if %length(&single_nonlive_orders) > 0 %then %do b = 1 %to %sysfunc(countw(&single_nonlive_orders));
+                        %let c = %scan(&single_nonlive_orders,&b);
+                    rc = dosubl("proc sql noprint;
+                                 select descr into :preg_outcome_descr trimmed 
+                                 from master_pregnancymeta b    
+                                 where upper(b.preg_outcome) = (select upper(code)
+                                                                from temp_preg_labels
+                                                                where order = &c);
+                                quit;");
+                    if order = &c then do;
+                        if upcase(includenonpregnant) = 'Y' then preg_outcome_label= cat('%str( )', symget('preg_outcome_descr'),' Cohort and Non-Pregnant Cohort');
+                        else preg_outcome_label=cat('%str( )', symget('preg_outcome_descr'),' Cohort');
+                    end;
+                    %end;
+                end;
+            end;
+            else if prxmatch('/MIX/i',code) and ^prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) then do; 
+                rc = dosubl('proc sql noprint;
+                             select descr into :preg_outcome_descr trimmed
+                             from master_pregnancymeta 
+                             where upcase(preg_outcome) = "MIX"; 
+                             quit;
+                            ');
+                if upcase(includenonpregnant) = 'Y' then preg_outcome_label=cat('%str( )', symget('preg_outcome_descr'), ' Cohort and Non-Pregnant Cohort');
+                else preg_outcome_label=cat('%str( )', symget('preg_outcome_descr'),' Cohort');
+             end;
+             else do;
+                if upcase(includenonpregnant) = 'Y' then preg_outcome_label=' Pregnant Cohort and Non-Pregnant Cohort';
+                else preg_outcome_label=' Pregnant Cohort';
+             end;
+             drop _name_ count substring i code col: rc;
         run;
     %end;
 

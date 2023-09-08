@@ -47,7 +47,14 @@
     %macro assign_cohort_mergevar(cohort=, mergevar=, outdata=, crosscheckfile = , crosscheckvar = ,includenonpregnant=N);
 	
         data &outdata.;
-            set input.&baselinefile.;
+            set 
+            %if ^%index(&reporttype,T4L1) %then %do;
+            input.&baselinefile.
+            %end;
+            %else %do;
+            preg_labels 
+            %end;
+            ;
             format cohort mergevar $15. analysisgrp $40. unique_psestimate 3.;
             group=lowcase(group);
             analysisgrp = group;
@@ -190,14 +197,6 @@
         data baselinefile;
             set baselinefile_:;
         run;
-        /* Add pregnancy outcome codes to baseline file to conditionally determine labels */
-        proc sql noprint undo_policy=none;
-            create table baselinefile as 
-            select a.*, b.code
-            from baselinefile a 
-            left join pregnancy_outcome_labels b 
-            on a.runid = b.runid and a.order = b.order;
-        quit;
     %end;
 
     /*T6: cohort is 'switch' and mergevar = 'analysisgrp'*/
