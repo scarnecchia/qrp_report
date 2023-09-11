@@ -348,7 +348,6 @@
             run;
         %end;
 
-
 		/* Restrict pregnancy outcome list to outcomes specified in pregnancychar parameter */
 		%let preg_outcome_list=;		
 		%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
@@ -1896,7 +1895,7 @@
 					%end;     
 
 					if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=9);
+                    %assignbaselinevars(label="Gestational age at pregnancy outcome (weeks)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=9);
                     end; 
                 end; 
                 else if metvar in (&exposurechar.) then do;      

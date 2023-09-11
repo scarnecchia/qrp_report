@@ -88,6 +88,7 @@
             %let analysisgrp2 = ;
             %let baselinegroupnum = ;
             %let pregnancylabel = ;
+            %let pregnancylabel2 = ;
             %let includenonpregnant = N;
 
             /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
@@ -113,8 +114,7 @@
 					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
-                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                        else call symput('pregnancylabel', ' Pregnancy Cohort');
+                     call symputx('pregnancylabel',preg_outcome_label);
                     end;
                     call symputx('includenonpregnant', upcase(includenonpregnant));
                     %end;
@@ -124,10 +124,12 @@
                 if _n_ = 2 then do;
                     if missing(baselinegroupnum)=0 then do;
                         call symputx('analysisgrp2',analysisgrp);
+                        %if %index(&reporttype,T4L1) %then %do;
+                        call symputx('pregnancylabel2', preg_outcome_label);
+                        %end;
                     end;
                 end;
-            run;
-         
+            run;         
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
@@ -238,6 +240,7 @@
 					%else %do;
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
 			            %if %length(&baselinegroupnum.)>0 %then %do;
+                            %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
 			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;

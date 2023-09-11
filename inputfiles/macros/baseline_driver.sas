@@ -47,7 +47,14 @@
     %macro assign_cohort_mergevar(cohort=, mergevar=, outdata=, crosscheckfile = , crosscheckvar = ,includenonpregnant=N);
 	
         data &outdata.;
-            set input.&baselinefile.;
+            set 
+            %if ^%index(&reporttype,T4L1) %then %do;
+            input.&baselinefile.
+            %end;
+            %else %do;
+            baseline_preg_labels 
+            %end;
+            ;
             format cohort mergevar $15. analysisgrp $40. unique_psestimate 3.;
             group=lowcase(group);
             analysisgrp = group;
@@ -281,7 +288,7 @@
 			%end;
 
 			proc datasets nowarn noprint lib= work;
-			  delete alldptable1_&periodid.;
+			  delete alldptable1_&periodid. preg_labels;
 			quit;
 
             proc sort data=_temp_mean_count;
