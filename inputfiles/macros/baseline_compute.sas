@@ -347,7 +347,18 @@
               call symputx('cohortdef', strip(switchcohortdef));
             run;
         %end;
-        
+
+
+		/* Restrict pregnancy outcome list to outcomes specified in pregnancychar parameter */
+		%let preg_outcome_list=;		
+		%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
+			proc sql noprint;
+			    select catt("PREG_OUTCOME_",upcase(preg_outcome)) into :preg_outcome_list separated by "|"
+			    from master_pregnancymeta where runid="&runid." and catt("PREG_OUTCOME_",upcase(preg_outcome)) in (&pregnancychar.) order by descr;
+
+			quit;
+		%end;
+
         /* Initialize variables related to risk scores */
 		%let riskscoreslist=;
 		%let riskscoreslist_quoted=;
@@ -1871,10 +1882,22 @@
 							/* Delete row if non live birth and/or mixed outcomes were not requested */
 							delete;
 						%end;
-                    end;
-                    if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=8);
-                    end;
+                    end;					
+
+					/* Pregnancy outcomes */
+					%if %length(&preg_outcome_list.) > 0 %then %do;
+						%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
+							%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
+
+							if metvar="&preg_outcome." then do;
+								 %assignbaselinevars(label=put("&preg_outcome", $pregoutcomefmt.), grouper="Pregnancy Characteristics", sortorder1=9, sortorder2=8, sortorder3=put("&preg_outcome", $pregoutcomesort.));
+							end;		
+						%end;
+					%end;     
+
+					if MetVar= 'GA_BIRTH' then do;
+                    %assignbaselinevars(label="Gestational age at delivery", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=9);
+                    end; 
                 end; 
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
@@ -2112,18 +2135,39 @@
 				%end;
                 ;
         run;
+		
 
+		%if %length(&preg_outcome_list.) > 0 | %length(&riskscores_with_cats.) > 0 %then %do;
+		data baseline_aggregatelabels;
+		set baseline_aggregatelabels
+		/* If pregnancy outcomes are output then add subheader */
+		%if %length(&preg_outcome_list.) > 0 %then %do;
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar="PATIENT") in=b)
+		%end;
 		/* If risk score categories are output then add header for each score */
 		%if %length(&riskscores_with_cats.) > 0 %then %do;
-			data baseline_aggregatelabels;
-			set baseline_aggregatelabels
-				baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=b);
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in(&riskscores_with_cats.)) in=c)
+		%end;
+		;
+		%if %length(&preg_outcome_list.) > 0 %then %do;
 			if b then do;
-				label=strip(label) || " categories";
-				metvar="";
-				sortorder4=0;
+			grouper="Pregnancy Characteristics";
+			label="Pregnancy Outcome";
+			sortorder1=9;
+			sortorder2=8;
+			sortorder3=0;
+			sortorder4=0;
+			metvar="";
 			end;
-			run;
+		%end;
+		%if %length(&riskscores_with_cats.) > 0 %then %do;
+			if c then do;
+			label=strip(label) || " categories";
+			metvar="";
+			sortorder4=0;
+			end;
+		%end;
+		run;
 		%end;
 
         /*Merge in agefmtsort to correctly update sortorder*/
