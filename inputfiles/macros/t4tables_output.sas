@@ -159,22 +159,7 @@
                          %if %index(&dataset., t4moi) %then %do; den_episodes %end;
                          %if %index(&dataset., _dps_) %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
-                         %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
-
-			/* Remove trimester counts from group label if table is not T1 or if observations are related to non-pregnant cohort */	
-			grouplabel2=tranwrd(grouplabel," trimester,","|");	
-			do strng=1 to countw(grouplabel2,"|");
-			substring=scan(grouplabel2,strng,"|");
-			end;
-			%if &table. ne T1 %then %do;
-			if index(grouplabel, "episodes reach the 2nd trimester") > 0 or index(grouplabel, "episodes reach the 3rd trimester") > 0 then 
-				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), substring);
-			%end;
-			%else %do;
-			if pregflg = "N" and (index(grouplabel, "episodes reach the 2nd trimester") > 0 or index(grouplabel, "episodes reach the 3rd trimester") > 0) then 
-				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), strip(substring));			
-			%end;
-			drop strng substring grouplabel2;			
+                         %if &includemoiheaderrow. =Y %then %do; moiheader %end;);			
     	run;
     %end;
 
