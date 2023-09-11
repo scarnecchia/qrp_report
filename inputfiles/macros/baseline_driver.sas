@@ -288,7 +288,7 @@
 			%end;
 
 			proc datasets nowarn noprint lib= work;
-			  delete alldptable1_&periodid. preg_labels;
+			  delete alldptable1_&periodid. baseline_preg_labels;
 			quit;
 
             proc sort data=_temp_mean_count;
