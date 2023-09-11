@@ -782,6 +782,7 @@
         %let analysisgrp2 = ;
         %let baselinegroupnum = ;
         %let pregnancylabel = ;
+        %let pregnancylabel2 = ;
         %let includenonpregnant = N;
         %let includecomp = N;
         %let computebalance =N;
