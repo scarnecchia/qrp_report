@@ -113,17 +113,17 @@
     data _footnotes;
        length footnote_order 3; 
        set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0	   	  
-	   	  %if &T2Columns.=Y %then %do; 6 %end;
-		  %if &T3Columns.=Y %then %do; 7 %end;
+	   	  %if &T2Columns.=Y %then %do; 2 %end;
+		  %if &T3Columns.=Y %then %do; 3 %end;
           %if &table.=T1 %then %do;
-           %if &nonpreg. = Y %then %do; 1 %end;
-            %else %do; 2 %end;
+           %if &nonpreg. = Y %then %do; 4 %end;
+            %else %do; 5 %end;
            %end;
           %if &table.=T5 %then %do;
-           %if &nonpreg. = Y %then %do; 3 %end;
-            %else %do; 4 %end;
+           %if &nonpreg. = Y %then %do; 6 %end;
+            %else %do; 7 %end;
            %end; 
-           %if %index(&varsuperscripts,Y) %then %do; 5 %end;)
+           %if %index(&varsuperscripts,Y) %then %do; 1 %end;)
           or (type='type4' and order in (-2 %if &nonpreg. = Y %then %do; -1 %end;))
          )));
        by order;
@@ -142,10 +142,10 @@
     quit;
 
 	%assign_superscripts(type=title, order = -2 -1);
-	%assign_superscripts(type=exposure, order = 1 2 3 4);
-    %assign_superscripts(type=column, order = 5);	
-	%assign_superscripts(type=T2column, order = 6);
-	%assign_superscripts(type=T3column, order = 7);
+	%assign_superscripts(type=exposure, order = 4 5 6 7);
+    %assign_superscripts(type=column, order = 1);	
+	%assign_superscripts(type=T2column, order = 2);
+	%assign_superscripts(type=T3column, order = 3);
 
     /*Save dataset to repdata folder*/
     %isdata(dataset=repdata.table&tabnum.);
