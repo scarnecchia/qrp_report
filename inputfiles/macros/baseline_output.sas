@@ -863,6 +863,9 @@
             if _n_ = 2 then do;
                 if missing(baselinegroupnum)=0 then do;
                     call symputx('analysisgrp2',analysisgrp);
+                    %if %index(&reporttype,T4L1) %then %do;
+                    call symputx('pregnancylabel2', preg_outcome_label);
+                    %end;
                 end;
             end;
         run;
@@ -1111,7 +1114,7 @@
         %if %length(&baselinegroupnum.)>0 %then %do;
             %let grp2_label = %bquote(&grouplabel2.);
             %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-            	%let grp2_label = %sysfunc(tranwrd(%bquote(&grouplabel2. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
+            	%let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.);
             %end;
         %end;
 

@@ -52,7 +52,7 @@
             input.&baselinefile.
             %end;
             %else %do;
-            preg_labels 
+            baseline_preg_labels 
             %end;
             ;
             format cohort mergevar $15. analysisgrp $40. unique_psestimate 3.;

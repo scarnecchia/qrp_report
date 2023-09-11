@@ -791,40 +791,47 @@
         run;
 
         proc sql noprint;
-            create table pregnancy_outcome_labels as 
-            select distinct a.runid, a.group, a.order, b.code 
+            create table _pregnancy_outcome_labels as 
+            select distinct a.runid, a.group, a.order, b.code  
             from input.&baselinefile as a 
             left join _po_codes as b
             on a.runid = b.runid and a.group = b.group
             order by a.runid, a.group, a.order;
         quit;
 
-        proc transpose data = pregnancy_outcome_labels out=temp_preg_labels;
+        proc transpose data = _pregnancy_outcome_labels out=_temp_preg_labels;
             var code;
             by runid group order;
         run;
 
-        data temp_preg_labels;
-            set temp_preg_labels;
+        data _temp_preg_labels;
+            set _temp_preg_labels;
             code=catx(' ', of col:);
         run;
 
         %let single_nonlive_orders =;
-        proc sql noprint;
-            select distinct order 
+        proc sql noprint undo_policy=none;
+            /* Add baselinegroupnum to dataset */
+            create table _temp_preg_labels as 
+            select a.*, b.baselinegroupnum
+            from _temp_preg_labels a 
+            left join input.&baselinefile b 
+            on a.runid = b.runid and a.group = b.group and a.order = b.order;
+
+            select distinct catx('@',order,baselinegroupnum) 
             into :single_nonlive_orders
             separated by ' '
-            from temp_preg_labels
+            from _temp_preg_labels
             where countw(code) = 1 and prxmatch("/&nonlive_preg_outcomes/", code);
         quit;
 
-        proc sort data = input.&baselinefile out=preg_labels;
+        proc sort data = input.&baselinefile out=baseline_preg_labels;
             by runid group order;
         run;
 
-        data preg_labels;
-            merge preg_labels
-                  temp_preg_labels;
+        data baseline_preg_labels;
+            merge baseline_preg_labels
+                  _temp_preg_labels;
             by runid group order;
             length preg_outcome_label $60;
             if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
@@ -842,16 +849,20 @@
                     else preg_outcome_label='%str( )Non-live Birth Outcomes Cohort';
                 end;
                 else if count = 1 then do;
-                    %if %length(&single_nonlive_orders) > 0 %then %do b = 1 %to %sysfunc(countw(&single_nonlive_orders));
-                        %let c = %scan(&single_nonlive_orders,&b);
+                    %if %length(&single_nonlive_orders) > 0 %then %do b = 1 %to %sysfunc(countw(&single_nonlive_orders, %str( )));
+                        %let c = %scan(&single_nonlive_orders,&b,%str( ));
+                        %let ordernum=%scan(&c,1,%str(@));
+                        %let baselinenum=%scan(&c,-1,%str(@));
+
                     rc = dosubl("proc sql noprint;
                                  select descr into :preg_outcome_descr trimmed 
                                  from master_pregnancymeta b    
                                  where upper(b.preg_outcome) = (select upper(code)
-                                                                from temp_preg_labels
-                                                                where order = &c);
+                                                                from _temp_preg_labels
+                                                                where order = &ordernum and baselinegroupnum=&baselinenum);
                                 quit;");
-                    if order = &c then do;
+
+                    if order = &ordernum and baselinegroupnum = &baselinenum then do;
                         if upcase(includenonpregnant) = 'Y' then preg_outcome_label= cat('%str( )', symget('preg_outcome_descr'),' Cohort and Non-Pregnant Cohort');
                         else preg_outcome_label=cat('%str( )', symget('preg_outcome_descr'),' Cohort');
                     end;
