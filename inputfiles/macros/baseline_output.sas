@@ -547,9 +547,9 @@
 				superscript=compress(strip(tranwrd(superscript,".,","")),".");
 			end;
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
-			if label = "Gestational age at delivery" then do;
-				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
+			if label = "Gestational age at pregnancy outcome (weeks)" then do;
+				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)^{Super *}");
 			end;	
 			else if label = "Gestational age of first exposure (weeks)" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
@@ -782,6 +782,7 @@
         %let analysisgrp2 = ;
         %let baselinegroupnum = ;
         %let pregnancylabel = ;
+        %let pregnancylabel2 = ;
         %let includenonpregnant = N;
         %let includecomp = N;
         %let computebalance =N;
@@ -842,10 +843,10 @@
 
                 %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                 if cohort in ('preg', 'nopreg') then do;
-                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                    else call symput('pregnancylabel', ' Pregnancy Cohort');
-                end;
+ 				call symputx('pregnancylabel',preg_outcome_label);
+ 				end;
                 call symputx('includenonpregnant', upcase(includenonpregnant));
+
                 %end;
                 if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 
@@ -863,6 +864,9 @@
             if _n_ = 2 then do;
                 if missing(baselinegroupnum)=0 then do;
                     call symputx('analysisgrp2',analysisgrp);
+                    %if %index(&reporttype,T4L1) %then %do;
+                    call symputx('pregnancylabel2', preg_outcome_label);
+                    %end;
                 end;
             end;
         run;
@@ -1101,9 +1105,9 @@
             %end;
             %else %do;
                 /*Pregnant and non-pregnant cohorts*/
-                %let grp1_label = %bquote(&grouplabel. Pregnancy Cohort);
+                %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
                 %if &includenonpregnant. = Y %then %do;
-                %let grp2_label = %bquote(&grouplabel. Non-Pregnancy Cohort);
+                %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);
                 %end;
             %end;
         %end;
@@ -1111,7 +1115,7 @@
         %if %length(&baselinegroupnum.)>0 %then %do;
             %let grp2_label = %bquote(&grouplabel2.);
             %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-            %let grp2_label = %bquote(&grouplabel2. Pregnancy Cohort);
+            	%let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.);
             %end;
         %end;
 
