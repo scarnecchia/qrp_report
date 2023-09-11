@@ -172,7 +172,7 @@
 			%end;
 			%else %do;
 			if pregflg = "N" and (index(grouplabel, "episodes reach the 2nd trimester") > 0 or index(grouplabel, "episodes reach the 3rd trimester") > 0) then 
-				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), substring);			
+				grouplabel=catt(substr(grouplabel, 1, index(grouplabel, "(")), strip(substring));			
 			%end;
 			drop strng substring grouplabel2;			
     	run;
