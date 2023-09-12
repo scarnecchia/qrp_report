@@ -56,19 +56,74 @@
                        definestatementlabels=,
                        spanningheader=);
 
+
+	/* Determine the pregnant cohort header based on pregnancy outcomes used to define the cohort */
+	proc sql noprint;
+	create table _outcomes as
+	select distinct a.group, 
+				    b.code
+	from &dataset. as a 
+	join Master_cohortcodes as b on a.group=b.group
+	where b.codecat="PO";
+	quit;
+
+	data _outcomes;
+	set _outcomes;
+	i=1;
+	do while(scan(code, i, " ") ne "");
+		code2=upcase(scan(code, i, " "));	
+		output;
+		i=i+1; 
+	end;
+	drop i code;
+	rename code2=code;									
+	run;
+
+	proc sql noprint undo_policy=none;
+	create table _outcomes as
+	select distinct a.preg_outcome, 
+					a.preg_outcomecat,
+				    a.descr
+	from Master_pregnancymeta as a 
+	join _outcomes as b on a.preg_outcome=b.code;
+
+	select count(distinct preg_outcomecat) into :num_unique_preg_outcomecat from _outcomes;
+	select count(distinct preg_outcome) into :num_unique_preg_outcome from _outcomes;
+	select distinct upcase(preg_outcomecat) into :unique_preg_outcomecat separated by "|" from _outcomes; 
+	select distinct descr into :unique_descr separated by "|" from _outcomes; 
+	quit;
+
+	%if &num_unique_preg_outcomecat. eq 1 %then %do;
+		%if %upcase(&unique_preg_outcomecat.) eq LIVE %then %let preg_cohort_header=Live Birth Delivery Cohort;
+		%else %if &num_unique_preg_outcome. eq 1 %then %let preg_cohort_header=&unique_descr. Cohort;
+		%else %let preg_cohort_header=Non-Live Birth Delivery Cohort;
+	%end;
+	%else %let preg_cohort_header=Pregnant Cohort;
+
     /*Assign footnotes*/
+	%let T2Columns=N;
+	%let T3Columns=N;
+	%if &table. = T1 %then %do;
+	data _null_;
+	set &dataset.;
+	if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
+	if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
+	run;
+	%end;
     data _footnotes;
        length footnote_order 3; 
-       set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0
+       set lookup.lookup_footnotes(where=( (type = "t4l1moi" and order in ( 0	   	  
+	   	  %if &T2Columns.=Y %then %do; 2 %end;
+		  %if &T3Columns.=Y %then %do; 3 %end;
           %if &table.=T1 %then %do;
-           %if &nonpreg. = Y %then %do; 1 %end;
-            %else %do; 2 %end;
+           %if &nonpreg. = Y %then %do; 4 %end;
+            %else %do; 5 %end;
            %end;
           %if &table.=T5 %then %do;
-           %if &nonpreg. = Y %then %do; 3 %end;
-            %else %do; 4 %end;
+           %if &nonpreg. = Y %then %do; 6 %end;
+            %else %do; 7 %end;
            %end; 
-           %if %index(&varsuperscripts,Y) %then %do; 5 %end;)
+           %if %index(&varsuperscripts,Y) %then %do; 1 %end;)
           or (type='type4' and order in (-2 %if &nonpreg. = Y %then %do; -1 %end;))
          )));
        by order;
@@ -87,8 +142,10 @@
     quit;
 
 	%assign_superscripts(type=title, order = -2 -1);
-	%assign_superscripts(type=exposure, order = 1 2 3 4);
-    %assign_superscripts(type=column, order = 5);
+	%assign_superscripts(type=exposure, order = 4 5 6 7);
+    %assign_superscripts(type=column, order = 1);	
+	%assign_superscripts(type=T2column, order = 2);
+	%assign_superscripts(type=T3column, order = 3);
 
     /*Save dataset to repdata folder*/
     %isdata(dataset=repdata.table&tabnum.);
@@ -102,7 +159,7 @@
                          %if %index(&dataset., t4moi) %then %do; den_episodes %end;
                          %if %index(&dataset., _dps_) %then %do; dpidsiteid %end;
                          %if &includeheaderrow. =Y %then %do; header %end;
-                         %if &includemoiheaderrow. =Y %then %do; moiheader %end;);
+                         %if &includemoiheaderrow. =Y %then %do; moiheader %end;);			
     	run;
     %end;
 
@@ -127,6 +184,17 @@
                 quit; 
                 %let columnsuperscript_flag = %scan(%str(&varsuperscripts.),&v., |||);
                 %if &columnsuperscript_flag = Y %then %let label = %scan(%str(&columnstatementlabels.),&v., |||)&super_column.;
+
+				%if &table.=T1 %then %do;
+					%if %index(%upcase(&label.),SECOND) %then %do;
+						%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T2column.,^{Super }))};		
+						%else %let label=&label.&super_T2column.;
+					%end;
+					%else %if %index(%upcase(&label.),THIRD) %then %do;
+						%if &columnsuperscript_flag = Y %then %let label=%sysfunc(compress(&label., }))%quote(,)%sysfunc(compress(&super_T3column.,^{Super }))};
+						%else %let label=&label.&super_T3column.;
+					%end;
+				%end;
                 %let columnstatement = &columnstatement. ("&label." &tmpcolumns.);
             %end;
         %end;
@@ -134,7 +202,7 @@
     %else %do;
         %let columnstatement = &varlist;
     %end;
-     
+  
     /*Write to report*/
     %if &destination = excel %then %do;
 	ods excel options(sheet_name="Table &tabnum." tab_color='green' flow="1:400");
@@ -189,10 +257,10 @@
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
         compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $100;
-            if pregflg = 'Y' then text = "Pregnancy Episodes Ending in Live-Birth Delivery";
+            length text $200;
+            if pregflg = 'Y' then text = "&preg_cohort_header.";
             else text = "All Matched Non-Pregnant Episodes";
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;
@@ -200,9 +268,9 @@
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $100;
+            length text $200;
             text = header;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;
@@ -215,18 +283,18 @@
              %else %do;
                 style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
              %end;
-            length text $100;
+            length text $200;
             text = grouplabel;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
 
         /*MOI header*/
         %if &includemoiheaderrow. = Y %then %do;
         compute before moiheader / style=[fontstyle=italic indent=.15in backgroundcolor=white just=L bordertopcolor=white borderbottomcolor=white];
-            length text $100;
+            length text $200;
             text = moiheader;
-            num = 100;
+            num = 200;
             line text $varying. num;
         endcomp;
         %end;

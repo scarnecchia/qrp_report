@@ -769,7 +769,7 @@
             %tableletter();
             %addtotoc(tabnum=Table &tablenum.&tableletter.,
                     %if &table. = T1 %then %do;
-                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
                     %end;
                     %if &table. = T2 %then %do;
                     caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
@@ -781,7 +781,7 @@
                     caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                     %end;
                     %if &table. = T5 %then %do;
-                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
                     %end;
                     %if &table. = T6 %then %do;
                     caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
@@ -794,7 +794,7 @@
                     %tableletter();
                     %addtotoc(tabnum=Table &tablenum.&tableletter.,
                         %if &table. = T1 %then %do;
-                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
                         %end;
                         %if &table. = T2 %then %do;
                         caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
@@ -806,7 +806,7 @@
                         caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                         %end;             
                         %if &table. = T5 %then %do;
-                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
                         %end;
                         %if &table. = T6 %then %do;
                         caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
