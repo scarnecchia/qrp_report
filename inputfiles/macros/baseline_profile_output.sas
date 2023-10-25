@@ -264,6 +264,22 @@
                 run;
             %end;
 
+			/* Exclude from covariates to report those anchored to INDEXDT_EXP fro type 4 unexposed cohorts */
+			%if %index(&reporttype,T4) > 0 %then %do;
+				%let numprofilecovars_valid=0;
+
+				%create_comma_charlist(inlist=&profilecovarsnocomma, outlist=profilecovarsquoted);
+
+				proc sql noprint;
+				select count(*) into: numprofilecovars_valid 
+				from covarname
+				where upcase(cov_varname) in (&profilecovarsquoted.) and upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP";
+				quit;
+
+				%put &=numprofilecovars_valid;
+			%end;
+			%else %let numprofilecovars_valid = &numprofilecovars.;
+
             *create label for each row in table;
             data covarswithlabel;
                 set final_agg_profile_&wherenum._&periodid. end=eof;
@@ -280,7 +296,7 @@
                 totalcov=sum(of covar:);
 
                 *all;
-                if totalcov = &numprofilecovars. then do;
+                if totalcov = &numprofilecovars_valid. and &numprofilecovars_valid. > 0 then do;
                     label = 'All Characteristics Present';
                     sortorder = &numprofilecovars.+1;
                 end;
@@ -290,7 +306,7 @@
                     sortorder = &numprofilecovars.+2;
                 end;
 
-                %if %eval(&numprofilecovars.>1) %then %do;
+                %if %eval(&numprofilecovars_valid.>1) %then %do;
                 *create a label for each covariate, then append for final label;
                 else do;
                     %do i = 1 %to %eval(&numprofilecovars.);

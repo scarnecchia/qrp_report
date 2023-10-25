@@ -2429,7 +2429,9 @@
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
                                 codedays,
-								%if %index(&reporttype,T4) > 0 %then %do;								
+								%if %index(&reporttype,T4) > 0 %then %do;
+								covfromanchor,
+								covtoanchor,	
 								codepop,
 								/* codepop2 will be used to compute codepop for cc covariates*/
 								codepop as codepop2 format $6. length=6,
@@ -2532,7 +2534,7 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
         by runid covarnum;
     run;  
     %end;
