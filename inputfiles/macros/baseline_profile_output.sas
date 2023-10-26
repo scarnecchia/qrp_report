@@ -273,7 +273,8 @@
 				proc sql noprint;
 				select count(*) into: numprofilecovars_valid 
 				from covarname
-				where upcase(cov_varname) in (&profilecovarsquoted.) and upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP";
+				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid" and
+					  upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP";
 				quit;
 
 				%put &=numprofilecovars_valid;

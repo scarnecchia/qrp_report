@@ -1099,7 +1099,7 @@
             stop;
         run;
 
-       data master_mil(keep=runid group groupname);
+       data master_mil(keep=runid group groupname controlmp ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
@@ -1116,6 +1116,7 @@
                 %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
                 if n&n. then do;
                 group=lowcase(milgrp);
+				ref=catt(group,"_ref");
                 runid = "&&id&n.";
                 end;
                 %end;

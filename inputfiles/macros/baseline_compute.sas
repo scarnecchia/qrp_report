@@ -417,6 +417,43 @@
           end;
         run;
 
+		/* For type 4 analyses, check if eoi and comp groups are exposed to MOI and get list of covariates anchored on INDEXDT_EXP */
+		%let covars_indexdt_exp=;
+		%let eoi_exp=NA;
+		%let comp_exp=NA;
+		%if %str("&reporttype") = %str("T4L1") or %str("&reporttype") = %str("T4L2") %then %do;
+			%if %str("&reporttype") = %str("T4L1") %then %do;
+				/* For T4L1, preg and nopreg cohorts are always considered unexposed */
+				%let eoi_exp=N;
+				%let comp_exp=N;
+			%end;
+			%else %if %str("&reporttype") = %str("T4L2") %then %do;
+				%let eoi_exp=Y;
+				%let comp_exp=N;
+
+				/* comp_exp will be set to Y only if controlmp is not missing */
+				proc sql noprint;
+					select controlmp into :comp_exp from 
+					master_mil(where=(runid="&runid")) as a
+					join pscs_masterinputs(where=(runid="&runid" and analysisgrp = "&analysisgrp." and missing(subgroup))) as b
+					on a.ref=b.ref;
+				quit;
+
+				%if %str(&comp_exp.) eq %str() %then %let comp_exp=N;
+				%else %let comp_exp=Y;				
+			%end;
+			
+			/* Get list of covariates anchored on INDEXDT_EXP */
+			proc sql noprint;
+				select cov_varname into: covars_indexdt_exp separated by " "
+				from covarname
+				where runid="&runid" and (upcase(covfromanchor) eq "INDEXDT_EXP" or upcase(covtoanchor) eq "INDEXDT_EXP");
+			quit;
+
+			%create_comma_charlist(inlist=&covars_indexdt_exp., outlist=covars_indexdt_exp_quoted);
+			%put &=covars_indexdt_exp_quoted;
+		%end;
+
         ***********************************************************************************************
         * Put total number of patients and episodes in macro variables and compute overall totals
         **********************************************************************************************;
@@ -826,6 +863,15 @@
                             end;  
                         end; 
 						%end; 
+
+						/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &eoi_exp. eq N %then %do;
+						if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+							exp_mean&i._char = 'N/A';                        
+                            exp_std&i._char = 'N/A'; 
+						end;
+						%end;
+
                         /*set to . if no patients in cohort*/
                         if exp_mean&i in (0,.) and &&&n_&table._episodes_exp&i = 0 then do;
                             exp_mean&i._char = '.';
@@ -867,6 +913,15 @@
                             end;                    
                         end;
 						%end;
+
+						/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &comp_exp. eq N %then %do;
+						if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+							comp_mean&i._char = 'N/A';                        
+                            comp_std&i._char = 'N/A'; 
+						end;
+						%end;
+
                         /*set to . if no patients in cohort*/
                         if comp_mean&i in (0,.) and &&&n_&table._episodes_comp&i = 0 then do; 
                             comp_mean&i._char = '.';
@@ -1232,6 +1287,22 @@
                         end;
                         %end;
                     end;
+					
+					/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+					%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() %then %do;
+					%if &eoi_exp. eq N %then %do;
+					if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+						exp_mean0_char='N/A';                        
+                        exp_std0_char='N/A'; 
+					end;
+					%end;
+					%if "&includecomp" = "Y" and &comp_exp. eq N %then %do;
+					if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+						comp_mean0_char="N/A";
+						comp_std0_char="N/A";
+					end;
+					%end;
+					%end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
                         if metvar not in ('N_EPISODES', 'PATIENT') then do; /*AD/SD not computed for total rows*/
@@ -1262,6 +1333,13 @@
                                 sd0_char = '.';
                                 ad0_char = '.';
                             end;
+							/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+							%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and (&eoi_exp. eq N or &comp_exp. eq N) %then %do;
+							else if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+								ad0_char = 'N/A';
+	                            sd0_char = 'N/A';		 
+							end;						
+							%end;
                         end;
                         else do;
                         ad0=.;
@@ -1435,6 +1513,13 @@
                                 ad&i._char = '.';
                                 sd&i._char = '.';
                           end;
+						  /*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						  %if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and (&eoi_exp. eq N or &comp_exp. eq N)  %then %do;
+						  else if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+							  	ad&i._char = 'N/A';
+                              	sd&i._char = 'N/A';		 
+						  end;
+						  %end;
                           end;
                     %end;
                 %end;
