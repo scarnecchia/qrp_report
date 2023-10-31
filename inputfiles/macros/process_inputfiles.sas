@@ -1094,8 +1094,8 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid $5 group groupname $40;
-            call missing(runid, group, groupname);
+            length runid controlmp $5 ref group groupname $40;
+            call missing(runid, controlmp, ref, group, groupname);
             stop;
         run;
 
