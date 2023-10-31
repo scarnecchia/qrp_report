@@ -721,7 +721,7 @@
 				set &dataout.&suffix.;
 
                 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
-                    format subgroup subgroupcat $11.;
+                    format subgroup $15. subgroupcat $11.;
                     subgroup="&subgroup.";
                     subgroupcat="&subgroupcat.";
                 %end;
@@ -1529,7 +1529,7 @@
                                 %end;;
                 length analysisgrp $40 table weight $30;
                 %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
-                    format subgroup subgroupcat $11.;
+                    format subgroup $15. subgroupcat $11.;
                     subgroup="&subgroup.";
                     subgroupcat="&subgroupcat.";
                 %end;
