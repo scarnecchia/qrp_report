@@ -264,7 +264,7 @@
                 run;
             %end;
 
-			/* Exclude from covariates to report those anchored to INDEXDT_EXP fro type 4 unexposed cohorts */
+			/* Exclude from covariates to report those anchored to INDEXDT_EXP for type 4 unexposed cohorts */
 			%if %index(&reporttype,T4) > 0 %then %do;
 				%let numprofilecovars_valid=0;
 
