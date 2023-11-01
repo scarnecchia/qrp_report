@@ -162,7 +162,7 @@
                 call symputx('productlabel',grouplabel);
                 end;
                 else do;
-                call symputx('grouplabel',group2);
+                call symputx('grouplabel',group);
                 call symputx('productlabel',group);
                 end;
                 %end;
