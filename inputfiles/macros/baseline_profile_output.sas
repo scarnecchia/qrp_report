@@ -58,6 +58,8 @@
                 else group2=group;
                 if cohort = 'switch' then switchlabel=' ';
                 call symputx('runid',runid);
+				call symputx('profilegroup',group);
+				call symputx('profilecohort',cohort);
             run;
 
             %let profileswitches = 0;
@@ -267,14 +269,32 @@
 			/* Exclude from covariates to report those anchored to INDEXDT_EXP for type 4 unexposed cohorts */
 			%if %index(&reporttype,T4) > 0 %then %do;
 				%let numprofilecovars_valid=0;
+				%let profilecovarsquoted=&profilecovarsnocomma;
+				%baseline_expand_parameters(var=profilecovarsquoted);
+				
+				%if &profilecohort. eq mi %then %do;
+					%if %substr(&profilegroup.,%length(&profilegroup.)-3, 4) eq _eoi %then %let profile_unexposed=N; /* _eoi group always exposed */
+					%else %do;
+						%let profile_unexposed=;
 
-				%create_comma_charlist(inlist=&profilecovarsnocomma, outlist=profilecovarsquoted);
+						proc sql noprint;
+						select controlmp into :profile_unexposed 
+						from master_mil where ref="&profilegroup.";
+						quit;
+
+						%if %str(&profile_unexposed.) eq %str() %then %let profile_unexposed=Y;
+						%else %let profile_unexposed=N;
+					%end;
+				%end;
+				%else %let profile_unexposed=Y;
 
 				proc sql noprint;
 				select count(*) into: numprofilecovars_valid 
 				from covarname
-				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid" and
-					  upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP";
+				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid" 
+					  %if &profile_unexposed. eq Y %then %do;
+					  and upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP"
+					  %end;;
 				quit;
 
 				%put &=numprofilecovars_valid;
