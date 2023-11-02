@@ -422,21 +422,19 @@
 		%let eoi_exp=NA;
 		%let comp_exp=NA;
 		%if %str("&reporttype") = %str("T4L1") or %str("&reporttype") = %str("T4L2") %then %do;
-			%if %str("&reporttype") = %str("T4L1") %then %do;
-				/* For T4L1, preg and nopreg cohorts are always considered unexposed */
+			%if &cohort. ne mi %then %do;
+				/* preg and nopreg cohorts are always considered unexposed */
 				%let eoi_exp=N;
 				%let comp_exp=N;
 			%end;
-			%else %if %str("&reporttype") = %str("T4L2") %then %do;
+			%else %do;
 				%let eoi_exp=Y;
 				%let comp_exp=N;
 
 				/* comp_exp will be set to Y only if controlmp is not missing */
 				proc sql noprint;
 					select controlmp into :comp_exp from 
-					master_mil(where=(runid="&runid")) as a
-					join pscs_masterinputs(where=(runid="&runid" and analysisgrp = "&analysisgrp." and missing(subgroup))) as b
-					on a.ref=b.ref;
+					master_mil(where=(runid="&runid" and group="&analysisgrp."));
 				quit;
 
 				%if %str(&comp_exp.) eq %str() %then %let comp_exp=N;
