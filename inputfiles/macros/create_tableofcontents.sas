@@ -534,7 +534,8 @@
                 select distinct subgroup
                 into :subgrouplist
                 separated by ' '
-                from _subgroups;				
+                from _subgroups
+				order by subgrouporder;				
             quit;
 
             %if %str(&subgrouplist.) = %str() %then %do;

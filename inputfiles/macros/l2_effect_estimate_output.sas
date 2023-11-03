@@ -101,7 +101,8 @@
             /*Get all values of subgroups for a given analysisgrp */
             select distinct subgroup 
             into :subgrouplist separated by ' '
-            from table&tablenum;
+            from table&tablenum
+			order by subgrouporder;
 
             /*Determine whether to print Monitoring Period column*/
            	select count(distinct monitoringperiod) into: printMP
