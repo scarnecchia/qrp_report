@@ -223,6 +223,15 @@
 			/* Exclude from covariates to report those anchored to INDEXDT_EXP for type 4 unexposed cohorts */
 			%if %index(&reporttype,T4) > 0 %then %do;
 				%let numprofilecovars_valid=0;
+
+				/* If ALL covariates where requested, need to build the list */
+				%if &profilecovarsnocomma. eq covar: %then %do;
+					proc sql noprint;
+					select distinct upcase(cov_varname) into :profilecovarsnocomma separated by " "
+					from covarname;
+					quit;
+				%end;
+
 				%let profilecovars_valid=&profilecovarsnocomma;
 				%let profilecovarsquoted=&profilecovarsnocomma;	
 				%baseline_expand_parameters(var=profilecovarsquoted);
