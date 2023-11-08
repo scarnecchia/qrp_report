@@ -2449,7 +2449,8 @@
             quit;
 
 			%if %index(&reporttype,T4) > 0 %then %do;
-				/* Determine codepop value for cc covariates if any */
+				/* Determine codepop value for cc covariates if any 
+				   If cc covariates are defined using at least a covariate anchored on indexdt_exp, consider them as such */
 				data Covarname_cc;
 				set Covarname_&runid.;
 				where upcase(codecat)="CC";
@@ -2474,15 +2475,30 @@
 							select distinct codepop into :cc_codepop separated by " " 
 							from Covarname_&runid.
 							where covarnum in (&cc_covarlist.); 
+
+							select distinct upcase(covfromanchor), upcase(covtoanchor) 
+                            into :cc_covfromanchor separated by " ", 
+                                 :cc_covtoanchor  separated by " " 
+							from Covarname_&runid.
+							where covarnum in (&cc_covarlist.); 
 						quit;
 
 						data Covarname_&runid.;
 						set Covarname_&runid.; 
 						if covarnum=&cc_covar. then do;
+							/* Reassess codepop */
 							codepop2="&cc_codepop";
 							if index(codepop2, "M")>0 and index(codepop2, "I")>0 then codepop="MI";
 							else if index(codepop2, "M")>0 then codepop="M";
 							else if index(codepop2, "I")>0 then codepop="I";
+
+							/* Reassess covfromanchor and covtoanchor */
+							covfromanchor2="&cc_covfromanchor";
+							covtoanchor2="&cc_covtoanchor";
+							if index(covfromanchor2, "INDEXDT_EXP")>0 or index(covtoanchor2, "INDEXDT_EXP")>0 then do;
+								covfromanchor="INDEXDT_EXP";
+								covtoanchor="INDEXDT_EXP";
+							end;
 						end;
 						run;
 					%end; /* loop through cc covariates */
