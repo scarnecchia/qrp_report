@@ -233,7 +233,7 @@
 				%end;
 
 				%let profilecovars_valid=&profilecovarsnocomma;
-				%let profilecovarsquoted=&profilecovarsnocomma;	
+				%let profilecovarsquoted=%upcase(&profilecovarsnocomma);	
 				%baseline_expand_parameters(var=profilecovarsquoted);
 				
 				%if &profilecohort. eq mi %then %do;
