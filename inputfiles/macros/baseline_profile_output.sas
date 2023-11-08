@@ -225,7 +225,7 @@
 				%let numprofilecovars_valid=0;
 
 				/* If ALL covariates where requested, need to build the list */
-				%if &profilecovarsnocomma. eq covar: %then %do;
+				%if %str("&profilecovarsnocomma.") eq %str("covar:") %then %do;
 					proc sql noprint;
 					select distinct upcase(cov_varname) into :profilecovarsnocomma separated by " "
 					from covarname;
