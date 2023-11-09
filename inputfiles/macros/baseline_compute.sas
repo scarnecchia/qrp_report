@@ -860,7 +860,16 @@
                                 exp_std&i._char = 'NaN';     
                             end;  
                         end; 
-						%end; 
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &eoi_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						    (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							exp_mean&i._char = 'N/A';                        
+                            exp_std&i._char = 'N/A'; 
+						end;
+						%end;
+ 						%end;
 
 						/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
 						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &eoi_exp. eq N %then %do;
@@ -910,6 +919,15 @@
                                 comp_std&i._char = 'NaN';     
                             end;                    
                         end;
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &comp_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						    (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							comp_mean&i._char = 'N/A';                        
+                            comp_std&i._char = 'N/A'; 
+						end;
+						%end; 
 						%end;
 
 						/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
@@ -954,6 +972,15 @@
 						    exp_std&i._char = 'NaN';
 						    end;
 						end;
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &eoi_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						    (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							exp_mean&i._char = 'N/A';                        
+                            exp_std&i._char = 'N/A'; 
+						end;
+						%end; 
 						%end;
                     %end;
                     %else %do;
@@ -980,6 +1007,15 @@
                         exp_std&i._char = '.';
                         end;
                     end;
+					/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+					%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &eoi_exp. eq N %then %do;
+					if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+					   (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+						exp_mean&i._char = 'N/A';                        
+                        exp_std&i._char = 'N/A'; 
+					end;
+					%end; 
                     %end;
                     %if "&includecomp" = "Y" %then %do;
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.1));
@@ -1007,6 +1043,15 @@
 						    comp_std&i._char = 'NaN';
 						    end;
 						end;
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &comp_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						    (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							comp_mean&i._char = 'N/A';                        
+                            comp_std&i._char = 'N/A'; 
+						end;
+						%end; 
 						%end;
                     %end;
                     %else %do;
@@ -1032,6 +1077,15 @@
                         comp_std&i._char = '.';
                         end;
                     end;
+					/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+					%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &comp_exp. eq N %then %do;
+					if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						(prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						(prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+						comp_mean&i._char = 'N/A';                        
+                        comp_std&i._char = 'N/A'; 
+					end;
+					%end; 
                     %end;
                     %end;
                 end;
@@ -1245,7 +1299,7 @@
                                 exp_mean0_char = '.'; 
                                 exp_std0_char = '.';
                             end;
-                        end;
+                        end;						
                         %if "&includecomp" = "Y" %then %do;
                         if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,agg_comp_w);
                         if missing(comp_mean0) then comp_std0 = .;
@@ -1257,7 +1311,7 @@
                                 comp_mean0_char='.';
                                 comp_std0_char = '.';
                             end;
-                        end;
+                        end;						
                         %end;
                     end;
 					%end;
@@ -1289,13 +1343,19 @@
 					/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
 					%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() %then %do;
 					%if &eoi_exp. eq N %then %do;
-					if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+					if upcase(metvar) in (&covars_indexdt_exp_quoted.) or 						
+					   (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+					   (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+					   (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;							
 						exp_mean0_char='N/A';                        
                         exp_std0_char='N/A'; 
 					end;
 					%end;
 					%if "&includecomp" = "Y" and &comp_exp. eq N %then %do;
-					if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+					if upcase(metvar) in (&covars_indexdt_exp_quoted.) or 						
+					   (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+					   (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+					   (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
 						comp_mean0_char="N/A";
 						comp_std0_char="N/A";
 					end;
@@ -1333,7 +1393,10 @@
                             end;
 							/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
 							%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and (&eoi_exp. eq N or &comp_exp. eq N) %then %do;
-							else if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
+							else if upcase(metvar) in (&covars_indexdt_exp_quoted.) or 						
+					   				(prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+					   				(prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    		(prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
 								ad0_char = 'N/A';
 	                            sd0_char = 'N/A';		 
 							end;						
@@ -1449,6 +1512,26 @@
 						%if "&includecomp" = "Y" %then %do;
 							if prxmatch('/LBRES/',metvar) and total_comp_episodes > 0 and agg_comp_lbdenom = 0 then comp_std0_char = 'NaN';                        
 						%end;
+
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() %then %do;
+						%if &eoi_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						   (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						   (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;							
+							exp_mean0_char='N/A';                        
+	                        exp_std0_char='N/A'; 
+						end;
+						%end;
+						%if "&includecomp" = "Y" and &comp_exp. eq N %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+						   (prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						   (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							comp_mean0_char="N/A";
+							comp_std0_char="N/A";
+						end;
+						%end;
+						%end;
 					%end;
 
                     %if "&includecomp" = "Y" & "&computebalance." = "Y" %then %do;
@@ -1483,6 +1566,16 @@
                                 ad0_char = '.';
                             end;
                         %end;
+
+						/*set to N/A if a lab covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
+						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and (&eoi_exp. eq N or &comp_exp. eq N) %then %do;
+						if (prxmatch("/(LBRES)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBRES")-1)) in (&covars_indexdt_exp_quoted.)) or
+				   			(prxmatch("/(LBUNIT)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"LBUNIT")-1)) in (&covars_indexdt_exp_quoted.))or
+						    (prxmatch("/(_NOTESTRECORD)/",metvar) and strip(substr(tranwrd(metvar, "N_",""),1,index(tranwrd(metvar, "N_",""),"_NOTESTRECORD")-1)) in (&covars_indexdt_exp_quoted.)) then do;
+							ad0_char = 'N/A';
+                            sd0_char = 'N/A';		 
+						end;	
+						%end;
                     %end;
                     drop exp_mean_num exp_std_sum %if "&includecomp" = "Y" %then %do; comp_mean_num comp_std_sum %end; ;
                 end;
