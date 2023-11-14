@@ -96,7 +96,7 @@
 	%if &num_unique_preg_outcomecat. eq 1 %then %do;
 		%if %upcase(&unique_preg_outcomecat.) eq LIVE %then %let preg_cohort_header=Live Birth Delivery Cohort;
 		%else %if &num_unique_preg_outcome. eq 1 %then %let preg_cohort_header=&unique_descr. Cohort;
-		%else %let preg_cohort_header=Non-Live Birth Delivery Cohort;
+		%else %let preg_cohort_header=Non-Live Birth Outcomes Cohort;
 	%end;
 	%else %let preg_cohort_header=Pregnant Cohort;
 
