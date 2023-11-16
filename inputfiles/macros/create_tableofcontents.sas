@@ -531,10 +531,11 @@
 			run;
 
             proc sql noprint;
-                select distinct subgroup
-                into :subgrouplist
+                select distinct subgroup, subgrouporder
+                into :subgrouplist, :dummyvar
                 separated by ' '
-                from _subgroups;				
+                from _subgroups
+				order by subgrouporder;				
             quit;
 
             %if %str(&subgrouplist.) = %str() %then %do;
