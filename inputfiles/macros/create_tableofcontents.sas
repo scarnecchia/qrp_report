@@ -531,8 +531,8 @@
 			run;
 
             proc sql noprint;
-                select distinct subgroup
-                into :subgrouplist
+                select distinct subgroup, subgrouporder
+                into :subgrouplist, :dummyvar
                 separated by ' '
                 from _subgroups
 				order by subgrouporder;				

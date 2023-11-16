@@ -99,8 +99,9 @@
             where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
 
             /*Get all values of subgroups for a given analysisgrp */
-            select distinct subgroup 
-            into :subgrouplist separated by ' '
+            select distinct subgroup, subgrouporder 
+            into :subgrouplist separated by ' ',  
+                 :dummyvar separated by ' '
             from table&tablenum
 			order by subgrouporder;
 

@@ -334,9 +334,9 @@
 
 		/* Pregnancy outcome categories format */
 		value $pregoutcomecatfmt
-		"LIVE" = "Live birth delivery"
-		"NONLIVE" = "Non-live birth outcome"
-		"MIX" = "Mixed birth outcome";	
+		"LIVE" = "Live Birth Delivery"
+		"NONLIVE" = "Non-Live Birth Outcome"
+		"MIX" = "Mixed Birth Outcome";	
 			
 		value $pregoutcomecatsort
 		"LIVE" = 1
