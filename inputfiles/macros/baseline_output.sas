@@ -125,7 +125,8 @@
         %end;
 
 		/* Select Footnotes */  		
-		%let fn_labcovar = 21;
+		%if %index(&reporttype,T4) > 0 %then %let fn_labcovar = 21;
+		%else %let fn_labcovar = 20;
 		%global covarlablabels;
 		%let covarlablabels=;
 		/* Get labels for lab covariates specified in covinps */
@@ -368,7 +369,10 @@
 		   /* FRAILTY score is specified */
 		   %if &FRAILTY = Y %then %do; 30 %end;
 		   /* Lab characteristics specified. */
-		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 21 %end;		
+		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do;
+		   	  %if %index(&reporttype,T4) > 0 %then %do; 21 %end;
+			  %else %do; 20 %end;
+		   %end;		
 		   %if %index(&reporttype,T4) > 0 %then %do;
 			  /* Non pregnant cohort with infant covariates */
 			  %if &fn_nopreg_i_covar. ne N %then %do; 22 %end;
@@ -410,7 +414,7 @@
 				if order_orig=30 then order=&fn_frailty.; 		
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order_orig=21 then order=&fn_labcovar.; 		
+				if order_orig in (20,21) then order=&fn_labcovar.; 		
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
 				if order_orig=22 then order=&fn_nopreg_i_covar.;				
@@ -459,7 +463,7 @@
 				if order_orig=30 then call symputx("fn_frailty",footnote_order);
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order_orig=21 then call symputx("fn_labcovar",order);
+				if order_orig in (20,21) then call symputx("fn_labcovar",order);
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
 				if order_orig=22 then call symputx("fn_nopreg_i_covar",footnote_order);
@@ -492,7 +496,12 @@
 				if fn_covinps ne . then fn_covinps=&fn_covinps.;
 			%end;			
 			%if &fn_labcovar. eq N %then %do;
-				call symputx("fn_labcovar",21);
+				%if %index(&reporttype,T4) > 0 %then %do;
+					call symputx("fn_labcovar",21);
+				%end;
+				%else %do;
+					call symputx("fn_labcovar",20);
+				%end;
 			%end;
 			drop fn_labcovar;
 			%if &fn_nopreg_i_covar. ne N %then %do; 

@@ -58,6 +58,8 @@
                 else group2=group;
                 if cohort = 'switch' then switchlabel=' ';
                 call symputx('runid',runid);
+				call symputx('profilegroup',group);
+				call symputx('profilecohort',cohort);
             run;
 
             %let profileswitches = 0;
@@ -160,7 +162,7 @@
                 call symputx('productlabel',grouplabel);
                 end;
                 else do;
-                call symputx('grouplabel',group2);
+                call symputx('grouplabel',group);
                 call symputx('productlabel',group);
                 end;
                 %end;
@@ -218,13 +220,68 @@
             quit;
             %put &totalpatients &totalepisodes;
 
+			/* Exclude from covariates to report those anchored to INDEXDT_EXP for type 4 unexposed cohorts */
+			%if %index(&reporttype,T4) > 0 %then %do;
+				%let numprofilecovars_valid=0;
+
+				/* If ALL covariates where requested, need to build the list */
+				%if %str("&profilecovarsnocomma.") eq %str("covar:") %then %do;
+					proc sql noprint;
+					select distinct upcase(cov_varname) into :profilecovarsnocomma separated by " "
+					from covarname;
+					quit;
+				%end;
+
+				%let profilecovars_valid=&profilecovarsnocomma;
+				%let profilecovarsquoted=%upcase(&profilecovarsnocomma);	
+				%baseline_expand_parameters(var=profilecovarsquoted);
+				
+				%if &profilecohort. eq mi %then %do;
+					%if %substr(&profilegroup.,%length(&profilegroup.)-3, 4) eq _eoi %then %let profile_unexposed=N; /* _eoi group always exposed */
+					%else %do;
+						%let profile_unexposed=;
+
+						proc sql noprint;
+						select controlmp into :profile_unexposed 
+						from master_mil where ref="&profilegroup.";
+						quit;
+
+						%if %str(&profile_unexposed.) eq %str() %then %let profile_unexposed=Y;
+						%else %let profile_unexposed=N;
+					%end;
+				%end;
+				%else %let profile_unexposed=Y;
+
+				proc sql noprint;
+				select count(*) into: numprofilecovars_valid 
+				from covarname
+				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid" 
+					  %if &profile_unexposed. eq Y %then %do;
+					  and upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP"
+					  %end;;
+
+				%if &profile_unexposed. eq Y %then %do;
+				select cov_varname into: profilecovars_valid separated by " " 
+				from covarname
+				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid" 		 
+					  and upcase(covfromanchor) ne "INDEXDT_EXP" and upcase(covtoanchor) ne "INDEXDT_EXP";		  
+				%end;
+				quit;
+
+				%put &=numprofilecovars_valid;
+			%end;
+			%else %do;
+				%let numprofilecovars_valid = &numprofilecovars.;
+				%let profilecovars_valid=profilecovarsnocomma;
+			%end;
+
             *Determine covariate label and order;
             data covarlabel;
-                set final_agg_profile_&wherenum._&periodid.(keep=&profilecovarsnocomma. obs=0);
+                set final_agg_profile_&wherenum._&periodid.(keep=&profilecovars_valid. obs=0);
             run;
 
             proc transpose data=covarlabel out=covarlabel1;
-                var &profilecovarsnocomma.;
+                var &profilecovars_valid.;
             run;
 
             proc sort data=covarlabel1 sortseq=linguistic (numeric_collation=on);
@@ -262,7 +319,7 @@
                     set covarlabel1(where=(upcase(_name_)=upcase("&covar.")));
                     call symputx("&covar.", _label_);
                 run;
-            %end;
+            %end;			
 
             *create label for each row in table;
             data covarswithlabel;
@@ -280,7 +337,7 @@
                 totalcov=sum(of covar:);
 
                 *all;
-                if totalcov = &numprofilecovars. then do;
+                if totalcov = &numprofilecovars_valid. and &numprofilecovars_valid. > 0 then do;
                     label = 'All Characteristics Present';
                     sortorder = &numprofilecovars.+1;
                 end;
@@ -290,7 +347,7 @@
                     sortorder = &numprofilecovars.+2;
                 end;
 
-                %if %eval(&numprofilecovars.>1) %then %do;
+                %if %eval(&numprofilecovars_valid.>1) %then %do;
                 *create a label for each covariate, then append for final label;
                 else do;
                     %do i = 1 %to %eval(&numprofilecovars.);

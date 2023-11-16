@@ -1094,12 +1094,12 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid $5 group groupname $40;
-            call missing(runid, group, groupname);
+            length runid controlmp $5 ref group groupname $40;
+            call missing(runid, controlmp, ref, group, groupname);
             stop;
         run;
 
-       data master_mil(keep=runid group groupname);
+       data master_mil(keep=runid group groupname controlmp ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
@@ -1116,6 +1116,7 @@
                 %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
                 if n&n. then do;
                 group=lowcase(milgrp);
+				ref=catt(group,"_ref");
                 runid = "&&id&n.";
                 end;
                 %end;
@@ -2429,7 +2430,9 @@
                                 "&runid" as runid length=5, 
                                 cats('covar',covarnum) as cov_varname length=8,
                                 codedays,
-								%if %index(&reporttype,T4) > 0 %then %do;								
+								%if %index(&reporttype,T4) > 0 %then %do;
+								covfromanchor,
+								covtoanchor,	
 								codepop,
 								/* codepop2 will be used to compute codepop for cc covariates*/
 								codepop as codepop2 format $6. length=6,
@@ -2446,7 +2449,8 @@
             quit;
 
 			%if %index(&reporttype,T4) > 0 %then %do;
-				/* Determine codepop value for cc covariates if any */
+				/* Determine codepop value for cc covariates if any 
+				   If cc covariates are defined using at least a covariate anchored on indexdt_exp, consider them as such */
 				data Covarname_cc;
 				set Covarname_&runid.;
 				where upcase(codecat)="CC";
@@ -2471,15 +2475,30 @@
 							select distinct codepop into :cc_codepop separated by " " 
 							from Covarname_&runid.
 							where covarnum in (&cc_covarlist.); 
+
+							select distinct upcase(covfromanchor), upcase(covtoanchor) 
+                            into :cc_covfromanchor separated by " ", 
+                                 :cc_covtoanchor  separated by " " 
+							from Covarname_&runid.
+							where covarnum in (&cc_covarlist.); 
 						quit;
 
 						data Covarname_&runid.;
 						set Covarname_&runid.; 
 						if covarnum=&cc_covar. then do;
+							/* Reassess codepop */
 							codepop2="&cc_codepop";
 							if index(codepop2, "M")>0 and index(codepop2, "I")>0 then codepop="MI";
 							else if index(codepop2, "M")>0 then codepop="M";
 							else if index(codepop2, "I")>0 then codepop="I";
+
+							/* Reassess covfromanchor and covtoanchor */
+							covfromanchor2="&cc_covfromanchor";
+							covtoanchor2="&cc_covtoanchor";
+							if index(covfromanchor2, "INDEXDT_EXP")>0 or index(covtoanchor2, "INDEXDT_EXP")>0 then do;
+								covfromanchor="INDEXDT_EXP";
+								covtoanchor="INDEXDT_EXP";
+							end;
 						end;
 						run;
 					%end; /* loop through cc covariates */
@@ -2532,7 +2551,7 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; codepop %end;);
+    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
         by runid covarnum;
     run;  
     %end;

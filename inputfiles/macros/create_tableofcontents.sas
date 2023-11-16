@@ -440,7 +440,7 @@
                 else call symputx('grouplabel',group2);
                 end;
                 else do;
-                call symputx('grouplabel',group2);
+                call symputx('grouplabel',group);
                 end;
                 %end;
 
