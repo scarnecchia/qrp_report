@@ -833,7 +833,7 @@
             merge baseline_preg_labels
                   _temp_preg_labels;
             by runid group order;
-            length preg_outcome_label $60;
+            length preg_outcome_label $65;
             if prxmatch("/&live_preg_outcomes/i",code) and ^prxmatch("/&nonlive_preg_outcomes/i",code) and ^prxmatch("/MIX/i",code) then do;
                 if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Live Birth Delivery Cohort and Non-Pregnant Cohort';
                 else preg_outcome_label='%str( )Live Birth Delivery Cohort';
@@ -886,7 +886,6 @@
              drop _name_ count substring i code col: rc;
         run;
     %end;
-
 /***************************************************************************************************
 *   Create a combined type file for all runs                                        
 ***************************************************************************************************/
