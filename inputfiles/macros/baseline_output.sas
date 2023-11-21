@@ -870,7 +870,6 @@
                 end;
             end;
         run;
-
 		/* Get list of riskscores that will be output */
 		%let riskscoreslist=;
 		%isdata(dataset=riskscorefile);
