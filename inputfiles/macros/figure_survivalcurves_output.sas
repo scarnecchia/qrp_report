@@ -564,12 +564,14 @@
 										%if &figure ^= F4 or &kmrefpop. = unweighted %then %let cititle=%str( and 95% Confidence Interval);
 										%else %let cititle=; 
 
+										%let AnalysisGroupLabel = %str(&AnalysisGroupLabel);
+
 				                        %output_survivalcurves(dataset=figure&figure._analysis&loopcount._&j.,
 													 where=%str(subgroup="&subgroup" and subgroupcat="&subgroupcat" and dpidsiteid="&dpwhere"),
 													 figtitle=%quote(&aggregated.&titlestart. Kaplan-Meier Estimate&cititle. of &outcomelabel. Not Occurring Among &AnalysisGroupLabel.&dpinparenthesis. from the &pop.&PSEstimateGroupLabelT. in the &database. from &startdateformatted. to &&enddate&j.formatted.&subgrouptitle.),
 													 figfn=,
 													 xaxislabel=%str(Follow-up time (days)),
-													 yaxislabel=%str(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
+													 yaxislabel=%quote(Cumulative probability that &outcomelabel.(*ESC*){unicode '000A'x} has not occurred),
 													 figure=&figure,
 													 font=&fontfamily,
 													 analysis=&titlestart,
