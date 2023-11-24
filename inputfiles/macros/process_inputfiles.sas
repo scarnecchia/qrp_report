@@ -1550,7 +1550,7 @@
 
                     /*Type 5:
                        - Tables T1-T10 require overall category
-                       - Tables T1, T3, T5, T7 all require categories
+                       - Tables T1, T3, T5, T7, T9, T15, T17 all require categories
                        - Must specify the same category for all stratifications within a table*/
                     %if &reporttype. = T5 %then %do;
                         %do t =1 %to %sysfunc(countw(&tablelist.));
@@ -1562,7 +1562,7 @@
                                 end;
                                 retain categoryfortable;
                                 if tablesub = 'overall' then call symputx('overallrequested', 'Y');
-                                if table in ('T1', 'T3', 'T5', 'T7', 'T15', 'T17') and missing(categories) then do;
+                                if table in ('T1', 'T3', 'T5', 'T7', 'T9', 'T15', 'T17') and missing(categories) then do;
                                     put "ERROR: (Sentinel) CATEGORIES parameter must be populated for table %scan(&tablelist, &t, ' ')";
                                     abort;
                                 end; 
