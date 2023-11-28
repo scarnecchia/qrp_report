@@ -540,8 +540,10 @@
                 %assignsubgroupvalue(year,subgroupcat,input(compress(subgroupcat),? $11.));
                 %assignsubgroupvalue(race, put(subgroupcat,$racefmt.),put(subgroupcat,racesort.));
                 %assignsubgroupvalue(hispanic, put(subgroupcat,$hispanicfmt.),put(subgroupcat,hispanicsort.));
-				%assignsubgroupvalue(preg_outcome, put(subgroupcat,$pregoutcomesfmt.),put(subgroupcat,pregoutcomessort.));
-				%assignsubgroupvalue(preg_outcomecat, put(subgroupcat,$pregoutcomecatfmt.),put(subgroupcat,pregoutcomecatsort.));
+				%if %length(&preg_outcome_list.) > 0 %then %do;
+				  %assignsubgroupvalue(preg_outcome, put(subgroupcat,$pregoutcomesfmt.),put(subgroupcat,pregoutcomessort.));
+				  %assignsubgroupvalue(preg_outcomecat, put(subgroupcat,$pregoutcomecatfmt.),put(subgroupcat,pregoutcomecatsort.));
+                %end;
                 %assignsubgroupvalue(prepostind, put(subgroupcat,$prepostindfmt.),put(subgroupcat,prepostindsort.));
                 %assignsubgroupvalue(matchmethod, put(subgroupcat,$matchmethodfmt.),put(subgroupcat,matchmethodsort.));
                 %assignsubgroupvalue(birth_type, put(subgroupcat,$birth_typefmt.),put(subgroupcat,birth_typesort.));

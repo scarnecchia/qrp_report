@@ -736,7 +736,7 @@
             compute sd&dpnum._char;
                 if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
                     if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
-                      call define(_row_,'style','style={foreground=blue}');
+                      call define(_row_,'style/merge','style={foreground=blue}');
                     end;
                 end;
             endcomp;
