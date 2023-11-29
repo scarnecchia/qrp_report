@@ -80,23 +80,22 @@
     /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
-	    /* Identify min gestwk requested. Max always 44 weeks */
+	    /* Identify min gestwk requested. Max 44 weeks if postpregdays is not positive */
         data master_typefile;
             set master_typefile;
             length gestwk_min gestwk_max 3;
             if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
             else gestwk_min = 0; 
-		    gestwk_max = 44;
+			if postpregdays >0 then gestwk_max = 43 + int((postpregdays/7)+1); 
+		    else gestwk_max = 44;
         run;
 
         proc sql noprint;
-		    select min(a.gestwk_min) into: min_min
+		    select min(a.gestwk_min), max(a.gestwk_max) into: min_min, :max_max
             from master_typefile a,
                  groupsfile b
             where a.group = b.group;
         quit;
-
-        %let max_max = 44; 
 
         data _temptablecolumns;
             set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
@@ -123,7 +122,15 @@
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
                 /*change columnlabel/columnheader (T6) to gestational week*/
                 columnlabel = strip(put(gestwkorder, best.));
-                if table = 'T6' then columnheader = strip(put(gestwkorder, best.));
+				if gestwkorder > 44 then do;
+					*columnlabel = strip(cats("(*ESC*){unicode '002B'x}",put(gestwkorder-44, best.)));
+					columnlabel = strip(cats("+",put(gestwkorder-44, best.)));
+					columnname = cats('gestwkpos', gestwkorder-44, origcolumnname);
+				end;
+                if table = 'T6' then do;
+					columnheader = strip(put(gestwkorder, best.));
+					if gestwkorder > 44 then columnheader = strip(cats("+",put(gestwkorder-44, best.)));
+				end;
                 output;
             end;
         run;
@@ -242,7 +249,7 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    data _agg_t4moi (keep = group moiname gestwk pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
+	    data _agg_t4moi (keep = group moiname gestwk pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char2 rename=gestwk_char2=gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
 	  	      agg_t4preggestwk (in = preg)
@@ -250,8 +257,8 @@
 	  		%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
 	  	      agg_t4nopreggestwk (in = nopreg)
 	  		%end;;
-	  	if gestwk < 0 then gestwk_char = left(cats("gestwkneg",put(abs(gestwk),3.)));
-          else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
+	  	if gestwk < 0 then gestwk_char2 = left(cats("gestwkneg",put(abs(gestwk),3.)));
+          else gestwk_char2 = catt("gestwk",tranwrd(gestwk_char,"+","pos"));
 	  	if preg then pregflg = "Y";
 	      else pregflg = "N";
 	  	den_&episode_var. = &episode_var.;
@@ -259,7 +266,7 @@
 	    run;	
 	  	
 	    proc summary data = _agg_t4moi nway missing;
-          class group moiname pregflg gestwk_char gestwk;
+          class group moiname pregflg gestwk_char;
           var &sumcolumns. den_&episode_var.;
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
@@ -377,18 +384,22 @@
 		                    %end;
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
-		                        if lowcase(group) = "&t4group" then do; 
-		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
-		                        		&&var&vv.._char = 'N/A';
-		                        		&&var&vv. = .;
-		                        		&&var&vv.._ss=1;
+								/* Check is not required if gestwk is after the pregnancy outcome */
+								if index(gestwk_char, "gestwkpos") = 0 then do;
+			                        if lowcase(group) = "&t4group" then do; 
+										gestwk = input(compress(gestwk_char, "gestwkneg"),best.);
+			                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
+			                        		&&var&vv.._char = 'N/A';
+			                        		&&var&vv. = .;
+			                        		&&var&vv.._ss=1;
+				                        end;
+			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
+			                        		&&var&vv.._char = 'N/A';
+			                        		&&var&vv. = .;
+			                        		&&var&vv.._ss=1;
+			                        	end;
 			                        end;
-		                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
-		                        		&&var&vv.._char = 'N/A';
-		                        		&&var&vv. = .;
-		                        		&&var&vv.._ss=1;
-		                        	end;
-		                        end;
+								end;
 		                        %end;
 		                    %end;
 		                    if lowcase(group) = "&t4group" and missing(t4pregenrdays) then do;
