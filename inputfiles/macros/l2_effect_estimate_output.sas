@@ -65,7 +65,7 @@
 
         /* stack all potential group values with label value */
         data labelfile_est;
-            set labelfile
+            set labelfile(where=(labeltype='grouplabel'))
                 table&tablenum(keep=medicalproduct rename=medicalproduct=group in=a)
                 table&tablenum(keep=analysisgrp rename=analysisgrp=group in=b);
             if missing(label) then do;
