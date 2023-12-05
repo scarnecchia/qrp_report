@@ -271,6 +271,14 @@
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
 		
+		%if &stratifybydp. = Y %then %do;
+			proc summary data = _agg_t4moi nway missing;
+	        class dpidsiteid group moiname pregflg gestwk_char;
+	        var &sumcolumns. den_&episode_var.;
+	        output out = _agg_t4moi_dp (drop = _:) sum=;
+	        run;
+		%end;
+
 		/*Determine the minimum gestional week for each group and assign to a macro variable*/
         proc sql noprint undo_policy=none;
            select distinct group into: group_list separated by ' '
@@ -529,7 +537,7 @@
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=_agg_t4moi_dp, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
