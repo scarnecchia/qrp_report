@@ -537,7 +537,7 @@
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi_dp, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=%if &dataset. = preg %then %do; _agg_t4moi %end; %else %do; _agg_t4moi_dp %end;, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
