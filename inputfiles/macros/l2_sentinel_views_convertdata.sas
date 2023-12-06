@@ -184,18 +184,18 @@
         /* Read in l2comparison for analysisgrp values and order values */
         create table analysistable as 
         select distinct a.runid, a.analysisgrp, a.order as sortingorder, b.weightingmethod, b.adjustmentmethod, b.modelparameters,
-               coalescec(b.eoi,c.eoi) as exposure length=40, coalescec(b.ref,c.ref) as reference length=40, "" as design length=1
+               coalescec(b.eoi,c.eoi) as exposure length=40, coalescec(b.ref,c.ref) as reference length=40, "" as design length=500
                %if &labelfileexists = Y %then %do;
-               ,case when not missing(d.label) then d.label else "ADD OUTCOME LABEL" end as outcome length=200 
-               ,case when not missing(e.label) then e.label else coalescec(e.group,a.analysisgrp) end as analysisgrouptitle length=200
-               ,case when not missing(f.label) then f.label else coalescec(f.group,b.eoi,c.eoi) end as exposurelabel length=200
-               ,case when not missing(g.label) then g.label else coalescec(g.group,b.ref,c.ref) end as referencelabel length=200
+               ,case when not missing(d.label) then d.label else "ADD OUTCOME LABEL" end as outcome length=500 
+               ,case when not missing(e.label) then e.label else coalescec(e.group,a.analysisgrp) end as analysisgrptitle length=500
+               ,case when not missing(f.label) then f.label else coalescec(f.group,b.eoi,c.eoi) end as exposurelabel length=500
+               ,case when not missing(g.label) then g.label else coalescec(g.group,b.ref,c.ref) end as referencelabel length=500
                %end;
                %else %do;
-               ,a.analysisgrp as analysisgrouptitle length=200
-               ,"ADD OUTCOME LABEL" as outcome length=200
-               ,coalescec(b.eoi,c.eoi) as exposurelabel length=200
-               ,coalescec(b.ref,c.ref) as referencelabel length=200
+               ,a.analysisgrp as analysisgrptitle length=500
+               ,"ADD OUTCOME LABEL" as outcome length=500
+               ,coalescec(b.eoi,c.eoi) as exposurelabel length=500
+               ,coalescec(b.ref,c.ref) as referencelabel length=500
                %end;
         from l2comparisonfile a 
         left join pscs_masterinputs_views b 
@@ -701,6 +701,7 @@
     %end;
 
     data views.analysisgroup;
+		retain analysisgrp analysisgrptitle exposure exposurelabel reference referencelabel outcome design adjustmentmethod modelparameters weightingmethod sortingorder;
         set analysistable;
         drop runid;
     run;
