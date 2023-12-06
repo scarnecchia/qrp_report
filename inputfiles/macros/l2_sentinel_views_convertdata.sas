@@ -663,6 +663,7 @@
                                                                    'Number of members' ,
                                                                    'Excluded due to same-day initiation of both exposure groups',
                                                                    'Number of patients with a truncated inverse probability of treatment weight')));
+	format level best8.;
     run;
 
     /* Check if medicalproduct_labeled variable exists, if not, assign it values and a label */
