@@ -679,12 +679,18 @@
     %end;
 
     /* Re-assign values for dates in monitoring file */
+	proc sql noprint;
+        select max(input(dpmaxdate,date9.)) into: maxdpenddate
+        from output.dpinfo;
+    quit;
+
     data views.monitoringperiod(keep=monitoringperiod startdate enddate);
+		retain periodid2 startdate enddate;
         set monitoringfile_views;
-        if not missing(fupenddate) then enddate=fupenddate;
-        else if not missing(indenddate) then enddate=fupenddate;
+		enddate=coalesce(fupenddate,indenddate, &maxdpenddate.);        
         rename periodid2=monitoringperiod;
-        format enddate date9.;
+        format enddate date9. periodid2 3.;
+		length periodid2 3;
     run;
 
     %if &psdistflag = 1 %then %do;
