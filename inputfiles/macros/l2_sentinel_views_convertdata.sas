@@ -695,10 +695,80 @@
     run;
 
     %if &psdistflag = 1 %then %do;
-    data views.psdist(drop=subgroup subgroupcat);
-        set _psdist_:;
-        where missing(subgroup);
-    run;
+    	/* Verify if subgroups and covariates are present */
+		%let dsid=%sysfunc(open(Pscs_masterinputs));
+	    %let check_subgroups=%sysfunc(varnum(&dsid,subgroup));
+	    %let check_covars=%sysfunc(varnum(&dsid,covar));          
+	    %let rc=%sysfunc(close(&dsid));
+		
+		data views.psdist;
+	    set _psdist_:;
+		/* No subgroups */
+		%if &check_subgroups=0 %then %do;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		subgroup="overall";
+		subgroupcat="overall";
+		subgrouplabel="Overall Analysis";
+		subgroupcatlabel="Overall Analysis";
+		subGroupOrder=1;
+		subGroupCatOrder=1;
+		%end;	
+	    run;
+
+		/* Get subgroups information */
+		%if &check_subgroups>0 %then %do;
+			proc sql noprint undo_policy=none;
+			create table views.psdist as
+			select a.*
+				   ,b.tabletitle as subgrouplabel format $500. length=500
+				   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
+				   ,b.subGroupOrder
+				   ,b.subGroupCatOrder		
+			from views.psdist as a
+			left join Pscs_masterinputs as b
+			on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
+			quit;
+		%end;
+
+		/* Get covariates information */
+		%if &check_covars > 0 %then %do;
+			proc sql noprint undo_policy=none;
+			create table views.psdist as
+			select a.*			   
+				   ,c.covarnum
+				   ,c.studyname
+			from views.psdist as a		
+			left join covarname as c on a.subgroup=c.cov_varname;
+			quit;
+		%end;
+
+	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat bin_eoi bin_ref);
+		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat bin_eoi bin_ref;
+		length dp $10 Type weight $30 subgroup subgroupcat $50 _eoi _ref bin_eoi bin_ref 8;
+		format dp $10. Type weight $30. subgroup subgroupcat $50. _eoi _ref bin_eoi bin_ref best8.;
+	    set views.psdist;
+		if dp="agg" then dp="Aggregate";
+		if missing(subgroup) then subgroup="overall";
+		if missing(subgroupcat) then subgroupcat="overall";
+		if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
+		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+
+		/* Specify correct values for covariates */
+		%if &check_covars > 0 %then %do;
+		if not missing(covarnum) then do;
+			subgrouplabel=studyname;
+			if subgroupcat="1" then do;
+				subgroupcatlabel="Yes";
+				subGroupCatOrder=2;
+			end;
+			else do;
+				subgroupcatlabel="No";
+				subGroupCatOrder=1;
+			end;
+			subGroupOrder=subGroupOrder+covarnum;
+		end;
+		%end;
+	    run;
     %end;
 
     data views.analysisgroup;
