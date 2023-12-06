@@ -533,7 +533,7 @@
 
     /* Output all transformed tables to folder */
     data views.study;
-        length queryid jirakey userid $40 studytitle $200;
+        length queryid jirakey $40 studytitle $1000 userid $80;
         queryid="&queryid";
         %if %length(&jirakey) = 0 %then %do;
             jirakey="QF-0000";
