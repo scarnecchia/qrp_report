@@ -564,7 +564,7 @@
 
 	/* Because some output tables do not have runid, deduplicate pscs_masterinputs by 
 	   analysisgrp/subgroup/subgroupcat that are agnostic to runid */
-	%if &check_subgroups=0 %then %do;
+	%if &check_subgroups>0 %then %do;
 	proc sort nodupkey data=Pscs_masterinputs out=_subgroup_info;
 	by analysisgrp subgroup subgroupcat;
 	run;
@@ -741,9 +741,73 @@
     run;
 
     data views.effectest;
-        set _effectest_:;
-        /* Rename tabletitle to title for data dictionary consistency */
-        rename tabletitle=title;
+    set _effectest_:;
+	/* No subgroups */
+	%if &check_subgroups=0 %then %do;
+	format subgroup $50.;
+	subgroup="overall";
+	%end;	
+    run;
+
+	/* Get missing subgroups information */
+	%if &check_subgroups>0 %then %do;
+		proc sql noprint undo_policy=none;
+		create table views.effectest as
+		select a.*
+			   ,b.subgroup	
+		from views.effectest as a
+		left join _subgroup_info as b
+		on a.analysisgrp=b.analysisgrp and a.tabletitle=b.tabletitle and a.subgroupcat=b.subgroupcat;
+		quit;
+	%end;
+
+    data views.effectest(rename=(tabletitle=subgrouplabel) 
+						 keep=monitoringperiod analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
+		  					 SubgroupDashboardLabel subGroupOrder subGroupCatOrder n EV IRDiff_1000PY RD_1000NU risk_1000NU FUTime_Y
+		  					 AvgFUTime_D AvgFUTime_Y IR_1000PY NNT AR poprisk PAR totalevents EVchar IR_1000PYchar IRDiff_1000PYchar
+		  					 RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
+		   					 HR_pvalue HR LCL UCL HR_coef HR_se);
+	retain monitoringperiod analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
+		   SubgroupDashboardLabel subGroupOrder subGroupCatOrder n EV IRDiff_1000PY RD_1000NU risk_1000NU FUTime_Y
+		   AvgFUTime_D AvgFUTime_Y IR_1000PY NNT AR poprisk PAR totalevents EVchar IR_1000PYchar IRDiff_1000PYchar
+		   RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
+		   HR_pvalue HR LCL UCL HR_coef HR_se;
+	length monitoringperiod 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500;
+	format monitoringperiod 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.;
+    set views.effectest;
+	if tabletitle="Data Partner" then do;
+		dp=subgroupcat;
+		subgroup="overall";
+		subgroupcat="overall";
+		tabletitle="Overall Analysis";
+		SubgroupCatLabel="Overall Analysis";
+		subGroupOrder=1;
+		subGroupCatOrder=1;
+	end;
+	else dp="Aggregate";
+	if missing(subgroup) or subgroup="overall" then do;
+		subgroup="overall";
+		SubgroupDashboardLabel="Overall Analysis";
+	end;
+	else SubgroupDashboardLabel = catt(tabletitle, ": ", subgroupcatlabel);
+	if missing(subgroupcat) then subgroupcat="overall";
+	if missing(tabletitle) then tabletitle="Overall Analysis";
+	if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+	
+	/* Specify correct values for covariates */
+	if not missing(covarnum_label) then do;
+		tabletitle=covarnum_label;
+		if subgroupcat="1" then do;
+			subgroupcatlabel="Yes";
+			subGroupCatOrder=2;
+		end;
+		else do;
+			subgroupcatlabel="No";
+			subGroupCatOrder=1;
+		end;
+		SubgroupDashboardLabel = catt(tabletitle, ": ", subgroupcatlabel);
+		subGroupOrder=1000+covarnum;
+	end;
     run;
 
     /* Delete rows not relevant for Sentinel Views */
