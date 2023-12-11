@@ -556,13 +556,103 @@
             output;
     run;
 
+	/* Verify if subgroups and covariates information are available in pscs_masterinputs */
+	%let dsid=%sysfunc(open(Pscs_masterinputs));
+    %let check_subgroups=%sysfunc(varnum(&dsid,subgroup));
+    %let check_covars=%sysfunc(varnum(&dsid,covar));          
+    %let rc=%sysfunc(close(&dsid));
+
+	/* Because some output tables do not have runid, deduplicate pscs_masterinputs by 
+	   analysisgrp/subgroup/subgroupcat that are agnostic to runid */
+	%if &check_subgroups=0 %then %do;
+	proc sort nodupkey data=Pscs_masterinputs out=_subgroup_info;
+	by analysisgrp subgroup subgroupcat;
+	run;
+	%end;
+
     /* Check to see if at least 1 km dataset exists */
     %if &kmtableflag = 1 %then %do;
         data views.kmtable;
-            set _km:;
-            where missing(subgroup) and dpidsiteid='ALL';
-            keep time atrisk km_estimate analysisgrp group medicalproduct analysis monitoringperiod;
-        run;
+	    set  _km:;
+		/* No subgroups */
+		%if &check_subgroups=0 %then %do;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		subgroup="overall";
+		subgroupcat="overall";
+		subgrouplabel="Overall Analysis";
+		subgroupcatlabel="Overall Analysis";
+		subGroupOrder=1;
+		subGroupCatOrder=1;
+		%end;
+		if dpidsiteid="ALL" or (dpidsiteid ne "all" and missing(subgroup));
+		run;
+
+		/* Get subgroups information */
+		%if &check_subgroups>0 %then %do;
+			proc sql noprint undo_policy=none;
+			create table views.kmtable as
+			select a.*
+				   ,b.tabletitle as subgrouplabel format $500. length=500
+				   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
+				   ,b.subGroupOrder
+				   ,b.subGroupCatOrder		
+			from views.kmtable as a
+			left join _subgroup_info as b
+			on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
+			quit;
+		%end;
+
+		/* Get covariates information */
+		%if &check_covars > 0 %then %do;
+			proc sql noprint undo_policy=none;
+			create table views.kmtable as
+			select a.*			   
+				   ,c.covarnum
+				   ,c.studyname
+			from views.kmtable as a		
+			left join covarname as c on a.subgroup=c.cov_varname;
+			quit;
+		%end;
+
+		/* Verify if lowerci and upperci are present */
+		%let dsid=%sysfunc(open(views.kmtable));
+	    %let check_lowerci=%sysfunc(varnum(&dsid,lowerci));
+	    %let check_upperci=%sysfunc(varnum(&dsid,upperci));          
+	    %let rc=%sysfunc(close(&dsid));
+
+	    data views.kmtable(keep=monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
+			   					subGroupOrder subGroupCatOrder time atrisk KM_estimate lowerci upperci);
+		retain monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
+			   subGroupOrder subGroupCatOrder time atrisk KM_estimate lowerci upperci;
+		length dp $10 subgroup subgroupcat $50;
+		format monitoringperiod 3. dp $10. subgroup subgroupcat $50.;
+	    set views.kmtable;
+		if dpidsiteid="ALL" then dp="Aggregate";
+		else dp=dpidsiteid;
+		if missing(subgroup) then subgroup="overall";
+		if missing(subgroupcat) then subgroupcat="overall";
+		if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
+		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+
+		%if &check_lowerci.=0 %then %do; lowerci=.; %end;
+		%if &check_upperci.=0 %then %do; upperci=.; %end;
+
+		/* Specify correct values for covariates */
+		%if &check_covars > 0 %then %do;
+		if not missing(covarnum) then do;
+			subgrouplabel=studyname;
+			if subgroupcat="1" then do;
+				subgroupcatlabel="Yes";
+				subGroupCatOrder=2;
+			end;
+			else do;
+				subgroupcatlabel="No";
+				subGroupCatOrder=1;
+			end;
+			subGroupOrder=1000+covarnum;
+		end;
+		%end;
+	    run;
     %end;
 
     data table1;
@@ -694,13 +784,7 @@
 		length periodid2 3;
     run;
 
-    %if &psdistflag = 1 %then %do;
-    	/* Verify if subgroups and covariates are present */
-		%let dsid=%sysfunc(open(Pscs_masterinputs));
-	    %let check_subgroups=%sysfunc(varnum(&dsid,subgroup));
-	    %let check_covars=%sysfunc(varnum(&dsid,covar));          
-	    %let rc=%sysfunc(close(&dsid));
-		
+    %if &psdistflag = 1 %then %do;    	
 		data views.psdist;
 	    set _psdist_:;
 		/* No subgroups */
@@ -713,6 +797,7 @@
 		subGroupOrder=1;
 		subGroupCatOrder=1;
 		%end;	
+		if dp="agg" or (dp ne "agg" and missing(subgroup));
 	    run;
 
 		/* Get subgroups information */
@@ -725,7 +810,7 @@
 				   ,b.subGroupOrder
 				   ,b.subGroupCatOrder		
 			from views.psdist as a
-			left join Pscs_masterinputs as b
+			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
 			quit;
 		%end;
@@ -765,7 +850,7 @@
 				subgroupcatlabel="No";
 				subGroupCatOrder=1;
 			end;
-			subGroupOrder=subGroupOrder+covarnum;
+			subGroupOrder=1000+covarnum;
 		end;
 		%end;
 	    run;
