@@ -253,8 +253,8 @@
 
             %if &check_table1 > 0 %then %do;
                 data _table1_&dpcnt._&i.;
-                    set &dsn(drop=subgroupcat);
-                    length dp $5 unique_psestimate 3 subgroupcat psestimategrp $40;
+                    set &dsn;
+                    length dp $5 unique_psestimate 3 psestimategrp $40;
                     table1order=_n_;
                     /* Change back standardized race/hispanic/sex values */
                     if upcase(metvar) = 'RACE_0' then metvar = 'RACE_UNKNOWN';
@@ -321,48 +321,11 @@
                     %end;
                 end;/* psestimategrp */
                 %end; /* m */
-                if prxmatch('/AGE\d/',metvar) > 0 then do;
-                    COVARNUM=1001;
-                    subgroupcat=tranwrd(substr(metvar,4,length(metvar)),'_','-');
-                    /* add plus sign to subgroupcat for age group stratification */
-                    if index(label,">=") then subgroupcat=cats(subgroupcat,'+');
-                end;
-                if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) > 0 then do;
-                    COVARNUM=1012;
-                    if prxmatch('/AMERICAN*/',metvar) > 0 then subgroupcat='1';
-                    if prxmatch('/ASIAN/',metvar) > 0 then subgroupcat='2';
-                    if prxmatch('/BLACK*/',metvar) > 0 then subgroupcat='3';
-                    if prxmatch('/MULTI*/',metvar) > 0 then subgroupcat='M';
-                    if prxmatch('/PACIFIC*/',metvar) > 0 then subgroupcat='4';
-                    if prxmatch('/RACE*/',metvar) > 0 then subgroupcat='0';
-                    if prxmatch('/WHITE/',metvar) > 0 then subgroupcat='5';
-                end;
-                if prxmatch('/YEAR*/',metvar) > 0 then do;
-                    COVARNUM=1002;
-                    subgroupcat=scan(metvar,-1,'_');
-                end;
-                if prxmatch('/SEX*|FEMALE|MALE/',metvar) > 0 then do;
-                    COVARNUM=1000;
-                    if prxmatch('/^FEMALE/',metvar) > 0 then subgroupcat='F';
-                    if prxmatch('/^MALE/',metvar) > 0 then subgroupcat='M';
-                    if prxmatch('/SEX*/',metvar) > 0 then subgroupcat='O';
-                end;
-                if prxmatch('/HISPANIC*/',metvar) > 0 then do;
-                    COVARNUM=1013;
-                    subgroupcat=substr(scan(metvar,-1,'_'),1,1);
-                end;
-                if prxmatch('/COVAR*/',metvar) > 0 then do;
-                    COVARNUM=put(compress(metvar,'','A'),8.);
-                    subgroupcat='';
-                end;
-                /* Remove categorical risk scores */
-                %if %length(&riskscore_regex) > 0 %then %do;
-                if prxmatch("/&riskscore_regex/i",metvar) then delete;
-                %end;
+                 
                 /* Remove risk score labels */
                 if grouper in ("Health Characteristics" "Health Service Utilization Intensity Metrics" "Medical Product Use") and missing(metvar) then delete;
-                /* Remove lab covariate rows */
-                if grouper = "Laboratory Characteristics" then delete;
+                /* Remove lab covariate labels */
+                if grouper = "Laboratory Characteristics" and missing(metvar) then delete;
                 if &dpcnt. = 0 then dp = "agg";
                 else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
                 else if &dpcnt >= 10 then dp = "DP&dpcnt.";
@@ -659,8 +622,7 @@
         set _table1_:;
         /* Rounding done to avoid scientific notation */
         ad=round(ad,0.001);
-        sd=round(sd,0.001);
-        where missing(subgroup);
+        sd=round(sd,0.001);        
     run;
 
     /* Need to recreate unadjusted tables for groups */
@@ -708,37 +670,170 @@
         %end;
     %end;
 
+    %let labcharacteristics=N;
+
     data _temptable1;
         set %if %length(&uniquepsest) > 0 %then %do; _table1_: %end;
             %else %do; table1 %end;
         ;
         /* Set original table order for platform */
         table1order=_n_;
-        where missing(subgroup);
-        drop unique_psestimate psestimategrp;
+        /* No subgroups */
+		%if &check_subgroups=0 %then %do;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		subgroup="overall";
+		subgroupcat="overall";
+		subgrouplabel="Overall Analysis";
+		subgroupcatlabel="Overall Analysis";
+		subGroupOrder=1;
+		subGroupCatOrder=1;
+		%end;
+		if dp="agg" or (dp ne "agg" and missing(subgroup));
+
+		/* Create metvar2 variable to get labs and riskscores required information */
+		if grouper="Laboratory Characteristics" then do;
+			metvar2=strip(tranwrd(metvar,"N_",""));
+			if index(metvar2,"LBUNIT") > 0 then metvar2=substr(metvar2, 1, index(metvar2,"LBUNIT")-1);
+			else if index(metvar2,"LBRES") > 0 then metvar2=substr(metvar2, 1, index(metvar2,"LBRES")-1);
+			else if index(metvar2,"_NOTEST") > 0 then metvar2=substr(metvar2, 1, index(metvar2,"_NOTEST")-1);
+			call symputx("labcharacteristics", "Y");
+		end;
+		else do;
+			metvar2=metvar;
+			if index(metvar2,"_CAT") > 0 then metvar2=substr(metvar2, 1, index(metvar2,"_CAT")-1);
+		end;
+
+        drop unique_psestimate;
+    run;	
+	
+	/* Get riskscores information if necessary */
+	%if %sysfunc(exist(riskscorefile)) %then %do;
+		proc sort nodupkey data=_temptable1(where=(prxmatch("/&riskscorelist/i",metvar) and metvar=metvar2)) out=_riskscores_info;
+		by metvar2;		
+		run;
+
+		proc sql noprint undo_policy=none;
+		create table _temptable1 as 
+		select a.*
+			   ,b.label as riskscorelabel
+			   ,b.pscovariate as riskscore_pscovariate
+		from _temptable1 as a 
+		left join _riskscores_info as b
+		on a.metvar2=b.metvar2;
+		quit;
+	%end;
+	
+	/* Get subgroups information */
+	%if &check_subgroups>0 %then %do;
+		proc sql noprint undo_policy=none;
+		create table _temptable1 as
+		select a.*
+			   ,b.tabletitle as subgrouplabel format $500. length=500
+			   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
+			   ,b.subGroupOrder
+			   ,b.subGroupCatOrder		
+		from _temptable1 as a
+		left join _subgroup_info as b
+		on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
+		quit;
+	%end;
+
+	/* Get covariates information */
+	%isdata(dataset=covarname);
+	%if %eval(&nobs.>0) %then %do;	
+		proc sql noprint undo_policy=none;
+		create table _temptable1 as
+		select a.*			   
+			   ,c.covarnum
+			   ,c.studyname
+		from _temptable1 as a		
+		left join covarname as c on a.subgroup=c.cov_varname;
+		
+		create table _temptable1 as 
+		select a.*
+			   ,b.studyname as covarlabel
+		from _temptable1 as a 
+		left join covarname as b
+		on a.metvar2=upcase(b.cov_varname);
+		quit;		
+	%end;
+
+    data _temptable1(keep=grouper table1order monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
+		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd);
+	retain monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
+		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd;
+	length monitoringperiod 3 dp $10 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
+	format monitoringperiod 3. dp $10. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
+    set _temptable1;
+	if dp="agg" then dp="Aggregate";
+	if missing(subgroup) then subgroup="overall";
+	if missing(subgroupcat) then subgroupcat="overall";
+	if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
+	if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+
+	headerlabel=grouper;
+	if metvar="AGE" then headerlabel="Mean Age";
+	else if prxmatch('/AGE\d/',metvar) > 0 or label="Age" then headerlabel="Age";
+	else if prxmatch('/ASIAN|WHITE|AMERICAN*|BLACK*|PACIFIC*|MULTI*|RACE*/',metvar) > 0 or label="Race" then headerlabel="Race";
+	else if prxmatch('/YEAR*/',metvar) > 0 or label="Year" then headerlabel="Year";
+	else if prxmatch('/SEX*|FEMALE|MALE/',metvar) > 0 or label="Sex" then headerlabel="Sex";
+	else if prxmatch('/HISPANIC*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
+
+	variableFilterLabel=label;
+	if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=catt(covarlabel, " (continuous)");
+	else if grouper="Laboratory Characteristics" then variableFilterLabel=catt(covarlabel, ": ", label);
+	%if %sysfunc(exist(riskscorefile)) %then %do;
+	else if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
+		variableFilterLabel=catt(label, " (continuous)");
+		pscovariate=riskscore_pscovariate;
+	end;
+	else if prxmatch("/&riskscorelist/i",metvar) then do;
+		variableFilterLabel=catt(riskscorelabel, ": ", label);
+		pscovariate=riskscore_pscovariate;
+	end;
+	%end;
+	
+	variableLabel=variableFilterLabel;
+	if vartype="dichotomous" and grouper="Demographic Characteristics" then variableLabel = catt(headerlabel, ": ", variableFilterLabel);
+
+	/* Now that we have extracted covariate numbers for labs we need to assess pscovariate for them */
+	%if &labcharacteristics. eq Y %then %do;
+		%do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
+		    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
+		    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
+		    %let psmodelvarsin = %scan(&psmodelcomb,-1,%str(#));
+			if psestimategrp = "&psestgrp" then do;
+			    %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
+			        %let psmodelvar = %scan(&psmodelvarsin,&z);		            
+		            %if %sysfunc(prxmatch(/COVAR*/,&psmodelvar)) %then %do; 
+		                if strip(metvar2) = "&psmodelvar" then pscovariate = 'Y';
+		            %end;				
+			    %end;
+			end;/* psestimategrp */
+		%end; /* m */
+	%end;
+
+	/* Specify correct values for covariates */
+	%if &nobs > 0 %then %do;
+		if not missing(covarnum) then do;
+			subgrouplabel=studyname;
+			if subgroupcat="1" then do;
+				subgroupcatlabel="Yes";
+				subGroupCatOrder=2;
+			end;
+			else do;
+				subgroupcatlabel="No";
+				subGroupCatOrder=1;
+			end;
+			subGroupOrder=1000+covarnum;
+		end;
+	%end;
     run;
 
-    /* Create a rank/order variable grouped by label, grouper and metvar */
-    proc sql noprint;
-    create table _temptable1order as 
-    select label, grouper, metvar, analysisgrp, 
-           type, weight, vartype, monitoringperiod, exp_mean, comp_mean, exp_std, 
-           comp_std, ad, sd, subgroupcat, dp, pscovariate, covarnum, table1order, min(table1order) as socrank
-    from _temptable1
-    group by label, grouper, metvar
-    order by grouper;
-    quit;
-
-    /* Re-assign the rank variable only on the grouper */
-    proc rank data = _temptable1order ties=dense out=_temptable1order;
-    var socrank;
-    by grouper ;
-    label socrank = ' ';
-    run;
-
-    proc sort data = _temptable1order out=views.table1(drop=table1order);
+    proc sort data = _temptable1 out=views.table1(drop=table1order);
         by table1order;
     run;
+
 
     data views.effectest;
     set _effectest_:;
