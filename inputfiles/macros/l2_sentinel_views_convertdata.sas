@@ -761,20 +761,21 @@
 		quit;
 	%end;
 
-    data views.effectest(rename=(tabletitle=subgrouplabel) 
-						 keep=monitoringperiod analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
+    data views.effectest(rename=(tabletitle=subgrouplabel monitoringperiod2=monitoringperiod) 
+						 keep=monitoringperiod2 analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
 		  					 SubgroupDashboardLabel subGroupOrder subGroupCatOrder n EV IRDiff_1000PY RD_1000NU risk_1000NU FUTime_Y
 		  					 AvgFUTime_D AvgFUTime_Y IR_1000PY NNT AR poprisk PAR totalevents EVchar IR_1000PYchar IRDiff_1000PYchar
 		  					 RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
 		   					 HR_pvalue HR LCL UCL HR_coef HR_se);
-	retain monitoringperiod analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
+	retain monitoringperiod2 analysisgrp analysis medicalproduct DP subgroup subgroupcat tabletitle subgroupcatlabel
 		   SubgroupDashboardLabel subGroupOrder subGroupCatOrder n EV IRDiff_1000PY RD_1000NU risk_1000NU FUTime_Y
 		   AvgFUTime_D AvgFUTime_Y IR_1000PY NNT AR poprisk PAR totalevents EVchar IR_1000PYchar IRDiff_1000PYchar
 		   RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
 		   HR_pvalue HR LCL UCL HR_coef HR_se;
-	length monitoringperiod 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500;
-	format monitoringperiod 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.;
+	length monitoringperiod2 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500;
+	format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.;
     set views.effectest;
+	monitoringperiod2=monitoringperiod;
 	if tabletitle="Data Partner" then do;
 		dp=subgroupcat;
 		subgroup="overall";
@@ -818,20 +819,7 @@
                                                                    'Excluded due to same-day initiation of both exposure groups',
                                                                    'Number of patients with a truncated inverse probability of treatment weight')));
 	format level best8.;
-    run;
-
-    /* Check if medicalproduct_labeled variable exists, if not, assign it values and a label */
-    %let dsid=%sysfunc(open(views.effectest));
-    %let add_vars=%sysfunc(varnum(&dsid,medicalproduct_labeled));
-    %let rc = %sysfunc(close(&dsid));
-
-    %if &add_vars = 0 %then %do;
-    data views.effectest;
-        set views.effectest;
-        medicalproduct_labeled=medicalproduct;
-        label=medicalproduct;
-    run;
-    %end;
+    run;    
 
     /* Re-assign values for dates in monitoring file */
 	proc sql noprint;
