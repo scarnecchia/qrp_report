@@ -300,7 +300,7 @@
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
-    		select a.* , b.t4pregenrdays, c.prepregdays
+    		select a.* , b.t4pregenrdays, c.prepregdays, c.postpregdays
     		from &dsin a 
     		left join master_cohortfile b 
     		on a.group = b.cohortgrp
@@ -392,7 +392,7 @@
 		                    %end;
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
-								/* Check is not required if gestwk is after the pregnancy outcome */
+								/* t4pregenrdays check is not required if gestwk is after the pregnancy outcome */
 								if index(gestwk_char, "gestwkpos") = 0 then do;
 			                        if lowcase(group) = "&t4group" then do; 
 										gestwk = input(compress(gestwk_char, "gestwkneg"),best.);
@@ -407,6 +407,22 @@
 			                        		&&var&vv.._ss=1;
 			                        	end;
 			                        end;
+								end;
+								/* Check postpregdays coverage */
+								else do;
+									if lowcase(group) = "&t4group" then do; 
+										gestwk = input(compress(gestwk_char, "gestwkpos"),best.);
+									    if postpregdays <= 0 then do;
+									        &&var&vv.._char = 'N/A';
+									        &&var&vv. = .;
+									        &&var&vv.._ss=1;
+									    end;
+									    else if postpregdays > 0 and (int(postpregdays/7)+1) < gestwk then do;
+									        &&var&vv.._char = 'N/A';
+									        &&var&vv. = .;
+									        &&var&vv.._ss=1;
+									    end;
+									end;
 								end;
 		                        %end;
 		                    %end;
