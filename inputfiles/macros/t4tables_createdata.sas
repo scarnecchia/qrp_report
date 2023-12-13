@@ -86,7 +86,7 @@
             length gestwk_min gestwk_max 3;
             if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
             else gestwk_min = 0; 
-			if postpregdays >0 then gestwk_max = 43 + int((postpregdays/7)+1); 
+			if postpregdays >0 then gestwk_max = 44 + int((postpregdays/7)+1); 
 		    else gestwk_max = 44;
         run;
 
@@ -288,7 +288,10 @@
         data _null_;
           set master_typefile;
           %do g = 1 %to %sysfunc(countw(&group_list));
-              if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
+              if group = "%scan(&group_list, &g)" then do;
+				call symputx("gestwk_min_group&g.", gestwk_min);
+				call symputx("gestwk_max_group&g.", gestwk_max);
+			  end;
           %end;
         run;
 	  %end;
@@ -466,18 +469,33 @@
 		   /* Merge data for all columns */
 		   data &dsin.;
              merge &dsin._tran_:;
-		     by &dpvar. group moiname pregflg den_episodes_wk1;
-			 /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
-			 %do g = 1 %to %sysfunc(countw(&group_list));      
-			   %if &min_min. < &&&gestwk_group&g. %then %do;
+		     by &dpvar. group moiname pregflg den_episodes_wk1;			 
+			 %do g = 1 %to %sysfunc(countw(&group_list));  
+			   /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
+			   %if &min_min. < &&&gestwk_min_group&g. %then %do;
 			     if group = "%scan(&group_list., &g.)" then do;
-			       %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
+			       %do min_loop = &min_min. %to &&&gestwk_min_group&g. -1;
                       %do vv = 1 %to &numcolumns; 
 				  	    if den_episodes_wk1 > 0 then do;
                           gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
                         end;
                         else do;
                           gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = '.';
+                        end;
+                      %end;
+                   %end;
+			     end;
+			   %end;
+			   /* set post-pregnancy period to N/A for weeks that are more than the maximum gestational week per group */
+			   %if &&&gestwk_max_group&g. < &max_max. %then %do;
+			     if group = "%scan(&group_list., &g.)" then do;				   
+			       %do max_loop = &&&gestwk_max_group&g. - 43 %to &max_max. - 44;
+                      %do vv = 1 %to &numcolumns; 
+				  	    if den_episodes_wk1 > 0 then do;
+                          gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = 'N/A';
+                        end;
+                        else do;
+                          gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = '.';
                         end;
                       %end;
                    %end;
