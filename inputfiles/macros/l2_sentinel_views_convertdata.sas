@@ -758,7 +758,7 @@
 		quit;		
 	%end;
 
-    data _temptable1(keep=grouper table1order monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
+    data _temptable1(keep=table1order monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
 		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd);
 	retain monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
 		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd;
