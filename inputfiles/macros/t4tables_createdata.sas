@@ -184,8 +184,9 @@
 	          create table _&dsin as 
                   select b.*
 	              ,a.&episode_var. as den_&episode_var.
+				  ,a.&episode_var._2trim as den_&episode_var._2trim
 	              ,a.&episode_var._3trim as den_&episode_var._3trim
-                  from agg_t4&dsin (keep = &episode_var. &episode_var._3trim level group dpidsiteid 
+                  from agg_t4&dsin (keep = &episode_var. &episode_var._2trim &episode_var._3trim level group dpidsiteid 
 	    		                    where=(level in (&&t4&dsin.level1))) as a,
                        agg_t4&dsin (where=(level in (&&t4&dsin.level2))) as b
                   where a.group=b.group 
@@ -205,10 +206,10 @@
 	     data _agg_t4moi;
 	       length moiname $5;
 	       set %if %sysfunc(findw(&datasetlist.,t4preg)) > 0 %then %do;
-	             _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
+	             _preg (in = t4preg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._2trim &episode_var._3trim den_:)
 	    	   %end;
 	    	   %if %sysfunc(findw(&datasetlist.,t4nopreg)) > 0 %then %do;
-	    	     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._3trim den_:)
+	    	     _nopreg (in = t4nopreg keep= dpidsiteid group moiname &sumcolumns &episode_var. &episode_var._2trim &episode_var._3trim den_:)
 	    	   %end;;
 	       if t4preg then pregflg = "Y";
 	       else pregflg = "N";
@@ -231,7 +232,7 @@
       ************************************************************************************************/	
 	    proc summary data = _agg_t4moi nway missing;
 	      class group moiname pregflg;
-	      var &sumcolumns. &episode_var. &episode_var._3trim den_&episode_var. den_&episode_var._3trim;
+	      var &sumcolumns. &episode_var. &episode_var._2trim &episode_var._3trim den_&episode_var. den_&episode_var._2trim den_&episode_var._3trim;
 	      output out = _agg_t4moi_summ (drop = _:) sum=;
 	    run;
 	  %end; /* T4preg and T4nopreg specific code */
@@ -297,7 +298,7 @@
     		select distinct group into: cohort_list separated by ' ' from &dsin;
     	quit;
 
-	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end;);
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end; %else %do; den_&episode_var._2trim den_&episode_var._3trim %end;);
 	     set &dsin.;
 		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
 		 %if &dataset. = preggestwk %then %do;
@@ -396,8 +397,8 @@
 		                        	&&var&vv.._ss=1;
 		                    end;
 	                %end;
-                /*if 0 episodes in 3rd trimester for preg/nopreg data or 0 episodes per week for gestational week data, % cannot be computed*/
-                %if &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
+                /*if 0 episodes in 2nd/3rd trimester for preg/nopreg data or 0 episodes per week for gestational week data, % cannot be computed*/
+                %if &&denominator&vv. = den_&episode_var._2trim | &&denominator&vv. = den_&episode_var._3trim | &&denominator&vv. = den_pregepisodes %then %do;
                     if &&denominator&vv. <=0 then &&var&vv.._char = 'NaN';
                 %end;
             end;
@@ -451,6 +452,12 @@
            run;
         %end; /*gestational week table transpose*/
 		
+	   	/* Check if columns related to 2nd/3rd trimesters are requested */	    
+		%let T2Columns=N;
+		%let T3Columns=N;
+		%if %index(%upcase(&sumcolumns.), ANYT2) | %index(%upcase(&sumcolumns.), ONLYT2) %then %let T2Columns=Y;
+		%if %index(%upcase(&sumcolumns.), ANYT3) | %index(%upcase(&sumcolumns.), ONLYT3) %then %let T3Columns=Y;
+
 	   /* Apply labels */
        proc sql noprint;
          create table &dsout. as
@@ -459,9 +466,9 @@
 		 %if &labelfileexists. = Y %then %do;
 		 	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
 			%if &dataset. = preg %then %do;
-		 	        when c.label = "" then catx(' ',strip(a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")")
-		 	   else catx(' ',strip(c.label),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")") end as grouplabel 
-		 	  ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")")
+		 	        when c.label = "" then catx(' ',strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
+		 	   else catx(' ',strip(c.label),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") end as grouplabel 
+		 	  ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
 			%end;
 			%else %do;
 			       when c.label = "" then strip(a.group)
@@ -476,7 +483,7 @@
 		 %end;
          %else %do;
 		    %if &dataset. = preg %then %do;
-		      ,catx(' ',strip(a.group),"(N = ",strip(put(a.den_&episode_var.,comma12.0))||")") as grouplabel 
+		      ,catx(' ',strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") as grouplabel  
 			%end;
 			%else %do;
 			  ,strip(a.group) as grouplabel

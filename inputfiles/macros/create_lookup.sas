@@ -52,7 +52,7 @@
 	  type = "baseline";  order = 8;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are weighted by the proportion of treated patients in the trimmed population divided by the inverse of their propensity score (PS). Reference patients are weighted by 1 minus the proportion of treated patients in the trimmed population divided by 1 minus their PS."; output;
 	  type = "baseline";  order = 9;  description = "Weighted patient characteristics tables facilitate the assessment of covariate balance after inverse probability weighting and should not be interpreted as a description of the unweighted population. Treated patients are assigned a weight of 1. Reference patients are weighted by their propensity score (PS) divided by 1 minus their PS."; output;
 	  type = "baseline";  order = 10; description = "With variable ratio matching, each exposed subject is matched to a variable number of comparator subjects. The weight for each treated subject equals 1. The weight for each control subject equals the inverse of the matching ratio for that specific matched set."; output;
-	  type = "baseline";  order = 11; description = "Baseline period in reference to user-defined index date (start of first valid exposed pregnancy resulting in live birth delivery, exposure date, or delivery date)."; output;
+	  type = "baseline";  order = 11; description = "Baseline period in reference to user-defined index dates (start of first valid exposed pregnancy, exposure date, or pregnancy outcome date)."; output;
 	  type = "baseline";  order = 12; description = "Value represents the proportion of episodes with first switch."; output;
 	  type = "baseline";  order = 13; description = "Value represents the proportion of first switch episodes with second switch."; output;
 	  type = "baseline";  order = 14; description = "Value represents standard deviation where no % follows the value."; output;
@@ -61,7 +61,8 @@
 	   type = "baseline";  order = 17; description = "Pregnancy duration is not classified by term status for pregnancies ending in non-live birth outcomes."; output;	   
 	   type = "baseline";  order = 18; description = "The length of the pregnancy episode was estimated using a hierarchy of pregnancy markers. If overlapping pregnancy episodes were constructed in the same patient due to observation of multiple pregnancy markers, then the markers providing more reliable estimation of pregnancy start was selected for estimation of pregnancy start date. If no pregnancy markers were observed, then a fixed pregnancy duration was assigned by pregnancy outcome type, as described in the overview section of this report."; output;
 	   type = "baseline";  order = 19; description = "Gagne JJ, Glynn RJ, Avorn J, Levin R, Schneeweiss S. A combined comorbidity score predicted mortality in elderly patients better than existing scores. J Clin Epidemiol. 2011;64(7):749-759. Sun JW, Rogers JR, Her Q, Welch EC, Panozzo CA, Toh S, Gagne JJ. Adaptation and validation of the combined comorbidity score for ICD-10-CM. Med Care. 2017;55(12):1046-1051."; output;
-	   type = "baseline"; order = 21;  description = "Only the laboratory result closest to the index date in the user-defined evaluation window is described. The number of &patientepi with a given categorical result value, or the mean numerical result value among those reported in given unit, is shown indented and italicized below the Romanized number of unique &patientepi with or without a test record."; output;
+	   type = "baseline"; order = 20;  description = "The number of &patientepi with a given categorical result value, or the mean numerical result value among those reported in given unit, is shown indented and italicized below the Romanized number of unique &patientepi with or without a test record."; output;	   
+	   type = "baseline"; order = 21;  description = "Only the laboratory result closest to the anchor date for the end of the covariate evaluation window (either pregnancy start, pregnancy end date, or exposure date) is described. The number of &patientepi with a given categorical result value, or the mean numerical result value among those reported in given unit, is shown indented and italicized below the Romanized number of unique &patientepi with or without a test record."; output;
 	   type = "baseline"; order = 22; description = "In non-pregnant patients, characteristics evaluated using only infant claims are not output."; output;
 	   type = "baseline"; order = 23; description = "Characteristics were evaluated only in infant claims."; output;
 	   type = "baseline"; order = 24; description = "Characteristics were evaluated in mother and infant claims."; output;
@@ -75,7 +76,7 @@
 	   /* Footnotes for L2 effect estimates table */	  
 	  type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
 	  type = "effectest"; order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
-	  type = "effectest"; order = 3;  description = "Delivery status based on algorithm-derived pregnancy duration."; output;
+	  type = "effectest"; order = 3;  description = "Gestational age categories based on algorithm-derived pregnancy duration."; output;
 	  type = "effectest"; order = 4;  description = "&weightscheme. = &weightschemelong.."; output;
 
        /* Footnotes for attrition table */
@@ -115,12 +116,14 @@
 	  type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
        /* Footnotes for type 4 MOI tables */
-      type = "t4l1moi"; order = 1;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
-	  type = "t4l1moi"; order = 2;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
-	  type = "t4l1moi"; order = 3;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
-	  type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
-	  type = "t4l1moi"; order = 5;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;
-
+      type = "t4l1moi"; order = 1;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;
+	  type = "t4l1moi"; order = 2;  description = "Assessing medical product use in the second trimester requires a pregnancy to continue to the second trimester (i.e. pregnancy was not terminated in the first trimester); the denominator is the total number of pregnancy episodes that progress to the second trimester."; output;
+	  type = "t4l1moi"; order = 3;  description = "Assessing medical product use in the third trimester requires a pregnancy to continue to the third trimester. The denominator is the total number of pregnancy episodes that progress to the third trimester."; output;
+      type = "t4l1moi"; order = 4;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes."; output;
+	  type = "t4l1moi"; order = 5;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
+	  type = "t4l1moi"; order = 6;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
+	  type = "t4l1moi"; order = 7;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
+	  
      run; 
 
      data lookup.lookup_attrition;

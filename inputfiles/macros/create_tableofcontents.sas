@@ -88,6 +88,7 @@
             %let analysisgrp2 = ;
             %let baselinegroupnum = ;
             %let pregnancylabel = ;
+            %let pregnancylabel2 = ;
             %let includenonpregnant = N;
 
             /*for L2 tables - need to reference PS/CS specific files to pull additional parameters*/
@@ -113,8 +114,7 @@
 					call symputx('unique_psestimate_orig',unique_psestimate);
                     %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                     if cohort in ('preg', 'nopreg') then do;
-                        if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                        else call symput('pregnancylabel', ' Pregnancy Cohort');
+                     call symputx('pregnancylabel',preg_outcome_label);
                     end;
                     call symputx('includenonpregnant', upcase(includenonpregnant));
                     %end;
@@ -124,10 +124,12 @@
                 if _n_ = 2 then do;
                     if missing(baselinegroupnum)=0 then do;
                         call symputx('analysisgrp2',analysisgrp);
+                        %if %index(&reporttype,T4L1) %then %do;
+                        call symputx('pregnancylabel2', preg_outcome_label);
+                        %end;
                     end;
                 end;
-            run;
-         
+            run;         
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
                 set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup)));
@@ -238,6 +240,7 @@
 					%else %do;
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
 			            %if %length(&baselinegroupnum.)>0 %then %do;
+                            %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
 			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
@@ -437,7 +440,7 @@
                 else call symputx('grouplabel',group2);
                 end;
                 else do;
-                call symputx('grouplabel',group2);
+                call symputx('grouplabel',group);
                 end;
                 %end;
 
@@ -528,10 +531,11 @@
 			run;
 
             proc sql noprint;
-                select distinct subgroup
-                into :subgrouplist
+                select distinct subgroup, subgrouporder
+                into :subgrouplist, :dummyvar
                 separated by ' '
-                from _subgroups;				
+                from _subgroups
+				order by subgrouporder;				
             quit;
 
             %if %str(&subgrouplist.) = %str() %then %do;
@@ -766,7 +770,7 @@
             %tableletter();
             %addtotoc(tabnum=Table &tablenum.&tableletter.,
                     %if &table. = T1 %then %do;
-                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
                     %end;
                     %if &table. = T2 %then %do;
                     caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
@@ -778,7 +782,7 @@
                     caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                     %end;
                     %if &table. = T5 %then %do;
-                    caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
                     %end;
                     %if &table. = T6 %then %do;
                     caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
@@ -791,7 +795,7 @@
                     %tableletter();
                     %addtotoc(tabnum=Table &tablenum.&tableletter.,
                         %if &table. = T1 %then %do;
-                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
                         %end;
                         %if &table. = T2 %then %do;
                         caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
@@ -803,7 +807,7 @@
                         caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
                         %end;             
                         %if &table. = T5 %then %do;
-                        caption=%quote(Pregnancy Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
                         %end;
                         %if &table. = T6 %then %do;
                         caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));

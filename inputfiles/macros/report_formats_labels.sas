@@ -150,6 +150,28 @@
         delete _agefmt;
     quit;
 
+	/* Initialize variables for pregnancy outcomes format */
+	%let preg_outcome_list=;
+	%let preg_outcome_labels=;
+
+	%if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2")  %then %do;
+		/* Remove duplicate that can exist if more than 1 run is specified */
+		proc sort nodupkey data=master_pregnancymeta(keep=preg_outcome descr) out=_outcomes;
+		by preg_outcome;
+		run;
+
+		proc sql noprint;
+		    select catt("PREG_OUTCOME_",upcase(preg_outcome)) into :preg_outcome_list separated by "|"
+		    from _outcomes order by descr;
+
+			select upcase(preg_outcome) into :preg_outcome_values separated by "|"
+		    from _outcomes order by descr;
+
+			select descr into :preg_outcome_labels separated by "|"
+		    from _outcomes order by descr;
+		quit;
+	%end;
+
     /***************************/
     /* MASTER FORMAT STATEMENT */
     /***************************/
@@ -279,6 +301,48 @@
         "NONE" = 6
 		"NA" = 7;
 
+		/* Pregnancy outcome format */
+		%if %length(&preg_outcome_list.) > 0 %then %do;
+			value $pregoutcomefmt
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
+				"&preg_outcome." = "%scan(&preg_outcome_labels., &outcome., %str(|))"						
+			%end;
+			;
+
+			value $pregoutcomesort
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_list., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
+				"&preg_outcome." = &outcome.						
+			%end;
+			;
+
+			value $pregoutcomesfmt
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_values., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_values., &outcome., %str(|));
+				"&preg_outcome." = "%scan(&preg_outcome_labels., &outcome., %str(|))"						
+			%end;
+			;
+
+			value $pregoutcomessort
+			%do outcome=1 %to %sysfunc(countw(&preg_outcome_values., '|'));	
+				%let preg_outcome=%scan(&preg_outcome_values., &outcome., %str(|));
+				"&preg_outcome." = &outcome.						
+			%end;
+			;
+		%end;   
+
+		/* Pregnancy outcome categories format */
+		value $pregoutcomecatfmt
+		"LIVE" = "Live Birth Delivery"
+		"NONLIVE" = "Non-Live Birth Outcome"
+		"MIX" = "Mixed Birth Outcome";	
+			
+		value $pregoutcomecatsort
+		"LIVE" = 1
+        "NONLIVE" = 2
+        "MIX" = 3;
+
         /* Birth Type format */
         value $birth_typefmt
         "0" = "Unspecified # of live births"
@@ -377,10 +441,12 @@
             'year' = 4
             'race' = 5
             'hispanic' = 6
-            'prepostind' = 7
-            'matchmethod' = 8
-            'birth_type' = 9
-            'periodid' = 10;
+			'preg_outcome' = 7
+			'preg_outcomecat' = 8
+            'prepostind' = 9
+            'matchmethod' = 10
+            'birth_type' = 11
+            'periodid' = 12;
 
         /* Format for character lab covariates and their categories */
         value $charlabfmt
@@ -474,6 +540,10 @@
                 %assignsubgroupvalue(year,subgroupcat,input(compress(subgroupcat),? $11.));
                 %assignsubgroupvalue(race, put(subgroupcat,$racefmt.),put(subgroupcat,racesort.));
                 %assignsubgroupvalue(hispanic, put(subgroupcat,$hispanicfmt.),put(subgroupcat,hispanicsort.));
+				%if %length(&preg_outcome_list.) > 0 %then %do;
+				  %assignsubgroupvalue(preg_outcome, put(subgroupcat,$pregoutcomesfmt.),put(subgroupcat,pregoutcomessort.));
+				  %assignsubgroupvalue(preg_outcomecat, put(subgroupcat,$pregoutcomecatfmt.),put(subgroupcat,pregoutcomecatsort.));
+                %end;
                 %assignsubgroupvalue(prepostind, put(subgroupcat,$prepostindfmt.),put(subgroupcat,prepostindsort.));
                 %assignsubgroupvalue(matchmethod, put(subgroupcat,$matchmethodfmt.),put(subgroupcat,matchmethodsort.));
                 %assignsubgroupvalue(birth_type, put(subgroupcat,$birth_typefmt.),put(subgroupcat,birth_typesort.));
@@ -491,9 +561,11 @@
                  - Agegroup => Age Group
                  - Hispanic => Hispanic Origin
                  - Periodid => Monitoring Period
-                 - Prepostind => Delivery Status
+                 - Prepostind => Gestational Age Categories
                  - Matchmethod => Match Method
-                 - Birthtype => Birth Type
+                 - Birth_type => Birth Type
+				 - Preg_outcome => Pregnancy Outcome
+				 - Preg_outcomecat => Pregnancy Outcome Category
 
                 /*note - geographic strata not currently available in QRP
                  - Zip3 => 3-Digit Zip/State
@@ -504,9 +576,11 @@
                 if index(tabletitle, 'Agegroup')>0 then tabletitle =tranwrd(tabletitle, 'Agegroup', 'Age Group');
                 if index(tabletitle, 'Hispanic')>0 then tabletitle =tranwrd(tabletitle, 'Hispanic', 'Hispanic Origin');
                 if index(tabletitle, 'Periodid')>0 then tabletitle =tranwrd(tabletitle, 'Periodid', 'Monitoring Period');
-                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Delivery Status');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Gestational Age Categories');
                 if index(tabletitle, 'Matchmethod')>0 then tabletitle =tranwrd(tabletitle, 'Matchmethod', 'Match Method');
-                if index(tabletitle, 'Birthtype')>0 then tabletitle =tranwrd(tabletitle, 'Birthtype', 'Birth Type');
+                if index(tabletitle, 'Birth_type')>0 then tabletitle =tranwrd(tabletitle, 'Birth_type', 'Birth Type');
+				if index(tabletitle, 'Preg_outcomecat')>0 then tabletitle =tranwrd(tabletitle, 'Preg_outcomecat', 'Pregnancy Outcome Category');
+				if index(tabletitle, 'Preg_outcome')>0 then tabletitle =tranwrd(tabletitle, 'Preg_outcome', 'Pregnancy Outcome');				
                 if index(tabletitle, 'Zip3')>0 then tabletitle =tranwrd(tabletitle, 'Zip3', '3-Digit Zip/State');
                 if index(tabletitle, 'Zip_uncertain')>0 then tabletitle =tranwrd(tabletitle, 'Zip_uncertain', 'Zip Uncertain');
                 if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');

@@ -65,7 +65,7 @@
 
         /* stack all potential group values with label value */
         data labelfile_est;
-            set labelfile
+            set labelfile(where=(labeltype='grouplabel'))
                 table&tablenum(keep=medicalproduct rename=medicalproduct=group in=a)
                 table&tablenum(keep=analysisgrp rename=analysisgrp=group in=b);
             if missing(label) then do;
@@ -99,9 +99,11 @@
             where analysisgrp = "&analysisgrp." and runid = "&runid" and missing(subgroup);
 
             /*Get all values of subgroups for a given analysisgrp */
-            select distinct subgroup 
-            into :subgrouplist separated by ' '
-            from table&tablenum;
+            select distinct subgroup, subgrouporder 
+            into :subgrouplist separated by ' ',  
+                 :dummyvar separated by ' '
+            from table&tablenum
+			order by subgrouporder;
 
             /*Determine whether to print Monitoring Period column*/
            	select count(distinct monitoringperiod) into: printMP

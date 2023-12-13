@@ -125,7 +125,8 @@
         %end;
 
 		/* Select Footnotes */  		
-		%let fn_labcovar = 21;
+		%if %index(&reporttype,T4) > 0 %then %let fn_labcovar = 21;
+		%else %let fn_labcovar = 20;
 		%global covarlablabels;
 		%let covarlablabels=;
 		/* Get labels for lab covariates specified in covinps */
@@ -368,7 +369,10 @@
 		   /* FRAILTY score is specified */
 		   %if &FRAILTY = Y %then %do; 30 %end;
 		   /* Lab characteristics specified. */
-		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 21 %end;		
+		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do;
+		   	  %if %index(&reporttype,T4) > 0 %then %do; 21 %end;
+			  %else %do; 20 %end;
+		   %end;		
 		   %if %index(&reporttype,T4) > 0 %then %do;
 			  /* Non pregnant cohort with infant covariates */
 			  %if &fn_nopreg_i_covar. ne N %then %do; 22 %end;
@@ -410,7 +414,7 @@
 				if order_orig=30 then order=&fn_frailty.; 		
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order_orig=21 then order=&fn_labcovar.; 		
+				if order_orig in (20,21) then order=&fn_labcovar.; 		
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
 				if order_orig=22 then order=&fn_nopreg_i_covar.;				
@@ -459,7 +463,7 @@
 				if order_orig=30 then call symputx("fn_frailty",footnote_order);
 			%end;
 			%if &fn_labcovar. ne N %then %do; 
-				if order_orig=21 then call symputx("fn_labcovar",order);
+				if order_orig in (20,21) then call symputx("fn_labcovar",order);
 			%end;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
 				if order_orig=22 then call symputx("fn_nopreg_i_covar",footnote_order);
@@ -492,7 +496,12 @@
 				if fn_covinps ne . then fn_covinps=&fn_covinps.;
 			%end;			
 			%if &fn_labcovar. eq N %then %do;
-				call symputx("fn_labcovar",21);
+				%if %index(&reporttype,T4) > 0 %then %do;
+					call symputx("fn_labcovar",21);
+				%end;
+				%else %do;
+					call symputx("fn_labcovar",20);
+				%end;
 			%end;
 			drop fn_labcovar;
 			%if &fn_nopreg_i_covar. ne N %then %do; 
@@ -547,9 +556,9 @@
 				superscript=compress(strip(tranwrd(superscript,".,","")),".");
 			end;
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
-			if label = "Gestational age at delivery" then do;
-				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at delivery^{Super *}");
+			if label = "Gestational age at pregnancy outcome (weeks)" then do;
+				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)");
+				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)^{Super *}");
 			end;	
 			else if label = "Gestational age of first exposure (weeks)" then do;
 				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
@@ -701,7 +710,7 @@
 					end;
 				%end;
 			  %end; 
-              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*/',metvar) > 0 then do;
+              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|PREG_OUTCOME*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
@@ -727,7 +736,7 @@
             compute sd&dpnum._char;
                 if upcase(strip(sd&dpnum._char)) not in ("", ".", "N/A", "NAN") then do;
                     if abs(input(sd&dpnum._char, 8.3)) > &sdthreshold. then do;
-                      call define(_row_,'style','style={foreground=blue}');
+                      call define(_row_,'style/merge','style={foreground=blue}');
                     end;
                 end;
             endcomp;
@@ -782,6 +791,7 @@
         %let analysisgrp2 = ;
         %let baselinegroupnum = ;
         %let pregnancylabel = ;
+        %let pregnancylabel2 = ;
         %let includenonpregnant = N;
         %let includecomp = N;
         %let computebalance =N;
@@ -842,10 +852,10 @@
 
                 %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                 if cohort in ('preg', 'nopreg') then do;
-                    if upcase(includenonpregnant) = 'Y' then call symput('pregnancylabel', ' Pregnancy Cohort and Non-Pregnancy Cohort');
-                    else call symput('pregnancylabel', ' Pregnancy Cohort');
-                end;
+ 				call symputx('pregnancylabel',preg_outcome_label);
+ 				end;
                 call symputx('includenonpregnant', upcase(includenonpregnant));
+
                 %end;
                 if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 
@@ -863,10 +873,12 @@
             if _n_ = 2 then do;
                 if missing(baselinegroupnum)=0 then do;
                     call symputx('analysisgrp2',analysisgrp);
+                    %if %index(&reporttype,T4L1) %then %do;
+                    call symputx('pregnancylabel2', preg_outcome_label);
+                    %end;
                 end;
             end;
         run;
-
 		/* Get list of riskscores that will be output */
 		%let riskscoreslist=;
 		%isdata(dataset=riskscorefile);
@@ -1101,9 +1113,9 @@
             %end;
             %else %do;
                 /*Pregnant and non-pregnant cohorts*/
-                %let grp1_label = %bquote(&grouplabel. Pregnancy Cohort);
+                %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
                 %if &includenonpregnant. = Y %then %do;
-                %let grp2_label = %bquote(&grouplabel. Non-Pregnancy Cohort);
+                %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);
                 %end;
             %end;
         %end;
@@ -1111,7 +1123,7 @@
         %if %length(&baselinegroupnum.)>0 %then %do;
             %let grp2_label = %bquote(&grouplabel2.);
             %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-            %let grp2_label = %bquote(&grouplabel2. Pregnancy Cohort);
+            	%let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.);
             %end;
         %end;
 
