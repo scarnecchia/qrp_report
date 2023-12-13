@@ -249,7 +249,7 @@
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
      ************************************************************************************************/	
 	  %else %do;
-	    data _agg_t4moi (keep = group moiname gestwk pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char2 rename=gestwk_char2=gestwk_char);
+	    data _agg_t4moi (keep = group moiname gestwk pregflg dpidsiteid den_&episode_var. &sumcolumns. pregflg gestwk_char);
 	      length pregflg $1 gestwk_char $15;
 	      set %if %sysfunc(findw(&datasetlist.,t4preggestwk)) %then %do;
 	  	      agg_t4preggestwk (in = preg)
@@ -257,12 +257,14 @@
 	  		%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
 	  	      agg_t4nopreggestwk (in = nopreg)
 	  		%end;;
-	  	if gestwk < 0 then gestwk_char2 = left(cats("gestwkneg",put(abs(gestwk),3.)));
-          else gestwk_char2 = catt("gestwk",tranwrd(gestwk_char,"+","pos"));
+	  	if index(gestwk,"-") > 0 then gestwk_char = catt("gestwkneg", compress(gestwk,"-"));
+          else gestwk_char = catt("gestwk",tranwrd(gestwk,"+","pos"));
 	  	if preg then pregflg = "Y";
 	      else pregflg = "N";
 	  	den_&episode_var. = &episode_var.;
-		if not (&min_min. <= gestwk <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
+		if index(gestwk,"+") > 0 then gestwk_num = 44 + input(compress(gestwk,"+"),3.);
+		else gestwk_num = input(gestwk,3.);
+		if not (&min_min. <= gestwk_num <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
 	    run;	
 	  	
 	    proc summary data = _agg_t4moi nway missing;
