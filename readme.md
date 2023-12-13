@@ -60,7 +60,7 @@ Version 3.0.0 of the QRP reporting tool is designed to be compatible with QRP 13
     <th> QRP Report Version</th>
   </tr>
     <tr>
-    <td>QRP 13.0.0-current</td>
+    <td>13.0.0-current</td>
     <td>3.0.0</td>
   </tr>
     <tr>
