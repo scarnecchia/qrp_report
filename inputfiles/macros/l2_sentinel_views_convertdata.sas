@@ -928,7 +928,7 @@
 		enddate=coalesce(fupenddate,indenddate, &maxdpenddate.);        
         rename periodid2=monitoringperiod;
         format enddate date9. periodid2 3.;
-		length periodid2 3;
+		length periodid2 3 startdate enddate 4;
     run;
 
     %if &psdistflag = 1 %then %do;    	
