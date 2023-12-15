@@ -533,6 +533,17 @@
 	run;
 	%end;
 
+	%let submissing=%str(if missing(subgroup) then subgroup="overall";
+						if missing(subgroupcat) then subgroupcat="overall";
+						if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
+						if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";);
+	%let suboverall=%str(subgroup="overall";
+						subgroupcat="overall";
+						tabletitle="Overall Analysis";
+						SubgroupCatLabel="Overall Analysis";
+						subGroupOrder=1;
+						subGroupCatOrder=1;);
+
     /* Check to see if at least 1 km dataset exists */
     %if &kmtableflag = 1 %then %do;
         data views.kmtable;
@@ -541,12 +552,7 @@
 		%if &check_subgroups=0 %then %do;
 		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
 		length subGroupOrder subGroupCatOrder 3;
-		subgroup="overall";
-		subgroupcat="overall";
-		subgrouplabel="Overall Analysis";
-		subgroupcatlabel="Overall Analysis";
-		subGroupOrder=1;
-		subGroupCatOrder=1;
+		&suboverall.;
 		%end;
 		if dpidsiteid="ALL" or (dpidsiteid ne "all" and missing(subgroup));
 		run;
@@ -593,10 +599,7 @@
 	    set views.kmtable;
 		if dpidsiteid="ALL" then dp="Aggregate";
 		else dp=dpidsiteid;
-		if missing(subgroup) then subgroup="overall";
-		if missing(subgroupcat) then subgroupcat="overall";
-		if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
-		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+		&submissing.;
 
 		%if &check_lowerci.=0 %then %do; lowerci=.; %end;
 		%if &check_upperci.=0 %then %do; upperci=.; %end;
@@ -683,12 +686,7 @@
 		%if &check_subgroups=0 %then %do;
 		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500.  subGroupOrder subGroupCatOrder best.;
 		length subGroupOrder subGroupCatOrder 3;
-		subgroup="overall";
-		subgroupcat="overall";
-		subgrouplabel="Overall Analysis";
-		subgroupcatlabel="Overall Analysis";
-		subGroupOrder=1;
-		subGroupCatOrder=1;
+		&suboverall.;
 		%end;
 		if dp="agg" or (dp ne "agg" and missing(subgroup));
 
@@ -770,10 +768,7 @@
     set _temptable1;
 	metvar30=metvar;	
 	if dp="agg" then dp="Aggregate";
-	if missing(subgroup) then subgroup="overall";
-	if missing(subgroupcat) then subgroupcat="overall";
-	if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
-	if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
+	&submissing.;
 
 	headerlabel=grouper;
 	if metvar="AGE" then headerlabel="Mean Age";
@@ -944,12 +939,7 @@
 		%if &check_subgroups=0 %then %do;
 		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500.  subGroupOrder subGroupCatOrder best.;
 		length subGroupOrder subGroupCatOrder 3;
-		subgroup="overall";
-		subgroupcat="overall";
-		subgrouplabel="Overall Analysis";
-		subgroupcatlabel="Overall Analysis";
-		subGroupOrder=1;
-		subGroupCatOrder=1;
+		&suboverall.;
 		%end;	
 		if dp="agg" or (dp ne "agg" and missing(subgroup));
 	    run;
@@ -981,11 +971,12 @@
 			quit;
 		%end;
 
-	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat bin_eoi bin_ref);
-		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat bin_eoi bin_ref;
-		length dp $10 Type weight $30 subgroup subgroupcat $50 _eoi _ref bin_eoi bin_ref 8;
+	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount ps_cat3=ps_cat) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref);
+		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref;
+		length ps_cat3 3 dp $10 Type weight $30 subgroup subgroupcat $50 _eoi _ref bin_eoi bin_ref 8;
 		format dp $10. Type weight $30. subgroup subgroupcat $50. _eoi _ref bin_eoi bin_ref best8.;
 	    set views.psdist;
+		ps_cat3=ps_cat;
 		if dp="agg" then dp="Aggregate";
 		if missing(subgroup) then subgroup="overall";
 		if missing(subgroupcat) then subgroupcat="overall";
