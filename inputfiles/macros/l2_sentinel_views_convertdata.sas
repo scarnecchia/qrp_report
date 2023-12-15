@@ -539,7 +539,8 @@
 	    set  _km:;
 		/* No subgroups */
 		%if &check_subgroups=0 %then %do;
-		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
+		length subGroupOrder subGroupCatOrder 3;
 		subgroup="overall";
 		subgroupcat="overall";
 		subgrouplabel="Overall Analysis";
@@ -557,8 +558,8 @@
 			select a.*
 				   ,b.tabletitle as subgrouplabel format $500. length=500
 				   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
-				   ,b.subGroupOrder
-				   ,b.subGroupCatOrder		
+				   ,b.subGroupOrder as subGroupOrder format best. length=3
+			   	   ,b.subGroupCatOrder as subGroupCatOrder format best. length=3	
 			from views.kmtable as a
 			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
@@ -680,7 +681,8 @@
         table1order=_n_;
         /* No subgroups */
 		%if &check_subgroups=0 %then %do;
-		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500.  subGroupOrder subGroupCatOrder best.;
+		length subGroupOrder subGroupCatOrder 3;
 		subgroup="overall";
 		subgroupcat="overall";
 		subgrouplabel="Overall Analysis";
@@ -730,8 +732,8 @@
 		select a.*
 			   ,b.tabletitle as subgrouplabel format $500. length=500
 			   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
-			   ,b.subGroupOrder
-			   ,b.subGroupCatOrder		
+			   ,b.subGroupOrder as subGroupOrder format best. length=3
+			   ,b.subGroupCatOrder as subGroupCatOrder format best. length=3		
 		from _temptable1 as a
 		left join _subgroup_info as b
 		on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
@@ -940,7 +942,8 @@
 	    set _psdist_:;
 		/* No subgroups */
 		%if &check_subgroups=0 %then %do;
-		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best8.;
+		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500.  subGroupOrder subGroupCatOrder best.;
+		length subGroupOrder subGroupCatOrder 3;
 		subgroup="overall";
 		subgroupcat="overall";
 		subgrouplabel="Overall Analysis";
@@ -958,8 +961,8 @@
 			select a.*
 				   ,b.tabletitle as subgrouplabel format $500. length=500
 				   ,b.subgroupcatlabel as subgroupcatlabel format $500. length=500
-				   ,b.subGroupOrder
-				   ,b.subGroupCatOrder		
+				   ,b.subGroupOrder as subGroupOrder format best. length=3
+			   	   ,b.subGroupCatOrder as subGroupCatOrder format best. length=3		
 			from views.psdist as a
 			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.subgroup=b.subgroup and a.subgroupcat=b.subgroupcat;
