@@ -759,12 +759,14 @@
 	%end;
 
     data _temptable1(keep=table1order monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd);
+		   		   		  headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
+					 rename=metvar30=metvar);
 	retain monitoringperiod analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd;
-	length monitoringperiod 3 dp $10 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
-	format monitoringperiod 3. dp $10. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
+		   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
+	length monitoringperiod 3 dp $10 metvar30 $30 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
+	format monitoringperiod 3. dp $10. metvar30 $30. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
     set _temptable1;
+	metvar30=metvar;	
 	if dp="agg" then dp="Aggregate";
 	if missing(subgroup) then subgroup="overall";
 	if missing(subgroupcat) then subgroupcat="overall";
@@ -867,8 +869,10 @@
 		   AvgFUTime_D AvgFUTime_Y IR_1000PY NNT AR poprisk PAR totalevents EVchar IR_1000PYchar IRDiff_1000PYchar
 		   RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
 		   HR_pvalue HR LCL UCL HR_coef HR_se;
-	length monitoringperiod2 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500;
-	format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.;
+	length monitoringperiod2 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500
+		   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI Char HR_pvalue Char $40;
+	format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.
+		   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI Char HR_pvalue Char $40.;
     set views.effectest;
 	monitoringperiod2=monitoringperiod;
 	if tabletitle="Data Partner" then do;
