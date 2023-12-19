@@ -111,8 +111,7 @@
                 weightingmethod = ipweight;
                 adjustmentmethod = 'Inverse Probability Treatment Weighted';
                 modelparameters='Trimmed';
-            end;
-            if missing(covarnum) then covarnum = 0;
+            end;            
         run;
 
         data psest_masterinputs_views;
@@ -171,7 +170,7 @@
         run;
 
     proc sort data=pscs_masterinputs_views nodupkey;
-        by runid covarnum analysisgrp;
+        by runid analysisgrp;
     run;
 
     /* Create analysisgrp, psestimategrp and unique_psestimate combination */
@@ -363,7 +362,7 @@
 
                 data _effectest_&i(drop=varlabel i);
                     set &dsn;
-                    length varlabel $2000 covarnum_label $200;                                                      
+                    length varlabel $2000 covarnum_label $500;                                                      
                     /* Remove overall rows from subgroup tables */
                     %if %length(&deletesubgroups) > 0 %then %do; 
                     if missing(subgroup) then delete;
