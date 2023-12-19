@@ -363,26 +363,19 @@
 
                 data _effectest_&i(drop=varlabel i);
                     set &dsn;
-                    length varlabel $2000 covarnum_label $200;
-                    COVARNUM=0;                                        
+                    length varlabel $2000 covarnum_label $200;                                                      
                     /* Remove overall rows from subgroup tables */
                     %if %length(&deletesubgroups) > 0 %then %do; 
                     if missing(subgroup) then delete;
                     %end;
-                    if subgroup='sex' then COVARNUM=1000;
-                    else if subgroup='agegroup' then COVARNUM=1001;
-                    else if subgroup='year' then COVARNUM=1002;
-                    else if subgroup='periodid' then COVARNUM=1003;
-                    else if subgroup='race' then COVARNUM=1012;
-                    else if subgroup='hispanic' then COVARNUM=1013;
-                    else if subgroup='dpidsiteid' then COVARNUM=9000;
-                    else if index(subgroup,'covar') then COVARNUM=put(compress(subgroup,'','A'),8.);
-                    if COVARNUM in (1:999) then do;
+                    if index(subgroup,'covar') then do;
+						COVARNUM=put(compress(subgroup,'','A'),8.);                    
                         do i = 1 to countw("&covarnumlabels",'|');
                             varlabel = scan("&covarnumlabels",i,'|');
                             if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
                         end; 
                     end;
+					else COVARNUM=.;      
                     drop subgroup;
                 run;
                 %if &dupperiods > 1 %then %do;
