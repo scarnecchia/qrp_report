@@ -445,11 +445,15 @@
                     where lower(name) in ('km_evexp' 'km_evunexp' /* 'km_evunexp_wght' */);
                 quit;
 
+				%let dsid=%sysfunc(open(&dsn));
+	    		%let check_ci=%sysfunc(varnum(&dsid,lowerCI_exp));	    		  
+	    		%let rc=%sysfunc(close(&dsid));
+
                 data _null_;
                     if _n_=1 then do; 
                     dcl hash H(multidata:'y') ;   
                     h.definekey("analysisgrp") ;   
-                    h.definedata("time", "subgroup", "subgroupcat", "dpidsiteid", "atrisk", "Km_estimate", "analysisgrp", "group", "medicalproduct", "analysis", "monitoringperiod");  
+                    h.definedata("time", "subgroup", "subgroupcat", "dpidsiteid", "atrisk", "Km_estimate", "analysisgrp", "group", "medicalproduct", "analysis", "monitoringperiod", "lowerci", "upperci");  
                     h.definedone() ;   
                     end;
                     length analysisgrp group medicalproduct $40 analysis $13;
@@ -458,21 +462,34 @@
                     array w eoilabel reflabel;
                     array z &atriskcols;
                     array y &kmcols;
+					%if &check_ci. > 0 %then %do;
+					array l lowerCI_exp lowerCI_unexp;
+					array u upperCI_exp upperCI_unexp;
+					%end;
                     do over z;
                         if not missing(z) then do;
                         medicalproduct=t;
                         atrisk=z;
                         group=w;
                         Km_estimate=y;
+						%if &check_ci. > 0 %then %do;
+						lowerci=l;
+						upperci=u;
+						%end;
+						%else %do;
+						lowerci=.;
+						upperci=.;
+						%end;
                         h.add();
                         end;
                     end;
                     if lr then h.output(dataset:"_km_&i");
                     run;
+
                 %if &dupperiods > 1 %then %do;
                 proc sql noprint undo_policy=none feedback;
                     create table _km_&i. as
-                    select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct,
+                    select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct, B.lowerci, B.upperci,
                     B.analysis, b.subgroup, b.subgroupcat, b.dpidsiteid, a.periodid2 as monitoringperiod
                     from monitoringperiod_lookup a right join _km_&i. b
                     on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
@@ -586,12 +603,6 @@
 			quit;
 		%end;
 
-		/* Verify if lowerci and upperci are present */
-		%let dsid=%sysfunc(open(views.kmtable));
-	    %let check_lowerci=%sysfunc(varnum(&dsid,lowerci));
-	    %let check_upperci=%sysfunc(varnum(&dsid,upperci));          
-	    %let rc=%sysfunc(close(&dsid));
-
 	    data views.kmtable(keep=monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
 			   					subGroupOrder subGroupCatOrder time atrisk KM_estimate lowerci upperci);
 		retain monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
@@ -602,9 +613,6 @@
 		if dpidsiteid="ALL" then dp="Aggregate";
 		else dp=dpidsiteid;
 		&submissing.;
-
-		%if &check_lowerci.=0 %then %do; lowerci=.; %end;
-		%if &check_upperci.=0 %then %do; upperci=.; %end;
 
 		/* Specify correct values for covariates */
 		%if &check_covars > 0 %then %do;
