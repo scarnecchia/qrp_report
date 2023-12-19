@@ -788,9 +788,8 @@
 			variableFilterLabel=strip(riskscorelabel) || ": " || strip(label);
 			pscovariate=riskscore_pscovariate;
 		end;
-		/* Eecode ADCSI label and remove SAS specific coding for CHA2DS2VASC */
-		if metvar = "ADCSI" then variableFilterLabel = "Adapted Diabetes Complications Severity Index";
-		else if metvar = "CHA2DS2VASC" then variableFilterLabel="CHA2DS2-VASc score";
+		/* Remove SAS specific coding for CHA2DS2VASC (currently coded as: CHA^{sub 2}DS^{sub 2}-VASc) */
+		if metvar = "CHA2DS2VASC" then variableFilterLabel="CHA2DS2-VASc score";
 		%end;
 		
 		variableLabel=variableFilterLabel;
