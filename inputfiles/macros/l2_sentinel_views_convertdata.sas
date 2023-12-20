@@ -263,67 +263,80 @@
             %let check_psdist=%sysfunc(varnum(&dsid,ps_cat));
             %let rc=%sysfunc(close(&dsid));
 
+			/******************************************************************/
+			/* Table 1: Set in all tables
+						Assign PSCOVARIATE and DP indicators
+						Drop rows with missing metvar values
+						Drop char variables
+						Rename variables
+					    All other processing done later*/
+			/******************************************************************/
             %if &check_table1 > 0 %then %do;
                 data _table1_&dpcnt._&i.;
                     set &dsn;
                     length dp $10 unique_psestimate 3 psestimategrp $40;
-                    table1order=_n_;                    
-                /* Add on unique_psestimate and psestimategrp */
-                %do n = 1 %to %sysfunc(countw(&combs,%str($)));
-                    %let comb = %scan(&combs,&n,%str($));
-                if analysisgrp = "%scan(&comb,1,%str(@))" then do;
-                    unique_psestimate=%scan(&comb,-1,%str(|));
-                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
-                end;
-                %end;
-                /* Change unicode value to symbol */
-                if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
-                pscovariate='N';
-                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
-                    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
-                    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
-                    %let psmodelvarsin = %scan(&psmodelcomb,-1,%str(#));
-                if psestimategrp = "&psestgrp" then do;
-                    %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
-                        %let psmodelvar = %scan(&psmodelvarsin,&z);
-                            %if &psmodelvar = AGE %then %do; 
-                                if metvar = 'AGE' then pscovariate = 'Y';
-                            %end;
-                            %if &psmodelvar = AGEGROUP %then %do; 
-                                if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
-                            %end;
-                            %if &psmodelvar = RACE %then %do; 
-                                if prxmatch('/RACE*/',metvar) then pscovariate='Y';
-                            %end;
-                            %if &psmodelvar = SEX %then %do;
-                                if prxmatch('/SEX*/',metvar) then pscovariate = 'Y';
-                            %end;
-                            %if &psmodelvar = YEAR %then %do;
-                                if prxmatch('/YEAR*/',metvar) then pscovariate = 'Y';
-                            %end;
-                            %if &psmodelvar = HISPANIC %then %do;
-                                if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
-                            %end;
-                            %if %sysfunc(prxmatch(/COVAR*|^NUM*/,&psmodelvar)) %then %do; 
-                                if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
-                            %end;
-							%if %sysfunc(exist(riskscorefile)) %then %do;
-								%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
-									%let score = %scan(&riskscorelist,&scorenum);
-									if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';																		
-								%end;
-							%end;
-                    %end;
-                end;/* psestimategrp */
-                %end; /* m */
+
+	                /* Add on unique_psestimate and psestimategrp */
+	                %do n = 1 %to %sysfunc(countw(&combs,%str($)));
+	                    %let comb = %scan(&combs,&n,%str($));
+	                	if analysisgrp = "%scan(&comb,1,%str(@))" then do;
+		                    unique_psestimate=%scan(&comb,-1,%str(|));
+		                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
+	                	end;
+	                %end;
+            
+                	pscovariate='N';
+	                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
+	                    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
+	                    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
+	                    %let psmodelvarsin = %scan(&psmodelcomb,-1,%str(#));
+		               	    if psestimategrp = "&psestgrp" then do;
+		                    %do z = 1 %to %sysfunc(countw(&psmodelvarsin));
+		                        %let psmodelvar = %scan(&psmodelvarsin,&z);
+		                            %if &psmodelvar = AGE %then %do; 
+		                                if metvar = 'AGE' then pscovariate = 'Y';
+		                            %end;
+		                            %if &psmodelvar = AGEGROUP %then %do; 
+		                                if prxmatch('/AGE\d/',metvar) then pscovariate = 'Y';
+		                            %end;
+		                            %if &psmodelvar = RACE %then %do; 
+		                                if prxmatch('/RACE*/',metvar) then pscovariate='Y';
+		                            %end;
+		                            %if &psmodelvar = SEX %then %do;
+		                                if prxmatch('/SEX*/',metvar) then pscovariate = 'Y';
+		                            %end;
+		                            %if &psmodelvar = YEAR %then %do;
+		                                if prxmatch('/YEAR*/',metvar) then pscovariate = 'Y';
+		                            %end;
+		                            %if &psmodelvar = HISPANIC %then %do;
+		                                if prxmatch('/HISPANIC*/',metvar) then pscovariate = 'Y';
+		                            %end;
+		                            %if %sysfunc(prxmatch(/COVAR*|^NUM*/,&psmodelvar)) %then %do; 
+		                                if strip(metvar) = "&psmodelvar" then pscovariate = 'Y';
+		                            %end;
+									%if %sysfunc(exist(riskscorefile)) %then %do;
+										%do scorenum = 1 %to %sysfunc(countw(&riskscorelist));
+											%let score = %scan(&riskscorelist,&scorenum);
+											if strip(metvar) = "&psmodelvar" and metvar = "&score." then pscovariate = 'Y';																		
+										%end;
+									%end;
+		                    %end;
+	                	end;/* psestimategrp */
+	                %end; /* m */
                  
-                if missing(metvar) then delete;              
-                if &dpcnt. = 0 then dp = "Aggregate";
-                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
-                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
-                rename table=type exp_mean&dpcnt=exp_mean exp_std&dpcnt=exp_std comp_mean&dpcnt=comp_mean comp_std&dpcnt.=comp_std
-                        sd&dpcnt=sd ad&dpcnt=ad;
-                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char;
+	                if missing(metvar) then delete;              
+	                if &dpcnt. = 0 then dp = "Aggregate";
+	                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+	                rename table=type 
+						   sortorder1=headerorder
+						   sortorder2=variableorder
+						   exp_mean&dpcnt=exp_mean 
+						   exp_std&dpcnt=exp_std 
+						   comp_mean&dpcnt=comp_mean
+						   comp_std&dpcnt.=comp_std
+	                       sd&dpcnt=sd ad&dpcnt=ad;
+	                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char;
                 run;
 
                 /* Join monitoring period when there are multiple runs */
@@ -331,12 +344,11 @@
                 proc sql noprint undo_policy=none;
                     create table _table1_&dpcnt._&i. as 
                     select 
-                    B.label, B.grouper, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean, b.table1order,
+                    B.label, B.headerorder, B.grouper, B.variableorder, B.sortorder3, B.sortorder4, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean,
                     B.comp_mean, B.exp_std, B.comp_std, B.ad, B.sd, b.subgroup, B.subgroupcat, B.dp, a.periodid2 as monitoringperiod, B.pscovariate, 
                     B.unique_psestimate, B.psestimategrp
                     from monitoringperiod_lookup a right join _table1_&dpcnt._&i. b 
-                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                    order by table1order;
+                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
                 quit;
                 %end;
             %end;/* Check table 1 */
@@ -674,7 +686,6 @@
 	            %else %do; table1 %end;
 	        ;
 	        /* Set original table order for platform */
-	        table1order=_n_;
 	        /* No subgroups */
 			%if &check_subgroups=0 %then %do;
 			format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500.  subGroupOrder subGroupCatOrder best.;
@@ -741,18 +752,20 @@
 			quit;		
 		%end;
 
-	    data _temptable1(keep=table1order monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   		   		  headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
+		/*assign variableorder*/
+	    data _temptable1(keep=monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
+			   		   		  headerlabel variableFilterLabel variableLabel headerorder /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
 						 rename=(metvar30=metvar monitoringperiod2=monitoringperiod));
 		retain monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   headerlabel variableFilterLabel variableLabel /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
-		length monitoringperiod2 3 metvar30 $30 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
+			   headerlabel variableFilterLabel variableLabel headerorder /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
+		length monitoringperiod2 headerorder 3 metvar30 $30 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
 		format monitoringperiod2 3. metvar30 $30. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
 	    set _temptable1;
 		metvar30=metvar;	
 		monitoringperiod2=monitoringperiod;
 		&submissing.;
 
+		/*assign headerlabel*/
 		headerlabel=grouper;
 		if metvar="AGE" then headerlabel="Mean Age";
 		else if prxmatch('/AGE\d/',metvar) > 0 or label="Age" then headerlabel="Age";
@@ -760,6 +773,9 @@
 		else if prxmatch('/YEAR*/',metvar) > 0 or label="Year" then headerlabel="Year";
 		else if prxmatch('/SEX*/',metvar) > 0 or label="Sex" then headerlabel="Sex";
 		else if prxmatch('/HISPANIC*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
+
+		/*headerorder takes the value of sortorder1 -> need to recode 1 to 0 to avoid showing # of episodes in dashboard*/
+		if headerorder = 1 then headerorder=0;
 
 		variableFilterLabel=label;
 		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (continuous)";
@@ -813,13 +829,11 @@
 			end;
 		%end;
 
-		/* Change unicode value to symbol */
-        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
+			/* Change unicode value to symbol */
+	        if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
+	        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 
-	    proc sort data = _temptable1 out=views.table1(drop=table1order);
-	        by table1order;
-	    run;
 	%end; /* Table1 requested*/
 
 	%if &effectestflag. eq 1 %then %do;
