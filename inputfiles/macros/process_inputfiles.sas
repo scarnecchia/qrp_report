@@ -2561,7 +2561,7 @@
 				by covarnum studyname;
 			run;
 
-			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname) dupout=_covdup nodupkey;
+			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname cov_varname) dupout=_covdup nodupkey;
 				by covarnum;
 			run;
 
