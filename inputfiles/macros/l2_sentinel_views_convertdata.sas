@@ -45,129 +45,129 @@
 
 	proc datasets library=views kill nowarn nolist; run; quit;
 
-        %let kmtableflag = ;
-        %let psdistflag = ;
-		%let effectestflag = ;
-		%let table1flag = ;
-        %let repdatadsn=;
-        %let psmodelvars=;
-        %let riskscore_regex=;
+    %let kmtableflag = ;
+    %let psdistflag = ;
+	%let effectestflag = ;
+	%let table1flag = ;
+    %let repdatadsn=;
+    %let psmodelvars=;
+    %let riskscore_regex=;
 
-        /* Check to see if same periods were specified */
-        %let dupperiods=0;
-        proc sql noprint;
-            select count(*) 
-            into :dupperiods trimmed 
-            from monitoringfile_views 
-            group by periodid
-            having count(*) > 1;
-        quit;
+    /* Check to see if same periods were specified */
+    %let dupperiods=0;
+    proc sql noprint;
+        select count(*) 
+        into :dupperiods trimmed 
+        from monitoringfile_views 
+        group by periodid
+        having count(*) > 1;
+    quit;
 
-        proc sql noprint;
-            select distinct catx('@',covarnum,studyname)
-            into :covarnumlabels 
-            separated by '|'
-            from covarnameviews;
+    proc sql noprint;
+        select distinct catx('@',covarnum,studyname)
+        into :covarnumlabels 
+        separated by '|'
+        from covarnameviews;
 
-            %if %sysfunc(exist(riskscorefile)) %then %do;
-                select distinct cats(riskscore,'_CAT'), riskscore
-	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
-	            from riskscorefile;
-            %end;
-        quit;
+        %if %sysfunc(exist(riskscorefile)) %then %do;
+            select distinct cats(riskscore,'_CAT'), riskscore
+            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+            from riskscorefile;
+        %end;
+    quit;
 
 
-        data pscs_masterinputs_views;
-            length adjustmentmethod weightingmethod modelparameters $40;
-            set pscs_masterinputs(where=(missing(subgroup)));
-            if file = 'psmatchfile' then do;
-                weightingmethod = '';
-                adjustmentmethod = 'Propensity Score Matched';
-                if upcase(ratio) = 'F' then modelparameters="Fixed Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
-                if upcase(ratio) = 'V' then modelparameters="Variable Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
-            end;
-            if file = 'stratificationfile' then do;
-                if not missing(strataweight) then do;
-                weightingmethod = strataweight;
-                adjustmentmethod = 'Propensity Score Stratum Weighted';
-                end;
-                else do;
-                weightingmethod = '';
-                adjustmentmethod = 'Propensity Score Stratified';
-                end;
-            if not missing(percentiles) then modelparameters='Trimmed'||'; Percentiles= '||strip(put(percentiles,8.));
-            else modelparameters='';
-            end;
-            if file = 'covstratfile' then do;
-                weightingmethod = '';
-                adjustmentmethod = 'Covariate Stratified';
-                do i = 1 to countw(stratvars);
-                    vars=scan(propcase(stratvars),i);
-                    if i = 1 then modelparameters = vars;
-                    else modelparameters=catx(',',modelparameters,vars);
-                end;
-            end;
-            if file = 'iptwfile' then do;
-                weightingmethod = ipweight;
-                adjustmentmethod = 'Inverse Probability Treatment Weighted';
-                modelparameters='Trimmed';
-            end;            
-        run;
-
-        data psest_masterinputs_views;
-            length tempvar class noclass $2000;
-            set psest_masterinputs;
-        /* Expand class and noclass covariates */
-        do i = 1 to countw(class,' ,');
-            word = scan(class,i,' ,');
-            if index(word,'-') = 0 then do;
-                if i = 1 then do;
-                    tempvar=word;
-                end;
-                else do;
-                    tempvar=catx(' ',tempvar,word);
-                end;
+    data pscs_masterinputs_views;
+        length adjustmentmethod weightingmethod modelparameters $40;
+        set pscs_masterinputs(where=(missing(subgroup)));
+        if file = 'psmatchfile' then do;
+            weightingmethod = '';
+            adjustmentmethod = 'Propensity Score Matched';
+            if upcase(ratio) = 'F' then modelparameters="Fixed Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
+            if upcase(ratio) = 'V' then modelparameters="Variable Ratio 1:"||strip(put(ceiling,8.))||', Caliper='||strip(put(caliper,8.2));
+        end;
+        if file = 'stratificationfile' then do;
+            if not missing(strataweight) then do;
+            weightingmethod = strataweight;
+            adjustmentmethod = 'Propensity Score Stratum Weighted';
             end;
             else do;
-                start=input(compress(scan(word,1,'-'),'','A'),8.);
-                end=input(compress(scan(word,-1,'-'),'','A'),8.);
-                do covar = start to end;
-                    if i = 1 and covar = start then do;
-                        tempvar=cats("COVAR",covar);
-                    end;
-                    else do; 
-                        tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                    end;
+            weightingmethod = '';
+            adjustmentmethod = 'Propensity Score Stratified';
+            end;
+        if not missing(percentiles) then modelparameters='Trimmed'||'; Percentiles= '||strip(put(percentiles,8.));
+        else modelparameters='';
+        end;
+        if file = 'covstratfile' then do;
+            weightingmethod = '';
+            adjustmentmethod = 'Covariate Stratified';
+            do i = 1 to countw(stratvars);
+                vars=scan(propcase(stratvars),i);
+                if i = 1 then modelparameters = vars;
+                else modelparameters=catx(',',modelparameters,vars);
+            end;
+        end;
+        if file = 'iptwfile' then do;
+            weightingmethod = ipweight;
+            adjustmentmethod = 'Inverse Probability Treatment Weighted';
+            modelparameters='Trimmed';
+        end;            
+    run;
+
+    data psest_masterinputs_views;
+        length tempvar class noclass $2000;
+        set psest_masterinputs;
+    /* Expand class and noclass covariates */
+    do i = 1 to countw(class,' ,');
+        word = scan(class,i,' ,');
+        if index(word,'-') = 0 then do;
+            if i = 1 then do;
+                tempvar=word;
+            end;
+            else do;
+                tempvar=catx(' ',tempvar,word);
+            end;
+        end;
+        else do;
+            start=input(compress(scan(word,1,'-'),'','A'),8.);
+            end=input(compress(scan(word,-1,'-'),'','A'),8.);
+            do covar = start to end;
+                if i = 1 and covar = start then do;
+                    tempvar=cats("COVAR",covar);
+                end;
+                else do; 
+                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
                 end;
             end;
         end;
-        class=tempvar;
-        do i = 1 to countw(noclass,' ,');
-            word = scan(noclass,i,' ,');
-            if index(word,'-') = 0 then do;
-                if i = 1 then do;
-                    tempvar=word;
-                end;
-                else do;
-                    tempvar=catx(' ',tempvar,word);
-                end;
+    end;
+    class=tempvar;
+    do i = 1 to countw(noclass,' ,');
+        word = scan(noclass,i,' ,');
+        if index(word,'-') = 0 then do;
+            if i = 1 then do;
+                tempvar=word;
             end;
             else do;
-                start=input(compress(scan(word,1,'-'),'','A'),8.);
-                end=input(compress(scan(word,-1,'-'),'','A'),8.);
-                do covar = start to end;
-                    if i = 1 and covar = start then do;
-                        tempvar=cats("COVAR",covar);
-                    end;
-                    else do; 
-                        tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                    end;
+                tempvar=catx(' ',tempvar,word);
+            end;
+        end;
+        else do;
+            start=input(compress(scan(word,1,'-'),'','A'),8.);
+            end=input(compress(scan(word,-1,'-'),'','A'),8.);
+            do covar = start to end;
+                if i = 1 and covar = start then do;
+                    tempvar=cats("COVAR",covar);
+                end;
+                else do; 
+                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
                 end;
             end;
         end;
-        noclass=tempvar;
-        drop tempvar start word end covar i;
-        run;
+    end;
+    noclass=tempvar;
+    drop tempvar start word end covar i;
+    run;
 
     proc sort data=pscs_masterinputs_views nodupkey;
         by runid analysisgrp;
@@ -753,7 +753,7 @@
 		%end;
 
 		/*assign variableorder*/
-	    data _temptable1(keep=monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
+	    data views.table1(keep=monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
 			   		   		  headerlabel variableFilterLabel variableLabel headerorder /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
 						 rename=(metvar30=metvar monitoringperiod2=monitoringperiod));
 		retain monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
@@ -829,9 +829,9 @@
 			end;
 		%end;
 
-			/* Change unicode value to symbol */
-	        if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
-	        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
+		/* Change unicode value to symbol */
+        if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 
 	%end; /* Table1 requested*/
