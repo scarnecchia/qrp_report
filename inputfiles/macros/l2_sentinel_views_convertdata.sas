@@ -67,7 +67,7 @@
             select distinct catx('@',covarnum,studyname)
             into :covarnumlabels 
             separated by '|'
-            from covarname;
+            from covarnameviews;
 
             %if %sysfunc(exist(riskscorefile)) %then %do;
                 select distinct cats(riskscore,'_CAT'), riskscore
@@ -533,13 +533,6 @@
 	run;
 	%end;
 
-	%isdata(dataset=covarname);
-	%if %eval(&nobs.>0) %then %do;
-		proc sort nodupkey data=covarname out=_covarname;
-		by covarnum;
-		run;		
-	%end;
-
 	%let submissing=%str(if missing(subgroup) then subgroup="overall";
 						if missing(subgroupcat) then subgroupcat="overall";
 						if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
@@ -591,7 +584,7 @@
 				   ,c.covarnum
 				   ,c.studyname
 			from views.kmtable as a		
-			left join _covarname as c on a.subgroup=c.cov_varname;
+			left join covarnameviews as c on a.subgroup=c.cov_varname;
 			quit;
 		%end;
 
@@ -729,7 +722,7 @@
 		%end;
 
 		/* Get covariates information */
-		%isdata(dataset=covarname);
+		%isdata(dataset=covarnameviews);
 		%if %eval(&nobs.>0) %then %do;	
 			proc sql noprint undo_policy=none;
 			create table _temptable1 as
@@ -737,13 +730,13 @@
 				   ,c.covarnum
 				   ,c.studyname
 			from _temptable1 as a		
-			left join _covarname as c on a.subgroup=c.cov_varname;
+			left join covarnameviews as c on a.subgroup=c.cov_varname;
 			
 			create table _temptable1 as 
 			select a.*
 				   ,b.studyname as covarlabel
 			from _temptable1 as a 
-			left join _covarname as b
+			left join covarnameviews as b
 			on a.metvar2=upcase(b.cov_varname);
 			quit;		
 		%end;
@@ -963,7 +956,7 @@
 				   ,c.covarnum
 				   ,c.studyname
 			from views.psdist as a		
-			left join _covarname as c on a.subgroup=c.cov_varname;
+			left join covarnameviews as c on a.subgroup=c.cov_varname;
 			quit;
 		%end;
 
