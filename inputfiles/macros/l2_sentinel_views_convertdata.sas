@@ -330,7 +330,6 @@
 	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
 	                rename table=type 
 						   sortorder1=headerorder
-						   sortorder2=variableorder
 						   exp_mean&dpcnt=exp_mean 
 						   exp_std&dpcnt=exp_std 
 						   comp_mean&dpcnt=comp_mean
@@ -344,7 +343,7 @@
                 proc sql noprint undo_policy=none;
                     create table _table1_&dpcnt._&i. as 
                     select 
-                    B.label, B.headerorder, B.grouper, B.variableorder, B.sortorder3, B.sortorder4, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean,
+                    B.label, B.headerorder, B.grouper, B.sortorder2, B.sortorder3, B.sortorder4, B.metvar, B.analysisgrp, B.type, B.weight, B.vartype, B.exp_mean,
                     B.comp_mean, B.exp_std, B.comp_std, B.ad, B.sd, b.subgroup, B.subgroupcat, B.dp, a.periodid2 as monitoringperiod, B.pscovariate, 
                     B.unique_psestimate, B.psestimategrp
                     from monitoringperiod_lookup a right join _table1_&dpcnt._&i. b 
@@ -752,15 +751,37 @@
 			quit;		
 		%end;
 
-		/*assign variableorder*/
+		/*sort to assign variableorder*/
+		proc sort data=_temptable1 out=_temptable1order nodupkey;
+			by headerorder sortorder2 sortorder3 sortorder4;
+		run;
+
+		data _temptable1order;
+			set _temptable1order;
+			by headerorder sortorder2 sortorder3 sortorder4;
+
+			/*assignvariableorder*/
+			variableorder+1;
+			if first.headerorder then variableorder = 1;
+		run;
+
+		proc sort data=_temptable1;
+			by headerorder sortorder2 sortorder3 sortorder4;
+		run;
+			
 	    data views.table1(keep=monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   		   		  headerlabel variableFilterLabel variableLabel headerorder /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
+			   		   		  headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
 						 rename=(metvar30=metvar monitoringperiod2=monitoringperiod));
 		retain monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   headerlabel variableFilterLabel variableLabel headerorder /*variableOrder*/ pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
+			   headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
 		length monitoringperiod2 headerorder 3 metvar30 $30 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
 		format monitoringperiod2 3. metvar30 $30. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
-	    set _temptable1;
+
+	    merge _temptable1 
+			  _temptable1order;
+
+		by headerorder sortorder2 sortorder3 sortorder4;
+
 		metvar30=metvar;	
 		monitoringperiod2=monitoringperiod;
 		&submissing.;
@@ -1008,4 +1029,5 @@
         delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
         _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views; 
     quit;		
+
 %mend l2_sentinel_views_convertdata;
