@@ -263,14 +263,6 @@
             %let check_psdist=%sysfunc(varnum(&dsid,ps_cat));
             %let rc=%sysfunc(close(&dsid));
 
-			/******************************************************************/
-			/* Table 1: Set in all tables
-						Assign PSCOVARIATE and DP indicators
-						Drop rows with missing metvar values
-						Drop char variables
-						Rename variables
-					    All other processing done later*/
-			/******************************************************************/
             %if &check_table1 > 0 %then %do;
                 data _table1_&dpcnt._&i.;
                     set &dsn;
@@ -284,6 +276,9 @@
 		                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
 	                	end;
 	                %end;
+
+					/* Change unicode value to symbol */
+                	if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
             
                 	pscovariate='N';
 	                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
@@ -751,12 +746,11 @@
 			quit;		
 		%end;
 
-		/*sort to assign variableorder*/
-		proc sort data=_temptable1 out=_temptable1order nodupkey;
-			by headerorder sortorder2 sortorder3 sortorder4;
+		/*sort to assign variableorder - need to retain metvar first to resolve metvar values with different sort values*/
+		proc sort data=_temptable1 out=_temptable1order(keep=headerorder sortorder: metvar) nodupkey;
+			by headerorder sortorder2 sortorder3 sortorder4 metvar;
 		run;
-
-		data _temptable1order;
+		data _temptable1order(keep=metvar variableorder);
 			set _temptable1order;
 			by headerorder sortorder2 sortorder3 sortorder4;
 
@@ -765,24 +759,26 @@
 			if first.headerorder then variableorder = 1;
 		run;
 
-		proc sort data=_temptable1;
-			by headerorder sortorder2 sortorder3 sortorder4;
+		proc sort data=_temptable1order nodupkey;
+			by metvar;
 		run;
-			
+		proc sort data=_temptable1;
+			by metvar;
+		run;
+
 	    data views.table1(keep=monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   		   		  headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd
-						 rename=(metvar30=metvar monitoringperiod2=monitoringperiod));
+			   		   		  headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd
+						 rename=(monitoringperiod2=monitoringperiod));
 		retain monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
-			   headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar30 vartype exp_mean exp_std comp_mean comp_std ad sd;
-		length monitoringperiod2 headerorder 3 metvar30 $30 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
-		format monitoringperiod2 3. metvar30 $30. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
+			   headerlabel variableFilterLabel variableLabel headerorder variableOrder pscovariate metvar vartype exp_mean exp_std comp_mean comp_std ad sd;
+		length monitoringperiod2 headerorder 3 metvar $32 subgroup subgroupcat $50 subgrouplabel subgroupcatlabel $500;
+		format monitoringperiod2 3. metvar $32. subgroup subgroupcat $50. headerlabel variableFilterLabel $500. variableLabel $1000.;
 
 	    merge _temptable1 
 			  _temptable1order;
 
-		by headerorder sortorder2 sortorder3 sortorder4;
+		by metvar;
 
-		metvar30=metvar;	
 		monitoringperiod2=monitoringperiod;
 		&submissing.;
 
@@ -851,9 +847,13 @@
 		%end;
 
 		/* Change unicode value to symbol */
-        if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
         if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
+
+		/*resort for easier viewing of table*/
+		proc sort data=views.table1;
+			by analysisgrp type weight headerorder variableorder;
+		run;
 
 	%end; /* Table1 requested*/
 
