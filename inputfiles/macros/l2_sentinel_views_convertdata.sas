@@ -578,34 +578,31 @@
 
     /* Check to see if at least 1 km dataset exists */
     %if &kmtableflag = 1 %then %do;
-        data views.kmtable;
+        data views.kmtable(drop=i);
+		length covarnum 4. studyname $200;
 	    set  _km:;
 		/* No subgroups */
 		%if &check_subgroups=0 %then %do;
-		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
-		length subGroupOrder subGroupCatOrder 3;
-		&suboverall.;
+			format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
+			length subGroupOrder subGroupCatOrder 3;
+			&suboverall.;
 		%end;
+		/* Get covariates information */
+		do i = 1 to countw("&covarnumlabels",'|');
+			%let varlabel=%str(scan("&covarnumlabels",i,'|'));
+			if upcase(subgroup)=cats("COVAR",scan(&varlabel,1,'@')) then do;
+			covarnum=scan(&varlabel,1,'@');
+			studyname=scan(&varlabel,-1,'@');
+			end;
+		end;		
 		if dpidsiteid="ALL" or (dpidsiteid ne "all" and missing(subgroup));
 		run;
-
+		
 		/* Get subgroups information */
 		%if &check_subgroups>0 %then %do;			
 			%getsubgroupsinfo(dataset=views.kmtable);
 		%end;
-
-		/* Get covariates information */
-		%if &check_covars > 0 %then %do;
-			proc sql noprint undo_policy=none;
-			create table views.kmtable as
-			select a.*			   
-				   ,c.covarnum
-				   ,c.studyname
-			from views.kmtable as a		
-			left join _covarname as c on a.subgroup=c.cov_varname;
-			quit;
-		%end;
-
+		
 	    data views.kmtable(keep=monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
 			   					subGroupOrder subGroupCatOrder time atrisk KM_estimate lowerci upperci);
 		retain monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
