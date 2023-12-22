@@ -76,7 +76,6 @@
             %end;
         quit;
 
-
         data pscs_masterinputs_views;
             length adjustmentmethod weightingmethod modelparameters $40;
             set pscs_masterinputs(where=(missing(subgroup)));
@@ -550,6 +549,18 @@
 						SubgroupCatLabel="Overall Analysis";
 						subGroupOrder=1;
 						subGroupCatOrder=1;);
+	%let subgroupcovar=%str(if index(subgroup,'covar')>0 then do;		
+								subgrouplabel=resolve(strip(cats('&study',subgroup)));
+								if subgroupcat="1" then do;
+									subgroupcatlabel="Yes";
+									subGroupCatOrder=2;
+								end;
+								else do;
+									subgroupcatlabel="No";
+									subGroupCatOrder=1;
+								end;
+								subGroupOrder=1000+put(compress(subgroup,'','A'),8.);
+							end;);						
 
 	%macro getsubgroupsinfo(dataset=);
 		proc sql noprint undo_policy=none;
@@ -608,18 +619,7 @@
 
 		/* Specify correct values for covariates */
 		%if &check_covars > 0 %then %do;
-		if not missing(covarnum) then do;
-			subgrouplabel=studyname;
-			if subgroupcat="1" then do;
-				subgroupcatlabel="Yes";
-				subGroupCatOrder=2;
-			end;
-			else do;
-				subgroupcatlabel="No";
-				subGroupCatOrder=1;
-			end;
-			subGroupOrder=1000+covarnum;
-		end;
+			&subgroupcovar;
 		%end;
 	    run;
     %end; /* KM data requested */
@@ -806,18 +806,7 @@
 
 		/* Specify correct values for covariates */
 		%if &nobs > 0 %then %do;
-			if not missing(covarnum) then do;
-				subgrouplabel=studyname;
-				if subgroupcat="1" then do;
-					subgroupcatlabel="Yes";
-					subGroupCatOrder=2;
-				end;
-				else do;
-					subgroupcatlabel="No";
-					subGroupCatOrder=1;
-				end;
-				subGroupOrder=1000+covarnum;
-			end;
+			&subgroupcovar;
 		%end;
 
 		/* Change unicode value to symbol */
@@ -902,7 +891,7 @@
 			subGroupOrder=1000+covarnum;
 		end;
 	    run;
-
+	
 		data views.analysisgroup;
 		retain analysisgrp analysisgrptitle exposure exposurelabel reference referencelabel outcome design adjustmentmethod modelparameters weightingmethod sortingorder;
         set analysistable;
@@ -966,7 +955,7 @@
 			left join _covarname as c on a.subgroup=c.cov_varname;
 			quit;
 		%end;
-
+		
 	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount ps_cat3=ps_cat) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref);
 		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref;
 		length ps_cat3 3 dp $10 Type weight $30 subgroup subgroupcat $50 _eoi _ref bin_eoi bin_ref 8;
@@ -974,27 +963,13 @@
 	    set views.psdist;
 		ps_cat3=ps_cat;
 		if dp="agg" then dp="Aggregate";
-		if missing(subgroup) then subgroup="overall";
-		if missing(subgroupcat) then subgroupcat="overall";
-		if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
-		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
-
+		&submissing.;
 		/* Specify correct values for covariates */
 		%if &check_covars > 0 %then %do;
-		if not missing(covarnum) then do;
-			subgrouplabel=studyname;
-			if subgroupcat="1" then do;
-				subgroupcatlabel="Yes";
-				subGroupCatOrder=2;
-			end;
-			else do;
-				subgroupcatlabel="No";
-				subGroupCatOrder=1;
-			end;
-			subGroupOrder=1000+covarnum;
-		end;
+			&subgroupcovar;
 		%end;
 	    run;
+	
     %end; /* PS distribution data requested */   
 
     proc datasets library=work nolist nowarn;
