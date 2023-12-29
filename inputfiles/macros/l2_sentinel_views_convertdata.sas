@@ -677,6 +677,9 @@
 		%if &check_covars > 0 %then %do;
 			&subgroupcovar;
 		%end;
+
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
     %end; /* KM data requested */
 
@@ -953,6 +956,9 @@
 			SubgroupDashboardLabel = strip(tabletitle) || ": " || strip(subgroupcatlabel);
 			subGroupOrder=1000+covarnum;
 		end;
+
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 	
     run;
@@ -1036,6 +1042,9 @@
 		%if &check_covars > 0 %then %do;
 			&subgroupcovar;
 		%end;
+
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 	
     %end; /* PS distribution data requested */   
