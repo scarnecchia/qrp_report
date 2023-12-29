@@ -120,9 +120,10 @@
         end;            
     run;
 
+	/*Expand class/noclass parameters*/
     data psest_masterinputs_views;
         length tempvar class noclass $2000;
-        set psest_masterinputs;
+        set psest_masterinputs(keep=psestimategrp eoi ref class noclass);
 
 	    /* Expand class and noclass covariates in order to assign PSCOVARIATE variable */
 	    do i = 1 to countw(class,' ,');
@@ -242,10 +243,11 @@
 	%end;
 	
 	proc sql noprint;		
+		/*Put list of PS model variables into macro variable*/
 		select distinct catx('#',psgrp,tempvar) length=4000
         into :psmodelvars separated by '|'
         from (select coalescec(a.psestimategrp,b.psestimategrp) as psgrp, catx(' ',upper(compbl(class)), upper(compbl(noclass))) as tempvar length=4000 
-              from psest_masterinputs a, pscs_masterinputs b
+              from psest_masterinputs_views a, pscs_masterinputs b
               where a.psestimategrp = b.psestimategrp);      
 
 	 	/* Read in all datasets */
