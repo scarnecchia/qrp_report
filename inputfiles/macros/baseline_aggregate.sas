@@ -473,7 +473,7 @@
                 monitoringperiod=&periodid;
             run;
 
-			%if &outputviewsdata=Y %then %do;		
+			%if %length(&labcharacteristics) > 0 and &outputviewsdata=Y %then %do;		
 			data Covarlabunits;
 			set _labvarsname(where=(index(metvar, "LBUNIT")>0));		
 			metvar=strip(tranwrd(metvar,"N_",""));	

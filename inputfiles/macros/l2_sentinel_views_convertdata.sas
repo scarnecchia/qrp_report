@@ -792,6 +792,15 @@
 		/* Get covariates information */
 		%isdata(dataset=covarname);
 		%if %eval(&nobs.>0) %then %do;	
+			%isdata(dataset=Covarlabunits);
+			%if %eval(&nobs.<=0) %then %do;
+			data Covarlabunits;
+			metvar="";
+			labunit="";
+			if _N_<1;
+			run;
+			%end;
+
 			proc sql noprint undo_policy=none;
 			create table _temptable1 as
 			select a.*			   
