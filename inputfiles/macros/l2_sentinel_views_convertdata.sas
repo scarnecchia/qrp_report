@@ -807,7 +807,18 @@
 			from _temptable1 as a 
 			left join _covarname as b
 			on a.metvar2=upcase(b.cov_varname);
-			quit;		
+			quit;	
+
+			%if %quote(&labcharacteristics) ^= %str("missing") %then %do;			
+			proc sql noprint undo_policy=none;
+			create table _temptable1 as 
+			select a.*
+				   ,b.labunit
+			from _temptable1 as a 
+			left join Covarlabunits as b
+			on a.metvar2=b.metvar;
+			quit;	
+			%end;	
 		%end;
 
 	    data _temptable1(keep=table1order monitoringperiod2 analysisgrp type weight dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder
@@ -831,10 +842,12 @@
 		else if prxmatch('/HISPANIC*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
 
 		variableFilterLabel=label;
-		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (continuous)";
+		%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (" || strip(labunit) || ") (continuous)";
 		else if grouper="Laboratory Characteristics" then variableFilterLabel=strip(covarlabel) || ": " || strip(label);
+		%end;
 		%if %sysfunc(exist(riskscorefile)) %then %do;
-		else if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
+		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
 			variableFilterLabel=strip(label) || " (continuous)";
 			pscovariate=riskscore_pscovariate;
 		end;

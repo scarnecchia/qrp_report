@@ -452,6 +452,7 @@
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
+		/*if lab covariates are requested, need to create Covarlabunits only once since covariates are the same for all periods*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
             data &outdata. (drop=dpidsiteid) 
 			     _baseline_agg_&periodid. (rename=(exp_mean&dpnumber.=exp_mean
@@ -465,12 +466,29 @@
 												   exp_w1_&dpnumber.=exp_w
 												   exp_w2_&dpnumber.=exp_w2
 												   comp_w1_&dpnumber.=comp_w
-												   comp_w2_&dpnumber.=comp_w2));
+												   comp_w2_&dpnumber.=comp_w2))
+				%if %quote(&labcharacteristics) ^= %str("missing") and &outputviewsdata=Y %then %do;
+				Covarlabunits(keep=metvar _label_ where=(index(metvar, "LBUNIT")>0));
+				%end;
+				;
                 set _temp_baseline_stacked;
 				length dpidsiteid $6 monitoringperiod 3;
                 dpidsiteid = "&maskedid."; 
                 monitoringperiod=&periodid;
             run;
+
+			%if %quote(&labcharacteristics) ^= %str("missing") and &outputviewsdata=Y %then %do;
+			proc sort nodupkey data=Covarlabunits;
+			by metvar _label_;
+			run;
+
+			data Covarlabunits;
+			set Covarlabunits;		
+			metvar=strip(tranwrd(metvar,"N_",""));	
+			metvar=substr(metvar, 1, index(metvar,"LBUNIT")-1);
+			rename _label_=labunit;
+			run;
+			%end;
         %end;
         %else %do;
             data &outdata.;
@@ -498,7 +516,7 @@
                 end;  
             run;
         %end;
-		
+	
         proc sort data=_baseline_agg_&periodid.; 
             by dpidsiteid analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
