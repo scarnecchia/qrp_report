@@ -777,8 +777,7 @@
 			proc sql noprint undo_policy=none;
 			create table _temptable1 as 
 			select a.*
-				   ,b.label as riskscorelabel
-				   ,b.pscovariate as riskscore_pscovariate
+				   ,b.label as riskscorelabel				   
 			from _temptable1 as a 
 			left join _riskscores_info as b
 			on a.metvar2=b.metvar2;
@@ -848,12 +847,10 @@
 		%end;
 		%if %sysfunc(exist(riskscorefile)) %then %do;
 		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
-			variableFilterLabel=strip(label) || " (continuous)";
-			pscovariate=riskscore_pscovariate;
+			variableFilterLabel=strip(label) || " (continuous)";			
 		end;
 		else if prxmatch("/&riskscorelist/i",metvar) then do;
-			variableFilterLabel=strip(riskscorelabel) || ": " || strip(label);
-			pscovariate=riskscore_pscovariate;
+			variableFilterLabel=strip(riskscorelabel) || ": " || strip(label);			
 		end;
 		/* Remove SAS specific coding for CHA2DS2VASC (currently coded as: CHA^{sub 2}DS^{sub 2}-VASc) */
 		if metvar = "CHA2DS2VASC" then variableFilterLabel="CHA2DS2-VASc score";
