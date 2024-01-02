@@ -466,27 +466,19 @@
 												   exp_w1_&dpnumber.=exp_w
 												   exp_w2_&dpnumber.=exp_w2
 												   comp_w1_&dpnumber.=comp_w
-												   comp_w2_&dpnumber.=comp_w2))
-				%if %quote(&labcharacteristics) ^= %str("missing") and &outputviewsdata=Y %then %do;
-				Covarlabunits(keep=metvar _label_ where=(index(metvar, "LBUNIT")>0));
-				%end;
-				;
+												   comp_w2_&dpnumber.=comp_w2));
                 set _temp_baseline_stacked;
 				length dpidsiteid $6 monitoringperiod 3;
                 dpidsiteid = "&maskedid."; 
                 monitoringperiod=&periodid;
             run;
 
-			%if %quote(&labcharacteristics) ^= %str("missing") and &outputviewsdata=Y %then %do;
-			proc sort nodupkey data=Covarlabunits;
-			by metvar _label_;
-			run;
-
+			%if &outputviewsdata=Y %then %do;		
 			data Covarlabunits;
-			set Covarlabunits;		
+			set _labvarsname(where=(index(metvar, "LBUNIT")>0));		
 			metvar=strip(tranwrd(metvar,"N_",""));	
 			metvar=substr(metvar, 1, index(metvar,"LBUNIT")-1);
-			rename _label_=labunit;
+			rename label=labunit;
 			run;
 			%end;
         %end;
