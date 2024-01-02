@@ -452,7 +452,7 @@
         run;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
-		/*if lab covariates are requested, need to create Covarlabunits only once since covariates are the same for all periods*/
+		/*if lab covariates are requested and views are also requested for a level 2 request, need to create Covarlabunits (only once since covariates are the same for all periods)*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
             data &outdata. (drop=dpidsiteid) 
 			     _baseline_agg_&periodid. (rename=(exp_mean&dpnumber.=exp_mean
@@ -473,7 +473,7 @@
                 monitoringperiod=&periodid;
             run;
 
-			%if %length(&labcharacteristics) > 0 and &outputviewsdata=Y %then %do;		
+			%if %length(&labcharacteristics) > 0 and %eval(&level.=2) and &outputviewsdata=Y %then %do;		
 			data Covarlabunits;
 			set _labvarsname(where=(index(metvar, "LBUNIT")>0));		
 			metvar=strip(tranwrd(metvar,"N_",""));	
