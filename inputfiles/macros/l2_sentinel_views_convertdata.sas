@@ -308,9 +308,7 @@
 		                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
 	                	end;
 	                %end;
-            
                 	pscovariate='N';
-
 	                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
 	                    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
 	                    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
