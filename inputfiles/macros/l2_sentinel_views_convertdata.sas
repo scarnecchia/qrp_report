@@ -709,10 +709,10 @@
 	    %if %length(&uniquepsest) > 0 %then %do;
 	        %do x = 1 %to %sysfunc(countw(&psestgrp));
 	            %let psgrpvalue = %scan(&psestgrp,&x);
-	            /* Create the main unadjusted datasets that need to be merged on */
+	            /* Create the main unadjusted datasets that need to be merged on. Need to restrict to observations with missing subgroups */
 	            data table1_unadj_&x.;
 	                set table1;
-	                where unique_psestimate = 1 and psestimategrp = "&psgrpvalue" and type="Unadjusted";
+	                where unique_psestimate = 1 and psestimategrp = "&psgrpvalue" and type="Unadjusted" and missing(subgroup);
 	            run;
 
 	            %let unadjgroups=;
