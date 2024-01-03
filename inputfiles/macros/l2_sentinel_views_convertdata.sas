@@ -111,7 +111,6 @@
                 vars=scan(propcase(stratvars),i);
                 if i = 1 then modelparameters = vars;
                 else modelparameters=catx(',',modelparameters,vars);
-
             end;
         end;
         if file = 'iptwfile' then do;
@@ -917,7 +916,7 @@
 
 		/*resort for easier viewing of table*/
 		proc sort data=views.table1;
-			by analysisgrp type weight headerorder variableorder;
+			by analysisgrp type weight dp subgrouporder subgroupcatorder headerorder variableorder;
 		run;
 
 	%end; /* Table1 requested*/
