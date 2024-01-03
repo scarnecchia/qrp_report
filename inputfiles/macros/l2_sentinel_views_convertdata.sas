@@ -43,6 +43,12 @@
 
 %macro l2_sentinel_views_convertdata(queryID=,jirakey=,userid=,studytitle=);
 
+	/********************************************************/
+	/* Set up and create Views specific PSCS Master input   */
+    /* file to drive the creation of the ANALYSISGROUP and  */
+ 	/* BASELINE files										*/
+	/********************************************************/
+
 	proc datasets library=views kill nowarn nolist; run; quit;
 
     %let kmtableflag = ;
@@ -52,9 +58,10 @@
     %let repdatadsn=;
     %let psmodelvars=;
     %let riskscore_regex=;
+	%let dupperiods=0;
 
-    /* Check to see if same periods were specified */
-    %let dupperiods=0;
+    /* Check to see if multiple monitoring period files are specified. If so, need to recode 
+	   periodID (monitoringperiod) to a Views specific value */
     proc sql noprint;
         select count(*) 
         into :dupperiods trimmed 
@@ -75,7 +82,6 @@
             from riskscorefile;
         %end;
     quit;
-
 
     data pscs_masterinputs_views;
         length adjustmentmethod weightingmethod modelparameters $40;
@@ -105,6 +111,7 @@
                 vars=scan(propcase(stratvars),i);
                 if i = 1 then modelparameters = vars;
                 else modelparameters=catx(',',modelparameters,vars);
+
             end;
         end;
         if file = 'iptwfile' then do;
@@ -114,59 +121,61 @@
         end;            
     run;
 
+	/*Expand class/noclass parameters*/
     data psest_masterinputs_views;
         length tempvar class noclass $2000;
-        set psest_masterinputs;
-    /* Expand class and noclass covariates */
-    do i = 1 to countw(class,' ,');
-        word = scan(class,i,' ,');
-        if index(word,'-') = 0 then do;
-            if i = 1 then do;
-                tempvar=word;
-            end;
-            else do;
-                tempvar=catx(' ',tempvar,word);
-            end;
-        end;
-        else do;
-            start=input(compress(scan(word,1,'-'),'','A'),8.);
-            end=input(compress(scan(word,-1,'-'),'','A'),8.);
-            do covar = start to end;
-                if i = 1 and covar = start then do;
-                    tempvar=cats("COVAR",covar);
-                end;
-                else do; 
-                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                end;
-            end;
-        end;
-    end;
-    class=tempvar;
-    do i = 1 to countw(noclass,' ,');
-        word = scan(noclass,i,' ,');
-        if index(word,'-') = 0 then do;
-            if i = 1 then do;
-                tempvar=word;
-            end;
-            else do;
-                tempvar=catx(' ',tempvar,word);
-            end;
-        end;
-        else do;
-            start=input(compress(scan(word,1,'-'),'','A'),8.);
-            end=input(compress(scan(word,-1,'-'),'','A'),8.);
-            do covar = start to end;
-                if i = 1 and covar = start then do;
-                    tempvar=cats("COVAR",covar);
-                end;
-                else do; 
-                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
-                end;
-            end;
-        end;
-    end;
-    noclass=tempvar;
-    drop tempvar start word end covar i;
+        set psest_masterinputs(keep=psestimategrp eoi ref class noclass);
+
+	    /* Expand class and noclass covariates in order to assign PSCOVARIATE variable */
+	    do i = 1 to countw(class,' ,');
+	        word = scan(class,i,' ,');
+	        if index(word,'-') = 0 then do;
+	            if i = 1 then do;
+	                tempvar=word;
+	            end;
+	            else do;
+	                tempvar=catx(' ',tempvar,word);
+	            end;
+	        end;
+	        else do;
+	            start=input(compress(scan(word,1,'-'),'','A'),8.);
+	            end=input(compress(scan(word,-1,'-'),'','A'),8.);
+	            do covar = start to end;
+	                if i = 1 and covar = start then do;
+	                    tempvar=cats("COVAR",covar);
+	                end;
+	                else do; 
+	                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
+	                end;
+	            end;
+	        end;
+	    end;
+	    class=tempvar;
+	    do i = 1 to countw(noclass,' ,');
+	        word = scan(noclass,i,' ,');
+	        if index(word,'-') = 0 then do;
+	            if i = 1 then do;
+	                tempvar=word;
+	            end;
+	            else do;
+	                tempvar=catx(' ',tempvar,word);
+	            end;
+	        end;
+	        else do;
+	            start=input(compress(scan(word,1,'-'),'','A'),8.);
+	            end=input(compress(scan(word,-1,'-'),'','A'),8.);
+	            do covar = start to end;
+	                if i = 1 and covar = start then do;
+	                    tempvar=cats("COVAR",covar);
+	                end;
+	                else do; 
+	                    tempvar=catx(' ',tempvar,cats("COVAR",covar));
+	                end;
+	            end;
+	        end;
+	    end;
+	    noclass=tempvar;
+	    drop tempvar start word end covar i;
     run;
 
     proc sort data=pscs_masterinputs_views nodupkey;
@@ -184,6 +193,10 @@
 	        from baselinefile;
 		quit;
 	%end;
+
+	/********************************************************/
+	/* Create ANALYSISGROUP file					     	*/
+	/********************************************************/
 
 	%isdata(dataset=l2comparisonfile);
 	%if %eval(&nobs.>0) %then %do;
@@ -223,13 +236,19 @@
         %end;
         ;         
     	quit;
+
+		data views.analysisgroup;
+		retain analysisgrp analysisgrptitle exposure exposurelabel reference referencelabel outcome design adjustmentmethod modelparameters weightingmethod sortingorder;
+        set analysistable;
+        drop runid;
 	%end;
 	
 	proc sql noprint;		
+		/*Put list of PS model variables into macro variable*/
 		select distinct catx('#',psgrp,tempvar) length=4000
         into :psmodelvars separated by '|'
         from (select coalescec(a.psestimategrp,b.psestimategrp) as psgrp, catx(' ',upper(compbl(class)), upper(compbl(noclass))) as tempvar length=4000 
-              from psest_masterinputs a, pscs_masterinputs b
+              from psest_masterinputs_views a, pscs_masterinputs b
               where a.psestimategrp = b.psestimategrp);      
 
 	 	/* Read in all datasets */
@@ -251,7 +270,12 @@
     quit;
     %end;
 
-    /* Loop all datasets to determine which it is */
+	/********************************************************/
+	/* Loop through all REPORTDATA datasets to determine which 
+	   should be read in. If multiple monitoring period,
+	   recode the monitoringperiod variable 				*/
+	/********************************************************/
+
     %do i = 1 %to %sysfunc(countw(&repdatadsn,@));
         %let dsn = %scan(&repdatadsn,&i,@);
         %do dpcnt = 0 %to &num_dp;
@@ -263,6 +287,14 @@
             %let check_psdist=%sysfunc(varnum(&dsid,ps_cat));
             %let rc=%sysfunc(close(&dsid));
 
+			/******************************************************************/
+			/* Table 1: Set in all tables
+						Assign PSCOVARIATE and DP indicators
+						Drop rows with missing metvar values
+						Drop char variables
+						Rename variables
+					    All other processing done later	*/
+			/******************************************************************/
             %if &check_table1 > 0 %then %do;
                 data _table1_&dpcnt._&i.;
                     set &dsn;
@@ -276,11 +308,9 @@
 		                    psestimategrp="%scan(%substr(&comb,%index(&comb,@)+1),1,%str(|))";
 	                	end;
 	                %end;
-
-					/* Change unicode value to symbol */
-                	if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
             
                 	pscovariate='N';
+
 	                %do m = 1 %to %sysfunc(countw(&psmodelvars,%str(|)));
 	                    %let psmodelcomb = %scan(&psmodelvars,&m,%str(|));
 	                    %let psestgrp = %scan(&psmodelcomb,1,%str(#));
@@ -330,6 +360,7 @@
 						   comp_mean&dpcnt=comp_mean
 						   comp_std&dpcnt.=comp_std
 	                       sd&dpcnt=sd ad&dpcnt=ad;
+
 	                drop exp_mean&dpcnt._char exp_std&dpcnt._char comp_mean&dpcnt._char comp_std&dpcnt._char sd&dpcnt._char ad&dpcnt._char;
                 run;
 
@@ -347,160 +378,182 @@
                 %end;
             %end;/* Check table 1 */
 
-        /* Only set in aggregate tables */
-        %if &dpcnt = 0 %then %do;
-            /* Check and output propensity score distribution datasets */
-            %if &check_psdist > 0 %then %do; 
-                %let psdistflag = 1;
-                data _psdist_&i;
-                    set &dsn;
-                run;
-            %end;
+        	/* For other tables, do not need to loop through DP, since DP specific data is contained within one table */
+        	%if &dpcnt = 0 %then %do;
 
-            %if &check_table2 > 0 %then %do;
+				/******************************************************************/
+				/* PS Distribution datasets
+				/******************************************************************/
+				%if &check_psdist > 0 %then %do; 
+	                %let psdistflag = 1;
+	                data _psdist_&i;
+	                    set &dsn;
+	                run;
+	            %end;
 
-                %let deletesubgroups=;
-                proc sql noprint; 
-                    select distinct subgroup 
-                    into :deletesubgroups separated by ' '
-                    from &dsn;
-                quit; 
+				/******************************************************************/
+				/* Effect Estimate datasets: Subgroup tables also contain overall */
+				/* rows, which should be deleted								  */
+				/******************************************************************/
+	            %if &check_table2 > 0 %then %do;
 
-                data _effectest_&i(drop=varlabel i);
-                    set &dsn;
-                    length varlabel $2000 covarnum_label $500;                                                      
-                    /* Remove overall rows from subgroup tables */
-                    %if %length(&deletesubgroups) > 0 %then %do; 
-                    if missing(subgroup) then delete;
-                    %end;
-                    if index(subgroup,'covar') then do;
-						COVARNUM=put(compress(subgroup,'','A'),8.);                    
-                        do i = 1 to countw("&covarnumlabels",'|');
-                            varlabel = scan("&covarnumlabels",i,'|');
-                            if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
-                        end; 
-                    end;
-					else COVARNUM=.;      
-                    drop subgroup;
-                run;
-                %if &dupperiods > 1 %then %do;
-                    proc sql noprint undo_policy=none;
-                        create table _effectest_&i. as 
-                        select B.medicalproduct, B.subgroupcat, B.analysisgrp, B.analysis, 
-                                a.periodid2 as monitoringperiod, B.COVARNUM, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
-                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
-                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
-                                B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
-                                B.analysisgrpsort, B.tabletitle, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
-                                %if &labelfileexists = Y %then %do; B.LABEL, B.medicalproduct_labeled, %end; B.COVARNUM_Label
-                        from monitoringperiod_lookup a right join _effectest_&i. b 
-                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
-                    quit;
-                %end;
-            %end;
+	                %let deletesubgroups=;
+	                proc sql noprint; 
+	                    select distinct subgroup 
+	                    into :deletesubgroups separated by ' '
+	                    from &dsn;
+	                quit; 
 
-            %if &check_attrtable > 0 %then %do;
-                data _attrition_&i(keep=monitoringperiod analysisgrp medicalproduct level descr remaining excluded);
-                    length analysisgrp medicalproduct $40;
-                    set &dsn;
-                    analysisgrp=scan(group,1,'@');
-                    medicalproduct=scan(group,-1,'@');
-                    rename report_descr = descr
-                           agg_remaining = remaining 
-                           agg_excluded = excluded;
-                run;
-                %if &dupperiods > 1 %then %do;
-                    proc sql noprint undo_policy=none;
-                        create table _attrition_&i. as 
-                        select B.analysisgrp, B.medicalproduct, B.descr, B.level, B.remaining, B.excluded, 
-                               a.periodid2 as monitoringperiod
-                        from monitoringperiod_lookup a right join _attrition_&i. b 
-                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                        order by analysisgrp, level, descr;
-                    quit;
-                %end;
-            %end;
+	                data _effectest_&i(drop=varlabel i);
+	                    set &dsn;
+	                    length varlabel $2000 covarnum_label $500;                                                      
+	                    /* Remove overall rows from subgroup tables */
+	                    %if %length(&deletesubgroups) > 0 %then %do; 
+	                    if missing(subgroup) then delete;
+	                    %end;
+	                    if index(subgroup,'covar') then do;
+							COVARNUM=put(compress(subgroup,'','A'),8.);                    
+	                        do i = 1 to countw("&covarnumlabels",'|');
+	                            varlabel = scan("&covarnumlabels",i,'|');
+	                            if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
+	                        end; 
+	                    end;
+						else COVARNUM=.;      
+	                    drop subgroup;
+	                run;
+	                %if &dupperiods > 1 %then %do;
+	                    proc sql noprint undo_policy=none;
+	                        create table _effectest_&i. as 
+	                        select B.medicalproduct, B.subgroupcat, B.subgroupcatlabel, B.analysisgrp, B.analysis, 
+	                                a.periodid2 as monitoringperiod, B.COVARNUM, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
+	                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
+	                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
+	                                B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
+	                                B.analysisgrpsort, B.tabletitle, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
+	                                B.COVARNUM_Label
+	                        from monitoringperiod_lookup a right join _effectest_&i. b 
+	                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
+	                    quit;
+	                %end;
+	            %end;
 
-            %if &check_kmtable > 0 %then %do;
-                /* Check that at least one kmtable was created */
-                %let kmtableflag = 1;
+				/******************************************************************/
+				/* Attrition table
+				/******************************************************************/
 
-                proc contents data = &dsn noprint out=_metanames(keep=name);
-                run;
+	            %if &check_attrtable > 0 %then %do;
+	                data _attrition_&i(keep=monitoringperiod analysisgrp medicalproduct level descr remaining excluded);
+	                    length analysisgrp medicalproduct $40;
+	                    set &dsn;
+	                    analysisgrp=scan(group,1,'@');
+	                    medicalproduct=scan(group,-1,'@');
+	                    rename report_descr = descr
+	                           agg_remaining = remaining 
+	                           agg_excluded = excluded;
+	                run;
+	                %if &dupperiods > 1 %then %do;
+	                    proc sql noprint undo_policy=none;
+	                        create table _attrition_&i. as 
+	                        select B.analysisgrp, B.medicalproduct, B.descr, B.level, B.remaining, B.excluded, 
+	                               a.periodid2 as monitoringperiod
+	                        from monitoringperiod_lookup a right join _attrition_&i. b 
+	                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
+	                        order by analysisgrp, level, descr;
+	                    quit;
+	                %end;
+	            %end;
 
-                /* Store at risk columns and km columns in macro variables to be transposed */
-                proc sql noprint;
-                    select lower(name) 
-                    into :atriskcols 
-                    separated by ' '
-                    from _metanames
-                    where lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp' /* 'episodes_atriskunexp_wght' */);
+				/******************************************************************/
+				/* KM Table: Need to transpose data
+				/******************************************************************/
+	            %if &check_kmtable > 0 %then %do;
+	                /* Check that at least one kmtable was created */
+	                %let kmtableflag = 1;
 
-                    select lower(name)  
-                    into :kmcols 
-                    separated by ' '
-                    from _metanames
-                    where lower(name) in ('km_evexp' 'km_evunexp' /* 'km_evunexp_wght' */);
-                quit;
+	                proc contents data = &dsn noprint out=_metanames(keep=name);
+	                run;
 
-				%let dsid=%sysfunc(open(&dsn));
-	    		%let check_ci=%sysfunc(varnum(&dsid,lowerCI_exp));	    		  
-	    		%let rc=%sysfunc(close(&dsid));
+	                /* Store at risk columns and km columns in macro variables to be transposed */
+	                proc sql noprint;
+	                    select lower(name) 
+	                    into :atriskcols 
+	                    separated by ' '
+	                    from _metanames
+	                    where lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp' /* 'episodes_atriskunexp_wght' */);
 
-                data _null_;
-                    if _n_=1 then do; 
-                    dcl hash H(multidata:'y') ;   
-                    h.definekey("analysisgrp") ;   
-                    h.definedata("time", "subgroup", "subgroupcat", "dpidsiteid", "atrisk", "Km_estimate", "analysisgrp", "group", "medicalproduct", "analysis", "monitoringperiod", "lowerci", "upperci");  
-                    h.definedone() ;   
-                    end;
-                    length analysisgrp group medicalproduct $40 analysis $13;
-                    set &dsn(rename=(day=time)) end=lr;
-                    array t eoi ref;
-                    array w eoilabel reflabel;
-                    array z &atriskcols;
-                    array y &kmcols;
-					%if &check_ci. > 0 %then %do;
-					array l lowerCI_exp lowerCI_unexp;
-					array u upperCI_exp upperCI_unexp;
-					%end;
-                    do over z;
-                        if not missing(z) then do;
-                        medicalproduct=t;
-                        atrisk=z;
-                        group=w;
-                        Km_estimate=y;
+	                    select lower(name)  
+	                    into :kmcols 
+	                    separated by ' '
+	                    from _metanames
+	                    where lower(name) in ('km_evexp' 'km_evunexp' /* 'km_evunexp_wght' */);
+	                quit;
+
+					%let dsid=%sysfunc(open(&dsn));
+		    		%let check_ci=%sysfunc(varnum(&dsid,lowerCI_exp));	    		  
+		    		%let rc=%sysfunc(close(&dsid));
+
+	                data _null_;
+	                    if _n_=1 then do; 
+	                    dcl hash H(multidata:'y') ;   
+	                    h.definekey("analysisgrp") ;   
+	                    h.definedata("time", "subgroup", "subgroupcat", "dpidsiteid", "atrisk", "Km_estimate", "analysisgrp", "group", "medicalproduct", "analysis", "monitoringperiod", "lowerci", "upperci");  
+	                    h.definedone() ;   
+	                    end;
+	                    length analysisgrp group medicalproduct $40 analysis $13;
+	                    set &dsn(rename=(day=time)) end=lr;
+	                    array t eoi ref;
+	                    array w eoilabel reflabel;
+	                    array z &atriskcols;
+	                    array y &kmcols;
 						%if &check_ci. > 0 %then %do;
-						lowerci=l;
-						upperci=u;
+						array l lowerCI_exp lowerCI_unexp;
+						array u upperCI_exp upperCI_unexp;
 						%end;
-						%else %do;
-						lowerci=.;
-						upperci=.;
-						%end;
-                        h.add();
-                        end;
-                    end;
-                    if lr then h.output(dataset:"_km_&i");
-                    run;
+	                    do over z;
+	                        if not missing(z) then do;
+	                        medicalproduct=t;
+	                        atrisk=z;
+	                        group=w;
+	                        Km_estimate=y;
+							%if &check_ci. > 0 %then %do;
+							lowerci=l;
+							upperci=u;
+							%end;
+							%else %do;
+							lowerci=.;
+							upperci=.;
+							%end;
+	                        h.add();
+	                        end;
+	                    end;
+	                    if lr then h.output(dataset:"_km_&i");
+	                    run;
 
-                %if &dupperiods > 1 %then %do;
-                proc sql noprint undo_policy=none feedback;
-                    create table _km_&i. as
-                    select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct, B.lowerci, B.upperci,
-                    B.analysis, b.subgroup, b.subgroupcat, b.dpidsiteid, a.periodid2 as monitoringperiod
-                    from monitoringperiod_lookup a right join _km_&i. b
-                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
-                    order by time, atrisk, Km_estimate, analysisgrp, group, B.medicalproduct,
-                    B.analysis, a.periodid2;
-                quit;
-                %end; /* dupperiods */
-            %end; /* Check KM table */
-        %end; /* dpcnt = 0 */
+	                %if &dupperiods > 1 %then %do;
+	                proc sql noprint undo_policy=none feedback;
+	                    create table _km_&i. as
+	                    select B.time, B.atrisk, B.Km_estimate, B.analysisgrp, B.group, B.medicalproduct, B.lowerci, B.upperci,
+	                    B.analysis, b.subgroup, b.subgroupcat, b.dpidsiteid, a.periodid2 as monitoringperiod
+	                    from monitoringperiod_lookup a right join _km_&i. b
+	                    on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp
+	                    order by time, atrisk, Km_estimate, analysisgrp, group, B.medicalproduct,
+	                    B.analysis, a.periodid2;
+	                quit;
+	                %end; /* dupperiods */
+	            %end; /* Check KM table */
+        	%end; /* dpcnt = 0 */
         %end; /* dpcnt */
     %end; /* i */
 
-    /* Output all transformed tables to folder */
+
+	/********************************************************/
+	/* Additional processing of datasets and save
+    /* all tables to folder views folder 					
+	/********************************************************/
+
+	/********************************************************/
+	/* Study table
+	/********************************************************/
     data views.study;
         length queryid jirakey $40 studytitle $1000 userid $80;
         queryid="&queryid";
@@ -525,7 +578,11 @@
             output;
     run;
 
-	/* Verify if subgroups and covariates information are available in pscs_masterinputs */
+
+	/*****************************************(**********************************************/
+	/* All tables: 
+	/*    Verify if subgroups and covariates information are available in pscs_masterinputs */
+	/*****************************************(*********************************************/
 	%let dsid=%sysfunc(open(Pscs_masterinputs));
     %let check_subgroups=%sysfunc(varnum(&dsid,subgroup));
     %let check_covars=%sysfunc(varnum(&dsid,covar));          
@@ -549,6 +606,18 @@
 						SubgroupCatLabel="Overall Analysis";
 						subGroupOrder=1;
 						subGroupCatOrder=1;);
+	%let subgroupcovar=%str(if index(subgroup,'covar')>0 then do;		
+								subgrouplabel=resolve(strip(cats('&study',subgroup)));
+								if subgroupcat="1" then do;
+									subgroupcatlabel="Yes";
+									subGroupCatOrder=2;
+								end;
+								else do;
+									subgroupcatlabel="No";
+									subGroupCatOrder=1;
+								end;
+								subGroupOrder=1000+put(compress(subgroup,'','A'),8.);
+							end;);						
 
 	%macro getsubgroupsinfo(dataset=);
 		proc sql noprint undo_policy=none;
@@ -564,34 +633,33 @@
 			quit;			
 	%mend getsubgroupsinfo;
 
-    /* Check to see if at least 1 km dataset exists */
+    /********************************************************/
+	/* KMTable
+	/********************************************************/
     %if &kmtableflag = 1 %then %do;
-        data views.kmtable;
+        data views.kmtable(drop=i);
+		length covarnum 4. studyname $200;
 	    set  _km:;
 		/* No subgroups */
 		%if &check_subgroups=0 %then %do;
-		format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
-		length subGroupOrder subGroupCatOrder 3;
-		&suboverall.;
+			format subgroup subgroupcat $50. subgrouplabel subgroupcatlabel $500. subGroupOrder subGroupCatOrder best.;
+			length subGroupOrder subGroupCatOrder 3;
+			&suboverall.;
 		%end;
+		/* Get covariates information */
+		do i = 1 to countw("&covarnumlabels",'|');
+			%let varlabel=%str(scan("&covarnumlabels",i,'|'));
+			if upcase(subgroup)=cats("COVAR",scan(&varlabel,1,'@')) then do;
+			covarnum=scan(&varlabel,1,'@');
+			studyname=scan(&varlabel,-1,'@');
+			end;
+		end;		
 		if dpidsiteid="ALL" or (dpidsiteid ne "all" and missing(subgroup));
 		run;
-
+		
 		/* Get subgroups information */
 		%if &check_subgroups>0 %then %do;			
 			%getsubgroupsinfo(dataset=views.kmtable);
-		%end;
-
-		/* Get covariates information */
-		%if &check_covars > 0 %then %do;
-			proc sql noprint undo_policy=none;
-			create table views.kmtable as
-			select a.*			   
-				   ,c.covarnum
-				   ,c.studyname
-			from views.kmtable as a		
-			left join covarnameviews as c on a.subgroup=c.cov_varname;
-			quit;
 		%end;
 
 	    data views.kmtable(keep=monitoringperiod analysisgrp analysis medicalproduct Dp subgroup subgroupcat subgrouplabel subgroupcatlabel
@@ -607,22 +675,17 @@
 
 		/* Specify correct values for covariates */
 		%if &check_covars > 0 %then %do;
-		if not missing(covarnum) then do;
-			subgrouplabel=studyname;
-			if subgroupcat="1" then do;
-				subgroupcatlabel="Yes";
-				subGroupCatOrder=2;
-			end;
-			else do;
-				subgroupcatlabel="No";
-				subGroupCatOrder=1;
-			end;
-			subGroupOrder=1000+covarnum;
-		end;
+			&subgroupcovar;
 		%end;
+
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
     %end; /* KM data requested */
 
+	/********************************************************/
+	/* Table1
+	/********************************************************/
 	%if &table1flag. eq 1 %then %do;
 	    data table1;
 	    set _table1_:;	            
@@ -646,10 +709,10 @@
 	    %if %length(&uniquepsest) > 0 %then %do;
 	        %do x = 1 %to %sysfunc(countw(&psestgrp));
 	            %let psgrpvalue = %scan(&psestgrp,&x);
-	            /* Create the main unadjusted datasets that need to be merged on */
+	            /* Create the main unadjusted datasets that need to be merged on. Need to restrict to observations with missing subgroups */
 	            data table1_unadj_&x.;
 	                set table1;
-	                where unique_psestimate = 1 and psestimategrp = "&psgrpvalue" and type="Unadjusted";
+	                where unique_psestimate = 1 and psestimategrp = "&psgrpvalue" and type="Unadjusted" and missing(subgroup);
 	            run;
 
 	            %let unadjgroups=;
@@ -713,8 +776,7 @@
 			proc sql noprint undo_policy=none;
 			create table _temptable1 as 
 			select a.*
-				   ,b.label as riskscorelabel
-				   ,b.pscovariate as riskscore_pscovariate
+				   ,b.label as riskscorelabel				   
 			from _temptable1 as a 
 			left join _riskscores_info as b
 			on a.metvar2=b.metvar2;
@@ -729,6 +791,15 @@
 		/* Get covariates information */
 		%isdata(dataset=covarnameviews);
 		%if %eval(&nobs.>0) %then %do;	
+			%isdata(dataset=Covarlabunits);
+			%if %eval(&nobs.<=0) %then %do;
+			data Covarlabunits;
+			metvar="";
+			labunit="";
+			if _N_<1;
+			run;
+			%end;
+
 			proc sql noprint undo_policy=none;
 			create table _temptable1 as
 			select a.*			   
@@ -743,7 +814,14 @@
 			from _temptable1 as a 
 			left join covarnameviews as b
 			on a.metvar2=upcase(b.cov_varname);
-			quit;		
+			
+			create table _temptable1 as 
+			select a.*
+				   ,b.labunit
+			from _temptable1 as a 
+			left join Covarlabunits as b
+			on a.metvar2=b.metvar;
+			quit;				
 		%end;
 
 		/*sort to assign variableorder - need to retain metvar first to resolve metvar values with different sort values*/
@@ -786,25 +864,24 @@
 		headerlabel=grouper;
 		if metvar="AGE" then headerlabel="Mean Age";
 		else if prxmatch('/AGE\d/',metvar) > 0 or label="Age" then headerlabel="Age";
-		else if prxmatch('/RACE*/',metvar) > 0 or label="Race" then headerlabel="Race";
-		else if prxmatch('/YEAR*/',metvar) > 0 or label="Year" then headerlabel="Year";
-		else if prxmatch('/SEX*/',metvar) > 0 or label="Sex" then headerlabel="Sex";
-		else if prxmatch('/HISPANIC*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
+		else if prxmatch('/RACE_*/',metvar) > 0 or label="Race" then headerlabel="Race";
+		else if prxmatch('/YEAR_*/',metvar) > 0 or label="Year" then headerlabel="Year";
+		else if prxmatch('/SEX_*/',metvar) > 0 or label="Sex" then headerlabel="Sex";
+		else if prxmatch('/HISPANIC_*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
 
 		/*headerorder takes the value of sortorder1 -> need to recode 1 to 0 to avoid showing # of episodes in dashboard*/
 		if headerorder = 1 then headerorder=0;
 
 		variableFilterLabel=label;
-		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (continuous)";
-		else if grouper="Laboratory Characteristics" then variableFilterLabel=strip(covarlabel) || ": " || strip(label);
+		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (" || strip(labunit) || ") (continuous)";
+		else if grouper="Laboratory Characteristics" then variableFilterLabel=strip(covarlabel) || ": " || strip(label);	
+	
 		%if %sysfunc(exist(riskscorefile)) %then %do;
-		else if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
-			variableFilterLabel=strip(label) || " (continuous)";
-			pscovariate=riskscore_pscovariate;
+		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
+			variableFilterLabel=strip(label) || " (continuous)";			
 		end;
 		else if prxmatch("/&riskscorelist/i",metvar) then do;
-			variableFilterLabel=strip(riskscorelabel) || ": " || strip(label);
-			pscovariate=riskscore_pscovariate;
+			variableFilterLabel=strip(riskscorelabel) || ": " || strip(label);			
 		end;
 		/* Remove SAS specific coding for CHA2DS2VASC (currently coded as: CHA^{sub 2}DS^{sub 2}-VASc) */
 		if metvar = "CHA2DS2VASC" then variableFilterLabel="CHA2DS2-VASc score";
@@ -832,22 +909,12 @@
 
 		/* Specify correct values for covariates */
 		%if &nobs > 0 %then %do;
-			if not missing(covarnum) then do;
-				subgrouplabel=studyname;
-				if subgroupcat="1" then do;
-					subgroupcatlabel="Yes";
-					subGroupCatOrder=2;
-				end;
-				else do;
-					subgroupcatlabel="No";
-					subGroupCatOrder=1;
-				end;
-				subGroupOrder=1000+covarnum;
-			end;
+			&subgroupcovar;
 		%end;
 
 		/* Change unicode value to symbol */
         if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
+	    if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 
 		/*resort for easier viewing of table*/
@@ -857,6 +924,9 @@
 
 	%end; /* Table1 requested*/
 
+	/********************************************************/
+	/* Effect Estimate Table
+	/********************************************************/
 	%if &effectestflag. eq 1 %then %do;
 	    data views.effectest;
 	    set _effectest_:;
@@ -929,15 +999,17 @@
 			SubgroupDashboardLabel = strip(tabletitle) || ": " || strip(subgroupcatlabel);
 			subGroupOrder=1000+covarnum;
 		end;
-	    run;
 
-		data views.analysisgroup;
-		retain analysisgrp analysisgrptitle exposure exposurelabel reference referencelabel outcome design adjustmentmethod modelparameters weightingmethod sortingorder;
-        set analysistable;
-        drop runid;
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
+	    run;
+	
     run;
 	%end; /* Effect estimates requested */
 
+	/********************************************************/
+	/* Attrition Table
+	/********************************************************/
     /* Delete rows not relevant for Sentinel Views */
     data views.attrition(rename=monitoringperiod2=monitoringperiod);
         set _attrition:(where=(not missing(level) and descr not in('Number of events in comparative analysis',
@@ -951,6 +1023,9 @@
 	drop monitoringperiod;
     run;    
 
+	/********************************************************/
+	/* Monitoring Table
+	/********************************************************/
     /* Re-assign values for dates in monitoring file */
 	proc sql noprint;
         select max(input(dpmaxdate,date9.)) into: maxdpenddate
@@ -966,6 +1041,9 @@
 		length periodid2 3 startdate enddate 4;
     run;
 
+	/********************************************************/
+	/* PS Distribution Table
+	/********************************************************/
     %if &psdistflag = 1 %then %do;    	
 		data views.psdist;
 	    set _psdist_:;
@@ -994,7 +1072,7 @@
 			left join covarnameviews as c on a.subgroup=c.cov_varname;
 			quit;
 		%end;
-
+		
 	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount ps_cat3=ps_cat) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref);
 		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref;
 		length ps_cat3 3 dp $10 Type weight $30 subgroup subgroupcat $50 _eoi _ref bin_eoi bin_ref 8;
@@ -1002,32 +1080,25 @@
 	    set views.psdist;
 		ps_cat3=ps_cat;
 		if dp="agg" then dp="Aggregate";
-		if missing(subgroup) then subgroup="overall";
-		if missing(subgroupcat) then subgroupcat="overall";
-		if missing(subgrouplabel) then subgrouplabel="Overall Analysis";
-		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
-
+		&submissing.;
 		/* Specify correct values for covariates */
 		%if &check_covars > 0 %then %do;
-		if not missing(covarnum) then do;
-			subgrouplabel=studyname;
-			if subgroupcat="1" then do;
-				subgroupcatlabel="Yes";
-				subGroupCatOrder=2;
-			end;
-			else do;
-				subgroupcatlabel="No";
-				subGroupCatOrder=1;
-			end;
-			subGroupOrder=1000+covarnum;
-		end;
+			&subgroupcovar;
 		%end;
+
+		/* Change unicode value to symbol */
+        if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
+	
     %end; /* PS distribution data requested */   
+
+	/********************************************************/
+	/* Clean up
+	/********************************************************/
 
     proc datasets library=work nolist nowarn;
         delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
         _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views; 
     quit;		
-
+	
 %mend l2_sentinel_views_convertdata;
