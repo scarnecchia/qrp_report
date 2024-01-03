@@ -840,10 +840,10 @@
 		headerlabel=grouper;
 		if metvar="AGE" then headerlabel="Mean Age";
 		else if prxmatch('/AGE\d/',metvar) > 0 or label="Age" then headerlabel="Age";
-		else if prxmatch('/RACE*/',metvar) > 0 or label="Race" then headerlabel="Race";
-		else if prxmatch('/YEAR*/',metvar) > 0 or label="Year" then headerlabel="Year";
-		else if prxmatch('/SEX*/',metvar) > 0 or label="Sex" then headerlabel="Sex";
-		else if prxmatch('/HISPANIC*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
+		else if prxmatch('/RACE_*/',metvar) > 0 or label="Race" then headerlabel="Race";
+		else if prxmatch('/YEAR_*/',metvar) > 0 or label="Year" then headerlabel="Year";
+		else if prxmatch('/SEX_*/',metvar) > 0 or label="Sex" then headerlabel="Sex";
+		else if prxmatch('/HISPANIC_*/',metvar) > 0 or label="Hispanic origin" then headerlabel="Hispanic";
 
 		variableFilterLabel=label;		
 		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (" || strip(labunit) || ") (continuous)";
