@@ -634,8 +634,7 @@
 	/* KMTable
 	/********************************************************/
     %if &kmtableflag = 1 %then %do;
-        data views.kmtable(drop=i);
-		length covarnum 4. studyname $200;
+        data views.kmtable;
 	    set  _km:;
 		/* No subgroups */
 		%if &check_subgroups=0 %then %do;
@@ -643,14 +642,6 @@
 			length subGroupOrder subGroupCatOrder 3;
 			&suboverall.;
 		%end;
-		/* Get covariates information */
-		do i = 1 to countw("&covarnumlabels",'|');
-			%let varlabel=%str(scan("&covarnumlabels",i,'|'));
-			if upcase(subgroup)=cats("COVAR",scan(&varlabel,1,'@')) then do;
-			covarnum=scan(&varlabel,1,'@');
-			studyname=scan(&varlabel,-1,'@');
-			end;
-		end;		
 		if dpidsiteid="ALL" or (dpidsiteid ne "all" and missing(subgroup));
 		run;
 		
