@@ -70,18 +70,13 @@
         having count(*) > 1;
     quit;
 
-    proc sql noprint;
-        select distinct catx('@',covarnum,studyname)
-        into :covarnumlabels 
-        separated by '|'
-        from covarname;
-
-        %if %sysfunc(exist(riskscorefile)) %then %do;
+    %if %sysfunc(exist(riskscorefile)) %then %do;
+	    proc sql noprint;	
             select distinct cats(riskscore,'_CAT'), riskscore
             into :riskscore_regex separated by '|', :riskscorelist separated by '|'
             from riskscorefile;
-        %end;
-    quit;
+		quit;			
+    %end;
 
     data pscs_masterinputs_views;
         length adjustmentmethod weightingmethod modelparameters $40;
@@ -397,33 +392,24 @@
 	                    from &dsn;
 	                quit; 
 
-	                data _effectest_&i(drop=varlabel i);
+	                data _effectest_&i;
 	                    set &dsn;
-	                    length varlabel $2000 covarnum_label $500;                                                      
 	                    /* Remove overall rows from subgroup tables */
 	                    %if %length(&deletesubgroups) > 0 %then %do; 
 	                    if missing(subgroup) then delete;
-	                    %end;
-	                    if index(subgroup,'covar') then do;
-							COVARNUM=put(compress(subgroup,'','A'),8.);                    
-	                        do i = 1 to countw("&covarnumlabels",'|');
-	                            varlabel = scan("&covarnumlabels",i,'|');
-	                            if COVARNUM = scan(varlabel,1,'@') then COVARNUM_Label = scan(varlabel,-1,'@');
-	                        end; 
-	                    end;
-						else COVARNUM=.;      
+	                    %end;  
 	                    drop subgroup;
 	                run;
+										
 	                %if &dupperiods > 1 %then %do;
 	                    proc sql noprint undo_policy=none;
 	                        create table _effectest_&i. as 
 	                        select B.medicalproduct, B.subgroupcat, B.subgroupcatlabel, B.analysisgrp, B.analysis, 
-	                                a.periodid2 as monitoringperiod, B.COVARNUM, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
+	                                a.periodid2 as monitoringperiod, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
 	                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
 	                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
 	                                B.risk_1000NUchar, B.FUTime_Ychar, B.AvgFUTime_Dchar, B.AvgFUTime_Ychar, B.sort1, B.sort2, 
-	                                B.analysisgrpsort, B.tabletitle, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se, 
-	                                B.COVARNUM_Label
+	                                B.analysisgrpsort, B.tabletitle, B.HR_95CI, B.HR_pvalue, B.HR, B.LCL, B.UCL, B.HR_coef, B.HR_se	                    
 	                        from monitoringperiod_lookup a right join _effectest_&i. b 
 	                        on a.periodid = b.monitoringperiod and a.analysisgrp = b.analysisgrp;
 	                    quit;
@@ -926,6 +912,7 @@
 		format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.
 			   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40. HR_coef best8.;
 	    set views.effectest;
+		tabletitle = resolve(tabletitle);
 		monitoringperiod2=monitoringperiod;
 		if tabletitle="Data Partner" then do;
 			dp=subgroupcat;
@@ -947,8 +934,7 @@
 		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
 		
 		/* Specify correct values for covariates */
-		if not missing(covarnum_label) then do;
-			tabletitle=covarnum_label;
+		if not missing(tabletitle) then do;		
 			if subgroupcat="1" then do;
 				subgroupcatlabel="Yes";
 				subGroupCatOrder=2;
@@ -958,7 +944,7 @@
 				subGroupCatOrder=1;
 			end;
 			SubgroupDashboardLabel = strip(tabletitle) || ": " || strip(subgroupcatlabel);
-			subGroupOrder=1000+covarnum;
+			subGroupOrder=1000+put(compress(subgroup,'','A'),8.);
 		end;
 
 		/* Change unicode value to symbol */
@@ -1049,5 +1035,5 @@
         delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
         _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views; 
     quit;	
-	
+
 %mend l2_sentinel_views_convertdata;
