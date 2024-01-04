@@ -1021,18 +1021,6 @@
 		%if &check_subgroups>0 %then %do;
 			%getsubgroupsinfo(dataset=views.psdist);			
 		%end;
-
-		/* Get covariates information */
-		%if &check_covars > 0 %then %do;
-			proc sql noprint undo_policy=none;
-			create table views.psdist as
-			select a.*			   
-				   ,c.covarnum
-				   ,c.studyname
-			from views.psdist as a		
-			left join _covarname as c on a.subgroup=c.cov_varname;
-			quit;
-		%end;
 		
 	    data views.psdist(rename=(_eoi=EoiEpiCount _ref=RefEpiCount ps_cat3=ps_cat) keep=monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref);
 		retain monitoringperiod analysisgrp Type weight Dp subgroup subgroupcat subgrouplabel subgroupcatlabel subGroupOrder subGroupCatOrder  _eoi _ref ps_cat3 bin_eoi bin_ref;
