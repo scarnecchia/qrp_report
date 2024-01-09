@@ -80,23 +80,22 @@
     /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
-	    /* Identify min gestwk requested. Max always 44 weeks */
+	    /* Identify min gestwk requested. Max 44 weeks if postpregdays is not positive */
         data master_typefile;
             set master_typefile;
             length gestwk_min gestwk_max 3;
             if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
             else gestwk_min = 0; 
-		    gestwk_max = 44;
+			if postpregdays >0 then gestwk_max = 44 + int((postpregdays/7)+1); 
+		    else gestwk_max = 44;
         run;
 
         proc sql noprint;
-		    select min(a.gestwk_min) into: min_min
+		    select min(a.gestwk_min), max(a.gestwk_max) into: min_min, :max_max
             from master_typefile a,
                  groupsfile b
             where a.group = b.group;
         quit;
-
-        %let max_max = 44; 
 
         data _temptablecolumns;
             set tablecolumns(where=(table in ('T5', 'T6')) rename=columnname=origcolumnname);
@@ -123,7 +122,15 @@
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
                 /*change columnlabel/columnheader (T6) to gestational week*/
                 columnlabel = strip(put(gestwkorder, best.));
-                if table = 'T6' then columnheader = strip(put(gestwkorder, best.));
+				if gestwkorder > 44 then do;
+					*columnlabel = strip(cats("(*ESC*){unicode '002B'x}",put(gestwkorder-44, best.)));
+					columnlabel = strip(cats("+",put(gestwkorder-44, best.)));
+					columnname = cats('gestwkpos', gestwkorder-44, origcolumnname);
+				end;
+                if table = 'T6' then do;
+					columnheader = strip(put(gestwkorder, best.));
+					if gestwkorder > 44 then columnheader = strip(cats("+",put(gestwkorder-44, best.)));
+				end;
                 output;
             end;
         run;
@@ -250,20 +257,30 @@
 	  		%if %sysfunc(findw(&datasetlist.,t4nopreggestwk)) %then %do;
 	  	      agg_t4nopreggestwk (in = nopreg)
 	  		%end;;
-	  	if gestwk < 0 then gestwk_char = left(cats("gestwkneg",put(abs(gestwk),3.)));
-          else gestwk_char = left(cats("gestwk",put(gestwk,3.)));
+	  	if index(gestwk,"-") > 0 then gestwk_char = catt("gestwkneg", compress(gestwk,"-"));
+          else gestwk_char = catt("gestwk",tranwrd(gestwk,"+","pos"));
 	  	if preg then pregflg = "Y";
 	      else pregflg = "N";
 	  	den_&episode_var. = &episode_var.;
-		if not (&min_min. <= gestwk <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
+		if index(gestwk,"+") > 0 then gestwk_num = 44 + input(compress(gestwk,"+"),3.);
+		else gestwk_num = input(gestwk,3.);
+		if not (&min_min. <= gestwk_num <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
 	    run;	
 	  	
 	    proc summary data = _agg_t4moi nway missing;
-          class group moiname pregflg gestwk_char gestwk;
+          class group moiname pregflg gestwk_char;
           var &sumcolumns. den_&episode_var.;
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
 		
+		%if &stratifybydp. = Y %then %do;
+			proc summary data = _agg_t4moi nway missing;
+	        class dpidsiteid group moiname pregflg gestwk_char;
+	        var &sumcolumns. den_&episode_var.;
+	        output out = _agg_t4moi_dp (drop = _:) sum=;
+	        run;
+		%end;
+
 		/*Determine the minimum gestional week for each group and assign to a macro variable*/
         proc sql noprint undo_policy=none;
            select distinct group into: group_list separated by ' '
@@ -273,7 +290,10 @@
         data _null_;
           set master_typefile;
           %do g = 1 %to %sysfunc(countw(&group_list));
-              if group = "%scan(&group_list, &g)" then call symputx("gestwk_group&g.", gestwk_min);
+              if group = "%scan(&group_list, &g)" then do;
+				call symputx("gestwk_min_group&g.", gestwk_min);
+				call symputx("gestwk_max_group&g.", gestwk_max);
+			  end;
           %end;
         run;
 	  %end;
@@ -285,7 +305,7 @@
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
-    		select a.* , b.t4pregenrdays, c.prepregdays
+    		select a.* , b.t4pregenrdays, c.prepregdays, c.postpregdays
     		from &dsin a 
     		left join master_cohortfile b 
     		on a.group = b.cohortgrp
@@ -377,18 +397,38 @@
 		                    %end;
 		                    %if &dataset = preggestwk %then %do;
 		                        %if %sysfunc(prxmatch(m/moi/i,&&formula&vv.)) %then %do; 
-		                        if lowcase(group) = "&t4group" then do; 
-		                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
-		                        		&&var&vv.._char = 'N/A';
-		                        		&&var&vv. = .;
-		                        		&&var&vv.._ss=1;
+								/* t4pregenrdays check is not required if gestwk is after the pregnancy outcome */
+								if index(gestwk_char, "gestwkpos") = 0 then do;
+			                        if lowcase(group) = "&t4group" then do; 
+										gestwk = input(compress(gestwk_char, "gestwkneg"),best.);
+			                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
+			                        		&&var&vv.._char = 'N/A';
+			                        		&&var&vv. = .;
+			                        		&&var&vv.._ss=1;
+				                        end;
+			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
+			                        		&&var&vv.._char = 'N/A';
+			                        		&&var&vv. = .;
+			                        		&&var&vv.._ss=1;
+			                        	end;
 			                        end;
-		                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
-		                        		&&var&vv.._char = 'N/A';
-		                        		&&var&vv. = .;
-		                        		&&var&vv.._ss=1;
-		                        	end;
-		                        end;
+								end;
+								/* Check postpregdays coverage */
+								else do;
+									if lowcase(group) = "&t4group" then do; 
+										gestwk = input(compress(gestwk_char, "gestwkpos"),best.);
+									    if postpregdays <= 0 then do;
+									        &&var&vv.._char = 'N/A';
+									        &&var&vv. = .;
+									        &&var&vv.._ss=1;
+									    end;
+									    else if postpregdays > 0 and (int(postpregdays/7)+1) < gestwk then do;
+									        &&var&vv.._char = 'N/A';
+									        &&var&vv. = .;
+									        &&var&vv.._ss=1;
+									    end;
+									end;
+								end;
 		                        %end;
 		                    %end;
 		                    if lowcase(group) = "&t4group" and missing(t4pregenrdays) then do;
@@ -431,18 +471,33 @@
 		   /* Merge data for all columns */
 		   data &dsin.;
              merge &dsin._tran_:;
-		     by &dpvar. group moiname pregflg den_episodes_wk1;
-			 /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
-			 %do g = 1 %to %sysfunc(countw(&group_list));      
-			   %if &min_min. < &&&gestwk_group&g. %then %do;
+		     by &dpvar. group moiname pregflg den_episodes_wk1;			 
+			 %do g = 1 %to %sysfunc(countw(&group_list));  
+			   /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
+			   %if &min_min. < &&&gestwk_min_group&g. %then %do;
 			     if group = "%scan(&group_list., &g.)" then do;
-			       %do min_loop = &min_min. %to &&&gestwk_group&g. -1;
+			       %do min_loop = &min_min. %to &&&gestwk_min_group&g. -1;
                       %do vv = 1 %to &numcolumns; 
 				  	    if den_episodes_wk1 > 0 then do;
                           gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
                         end;
                         else do;
                           gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = '.';
+                        end;
+                      %end;
+                   %end;
+			     end;
+			   %end;
+			   /* set post-pregnancy period to N/A for weeks that are more than the maximum gestational week per group */
+			   %if &&&gestwk_max_group&g. < &max_max. %then %do;
+			     if group = "%scan(&group_list., &g.)" then do;				   
+			       %do max_loop = &&&gestwk_max_group&g. - 43 %to &max_max. - 44;
+                      %do vv = 1 %to &numcolumns; 
+				  	    if den_episodes_wk1 > 0 then do;
+                          gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = 'N/A';
+                        end;
+                        else do;
+                          gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = '.';
                         end;
                       %end;
                    %end;
@@ -518,7 +573,7 @@
 
 	/*By Data Partner*/
     %if &stratifybydp. = Y %then %do;
-	  %prep_t4tables(dsin=_agg_t4moi, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
+	  %prep_t4tables(dsin=%if &dataset. = preg %then %do; _agg_t4moi %end; %else %do; _agg_t4moi_dp %end;, dsout=final_dps&output_suffix., dpvar=dpidsiteid);
 	%end;
 	
 	/*Clean up*/
