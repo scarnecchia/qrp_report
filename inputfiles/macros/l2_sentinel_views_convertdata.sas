@@ -889,6 +889,8 @@
 		/* Change unicode value to symbol */
         if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    if indexw(label,"(*ESC*){unicode '2265'x}") then label=tranwrd(label,"(*ESC*){unicode '2265'x}",">=");
+		if indexw(variableFilterLabel,"(*ESC*){unicode '2265'x}") then variableFilterLabel=tranwrd(variableFilterLabel,"(*ESC*){unicode '2265'x}",">=");
+	    if indexw(variableLabel,"(*ESC*){unicode '2265'x}") then variableLabel=tranwrd(variableLabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 
 		/*resort for easier viewing of table*/
