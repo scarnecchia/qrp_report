@@ -2550,14 +2550,33 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
-        by runid covarnum;
-    run;  
-    %end;
+	    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
+	        by runid covarnum;
+	    run;  
+
+		/*T2L2 Views dashboard requires the same covariates to be specified across runs for all covariates
+			This is different from the check below which is less restricive in that it only checks covariates specified as subgroup or stratification */
+		%if &outputviewsdata. = Y and &reporttype. = T2L2 %then %do;
+			proc sort data=covarname out=_covarstudyname nodupkey;
+				by covarnum studyname;
+			run;
+
+			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname cov_varname) dupout=_covdup nodupkey;
+				by covarnum;
+			run;
+
+			%isdata(dataset=_covdup);
+			%if %eval(&nobs.>0) %then %do;
+				%put ERROR: (Sentinel) The same covariatecodes file must be used for all runs when using Sentinel Views.;
+				%abort;
+			%end;
+	    %end;
+
+	%end;
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_:; 
+        delete studylen covarname_: _covarstudyname _covdup; 
    quit;  
 
 /************************************************************************************************
@@ -2645,7 +2664,6 @@
     %mend;
     %assigncovarlabels(dataset=tablefile, var=tablesub);
     %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
-
 
 /***************************************************************************************************
 *  Create stacked dataset containing riskscores data for all runs                                            
