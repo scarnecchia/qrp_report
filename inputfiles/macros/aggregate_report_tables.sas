@@ -389,6 +389,13 @@
           %end;
         %end;
 
+		/* Riskdiffdata tables for tree analyses */ 
+		%if %str("&reporttype") = %str("TREE2") or %str("&reporttype") = %str("TREE4") %then %do;
+		  %do periodid = %eval(&look_start.) %to %eval(&look_end.);
+		  %agg_report(infile=riskdiffdata_&periodid., outfile=riskdiffdata_&periodid., name=analysisgrp);
+          %end;
+		%end;
+
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;
