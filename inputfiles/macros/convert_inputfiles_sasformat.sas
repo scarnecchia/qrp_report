@@ -156,6 +156,7 @@
             out = tmpfile
             dbms = csv
             replace;
+            guessingrows=max;
         run;
 
         %if %length(&dynamic_format_list) > 0 %then %do i = 1 %to %sysfunc(countw(&dynamic_format_list));
