@@ -963,7 +963,7 @@
 		if missing(subgroupcatlabel) then subgroupcatlabel="Overall Analysis";
 		
 		/* Specify correct values for covariates */
-		if not missing(tabletitle) then do;		
+		if not missing(tabletitle) and prxmatch('/^COVAR\d/i',subgroup) then do;		
 			if subgroupcat="1" then do;
 				subgroupcatlabel="Yes";
 				subGroupCatOrder=2;
@@ -980,7 +980,6 @@
         if indexw(subgroupcatlabel,"(*ESC*){unicode '2265'x}") then subgroupcatlabel=tranwrd(subgroupcatlabel,"(*ESC*){unicode '2265'x}",">=");
 	    run;
 	
-    run;
 	%end; /* Effect estimates requested */
 
 	/********************************************************/
