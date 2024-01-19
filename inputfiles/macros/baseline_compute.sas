@@ -442,14 +442,16 @@
 			%end;
 			
 			/* Get list of covariates anchored on INDEXDT_EXP */
-			proc sql noprint;
+			%if %sysfunc(exist(covarname)) = 1 %then %do;
+			  proc sql noprint;
 				select cov_varname into: covars_indexdt_exp separated by " "
 				from covarname
 				where runid="&runid" and (upcase(covfromanchor) eq "INDEXDT_EXP" or upcase(covtoanchor) eq "INDEXDT_EXP");
-			quit;
+			  quit;
 
-			%create_comma_charlist(inlist=&covars_indexdt_exp., outlist=covars_indexdt_exp_quoted);
-			%put &=covars_indexdt_exp_quoted;
+			  %create_comma_charlist(inlist=&covars_indexdt_exp., outlist=covars_indexdt_exp_quoted);
+			  %put &=covars_indexdt_exp_quoted;
+			%end;
 		%end;
 
         ***********************************************************************************************
