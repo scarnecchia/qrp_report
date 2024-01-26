@@ -845,6 +845,7 @@
 
 		/*headerorder takes the value of sortorder1 -> need to recode 1 to 0 to avoid showing # of episodes in dashboard*/
 		if headerorder = 1 then headerorder=0;
+		if headerorder = 0 then variableorder=0;
 
 		variableFilterLabel=label;
 		if grouper="Laboratory Characteristics" and vartype="continuous" then variableFilterLabel=strip(covarlabel) || " (" || strip(labunit) || ") (continuous)";
