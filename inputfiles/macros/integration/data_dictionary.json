@@ -1388,7 +1388,7 @@
 							"2": [
 								"t2cida",
 								"t2cidaprev",
-								"t2cidafollowuptime",
+								"t2followuptime",
 								"t2censor",
 								"t2censorprev",
 								"t2treeanalysis",
