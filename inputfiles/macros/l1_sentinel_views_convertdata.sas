@@ -55,6 +55,7 @@
 
 	%do i = 1 %to %sysfunc(countw(&repdatadsn,@));
 	    %let dsn = %scan(&repdatadsn,&i,@);
+		%let table = %sysfunc(tranwrd(&dsn,repdata.,%str()));
 	    %do dpcnt = 0 %to &num_dp;
 	        %let dsid=%sysfunc(open(&dsn));
 	        %let check_table1=%sysfunc(varnum(&dsid,exp_mean&dpcnt));
@@ -91,12 +92,18 @@
 
 
 		/******************************************************************/
-		/* Attrition Table : Set report table and keep necessary variables										
+		/* Attrition Table : Set report table and keep necessary variables	
+							 Extract monitoring period	
 				    		 All other processing done later		
 		/******************************************************************/
 		%if &check_attrtable > 0 %then %do;
+			proc sql noprint;
+			select periodid into :periodid trimmed 
+			from tableofcontents_views(where=(upcase(table)=upcase("&table")));
+			quit;
+
 			proc sql noprint undo_policy=none;
-			create table _attrition as
+			create table _attrition_&i. as
 			select a.group
 				  ,a.report_descr
 				  ,a.level
@@ -104,8 +111,9 @@
 				  ,a.agg_excluded
 				  ,b.periodid2 as monitoringperiod length=3 format 3. 
 	        from &dsn(keep=runid group report_descr level agg_remaining agg_excluded) as a
-			left join Monitoringfile_views as b
-			on a.runid=b.runid;                
+			left join Monitoringfile_views(where=(periodid=&periodid.)) as b
+			on a.runid=b.runid
+			order by monitoringperiod, group, level;                
 	        quit;
 	    %end; /* Attrition */
 	%end; /* repdata tables loop */
@@ -180,7 +188,7 @@
 
 	/* TODO: Finalize formatting */
 	data views.attrition;
-	set _attrition;
+	set _attrition:;
 	run;
 
 
@@ -225,7 +233,7 @@
 
 	/* Clean-up */
 	proc datasets library=work nolist nowarn;
-    	delete _table1_: _cidatable_ _attrition;
+    	delete _table1_: _cidatable_ _attrition:;
 	quit;
 		
 %mend l1_sentinel_views_convertdata;
