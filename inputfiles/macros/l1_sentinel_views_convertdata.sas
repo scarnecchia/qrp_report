@@ -25,6 +25,9 @@
 *
 *  PARAMETERS: 
 *	requestID: 5 Token Request ID, defined in %create_report as &viewsID
+*   jirakey: Jira tag number associated with query
+*   userid: Users e-mail address
+*   studytitle: Title of query
 *
 *  Programming Notes: 
 *   - This macro calls %baseline_expand_parameters macro 
@@ -38,7 +41,7 @@
 *
 ***************************************************************************************************;
 
-%macro l1_sentinel_views_convertdata(requestID);
+%macro l1_sentinel_views_convertdata(requestID=,jirakey=,userid=,studytitle=);
 
 	proc datasets library=views kill nowarn nolist; run; quit;
 
@@ -442,7 +445,30 @@
 	/********************************************************/
 	/* Study table
 	/********************************************************/
-
+    data views.study;
+        length queryid $40 querytype $10 jirakey $40 studytitle $1000 userid $500;
+        queryid="&requestid";
+        querytype="%upcase(&reporttype)";
+        %if %length(&jirakey) = 0 %then %do;
+            jirakey="QF-0000";
+        %end;
+        %else %do;
+            jirakey="&jirakey";
+        %end;
+        %if %length(&userid) = 0 %then %do;
+            userid="qf@sentinelsystem.org";
+        %end;
+        %else %do;
+            userid="&userid";
+        %end;
+        %if %length(&studytitle) = 0 %then %do;
+            studytitle="ADD STUDY TITLE";
+        %end;
+        %else %do;
+            studytitle="&studytitle";
+        %end;
+            output;
+    run;
 
 
 
@@ -450,7 +476,20 @@
 	/********************************************************/
 	/* Monitoring Table
 	/********************************************************/
+    /* Re-assign values for dates in monitoring file */
+    proc sql noprint;
+        select max(input(dpmaxdate,date9.)) into: maxdpenddate
+        from output.dpinfo;
+    quit;
 
+    data views.monitoringperiod(keep=monitoringperiod startdate enddate);
+        retain periodid2 startdate enddate;
+        set monitoringfile_views;
+        enddate=coalesce(fupenddate,indenddate, &maxdpenddate.);        
+        rename periodid2=monitoringperiod;
+        format enddate date9. periodid2 3.;
+        length periodid2 3 startdate enddate 4;
+    run;
 
 
 
@@ -503,7 +542,7 @@
 
 
 	/*Remove MSOCDATA datasets not converted to the Sentinel Views data dictionary*/
-	proc sql noprint;
+/* 	proc sql noprint;
 		select memname into :dropfromviews separated by ' '
 		from dictionary.tables 
 		where libname = 'VIEWS'
@@ -512,6 +551,6 @@
 	
 	proc datasets library=views nolist nowarn;
     	delete &dropfromviews;
-	quit;	
+	quit;	 */
 		
 %mend l1_sentinel_views_convertdata;

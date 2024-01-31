@@ -1131,7 +1131,7 @@
     /* Views platform does not have a way of distinguishing multiple runids
        so monitoring period variable is incremented as periodid2 to work around
        limitation */
-    %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+    %if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
         data monitoringfile_views;
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
