@@ -2563,7 +2563,7 @@
 
 		/*T2L2 Views dashboard requires the same covariates to be specified across runs for all covariates
 			This is different from the check below which is less restricive in that it only checks covariates specified as subgroup or stratification */
-		%if &outputviewsdata. = Y and &reporttype. = T2L2 %then %do;
+		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
 			proc sort data=covarname out=_covarstudyname nodupkey;
 				by covarnum studyname;
 			run;
