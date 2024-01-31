@@ -1147,6 +1147,13 @@
                 end;
             %end;
         run;
+
+        /* Check that groupsfile is defined */
+        %if %length(&groupsfile) = 0 %then %do;
+            %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
+            %put The reporting code will abort;
+            %abort;
+        %end;
     %end;
 
 /***************************************************************************************************
