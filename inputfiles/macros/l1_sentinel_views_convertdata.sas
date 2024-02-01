@@ -100,19 +100,24 @@
 			proc sql noprint;
 			select periodid into :periodid trimmed 
 			from tableofcontents_views(where=(upcase(table)=upcase("&table")));
+
+			select distinct quote(group)
+			into :views_groups separated by ' '
+			from input.&groupsfile;
 			quit;
 
 			proc sql noprint undo_policy=none;
 			create table _attrition_&i. as
-			select a.group
-				  ,a.report_descr
+			select a.group as cohortgrp length=40
+				  ,a.report_descr as descr length=500
 				  ,a.level
-				  ,a.agg_remaining
-				  ,a.agg_excluded
+				  ,a.agg_remaining as remaining length=8
+				  ,a.agg_excluded as excluded length=8
 				  ,b.periodid2 as monitoringperiod length=3 format 3. 
 	        from &dsn(keep=runid group report_descr level agg_remaining agg_excluded) as a
 			left join Monitoringfile_views(where=(periodid=&periodid.)) as b
 			on a.runid=b.runid
+			where group in (&views_groups)
 			order by monitoringperiod, group, level;                
 	        quit;
 	    %end; /* Attrition */
@@ -188,7 +193,7 @@
 
 	/* TODO: Finalize formatting */
 	data views.attrition;
-	set _attrition:;
+	set _attrition_:;
 	run;
 
 
