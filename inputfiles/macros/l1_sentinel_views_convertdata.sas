@@ -110,7 +110,7 @@
 			create table _attrition_&i. as
 			select a.group as cohortgrp length=40
 				  ,a.report_descr as descr length=500
-				  ,a.level
+				  ,a.level length=8
 				  ,a.agg_remaining as remaining length=8
 				  ,a.agg_excluded as excluded length=8
 				  ,b.periodid2 as monitoringperiod length=3 format 3. 
@@ -191,7 +191,6 @@
 	/* Attrition Table
 	/********************************************************/
 
-	/* TODO: Finalize formatting */
 	data views.attrition;
 	set _attrition_:;
 	run;
