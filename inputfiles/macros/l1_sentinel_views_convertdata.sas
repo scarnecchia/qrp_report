@@ -53,30 +53,56 @@
 	where libname = 'REPDATA' and prxmatch('/^table\d|^figure\d/i',memname);
 	quit;
 
+	%let table1exists=0;
+	%let resultstableexists=0;
+
 	%do i = 1 %to %sysfunc(countw(&repdatadsn,@));
 	    %let dsn = %scan(&repdatadsn,&i,@);
 		%let table = %sysfunc(tranwrd(&dsn,repdata.,%str()));
-	    %do dpcnt = 0 %to &num_dp;
-	        %let dsid=%sysfunc(open(&dsn));
-	        %let check_table1=%sysfunc(varnum(&dsid,exp_mean&dpcnt));
-			%let check_cidatable=%sysfunc(varnum(&dsid,column1));
-			%let check_attrtable=%sysfunc(varnum(&dsid,report_descr)); 
-	        %let rc=%sysfunc(close(&dsid));
+		%let dsid=%sysfunc(open(&dsn));
+        %let check_table1=%sysfunc(varnum(&dsid,metvar));
+		%let check_cidatable=%sysfunc(varnum(&dsid,column1));
+		%let check_attrtable=%sysfunc(varnum(&dsid,report_descr));         
+		%let check_dpidsiteid=%sysfunc(varnum(&dsid,dpidsiteid)); 
+ 
+		/******************************************************************/
+		/* Table 1: Set in all tables					
+					Drop rows with missing metvar values
+					Extract monitoring period
+					Keep necessary variables
+					Rename variables
+				    All other processing done later	
+		/******************************************************************/
+		%if &check_table1 > 0 %then %do;	
+			%let table1exists=1;	
 
-			/******************************************************************/
-			/* Table 1: Set in all tables					
-						Drop rows with missing metvar values
-						Keep necessary variables
-						Rename variables
-					    All other processing done later	
-			/******************************************************************/
-	        %if &check_table1 > 0 %then %do;
-	            data _table1_&dpcnt._&i.;
-	            set &dsn;
-	            /* TODO */    
-	            run;
-			%end; /* Table1 */		
-		%end; /* DP loop */
+		    %do dpcnt = 0 %to &num_dp;		        		
+				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));	
+				%if &check_table1_dp > 0 %then %do;	
+					proc sql noprint;
+					select periodid2 into :periodid2 trimmed 
+					from tableofcontents_views(where=(upcase(table)=upcase("&table"))) as a
+					join monitoringfile_views as b
+					on a.runid=b.runid and a.periodid=b.periodid;
+					quit;
+
+		            data _table1_&dpcnt._&i.;
+	                set &dsn;
+	                length dp $10 monitoringperiod 3; 
+					format monitoringperiod 3.; 
+	                if missing(metvar) then delete;              
+	                if &dpcnt. = 0 then dp = "Aggregate";
+	                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+					monitoringperiod=&periodid2;
+	                rename sortorder1=headerorder
+						   exp_mean&dpcnt=exp_mean 
+						   exp_std&dpcnt=exp_std; 					   
+	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt exp_std&dpcnt dp monitoringperiod;
+		            run;		
+				%end;
+			%end;  /* DP loop */	
+		%end; /* Table1 */
 
 
 		/******************************************************************/
@@ -94,7 +120,8 @@
 		/******************************************************************/
 		/* Attrition Table : Set report table and keep necessary variables	
 							 Extract monitoring period	
-				    		 All other processing done later		
+							 Apply formatting
+				    		 Final stacking done later		
 		/******************************************************************/
 		%if &check_attrtable > 0 %then %do;
 			proc sql noprint;
@@ -121,10 +148,9 @@
 			order by monitoringperiod, group, level;                
 	        quit;
 	    %end; /* Attrition */
+
+		%let rc=%sysfunc(close(&dsid));
 	%end; /* repdata tables loop */
-
-
-
 
 
 	/********************************************************/
@@ -154,9 +180,6 @@
         %end;
             output;
     run;
-
-
-
 
 	/********************************************************/
 	/* Monitoring Table
@@ -190,7 +213,6 @@
 	/********************************************************/
 	/* Attrition Table
 	/********************************************************/
-
 	data views.attrition;
 	set _attrition_:;
 	run;
@@ -201,12 +223,11 @@
 	/********************************************************/
 
 	/* TODO: Wait for code refactoring and aggregation before finalizing */
-
-	/*
-	data views.table1;
-	set _table1_:;
-	run;
-	*/
+	%if &table1exists > 0 %then %do;	
+		data views.table1;
+		set _table1_:;
+		run;
+	%end; /* Table1 exists */
 
 
 	/********************************************************/
@@ -237,7 +258,7 @@
 
 	/* Clean-up */
 	proc datasets library=work nolist nowarn;
-    	delete _table1_: _cidatable_ _attrition:;
+    	delete _table1_: _cidatable_: _attrition:;
 	quit;
 		
 %mend l1_sentinel_views_convertdata;
