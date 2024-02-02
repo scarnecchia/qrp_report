@@ -211,7 +211,36 @@
 	/********************************************************/
 	/* CohortGroup Table
 	/********************************************************/
-
+    proc sql;
+    create table cohortgroup as
+    select distinct 
+      a.group as cohortgrp length 40,
+	  c.label as cohortgrptitle length 500,
+	  b.label as outcomelabel,
+      %if %sysfunc(prxmatch(m/T2L1/i,&reporttype)) %then %do;
+        'ADD OUTCOME LABEL' as outcome length 500,
+      %end;
+      %else %do;	   
+	    'N/A' as outcome length 500,
+      %end;
+	  a.order as sortingorder,
+	  ' ' as design length 500
+	from groupsfile as a
+	     left join labelfile (where =(labeltype = "outcomelabel")) as b
+		on a.group = b.group
+		 left join labelfile (where = (labeltype = "grouplabel")) as c
+	    on a.group = c.group;
+	quit;
+   
+    data views.cohortgroup;
+      set cohortgroup; 
+	    %if %sysfunc(prxmatch(m/T2L1/i,&reporttype)) %then %do;
+	      if outcomelabel ne '' then outcome = outcomelabel;
+		  drop outcomelabel;
+	    %end;
+	    if cohortgrptitle = '' then cohortgrptitle = cohortgrp;
+		drop outcomelabel;
+    run;
 
 
 
