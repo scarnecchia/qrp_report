@@ -84,6 +84,10 @@
 					from tableofcontents_views(where=(upcase(table)=upcase("&table"))) as a
 					join monitoringfile_views as b
 					on a.runid=b.runid and a.periodid=b.periodid;
+
+					select distinct quote(strip(group))
+					into :views_groups separated by ' '
+					from input.&groupsfile;
 					quit;
 
 		            data _table1_&dpcnt._&i.;
@@ -96,9 +100,11 @@
 	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
 					monitoringperiod=&periodid2;
 	                rename sortorder1=headerorder
-						   exp_mean&dpcnt=exp_mean 
-						   exp_std&dpcnt=exp_std; 					   
-	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt exp_std&dpcnt dp monitoringperiod;
+						   exp_mean&dpcnt._char=exp_mean_char 
+						   exp_std&dpcnt._char=exp_std_char
+						   analysisgrp=cohortgrp; 				
+					where analysisgrp in (&views_groups);	   
+	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt._char exp_std&dpcnt._char dp monitoringperiod;
 		            run;		
 				%end;
 			%end;  /* DP loop */	
@@ -128,7 +134,7 @@
 			select periodid into :periodid trimmed 
 			from tableofcontents_views(where=(upcase(table)=upcase("&table")));
 
-			select distinct quote(group)
+			select distinct quote(strip(group))
 			into :views_groups separated by ' '
 			from input.&groupsfile;
 			quit;
@@ -250,12 +256,92 @@
 	/********************************************************/
 	/* Table1
 	/********************************************************/
-
-	/* TODO: Wait for code refactoring and aggregation before finalizing */
 	%if &table1exists > 0 %then %do;	
+		%if %sysfunc(exist(riskscorefile)) %then %do;
+			proc sql noprint;	
+	            select distinct cats(riskscore,'_CAT'), riskscore
+	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+	            from riskscorefile;
+			quit;	
+		%end;		
+
 		data views.table1;
+		retain riskscore_label;
+		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
+		       metvar $32 vartype exp_mean_char exp_std_char $30;   
 		set _table1_:;
+		if upcase(metvar)='AGE' then do;
+			headerlabel='Mean Age';
+			variablelabel='';
+		end;
+
+		if prxmatch('/AGE\d/i',metvar) then do;
+			headerlabel='Age';
+			variablelabel=label;
+		end;
+
+		if prxmatch('/SEX_/i',metvar) then do;
+			headerlabel='Sex';
+			variablelabel=label;
+		end;
+		if prxmatch('/YEAR_\d/i',metvar) then do;
+			headerlabel='Year';
+			variablelabel=label;
+		end;
+		if prxmatch('/RACE_/i',metvar) then do;
+			headerlabel='Race';
+			variablelabel=label;
+		end;
+		if prxmatch('/HISPANIC_/i',metvar) then do;
+			headerlabel='Hispanic';
+			variablelabel=label;
+		end;
+
+		%if %length(&riskscorelist) > 0 or %length(&riskscore_regex) > 0 %then %do;
+		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
+  			headerlabel=strip(label) || " (continuous)";
+  			riskscore_label=label;			
+  		end;
+  		if prxmatch("/&riskscore_regex/i",metvar) and vartype="dichotomous" then do;
+			headerlabel=strip(riskscore_label) || " (categorical)";
+			variablelabel=label;
+		end;
+		%end;
+
+		if prxmatch("/COVAR\d/i",metvar) then do;
+			headerlabel=label;
+			variablelabel='';
+		end;		
+
+		if prxmatch("/NUM/i",metvar) then do;
+			headerlabel=label;
+			variablelabel='';
+		end;		
+
+		if exp_mean_char in ('.','N/A','NaN') then exp_mean_char = '';
+		if exp_std_char in ('.','N/A','NaN') then exp_std_char = '';
+		drop riskscore_label label sortorder: headerorder;
 		run;
+
+		/* create ordering variables */
+		data views.table1;
+			length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
+		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean_char exp_std_char $30;   
+			set views.table1;  
+			by monitoringperiod cohortgrp dp grouper headerlabel variablelabel notsorted;
+			if first.monitoringperiod or first.cohortgrp or first.dp then do;
+				grouperorder=0;
+				headerorder=0;
+				variableorder=0;
+			end;
+			if first.grouper then grouperorder+1;
+			if first.headerlabel then do;
+				headerorder+1;
+				variableorder=0;
+			end;
+			if first.variablelabel then variableorder+1;
+		run;
+
 	%end; /* Table1 exists */
 
 
