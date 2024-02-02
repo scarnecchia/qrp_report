@@ -256,8 +256,6 @@
 	/********************************************************/
 	/* Table1
 	/********************************************************/
-
-	/* TODO: Wait for code refactoring and aggregation before finalizing */
 	%if &table1exists > 0 %then %do;	
 		%if %sysfunc(exist(riskscorefile)) %then %do;
 			proc sql noprint;	
