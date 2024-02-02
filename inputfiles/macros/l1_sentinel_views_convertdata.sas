@@ -113,14 +113,192 @@
 
 		/******************************************************************/
 		/* Results Table : Set in all tables											
-				    	   All other processing done later		
+				    	   Compute and format all variables	
 		/******************************************************************/
 		%if &check_cidatable > 0 %then %do;
-			data _cidatable_&i.;
+			%let resultstableexists=1;
+
+			/* Get number of selected stat columns, level (unique in &dsn) and stratification variables */
+			proc sql noprint;
+				select count(*) into :numcolumns trimmed from tablecolumns 
+				where table= %if &reporttype. eq T1 %then %do; "t1cida" %end; %else %do; "t2cida" %end;;
+
+				select distinct level into :level from &dsn;
+				select lowcase(tablesub) into :strats from tablefile where levelid1="&level";
+			quit;
+
+			/* Compute stratorder and stratcatorder and drop unnecessary variables */
+			data _cidatable_&i. (rename=group=cohortgrp);
+			length stratcatorder 3.;
 			set &dsn;
-			/* TODO */
+			by order;
+			if first.order then stratcatorder=1;
+			else stratcatorder=stratcatorder+1;
+			retain stratcatorder;
+			drop order header grouplabel sortorder: %do col=1 %to &numcolumns; column&col. %end;;
 			run;
-		%end;
+
+			proc sql noprint undo_policy=none;
+				create table _cidatable_&i. as
+				select a.*
+				      ,b.stratificationorder as stratorder length=3
+				from _cidatable_&i. as a
+				left join tablefile as b 
+				on a.level = b.levelid1;
+			quit;
+
+			/* Get monitoringperiod */
+			proc sql noprint undo_policy=none;
+			create table _cidatable_&i. as
+			select a.*,
+				   c.periodid2 as monitoringperiod length=3 format 3.
+			from _cidatable_&i. as a 
+			left join groupsfile as b
+			on a.cohortgrp=b.group
+			join Monitoringfile_views(where=(periodid=&look_end.)) as c
+			on b.runid=c.runid;
+			quit;
+
+			/* Get stratification values (raw and formatted) if stratification is not overall */
+			%if &strats. ne overall %then %do;
+				proc sort nodupkey data=%if &reporttype=T1 %then %do; msocdata.agg_t1_cida %end;
+										%else %do; msocdata.agg_t2_cida %end; (where=(level="&level.") keep=level &strats.) out=_stratcat;
+				by &strats.;
+				run;
+
+				data _stratcat;
+				set _stratcat;
+				%do z = 1 %to %sysfunc(countw(&strats));
+					%let strat = %scan(&strats,&z);		   
+					%if &strat eq year or &strat eq zip3 or &strat eq state %then %do;
+						&strat.fmt = &strat;
+					%end;
+					%else %if %index(&strat, covar)> 0 %then %do;
+						format &strat.fmt $50.;
+						if &strat. = 0 then &strat.fmt="No evidence of &&&Study&strat.";
+						else &strat.fmt="Evidence of &&&Study&strat.";
+					%end;
+					/* For month and quarter, using the &strat. macro variable when assigning format generates a w.a.r.n.i.n.g in the log */
+					%else %if &strat. eq month %then %do;												
+						length monthfmt $10;
+						monthfmt = put(month, monthfmt.);	
+					%end;
+					%else %if &strat. eq quarter %then %do;												
+						length quarterfmt $10;
+						quarterfmt = put(quarter, quarterfmt.);	
+					%end;
+					%else %do;
+						&strat.fmt = put(&strat., $&strat.fmt.);
+					%end;
+				%end;
+				run;
+
+				proc sql noprint undo_policy=none;
+					create table _cidatable_&i. as
+					select a.*
+						   %do z = 1 %to %sysfunc(countw(&strats));
+						   	 	%let strat = %scan(&strats,&z);	  
+						   ,b.&strat. as &strat.raw
+						   %end;	
+					from _cidatable_&i. as a
+					left join _stratcat as b
+					on %do z = 1 %to %sysfunc(countw(&strats));
+					   		%let strat = %scan(&strats,&z);	  
+						   a.&strat=b.&strat.fmt %if &z. < %sysfunc(countw(&strats)) %then %do; and %end;
+					   %end;;
+				quit;
+
+				proc contents data=&dsn. noprint out=_content(keep=name label);
+				quit;
+
+				/* Get covariate label if necessary */
+				%if %index(&strats., covar) > 0 %then %do;
+					proc sql noprint undo_policy=none;
+					create table _content as
+					select name, 
+						   case when b.studyname is not null then b.studyname
+						   	    else a.label
+						   end as label
+					from _content as a
+					left join (select distinct studyname, cov_varname from covarname) as b
+					on lowcase(a.name) = lowcase(b.cov_varname);
+					quit;
+				%end;
+				
+				/* Compute stratlabel */
+				data _content(where=(order>0));
+				set _content;
+				%do z = 1 %to %sysfunc(countw(&strats));
+			   		%let strat = %scan(&strats,&z);	  
+				    if lowcase(name) = lowcase("&strat.") then order=&z.;		
+			    %end;
+				run;
+
+				%create_comma_charlist(inlist=&strats., outlist=strats_quoted);
+
+				proc sql noprint;
+				select label into :stratlabel separated by "/" 
+				from _content
+				where upcase(name) in (&strats_quoted.)
+				order by order;
+				quit;
+				
+			%end; /* Stratification is not overall */	 	
+
+			/* Finalize variables computation and formatting; */
+			data _cidatable_&i.;
+			length %do col=1 %to &numcolumns; column&col._char %end; $50;
+			retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+				   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
+			set _cidatable_&i.;
+			keep monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+				 stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;			
+			format dp $10. strat stratcat $50. stratlabel stratcatlabel $500. stratdashboardlabel $1000. %do col=1 %to &numcolumns; column&col._char %end; $50.;
+			
+			%if &check_dpidsiteid > 0 %then %do; 
+				dp=dpidsiteid;
+			%end;
+			%else %do;
+				dp="Aggregate";
+			%end;
+
+			strat="&strats";
+			%if &strats. eq overall %then %do;
+				stratcat="overall";
+				stratlabel="Overall Analysis";
+				stratcatlabel="Overall Analysis";
+				stratdashboardlabel="Overall Analysis";
+			%end;
+			%else %do;
+				stratlabel="&stratlabel.";	
+				stratcat="";
+				stratcatlabel="";
+				%do z = 1 %to %sysfunc(countw(&strats));
+			   		%let strat = %scan(&strats,&z);	  
+
+					/* Additional processing for covariates */	
+					%if %index(&strat., covar) > 0 %then %do;
+						if index(&strat., "No evidence of ") > 0 then do;							
+							&strat.="No";
+						end;
+						else do;							
+							&strat.="Yes";
+						end;						
+					%end;
+
+				    stratcat = strip(stratcat) %if &z. > 1 %then %do; || " "  %end; || strip(&strat.raw);		
+					stratcatlabel = strip(stratcatlabel) %if &z. > 1 %then %do; || "/"  %end; || strip(&strat.);
+			    %end;	
+								
+				stratdashboardlabel = strip(stratlabel) || ": " || strip(stratcatlabel);
+			%end;
+
+			/* Replace missing indicator values with blanks */
+			%do col=1 %to &numcolumns;
+				if upcase(column&col._char) in(".", "N/A", "NAN") then column&col._char="";
+			%end;
+			run;
+		%end; /* Result table */
 
 
 		/******************************************************************/
@@ -348,16 +526,15 @@
 	/********************************************************/
 	/* Results Table
 	/********************************************************/
+	%if &resultstableexists > 0 %then %do;			
+	    data views.results;
+		set _cidatable_:;
+		run;
 
-	/* TODO: Wait for code refactoring and aggregation before finalizing */
-
-	/*
-	data views.results;
-	set _cidatable_:
-	run;
-	*/
-
-
+		proc sort data=views.results;
+		by monitoringperiod cohortgrp dp stratorder stratcatorder;
+		run;
+	%end; /* Results table exists */
 
 
 	/********************************************************/
@@ -386,7 +563,7 @@
 
 	/* Clean-up */
 	proc datasets library=work nolist nowarn;
-    	delete _table1_: _cidatable_: _attrition:;
+    	delete _table1_: _cidatable_: _attrition: _content _stratcat;
 	quit;
 		
 %mend l1_sentinel_views_convertdata;
