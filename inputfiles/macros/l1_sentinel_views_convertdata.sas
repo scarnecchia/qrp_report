@@ -278,7 +278,20 @@
 	/* ResultsColumns Table
 	/********************************************************/
 
-
+    proc sql;
+      create table views.resultscolumns as
+       select column as columnkey length 25,
+       order,
+	   columnlabel as columnheader length 500,
+	   (case when CIrate = 'N' and 
+	               find(columnFormat, "comma", "i")  then 'Y'
+             else 'N' end) as Histogram length 10,
+	   (case when find(columnformat, "n.", "i") then "INT"
+             when find(columnformat, "comma", "i") then 
+                tranwrd(cats('DECIMAL',"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ',')
+             else'NVARCHAR(250)' end) as format length 20
+       from tablefile;
+     quit;
 
 
 
