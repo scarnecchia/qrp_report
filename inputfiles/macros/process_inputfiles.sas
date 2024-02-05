@@ -1149,7 +1149,7 @@
         run;
 
         /* Check that groupsfile is defined */
-        %if %length(&groupsfile) = 0 %then %do;
+        %if %length(&groupsfile) = 0 and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
             %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
             %put The reporting code will abort;
             %abort;
@@ -2561,8 +2561,7 @@
 	        by runid covarnum;
 	    run;  
 
-		/*T2L2 Views dashboard requires the same covariates to be specified across runs for all covariates
-			This is different from the check below which is less restricive in that it only checks covariates specified as subgroup or stratification */
+		/* Views dashboards require the same covariates to be specified across runs for all covariates */
 		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
 			proc sort data=covarname out=_covarstudyname nodupkey;
 				by covarnum studyname;
