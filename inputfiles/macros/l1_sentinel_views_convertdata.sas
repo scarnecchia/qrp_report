@@ -479,10 +479,12 @@
 		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
   			headerlabel=strip(label) || " (continuous)";
   			riskscore_label=label;			
+  			if metvar = "CHA2DS2VASC" then headerlabel="CHA2DS2-VASc score (continuous)";
   		end;
   		if prxmatch("/&riskscore_regex/i",metvar) and vartype="dichotomous" then do;
 			headerlabel=strip(riskscore_label) || " (categorical)";
 			variablelabel=label;
+			if prxmatch('/CHA2DS2VASC_CAT/i',metvar) then headerlabel="CHA2DS2-VASc score (categorical)";
 		end;
 		%end;
 
@@ -496,6 +498,7 @@
 			variablelabel='';
 		end;		
 
+  		if indexw(variablelabel,"(*ESC*){unicode '2265'x}") then variablelabel=tranwrd(variablelabel,"(*ESC*){unicode '2265'x}",">=");
 		if exp_mean_char in ('.','N/A','NaN') then exp_mean_char = '';
 		if exp_std_char in ('.','N/A','NaN') then exp_std_char = '';
 		drop riskscore_label label sortorder: headerorder;
