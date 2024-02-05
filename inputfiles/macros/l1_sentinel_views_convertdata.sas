@@ -531,6 +531,8 @@
 	/********************************************************/
 	%if &resultstableexists > 0 %then %do;			
 	    data views.results;
+		retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+			   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
 		set _cidatable_:;
 		run;
 
