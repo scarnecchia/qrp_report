@@ -435,16 +435,30 @@
 	/* Table1
 	/********************************************************/
 	%if &table1exists > 0 %then %do;	
+		%let riskscore_regex=;
+		%let riskscorelist=;
+		%let lab_cov_list=;
 		%if %sysfunc(exist(riskscorefile)) %then %do;
 			proc sql noprint;	
 	            select distinct cats(riskscore,'_CAT'), riskscore
 	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
 	            from riskscorefile;
 			quit;	
-		%end;		
+		%end;	
+
+		%isdata(dataset=covarnameviews);
+		%if &nobs > 0 %then %do;
+			proc sql noprint;
+				select distinct catx('|',studyname,cov_varname)
+				into :lab_cov_list separated by '@'
+				from covarnameviews;
+			quit;
+		%end;
 
 		data views.table1;
+		%if %length(&riskscorelist) > 0 or %length(&riskscore_regex) > 0 %then %do;
 		retain riskscore_label;
+		%end;
 		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
 		       metvar $32 vartype exp_mean_char exp_std_char $30;   
 		set _table1_:;
@@ -496,12 +510,25 @@
 		if prxmatch("/NUM/i",metvar) then do;
 			headerlabel=label;
 			variablelabel='';
-		end;		
+		end;	
+
+		/*Lab covariates */
+		%if %length(&lab_cov_list) > 0 %then %do;
+		if grouper = "Laboratory Characteristics" then do;
+			%do z = 1 %to %sysfunc(countw(&lab_cov_list,%str(@)));
+				%let cov_pairing = %scan(&lab_cov_list,&z,%str(@));
+				%let cov_header = %scan(&cov_pairing,1,%str(|));
+				%let lab_covar_match = %scan(&cov_pairing,-1,%str(|));
+				if prxmatch("/&lab_covar_match/i",metvar) then headerlabel="&cov_header";
+			%end;
+			variablelabel=label;	
+		end;
+		%end;
 
   		if indexw(variablelabel,"(*ESC*){unicode '2265'x}") then variablelabel=tranwrd(variablelabel,"(*ESC*){unicode '2265'x}",">=");
 		if exp_mean_char in ('.','N/A','NaN') then exp_mean_char = '';
 		if exp_std_char in ('.','N/A','NaN') then exp_std_char = '';
-		drop riskscore_label label sortorder: headerorder;
+		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean_char exp_std_char;   
 		run;
 
 		/* create ordering variables */
