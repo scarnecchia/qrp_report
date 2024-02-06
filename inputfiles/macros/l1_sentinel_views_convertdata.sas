@@ -475,6 +475,14 @@
 		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
 		       metvar $32 vartype exp_mean_char exp_std_char $30;   
 		set _table1_:;
+		if upcase(metvar) = 'PATIENT' then do;
+			headerlabel='Number of Patients';
+			variablelabel='';
+		end;
+		if upcase(metvar) = 'N_EPISODES' then do;
+			headerlabel='Number of Episodes';
+			variablelabel='';
+		end;
 		if upcase(metvar)='AGE' then do;
 			headerlabel='Mean Age';
 			variablelabel='';
@@ -562,6 +570,8 @@
 			end;
 			if first.variablelabel then variableorder+1;
 		run;
+
+
 
 	%end; /* Table1 exists */
 
