@@ -534,6 +534,9 @@
 		retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
 			   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
 		set _cidatable_:;
+		/* Change unicode value to symbol */
+        if indexw(stratcatlabel ,"(*ESC*){unicode '2265'x}") then stratcatlabel =tranwrd(stratcatlabel ,"(*ESC*){unicode '2265'x}",">=");
+		if indexw(stratdashboardlabel  ,"(*ESC*){unicode '2265'x}") then stratdashboardlabel  =tranwrd(stratdashboardlabel  ,"(*ESC*){unicode '2265'x}",">=");
 		run;
 
 		proc sort data=views.results;
