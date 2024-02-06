@@ -588,12 +588,11 @@
 	/********************************************************/
 	/* ResultsColumns Table
 	/********************************************************/
-	
-	%isdata(dataset=views.results);
-	%if %eval(&nobs.>0) %then %do;
+
+	%if &resultstableexists > 0 %then %do;
 		proc sql;
 		  create table views.resultscolumns as
-		   select column as columnkey length 25,
+		   select catx('','column',order,'_char')  as columnkey length 25,
 		   order,
 		   columnlabel as columnheader length 500,
 		   (case when CIrate = 'N' and 
