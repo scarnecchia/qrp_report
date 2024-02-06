@@ -477,11 +477,11 @@
 		set _table1_:;
 		if upcase(metvar) = 'PATIENT' then do;
 			headerlabel='Number of Patients';
-			variablelabel='';
+			variablelabel=label;
 		end;
 		if upcase(metvar) = 'N_EPISODES' then do;
 			headerlabel='Number of Episodes';
-			variablelabel='';
+			variablelabel=label;
 		end;
 		if upcase(metvar)='AGE' then do;
 			headerlabel='Mean Age';
