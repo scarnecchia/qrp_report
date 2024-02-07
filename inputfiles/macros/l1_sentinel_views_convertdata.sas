@@ -47,7 +47,7 @@
 ***************************************************************************************************;
 
 %macro l1_sentinel_views_convertdata(requestID=,jirakey=,userid=,studytitle=);
-
+libname qc "U:\dev\test\qrp_report_DEV33334\_QC";
 	proc datasets library=views kill nowarn nolist; run; quit;
 
 	/* Loop through list of tables in REPDATA library */
@@ -394,7 +394,7 @@
 	/* CohortGroup Table
 	/********************************************************/
 
-    proc sql;
+    proc sql noprint;
     create table cohortgroup as
     select distinct 
       a.group as cohortgrp length 40,
@@ -603,21 +603,24 @@
 	/* ResultsColumns Table
 	/********************************************************/
 
-	%if &resultstableexists > 0 %then %do;
-		proc sql;
-		  create table views.resultscolumns as
-		   select catx('','column',order,'_char')  as columnkey length 25,
-		   order,
-		   columnlabel as columnheader length 500,
-		   (case when CIrate = 'N' and 
-					   find(columnFormat, "comma", "i")  then 'Y'
-				 else 'N' end) as Histogram length 10,
-		   (case when find(columnformat, "n.", "i") then "INT"
-				 when find(columnformat, "comma", "i") then 
-					tranwrd(cats('DECIMAL',"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ',')
-				 else'NVARCHAR(250)' end) as format length 20
-		   from tablecolumns;
-		 quit;
+	%if &resultstableexists > 0 %then %do; 
+		data views.resultscolumns(keep=columnkey order columnheader histogram format);
+			length columnkey $25. order 3. columnheader $500. histogram $10. format type $20.;
+			set tablecolumns(rename=(order=_order));
+			order=_order;
+			columnheader=columnlabel;
+			columnkey=cats(columnname,'_char');
+			if CIrate = 'N' and find(columnFormat, "comma", "i") then Histogram='Y';
+				else Histogram='N';
+			if find(columnformat, "comma", "i") then do;
+				if substr(columnformat, find(columnformat, '.'))='.0' then type='INT';
+				else type='DECIMAL';
+			end;
+			if type='DECIMAL' then format=tranwrd(cats(type,"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ','); 
+			else if type='INT' then format=type;
+			else format='NVARCHAR(250)';
+			if CIrate ^= 'N' then format='NVARCHAR(250)';
+		run;	 
 	%end;
 
 
