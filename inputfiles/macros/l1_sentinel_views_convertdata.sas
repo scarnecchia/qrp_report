@@ -47,7 +47,7 @@
 ***************************************************************************************************;
 
 %macro l1_sentinel_views_convertdata(requestID=,jirakey=,userid=,studytitle=);
-libname qc "U:\dev\test\qrp_report_DEV33334\_QC";
+
 	proc datasets library=views kill nowarn nolist; run; quit;
 
 	/* Loop through list of tables in REPDATA library */
