@@ -80,9 +80,17 @@
 		/******************************************************************/
 		%if &check_table1 > 0 %then %do;	
 			%let table1exists=1;	
+			
+			/* Check if baselinegroupnum is used */	
+			%let cohortgrp1=;
+			%let cohortgrp2=;		
+			proc sql noprint;	
+				select group into :cohortgrp1 trimmed from baselinefile where baselinegroupnum=1 and group in (select distinct analysisgrp from &dsn.);
+				select group into :cohortgrp2 trimmed from baselinefile where baselinegroupnum=2 and group in (select distinct analysisgrp from &dsn.);
+			quit;
 
 		    %do dpcnt = 0 %to &num_dp;		        		
-				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));	
+				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));		
 				%if &check_table1_dp > 0 %then %do;	
 					proc sql noprint;
 					select periodid2 into :periodid2 trimmed 
@@ -92,7 +100,7 @@
 
 					select distinct quote(strip(group))
 					into :views_groups separated by ' '
-					from input.&groupsfile;
+					from input.&groupsfile;					
 					quit;
 
 		            data _table1_&dpcnt._&i.;
@@ -105,12 +113,34 @@
 	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
 					monitoringperiod=&periodid2;
 	                rename sortorder1=headerorder
-						   exp_mean&dpcnt._char=exp_mean_char 
-						   exp_std&dpcnt._char=exp_std_char
+						   exp_mean&dpcnt._char=exp_mean 
+						   exp_std&dpcnt._char=exp_std
 						   analysisgrp=cohortgrp; 				
-					where analysisgrp in (&views_groups);	   
+					where analysisgrp in (&views_groups);
+					%if %str(&cohortgrp1.) ne %str() %then %do; analysisgrp = "&cohortgrp1."; %end;
 	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt._char exp_std&dpcnt._char dp monitoringperiod;
-		            run;		
+		            run;	
+					
+					/* If baselinegroupnum was used, output second cohort */
+					%if %str(&cohortgrp2.) ne %str() %then %do;
+						data _table1_&dpcnt._&i._comp;
+		                set &dsn;
+		                length dp $10 monitoringperiod 3; 
+						format monitoringperiod 3.; 
+		                if missing(metvar) then delete;              
+		                if &dpcnt. = 0 then dp = "Aggregate";
+		                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+		                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+						monitoringperiod=&periodid2;
+		                rename sortorder1=headerorder
+							   comp_mean&dpcnt._char=exp_mean 
+							   comp_std&dpcnt._char=exp_std
+							   analysisgrp=cohortgrp; 				
+						where analysisgrp in (&views_groups);
+						analysisgrp = "&cohortgrp2.";
+		                keep metvar	label sortorder: grouper analysisgrp vartype comp_mean&dpcnt._char comp_std&dpcnt._char dp monitoringperiod;
+			            run;
+					%end;
 				%end;
 			%end;  /* DP loop */	
 		%end; /* Table1 */
@@ -342,6 +372,11 @@
 
 
 	/********************************************************/
+	/* Additional processing of datasets. 
+    /* Stack and save all tables to views folder 					
+	/********************************************************/
+
+	/********************************************************/
 	/* Study table
 	/********************************************************/
     data views.study;
@@ -477,7 +512,7 @@
 		retain riskscore_label;
 		%end;
 		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
-		       metvar $32 vartype exp_mean_char exp_std_char $30;   
+		       metvar $32 vartype exp_mean exp_std $30;   
 		set _table1_:;
 		if upcase(metvar) = 'PATIENT' then do;
 			headerlabel='Number of Patients';
@@ -551,15 +586,15 @@
 		%end;
 
   		if indexw(variablelabel,"(*ESC*){unicode '2265'x}") then variablelabel=tranwrd(variablelabel,"(*ESC*){unicode '2265'x}",">=");
-		if exp_mean_char in ('.','N/A','NaN') then exp_mean_char = '';
-		if exp_std_char in ('.','N/A','NaN') then exp_std_char = '';
-		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean_char exp_std_char;   
+		if exp_mean in ('.','N/A','NaN') then exp_mean = '';
+		if exp_std in ('.','N/A','NaN') then exp_std = '';
+		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean exp_std;   
 		run;
 
 		/* create ordering variables */
 		data views.table1;
 			length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
-		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean_char exp_std_char $30;   
+		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean exp_std $30;   
 			set views.table1;  
 			by monitoringperiod cohortgrp dp grouper headerlabel variablelabel notsorted;
 			if first.monitoringperiod or first.cohortgrp or first.dp then do;
