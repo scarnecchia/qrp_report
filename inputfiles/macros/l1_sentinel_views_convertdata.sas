@@ -126,7 +126,7 @@
 			/* Get number of selected stat columns, level (unique in &dsn) and stratification variables */
 			proc sql noprint;
 				select count(*) into :numcolumns trimmed from tablecolumns 
-				where table= %if &reporttype. eq T1 %then %do; "t1cida" %end; %else %do; "t2cida" %end;;
+				where table="t&typenum.cida";
 
 				select distinct level into :level from &dsn;
 				select lowcase(tablesub) into :strats from tablefile where levelid1="&level";
@@ -166,8 +166,7 @@
 
 			/* Get stratification values (raw and formatted) if stratification is not overall */
 			%if &strats. ne overall %then %do;
-				proc sort nodupkey data=%if &reporttype=T1 %then %do; msocdata.agg_t1_cida %end;
-										%else %do; msocdata.agg_t2_cida %end; (where=(level="&level.") keep=level &strats.) out=_stratcat;
+				proc sort nodupkey data=msocdata.agg_t&typenum._cida(where=(level="&level.") keep=level &strats.) out=_stratcat;
 				by &strats.;
 				run;
 
