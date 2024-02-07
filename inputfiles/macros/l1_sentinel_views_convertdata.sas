@@ -6,22 +6,27 @@
 * Created (mm/dd/yyyy): 08/12/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: Transform qrp_report Types 1 and 2 MSOCDATA folder datasets for use in the Sentinel Views
-*          KPI Studio Platform.
+* PURPOSE: Transform qrp_report Types 1 and 2 REPDATA folder datasets for use in the Sentinel Views.
 *
 *  Program inputs: 
-    Input files:
-*   - work.userstrata.sas7bdat
+*   Input files:
+*   - input.[tablefile]
+*   - input.[tablecolumnsfile]
 *	- input.[baselinefile]
-*   MSOCDATA datasets
-*	- msocdata.agg_baseline_[PeriodID]
-*	- msocdata.agg_[ReportType]cida   
-*	- msocdata.agg_t2followuptime 
+*	- input.[groupsfile]
+*   REPDATA datasets
+*	- baseline tables
+*	- t1_cida/t2_cida result tables
+*	- attrition tables
 *
 *  Program outputs:  
-*	- agg_[ReportType]_baseline
-*	- agg_[ReportType]_cida
-*	- agg_t2_followuptime
+*	- attrition
+*	- cohortgroup
+*	- monitoringperiod
+*	- study
+*	- baseline (if requested)
+*	- results (if requested)
+*	- resultscolumns (if requested)
 *
 *  PARAMETERS: 
 *	requestID: 5 Token Request ID, defined in %create_report as &viewsID
@@ -30,9 +35,9 @@
 *   studytitle: Title of query
 *
 *  Programming Notes: 
-*   - This macro calls %baseline_expand_parameters macro 
-*   - summary and followup tables must be requested in the TABLEFILE in order to be available for
-*     inclusion in KPI studio
+*   - This macro calls %create_comma_charlist macro 
+*   - result tables must be requested in the TABLEFILE input file in order to be available in the views output
+*   - baseline tables must be requested in the BASELINEFILE input file in order to be available in the views output
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
@@ -50,7 +55,7 @@
 	select catx('.','repdata',memname) 
 	into :repdatadsn separated by '@'
 	from dictionary.tables 
-	where libname = 'REPDATA' and prxmatch('/^table\d|^figure\d/i',memname);
+	where libname = 'REPDATA' and prxmatch('/^table\d/i',memname);
 	quit;
 
 	%let table1exists=0;
