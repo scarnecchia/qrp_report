@@ -563,7 +563,10 @@
 				headerorder=0;
 				variableorder=0;
 			end;
-			if first.grouper then grouperorder+1;
+			if first.grouper then do;
+				grouperorder+1;
+				headerorder=0;
+			end;
 			if first.headerlabel then do;
 				headerorder+1;
 				variableorder=0;
