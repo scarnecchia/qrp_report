@@ -6,22 +6,27 @@
 * Created (mm/dd/yyyy): 08/12/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: Transform qrp_report Types 1 and 2 MSOCDATA folder datasets for use in the Sentinel Views
-*          KPI Studio Platform.
+* PURPOSE: Transform qrp_report Types 1 and 2 REPDATA folder datasets for use in the Sentinel Views.
 *
 *  Program inputs: 
-    Input files:
-*   - work.userstrata.sas7bdat
+*   Input files:
+*   - input.[tablefile]
+*   - input.[tablecolumnsfile]
 *	- input.[baselinefile]
-*   MSOCDATA datasets
-*	- msocdata.agg_baseline_[PeriodID]
-*	- msocdata.agg_[ReportType]cida   
-*	- msocdata.agg_t2followuptime 
+*	- input.[groupsfile]
+*   REPDATA datasets
+*	- baseline tables
+*	- t1_cida/t2_cida result tables
+*	- attrition tables
 *
 *  Program outputs:  
-*	- agg_[ReportType]_baseline
-*	- agg_[ReportType]_cida
-*	- agg_t2_followuptime
+*	- attrition
+*	- cohortgroup
+*	- monitoringperiod
+*	- study
+*	- baseline (if requested)
+*	- results (if requested)
+*	- resultscolumns (if requested)
 *
 *  PARAMETERS: 
 *	requestID: 5 Token Request ID, defined in %create_report as &viewsID
@@ -30,9 +35,9 @@
 *   studytitle: Title of query
 *
 *  Programming Notes: 
-*   - This macro calls %baseline_expand_parameters macro 
-*   - summary and followup tables must be requested in the TABLEFILE in order to be available for
-*     inclusion in KPI studio
+*   - This macro calls %create_comma_charlist macro 
+*   - result tables must be requested in the TABLEFILE input file in order to be available in the views output
+*   - baseline tables must be requested in the BASELINEFILE input file in order to be available in the views output
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
@@ -50,7 +55,7 @@
 	select catx('.','repdata',memname) 
 	into :repdatadsn separated by '@'
 	from dictionary.tables 
-	where libname = 'REPDATA' and prxmatch('/^table\d|^figure\d/i',memname);
+	where libname = 'REPDATA' and prxmatch('/^table\d/i',memname);
 	quit;
 
 	%let table1exists=0;
@@ -75,9 +80,17 @@
 		/******************************************************************/
 		%if &check_table1 > 0 %then %do;	
 			%let table1exists=1;	
+			
+			/* Check if baselinegroupnum is used */	
+			%let cohortgrp1=;
+			%let cohortgrp2=;		
+			proc sql noprint;	
+				select group into :cohortgrp1 trimmed from baselinefile where baselinegroupnum=1 and group in (select distinct analysisgrp from &dsn.);
+				select group into :cohortgrp2 trimmed from baselinefile where baselinegroupnum=2 and group in (select distinct analysisgrp from &dsn.);
+			quit;
 
 		    %do dpcnt = 0 %to &num_dp;		        		
-				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));	
+				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));		
 				%if &check_table1_dp > 0 %then %do;	
 					proc sql noprint;
 					select periodid2 into :periodid2 trimmed 
@@ -87,7 +100,7 @@
 
 					select distinct quote(strip(group))
 					into :views_groups separated by ' '
-					from input.&groupsfile;
+					from input.&groupsfile;					
 					quit;
 
 		            data _table1_&dpcnt._&i.;
@@ -100,12 +113,34 @@
 	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
 					monitoringperiod=&periodid2;
 	                rename sortorder1=headerorder
-						   exp_mean&dpcnt._char=exp_mean_char 
-						   exp_std&dpcnt._char=exp_std_char
+						   exp_mean&dpcnt._char=exp_mean 
+						   exp_std&dpcnt._char=exp_std
 						   analysisgrp=cohortgrp; 				
-					where analysisgrp in (&views_groups);	   
+					where analysisgrp in (&views_groups);
+					%if %str(&cohortgrp1.) ne %str() %then %do; analysisgrp = "&cohortgrp1."; %end;
 	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt._char exp_std&dpcnt._char dp monitoringperiod;
-		            run;		
+		            run;	
+					
+					/* If baselinegroupnum was used, output second cohort */
+					%if %str(&cohortgrp2.) ne %str() %then %do;
+						data _table1_&dpcnt._&i._comp;
+		                set &dsn;
+		                length dp $10 monitoringperiod 3; 
+						format monitoringperiod 3.; 
+		                if missing(metvar) then delete;              
+		                if &dpcnt. = 0 then dp = "Aggregate";
+		                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+		                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+						monitoringperiod=&periodid2;
+		                rename sortorder1=headerorder
+							   comp_mean&dpcnt._char=exp_mean 
+							   comp_std&dpcnt._char=exp_std
+							   analysisgrp=cohortgrp; 				
+						where analysisgrp in (&views_groups);
+						analysisgrp = "&cohortgrp2.";
+		                keep metvar	label sortorder: grouper analysisgrp vartype comp_mean&dpcnt._char comp_std&dpcnt._char dp monitoringperiod;
+			            run;
+					%end;
 				%end;
 			%end;  /* DP loop */	
 		%end; /* Table1 */
@@ -121,7 +156,7 @@
 			/* Get number of selected stat columns, level (unique in &dsn) and stratification variables */
 			proc sql noprint;
 				select count(*) into :numcolumns trimmed from tablecolumns 
-				where table= %if &reporttype. eq T1 %then %do; "t1cida" %end; %else %do; "t2cida" %end;;
+				where table="t&typenum.cida";
 
 				select distinct level into :level from &dsn;
 				select lowcase(tablesub) into :strats from tablefile where levelid1="&level";
@@ -161,8 +196,7 @@
 
 			/* Get stratification values (raw and formatted) if stratification is not overall */
 			%if &strats. ne overall %then %do;
-				proc sort nodupkey data=%if &reporttype=T1 %then %do; msocdata.agg_t1_cida %end;
-										%else %do; msocdata.agg_t2_cida %end; (where=(level="&level.") keep=level &strats.) out=_stratcat;
+				proc sort nodupkey data=msocdata.agg_t&typenum._cida(where=(level="&level.") keep=level &strats.) out=_stratcat;
 				by &strats.;
 				run;
 
@@ -338,6 +372,11 @@
 
 
 	/********************************************************/
+	/* Additional processing of datasets. 
+    /* Stack and save all tables to views folder 					
+	/********************************************************/
+
+	/********************************************************/
 	/* Study table
 	/********************************************************/
     data views.study;
@@ -390,7 +429,7 @@
 	/* CohortGroup Table
 	/********************************************************/
 
-    proc sql;
+    proc sql noprint;
     create table cohortgroup as
     select distinct 
       a.group as cohortgrp length 40,
@@ -473,7 +512,7 @@
 		retain riskscore_label;
 		%end;
 		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
-		       metvar $32 vartype exp_mean_char exp_std_char $30;   
+		       metvar $32 vartype exp_mean exp_std $30;   
 		set _table1_:;
 		if upcase(metvar) = 'PATIENT' then do;
 			headerlabel='Number of Patients';
@@ -547,15 +586,15 @@
 		%end;
 
   		if indexw(variablelabel,"(*ESC*){unicode '2265'x}") then variablelabel=tranwrd(variablelabel,"(*ESC*){unicode '2265'x}",">=");
-		if exp_mean_char in ('.','N/A','NaN') then exp_mean_char = '';
-		if exp_std_char in ('.','N/A','NaN') then exp_std_char = '';
-		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean_char exp_std_char;   
+		if exp_mean in ('.','N/A','NaN') then exp_mean = '';
+		if exp_std in ('.','N/A','NaN') then exp_std = '';
+		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean exp_std;   
 		run;
 
 		/* create ordering variables */
 		data views.table1;
 			length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
-		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean_char exp_std_char $30;   
+		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean exp_std $30;   
 			set views.table1;  
 			by monitoringperiod cohortgrp dp grouper headerlabel variablelabel notsorted;
 			if first.monitoringperiod or first.cohortgrp or first.dp then do;
@@ -602,21 +641,24 @@
 	/* ResultsColumns Table
 	/********************************************************/
 
-	%if &resultstableexists > 0 %then %do;
-		proc sql;
-		  create table views.resultscolumns as
-		   select catx('','column',order,'_char')  as columnkey length 25,
-		   order,
-		   columnlabel as columnheader length 500,
-		   (case when CIrate = 'N' and 
-					   find(columnFormat, "comma", "i")  then 'Y'
-				 else 'N' end) as Histogram length 10,
-		   (case when find(columnformat, "n.", "i") then "INT"
-				 when find(columnformat, "comma", "i") then 
-					tranwrd(cats('DECIMAL',"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ',')
-				 else'NVARCHAR(250)' end) as format length 20
-		   from tablecolumns;
-		 quit;
+	%if &resultstableexists > 0 %then %do; 
+		data views.resultscolumns(keep=columnkey order columnheader histogram format);
+			length columnkey $25. order 3. columnheader $500. histogram $10. format type $20.;
+			set tablecolumns(rename=(order=_order));
+			order=_order;
+			columnheader=columnlabel;
+			columnkey=cats(columnname,'_char');
+			if CIrate = 'N' and find(columnFormat, "comma", "i") then Histogram='Y';
+				else Histogram='N';
+			if find(columnformat, "comma", "i") then do;
+				if substr(columnformat, find(columnformat, '.'))='.0' then type='INT';
+				else type='DECIMAL';
+			end;
+			if type='DECIMAL' then format=tranwrd(cats(type,"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ','); 
+			else if type='INT' then format=type;
+			else format='NVARCHAR(250)';
+			if CIrate ^= 'N' then format='NVARCHAR(250)';
+		run;	 
 	%end;
 
 
