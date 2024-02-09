@@ -1131,7 +1131,7 @@
     /* Views platform does not have a way of distinguishing multiple runids
        so monitoring period variable is incremented as periodid2 to work around
        limitation */
-    %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+    %if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
         data monitoringfile_views;
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
@@ -1147,6 +1147,13 @@
                 end;
             %end;
         run;
+
+        /* Check that groupsfile is defined */
+        %if %length(&groupsfile) = 0 and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
+            %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
+            %put The reporting code will abort;
+            %abort;
+        %end;
     %end;
 
 /***************************************************************************************************
@@ -2554,9 +2561,8 @@
 	        by runid covarnum;
 	    run;  
 
-		/*T2L2 Views dashboard requires the same covariates to be specified across runs for all covariates
-			This is different from the check below which is less restricive in that it only checks covariates specified as subgroup or stratification */
-		%if &outputviewsdata. = Y and &reporttype. = T2L2 %then %do;
+		/* Views dashboards require the same covariates to be specified across runs for all covariates */
+		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
 			proc sort data=covarname out=_covarstudyname nodupkey;
 				by covarnum studyname;
 			run;
