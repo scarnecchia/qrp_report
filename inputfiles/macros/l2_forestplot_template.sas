@@ -16,7 +16,8 @@
 *   -
 * 
 *  PARAMETERS:
-*  plotheight - Specifies height of forest plot                                                                       
+*  plotheight - Specifies height of forest plot     
+*  plotwidth  - Specified width of the forest plot                                                                  
 *            
 *  Programming Notes:                                                                                
 *                                                                           
@@ -29,14 +30,14 @@
 *--------------------------------------------------------------------------------------------------
 ***************************************************************************************************;
 
-%macro l2_forestplot_template(plotheight=, pointest=, lowerci=, upperci=, ci95=, cilabel=, font=);
+%macro l2_forestplot_template(plotheight=, plotwidth=, pointest=, lowerci=, upperci=, ci95=, cilabel=, font=);
 
 ods path(prepend) work.templat(update);
 
 proc template;
     define statgraph forestAxisTable;
     dynamic _headerColor;
-    begingraph / designheight=&plotheight designwidth=7in;
+    begingraph / designheight=&plotheight. designwidth=&plotwidth.;
 
     discreteattrmap name='text' / trimleading=true;
     value '1' / textAttrs=(weight=bold family="&font");
