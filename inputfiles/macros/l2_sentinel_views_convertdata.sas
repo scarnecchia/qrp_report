@@ -920,6 +920,8 @@
 			create table views.effectest as
 			select a.*
 				   ,b.subgroup	
+                   ,b.subgroupcatorder
+                   ,b.subgrouporder
 			from views.effectest as a
 			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.tabletitle=b.tabletitle and a.subgroupcat=b.subgroupcat;
@@ -1062,7 +1064,7 @@
 
     proc datasets library=work nolist nowarn;
         delete analysistable _psdist: monitoringfile_views _attrition: _km: _temptable1: table1: _table1:
-        _metanames _effectest: pscs_masterinputs_views psest_masterinputs_views; 
+        _metanames /*_effectest: pscs_masterinputs_views psest_masterinputs_views*/; 
     quit;		
 
 %mend l2_sentinel_views_convertdata;
