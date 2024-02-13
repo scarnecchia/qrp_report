@@ -918,10 +918,23 @@
 		%if &check_subgroups>0 %then %do;
 			proc sql noprint undo_policy=none;
 			create table views.effectest as
-			select a.*
-				   ,b.subgroup	
-                   ,b.subgroupcatorder
-                   ,b.subgrouporder
+			select a.medicalproduct
+                  ,a.subgroupcat ,a.analysisgrp ,a.analysis
+                  ,a.MonitoringPeriod ,a.n ,a.EV 
+                  ,a.IRDiff_1000PY ,a.RD_1000NU ,a.risk_1000NU
+                  ,a.FUTime_Y ,a.AvgFUTime_D ,a.AvgFUTime_Y
+                  ,a.IR_1000PY ,a.NNT ,a.AR
+                  ,a.poprisk ,a.PAR ,a.totalevents
+                  ,a.EVchar ,a.IR_1000PYchar ,a.IRDiff_1000PYchar
+                  ,a.RD_1000NUchar ,a.risk_1000NUchar ,a.rrchar
+                  ,a.FUTime_Ychar ,a.AvgFUTime_Dchar ,a.AvgFUTime_Ychar
+                  ,a.sort1 ,a.sort2 ,a.analysisgrpsort
+                  ,a.tabletitle ,a.subgroupcatlabel ,a.HR_95CI ,a.HR_pvalue
+                  ,a.HR ,a.LCL ,a.UCL ,a.HR_coef ,a.HR_se
+                  ,a.label ,a.medicalproduct_labeled
+                  ,b.subgroup	
+                  ,coalesce(a.subgroupcatorder, b.subgroupcatorder) as subgroupcatorder
+                  ,coalesce(a.subgrouporder, b.subgrouporder) as subgrouporder
 			from views.effectest as a
 			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.tabletitle=b.tabletitle and a.subgroupcat=b.subgroupcat;
@@ -940,9 +953,9 @@
 			   RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
 			   HR_pvalue HR LCL UCL HR_coef HR_se;
 		length monitoringperiod2 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500
-			   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40;
+			   EVChar IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40;
 		format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.
-			   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40. HR_coef best8.;
+			   EVChar IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40. HR_coef best8.;
 	    set views.effectest;
 		tabletitle = resolve(tabletitle);
 		monitoringperiod2=monitoringperiod;
