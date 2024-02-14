@@ -100,7 +100,6 @@
               call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
               %end;
               call symputx("forest_title",forest_title);
-
               /*if HR cannot be computed for any row in plot, then:
                  - only 8 additional footnotes are possible
                  - start assigning footnotes at 2
@@ -111,6 +110,21 @@
                 call symputx('unicode_forplot', substr("&unicode_list.",6)); /*unicode characters are 4 digits*/
                 call symputx('forestnohrsuper', "^{super 1}");
               end;
+              call symputx('plotwidth','7in', 'G');
+            run;
+
+            data _null_;
+                set forest nobs=n;
+                titlelen=length(title);
+                if id=1 and titlelen >= 80 then do;  
+                        call symputx('plotwidth',cats(titlelen**0.7,'in'),'G');
+                        if n <= 5 then call symputx('plotheight',cats(titlelen**0.3,'in'),"G");
+                        else if n > 5 and n <= 10 then call symputx('plotheight',cats(titlelen**0.35,'in'),"G");
+                        else if n > 10 and n <= 20 then call symputx('plotheight',cats(titlelen**0.4,'in'),"G");
+                        else if n > 20 and n <= 30 then call symputx('plotheight',cats(titlelen**0.5,'in'),"G");
+                        else if n > 30 and n <= 40 then call symputx('plotheight',cats(titlelen**0.6,'in'),"G");
+                        else if n > 40 then call symputx('plotheight',cats(titlelen**0.7,'in'),"G");
+                end;
             run;
 
             /* Only create forest plots if analysis exists */
@@ -226,7 +240,7 @@
                 p " ";
                 run;
 
-                %l2_forestplot_template(plotheight=&plotheight, pointest=&Forestpointest, 
+                %l2_forestplot_template(plotheight=&plotheight, plotwidth=&plotwidth, pointest=&Forestpointest, 
                                      lowerci=&Forestlowerci, upperci=&Forestupperci, 
                                      ci95=&Forestci95, cilabel=&forestratiolabel, font=&fontfamily);
 
