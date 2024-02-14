@@ -409,6 +409,7 @@
 	                    proc sql noprint undo_policy=none;
 	                        create table _effectest_&i. as 
 	                        select B.medicalproduct, B.subgroupcat, B.subgroupcatlabel, B.analysisgrp, B.analysis, 
+                                    B.subgroupcatorder, B.subgrouporder,
 	                                a.periodid2 as monitoringperiod, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
 	                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
 	                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
@@ -920,8 +921,6 @@
 			create table views.effectest as
 			select a.*
 				   ,b.subgroup	
-                   ,b.subgroupcatorder
-                   ,b.subgrouporder
 			from views.effectest as a
 			left join _subgroup_info as b
 			on a.analysisgrp=b.analysisgrp and a.tabletitle=b.tabletitle and a.subgroupcat=b.subgroupcat;
