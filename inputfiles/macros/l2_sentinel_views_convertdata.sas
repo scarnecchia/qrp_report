@@ -409,6 +409,7 @@
 	                    proc sql noprint undo_policy=none;
 	                        create table _effectest_&i. as 
 	                        select B.medicalproduct, B.subgroupcat, B.subgroupcatlabel, B.analysisgrp, B.analysis, 
+                                    B.subgroupcatorder, B.subgrouporder,
 	                                a.periodid2 as monitoringperiod, B.n, B.FUTime_Y, B.AvgFUTime_D, B.AvgFUTime_Y, B.EV, 
 	                                B.totalevents, B.IR_1000PY, B.risk_1000NU, B.IRDiff_1000PY, B.RD_1000NU, B.poprisk, B.nnt, B.ar, 
 	                                B.par, B.EVchar, B.rrchar, B.IR_1000PYchar, B.IRDiff_1000PYchar, B.RD_1000NUchar, 
@@ -938,9 +939,9 @@
 			   RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar sort1 sort2 HR_95CI
 			   HR_pvalue HR LCL UCL HR_coef HR_se;
 		length monitoringperiod2 3 dp $10 subgroup subgroupcat $50 tabletitle subgroupcatlabel $500
-			   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40;
+			   EVchar IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40;
 		format monitoringperiod2 3. dp $10. subgroup subgroupcat $50. SubgroupDashboardLabel $1000.
-			   IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40. HR_coef best8.;
+			   EVchar IR_1000PYchar IRDiff_1000PYchar RD_1000NUchar risk_1000NUchar rrchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar HR_95CI HR_pvalue $40. HR_coef best8.;
 	    set views.effectest;
 		tabletitle = resolve(tabletitle);
 		monitoringperiod2=monitoringperiod;
