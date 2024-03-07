@@ -120,6 +120,9 @@
 				%if %index(&reporttype,T4) > 0 %then %do;
 				codepop
 				%end;
+				%if &outputviewsdata.=Y %then %do;
+				sortorder:
+				%end;
                 ;
             run;
         %end;

@@ -210,7 +210,7 @@
     ods proclabel = "Table &tabnum.";
 
      proc report data = repdata.table&tabnum. nofs nowd spanrows missing headskip split="*"
-        style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr] split='*'
+        style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr tagattr='type:string'] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
         columns (%if %length(&spanningheader)>0 %then %do; "&spanningheader." %end; %if &nonpreg. = Y %then %do; pregflg %end;
@@ -245,7 +245,7 @@
 		   define &varname. / display %if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; "&varlabel.&super_column." %end;
                                       %else %do; "&varlabel" %end;
                  style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
-				 style(header)=[%if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; height=.5in %end; just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
+				 style(header)=[%if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; height=.5in %end; just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr tagattr='type:string'];
         %end;
 
 		/* Add title */

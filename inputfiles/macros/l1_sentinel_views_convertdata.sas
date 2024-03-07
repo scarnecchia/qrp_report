@@ -6,30 +6,38 @@
 * Created (mm/dd/yyyy): 08/12/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: Transform qrp_report Types 1 and 2 MSOCDATA folder datasets for use in the Sentinel Views
-*          KPI Studio Platform.
+* PURPOSE: Transform qrp_report Types 1 and 2 REPDATA folder datasets for use in the Sentinel Views.
 *
 *  Program inputs: 
-    Input files:
-*   - work.userstrata.sas7bdat
+*   Input files:
+*   - input.[tablefile]
+*   - input.[tablecolumnsfile]
 *	- input.[baselinefile]
-*   MSOCDATA datasets
-*	- msocdata.agg_baseline_[PeriodID]
-*	- msocdata.agg_[ReportType]cida   
-*	- msocdata.agg_t2followuptime 
+*	- input.[groupsfile]
+*   REPDATA datasets
+*	- baseline tables
+*	- t1_cida/t2_cida result tables
+*	- attrition tables
 *
 *  Program outputs:  
-*	- agg_[ReportType]_baseline
-*	- agg_[ReportType]_cida
-*	- agg_t2_followuptime
+*	- attrition
+*	- cohortgroup
+*	- monitoringperiod
+*	- study
+*	- baseline (if requested)
+*	- results (if requested)
+*	- resultscolumns (if requested)
 *
 *  PARAMETERS: 
 *	requestID: 5 Token Request ID, defined in %create_report as &viewsID
+*   jirakey: Jira tag number associated with query
+*   userid: Users e-mail address
+*   studytitle: Title of query
 *
 *  Programming Notes: 
-*   - This macro calls %baseline_expand_parameters macro 
-*   - summary and followup tables must be requested in the TABLEFILE in order to be available for
-*     inclusion in KPI studio
+*   - This macro calls %create_comma_charlist macro 
+*   - result tables must be requested in the TABLEFILE input file in order to be available in the views output
+*   - baseline tables must be requested in the BASELINEFILE input file in order to be available in the views output
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO:
@@ -38,413 +46,625 @@
 *
 ***************************************************************************************************;
 
-%macro l1_sentinel_views_convertdata(requestID);
+%macro l1_sentinel_views_convertdata(requestID=,jirakey=,userid=,studytitle=);
 
 	proc datasets library=views kill nowarn nolist; run; quit;
 
-	/* Copy all datasets from MSOCDATA to VIEWS folder for initial data processing */
-    /* Datasets not converted to Sentinel Views will be deleted */
-	proc copy in=msocdata out=views memtype=data; run;
-
-	/* Read in name of all datasets into macro variable &msocdatadsn */
+	/* Loop through list of tables in REPDATA library */
 	proc sql noprint;
-        select memname 
-        into :msocdatadsn separated by '@'
-        from dictionary.tables 
-        where libname = 'MSOCDATA';
+	select catx('.','repdata',memname) 
+	into :repdatadsn separated by '@'
+	from dictionary.tables 
+	where libname = 'REPDATA' and prxmatch('/^table\d/i',memname);
+	quit;
+
+	%let table1exists=0;
+	%let resultstableexists=0;
+
+	%do i = 1 %to %sysfunc(countw(&repdatadsn,@));
+	    %let dsn = %scan(&repdatadsn,&i,@);
+		%let table = %sysfunc(tranwrd(&dsn,repdata.,%str()));
+		%let dsid=%sysfunc(open(&dsn));
+        %let check_table1=%sysfunc(varnum(&dsid,metvar));
+		%let check_cidatable=%sysfunc(varnum(&dsid,column1));
+		%let check_attrtable=%sysfunc(varnum(&dsid,report_descr));         
+		%let check_dpidsiteid=%sysfunc(varnum(&dsid,dpidsiteid)); 
+ 
+		/******************************************************************/
+		/* Table 1: Set in all tables					
+					Drop rows with missing metvar values
+					Extract monitoring period
+					Keep necessary variables
+					Rename variables
+				    All other processing done later	
+		/******************************************************************/
+		%if &check_table1 > 0 %then %do;	
+			%let table1exists=1;	
+			
+			/* Check if baselinegroupnum is used */	
+			%let cohortgrp1=;
+			%let cohortgrp2=;		
+			proc sql noprint;	
+				select group into :cohortgrp1 trimmed from baselinefile where baselinegroupnum=1 and group in (select distinct analysisgrp from &dsn.);
+				select group into :cohortgrp2 trimmed from baselinefile where baselinegroupnum=2 and group in (select distinct analysisgrp from &dsn.);
+			quit;
+
+		    %do dpcnt = 0 %to &num_dp;		        		
+				%let check_table1_dp=%sysfunc(varnum(&dsid,exp_mean&dpcnt));		
+				%if &check_table1_dp > 0 %then %do;	
+					proc sql noprint;
+					select periodid2 into :periodid2 trimmed 
+					from tableofcontents_views(where=(upcase(table)=upcase("&table"))) as a
+					join monitoringfile_views as b
+					on a.runid=b.runid and a.periodid=b.periodid;
+
+					select distinct quote(strip(group))
+					into :views_groups separated by ' '
+					from input.&groupsfile;					
+					quit;
+
+		            data _table1_&dpcnt._&i.;
+	                set &dsn;
+	                length dp $10 monitoringperiod 3; 
+					format monitoringperiod 3.; 
+	                if missing(metvar) then delete;              
+	                if &dpcnt. = 0 then dp = "Aggregate";
+	                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+	                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+					monitoringperiod=&periodid2;
+	                rename sortorder1=headerorder
+						   exp_mean&dpcnt._char=exp_mean 
+						   exp_std&dpcnt._char=exp_std
+						   analysisgrp=cohortgrp; 				
+					where analysisgrp in (&views_groups);
+					%if %str(&cohortgrp1.) ne %str() %then %do; analysisgrp = "&cohortgrp1."; %end;
+	                keep metvar	label sortorder: grouper analysisgrp vartype exp_mean&dpcnt._char exp_std&dpcnt._char dp monitoringperiod;
+		            run;	
+					
+					/* If baselinegroupnum was used, output second cohort */
+					%if %str(&cohortgrp2.) ne %str() %then %do;
+						data _table1_&dpcnt._&i._comp;
+		                set &dsn;
+		                length dp $10 monitoringperiod 3; 
+						format monitoringperiod 3.; 
+		                if missing(metvar) then delete;              
+		                if &dpcnt. = 0 then dp = "Aggregate";
+		                else if &dpcnt ^= 0 and &dpcnt < 10 then dp ="DP0&dpcnt";
+		                else if &dpcnt >= 10 then dp = "DP&dpcnt.";
+						monitoringperiod=&periodid2;
+		                rename sortorder1=headerorder
+							   comp_mean&dpcnt._char=exp_mean 
+							   comp_std&dpcnt._char=exp_std
+							   analysisgrp=cohortgrp; 				
+						where analysisgrp in (&views_groups);
+						analysisgrp = "&cohortgrp2.";
+		                keep metvar	label sortorder: grouper analysisgrp vartype comp_mean&dpcnt._char comp_std&dpcnt._char dp monitoringperiod;
+			            run;
+					%end;
+				%end;
+			%end;  /* DP loop */	
+		%end; /* Table1 */
+
+
+		/******************************************************************/
+		/* Results Table : Set in all tables											
+				    	   Compute and format all variables	
+		/******************************************************************/
+		%if &check_cidatable > 0 %then %do;
+			%let resultstableexists=1;
+
+			/* Get number of selected stat columns, level (unique in &dsn) and stratification variables */
+			proc sql noprint;
+				select count(*) into :numcolumns trimmed from tablecolumns 
+				where table="t&typenum.cida";
+
+				select distinct level into :level from &dsn;
+				select lowcase(tablesub) into :strats from tablefile where levelid1="&level";
+			quit;
+
+			/* Compute stratorder and stratcatorder and drop unnecessary variables */
+			data _cidatable_&i. (rename=group=cohortgrp);
+			length stratcatorder 3.;
+			set &dsn;
+			by order;
+			if first.order then stratcatorder=1;
+			else stratcatorder=stratcatorder+1;
+			retain stratcatorder;
+			drop order header grouplabel sortorder: %do col=1 %to &numcolumns; column&col. %end;;
+			run;
+
+			proc sql noprint undo_policy=none;
+				create table _cidatable_&i. as
+				select a.*
+				      ,b.stratificationorder as stratorder length=3
+				from _cidatable_&i. as a
+				left join tablefile as b 
+				on a.level = b.levelid1;
+			quit;
+
+			/* Get monitoringperiod */
+			proc sql noprint undo_policy=none;
+			create table _cidatable_&i. as
+			select a.*,
+				   c.periodid2 as monitoringperiod length=3 format 3.
+			from _cidatable_&i. as a 
+			left join groupsfile as b
+			on a.cohortgrp=b.group
+			join Monitoringfile_views(where=(periodid=&look_end.)) as c
+			on b.runid=c.runid;
+			quit;
+
+			/* Get stratification values (raw and formatted) if stratification is not overall */
+			%if &strats. ne overall %then %do;
+				proc sort nodupkey data=msocdata.agg_t&typenum._cida(where=(level="&level.") keep=level &strats.) out=_stratcat;
+				by &strats.;
+				run;
+
+				data _stratcat;
+				set _stratcat;
+				%do z = 1 %to %sysfunc(countw(&strats));
+					%let strat = %scan(&strats,&z);		   
+					%if &strat eq year or &strat eq zip3 or &strat eq state %then %do;
+						&strat.fmt = &strat;
+					%end;
+					%else %if %index(&strat, covar)> 0 %then %do;
+						format &strat.fmt $50.;
+						if &strat. = 0 then &strat.fmt="No evidence of &&&Study&strat.";
+						else &strat.fmt="Evidence of &&&Study&strat.";
+					%end;
+					/* For month and quarter, using the &strat. macro variable when assigning format generates a w.a.r.n.i.n.g in the log */
+					%else %if &strat. eq month %then %do;												
+						length monthfmt $10;
+						monthfmt = put(month, monthfmt.);	
+					%end;
+					%else %if &strat. eq quarter %then %do;												
+						length quarterfmt $10;
+						quarterfmt = put(quarter, quarterfmt.);	
+					%end;
+					%else %do;
+						&strat.fmt = put(&strat., $&strat.fmt.);
+					%end;
+				%end;
+				run;
+
+				proc sql noprint undo_policy=none;
+					create table _cidatable_&i. as
+					select a.*
+						   %do z = 1 %to %sysfunc(countw(&strats));
+						   	 	%let strat = %scan(&strats,&z);	  
+						   ,b.&strat. as &strat.raw
+						   %end;	
+					from _cidatable_&i. as a
+					left join _stratcat as b
+					on %do z = 1 %to %sysfunc(countw(&strats));
+					   		%let strat = %scan(&strats,&z);	  
+						   a.&strat=b.&strat.fmt %if &z. < %sysfunc(countw(&strats)) %then %do; and %end;
+					   %end;;
+				quit;
+
+				proc contents data=&dsn. noprint out=_content(keep=name label);
+				quit;
+
+				/* Get covariate label if necessary */
+				%if %index(&strats., covar) > 0 %then %do;
+					proc sql noprint undo_policy=none;
+					create table _content as
+					select name, 
+						   case when b.studyname is not null then b.studyname
+						   	    else a.label
+						   end as label
+					from _content as a
+					left join (select distinct studyname, cov_varname from covarname) as b
+					on lowcase(a.name) = lowcase(b.cov_varname);
+					quit;
+				%end;
+				
+				/* Compute stratlabel */
+				data _content(where=(order>0));
+				set _content;
+				%do z = 1 %to %sysfunc(countw(&strats));
+			   		%let strat = %scan(&strats,&z);	  
+				    if lowcase(name) = lowcase("&strat.") then order=&z.;		
+			    %end;
+				run;
+
+				%create_comma_charlist(inlist=&strats., outlist=strats_quoted);
+
+				proc sql noprint;
+				select label into :stratlabel separated by "/" 
+				from _content
+				where upcase(name) in (&strats_quoted.)
+				order by order;
+				quit;
+				
+			%end; /* Stratification is not overall */	 	
+
+			/* Finalize variables computation and formatting; */
+			data _cidatable_&i.;
+			length %do col=1 %to &numcolumns; column&col._char %end; $50;
+			retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+				   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
+			set _cidatable_&i.;
+			keep monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+				 stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;			
+			format dp $10. strat stratcat $50. stratlabel stratcatlabel $500. stratdashboardlabel $1000. %do col=1 %to &numcolumns; column&col._char %end; $50.;
+			
+			%if &check_dpidsiteid > 0 %then %do; 
+				dp=dpidsiteid;
+			%end;
+			%else %do;
+				dp="Aggregate";
+			%end;
+
+			strat="&strats";
+			%if &strats. eq overall %then %do;
+				stratcat="overall";
+				stratlabel="Overall Analysis";
+				stratcatlabel="Overall Analysis";
+				stratdashboardlabel="Overall Analysis";
+			%end;
+			%else %do;
+				stratlabel="&stratlabel.";	
+				stratcat="";
+				stratcatlabel="";
+				%do z = 1 %to %sysfunc(countw(&strats));
+			   		%let strat = %scan(&strats,&z);	  
+
+					/* Additional processing for covariates */	
+					%if %index(&strat., covar) > 0 %then %do;
+						if index(&strat., "No evidence of ") > 0 then do;							
+							&strat.="No";
+						end;
+						else do;							
+							&strat.="Yes";
+						end;						
+					%end;
+
+				    stratcat = strip(stratcat) %if &z. > 1 %then %do; || " "  %end; || strip(&strat.raw);		
+					stratcatlabel = strip(stratcatlabel) %if &z. > 1 %then %do; || "/"  %end; || strip(&strat.);
+			    %end;	
+								
+				stratdashboardlabel = strip(stratlabel) || ": " || strip(stratcatlabel);
+			%end;
+
+			/* Replace missing indicator values with blanks */
+			%do col=1 %to &numcolumns;
+				if upcase(column&col._char) in(".", "N/A", "NAN") then column&col._char="";
+			%end;
+			run;
+		%end; /* Result table */
+
+
+		/******************************************************************/
+		/* Attrition Table : Set report table and keep necessary variables	
+							 Extract monitoring period	
+							 Apply formatting
+				    		 Final stacking done later		
+		/******************************************************************/
+		%if &check_attrtable > 0 %then %do;
+			proc sql noprint;
+			select periodid into :periodid trimmed 
+			from tableofcontents_views(where=(upcase(table)=upcase("&table")));
+
+			select distinct quote(strip(group))
+			into :views_groups separated by ' '
+			from input.&groupsfile;
+			quit;
+
+			proc sql noprint undo_policy=none;
+			create table _attrition_&i. as
+			select a.group as cohortgrp length=40
+				  ,a.report_descr as descr length=500
+				  ,a.level length=8
+				  ,a.agg_remaining as remaining length=8
+				  ,a.agg_excluded as excluded length=8
+				  ,b.periodid2 as monitoringperiod length=3 format 3. 
+	        from &dsn(keep=runid group report_descr level agg_remaining agg_excluded) as a
+			left join Monitoringfile_views(where=(periodid=&periodid.)) as b
+			on a.runid=b.runid
+			where group in (&views_groups)
+			order by monitoringperiod, group, level;                
+	        quit;
+	    %end; /* Attrition */
+
+		%let rc=%sysfunc(close(&dsid));
+	%end; /* repdata tables loop */
+
+
+	/********************************************************/
+	/* Additional processing of datasets. 
+    /* Stack and save all tables to views folder 					
+	/********************************************************/
+
+	/********************************************************/
+	/* Study table
+	/********************************************************/
+    data views.study;
+        length queryid $40 querytype $10 jirakey $40 studytitle $1000 userid $500;
+        queryid="&requestid";
+        querytype="%upcase(&reporttype)";
+        %if %length(&jirakey) = 0 %then %do;
+            jirakey="QF-0000";
+        %end;
+        %else %do;
+            jirakey="&jirakey";
+        %end;
+        %if %length(&userid) = 0 %then %do;
+            userid="qf@sentinelsystem.org";
+        %end;
+        %else %do;
+            userid="&userid";
+        %end;
+        %if %length(&studytitle) = 0 %then %do;
+            studytitle="ADD STUDY TITLE";
+        %end;
+        %else %do;
+            studytitle="&studytitle";
+        %end;
+            output;
+    run;
+
+	/********************************************************/
+	/* Monitoring Table
+	/********************************************************/
+    /* Re-assign values for dates in monitoring file */
+    proc sql noprint;
+        select max(input(dpmaxdate,date9.)) into: maxdpenddate
+        from output.dpinfo;
     quit;
 
-    /*Loop through each table*/
-    %do z = 1 %to %sysfunc(countw(&msocdatadsn,@));
+    data views.monitoringperiod(keep=monitoringperiod startdate enddate);
+        retain periodid2 startdate enddate;
+        set monitoringfile_views;
+        enddate=coalesce(fupenddate,indenddate, &maxdpenddate.);        
+        rename periodid2=monitoringperiod;
+        format enddate date9. periodid2 3.;
+        length periodid2 3 startdate enddate 4;
+    run;
 
-		%let out_table= views.%scan(&msocdatadsn,&z,@);
 
-        /* Start checking to ensure certain variables exist in the data - If not, set them up to missing */
 
-    	%if %index(&out_table,CIDA) and ^%index(&out_table,CENSOR) and ^%index(&out_table,FOLLOWUPTIME) %then %do;
-			
-        data &out_table ;
-            set &out_table;
-			%if %varexist(&out_table,agegroup)		=0 %then %do; agegroup		=''; %end;
-			%if %varexist(&out_table,agegroupnum)	=0 %then %do; agegroupnum	=. ; %end;
-			%if %varexist(&out_table,sex)			=0 %then %do; sex			=''; %end;
-			%if %varexist(&out_table,year)			=0 %then %do; year			=. ; %end;
-			%if %varexist(&out_table,month)			=0 %then %do; month			=. ; %end;
-			%if %varexist(&out_table,quarter)		=0 %then %do; quarter		=. ; %end;
-			%if %varexist(&out_table,zip3)			=0 %then %do; zip3			=''; %end;
-			%if %varexist(&out_table,state)			=0 %then %do; state			=''; %end;
-			%if %varexist(&out_table,hhs_reg)		=0 %then %do; hhs_reg		=''; %end;
-			%if %varexist(&out_table,cb_reg)		=0 %then %do; cb_reg		=''; %end;
-			%if %varexist(&out_table,zip_uncertain)	=0 %then %do; zip_uncertain	=''; %end;
-			%if %varexist(&out_table,race)			=0 %then %do; race			=''; %end;
-			%if %varexist(&out_table,hispanic)		=0 %then %do; hispanic		=''; %end;      
-        run;
 
-    	%let covarlistcomma = ;
-    	%let covarlist = ;
-    	proc sql noprint;
+ 	/********************************************************/
+	/* CohortGroup Table
+	/********************************************************/
 
-            /* Check to see if covars are in dataset */
-            select distinct 'a.'||name, name 
-            into :covarlistcomma separated by ',', :covarlistspace separated by ' '
-            from dictionary.columns 
-            where libname = 'VIEWS' and lower(memname) contains 'cida' 
-            						   and lower(memname) not contains 'censor' 
-                                       and lower(memname) not contains 'followuptime'
-            						   and lower(name) like 'covar%';
-       		select lower(tableid) 
-       		into :tabletype 
-       		from userstrata
-       		where lower(tableid) contains 'cida';
-
-            select distinct levelvars 
-            into :covarlist separated by '@'
-            from userstrata 
-            where lower(tableid) contains 'cida' and lower(levelvars) like '%covar%';
-
-    		/* Obtain stratifications */
-   			create table cida_levelvars as 
-   			select A.runid, A.dpidsiteid, A.group, A.Level, A.sex, A.agegroup, A.year, A.month, A.quarter, A.zip3, 
-				   A.state, A.hhs_reg, A.cb_reg, A.zip_uncertain, A.race, 
-                   A.hispanic, A.Npts, A.Episodes, A.AdjustedCodeCount, A.RawCodeCount, 
-                   A.DaySupp, A.AmtSupp, 
-                   A.timetocensor, A.DenNumPts, A.DenNumMemDays, divide(A.DenNumMemDays,365.25) as DenNumMemYears
-                   %if %upcase(&reporttype) = T2L1 %then %do;
-                   ,A.eps_wevents,A.all_events,A.followuptime 
-                   %end;
-                   %if %length(&covarlistcomma) > 0 %then %do; ,&covarlistcomma %end; ,b.levelvars 
-    		from &out_table A 
-    		left join userstrata(where=(tableid="&tabletype")) B
-    		on a.level = b.levelid;
-
-    		/* Aggregate only the overall row, stack table together */
-    		create table agg_cida as 
-    		select a.runid, 'AGGR' as dpidsiteid, a.group, a.levelvars, a.sex, a.agegroup, a.year, a.month, a.quarter,
-                   a.zip3, a.state, a.hhs_reg, a.cb_reg, a.zip_uncertain, a.race, a.hispanic, sum(a.Npts) as Npts, sum(a.Episodes) as Episodes 
-                   %if %length(&covarlistcomma) > 0 %then %do; ,&covarlistcomma %end;
-				   ,sum(a.AdjustedCodeCount) as AdjustedCodeCount, sum(a.RawCodeCount) as RawCodeCount, 
-                   sum(a.DaySupp) as DaySupp, sum(a.AmtSupp) as AmtSupp, 
-                   sum(a.timetocensor) as timetocensor, sum(a.DenNumPts) as DenNumPts, sum(a.DenNumMemDays) as DenNumMemDays, sum(DenNumMemYears) as DenNumMemYears
-                   %if %upcase(&reporttype) = T2L1 %then %do;
-                    ,sum(A.eps_wevents) as eps_wevents, sum(A.all_events) as all_events, sum(A.followuptime) as followuptime 
-                   %end; 
-            	   from cida_levelvars a
-            	   group by a.runid, a.group, a.levelvars, a.sex, A.agegroup, a.year, a.month, a.quarter, 
-                            a.zip3, a.state, a.hhs_reg, a.cb_reg, a.zip_uncertain, A.race, A.hispanic
-                            %if %length(&covarlistcomma) > 0 %then %do; ,&covarlistcomma %end;
-            outer union corr 
-            select b.* 
-            from cida_levelvars b;
-    	quit;
- 
-       %if %upcase(&reporttype) = T1 %then %do;
-        data views.agg_t1_cida
-       %end;
-       %else %if %upcase(&reporttype) = T2L1 %then %do;
-        data views.agg_t2_cida
-       %end;
-       ;
-        length requestid $40 covar_label covarn $200;
-       	set agg_cida;
-
-        covar_label='';
-        covarn='';
-        %let covarlabel = ;
-        %let covarn = ;
-
-       	%if %length(&covarlist) > 0 %then %do;
-            %let covarlabel = ;
-            %let covarn = ;
-           %do i = 1 %to %sysfunc(countw(&covarlist,%str(@)));
-              %let covars = %scan(&covarlist,&i,%str(@));
-              %do j = 1 %to %sysfunc(countw(&covars,%str( )));
-                %let covar = %scan(&covars,&j,%str( ));
-                %if %index(&covar,covar) %then %do;
-                length covarn_&i._&j $200 covar_label_&i._&j $200;
-                    if &covar = 0 and levelvars = "&covars" then covar_label_&i._&j = catx('|',vlabel(&covar),'N');
-                    else if &covar = 1 and levelvars = "&covars" then covar_label_&i._&j = catx('|',vlabel(&covar),'Y');
-                    if not missing(&covar) and levelvars = "&covars" then covarn_&i._&j ="%upcase(&covar.)";
-                %let covarlabel = &covarlabel covar_label_&i._&j;
-                %let covarn = &covarn covarn_&i._&j;
-                %end;
-              %end;
-            %end;
-            %let covarlabel = %sysfunc(tranwrd(%sysfunc(compbl(&covarlabel)),%str( ),%str(,)));
-            %let covarn = %sysfunc(tranwrd(%sysfunc(compbl(&covarn)),%str( ),%str(,)));
-            covar_label = catx(',',&covarlabel);
-            covarn = catx(',',&covarn);
-        %end;
-        requestid="&requestID";
-        rename levelvars=stratification_vars dpidsiteid=dpid;
-        drop level %if %length(&covarlist) > 0 %then %do; &covarlistspace covar_label_: covarn_:%end;
-        ;
-    	run;
-
-        %put &=covarlabel;
-        %put &=covarn;
-
-    	%end; /* Cida table */
-		
-    	%else %if %index(&out_table,BASELINE) %then %do;
-				
-    	%let baselinevarlist = ;
-
-    	proc sql noprint;
-            /* Get all baseline dataset variables */
-            select distinct name, 'sum(a.'||name||') as '||name
-            into :baselinevarlist separated by ' ', :baselinecommalist separated by ',' 
-            from dictionary.columns
-            where libname = 'VIEWS' and lower(memname) contains 'baseline' and prxmatch('/covar|age\d|sex|year|race|hispanic/i',name)
-			and ^ prxmatch("m/n_covar|mean_covar|std_covar|lbres|lbunit|notestrecord/oi", name) ;
-			;			
-			
-            %let contvars = std_Age std_NumAV std_NUMOA std_NUMIP std_NUMIS std_NUMED std_NumGeneric std_NumClass std_NumRx;
-            %do i = 1 %to %sysfunc(countw(&contvars));
-                %let stdvar = %scan(&contvars,&i);
-            select count(distinct dpidsiteid)
-            into :&stdvar.dpnum
-            from &out_table
-            where not missing(&stdvar);
-            %end;
-
-            create table agg_baseline as 
-            select  A.runid, A.group, 'AGGR' as dpidsiteid, sum(A.patient) as patient, &baselinecommalist, sum(A.N_episodes) as n_episodes, 
-            		case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_Age*A.N_Episodes),sum(A.N_episodes)) end as mean_Age, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumAV*A.N_Episodes),sum(A.N_episodes)) end as mean_NumAV, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumOA*A.N_Episodes),sum(A.N_episodes)) end as mean_NumOA,
-					case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumIP*A.N_Episodes),sum(A.N_episodes)) end as mean_NumIP, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumIS*A.N_Episodes),sum(A.N_episodes)) end as mean_NumIS, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumED*A.N_Episodes),sum(A.N_episodes)) end as mean_NumED, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumGeneric*A.N_Episodes),sum(A.N_episodes)) end as mean_NumGeneric, 
-                    case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumClass*A.N_Episodes),sum(A.N_episodes)) end as mean_NumClass, 
-					case when sum(A.N_Episodes) = 0 then . else divide(sum(A.mean_NumRx*A.N_Episodes),sum(A.N_episodes)) end as mean_NumRx, 
-
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_Age**2) = . or sum(A.N_episodes-&std_Agedpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_Age**2),sum(A.N_episodes-&std_Agedpnum))) end as std_Age, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumAV**2) = . or sum(A.N_episodes-&std_NUMAVdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumAV**2),sum(A.N_episodes-&std_NUMAVdpnum))) end as std_NumAV, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumOA**2) = . or sum(A.N_episodes-&std_NUMOAdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumOA**2),sum(A.N_episodes-&std_NUMOAdpnum))) end as std_NumOA, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumIP**2) = . or sum(A.N_episodes-&std_NUMIPdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIP**2),sum(A.N_episodes-&std_NUMIPdpnum))) end as std_NumIP, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumIS**2) = . or sum(A.N_episodes-&std_NUMISdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumIS**2),sum(A.N_episodes-&std_NUMISdpnum))) end as std_NumIS, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumED**2) = . or sum(A.N_episodes-&std_NUMEDdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumED**2),sum(A.N_episodes-&std_NUMEDdpnum))) end as std_NumED, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumGeneric**2) = . or sum(A.N_episodes-&std_NumGenericdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumGeneric**2),sum(A.N_episodes-&std_NumGenericdpnum))) end as std_NumGeneric, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumClass**2) = . or sum(A.N_episodes-&std_NumClassdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumClass**2),sum(A.N_episodes-&std_NumClassdpnum))) end as std_NumClass, 
-                    case when sum(A.N_Episodes) = 0 or sum((A.N_Episodes-1)*A.std_NumRx**2) = . or sum(A.N_episodes-&std_NumRxdpnum) in (.,0) then . 
-                    else sqrt(divide(sum((A.N_Episodes-1)*A.std_NumRx**2),sum(A.N_episodes-&std_NumRxdpnum))) end as std_NumRx
-            	   from &out_table a
-            	   group by a.runid, a.group
-            union corr all
-            select b.* 
-            from &out_table b;
-        quit;
-
-        /* Create temporary subsets to manipulate the data */
-        data _sub1_agg_base(drop=patient n_episodes mean_: std_:) 
-             _sub2_agg_base(keep=runid group dpid patient n_episodes)
-             _sub3_agg_base(keep=runid group dpid mean_: std_:);
-            set agg_baseline(rename=(dpidsiteid=dpid)); 
-        run;
-
-        proc sort data=_sub1_agg_base;
-            by group runid dpid;
-        run;
-
-        /* Transpose all stratifications into one column */
-        proc transpose data = _sub1_agg_base out=_sub1_agg_base; 
-            by group runid dpid;
-        run; 
-
-        proc sort data = _sub2_agg_base;
-            by group runid dpid;
-        run;
-
-		/* De-dupe continuous statistics */
-        proc sort data = _sub3_agg_base nodupkey out=_sub3_agg_base;
-            by group runid dpid;
-        run;
-
-        proc sql noprint;
-            select distinct upper(medproduse), upper(healthchar), upper(UtilizationIntensity)
-            into :medproduse separated by ' ', :healthchar separated ' ', :UtilizationIntensity separated by ' '
-            from input.&baselinefile;
-        quit;
-
-        %baseline_expand_parameters(var =medproduse);
-        %baseline_expand_parameters(var =healthchar);
-        %baseline_expand_parameters(var =UtilizationIntensity);
-
-        data _sub1_2_agg_base;
-            length _name_ $200 variable_subgroup $60;
-            merge _sub1_agg_base _sub2_agg_base;
-            by group runid dpid;
-            variable_subgroup = 'Custom Variables';
-            if upcase(_name_) in (&medproduse) then variable_subgroup = "Medical Product Use";
-            if upcase(_name_) in (&healthchar) then variable_subgroup = "Health Characteristics";
-            if scan(upcase(_name_),-1,'_') in (&UtilizationIntensity) then variable_subgroup = "Health Service Utilization Intensity Metrics";
-            if index(upcase(_name_),'AGE') then do;
-                covarnum=1001;
-                variable_subgroup='Age';
-            end;
-            if index(upcase(_name_),'YEAR') then do; 
-                covarnum=1002;
-                variable_subgroup='Year';
-            end;
-            if index(upcase(_name_),'SEX') or index(upcase(_name_),'RACE') or index(upcase(_name_),'HISPANIC') then do;
-                if index(upcase(_name_),'SEX') then do;
-                    covarnum=1000;
-                    variable_subgroup='Sex';
-                end;
-                if index(upcase(_name_),'RACE') then do;
-                    covarnum=1012;
-                    variable_subgroup='Race';
-                end;
-                if index(upcase(_name_),'HISPANIC') then do;
-                    covarnum=1013;
-                    variable_subgroup='Hispanic';
-                end;
-                patient2=col1;
-                patients_pct=round(divide(patient2,patient)*100,0.1);
-                episode2=.;
-                episodes_pct=.;
-            end;
-            else do;
-                episode2=col1;
-                episodes_pct=round(divide(episode2,n_episodes)*100,0.1);
-                patient2=.;
-                patients_pct=.;
-                if index(upcase(_name_),'COVAR') then do;
-                    covarnum=input(compress(_name_,'','A'),8.);
-                    _name_=_label_;
-                end;
-            end;
-            label _name_=' ';
-            drop patient n_episodes _label_ col1;
-            rename patient2=patients episode2=episodes _name_=variable;
-        run;
-
-        %if %upcase(&reporttype) = T1 %then %do;
-        data views.agg_t1_baseline;
-        %end;
-        %else %if %upcase(&reporttype) = T2L1 %then %do;
-        data views.agg_t2_baseline;
-        %end;
-            set _sub1_2_agg_base _sub3_agg_base;
-        length requestid $40;
-        requestid="&requestID";
-        if not missing(mean_age) then do;
-            if missing(variable) then variable = "Custom Variables";
-            variable_subgroup = "Health Service Utilization Intensity Metrics";
-        end;
-        run;
-		
-        %end; /* baseline table */
-
-        %else %if %index(&out_table,FOLLOWUPTIME) %then %do;
-
-        %let dsid=%sysfunc(open(&out_table));
-        %let check_age=%sysfunc(varnum(&dsid,agegroup));
-        %let check_sex=%sysfunc(varnum(&dsid,sex));
-        %let check_year=%sysfunc(varnum(&dsid,year));
-        %let check_month=%sysfunc(varnum(&dsid,month));
-        %let check_quarter=%sysfunc(varnum(&dsid,quarter));
-        %let check_eventflag=%sysfunc(varnum(&dsid,event_flag));
-        %let check_censdays=%sysfunc(varnum(&dsid,censdays_value));
-        %let check_censdayscat=%sysfunc(varnum(&dsid,censdays_value_cat));
-        %let rc=%sysfunc(close(&dsid));
-
-        /* if columns are missing, initialize them */
-        data &out_table;
-            set &out_table;
-            %if &check_age=0 %then %do;
-            agegroup='';
-            agegroupnum=.;
-            %end;
-            %if &check_sex=0 %then %do;
-            sex='';
-            %end;
-            %if &check_year=0 %then %do;
-            year=.;
-            %end;
-            %if &check_month=0 %then %do;
-            month=.;
-            %end;
-            %if &check_quarter=0 %then %do;
-            quarter=.;
-            %end;
-            %if &check_eventflag=0 %then %do;
-            event_flag='';
-            %end;
-            %if &check_censdays=0 %then %do;
-            censdays_value=.;
-            %end;
-            %if &check_censdayscat=0 %then %do;
-            censdays_value_cat='';
-            %end;
-        run;
-
-        proc sql noprint;
-            select lower(tableid) 
-            into :tabletype 
-            from userstrata
-            where lower(tableid) contains 'followuptime';
-
-            /* Obtain stratifications */
-            create table followuptime_levelvars as 
-            select A.runid, A.dpidsiteid, A.group, A.Level, A.censdays_value, A.censdays_value_cat, A.sex, A.agegroup, A.event_flag, 
-                   A.year, A.month, A.quarter, A.Episodes, A.cens_elig, A.cens_dth, A.cens_dpend, A.cens_qryend, A.cens_episend, 
-                   A.cens_spec, A.cens_event, b.levelvars
-            from &out_table A 
-            left join userstrata(where=(tableid="&tabletype")) B
-            on a.level = b.levelid
-            order by A.runid, A.dpidsiteid, A.group, A.Level, A.censdays_value, A.censdays_value_cat, A.sex, A.agegroup, A.event_flag, 
-                   A.year, A.month, A.quarter;
-
-            /* Aggregate only the overall row, stack table together */
-            create table agg_followuptime as 
-            select a.runid, 'AGGR' as dpidsiteid, a.group, a.levelvars, A.censdays_value, A.censdays_value_cat, A.sex, A.agegroup, A.event_flag, 
-                   A.year, A.month, A.quarter, sum(A.Episodes) as Episodes, sum(A.cens_elig) as cens_elig, sum(A.cens_dth) as cens_dth, 
-                   sum(A.cens_dpend) as cens_dpend, sum(A.cens_qryend) as cens_qryend, sum(A.cens_episend) as cens_episend, 
-                   sum(A.cens_spec) as cens_spec, sum(A.cens_event) as cens_event
-                   from followuptime_levelvars a
-                   group by a.runid, a.group, a.levelvars, A.censdays_value, A.censdays_value_cat, a.sex, A.agegroup, A.event_flag, 
-                            a.year, a.month, a.quarter
-            outer union corr 
-            select b.* 
-            from followuptime_levelvars b;
-        quit;
-
-        data views.agg_t2_followuptime;
-            set agg_followuptime;
-            length requestid $40;
-            requestid="&requestID";
-            rename levelvars=stratification_vars dpidsiteid=dpid;
-            drop level;
-        run; 
-	
-        %end; /* End follow-up time datast */
-		
-		proc datasets nolist nowarn lib=work; 
-			delete _sub: cida_levelvars agg_cida agg_baseline followuptime_levelvars agg_followuptime;
-		quit;
-	
-    %end; /* Loop all tables */
-
-	/*Remove MSOCDATA datasets not converted to the Sentinel Views data dictionary*/
-	proc sql noprint;
-		select memname into :dropfromviews separated by ' '
-		from dictionary.tables 
-		where libname = 'VIEWS'
-		and ^prxmatch("m/agg_t1_baseline|agg_t1_cida|agg_t2_cida|agg_t2_baseline|agg_t2_followuptime/oi", memname);
+    proc sql noprint;
+    create table cohortgroup as
+    select distinct 
+      a.group as cohortgrp length 40,
+	  %if &labelfileexists=Y %then %do;
+		c.label as cohortgrptitle length 500,
+		b.label as outcomelabel,
+	  %end;
+	  %else %do;
+		a.group as cohortgrptitle length 500,
+		  %if %sysfunc(prxmatch(m/T2L1/i,&reporttype)) %then %do;
+			'ADD OUTCOME LABEL' as outcomelabel length 250,
+		  %end;
+		  %else %do;	   
+			'N/A' as outcomelabel length 250,
+		  %end;	  
+	  %end; 
+      %if %sysfunc(prxmatch(m/T2L1/i,&reporttype)) %then %do;
+        'ADD OUTCOME LABEL' as outcome length 500,
+      %end;
+      %else %do;	   
+	    'N/A' as outcome length 500,
+      %end;
+	  a.order as sortingorder,
+	  ' ' as design length 500
+	from groupsfile as a
+		%if &labelfileexists=Y %then %do;
+			 left join labelfile (where =(labeltype = "outcomelabel")) as b
+			on a.group = b.group
+			 left join labelfile (where = (labeltype = "grouplabel")) as c
+			on a.group = c.group
+		%end;;
 	quit;
-	
-	proc datasets library=views nolist nowarn;
-    	delete &dropfromviews;
-	quit;	
+
+    data views.cohortgroup;
+      set cohortgroup; 
+	    %if %sysfunc(prxmatch(m/T2L1/i,&reporttype)) %then %do;
+	      if outcomelabel ne '' then outcome = outcomelabel;
+		  drop outcomelabel;
+	    %end;
+	    if cohortgrptitle = '' then cohortgrptitle = cohortgrp;
+		drop outcomelabel;
+    run;
+
+
+
+	/********************************************************/
+	/* Attrition Table
+	/********************************************************/
+	data views.attrition;
+	set _attrition_:;
+	run;
+
+
+	/********************************************************/
+	/* Table1
+	/********************************************************/
+	%if &table1exists > 0 %then %do;	
+		%let riskscore_regex=;
+		%let riskscorelist=;
+		%let lab_cov_list=;
+		%if %sysfunc(exist(riskscorefile)) %then %do;
+			proc sql noprint;	
+	            select distinct cats(riskscore,'_CAT'), riskscore
+	            into :riskscore_regex separated by '|', :riskscorelist separated by '|'
+	            from riskscorefile;
+			quit;	
+		%end;	
+
+		%isdata(dataset=covarnameviews);
+		%if &nobs > 0 %then %do;
+			proc sql noprint;
+				select distinct catx('|',studyname,cov_varname)
+				into :lab_cov_list separated by '@'
+				from covarnameviews;
+			quit;
+		%end;
+
+		data views.table1;
+		%if %length(&riskscorelist) > 0 or %length(&riskscore_regex) > 0 %then %do;
+		retain riskscore_label;
+		%end;
+		length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
+		       metvar $32 vartype exp_mean exp_std $30;   
+		set _table1_:;
+		if upcase(metvar) = 'PATIENT' then do;
+			headerlabel='Number of Patients';
+			variablelabel=label;
+		end;
+		if upcase(metvar) = 'N_EPISODES' then do;
+			headerlabel='Number of Episodes';
+			variablelabel=label;
+		end;
+		if upcase(metvar)='AGE' then do;
+			headerlabel='Mean Age';
+			variablelabel='';
+		end;
+
+		if prxmatch('/AGE\d/i',metvar) then do;
+			headerlabel='Age';
+			variablelabel=label;
+		end;
+
+		if prxmatch('/SEX_/i',metvar) then do;
+			headerlabel='Sex';
+			variablelabel=label;
+		end;
+		if prxmatch('/YEAR_\d/i',metvar) then do;
+			headerlabel='Year';
+			variablelabel=label;
+		end;
+		if prxmatch('/RACE_/i',metvar) then do;
+			headerlabel='Race';
+			variablelabel=label;
+		end;
+		if prxmatch('/HISPANIC_/i',metvar) then do;
+			headerlabel='Hispanic';
+			variablelabel=label;
+		end;
+
+		%if %length(&riskscorelist) > 0 or %length(&riskscore_regex) > 0 %then %do;
+		if prxmatch("/&riskscorelist/i",metvar) and vartype="continuous" then do;
+  			headerlabel=strip(label) || " (continuous)";
+  			riskscore_label=label;			
+  			if metvar = "CHA2DS2VASC" then headerlabel="CHA2DS2-VASc score (continuous)";
+  		end;
+  		if prxmatch("/&riskscore_regex/i",metvar) and vartype="dichotomous" then do;
+			headerlabel=strip(riskscore_label) || " (categorical)";
+			variablelabel=label;
+			if prxmatch('/CHA2DS2VASC_CAT/i',metvar) then headerlabel="CHA2DS2-VASc score (categorical)";
+		end;
+		%end;
+
+		if prxmatch("/COVAR\d/i",metvar) then do;
+			headerlabel=label;
+			variablelabel='';
+		end;		
+
+		if prxmatch("/NUM/i",metvar) then do;
+			headerlabel=label;
+			variablelabel='';
+		end;	
+
+		/*Lab covariates */
+		%if %length(&lab_cov_list) > 0 %then %do;
+		if grouper = "Laboratory Characteristics" then do;
+			%do z = 1 %to %sysfunc(countw(&lab_cov_list,%str(@)));
+				%let cov_pairing = %scan(&lab_cov_list,&z,%str(@));
+				%let cov_header = %scan(&cov_pairing,1,%str(|));
+				%let lab_covar_match = %scan(&cov_pairing,-1,%str(|));
+				if prxmatch("/&lab_covar_match/i",metvar) then headerlabel="&cov_header";
+			%end;
+			variablelabel=label;	
+		end;
+		%end;
+
+  		if indexw(variablelabel,"(*ESC*){unicode '2265'x}") then variablelabel=tranwrd(variablelabel,"(*ESC*){unicode '2265'x}",">=");
+		if exp_mean in ('.','N/A','NaN') then exp_mean = '';
+		if exp_std in ('.','N/A','NaN') then exp_std = '';
+		keep monitoringperiod cohortgrp dp grouper headerlabel variablelabel metvar vartype exp_mean exp_std;   
+		run;
+
+		/* create ordering variables */
+		data views.table1;
+			length monitoringperiod 3 cohortgrp $40 dp $10 grouper $60 headerlabel $500 variablelabel $1000
+		       grouperorder headerorder variableorder 3 metvar $32 vartype exp_mean exp_std $30;   
+			set views.table1;  
+			by monitoringperiod cohortgrp dp grouper headerlabel variablelabel notsorted;
+			if first.monitoringperiod or first.cohortgrp or first.dp then do;
+				grouperorder=0;
+				headerorder=0;
+				variableorder=0;
+			end;
+			if first.grouper then do;
+				grouperorder+1;
+				headerorder=0;
+			end;
+			if first.headerlabel then do;
+				headerorder+1;
+				variableorder=0;
+			end;
+			if first.variablelabel then variableorder+1;
+		run;
+
+
+
+	%end; /* Table1 exists */
+
+
+	/********************************************************/
+	/* Results Table
+	/********************************************************/
+	%if &resultstableexists > 0 %then %do;			
+	    data views.results;
+		retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
+			   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
+		set _cidatable_:;
+		/* Change unicode value to symbol */
+        if indexw(stratcatlabel ,"(*ESC*){unicode '2265'x}") then stratcatlabel =tranwrd(stratcatlabel ,"(*ESC*){unicode '2265'x}",">=");
+		if indexw(stratdashboardlabel  ,"(*ESC*){unicode '2265'x}") then stratdashboardlabel  =tranwrd(stratdashboardlabel  ,"(*ESC*){unicode '2265'x}",">=");
+		run;
+
+		proc sort data=views.results;
+		by monitoringperiod cohortgrp dp stratorder stratcatorder;
+		run;
+	%end; /* Results table exists */
+
+
+	/********************************************************/
+	/* ResultsColumns Table
+	/********************************************************/
+
+	%if &resultstableexists > 0 %then %do; 
+		data views.resultscolumns(keep=columnkey order columnheader histogram format);
+			length columnkey $25. order 3. columnheader $500. histogram $10. format type $20.;
+			set tablecolumns(rename=(order=_order));
+			order=_order;
+			columnheader=columnlabel;
+			columnkey=cats(columnname,'_char');
+			if CIrate = 'N' and find(columnFormat, "comma", "i") then Histogram='Y';
+				else Histogram='N';
+			if find(columnformat, "comma", "i") then do;
+				if substr(columnformat, find(columnformat, '.'))='.0' then type='INT';
+				else type='DECIMAL';
+			end;
+			if type='DECIMAL' then format=tranwrd(cats(type,"(", substr(columnformat, find(columnformat, '.') -2), ")"), '.', ','); 
+			else if type='INT' then format=type;
+			else format='NVARCHAR(250)';
+			if CIrate ^= 'N' then format='NVARCHAR(250)';
+		run;	 
+	%end;
+
+
+	/* Clean-up */
+	proc datasets library=work nolist nowarn;
+    	delete _table1_: _cidatable_: _attrition: _content _stratcat;
+	quit;
 		
 %mend l1_sentinel_views_convertdata;

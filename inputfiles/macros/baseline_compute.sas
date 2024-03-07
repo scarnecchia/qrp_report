@@ -442,14 +442,16 @@
 			%end;
 			
 			/* Get list of covariates anchored on INDEXDT_EXP */
-			proc sql noprint;
+			%if %sysfunc(exist(covarname)) = 1 %then %do;
+			  proc sql noprint;
 				select cov_varname into: covars_indexdt_exp separated by " "
 				from covarname
 				where runid="&runid" and (upcase(covfromanchor) eq "INDEXDT_EXP" or upcase(covtoanchor) eq "INDEXDT_EXP");
-			quit;
+			  quit;
 
-			%create_comma_charlist(inlist=&covars_indexdt_exp., outlist=covars_indexdt_exp_quoted);
-			%put &=covars_indexdt_exp_quoted;
+			  %create_comma_charlist(inlist=&covars_indexdt_exp., outlist=covars_indexdt_exp_quoted);
+			  %put &=covars_indexdt_exp_quoted;
+			%end;
 		%end;
 
         ***********************************************************************************************
@@ -2288,6 +2290,12 @@
             end;
             
             if missing(label) then delete;
+
+			/*L2 queries: Remove Years past the maximum year for the PeriodID*/
+			%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
+				if index(metvar,'YEAR')>0 and input(label,4.)>&&maxyear&periodid. 
+					/*defensive*/ and exp_mean0<=0 and comp_mean0<=0 then delete;
+			%end;
 			
             keep analysisgrp order table weight metvar vartype label agegroup sortorder1 sortorder2 sortorder3 sortorder4 grouper exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                 %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;

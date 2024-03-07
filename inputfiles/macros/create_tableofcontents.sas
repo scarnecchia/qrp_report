@@ -53,6 +53,28 @@
         length tabnum $25 caption $500 appendixtype $30;
         call missing(tabnum, caption, appendixtype);
     run;
+	
+	%if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
+		%macro addtotoc_views(table=, dp=, runid=, periodid=, group=);
+	    data tableofcontents_views;
+	        set tableofcontents_views end=eof;
+	        output;
+	        if eof then do;
+	            table = "&table.";
+	            dp = "&dp.";
+				runid = "&runid.";
+				periodid = &periodid.;
+	            group = "&group.";	
+	            output;
+	        end;
+	    run;
+	    %mend;
+
+		data tableofcontents_views;
+	        length table $25 dp $10 runid $3 periodid 3 group $40;
+	        call missing(table, dp, runid, periodid, group);
+	    run;
+	%end;
 
     %let number = 1;
     %let tablenum = 1;
@@ -258,6 +280,16 @@
 	                 %tableletter(); 
 	                 %addtotoc(tabnum=Table 1&tableletter., 
 	                 caption=%quote(&aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+
+					 	/* If views are requested for a L1 query, add to table of contents for views */
+						%if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
+							%if %str(&dpcomma.) eq %str() %then %do;
+								%addtotoc_views(table=Table1&tableletter., dp=Aggregate, runid=&runid., periodid=&periodid., group=&analysisgrp.);
+							%end;
+							%else %do;
+								%addtotoc_views(table=Table1&tableletter., dp=&maskedid., runid=&runid., periodid=&periodid., group=&analysisgrp.);
+							%end;
+						%end;
 	                %end;
 
 	                /*For L2 tables - up to 2 additional adjusted tables*/
@@ -1336,6 +1368,11 @@
     					  caption=%quote(Summary of Patient Level Cohort Attrition in the &database. from &startdateformatted. to &&enddate&j.formatted.));
     		%end;
     	
+			/* If views are requested for a L1 query, add to table of contents for views */
+			%if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
+				%addtotoc_views(table=Table&tablenum.&tableletter., dp=Aggregate, runid=, periodid=&j., group=);				
+			%end;
+
             %let tablenum = %eval(&tablenum + 1);
 
         %end;/* attrition_groups file */

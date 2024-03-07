@@ -250,8 +250,6 @@
             /* For overall analysis - subset data where subgroup is missing and execute computation macros */
             /***********************************************************************************************/
             %if &sub. = 0 %then %do;
-                %if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto hdpsdata;
-
                 /*******************************************************/
                 /* Aggregate data - only needed 1st loop (when &sub=0) */
                 /*******************************************************/
@@ -271,6 +269,8 @@
                                        , renameclause=%str( rename=percentilevalue = percentile)
                                        %end;
                                        );
+
+				%if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto hdpsdata;
 
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     /*[runid]_adjusted_&periodid.*/

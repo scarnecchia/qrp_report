@@ -1131,7 +1131,7 @@
     /* Views platform does not have a way of distinguishing multiple runids
        so monitoring period variable is incremented as periodid2 to work around
        limitation */
-    %if &outputviewsdata = Y and &reporttype = T2L2 %then %do;
+    %if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
         data monitoringfile_views;
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
@@ -1147,6 +1147,13 @@
                 end;
             %end;
         run;
+
+        /* Check that groupsfile is defined */
+        %if %length(&groupsfile) = 0 and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
+            %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
+            %put The reporting code will abort;
+            %abort;
+        %end;
     %end;
 
 /***************************************************************************************************
@@ -2550,14 +2557,32 @@
     %end;
 
     %if &nobs > 0 %then %do;
-    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
-        by runid covarnum;
-    run;  
-    %end;
+	    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
+	        by runid covarnum;
+	    run;  
+
+		/* Views dashboards require the same covariates to be specified across runs for all covariates */
+		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
+			proc sort data=covarname out=_covarstudyname nodupkey;
+				by covarnum studyname;
+			run;
+
+			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname cov_varname) dupout=_covdup nodupkey;
+				by covarnum;
+			run;
+
+			%isdata(dataset=_covdup);
+			%if %eval(&nobs.>0) %then %do;
+				%put ERROR: (Sentinel) The same covariatecodes file must be used for all runs when using Sentinel Views.;
+				%abort;
+			%end;
+	    %end;
+
+	%end;
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_:; 
+        delete studylen covarname_: _covarstudyname _covdup; 
    quit;  
 
 /************************************************************************************************
@@ -2645,7 +2670,6 @@
     %mend;
     %assigncovarlabels(dataset=tablefile, var=tablesub);
     %assigncovarlabels(dataset=pscs_masterinputs, var=subgroup);
-
 
 /***************************************************************************************************
 *  Create stacked dataset containing riskscores data for all runs                                            
