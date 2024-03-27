@@ -320,7 +320,7 @@
 		----------------------------------------------------------------------------------------------*/
 		  %if &type. ne 3 or (&&rwstart&t.. ne . and &&rwend&t.. ne . and &&cwstart&t.. ne . and &&cwend&t.. ne .) %then %do;	
 		    proc sql noprint;
-			  create table output.&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi
 			        ,nhois_eoi
 					,nhois_ref
@@ -334,10 +334,24 @@
 			    group by hoi)
 			  where nhois_eoi > 0 or nhois_ref > 0;
 			quit;
+
+			/* Exposed CSV */
+			data _null_;
+			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
+			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_eoi);
+					 put (_all_) (+0);
+			run;
+
+			/* Unexposed CSV */
+			data _null_;
+			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
+			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_ref);
+					 put (_all_) (+0);
+			run;
 		  %end;
-	      %else %do;
+	    %else %do;
 	        proc sql noprint;
-			  create table output.&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi                               format = $11.
 			        ,case when sum(sum_nhois) < 1 then 0
 					 else sum(sum_nhois) end as nhois  format = 8.
@@ -348,7 +362,13 @@
 			          ,tte
 					  ,ttc;
 			quit;
-	      %end; /* final aggregation by type */
+
+			data _null_;
+			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
+			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+					 put (_all_) (+0);
+			run;
+	    %end; /* final aggregation by type */
 		  
 		  /* Clean up work space */
           proc datasets lib = work;
