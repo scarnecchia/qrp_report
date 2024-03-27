@@ -265,7 +265,7 @@
 		%if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
 		%end;
-        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
+        %if %index(&reporttype,L2) and %index(&figurelist,F2) and &treeaggindicator. eq N %then %do;
             %l2_forestplot_createdata;
         %end;
     %end;

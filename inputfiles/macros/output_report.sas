@@ -121,7 +121,7 @@
 * Effect estimate tables                                                      
 ***************************************************************************************************;
 
-    %if %index(&reporttype,L2) %then %do;
+    %if %index(&reporttype,L2) and &treeaggindicator. eq N %then %do;
     /* Need to set to landscape so PDF tables don't wrap */
     options orientation = landscape;
         %l2_effect_estimate_output;
@@ -840,7 +840,7 @@
         %if %index(&figurelist,F1) %then %do;
         %l2_psdistribution_output;
         %end;
-        %if %index(&figurelist,F2) %then %do;
+        %if %index(&figurelist,F2) and &treeaggindicator. eq N %then %do;
         %l2_forestplot_driver;
         %end;   
     %end; 
@@ -926,7 +926,9 @@
         - 1-CDF
         - CIF
     ************************************************;
-	%figure_survivalcurves_output;
+	%if &treeaggindicator. eq N %then %do;
+		%figure_survivalcurves_output;
+	%end;
 	
     options orientation = portrait;
     
