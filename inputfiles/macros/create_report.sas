@@ -160,40 +160,34 @@
         set output.dpinfo(drop=projid wptype wpid dpid);
     run;
 	
-    ***************************************************************************************************;
-    *   Assign study start and end dates                                               
-    ***************************************************************************************************;
+***************************************************************************************************;
+*   Assign study start and end dates                                               
+***************************************************************************************************;
 
-    %if ^%index(&reporttype,TREE) %then %do;
+    %output_report_dates();
 
-        %output_report_dates();
+***************************************************************************************************;
+*   Create report formats and labels                                           
+***************************************************************************************************;
 
-    ***************************************************************************************************;
-    *   Create report formats and labels                                           
-    ***************************************************************************************************;
+	%format_labels:    
 
-		%format_labels:    
+    %report_formats_labels();
 
-        %report_formats_labels();
+	%if &produceappendixfileonly. = Y %then %goto createtoc;
 
-		%if &produceappendixfileonly. = Y %then %goto createtoc;
+***************************************************************************************************;
+* Baseline tables                                                      
+***************************************************************************************************;
 
-    ***************************************************************************************************;
-    * Baseline tables                                                      
-    ***************************************************************************************************;
-
-        %baseline_driver();
-
-    %end;
-
+    %baseline_driver();
+    
 ***************************************************************************************************;
 * Aggregate MSOC output tables from each DP                                                      
 ***************************************************************************************************;
 
 	%aggregate_report_tables;
-
-    %if ^%index(&reporttype,TREE) %then %do;
-
+    
 ***************************************************************************************************;
 *   Calculate L1 summary tables                                             
 ***************************************************************************************************;
@@ -271,7 +265,7 @@
 		%if %index(&reporttype,L2) and %index(&figurelist,F1) %then %do;
 			%l2_psdistribution_createdata;
 		%end;
-        %if %index(&reporttype,L2) and %index(&figurelist,F2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+        %if %index(&reporttype,L2) and %index(&figurelist,F2) %then %do;
             %l2_forestplot_createdata;
         %end;
     %end;
@@ -327,14 +321,12 @@
         /*all systems: report font = arial, font size = 8, footnote fontsize = 7*/
         %output_report(destination = pdf,font=arial, fontsize=8pt, footfontsize=7pt, bordersize=2pt);
     %end;
-  
-    %end; /*reporttype is not TREE*/
-
+      
 ***************************************************************************************************;
 *   Create analytic datasets that can be used as inputs to TreeScan software                                             
 ***************************************************************************************************;
     /*loop aggregate tree processing by periodid*/
-    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+    %if &treeaggindicator. eq Y %then %do;
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %aggregate_tree();
       %end;
