@@ -158,6 +158,9 @@
 				select count(*) into :numcolumns trimmed from tablecolumns 
 				where table="t&typenum.cida";
 
+				select max(count(*),50) into :totnumcolumns trimmed from tablecolumns 
+				where table="t&typenum.cida";
+
 				select distinct level into :level from &dsn;
 				select lowcase(tablesub) into :strats from tablefile where levelid1="&level";
 			quit;
@@ -281,13 +284,13 @@
 
 			/* Finalize variables computation and formatting; */
 			data _cidatable_&i.;
-			length %do col=1 %to &numcolumns; column&col._char %end; $50;
+			length %do col=1 %to &totnumcolumns; column&col._char %end; $50;
 			retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
-				   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
+				   stratdashboardlabel stratorder stratcatorder %do col=1 %to &totnumcolumns; column&col._char %end;;
 			set _cidatable_&i.;
 			keep monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
-				 stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;			
-			format dp $10. strat stratcat $50. stratlabel stratcatlabel $500. stratdashboardlabel $1000. %do col=1 %to &numcolumns; column&col._char %end; $50.;
+				 stratdashboardlabel stratorder stratcatorder %do col=1 %to &totnumcolumns; column&col._char %end;;			
+			format dp $10. strat stratcat $50. stratlabel stratcatlabel $500. stratdashboardlabel $1000. %do col=1 %to &totnumcolumns; column&col._char %end; $50.;
 			
 			%if &check_dpidsiteid > 0 %then %do; 
 				dp=dpidsiteid;
@@ -328,7 +331,7 @@
 			%end;
 
 			/* Replace missing indicator values with blanks */
-			%do col=1 %to &numcolumns;
+			%do col=1 %to &totnumcolumns;
 				if upcase(column&col._char) in(".", "N/A", "NAN") then column&col._char="";
 			%end;
 			run;
@@ -624,7 +627,7 @@
 	%if &resultstableexists > 0 %then %do;			
 	    data views.results;
 		retain monitoringperiod cohortgrp dp strat stratcat stratlabel stratcatlabel 
-			   stratdashboardlabel stratorder stratcatorder %do col=1 %to &numcolumns; column&col._char %end;;
+			   stratdashboardlabel stratorder stratcatorder %do col=1 %to &totnumcolumns; column&col._char %end;;
 		set _cidatable_:;
 		/* Change unicode value to symbol */
         if indexw(stratcatlabel ,"(*ESC*){unicode '2265'x}") then stratcatlabel =tranwrd(stratcatlabel ,"(*ESC*){unicode '2265'x}",">=");
