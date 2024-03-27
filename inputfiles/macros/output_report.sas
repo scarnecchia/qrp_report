@@ -798,7 +798,7 @@
 * Attrition tables                                                     
 ***************************************************************************************************;
 
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
+    %if %sysfunc(prxmatch(m/T1|T3|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
 
         /* reset counter to reset table letter */
         %let tablecount=1;
