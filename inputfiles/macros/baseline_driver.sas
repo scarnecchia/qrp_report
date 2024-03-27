@@ -162,8 +162,8 @@
         %end;
     %mend;
 
-    /*T1 and T5 cohort is missing and mergevar = 'group'*/
-    %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
+    /*T1, T3 and T5 cohort is missing and mergevar = 'group'*/
+    %if %sysfunc(prxmatch(m/T1|T3|T5/i,&reporttype.)) > 0 %then %do;
         %assign_cohort_mergevar(cohort=, mergevar=group, outdata=baselinefile);
     %end;
 
@@ -250,7 +250,7 @@
         * Reformat L1 tables to mimic L2 format                             
         ***********************************************************************************************;
 
-        %if %sysfunc(prxmatch(m/T1|T5|T2L1|T4L1|T6/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T3|T5|T2L1|T4L1|T6/i,&reporttype.)) > 0 %then %do;
 
             /*split std metrics out so they can be remerged as separate column*/
             /*remove _MEAN and _STD prefix from metvar, add vartype, table, weight variables*/
@@ -565,7 +565,7 @@
                         by order;
                         format group2 $40. table weight $30.;
 
-                        /*For ReportType = T1, T2L1, T4L1, T5, set table = Unadjusted*/
+                        /*For ReportType = T1, T3, T2L1, T4L1, T5, set table = Unadjusted*/
                         /*For ReportType = T6 set table = Switchstep_0, Switchstep_1 or Switchstep_2*/
                         /*weight = 'Unweighted for all ReportType*/
                         weight = 'Unweighted';
@@ -646,7 +646,7 @@
 
             %mend reformatL1baseline;
 
-            /*For ReportType = T1, T2L1, T4L1, and T5, call %reformatL1baseline one time*/
+            /*For ReportType = T1, T3, T2L1, T4L1, and T5, call %reformatL1baseline one time*/
             /*For ReportType = T6, call %reformatL1baseline once for each switch and stack datasets*/
             %if %str("&reporttype") = %str("T6") %then %do; 
                 %do switch_count = 0 %to &switch_counter;
