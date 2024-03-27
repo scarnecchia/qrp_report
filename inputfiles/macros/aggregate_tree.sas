@@ -319,7 +319,7 @@
 		 Aggregate data by group levelid levelnum for NHOI's  and output finalize data based on type
 		----------------------------------------------------------------------------------------------*/
 		  %if &type. ne 3 or (&&rwstart&t.. ne . and &&rwend&t.. ne . and &&cwstart&t.. ne . and &&cwend&t.. ne .) %then %do;	
-		    proc sql noprint;
+		    proc sql noprint undo_policy=none;
 			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi
 			        ,nhois_eoi
@@ -350,7 +350,7 @@
 			run;
 		  %end;
 	    %else %do;
-	        proc sql noprint;
+	        proc sql noprint undo_policy=none;
 			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi                               format = $11.
 			        ,case when sum(sum_nhois) < 1 then 0
