@@ -2332,7 +2332,7 @@
         %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
             /* Check if poisson analyses are being requested */
             proc sql noprint;
-                select count(*)
+                select 'Y'
                 into :treepoissonindicator trimmed 
                 from (select distinct a.group 
                 from inputfiles a 
