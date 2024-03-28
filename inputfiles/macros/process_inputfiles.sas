@@ -2329,6 +2329,19 @@
         quit;
         %end;
 
+        %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
+            /* Check if poisson analyses are being requested */
+            proc sql noprint;
+                select count(*)
+                into :treepoissonindicator trimmed 
+                from (select distinct a.group 
+                from inputfiles a 
+                inner join pscs_masterinputs b 
+                on a.group = b.analysisgrp
+                where b.file in ('stratificationfile','iptwfile'));
+            quit;
+        %end;
+
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
         %if %eval(&nobs.>0) %then %do;
