@@ -157,6 +157,10 @@
             %let collapse_vars = ;
         %end;
 
+/***************************************************************************************************
+*  	Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
+* 	will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
+***************************************************************************************************/
 		%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
 
 /***************************************************************************************************
