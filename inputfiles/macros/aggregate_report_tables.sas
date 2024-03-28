@@ -278,18 +278,14 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
-		%if %sysfunc(exist(input.&treeaggfile.)) %then %do;
-		  %if %index(&reporttype., TREE) > 0 %then %do;
-             %let type = %substr(&reporttype,5,1);
-          %end;
-          %else %do;
-             %let type = %substr(&reporttype.,2,1);
-          %end;
+		%if &treeaggindicator. eq Y %then %do;
+		  %let type = %substr(&reporttype.,2,1);
+ 
 		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %agg_report(infile=t&type._treeanalysis_poisson_&periodid., outfile=agg_t&type._treeanalysis_poisson_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
-		  %if %str("&reporttype") = %str("TREE3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
+		  %if %str("&reporttype") = %str("T3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
 		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
-		  %end; /*TREE3*/
+		  %end; 
 		%end; /*TREEAGGFILE exists*/
 	%end; *periodid;
 
@@ -389,14 +385,7 @@
 		  %agg_report(infile=adjusted_attrition_&periodid., outfile=agg_adjusted_attrition_&periodid., name=analysisgrp);
           %end;
         %end;
-
-		/* Riskdiffdata tables for tree analyses */ 
-		%if %str("&reporttype") = %str("TREE2") or %str("&reporttype") = %str("TREE4") %then %do;
-		  %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-		  %agg_report(infile=riskdiffdata_&periodid., outfile=riskdiffdata_&periodid., name=analysisgrp);
-          %end;
-		%end;
-
+		
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;
