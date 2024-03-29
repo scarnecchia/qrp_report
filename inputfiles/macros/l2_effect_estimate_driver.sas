@@ -270,7 +270,7 @@
                                        %end;
                                        );
 
-				%if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto hdpsdata;
+				%if &treeaggindicator. eq Y %then %goto hdpsdata;
 
                 %if %sysfunc(prxmatch(m/F4/i,&figurelist.)) > 0 & (&kmrefpop. = weighted | &kmrefpop. = both) %then %do;
                     /*[runid]_adjusted_&periodid.*/
@@ -356,7 +356,7 @@
                                           runidvar=&runid.);    
                 %end;
 
-                %if %sysfunc(exist(input.&treeaggfile.)) > 0 %then %goto nextloop;
+                %if &treeaggindicator. eq Y %then %goto nextloop;
 
                 %subsetdata(datain=aggrd, dataout=cat_dp_rd, subgroup=&subgroup., cat=&cat.);
                                 
@@ -627,7 +627,7 @@
     ***********************************************************************************************;
     * Merge together risk metrics, effect estimates and label/order info                 
     ***********************************************************************************************;
-    %if ^%sysfunc(exist(input.&treeaggfile.)) %then %do; 
+    %if &treeaggindicator. eq N %then %do; 
         proc sql noprint;
             create table l2_effectestimates_&periodid. as
             select r.*, 

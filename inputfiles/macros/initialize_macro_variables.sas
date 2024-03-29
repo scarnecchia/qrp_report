@@ -181,6 +181,11 @@
 	%global produceappendixfileonly;
 	%let produceappendixfileonly=N;
 
+	/* To determine if tree aggregation should be executed */
+	%global treeaggindicator treepoissonindicator;
+	%let treeaggindicator=N;
+    %let treepoissonindicator=N;
+
 	/* Leave behind report */
 	%global reportid dpfile logofile;
 

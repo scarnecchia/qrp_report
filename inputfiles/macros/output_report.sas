@@ -121,7 +121,7 @@
 * Effect estimate tables                                                      
 ***************************************************************************************************;
 
-    %if %index(&reporttype,L2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+    %if %index(&reporttype,L2) and &treeaggindicator. eq N %then %do;
     /* Need to set to landscape so PDF tables don't wrap */
     options orientation = landscape;
         %l2_effect_estimate_output;
@@ -798,7 +798,7 @@
 * Attrition tables                                                     
 ***************************************************************************************************;
 
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
+    %if %sysfunc(prxmatch(m/T1|T3|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
 
         /* reset counter to reset table letter */
         %let tablecount=1;
@@ -840,7 +840,7 @@
         %if %index(&figurelist,F1) %then %do;
         %l2_psdistribution_output;
         %end;
-        %if %index(&figurelist,F2) and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+        %if %index(&figurelist,F2) and &treeaggindicator. eq N %then %do;
         %l2_forestplot_driver;
         %end;   
     %end; 
@@ -926,7 +926,7 @@
         - 1-CDF
         - CIF
     ************************************************;
-	%if %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+	%if &treeaggindicator. eq N %then %do;
 		%figure_survivalcurves_output;
 	%end;
 	

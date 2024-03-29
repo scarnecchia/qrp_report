@@ -271,8 +271,8 @@
 				%put &=numprofilecovars_valid;
 			%end;
 			%else %do;
-				%let numprofilecovars_valid = &numprofilecovars.;
-				%let profilecovars_valid=profilecovarsnocomma;
+				%let numprofilecovars_valid = &numprofilecovarstoinclude.;
+				%let profilecovars_valid = &profilecovarsnocomma.;
 			%end;
 
             *Determine covariate label and order;
