@@ -369,6 +369,48 @@
 					 put (_all_) (+0);
 			run;
 	    %end; /* final aggregation by type */
+
+	  /*----------------------------------------------------------------------------------------------
+		 Aggregate poisson data 
+		----------------------------------------------------------------------------------------------*/
+	    %if &treepoissonindicator = Y %then %do;
+
+	    proc sql noprint;
+	    	create table poisson_agg as 
+	    	select a.*, b.file, b.adjustment, b.denominator
+	    	from agg_t&type._treeanalysis_poisson_&periodid a 
+	    	left join poisson_group_lookup b
+	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group
+	    	order by a.runid, a.dpidsiteid, a.treeanalysisgrp, a.group, a.level, a.percentile;
+	    quit;
+
+	    data _poisson_agg;
+	    	set poisson_agg;
+	    	by runid dpidsiteid treeanalysisgrp group level percentile;
+	    	length observed expected 8;
+	    	if file = 'stratificationfile' and adjustment = 'Unweighted' then do;
+	    		if denominator = 'person' then do;
+	    			observed=evexp;
+	    			expected=exp*(evunexp/evexp);
+	    		end;
+	    		else if denominator = 'persontime' then do;
+	    			observed=evexp;
+	    			expected=futimeexp*(evunexp/futimeunexp);
+	    		end;
+	    	end;
+	    	if (file = 'stratificationfile' and adjustment = 'Weighted') or file='iptwfile' then do;
+	    		if denominator = 'person' then do;
+	    			observed=evexp;
+	    			expected=exp*(w_evunexp/evexp);
+	    		end;
+	    		else if denominator = 'persontime' then do;
+	    			observed=evexp;
+	    			expected=futimeexp*(w_evunexp*w_futimeunexp);
+	    		end;
+	    	end;
+	    run;
+
+	    %end;
 		  
 		  /* Clean up work space */
           proc datasets lib = work;
