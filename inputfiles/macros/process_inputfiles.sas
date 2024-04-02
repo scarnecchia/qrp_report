@@ -157,10 +157,6 @@
             %let collapse_vars = ;
         %end;
 
-/***************************************************************************************************
-*  	Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
-* 	will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
-***************************************************************************************************/
 		%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
 
 /***************************************************************************************************
@@ -707,6 +703,25 @@
             order by order;
         quit;
 
+    %end;
+
+/***************************************************************************************************
+*   Create a combined treefile for all runs                                                
+***************************************************************************************************/
+    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 and &treeaggindicator = Y  %then %do; 
+         data master_treefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._treefile(in=n&n.)
+            %end;
+         ;
+         format runid $6.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+         run;
     %end;
  
 /***************************************************************************************************
@@ -2336,14 +2351,27 @@
         %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
             /* Check if poisson analyses are being requested */
             proc sql noprint;
-                select 'Y'
-                into :treepoissonindicator trimmed 
-                from (select distinct a.group 
-                from inputfiles a 
-                inner join pscs_masterinputs b 
-                on a.group = b.analysisgrp
-                where b.file in ('stratificationfile','iptwfile'));
+                /* Create look-up table for poisson aggregation */
+                create table poisson_group_lookup as 
+                select a.runid, a.treeanalysisgrp, a.group, a.denominator, 
+                       c.file, d.treeanalysisid, d.levelnum,
+                       case when missing(c.strataweight) then 'Unweighted'
+                            when not missing(c.strataweight) then 'Weighted'
+                            when not missing(c.ipweight) then 'Weighted'
+                            else ''
+                            end as adjustment length=10
+                from master_treefile a 
+                inner join inputfiles b 
+                on a.group = b.group
+                inner join pscs_masterinputs c
+                on b.group = c.analysisgrp
+                inner join input.&treeaggfile d
+                on a.treeanalysisgrp = d.treeanalysisgrp
+                where c.file in ('stratificationfile','iptwfile'); 
             quit;
+
+            %isdata(dataset=poisson_group_lookup);
+            %if &nobs > 0 %then %let treepoissonindicator = Y;
         %end;
 
         *Add unique psestimategrp flag to the l2comparisonfile;     
