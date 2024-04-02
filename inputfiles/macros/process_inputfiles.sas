@@ -157,6 +157,11 @@
             %let collapse_vars = ;
         %end;
 
+        /***************************************************************************************************
+        *   Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
+        *   will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
+        ***************************************************************************************************/
+
 		%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
 
 /***************************************************************************************************
@@ -2361,10 +2366,8 @@
                             else ''
                             end as adjustment length=10
                 from master_treefile a 
-                inner join inputfiles b 
-                on a.group = b.group
                 inner join pscs_masterinputs c
-                on b.group = c.analysisgrp
+                on a.group = c.analysisgrp
                 inner join input.&treeaggfile d
                 on a.treeanalysisgrp = d.treeanalysisgrp
                 where c.file in ('stratificationfile','iptwfile'); 
