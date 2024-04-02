@@ -61,6 +61,7 @@
                     "sas_format": "$40",
                     "info": "Standardized name used to differentiate cohorts",
                     "input_type": "RowParameter",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -69,6 +70,7 @@
                     "sas_format": "$2",
                     "info": "Indicates medical and drug coverage type requirements for the cohort",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "M",
                         "D",
@@ -86,22 +88,27 @@
                     "sas_format": "3",
                     "info": "Sets the number of days that will be bridged between two consecutive enrollment periods to create a 'continuously enrolled' period",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
                     "id": "ENRDAYS",
                     "name": "Pre-Index Enrollment",
                     "sas_format": "3",
+					"analysis_types": ["1","2","3","5","6"],
                     "info": "For non-pregnancy queries, specifies the number of days of continuous enrollment required before the index date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "T4PREGENRDAYS",
                     "name": "Maternal Enrollment Days",
                     "sas_format": "3",
+					"analysis_types": ["4"],
                     "info": "(For pregnancy queries) Specifies the number of days of continuous enrollment required before or after the last menstruel period through the pregnancy outcome",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -110,6 +117,7 @@
                     "sas_format": "3",
                     "info": "Optional parameter to specify the number of days a patient is required to be in the data after the index date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -118,6 +126,7 @@
                     "sas_format": "3",
                     "info": "Indicates cohort identification strategy to be performed",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                        {
 							"1": [
@@ -159,6 +168,7 @@
                         "Y",
                         "N"
                     ],
+					"allowHidingByType": [],
 					"value_map": {
 						"Y": "Yes",
 						"N": "No"
@@ -170,6 +180,7 @@
                     "sas_format": "$7",
                     "info": "Optional parameter to restrict cohort to only specified Sex values",
                     "input_type": "MultiSelect",
+					"allowHidingByType": ["4"],
                     "values": [
                         "A",
                         "F",
@@ -189,6 +200,7 @@
                     "sas_format": "$13",
                     "info": "Optional parameter to restrict cohort to only specified Race values",
                     "input_type": "MultiSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
                         "0",
                         "1",
@@ -214,6 +226,7 @@
                     "sas_format": "$5",
                     "info": "Optional parameter to restrict cohort to only specified Hispanic values",
                     "input_type": "MultiSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
                         "N",
                         "U",
@@ -231,6 +244,7 @@
                     "sas_format": " ",
                     "info": "Age group categories for reporting. Specifying this parameter will (1) restrict to certain age groups and (2) specify how age groups will be stratified in result tables",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -239,6 +253,7 @@
                     "sas_format": "$1",
                     "info": "Indicates whether to produce a baseline table for corresponding COHORTGRP",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "Y",
                         "N"
@@ -279,6 +294,7 @@
                     "sas_format": "$40",
                     "info": "Standardized name used to differentiate cohorts",
                     "input_type": "RowParameter",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -287,6 +303,7 @@
                     "sas_format": " ",
                     "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP.",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -295,6 +312,7 @@
                     "sas_format": "$2",
                     "info": "Type of each code category value included in the CodeType field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "RX",
                         "DX",
@@ -389,30 +407,27 @@
                     "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
                     "id": "STRENGTH",
                     "name": "Medical Product Strength",
                     "sas_format": "8",
-                    "analysis_types": [
-                        "2",
-                        "5"
-                    ],
+                    "analysis_types": ["2","5"],
                     "info": "A strength associated with each medical product dispensing",
                     "input_type": "Numeric",
+					"allowHidingByType": ["2","5"],
                     "values": []
                 },
                 {
                     "id": "UNIT",
                     "name": "Medical Product Unit",
                     "sas_format": "$10",
-                    "analysis_types": [
-                        "2",
-                        "5"
-                    ],
+                    "analysis_types": ["2","5"],
                     "info": "Unit with which strength is measured for each medical product dispensing",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","5"],
                     "values": [
                         "mg",
                         "mEq",
@@ -462,6 +477,7 @@
                     "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
+					"allowHidingByType": [],
                     "values": [
                         "IPP",
                         "IPS",
@@ -495,6 +511,7 @@
                     "sas_format": "$5",
                     "info": "Indicates what role the code will play in defining an index date/exposure episode. If medical product exposure (MPn) or incident medical product exposure during pregnancy (ICn) is being defined, manually define by replacing n with number",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "DEF",
                         "FUT",
@@ -512,6 +529,7 @@
                     "sas_format": "$3",
                     "info": "Indicates what role the code will play in defining an HOI or concomitant event",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "DEF",
                         "IOC",
@@ -529,6 +547,7 @@
                     "sas_format": "3",
                     "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -537,6 +556,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if lookback period to define new use of a medical product looks for evidence of a date or evidence of an interval",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "Y",
                         "N"
@@ -552,6 +572,7 @@
                     "sas_format": "$3",
                     "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
@@ -560,39 +581,37 @@
                     "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
                     "id": "PRODUCTAPPROVALDATE",
                     "name": "Product Approval Date",
                     "sas_format": "Date9",
-                    "analysis_types": [
-                        "6"
-                    ],
+                    "analysis_types": ["6"],
                     "info": "Defines user-specified approval date for product. Valid for Type 6 only",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
                     "id": "PRODUCTMARKETINGDATE",
                     "name": "Product Marketing Start Date",
                     "sas_format": "Date9",
-                    "analysis_types": [
-                        "6"
-                    ],
+                    "analysis_types": ["6"],
                     "info": "Defines user-specified start marketing date for product. If unknown, leave blank. Valid for Type 6 only",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
                     "id": "OTHERPRODUCTDATE",
                     "name": "Other Product Date",
                     "sas_format": "Date9",
-                    "analysis_types": [
-                        "6"
-                    ],
+                    "analysis_types": ["6"],
                     "info": "Defines user-specified other product-related date. If unknown or not needed, leave blank. Valid for Type 6 only",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 }
             ]
@@ -624,6 +643,7 @@
                     "sas_format": "3",
                     "info": "Identifier for each monitoring period",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -632,6 +652,7 @@
                     "sas_format": "Date9",
                     "info": "The date on which patients may begin contributing eligible index exposures/events. Data prior to STARTDATE may be used to determine enrollment, washout, and other cohort inclusion criteria.",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -640,6 +661,7 @@
                     "sas_format": "Date9",
                     "info": "Last day a patient can contribute an index date to the analysis. Users have the option to explicitly set the date in this field or use INDENDOPTIONS for a data driven approach to set the date.",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -648,6 +670,7 @@
                     "sas_format": "$10",
                     "info": "Options for setting the last day a patient can contribute a qualifying index date.",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "FUPDRIVEN",
                         "DATADRIVEN",
@@ -665,6 +688,7 @@
                     "sas_format": "Date9",
                     "info": "Last day a patient can contribute follow-up time to the analysis.",
                     "input_type": "Date",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -673,6 +697,7 @@
                     "sas_format": "$1",
                     "info": "Whether to censor patient episodes based on Common Components database completeness date",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "Y",
                         "N"
@@ -711,6 +736,7 @@
                     "sas_format": "$3",
                     "info": "Run identifier for internal Sentinel Operations Center (SOC) identification and tracking",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -719,6 +745,7 @@
                     "sas_format": "3",
                     "info": "PERIODIDSTART should correspond to the PERIODID value in the input MONITORINGFILE to identify at what time the QRP should begin execution",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -727,14 +754,17 @@
                     "sas_format": "3",
                     "info": "PERIODIDEND should correspond to the PERIODID value in the input MONITORINGFILE to identify at what time the QRP should end execution",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "ANALYSIS",
                     "name": "Further Analysis",
                     "sas_format": "$4",
+					"analysis_types": ["2","3","4"],
                     "info": "Indicates what, if any, additional analyses will be performed on the cohort after extraction",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","3","4"],
                     "values": [
 						" ",
 						"TREE"
@@ -750,6 +780,7 @@
                     "sas_format": "3",
                     "info": "Specifies the method for data cleaning with the envelope macro",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"0",
 						"1",
@@ -767,6 +798,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if an optional output file with the distribution of index-defining codes and/or outcome-defining codes will be output for this request",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"Y",
 						"N"
@@ -782,6 +814,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if SCDM data for patients selected in the cohort(s) of interest will be saved in the dplocal folder for further processing",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"Y",
 						"A",
@@ -801,6 +834,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining the time period(s) for each data extraction",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"monitoringfile"
 					],
@@ -814,6 +848,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining the cohort identification strategy used and continuous enrollment requirements",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"cohortfile"
 					],
@@ -825,8 +860,10 @@
                     "id": "TYPE1FILE",
                     "name": "Type 1 File",
                     "sas_format": "$32",
+					"analysis_types": ["1"],
                     "info": "Name of the SAS dataset defining parameters required for a background rate calculation cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type1file"
 					],
@@ -838,8 +875,10 @@
                     "id": "TYPE2FILE",
                     "name": "Type 2 File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining parameters required for an exposures and follow-up time cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type2file"
 					],
@@ -851,8 +890,10 @@
                     "id": "TYPE3FILE",
                     "name": "Type 3 File",
                     "sas_format": "$32",
+					"analysis_types": ["3"],
                     "info": "Name of the SAS dataset defining parameters required for a self-controlled risk interval design cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type3file"
 					],
@@ -864,8 +905,10 @@
                     "id": "TYPE4FILE",
                     "name": "Type 4 File",
                     "sas_format": "$32",
+					"analysis_types": ["4"],
                     "info": "Name of the SAS dataset defining parameters required for a pregnancy episodes cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type4file"
 					],
@@ -877,8 +920,10 @@
                     "id": "TYPE5FILE",
                     "name": "Type 5 File",
                     "sas_format": "$32",
+					"analysis_types": ["5"],
                     "info": "Name of the SAS dataset defining parameters required for a medical product utilization cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type5file"
 					],
@@ -890,8 +935,10 @@
                     "id": "TYPE6FILE",
                     "name": "Type 6 File",
                     "sas_format": "$32",
+					"analysis_types": ["6"],
                     "info": "Name of the SAS dataset defining parameters required for a manufacture level product utilization and switching patterns cohort identification strategy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"type6file"
 					],
@@ -905,6 +952,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset listing codes used to define the cohort",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"cohortcodes"
 					],
@@ -918,6 +966,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset listing codes used to define additional cohort inclusion and exclusion criteria",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"inclusioncodes"
 					],
@@ -931,6 +980,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset listing codes used to define covariates",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"covariatecodes"
 					],
@@ -944,6 +994,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset to request most frequent utilization assessment",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"mfufile"
 					],
@@ -957,6 +1008,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining how dispensings, days supplied, and amount supplied are handled by the QRP (if defaults should be modified)",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"stockpilingfile"
 					],
@@ -970,6 +1022,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining the drug and medical utilization evaluation windows",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"utilfile"
 					],
@@ -983,6 +1036,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset used to specify the algorithms used to define complex events (i.e., any event that cannot be defined as a simple list of codes, which requires temporal relationships or multiple criteria to be true to define an event)",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"combofile"
 					],
@@ -996,6 +1050,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining the risk scores being requested for the study",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"riskscorefile"
 					],
@@ -1009,6 +1064,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset defining the codes used to define risk scores. Required for any study requesting risk scores.",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"riskscorecodes"
 					],
@@ -1020,8 +1076,10 @@
                     "id": "MICOHORTFILE",
                     "name": "Mother-Infant Cohort File",
                     "sas_format": "$32",
+					"analysis_types": ["4"],
                     "info": "Contains parameters to query the Mother-Infant Linkage Table and to specify criteria to build new pregnant exposure, pregnant comparator, and preganant unexposed cohorts",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"micohortfile"
 					],
@@ -1033,8 +1091,10 @@
                     "id": "PREGNANCYCODES",
                     "name": "Pregnancy Codes Lookup Table",
                     "sas_format": "$32",
+					"analysis_types": ["4"],
                     "info": "Lookup table defining pregnancy outcomes and the codes used to define them",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"pregnancycodes"
 					],
@@ -1046,8 +1106,10 @@
                     "id": "PREGNANCYMETA",
                     "name": "Pregnancy Metadata Lookup Table",
                     "sas_format": "$32",
+					"analysis_types": ["4"],
                     "info": "Lookup table defining metadata pertaining to pregnancy outcomes",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"pregnancymeta"
 					],
@@ -1059,8 +1121,10 @@
                     "id": "PREGNANCYDURATION",
                     "name": "Pregnancy Duration Lookup Table",
                     "sas_format": "$32",
+					"analysis_types": ["4"],
                     "info": "Lookup table defining the algorithm and codes used to calculate pregnancy episode duration and date of start of pregnancy",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"pregnancyduration"
 					],
@@ -1074,6 +1138,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS dataset listing user-defined strata levels to include in output",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"userstrata"
 					],
@@ -1085,8 +1150,10 @@
                     "id": "OVERLAPFILE",
                     "name": "Overlap File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining parameters to assess overlap analysis",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"overlapfile"
 					],
@@ -1098,8 +1165,10 @@
                     "id": "OVERLAPFILE_ADHERE",
                     "name": "Overlap Adherence File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining treatment adherence for an overlap analysis",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"overlapfile_adhere"
 					],
@@ -1111,8 +1180,10 @@
                     "id": "CONCFILE",
                     "name": "Concomitant File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining parameters to assess concomitant use",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"concfile"
 					],
@@ -1124,8 +1195,10 @@
                     "id": "MULTEVENTFILE",
                     "name": "Multiple Events File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining parameters to assess multiple events during requestor defined observation window",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"multeventfile"
 					],
@@ -1137,8 +1210,10 @@
                     "id": "MULTEVENTFILE_ADHERE",
                     "name": "Multiple Events Adherence File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset defining treatment adherence for a multiple events analysis",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"multeventfile_adhere"
 					],
@@ -1150,8 +1225,10 @@
                     "id": "ITSFILE",
                     "name": "Interrupted Time Series File",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Name of the SAS dataset used to perform Interrupted Time Series analysis",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2"],
                     "values": [
 						"itsfile"
 					],
@@ -1163,8 +1240,10 @@
                     "id": "METADATAFILE",
                     "name": "Surveillance Metadata File",
                     "sas_format": "$32",
+					"analysis_types": ["2","3","4"],
                     "info": "Name of the SAS dataset defining parameters required for prospective surveillance",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","3","4"],
                     "values": [
 						"metadatafile"
 					],
@@ -1176,8 +1255,10 @@
                     "id": "ICD10ICD9MAP",
                     "name": "ICD-10-CM – ICD-9-CM Mapping Lookup Table File",
                     "sas_format": "$32",
+					"analysis_types": ["2","3","4"],
                     "info": "Name of the input file containing the ICD-10-CM - ICD-9-CM lookup table that will be used in the request",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","3","4"],
                     "values": [
 						"icd10icd9map"
 					],
@@ -1189,8 +1270,10 @@
                     "id": "TREELOOKUP",
                     "name": "Tree Lookup Table File",
                     "sas_format": "$32",
+					"analysis_types": ["2","3","4"],
                     "info": "Name of the input file containing the tree lookup table that will be used in the request",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","3","4"],
                     "values": [
 						"treelookup"
 					],
@@ -1202,8 +1285,10 @@
                     "id": "TREEFILE",
                     "name": "TreeScan Parameter File",
                     "sas_format": "$32",
+					"analysis_types": ["2","3","4"],
                     "info": "Name of the input file containing the Signal Identification specific parameters that will be used in the request",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["2","3","4"],
                     "values": [
 						"treefile"
 					],
@@ -1217,11 +1302,12 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS lookup table containing a list of NDCs by unique generic name indicator and unique drug class indicator",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
-						"drugclassfile"
+						"drugclass"
 					],
 					"value_map":{
-						"drugclassfile": "Include"
+						"drugclass": "Include"
 					}
                 },
 				{
@@ -1230,6 +1316,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS lookup table defining lab codes used to query the SCDM Laboratory Result table",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
 						"labcodesmap"
 					],
@@ -1243,6 +1330,7 @@
                     "sas_format": "$32",
                     "info": "Name of the SAS lookup table defining ZIP codes, state codes, Health and Human Services region codes and Census Bureau region codes",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
 						"zipfile"
 					],
@@ -1256,6 +1344,7 @@
                     "sas_format": "$1",
                     "info": "Specify whether to return an aggregated dataset of patients/episodes that contains unique covariate combination",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
 						"Y",
 						"N"
@@ -1269,8 +1358,10 @@
                     "id": "TREATMENTPATHWAYS",
                     "name": "Treatment Pathways",
                     "sas_format": "$32",
+					"analysis_types": ["6"],
                     "info": "Name of the SAS dataset used to evaluate and characterize switch pattern",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"treatmentpathways"
 					],
@@ -1282,72 +1373,90 @@
                     "id": "PSESTIMATIONFILE",
                     "name": "PS Estimation File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for estimating a PS model",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "PSMATCHFILE",
                     "name": "PS Matching Analysis File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for a PS matching analysis",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "STRATIFICATIONFILE",
                     "name": "PS Stratification Analysis File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for a PS stratification analysis",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "IPTWFILE",
                     "name": "Inverse Probability of Treatment Weights File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for an inverse probability of treatment weights (IPTW) analysis",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "COVSTRATFILE",
                     "name": "Covariate Stratification (CS) Analysis File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for a CS analysis",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "PSCSSUBGROUPFILE",
                     "name": "PS or CS Subgroup Analysis File",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Name of the SAS dataset describing parameters for Propensity Score/Covariate Stratification analyses with subgroups of the overall analysis group",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "DIAGNOSTICS",
                     "name": "Return PS Estimation Model Diagnostics",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Specifies if program should return three diagnostic output files from the proc logistic for each PS model",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "INDLEVEL",
                     "name": "Indicator for Individual Level Output Return",
                     "sas_format": "$32",
+					"analysis_types": ["2","4"],
                     "info": "Specifies whether to write individual level [RUNID]_adjusted_[PERIODID] files to the msoc subfolder",
                     "input_type": "String",
+					"allowHidingByType": ["2","4"],
                     "values": []
                 },
 				{
                     "id": "SURVEILLANCEMODE",
                     "name": "Surveillance Strategy for Propensity Score Analyses or Multi-Factor Matching Analyses",
                     "sas_format": "$32",
+					"analysis_types": ["2"],
                     "info": "Specifies the method for performing prospective surveillance when using propensity score adjustment in a variable time-at-risk design",
                     "input_type": "String",
+					"allowHidingByType": ["2"],
                     "values": []
                 }
 			]
@@ -1379,6 +1488,7 @@
 					"sas_format": "$30",
 					"info": "CIDA output table identifier for which strata applies.",
 					"input_type": "SingleSelect",
+					"allowHidingByType": [],
 					"values": [
 						{
 							"1": [
@@ -1445,6 +1555,7 @@
 					"sas_format": "$3",
 					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
 					"input_type": "Numeric",
+					"allowHidingByType": [],
 					"values": []
 				},
 				{
@@ -1453,6 +1564,7 @@
 					"sas_format": " ",
 					"info": "Level identifier applied to each distinct combination of strata/row of data in the look-up table.",
 					"input_type": "String",
+					"allowHidingByType": [],
 					"values": []
 				}
 			]
@@ -1691,6 +1803,7 @@
                     "sas_format": "8",
                     "info": "Specifies the minimum cumulative dose of the index medication prior to index required to enter the cohort",
                     "input_type": "Numeric",
+					"allowHidingByType": ["2"],
                     "values": []
                 },
 				{
@@ -1699,6 +1812,7 @@
                     "sas_format": "8",
                     "info": "Censors episodes once the patient's cumulative dose exceeds the MAXCUMDOSE value",
                     "input_type": "Numeric",
+					"allowHidingByType": ["2"],
                     "values": []
                 },
 				{
@@ -1707,6 +1821,7 @@
                     "sas_format": "8",
                     "info": "Specifies the minimum current filled daily dose of the index dispensing required to enter the cohort",
                     "input_type": "Numeric",
+					"allowHidingByType": ["2"],
                     "values": []
                 },
 				{
@@ -1715,6 +1830,7 @@
                     "sas_format": "8",
                     "info": "Specifies the maximum current filled daily dose of the index dispensing required to enter the cohort",
                     "input_type": "Numeric",
+					"allowHidingByType": ["2"],
                     "values": []
                 },
 				{
@@ -2162,23 +2278,8 @@
 						"L": "(L) Only include linked mothers from the MIL table",
 						"U": "(U) Only include unlinked mothers from the MIL table"
 					}
-                },
-				{
-                    "id": "GRACEDAYS",
-                    "name": "Maximum Infant Grace Period",
-                    "sas_format": "3",
-                    "info": "Optional parameter to specify the maximum number of days to allow between an infant's birth and enrollment start",
-                    "input_type": "Numeric",
-                    "values": []
-                },
-				{
-                    "id": "MIDAYSDIFF",
-                    "name": "Allowed Days Between Birth Date and Delivery Date",
-                    "sas_format": "3",
-                    "info": "Indicates the allowable number of days between infant birth date and delivery date used when selecting pregnancy episodes from MIL table",
-                    "input_type": "Numeric",
-                    "values": []
                 }
+				
 			]
 		},
 		{
@@ -2280,6 +2381,7 @@
                     "sas_format": " ",
                     "info": "User-defined categories of average filled daily dose to output",
                     "input_type": "String",
+					"allowHidingByType": ["5"],
                     "values": []
                 },
 				{
@@ -2288,6 +2390,7 @@
                     "sas_format": " ",
                     "info": "User-defined categories of cumulative dose to output",
                     "input_type": "String",
+					"allowHidingByType": ["5"],
                     "values": []
                 },
 				{
@@ -2296,6 +2399,7 @@
                     "sas_format": " ",
                     "info": "User-defined categories of current filled daily dose to output",
                     "input_type": "String",
+					"allowHidingByType": ["5"],
                     "values": []
                 }
 			]
@@ -2625,6 +2729,7 @@
                     "sas_format": "$40",
                     "info": "Standardized name used to differentiate cohorts",
                     "input_type": "RowParameter",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2633,6 +2738,7 @@
                     "sas_format": " ",
                     "info": "Standardized name used to refer to a specific inclusion/exclusion code/criterion within a given GROUP",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2641,6 +2747,7 @@
                     "sas_format": "$2",
                     "info": "Type of each code category value included in the CODETYPE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"RX",
 						"DX",
@@ -2662,6 +2769,7 @@
                     "sas_format": "$3",
                     "info": "Type of each code value included in the CODE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"ND",
                         "09",
@@ -2719,6 +2827,7 @@
                     "sas_format": " ",
                     "info": "Drug code, procedure, diagnosis, and/or lab code of interest",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2727,6 +2836,7 @@
                     "sas_format": "8",
                     "info": "A strength associated with each medical product dispensing",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
@@ -2735,6 +2845,7 @@
                     "sas_format": "$10",
                     "info": "Unit with which strength is measured for each medical product dispensing",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
                         "mg",
                         "mEq",
@@ -2784,6 +2895,7 @@
                     "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each code",
                     "input_type": "MultiSelect",
+					"allowHidingByType": [],
                     "values": [
                         "IPP",
                         "IPS",
@@ -2817,6 +2929,7 @@
                     "sas_format": "3",
                     "info": "Indicates whether each criterion specified is for an inclusion or exclusion",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"0",
 						"1"
@@ -2832,6 +2945,7 @@
                     "sas_format": " ",
                     "info": "User-defined name to represent a unique inclusion or exclusion criterion",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2840,6 +2954,7 @@
                     "sas_format": " ",
                     "info": "User-defined name to represent unique inclusion or exclusion criteria within CONDLEVEL values",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2848,6 +2963,7 @@
                     "sas_format": "3",
                     "info": "Indicates whether each SUBCONDLEVEL criterion is for an inclusion or exclusion",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"0",
 						"1"
@@ -2863,6 +2979,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the evaluation period for each CODE value specified, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2871,6 +2988,7 @@
                     "sas_format": "3",
                     "info": "Defines the end of the evaluation period for each CODE value specified, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2879,6 +2997,7 @@
                     "sas_format": "3",
                     "info": "Sets the minimum number of times SUBCONDLEVEL should be found in the baseline period",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2887,6 +3006,7 @@
                     "sas_format": "3",
                     "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2895,6 +3015,7 @@
                     "sas_format": "3",
                     "info": "Sets the minimum cumulative number of days covered by dispensing to require during the evaluation period within each SUBCONDLEVEL",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -2903,6 +3024,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if lookback period to define inclusion/exclusion criteria looks for evidence of a date or evidence of an interval",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"N",
 						"Y"
@@ -2918,6 +3040,7 @@
                     "sas_format": "8",
                     "info": "Specifies the minimum cumulative dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -2926,6 +3049,7 @@
                     "sas_format": "8",
                     "info": "Specifies the minimum average filled daily dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -2934,6 +3058,7 @@
                     "sas_format": "8",
                     "info": "Specifies the maximum average filled daily dose of a medication to require during the evaluation period within each SUBCONDLEVEL",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -2942,6 +3067,7 @@
                     "sas_format": "8",
                     "info": "Indicates that only dispensings greater than or equal to the minimum current filled daily dose are considered in the lookback period to define inclusion/exclusion criteria",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -2950,17 +3076,17 @@
                     "sas_format": "8",
                     "info": "Indicates that only dispensings less than or equal to the maximum current filled daily dose are considered in the lookback period to define inclusion/exclusion criteria",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
                     "id": "CODEPOP",
                     "name": "Code Population Source",
                     "sas_format": "$2",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "In queries restricting Mother-Infant pregnant cohorts, population source to query for code",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"M",
 						"I",
@@ -2976,11 +3102,10 @@
                     "id": "CONDFROMANCHOR",
                     "name": "Anchor Date to Start Condition Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the index date to use as an anchor for the start of the inclusion or exclusion criteria.",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"INDEXDT_EXP",
@@ -2996,11 +3121,10 @@
                     "id": "CONDTOANCHOR",
                     "name": "Anchor Date to End Condition Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the index date to use as an anchor for the end of the inclusion or exclusion criteria.",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"INDEXDT_EXP",
@@ -3018,6 +3142,7 @@
                     "sas_format": "$3",
                     "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
@@ -3026,6 +3151,7 @@
                     "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 }
 			]
@@ -3057,6 +3183,7 @@
                     "sas_format": " ",
                     "info": "Unique name for each covariate defined in the file",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3065,6 +3192,7 @@
                     "sas_format": " ",
                     "info": "Standardized name used to refer to a specific exposure/HOI within a given GROUP",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3073,6 +3201,7 @@
                     "sas_format": "3",
                     "info": "A numeric indicator for each covariate specified",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3081,6 +3210,7 @@
                     "sas_format": "$2",
                     "info": "Type of each code category value included in the CODETYPE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"RX",
 						"DX",
@@ -3102,6 +3232,7 @@
                     "sas_format": "$3",
                     "info": "Type of each code value included in the CODE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"ND",
                         "09",
@@ -3133,6 +3264,7 @@
                     "sas_format": " ",
                     "info": "Drug code, diagnosis, and/or procedure code of interest",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3141,6 +3273,7 @@
                     "sas_format": "8",
                     "info": "A strength associated with each medical product dispensing",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
@@ -3149,6 +3282,7 @@
                     "sas_format": "$10",
                     "info": "Unit with which strength is measured for each medical product dispensing",
                     "input_type": "SingleSelect",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": [
                         "mg",
                         "mEq",
@@ -3231,6 +3365,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the evaluation period for each CODE value specified, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3239,17 +3374,17 @@
                     "sas_format": "3",
                     "info": "Defines the end of the evaluation period for each CODE value specified, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "COVFROMANCHOR",
                     "name": "Anchor Date on which to Start Covariate Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the start of the covariate evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"INDEXDT_EXP",
@@ -3265,11 +3400,10 @@
                     "id": "COVTOANCHOR",
                     "name": "Anchor Date on which to End Covariate Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the end of the covariate evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"INDEXDT_EXP",
@@ -3287,6 +3421,7 @@
                     "sas_format": "3",
                     "info": "Sets the minimum number of times COVARNUM should be found in the baseline period",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3295,17 +3430,17 @@
                     "sas_format": "3",
                     "info": "Indicates, for each code listed in the file, a forced supply that should be attached to the code",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "CODEPOP",
                     "name": "Source Population",
                     "sas_format": "$2",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "In queries restricting Mother-Infant pregnant cohorts, population source to query for code",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                      "values": [
 						"M",
 						"I",
@@ -3323,6 +3458,7 @@
                     "sas_format": "3",
                     "info": "Sets the minimum cumulative number of days covered by dispensing to require during the evaluation period within each COVARNUM",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3331,6 +3467,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if lookback period to define covariates looks for evidence of a date or evidence of an interval",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"N",
 						"Y"
@@ -3346,6 +3483,7 @@
                     "sas_format": "$3",
                     "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
                 {
@@ -3354,6 +3492,7 @@
                     "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -3362,6 +3501,7 @@
                     "sas_format": "8",
                     "info": "Specifies the minimum average filled daily dose of a medication to require during the evaluation period within each COVARNUM",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 },
 				{
@@ -3370,6 +3510,7 @@
                     "sas_format": "8",
                     "info": "Specifies the maximum average filled daily dose of a medication to require during the evaluation period within each COVARNUM",
                     "input_type": "Numeric",
+					"allowHidingByType": ["1","2","3","4","5","6"],
                     "values": []
                 }
 			]
@@ -3401,6 +3542,7 @@
                     "sas_format": "$20",
                     "info": "Defines risk score being requested",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"CCI",
 						"CHA2DS2VASC",
@@ -3426,6 +3568,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the risk score evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3434,17 +3577,17 @@
                     "sas_format": "3",
                     "info": "Defines the end of the risk score evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "RISKFROMANCHOR",
                     "name": "Anchor Date to Start Risk Score Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the index date to use as an anchor for the start of the risk score evaluation",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3458,11 +3601,10 @@
                     "id": "RISKTOANCHOR",
                     "name": "Anchor Date to End Risk Score Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the index date to use as an anchor for the end of the risk score evaluation",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3478,6 +3620,7 @@
                     "sas_format": " ",
                     "info": "The categorical groupings for a risk score",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 }
 			]
@@ -3511,6 +3654,7 @@
                     "sas_format": "$40",
                     "info": "Standardized name used to differentiate cohorts",
                     "input_type": "RowParameter",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3519,6 +3663,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the medical utilization evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3527,17 +3672,17 @@
                     "sas_format": "3",
                     "info": "Defines the end of the medical utilization evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "MEDUTILANCHORFROM",
                     "name": "Anchor Date on which to Start Medical Utilization Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the start of the medical utilization evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3551,11 +3696,10 @@
                     "id": "MEDUTILANCHORTO",
                     "name": "Anchor Date on which to End Medical Utilization Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the end of the medical utilization evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3571,6 +3715,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the drug utilization evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3579,17 +3724,17 @@
                     "sas_format": "3",
                     "info": "Defines the end of the drug utilization evaluation period, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "DRUGUTILANCHORFROM",
                     "name": "Anchor Date on which to Start Drug Utilization Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the start of the drug utilization evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3603,11 +3748,10 @@
                     "id": "DRUGUTILANCHORTO",
                     "name": "Anchor Date on which to End Drug Utilization Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the end of the drug utilization evaluation period",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3648,6 +3792,7 @@
                     "sas_format": "$40",
                     "info": "Standardized name used to differentiate cohorts",
                     "input_type": "RowParameter",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3656,6 +3801,7 @@
                     "sas_format": " ",
                     "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given GROUP",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3664,6 +3810,7 @@
                     "sas_format": "$2",
                     "info": "Defines how same day dispensings are processed for dispensings in the same GROUP/STOCKGROUP",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"aa",
 						"an",
@@ -3707,6 +3854,7 @@
                     "sas_format": "$40",
                     "info": "Specifies the allowable range of days supplied values (variable RxSup in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3715,6 +3863,7 @@
                     "sas_format": "$40",
                     "info": "Specifies the allowable range of amount supplied values (variable RxAmt in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3723,6 +3872,7 @@
                     "sas_format": "8",
                     "info": "The maximum percentage overlap of previous dispensing's days supply allowed for pushing dispensing dates forward",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 }
 			]
@@ -3754,6 +3904,7 @@
                     "sas_format": "3",
                     "info": "Numeric indicator to define a unique analysis. A unique analysis can have multiple rows in this file if multiple combinations of CODECAT/CODETYPE are requested",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3762,6 +3913,7 @@
                     "sas_format": "8",
                     "info": "Number of codes to return in output, across all specified code types",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3770,6 +3922,7 @@
                     "sas_format": "3",
                     "info": "Defines the start of the evaluation period to identify most frequent codes, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3778,17 +3931,17 @@
                     "sas_format": "3",
                     "info": "Defines the end of the evaluation period to identify most frequent codes, relative to Index Date",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
                     "id": "MFUANCHORFROM",
                     "name": "Anchor Date on which to Start MFU Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the start of the evaluation period to identify most frequent codes",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3802,11 +3955,10 @@
                     "id": "MFUANCHORTO",
                     "name": "Anchor Date on which to End MFU Evaluation",
                     "sas_format": "$12",
-					"analysis_types": [
-						"4"
-					],
+					"analysis_types": ["4"],
                     "info": "(Only for Type 4) Identifies the date to use as an anchor for the end of the evaluation period to identify most frequent codes",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"INDEXDT",
 						"EPISODEENDDT"
@@ -3822,6 +3974,7 @@
                     "sas_format": "$2",
                     "info": "Type of each code category value included in the CODETYPE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"RX",
 						"DX",
@@ -3841,6 +3994,7 @@
                     "sas_format": "$3",
                     "info": "Type of each code value",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"ND",
                         "09",
@@ -3894,6 +4048,7 @@
                     "sas_format": " ",
                     "info": "Defines the care setting and principal diagnosis position requirements for each CODETYPE",
                     "input_type": "MultiSelect",
+					"allowHidingByType": [],
                     "values": [
                         "IPP",
                         "IPS",
@@ -3927,6 +4082,7 @@
                     "sas_format": "$1",
                     "info": "Indicates if the top most frequent codes are output or of the largest number of patients are output",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"C",
 						"P"
@@ -3965,6 +4121,7 @@
                     "sas_format": "$30",
                     "info": "Variable used to group different components that will define a combination item",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3973,6 +4130,7 @@
                     "sas_format": " ",
                     "info": "Variable used to identify stockgroups of different components within a given RAWGROUP",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -3981,6 +4139,7 @@
                     "sas_format": "$6",
                     "info": "Type of each code value included in the RAWCODE field",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "DX09",
 						"DX10",
@@ -4048,6 +4207,7 @@
                     "sas_format": " ",
                     "info": "Code used to extract the raw record. The code will be defined in accordance with RAWCODETYPE",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4056,6 +4216,7 @@
                     "sas_format": "$30",
                     "info": "The encounter type(s) extracted for each raw record",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "E",
                         "H",
@@ -4087,6 +4248,7 @@
                     "sas_format": "$1",
                     "info": "The principal discharge diagnosis flag (PDX) value extracted for each raw record",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
                         "P",
                         "S",
@@ -4104,6 +4266,7 @@
                     "sas_format": "$3",
                     "info": "Specifies in what sequence date(s) in the SCDM Laboratory Result table should be considered to select one relevant date for a laboratory result of interest",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
                 {
@@ -4112,6 +4275,7 @@
                     "sas_format": " ",
                     "info": "Specifies the lab result value or lab result range for querying",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 }
 			]
@@ -4143,6 +4307,7 @@
                     "sas_format": "$40",
                     "info": "Names the combo virtual record that is created",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4151,6 +4316,7 @@
                     "sas_format": "3",
                     "info": "The order in which combination items are processed",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4159,6 +4325,7 @@
                     "sas_format": " ",
                     "info": "Optional free text providing details for the CombGroup",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4167,6 +4334,7 @@
                     "sas_format": " ",
                     "info": "User-defined “code” that will appear on the final virtual record",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4175,6 +4343,7 @@
                     "sas_format": "$2",
                     "info": "Determines how the final virtual record will ultimately behave",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"DX",
 						"PX",
@@ -4192,6 +4361,7 @@
                     "sas_format": "$2",
                     "info": "Encounter Type assigned to the final virtual record",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"IP",
 						"IS",
@@ -4213,6 +4383,7 @@
                     "sas_format": "$1",
                     "info": "Principal Diagnosis Position (PDX) value to be included on the final virtual record",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"P",
 						"S",
@@ -4230,6 +4401,7 @@
                     "sas_format": "$30",
                     "info": "Variable used to group different components that will define a combination item",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4238,6 +4410,7 @@
                     "sas_format": "3",
                     "info": "Instructs the algorithm which order to apply the combination items in the two-by-two method",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4246,6 +4419,7 @@
                     "sas_format": "3",
                     "info": "Determines whether episodes of the combination item are created",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"0",
 						"1",
@@ -4263,6 +4437,7 @@
                     "sas_format": "3",
                     "info": "Sets the number of days allowed between two consecutive events to consider them as part of the same treatment episode",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4271,6 +4446,7 @@
                     "sas_format": "3",
                     "info": "Indicates whether the combination item is an exclusion criterion",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"0",
 						"1"
@@ -4286,6 +4462,7 @@
                     "sas_format": "$30",
                     "info": "Determines the interval of days in which a combination item (RAWORDER=N) must overlap the previous combination item (RAWORDER=N-1) ADate to be deemed a combination",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4294,6 +4471,7 @@
                     "sas_format": "$30",
                     "info": "Determines the interval of days in which a combination item (RAWORDER=N) must overlap the previous combination item (RAWORDER=N-1) EDate to be deemed a combination",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4302,6 +4480,7 @@
                     "sas_format": "3",
                     "info": "This parameter allows the user to add a fixed duration to a combination item raw record",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4310,6 +4489,7 @@
                     "sas_format": "$10",
                     "info": "Defines the ADate (virtual episode start date) to keep on the (interim or final) virtual record after having identified a valid combination of two (or more) items",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"ADATEB",
 						"ADATEC",
@@ -4341,6 +4521,7 @@
                     "sas_format": "$10",
                     "info": "Defines the EDate (virtual episode end date) to keep on the (interim) virtual record after having identified a valid combination of two (or more) items",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"ADATEB",
 						"ADATEC",
@@ -4395,6 +4576,7 @@
                     "sas_format": "$30",
                     "info": "Standardized name used to refer to a RAWGROUP in the Combo Codes Input File",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4403,6 +4585,7 @@
                     "sas_format": " ",
                     "info": "Standardized name used to refer to codes for a specific exposure/HOI within a given RAWGROUP",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4411,6 +4594,7 @@
                     "sas_format": "$2",
                     "info": "Defines how same day dispensings are processed for dispensings in the same GROUP/STOCKGROUP",
                     "input_type": "SingleSelect",
+					"allowHidingByType": [],
                     "values": [
 						"aa",
 						"an",
@@ -4454,6 +4638,7 @@
                     "sas_format": "$40",
                     "info": "Uses mean (amount supplied or days supplied) value for dispensings in the same GROUP/STOCKGROUP on the same day",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4462,6 +4647,7 @@
                     "sas_format": "$40",
                     "info": "Specifies the allowable range of amount supplied values (variable RxAmt in the SCDM) that are allowed for a dispensing to be used to create valid treatment episodes",
                     "input_type": "String",
+					"allowHidingByType": [],
                     "values": []
                 },
 				{
@@ -4470,6 +4656,7 @@
                     "sas_format": "8",
                     "info": "The maximum percentage overlap of previous dispensing’s days supply allowed for pushing dispensing dates forward",
                     "input_type": "Numeric",
+					"allowHidingByType": [],
                     "values": []
                 }
 			]
@@ -5098,6 +5285,22 @@
 						"M": "Male",
 						"O": "Other"
 					}
+                },
+				{
+                    "id": "GRACEDAYS",
+                    "name": "Maximum Infant Grace Period",
+                    "sas_format": "3",
+                    "info": "Optional parameter to specify the maximum number of days to allow between an infant's birth and enrollment start",
+                    "input_type": "Numeric",
+                    "values": []
+                },
+				{
+                    "id": "MIDAYSDIFF",
+                    "name": "Allowed Days Between Birth Date and Delivery Date",
+                    "sas_format": "3",
+                    "info": "Indicates the allowable number of days between infant birth date and delivery date used when selecting pregnancy episodes from MIL table",
+                    "input_type": "Numeric",
+                    "values": []
                 },
 				{
                     "id": "EXPOSUREUNIT",
