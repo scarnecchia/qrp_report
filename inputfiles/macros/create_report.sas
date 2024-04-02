@@ -273,11 +273,8 @@
 ***************************************************************************************************;
 * Attrition tables                                                      
 ***************************************************************************************************;
-
-    %if %sysfunc(prxmatch(m/T1|T3|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
-        %do periodid = %eval(&look_start) %to %eval(&look_end);
-            %attrition_createdata;
-        %end;
+    %do periodid = %eval(&look_start) %to %eval(&look_end);
+        %attrition_createdata;
     %end;
 
 ***************************************************************************************************;

@@ -797,13 +797,11 @@
 ***************************************************************************************************;
 * Attrition tables                                                     
 ***************************************************************************************************;
+    
+    /* reset counter to reset table letter */
+    %let tablecount=1;
 
-    %if %sysfunc(prxmatch(m/T1|T3|T2L1|T2L2|T4L1|T4L2|T5|T6/i,&reporttype.)) %then %do;
-
-        /* reset counter to reset table letter */
-        %let tablecount=1;
-
-        %do j = %eval(&look_start) %to %eval(&look_end);
+	%do j = %eval(&look_start) %to %eval(&look_end);
 
         %if %index(&reporttype,L2) %then %let attrperiodid=_&j;
         
@@ -825,9 +823,8 @@
             options orientation = portrait;
             %let tablenum = %eval(&tablenum + 1);
                     
-            %end;
-        %end;/*periodid */
-    %end;
+        %end;
+	%end;/*periodid */    
 
 ***************************************************************************************************;
 * Figures                                                   
