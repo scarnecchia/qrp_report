@@ -46,6 +46,9 @@
 *			-[runid]_t6_switchplotb
 *           -[runid]_t6_productsdates
 *
+*			-[runid]_t&typenum._tree_analysis_[LOOK]
+*			-[runid]_t3_tree_wkdays_[LOOK]
+*
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
 *
@@ -278,10 +281,8 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
-		%if &treeaggindicator. eq Y %then %do;
-		  %let type = %substr(&reporttype.,2,1);
- 
-		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
+		%if &treeaggindicator. eq Y %then %do;		  
+		  %agg_report(infile=t&typenum._tree_analysis_&periodid., outfile=agg_t&typenum._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %if %str("&reporttype") = %str("T3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
 		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end; 
