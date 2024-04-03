@@ -352,7 +352,7 @@
 				run;
 			%end; /* nobs > 0 */
 		  %end;
-	    %else %do;
+	      %else %do;	   
 	        proc sql noprint undo_policy=none;
 			  create table &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi                               format = $11.
