@@ -410,7 +410,7 @@
 	    	if adjustment in ('psstrat@weighted','iptw@weighted') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
-	    			expected=exp*(w_evunexp/evexp);
+	    			expected=exp*(w_evunexp/w_unexp);
 	    		end;
 	    		else if denominator = 'persontime' then do;
 	    			observed=evexp;
