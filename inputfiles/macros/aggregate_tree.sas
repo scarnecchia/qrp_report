@@ -414,7 +414,7 @@
 	    		end;
 	    		else if denominator = 'persontime' then do;
 	    			observed=evexp;
-	    			expected=futimeexp*(w_evunexp*w_futimeunexp);
+	    			expected=futimeexp*(w_evunexp/w_futimeunexp);
 	    		end;
 	    	end;
 	    run;
