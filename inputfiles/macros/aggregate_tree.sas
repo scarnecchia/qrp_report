@@ -199,7 +199,7 @@
 	    /* Determine what user strata values are, and the expected values based on levelnumlbl per levelnum */
      data _null_;
      	set _tree_groups;
-     	retain count;
+     	retain count 0;
      	num_levelvars=countw(levelvars,' ');
      	num_lbls=countw(levelnumlbl,' ');
      	if num_levelvars ne num_lbls then do;
@@ -400,7 +400,7 @@
 	    	if adjustment in ('psstrat@unweighted','psstrat@unweightedw') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
-	    			expected=exp*(evunexp/evexp);
+	    			expected=exp*(evunexp/unexp);
 	    		end;
 	    		else if denominator = 'persontime' then do;
 	    			observed=evexp;
