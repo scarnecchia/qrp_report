@@ -30,18 +30,12 @@
 
   %do n = 1 %to &numrunid.;
    %let runid = %scan(&runidlist., &n.); 
-   %if %index(&reporttype., TREE) > 0 %then %do;
-     %let type = %substr(&reporttype,5,1);
-   %end;
-   %else %do;
-     %let type = %substr(&reporttype.,2,1);
-   %end;
    
    /***********************************************************************************************
     Identify EOI and REF for type 2 and 4
    ***********************************************************************************************/
    *Get EOI/REF for type 2/4 analysis;
-    %if %eval(&type. ne 3) %then %do;
+    %if %eval(&typenum. ne 3) %then %do;
         proc sql noprint;
             create table comparison as
             select x.analysisgrp, y.eoi, y.ref
@@ -109,16 +103,16 @@
 	 %end;
 	 
    %mend find_lvl_vars;
-     %find_lvl_vars(strata_table = t&type.treeanalysis, out_var =unique_lvlvars);
+     %find_lvl_vars(strata_table = t&typenum.treeanalysis, out_var =unique_lvlvars);
 	 %if &run_t3wk. = Y %then %do; %find_lvl_vars(strata_table = t3treewkdays, out_var =unique_wklvlvars); %end;
 
   /************************************************************************************************
    collapse data
    ************************************************************************************************/
-    proc means noprint data=agg_t&type._tree_analysis_&periodid. (where = (lowcase(runid) = "&runid.")) nway missing;
+    proc means noprint data=agg_t&typenum._tree_analysis_&periodid. (where = (lowcase(runid) = "&runid.")) nway missing;
 	  var nhois;
 	  class treeanalysisgrp group level tte ttc hoi &unique_lvlvars.;
-	  output out=_agg_t&type._tree_analysis_&periodid.(drop=_:) 	
+	  output out=_agg_t&typenum._tree_analysis_&periodid.(drop=_:) 	
 	  sum (nhois)=sum_nhois;
 	run;
 	
@@ -155,7 +149,7 @@
      Convert all strata variables that are used for identification to character values
      ----------------------------------------------------------------------------------------------*/ 
 	  %if &num_unique_lvlvars. > 0 %then %do;
-	    proc contents noprint data =_agg_t&type._tree_analysis_&periodid. (keep = &unique_lvlvars.) out = contents_all;
+	    proc contents noprint data =_agg_t&typenum._tree_analysis_&periodid. (keep = &unique_lvlvars.) out = contents_all;
         run;
 	    
 	    proc sql noprint;
@@ -170,8 +164,8 @@
 	      %end;
 	    quit;
 	    
-	    data _agg_t&type._tree_analysis_&periodid.;
-	      set _agg_t&type._tree_analysis_&periodid. 
+	    data _agg_t&typenum._tree_analysis_&periodid.;
+	      set _agg_t&typenum._tree_analysis_&periodid. 
 	      %if &num_nums. > 0 %then %do;(rename = (%do nn = 1 %to &num_nums.; &&num&nn.. = &&num&nn.._in %end;))%end;;  
 	      %do na = 1 %to &num_nums.; 
 	        length &&num&na.. $50;
@@ -183,11 +177,8 @@
    /*----------------------------------------------------------------------------------------------
      Determine the number of treeanalysisids in the tree_file
      ----------------------------------------------------------------------------------------------*/
-      proc sql noprint;
-        select count(treeanalysisid)
-    	into: num_treeids trimmed
-    	from input.&treeaggfile. (where = (lowcase(runid) = "&runid."));
-    	
+      proc sql noprint;    	
+    	create table _tree_groups as 
     	select a.treeanalysisid
 		      ,a.treeanalysisgrp
 		      ,a.levelid
@@ -198,44 +189,56 @@
 			  ,a.cwstart
 			  ,a.cwend
 			  ,b.levelvars
-    	into :tree1        - :tree&num_treeids.
-		    ,:treegroup1   - :treegroup&num_treeids.
-		    ,:levelid1     - :levelid&num_treeids.
-			,:levelnum1    - :levelnum&num_treeids.
-			,:levelnumlbl1 - :levelnumlbl&num_treeids.
-			,:rwstart1     - :rwstart&num_treeids. 
-			,:rwend1       - :rwend&num_treeids.   
-			,:cwstart1     - :cwstart&num_treeids. 
-			,:cwend1       - :cwend&num_treeids.   
-			,:levelvar1    - :levelvar&num_treeids.
+			  ,lower(b.tableid) as tableid
     	from input.&treeaggfile. (where = (lowcase(runid) = "&runid.")) a 
-		inner join infolder.&&&runid._userstrata (where = (lowcase(tableid) = "t&type.treeanalysis")) b
+		  inner join infolder.&&&runid._userstrata (where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson"))) b
 	    on a.levelid = b.levelid
-		order by a.treeanalysisid;
+		  order by a.treeanalysisid;
       quit;
+
+	    /* Determine what user strata values are, and the expected values based on levelnumlbl per levelnum */
+     data _null_;
+     	set _tree_groups;
+     	retain count;
+     	num_levelvars=countw(levelvars,' ');
+     	num_lbls=countw(levelnumlbl,' ');
+     	if num_levelvars ne num_lbls then do;
+       put 'ERROR: (Sentinel) There must be one value in levelnumlbl for every levelvars.';
+       put treeanalysisid= treeanalysisgrp= levelvars= levelnumlbl=;
+  	   abort;
+  	  end;
+  	  if tableid = "t&typenum.treeanalysis" then do;
+  	  count+1;
+  	  treecount=put(count,6. -L);
+  	  call symputx('num_treeids',treecount);
+  	  call symputx('tree'||treecount,treeanalysisid);
+  	  call symputx('treegroup'||treecount,treeanalysisgrp);
+  	  call symputx('levelid'||treecount,levelid);
+  	  call symputx('levelnum'||treecount,levelnum);
+  	  call symputx('levelnumlbl'||treecount,levelnumlbl);
+  	  call symputx('rwstart'||treecount,put(rwstart,best.));
+  	  call symputx('rwend'||treecount,put(rwend,best.));
+  	  call symputx('cwstart'||treecount,put(cwstart,best.));
+  	  call symputx('cwend'||treecount,put(cwend,best.));
+  	  call symputx('levelvar'||treecount,levelvars);
+  		end;
+     run;
  
    /*----------------------------------------------------------------------------------------------
      Loop through each treeanalysisid and create TreeScan Analytic datasets from temporary datasets 
 	 ----------------------------------------------------------------------------------------------*/
       %do t = 1 %to &num_treeids.;
-	    %if &num_unique_lvlvars. > 0 %then %do;
-	      /* Determine what user strata values are, and the expected values based on levelnumlbl per levelnum */
-		  %let num_levelvars = %sysfunc(countw(&&levelvar&t..,' '));
-		  %let num_lbls = %sysfunc(countw(&&levelnumlbl&t..,' '));
-		  %if &num_levelvars. ne &num_lbls. %then %do;
-		     data _null_;
-		       put 'ERROR: There must be one value in levelnumlbl for every levelvars.';
-		  	 abort;
-		     run;
-		  %end;
-		  
+    %if &num_unique_lvlvars > 0 %then %do;
+
+    	%let num_levelvars = %sysfunc(countw(&&levelvar&t..,' '));
+
 		  %do lv = 1 %to &num_levelvars.;
 	         %let lvl_var&lv. = %sysfunc(scan(&&levelvar&t..,&lv.,' ')); 
 		     %let lbl&lv. = %sysfunc(scan(&&levelnumlbl&t..,&lv.,' '));
 	      %end;
 		  
-	      data temp_&runid._t&type._tree_analysis_&periodid._agg;
-		     set _agg_t&type._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." 
+	      data temp_&runid._t&typenum._tree_analysis_&periodid._agg;
+		     set _agg_t&typenum._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." 
 		                                                                   and level = "&&levelid&t.." 
 		  	                                                           %do lv = 1 %to &num_levelvars.;
 		  		                                                         and &&lvl_var&lv.. = "&&lbl&lv.."
@@ -244,17 +247,14 @@
 		%end; 
         %else %do;
 		  %let num_levelvars = 0;
-		  data temp_&runid._t&type._tree_analysis_&periodid._agg;
-		     set _agg_t&type._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." and level = "&&levelid&t.." ));
+		  data temp_&runid._t&typenum._tree_analysis_&periodid._agg;
+		     set _agg_t&typenum._tree_analysis_&periodid. (where = (treeanalysisgrp = "&&treegroup&t.." and level = "&&levelid&t.." ));
 		  run;
 		%end;
       /*----------------------------------------------------------------------------------------------
         Determine if record count is greater than 0 and output warning if not 
 	    ----------------------------------------------------------------------------------------------*/
-  	    data _null_;
-  		  dsid = open("temp_&runid._t&type._tree_analysis_&periodid._agg");
-  		  call symputx("nobs",attrn(dsid,"nlobs"));
-  	    run;
+	    	%isdata(dataset=temp_&runid._t&typenum._tree_analysis_&periodid._agg);
         %if &nobs. = 0 %then %do;
            %let labelwarning =;
            %if &num_levelvars. > 0 %then %do;
@@ -274,7 +274,7 @@
 		  - map treeanalysisgrp to group from tree_file, which is the cohortgrp
 		----------------------------------------------------------------------------------------------*/
 		    
-		  data &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+		  data &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
 		    length levelnum levelnumlbl $32 group $40;
 		    if _n_ = 1 then do;
 			  declare hash grp (dataset: "infolder.&&&runid._treefile.");
@@ -283,7 +283,7 @@
 			  grp.definedone();
 			  call missing(group);
 			  
-			  %if &type. ne 3 %then %do;
+			  %if &typenum. ne 3 %then %do;
 			    length eoi ref $40;
 			    declare hash comp (dataset: "comparison(rename = (analysisgrp = group))");
 			    comp.definekey("group");
@@ -292,9 +292,9 @@
 				call missing(eoi, ref);
 			  %end;
 			end;
-		    set temp_&runid._t&type._tree_analysis_&periodid._agg (rename = (group = stratagroup));
+		    set temp_&runid._t&typenum._tree_analysis_&periodid._agg (rename = (group = stratagroup));
 			if grp.find() = 0 then group = group;
-			%if &type. ne 3 %then %do;
+			%if &typenum. ne 3 %then %do;
 			  if comp.find() = 0 then do;
 			     eoi = eoi;
 			     ref = ref;
@@ -312,15 +312,15 @@
 		  
 		  /* Clean up work space */
           proc datasets lib = work;
-            delete temp_&runid._t&type._tree_analysis_&periodid._agg;
+            delete temp_&runid._t&typenum._tree_analysis_&periodid._agg;
           quit;
 		  
       /*----------------------------------------------------------------------------------------------
 		 Aggregate data by group levelid levelnum for NHOI's  and output finalize data based on type
 		----------------------------------------------------------------------------------------------*/
-		  %if &type. ne 3 or (&&rwstart&t.. ne . and &&rwend&t.. ne . and &&cwstart&t.. ne . and &&cwend&t.. ne .) %then %do;	
+		  %if &typenum. ne 3 or (&&rwstart&t.. ne . and &&rwend&t.. ne . and &&cwstart&t.. ne . and &&cwend&t.. ne .) %then %do;	
 		    proc sql noprint undo_policy=none;
-			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi
 			        ,nhois_eoi
 					,nhois_ref
@@ -330,65 +330,74 @@
                        else sum(nhois_eoi) end as nhois_eoi  format = 8.
 				  	,case when sum(nhois_ref) < 1 then 0
                        else sum(nhois_ref) end as nhois_ref  format = 8.
-			    from &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
+			    from &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
 			    group by hoi)
 			  where nhois_eoi > 0 or nhois_ref > 0;
 			quit;
 
-			/* Exposed CSV */
-			data _null_;
-			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
-			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_eoi);
-					 put (_all_) (+0);
-			run;
+			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
+			%if &nobs > 0 %then %do;
+				/* Exposed CSV */
+				data _null_;
+				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
+				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_eoi);
+						 put (_all_) (+0);
+				run;
 
-			/* Unexposed CSV */
-			data _null_;
-			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
-			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_ref);
-					 put (_all_) (+0);
-			run;
+				/* Unexposed CSV */
+				data _null_;
+				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
+				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_ref);
+						 put (_all_) (+0);
+				run;
+			%end; /* nobs > 0 */
 		  %end;
 	    %else %do;
 	        proc sql noprint undo_policy=none;
-			  create table &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
+			  create table &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
 			  select hoi                               format = $11.
 			        ,case when sum(sum_nhois) < 1 then 0
 					 else sum(sum_nhois) end as nhois  format = 8.
 			        ,tte                               format = 8.
 					,ttc                               format = 8.
-			  from &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
+			  from &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.
 			  group by hoi
 			          ,tte
 					  ,ttc;
 			quit;
 
-			data _null_;
-			     file "&REPORTROOT./output/&runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
-			     set &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
-					 put (_all_) (+0);
-			run;
+			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
+			%if &nobs > 0 %then %do;
+				data _null_;
+				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
+				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+						 put (_all_) (+0);
+				run;
+			%end;
 	    %end; /* final aggregation by type */
+		  /* Clean up work space */
+          proc datasets lib = work;
+            delete &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
+          quit; 
+		%end; /* data exists */ 
+	  %end; /* treeanalysisid loop */
 
 	  /*----------------------------------------------------------------------------------------------
 		 Aggregate poisson data 
 		----------------------------------------------------------------------------------------------*/
 	    %if &treepoissonindicator = Y %then %do;
-
 	    proc sql noprint;
-	    	create table poisson_agg as 
-	    	select a.*, b.file, b.adjustment, b.denominator
-	    	from agg_t&type._treeanalysis_poisson_&periodid a 
-	    	left join poisson_group_lookup b
-	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group
-	    	order by a.runid, a.dpidsiteid, a.treeanalysisgrp, a.group, a.level, a.percentile;
+	    	create table _agg_poissont&typenum._&periodid as 
+	    	select a.*, b.adjustment, b.denominator
+	    	from agg_t&typenum._treeanalysis_poisson_&periodid a 
+	    	left join poisson_group_lookup_all b
+	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group;
 	    quit;
 
-	    data _poisson_agg;
-	    	set poisson_agg;
-	    	by runid dpidsiteid treeanalysisgrp group level percentile;
+	    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);
+	    	set _agg_poissont&typenum._&periodid;
 	    	length observed expected 8;
-	    	if file = 'stratificationfile' and adjustment = 'Unweighted' then do;
+	    	if adjustment in ('psstrat@unweighted','psstrat@unweightedw') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
 	    			expected=exp*(evunexp/evexp);
@@ -398,7 +407,7 @@
 	    			expected=futimeexp*(evunexp/futimeunexp);
 	    		end;
 	    	end;
-	    	if (file = 'stratificationfile' and adjustment = 'Weighted') or file='iptwfile' then do;
+	    	if adjustment in ('psstrat@weighted','iptw@weighted') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
 	    			expected=exp*(w_evunexp/evexp);
@@ -410,13 +419,63 @@
 	    	end;
 	    run;
 
-	    %end;
-		  
-		  /* Clean up work space */
-          proc datasets lib = work;
-            delete &runid._t&type._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
-          quit; 
-		%end; /* data exists */ 
-	  %end; /* treeanalysisid loop */
+	    data _null_;
+	    	set poisson_group_lookup_all;
+	    	count=put(_n_,6. -L);
+	    	call symputx('num_poisson_treeids',count);
+	    	call symputx('treepoissonid'||count,treeanalysisid);
+	    	call symputx('treepoissonanalysisgrp'||count,treeanalysisgrp);
+	    	call symputx('treepoissonlevelid'||count,levelid);
+	    	call symputx('treepoissonlevelnum'||count,levelnum);
+	    	call symputx('treepoissonlevelvar'||count,levelvars);
+	    	call symputx('treepoissonlevelnumlbl'||count,levelnumlbl);
+	    	call symputx('adjustmentmethod'||count,adjustment);
+	    run;
+
+	   	%do z = 1 %to &num_poisson_treeids;
+
+	    	%let num_poisson_levelvars = %sysfunc(countw(&&treepoissonlevelvar&z..,' '));
+
+			  %do lv = 1 %to &num_poisson_levelvars;
+		        %let poisson_lvlvar&lv. = %sysfunc(scan(&&treepoissonlevelvar&z..,&lv.,' ')); 
+			     %let poisson_lbl&lv. = %sysfunc(scan(&&treepoissonlevelnumlbl&z..,&lv.,' '));
+		    %end;
+
+			  proc means noprint data=_agg_poissont&typenum._&periodid.
+			    (where=(lowcase(runid) = "&runid" and 
+			    	      treeanalysisgrp="&&treepoissonanalysisgrp&z." and 
+			  	        level = "&&treepoissonlevelid&z" and adjustment = "&&adjustmentmethod&z" and 
+			  	        (observed > 0 and expected > 0)
+			  	        %if &num_poisson_levelvars > 0 %then %do lv = 1 %to &num_poisson_levelvars;
+			  	         and &&poisson_lvlvar&lv. = "&&poisson_lbl&lv."
+			  	        %end;)) nway missing;
+
+			    var observed expected;
+			    class hoi;
+			    output out=_t&typenum._temp (drop=_:) 	
+			    sum(observed)=observed
+			    sum(expected)=expected;
+			  run;
+
+			  /* Rename adjustment method for file name */
+			  %if %str(&&adjustmentmethod&z.) = %str(psstrat@weighted) %then %let adjustment = _weighted;
+			  %else %if %str(&&adjustmentmethod&z.) = %str(psstrat@unweightedw) %then %let adjustment = _unweighted; 
+			  %else %let adjustment =;
+
+			  %isdata(dataset=_t&typenum._temp);
+			  %if &nobs > 0 %then %do;
+				  data _null_;
+				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
+				     set _t&typenum._temp;
+						 put (_all_) (+0);
+					run;
+				%end;
+
+			%end; /* z */
+			/* Clean up work space */
+        proc datasets nowarn noprint nolist lib = work;
+          delete _t&typenum._temp _agg_poissont&typenum._&periodid. poisson_group_lookup_all;
+        quit; 
+	    %end; /* treepoissonindicator = Y */
   %end; /* runid loop */
 %mend aggregate_tree;

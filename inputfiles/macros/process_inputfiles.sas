@@ -2348,29 +2348,6 @@
         quit;
         %end;
 
-        %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
-            /* Check if poisson analyses are being requested */
-            proc sql noprint;
-                /* Create look-up table for poisson aggregation */
-                create table poisson_group_lookup as 
-                select a.runid, a.treeanalysisgrp, a.group, a.denominator, c.file,
-                       case when missing(c.strataweight) then 'Unweighted'
-                            when not missing(c.strataweight) then 'Weighted'
-                            when not missing(c.ipweight) then 'Weighted'
-                            else ''
-                            end as adjustment length=10
-                from master_treefile a 
-                inner join inputfiles b 
-                on a.group = b.group
-                inner join pscs_masterinputs c
-                on b.group = c.analysisgrp
-                where c.file in ('stratificationfile','iptwfile'); 
-            quit;
-
-            %isdata(dataset=poisson_group_lookup);
-            %if &nobs > 0 %then %let treepoissonindicator = Y;
-        %end;
-
         *Add unique psestimategrp flag to the l2comparisonfile;     
         %isdata(dataset=l2comparisonfile);
         %if %eval(&nobs.>0) %then %do;
@@ -2455,6 +2432,50 @@
           %end; /* treelookup exists */
         %end; /* runid loop */
       %end; /* tree aggregation requested */ 
+
+    /***************************************************************************************************
+    *  Create dataset containing tree analysis groups for poisson aggregation                                         
+    ***************************************************************************************************/
+    %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
+        /* Check if poisson analyses are being requested */
+        proc sql noprint;
+            /* Create look-up table for poisson aggregation */
+            create table _poisson_group_lookup as 
+            select a.runid, a.treeanalysisgrp, a.group, a.denominator, 
+                   d.treeanalysisid, d.levelid, d.levelnum, d.levelnumlbl, e.levelvars,
+                   case when missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@unweighted'
+                        when not missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@weighted'
+                        when not missing(c.ipweight) and c.file='iptwfile' then 'iptw@weighted'
+                        else ''
+                        end as adjustment length=20
+            from master_treefile a 
+            inner join pscs_masterinputs c
+            on a.group = c.analysisgrp
+            inner join input.&treeaggfile d
+            on a.treeanalysisgrp = d.treeanalysisgrp
+            inner join infolder.&&&runid._userstrata e
+            on d.levelid = e.levelid 
+            where c.file in ('stratificationfile','iptwfile') and lower(e.tableid)="t&typenum.treepoisson";
+        quit;
+
+        /* Create unweighted group for PS stratified weighted analysis */
+        data poisson_group_lookup_all;
+            set _poisson_group_lookup(in=a) _poisson_group_lookup(where=(adjustment='psstrat@weighted') in=b);
+            if b then do;
+                adjustment='psstrat@unweightedw';
+                output poisson_group_lookup_all;
+            end;
+            else if a then output poisson_group_lookup_all;
+        run;
+
+        %isdata(dataset=poisson_group_lookup_all);
+        %if &nobs > 0 %then %let treepoissonindicator = Y;
+
+        /* Clean up work space */
+        proc datasets nowarn noprint nolist lib = work;
+          delete _poisson_group_lookup;
+        quit;
+    %end; /* Treeaggindicator = Y */
 
 /***************************************************************************************************
 *  Create stacked dataset containing covariate labels for all runs          
