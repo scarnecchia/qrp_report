@@ -199,6 +199,7 @@
 		  order by a.treeanalysisid;
       quit;
 
+      %let num_treeids=0;
 	    /* Determine what user strata values are, and the expected values based on levelnumlbl per levelnum */
      data _null_;
      	set _tree_groups;
@@ -224,9 +225,6 @@
 	  	  call symputx('cwstart'||treecount,put(cwstart,best.));
 	  	  call symputx('cwend'||treecount,put(cwend,best.));
 	  	  call symputx('levelvar'||treecount,levelvars);
-  	  end;
-  	  else do;
-  		  call symputx('num_treeids','0');
   	  end;
      run;
  
