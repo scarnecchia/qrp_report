@@ -31,6 +31,8 @@
   %do n = 1 %to &numrunid.;
    %let runid = %scan(&runidlist., &n.); 
    
+   /* If there are no treeanalysis tables requested, jump to check */
+   %if &treeanalysisindicator ne Y %then %goto treecheck;
    /***********************************************************************************************
     Identify EOI and REF for type 2 and 4
    ***********************************************************************************************/
@@ -177,6 +179,7 @@
    /*----------------------------------------------------------------------------------------------
      Determine the number of treeanalysisids in the tree_file
      ----------------------------------------------------------------------------------------------*/
+     %treecheck:
       proc sql noprint;    	
     	create table _tree_groups as 
     	select a.treeanalysisid
@@ -221,6 +224,9 @@
   	  call symputx('cwstart'||treecount,put(cwstart,best.));
   	  call symputx('cwend'||treecount,put(cwend,best.));
   	  call symputx('levelvar'||treecount,levelvars);
+  		end;
+  		else do;
+  		call symputx('num_treeids','0');
   		end;
      run;
  
@@ -388,10 +394,10 @@
 	    %if &treepoissonindicator = Y %then %do;
 	    proc sql noprint;
 	    	create table _agg_poissont&typenum._&periodid as 
-	    	select a.*, b.adjustment, b.denominator
+	    	select distinct a.*, b.adjustment, b.denominator
 	    	from agg_t&typenum._treeanalysis_poisson_&periodid a 
 	    	left join poisson_group_lookup_all b
-	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group;
+	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group and a.level=b.levelid;
 	    quit;
 
 	    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);

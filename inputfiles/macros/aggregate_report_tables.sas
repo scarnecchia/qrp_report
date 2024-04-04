@@ -283,8 +283,10 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
-		%if &treeaggindicator. eq Y %then %do;		  
+		%if &treeaggindicator. eq Y %then %do;	
+			%if &treeanalysisindicator eq Y %then %do;	  
 		  %agg_report(infile=t&typenum._tree_analysis_&periodid., outfile=agg_t&typenum._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
+		  %end;
 		  %if &treepoissonindicator eq Y %then %do;
 		  %agg_report(infile=t&typenum._treeanalysis_poisson_&periodid., outfile=agg_t&typenum._treeanalysis_poisson_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end;

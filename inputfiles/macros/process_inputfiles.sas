@@ -1313,10 +1313,14 @@
 
         /* Type 3 tree weekdays table is not requested through tablefile
             and will be stored and processed independently */
-        %if &reporttype = T3 and &treeaggindicator. eq Y %then %do;
+        /* Check if treeanalysis stratifications were requested to determine whether to execute portion of aggregate tree */
+        %if &treeaggindicator. eq Y %then %do;
             data _null_;
                 set userstrata(keep=tableid);
+                %if &reporttype = T3 %then %do;
                 if lowcase(tableid) = 't3treewkdays' then call symputx('t3treewkdaysdset','t3treewkdays');
+                %end;
+                if lowcase(tableid) = "t&typenum.treeanalysis" then call symputx('treeanalysisindicator','Y');
             run;
         %end;
     %end;
