@@ -205,36 +205,36 @@
      	retain count 0;
      	num_levelvars=countw(levelvars,' ');
      	num_lbls=countw(levelnumlbl,' ');
-     	if num_levelvars ne num_lbls then do;
+      if num_levelvars ne num_lbls then do;
        put 'ERROR: (Sentinel) There must be one value in levelnumlbl for every levelvars.';
        put treeanalysisid= treeanalysisgrp= levelvars= levelnumlbl=;
   	   abort;
   	  end;
   	  if tableid = "t&typenum.treeanalysis" then do;
-  	  count+1;
-  	  treecount=put(count,6. -L);
-  	  call symputx('num_treeids',treecount);
-  	  call symputx('tree'||treecount,treeanalysisid);
-  	  call symputx('treegroup'||treecount,treeanalysisgrp);
-  	  call symputx('levelid'||treecount,levelid);
-  	  call symputx('levelnum'||treecount,levelnum);
-  	  call symputx('levelnumlbl'||treecount,levelnumlbl);
-  	  call symputx('rwstart'||treecount,put(rwstart,best.));
-  	  call symputx('rwend'||treecount,put(rwend,best.));
-  	  call symputx('cwstart'||treecount,put(cwstart,best.));
-  	  call symputx('cwend'||treecount,put(cwend,best.));
-  	  call symputx('levelvar'||treecount,levelvars);
-  		end;
-  		else do;
-  		call symputx('num_treeids','0');
-  		end;
+	  	  count+1;
+	  	  treecount=put(count,6. -L);
+	  	  call symputx('num_treeids',treecount);
+	  	  call symputx('tree'||treecount,treeanalysisid);
+	  	  call symputx('treegroup'||treecount,treeanalysisgrp);
+	  	  call symputx('levelid'||treecount,levelid);
+	  	  call symputx('levelnum'||treecount,levelnum);
+	  	  call symputx('levelnumlbl'||treecount,levelnumlbl);
+	  	  call symputx('rwstart'||treecount,put(rwstart,best.));
+	  	  call symputx('rwend'||treecount,put(rwend,best.));
+	  	  call symputx('cwstart'||treecount,put(cwstart,best.));
+	  	  call symputx('cwend'||treecount,put(cwend,best.));
+	  	  call symputx('levelvar'||treecount,levelvars);
+  	  end;
+  	  else do;
+  		  call symputx('num_treeids','0');
+  	  end;
      run;
  
    /*----------------------------------------------------------------------------------------------
      Loop through each treeanalysisid and create TreeScan Analytic datasets from temporary datasets 
 	 ----------------------------------------------------------------------------------------------*/
       %do t = 1 %to &num_treeids.;
-    %if &num_unique_lvlvars > 0 %then %do;
+       %if &num_unique_lvlvars > 0 %then %do;
 
     	%let num_levelvars = %sysfunc(countw(&&levelvar&t..,' '));
 
@@ -260,7 +260,7 @@
       /*----------------------------------------------------------------------------------------------
         Determine if record count is greater than 0 and output warning if not 
 	    ----------------------------------------------------------------------------------------------*/
-	    	%isdata(dataset=temp_&runid._t&typenum._tree_analysis_&periodid._agg);
+	    %isdata(dataset=temp_&runid._t&typenum._tree_analysis_&periodid._agg);
         %if &nobs. = 0 %then %do;
            %let labelwarning =;
            %if &num_levelvars. > 0 %then %do;
@@ -445,7 +445,7 @@
 			  %do lv = 1 %to &num_poisson_levelvars;
 		        %let poisson_lvlvar&lv. = %sysfunc(scan(&&treepoissonlevelvar&z..,&lv.,' ')); 
 			     %let poisson_lbl&lv. = %sysfunc(scan(&&treepoissonlevelnumlbl&z..,&lv.,' '));
-		    %end;
+		      %end;
 
 			  proc means noprint data=_agg_poissont&typenum._&periodid.
 			    (where=(lowcase(runid) = "&runid" and 
@@ -474,8 +474,8 @@
 				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
 				     set _t&typenum._temp;
 						 put (_all_) (+0);
-					run;
-				%end;
+				  run;
+			  %end;
 
 			%end; /* z */
 			/* Clean up work space */
