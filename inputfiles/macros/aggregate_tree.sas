@@ -100,7 +100,7 @@
        quit;
        
        /* Clean up work space */
-       proc datasets lib = work;
+       proc datasets nowarn noprint nolist lib = work;
         delete _uniques;
        quit;
      %end;
