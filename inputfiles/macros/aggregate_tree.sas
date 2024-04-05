@@ -31,7 +31,11 @@
   %do n = 1 %to &numrunid.;
    %let runid = %scan(&runidlist., &n.); 
    
-   /* If there are no treeanalysis tables requested, jump to check */
+  /***********************************************************************************************
+   * Process treeanalysis and/or t3treewkdays tables
+   * If neither requested, skip to check logic for numlevels and numlevellabels 
+  /***********************************************************************************************/
+
    %if &treeanalysisindicator ne Y %then %goto treecheck;
    /***********************************************************************************************
     Identify EOI and REF for type 2 and 4
@@ -341,19 +345,28 @@
 
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
+				/* Prevent path from being written to log */
+			  proc printto log=log;
+				run;
+
 				/* Exposed CSV */
 				data _null_;
-				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
+				     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
 				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_eoi);
 						 put (_all_) (+0);
 				run;
 
 				/* Unexposed CSV */
 				data _null_;
-				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
+				     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
 				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_ref);
 						 put (_all_) (+0);
 				run;
+
+				/* Resume writing to log */
+				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+				run;
+
 			%end; /* nobs > 0 */
 		  %end;
 	      %else %do;	   
@@ -372,10 +385,18 @@
 
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
+				/* Prevent path from being written to log */
+			  proc printto log=log;
+				run;
+
 				data _null_;
-				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
+				     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
 				     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
 						 put (_all_) (+0);
+				run;
+
+				/* Resume writing to log */
+				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
 				run;
 			%end;
 	    %end; /* final aggregation by type */
@@ -468,11 +489,20 @@
 
 			  %isdata(dataset=_t&typenum._temp);
 			  %if &nobs > 0 %then %do;
+
+			  	/* Prevent path from being written to log */
+			    proc printto log=log;
+				 	run;
+
 				  data _null_;
-				     file "&REPORTROOT./output/&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
+				     file "&OUTPUT.&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
 				     set _t&typenum._temp;
 						 put (_all_) (+0);
 				  run;
+
+				  /* Resume writing to log */
+					 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+					 run;
 			  %end;
 
 			%end; /* z */

@@ -726,6 +726,7 @@
                 runid = "&&id&n.";
                 end;
             %end;
+            treeanalysisgrp=lowcase(treeanalysisgrp);
          run;
     %end;
  
@@ -2461,8 +2462,8 @@
             inner join pscs_masterinputs c
             on a.group = c.analysisgrp
             inner join input.&treeaggfile d
-            on a.treeanalysisgrp = d.treeanalysisgrp
-            inner join infolder.&&&runid._userstrata e
+            on lower(a.treeanalysisgrp) = lower(d.treeanalysisgrp)
+            inner join userstrata e
             on d.levelid = e.levelid 
             where c.file in ('stratificationfile','iptwfile') and lower(e.tableid)="t&typenum.treepoisson";
         quit;
