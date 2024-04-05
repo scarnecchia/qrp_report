@@ -42,6 +42,7 @@
    ***********************************************************************************************/
    *Get EOI/REF for type 2/4 analysis;
     %if %eval(&typenum. ne 3) %then %do;
+    	%if %sysfunc(exist(infolder.&&&runid._psmatchfile)) %then %do;
         proc sql noprint;
             create table comparison as
             select x.analysisgrp, y.eoi, y.ref
@@ -49,6 +50,7 @@
             inner join infolder.&&&runid._psestimationfile. as y
             on x.psestimategrp = y.psestimategrp;
         quit;
+      %end;
     %end;
 	
   /***********************************************************************************************
@@ -231,7 +233,10 @@
 	  	  call symputx('levelvar'||treecount,levelvars);
   	  end;
      run;
- 
+
+     /* Do not execute loop for tree analysis when there is no PS match requested */
+     %if &typenum ne 3 and ^%sysfunc(exist(infolder.&&&runid._psmatchfile)) %then %let num_treeids=0;
+
    /*----------------------------------------------------------------------------------------------
      Loop through each treeanalysisid and create TreeScan Analytic datasets from temporary datasets 
 	 ----------------------------------------------------------------------------------------------*/
