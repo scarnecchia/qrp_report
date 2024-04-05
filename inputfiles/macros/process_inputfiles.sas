@@ -713,7 +713,7 @@
 /***************************************************************************************************
 *   Create a combined treefile for all runs                                                
 ***************************************************************************************************/
-    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 and &treeaggindicator = Y  %then %do; 
+    %if &treeaggindicator = Y  %then %do; 
          data master_treefile;
          set %do n = 1 %to &numrunid.;
                 %let runid=&&id&n..;
@@ -2443,22 +2443,26 @@
     /***************************************************************************************************
     *  Create dataset containing tree analysis groups for poisson aggregation and tree analysis                                        
     ***************************************************************************************************/
-    %if &treeaggindicator = Y and %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype)) %then %do; 
+    %if &treeaggindicator = Y %then %do; 
         /* Check if poisson analyses are being requested */
         proc sql noprint;
             /* Create look-up table for poisson aggregation */
             create table _tree_group_lookup as 
             select a.runid, a.treeanalysisgrp, a.group, a.denominator, 
                    d.treeanalysisid, d.levelid, d.levelnum, d.levelnumlbl, 
-                   d.rwstart, d.rwend, d.cwstart, d.cwend, lower(e.tableid) as tableid, e.levelvars,
-                   case when missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@unweighted'
+                   d.rwstart, d.rwend, d.cwstart, d.cwend, lower(e.tableid) as tableid, e.levelvars
+                   %if &reporttype ^= T3 %then %do;
+                   ,case when missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@unweighted'
                         when not missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@weighted'
                         when not missing(c.ipweight) and c.file='iptwfile' then 'iptw@weighted'
                         else ''
                         end as adjustment length=20
+                   %end;
             from master_treefile a 
+            %if &reporttype ^= T3 %then %do;
             inner join pscs_masterinputs c
             on a.group = c.analysisgrp
+            %end;
             inner join input.&treeaggfile d
             on lower(a.treeanalysisgrp) = lower(d.treeanalysisgrp)
             inner join userstrata e
@@ -2469,20 +2473,27 @@
         /* Create unweighted group for PS stratified weighted analysis */
         /* Tree analysis datasets cannot have adjustments, so remove them for processing in aggregate_tree */
         /* Vice versa for poisson - currently all groups for poisson will have adjustments */
-        data tree_group_lookup_all;
-            set _tree_group_lookup(in=a) _tree_group_lookup(where=(adjustment='psstrat@weighted') in=b);
-            if b then do;
-                if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
-                if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
-                adjustment='psstrat@unweightedw';
-                output tree_group_lookup_all;
-            end;
-            else if a then do;
-                if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
-                if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
-                output tree_group_lookup_all;
-            end;
-        run;
+        %if &reporttype ^= T3 %then %do;
+            data tree_group_lookup_all;
+                set _tree_group_lookup(in=a) _tree_group_lookup(where=(adjustment='psstrat@weighted') in=b);
+                if b then do;
+                    if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
+                    if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
+                    adjustment='psstrat@unweightedw';
+                    output tree_group_lookup_all;
+                end;
+                else if a then do;
+                    if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
+                    if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
+                    output tree_group_lookup_all;
+                end;
+            run;
+        %end;
+        %else %do;
+            data tree_group_lookup_all;
+                set _tree_group_lookup;
+            run;
+        %end;
 
         data _null_;
             set tree_group_lookup_all;
