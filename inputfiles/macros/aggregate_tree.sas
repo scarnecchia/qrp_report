@@ -33,7 +33,7 @@
    
   /***********************************************************************************************
    * Process treeanalysis and/or t3treewkdays tables
-   * If neither requested, skip to check logic for numlevels and numlevellabels 
+   * If no groups exist to create CSVs, skip to check logic for numlevels and numlevellabels 
   /***********************************************************************************************/
 
    %if &treeanalysisindicator ne Y %then %goto treecheck;
@@ -42,7 +42,6 @@
    ***********************************************************************************************/
    *Get EOI/REF for type 2/4 analysis;
     %if %eval(&typenum. ne 3) %then %do;
-    	%if %sysfunc(exist(infolder.&&&runid._psmatchfile)) %then %do;
         proc sql noprint;
             create table comparison as
             select x.analysisgrp, y.eoi, y.ref
@@ -50,7 +49,6 @@
             inner join infolder.&&&runid._psestimationfile. as y
             on x.psestimategrp = y.psestimategrp;
         quit;
-      %end;
     %end;
 	
   /***********************************************************************************************
@@ -188,21 +186,19 @@
      %treecheck:
       proc sql noprint;    	
     	create table _tree_groups as 
-    	select a.treeanalysisid
-		      ,a.treeanalysisgrp
-		      ,a.levelid
-		      ,a.levelnum
-			  ,a.levelnumlbl
-			  ,a.rwstart
-			  ,a.rwend
-			  ,a.cwstart
-			  ,a.cwend
-			  ,b.levelvars
-			  ,lower(b.tableid) as tableid
-    	from input.&treeaggfile. (where = (lowcase(runid) = "&runid.")) a 
-		  inner join infolder.&&&runid._userstrata (where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson"))) b
-	    on a.levelid = b.levelid
-		  order by a.treeanalysisid;
+    	select treeanalysisid
+		        ,treeanalysisgrp
+		        ,levelid
+		        ,levelnum
+			      ,levelnumlbl
+			      ,rwstart
+			      ,rwend
+			      ,cwstart
+			      ,cwend
+			      ,levelvars
+			      ,tableid
+    	from tree_group_lookup_all(where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson")))
+		  order by treeanalysisid;
       quit;
 
       %let num_treeids=0;
@@ -233,9 +229,6 @@
 	  	  call symputx('levelvar'||treecount,levelvars);
   	  end;
      run;
-
-     /* Do not execute loop for tree analysis when there is no PS match requested */
-     %if &typenum ne 3 and ^%sysfunc(exist(infolder.&&&runid._psmatchfile)) %then %let num_treeids=0;
 
    /*----------------------------------------------------------------------------------------------
      Loop through each treeanalysisid and create TreeScan Analytic datasets from temporary datasets 
@@ -420,7 +413,7 @@
 	    	create table _agg_poissont&typenum._&periodid as 
 	    	select distinct a.*, b.adjustment, b.denominator
 	    	from agg_t&typenum._treeanalysis_poisson_&periodid a 
-	    	left join poisson_group_lookup_all b
+	    	left join tree_group_lookup_all(where=(tableid="t&typenum.treepoisson")) b
 	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group and a.level=b.levelid;
 	    quit;
 
@@ -450,7 +443,7 @@
 	    run;
 
 	    data _null_;
-	    	set poisson_group_lookup_all;
+	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson"));
 	    	count=put(_n_,6. -L);
 	    	call symputx('num_poisson_treeids',count);
 	    	call symputx('treepoissonid'||count,treeanalysisid);
