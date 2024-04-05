@@ -268,7 +268,7 @@
         			%let labelwarning = &labelwarning., &&lvl_var&lv.. = &&lbl&lv..;
         		%end;
            %end;
-          %put WARNING: No data exists for treeanalysisid = &&tree&t.., treeanalysisgrp = &&treegroup&t.., level = &&levelid&t..&labelwarning.. Aggregate datasets will not be produced.;
+          %put WARNING: (Sentinel) No data exists for treeanalysisid = &&tree&t.., treeanalysisgrp = &&treegroup&t.., level = &&levelid&t..&labelwarning.. Aggregate datasets will not be produced.;
         %end;
 	    %else %do;
 	  /*----------------------------------------------------------------------------------------------
@@ -501,6 +501,9 @@
 				  /* Resume writing to log */
 				  proc printto log="&OUTPUT.qrp_report_log&reportid..log";
 				  run;
+			  %end;
+			  %else %do;
+			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum.&z... CSV will not be produced.;
 			  %end;
 
 			%end; /* z */
