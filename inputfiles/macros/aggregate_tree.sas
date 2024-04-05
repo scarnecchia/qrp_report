@@ -346,7 +346,7 @@
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
 				/* Prevent path from being written to log */
-			  proc printto log=log;
+				proc printto log=log;
 				run;
 
 				/* Exposed CSV */
@@ -386,7 +386,7 @@
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
 				/* Prevent path from being written to log */
-			  proc printto log=log;
+				proc printto log=log;
 				run;
 
 				data _null_;
@@ -491,8 +491,8 @@
 			  %if &nobs > 0 %then %do;
 
 			  	/* Prevent path from being written to log */
-			    proc printto log=log;
-				 	run;
+			  	proc printto log=log;
+			  	run;
 
 				  data _null_;
 				     file "&OUTPUT.&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
@@ -501,8 +501,8 @@
 				  run;
 
 				  /* Resume writing to log */
-					 proc printto log="&OUTPUT.qrp_report_log&reportid..log";
-					 run;
+				  proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+				  run;
 			  %end;
 
 			%end; /* z */
