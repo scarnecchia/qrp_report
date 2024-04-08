@@ -51,15 +51,6 @@
             on x.psestimategrp = y.psestimategrp;
         quit;
       %end;
-      %else %do;
-      /* Create dummy table when comparison isn't generated */
-        data comparison;
-          length analysisgrp eoi ref $40 
-          analysisgrp='';
-          eoi='';
-          ref='';
-        run;
-      %end;
     %end;
 	
   /***********************************************************************************************
@@ -362,7 +353,7 @@
 
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
-        /* Prevent path from being written to log */
+      /* Prevent path from being written to log */
 				proc printto log=log;
 				run;
 
