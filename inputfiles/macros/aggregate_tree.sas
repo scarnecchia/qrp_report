@@ -127,7 +127,7 @@
    proc sql noprint;
     select distinct quote(lower(strip(treeanalysisgrp)))
     into :_tree_analysis_groups separated ','
-    from tree_group_lookup_all(where=(tableid = "t&typenum.treeanalysis"))
+    from tree_group_lookup_all(where=(lowcase(runid) = "&runid." and tableid = "t&typenum.treeanalysis"))
    quit;
 
   /************************************************************************************************
