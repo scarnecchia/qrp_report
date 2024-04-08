@@ -30,6 +30,33 @@
 
   %do n = 1 %to &numrunid.;
    %let runid = %scan(&runidlist., &n.); 
+
+   /*----------------------------------------------------------------------------------------------
+     Convert all numeric strata variables that are used for identification to character values
+     ----------------------------------------------------------------------------------------------*/ 
+    %macro convert_num_strata_to_char(DSET=,KEEPVARS=);
+      proc contents noprint data =&DSET(keep = &keepvars) out = contents_all;
+        run;
+      
+      proc sql noprint;
+        select count(name) into: num_nums trimmed
+        from contents_all where type = 1;
+        
+        %if &num_nums. > 0 %then %do;
+          select name into: num1 - :num&num_nums.
+          from contents_all where type = 1;
+        %end;
+      quit;
+      
+      data &DSET;
+        set &DSET
+        %if &num_nums. > 0 %then %do;(rename = (%do nn = 1 %to &num_nums.; &&num&nn.. = &&num&nn.._in %end;))%end;;  
+        %do na = 1 %to &num_nums.; 
+          length &&num&na.. $50;
+          &&num&na.. = left(put(&&num&na.._in,8.));
+        %end;
+        run;  
+    %mend convert_num_strata_to_char;
    
   /***********************************************************************************************
    * Process treeanalysis and/or t3treewkdays tables
@@ -164,30 +191,8 @@
      Convert all strata variables that are used for identification to character values
      ----------------------------------------------------------------------------------------------*/ 
 	  %if &num_unique_lvlvars. > 0 %then %do;
-	    proc contents noprint data =_agg_t&typenum._tree_analysis_&periodid. (keep = &unique_lvlvars.) out = contents_all;
-        run;
-	    
-	    proc sql noprint;
-	      select count(name) into: num_nums
-	      from contents_all where type = 1;
-	      
-	      %let num_nums = &num_nums.;
-	      
-	      %if &num_nums. > 0 %then %do;
-	        select name into: num1 - :num&num_nums.
-	        from contents_all where type = 1;
-	      %end;
-	    quit;
-	    
-	    data _agg_t&typenum._tree_analysis_&periodid.;
-	      set _agg_t&typenum._tree_analysis_&periodid. 
-	      %if &num_nums. > 0 %then %do;(rename = (%do nn = 1 %to &num_nums.; &&num&nn.. = &&num&nn.._in %end;))%end;;  
-	      %do na = 1 %to &num_nums.; 
-	        length &&num&na.. $50;
-	        &&num&na.. = left(put(&&num&na.._in,8.));
-	      %end;
-        run;	
-      %end;	
+    %convert_num_strata_to_char(DSET=_agg_t&typenum._tree_analysis_&periodid.,KEEPVARS=&unique_lvlvars);
+    %end;	
 
    /*----------------------------------------------------------------------------------------------
      Determine the number of treeanalysisids in the tree_file
@@ -435,26 +440,31 @@
 	    	if adjustment in ('psstrat@unweighted','psstrat@unweightedw') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
-	    			expected=exp*(evunexp/unexp);
+	    			if unexp > 0 then expected=exp*(evunexp/unexp);
+            else expected=.;
 	    		end;
 	    		else if denominator = 'persontime' then do;
 	    			observed=evexp;
-	    			expected=futimeexp*(evunexp/futimeunexp);
+	    			if futimeunexp > 0 then expected=futimeexp*(evunexp/futimeunexp);
+            else expected=.;
 	    		end;
 	    	end;
 	    	if adjustment in ('psstrat@weighted','iptw@weighted') then do;
 	    		if denominator = 'person' then do;
 	    			observed=evexp;
-	    			expected=exp*(w_evunexp/w_unexp);
+	    			if w_unexp > 0 then expected=exp*(w_evunexp/w_unexp);
+            else expected=.;
 	    		end;
 	    		else if denominator = 'persontime' then do;
 	    			observed=evexp;
-	    			expected=futimeexp*(w_evunexp/w_futimeunexp);
+	    			if w_futimeunexp > 0 then expected=futimeexp*(w_evunexp/w_futimeunexp);
+            else expected=.;
 	    		end;
 	    	end;
 	    run;
 
 	    /* Store count and values to loop and generate output for poisson data */
+      %let poisson_lvlvar_list=;
       data _null_;
         set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
         count=put(_n_,6. -L);
@@ -466,7 +476,13 @@
         call symputx('treepoissonlevelvar'||count,levelvars);
         call symputx('treepoissonlevelnumlbl'||count,levelnumlbl);
         call symputx('adjustmentmethod'||count,adjustment);
+        call symputx('poisson_lvlvar_list',trim(resolve('&poisson_lvlvar_list'))||' '||strip(levelvars));
       run;
+
+      /* Convert numeric stratifications to character */
+      %if %length(&poisson_lvlvar_list) > 0 %then %do;
+      %convert_num_strata_to_char(DSET=_agg_poissont&typenum._&periodid,KEEPVARS=&poisson_lvlvar_list);
+      %end;
 
 	   	%do z = 1 %to &num_poisson_treeids;
 
@@ -516,7 +532,7 @@
           run;
 			  %end;
 			  %else %do;
-			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum&z.. . CSV will not be produced.;
+			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum&z... CSV will not be produced.;
 			  %end;
 
 			%end; /* z */
