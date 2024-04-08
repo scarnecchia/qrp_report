@@ -33,7 +33,7 @@
    
   /***********************************************************************************************
    * Process treeanalysis and/or t3treewkdays tables
-   * If no groups exist to create CSVs, skip to check logic for numlevels and numlevellabels 
+   * If no bernoulli groups requested, skip to check logic for numlevels and numlevellabels 
   /***********************************************************************************************/
 
    %if &treeanalysisindicator ne Y %then %goto treecheck;
@@ -42,6 +42,7 @@
    ***********************************************************************************************/
    *Get EOI/REF for type 2/4 analysis;
     %if %eval(&typenum. ne 3) %then %do;
+    	%if %sysfunc(exist(infolder.&&&runid._psmatchfile)) %then %do;
         proc sql noprint;
             create table comparison as
             select x.analysisgrp, y.eoi, y.ref
@@ -49,6 +50,16 @@
             inner join infolder.&&&runid._psestimationfile. as y
             on x.psestimategrp = y.psestimategrp;
         quit;
+      %end;
+      %else %do;
+      /* Create dummy table when comparison isn't generated */
+        data comparison;
+        	length analysisgrp eoi ref $40 
+        	analysisgrp='';
+        	eoi='';
+        	ref='';
+        run;
+      %end;
     %end;
 	
   /***********************************************************************************************
@@ -112,10 +123,17 @@
      %find_lvl_vars(strata_table = t&typenum.treeanalysis, out_var =unique_lvlvars);
 	 %if &run_t3wk. = Y %then %do; %find_lvl_vars(strata_table = t3treewkdays, out_var =unique_wklvlvars); %end;
 
+	 /* Select treeanalysisgrp values where only bernoulli groups are selected to filter aggregate dataset*/
+	 proc sql noprint;
+	 	select distinct quote(lower(strip(treeanalysisgrp)))
+	 	into :_tree_analysis_groups separated ','
+	 	from tree_group_lookup_all(where=(tableid = "t&typenum.treeanalysis"))
+	 quit;
+
   /************************************************************************************************
    collapse data
    ************************************************************************************************/
-    proc means noprint data=agg_t&typenum._tree_analysis_&periodid. (where = (lowcase(runid) = "&runid.")) nway missing;
+    proc means noprint data=agg_t&typenum._tree_analysis_&periodid. (where = (lowcase(runid) = "&runid." and lowcase(treeanalysisgrp) in (&_tree_analysis_groups))) nway missing;
 	  var nhois;
 	  class treeanalysisgrp group level tte ttc hoi &unique_lvlvars.;
 	  output out=_agg_t&typenum._tree_analysis_&periodid.(drop=_:) 	
@@ -418,6 +436,7 @@
 	    	where lower(b.runid) = "&runid.";
 	    quit;
 
+	    /* Compute metrics based on denominator, analysis type and weighting value */
 	    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);
 	    	set _agg_poissont&typenum._&periodid;
 	    	length observed expected 8;
@@ -443,6 +462,7 @@
 	    	end;
 	    run;
 
+	    /* Store count and values to loop and generate output for poisson data */
 	    data _null_;
 	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
 	    	count=put(_n_,6. -L);
