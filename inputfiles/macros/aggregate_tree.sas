@@ -54,10 +54,10 @@
       %else %do;
       /* Create dummy table when comparison isn't generated */
         data comparison;
-        	length analysisgrp eoi ref $40 
-        	analysisgrp='';
-        	eoi='';
-        	ref='';
+          length analysisgrp eoi ref $40 
+          analysisgrp='';
+          eoi='';
+          ref='';
         run;
       %end;
     %end;
@@ -125,9 +125,9 @@
 
 	 /* Select treeanalysisgrp values where only bernoulli groups are selected to filter aggregate dataset*/
 	 proc sql noprint;
-	 	select distinct quote(lower(strip(treeanalysisgrp)))
-	 	into :_tree_analysis_groups separated ','
-	 	from tree_group_lookup_all(where=(tableid = "t&typenum.treeanalysis"))
+    select distinct quote(lower(strip(treeanalysisgrp)))
+    into :_tree_analysis_groups separated ','
+    from tree_group_lookup_all(where=(tableid = "t&typenum.treeanalysis"))
 	 quit;
 
   /************************************************************************************************
@@ -205,16 +205,16 @@
       proc sql noprint;    	
     	create table _tree_groups as 
     	select treeanalysisid
-		        ,treeanalysisgrp
-		        ,levelid
-		        ,levelnum
-			      ,levelnumlbl
-			      ,rwstart
-			      ,rwend
-			      ,cwstart
-			      ,cwend
-			      ,levelvars
-			      ,tableid
+      ,treeanalysisgrp
+      ,levelid
+      ,levelnum
+      ,levelnumlbl
+      ,rwstart
+      ,rwend
+      ,cwstart
+      ,cwend
+      ,levelvars
+      ,tableid
     	from tree_group_lookup_all(where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson") and lowcase(runid)="&runid."))
 		  order by treeanalysisid;
       quit;
@@ -227,24 +227,24 @@
      	num_levelvars=countw(levelvars,' ');
      	num_lbls=countw(levelnumlbl,' ');
       if num_levelvars ne num_lbls then do;
-       put 'ERROR: (Sentinel) There must be one value in levelnumlbl for every levelvars.';
-       put treeanalysisid= treeanalysisgrp= levelvars= levelnumlbl=;
-  	   abort;
-  	  end;
-  	  if tableid = "t&typenum.treeanalysis" then do;
-	  	  count+1;
-	  	  treecount=put(count,6. -L);
-	  	  call symputx('num_treeids',treecount);
-	  	  call symputx('tree'||treecount,treeanalysisid);
-	  	  call symputx('treegroup'||treecount,treeanalysisgrp);
-	  	  call symputx('levelid'||treecount,levelid);
-	  	  call symputx('levelnum'||treecount,levelnum);
-	  	  call symputx('levelnumlbl'||treecount,levelnumlbl);
-	  	  call symputx('rwstart'||treecount,put(rwstart,best.));
-	  	  call symputx('rwend'||treecount,put(rwend,best.));
-	  	  call symputx('cwstart'||treecount,put(cwstart,best.));
-	  	  call symputx('cwend'||treecount,put(cwend,best.));
-	  	  call symputx('levelvar'||treecount,levelvars);
+        put 'ERROR: (Sentinel) There must be one value in levelnumlbl for every levelvars.';
+        put treeanalysisid= treeanalysisgrp= levelvars= levelnumlbl=;
+        abort;
+      end;
+      if tableid = "t&typenum.treeanalysis" then do;
+        count+1;
+        treecount=put(count,6. -L);
+        call symputx('num_treeids',treecount);
+        call symputx('tree'||treecount,treeanalysisid);
+        call symputx('treegroup'||treecount,treeanalysisgrp);
+        call symputx('levelid'||treecount,levelid);
+        call symputx('levelnum'||treecount,levelnum);
+        call symputx('levelnumlbl'||treecount,levelnumlbl);
+        call symputx('rwstart'||treecount,put(rwstart,best.));
+        call symputx('rwend'||treecount,put(rwend,best.));
+        call symputx('cwstart'||treecount,put(cwstart,best.));
+        call symputx('cwend'||treecount,put(cwend,best.));
+        call symputx('levelvar'||treecount,levelvars);
   	  end;
      run;
 
@@ -465,15 +465,15 @@
 	    /* Store count and values to loop and generate output for poisson data */
 	    data _null_;
 	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
-	    	count=put(_n_,6. -L);
-	    	call symputx('num_poisson_treeids',count);
-	    	call symputx('treepoissonid'||count,treeanalysisid);
-	    	call symputx('treepoissonanalysisgrp'||count,treeanalysisgrp);
-	    	call symputx('treepoissonlevelid'||count,levelid);
-	    	call symputx('treepoissonlevelnum'||count,levelnum);
-	    	call symputx('treepoissonlevelvar'||count,levelvars);
-	    	call symputx('treepoissonlevelnumlbl'||count,levelnumlbl);
-	    	call symputx('adjustmentmethod'||count,adjustment);
+        count=put(_n_,6. -L);
+        call symputx('num_poisson_treeids',count);
+        call symputx('treepoissonid'||count,treeanalysisid);
+        call symputx('treepoissonanalysisgrp'||count,treeanalysisgrp);
+        call symputx('treepoissonlevelid'||count,levelid);
+        call symputx('treepoissonlevelnum'||count,levelnum);
+        call symputx('treepoissonlevelvar'||count,levelvars);
+        call symputx('treepoissonlevelnumlbl'||count,levelnumlbl);
+        call symputx('adjustmentmethod'||count,adjustment);
 	    run;
 
 	   	%do z = 1 %to &num_poisson_treeids;
