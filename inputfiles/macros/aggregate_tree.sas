@@ -57,6 +57,15 @@
         %end;
         run;  
     %mend convert_num_strata_to_char;
+
+   /* Merge back original levelvars column from source userstrata to keep strata order */
+   proc sql noprint undo_policy=none;
+   	create table tree_group_lookup_all as 
+   	select a.*, b.levelvars 
+   	from tree_group_lookup_all(drop=levelvars) a 
+   	left join infolder.&&&runid._userstrata b
+   	on lower(a.tableID) = lower(b.tableid) and a.levelid = b.levelid;
+   quit;
    
   /***********************************************************************************************
    * Process treeanalysis and/or t3treewkdays tables
