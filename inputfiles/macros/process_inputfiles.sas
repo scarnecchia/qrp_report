@@ -2471,8 +2471,8 @@
         quit;
 
         /* Create unweighted group for PS stratified weighted analysis */
-        /* Tree analysis datasets cannot have adjustments, so remove them for processing in aggregate_tree */
-        /* Vice versa for poisson - currently all groups for poisson will have adjustments */
+        /* Tree analysis datasets cannot have values for weights, so remove them for processing in aggregate_tree */
+        /* Vice versa for poisson - currently all groups for poisson will be weighted or unweighted */
         %if &reporttype ^= T3 %then %do;
             data tree_group_lookup_all;
                 set _tree_group_lookup(in=a) _tree_group_lookup(where=(adjustment='psstrat@weighted') in=b);
