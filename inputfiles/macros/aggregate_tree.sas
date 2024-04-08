@@ -123,12 +123,12 @@
      %find_lvl_vars(strata_table = t&typenum.treeanalysis, out_var =unique_lvlvars);
 	 %if &run_t3wk. = Y %then %do; %find_lvl_vars(strata_table = t3treewkdays, out_var =unique_wklvlvars); %end;
 
-	 /* Select treeanalysisgrp values where only bernoulli groups are selected to filter aggregate dataset*/
-	 proc sql noprint;
+  /* Select treeanalysisgrp values where only bernoulli groups are selected to filter aggregate dataset*/
+   proc sql noprint;
     select distinct quote(lower(strip(treeanalysisgrp)))
     into :_tree_analysis_groups separated ','
     from tree_group_lookup_all(where=(tableid = "t&typenum.treeanalysis"))
-	 quit;
+   quit;
 
   /************************************************************************************************
    collapse data
@@ -231,6 +231,7 @@
         put treeanalysisid= treeanalysisgrp= levelvars= levelnumlbl=;
         abort;
       end;
+      /* Count number of groups and values to loop to generate output for tree analysis */
       if tableid = "t&typenum.treeanalysis" then do;
         count+1;
         treecount=put(count,6. -L);
@@ -245,7 +246,7 @@
         call symputx('cwstart'||treecount,put(cwstart,best.));
         call symputx('cwend'||treecount,put(cwend,best.));
         call symputx('levelvar'||treecount,levelvars);
-  	  end;
+      end;
      run;
 
    /*----------------------------------------------------------------------------------------------
@@ -474,7 +475,7 @@
         call symputx('treepoissonlevelvar'||count,levelvars);
         call symputx('treepoissonlevelnumlbl'||count,levelnumlbl);
         call symputx('adjustmentmethod'||count,adjustment);
-	    run;
+      run;
 
 	   	%do z = 1 %to &num_poisson_treeids;
 
