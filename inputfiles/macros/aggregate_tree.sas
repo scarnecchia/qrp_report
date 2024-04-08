@@ -197,7 +197,7 @@
 			      ,cwend
 			      ,levelvars
 			      ,tableid
-    	from tree_group_lookup_all(where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson")))
+    	from tree_group_lookup_all(where = (lowcase(tableid) in ("t&typenum.treeanalysis", "t&typenum.treepoisson") and lowcase(runid)="&runid."))
 		  order by treeanalysisid;
       quit;
 
@@ -414,7 +414,8 @@
 	    	select distinct a.*, b.adjustment, b.denominator
 	    	from agg_t&typenum._treeanalysis_poisson_&periodid a 
 	    	left join tree_group_lookup_all(where=(tableid="t&typenum.treepoisson")) b
-	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group and a.level=b.levelid;
+	    	on a.runid = b.runid and a.treeanalysisgrp = b.treeanalysisgrp and a.group = b.group and a.level=b.levelid
+	    	where lower(b.runid) = "&runid.";
 	    quit;
 
 	    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);
@@ -443,7 +444,7 @@
 	    run;
 
 	    data _null_;
-	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson"));
+	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
 	    	count=put(_n_,6. -L);
 	    	call symputx('num_poisson_treeids',count);
 	    	call symputx('treepoissonid'||count,treeanalysisid);
@@ -503,7 +504,7 @@
 				  run;
 			  %end;
 			  %else %do;
-			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum.&z... CSV will not be produced.;
+			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum&z.. . CSV will not be produced.;
 			  %end;
 
 			%end; /* z */
