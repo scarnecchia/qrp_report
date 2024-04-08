@@ -362,7 +362,7 @@
 
 			%isdata(dataset=&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
 			%if &nobs > 0 %then %do;
-				/* Prevent path from being written to log */
+        /* Prevent path from being written to log */
 				proc printto log=log;
 				run;
 
@@ -380,9 +380,9 @@
 						 put (_all_) (+0);
 				run;
 
-				/* Resume writing to log */
-				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
-				run;
+        /* Resume writing to log */
+        proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+        run;
 
 			%end; /* nobs > 0 */
 		  %end;
@@ -413,8 +413,8 @@
 				run;
 
 				/* Resume writing to log */
-				proc printto log="&OUTPUT.qrp_report_log&reportid..log";
-				run;
+        proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+        run;
 			%end;
 	    %end; /* final aggregation by type */
 		  /* Clean up work space */
@@ -464,8 +464,8 @@
 	    run;
 
 	    /* Store count and values to loop and generate output for poisson data */
-	    data _null_;
-	    	set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
+      data _null_;
+        set tree_group_lookup_all(where=(tableid="t&typenum.treepoisson" and lowcase(runid)="&runid."));
         count=put(_n_,6. -L);
         call symputx('num_poisson_treeids',count);
         call symputx('treepoissonid'||count,treeanalysisid);
@@ -520,9 +520,9 @@
 						 put (_all_) (+0);
 				  run;
 
-				  /* Resume writing to log */
-				  proc printto log="&OUTPUT.qrp_report_log&reportid..log";
-				  run;
+          /* Resume writing to log */
+          proc printto log="&OUTPUT.qrp_report_log&reportid..log";
+          run;
 			  %end;
 			  %else %do;
 			    %put WARNING: (Sentinel) No data exists for treeanalysisid = &&treepoissonid&z.., treeanalysisgrp = &&treepoissonanalysisgrp&z.., level = &&treepoissonlevelid&z.., levelnum = &&treepoissonlevelnum&z.. . CSV will not be produced.;
