@@ -1313,8 +1313,8 @@
         %end;
 
         /* Type 3 tree weekdays table is not requested through tablefile
-            and will be stored and processed independently */
-        /* Check if treeanalysis stratifications were requested to determine whether to execute portion of aggregate tree */
+           and will be stored and processed independently. 
+           Check if t3treewkdays was requested */
         %if &treeaggindicator. eq Y and &reporttype = T3 %then %do;
             data _null_;
                 set userstrata(keep=tableid);
