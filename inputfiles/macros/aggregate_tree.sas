@@ -8,12 +8,29 @@
 * PURPOSE: Create analytic datasets that can be used as inputs to TreeScan software
 * 
 * Program inputs:       
-*    input.&tree_table.
-*    Type 3 Analysis:
-*       msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID].sas7bdat 
-*       msoc.[RUNID]_t3_tree_wkdays_[PERIODID]_agg.sas7bdat
+*    input.&treeaggfile.
+*	 infolder.&&&runid._treefile.
+*	 infolder.&&&runid._userstrata.
+*	 infolder.&&&runid._psmatchfile.
+*	 infolder.&&&runid._psestimationfile.
+*	 tree_group_lookup_all
+*
+** Program outputs:
+*    Type 3 Analysis:       
+*       	msoc.[RUNID]_t3_tree_wkdays_[PERIODID]_agg.sas7bdat
+*	   	non fixed window only:
+*	    	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
+*		fixed window only: 	
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
 *    Type 2 and Type 4:
-*       msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID].sas7bdat
+*       	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
+*		UNWEIGHTED PSSTRAT only:
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_weighted.csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_unweighted.csv
+*		non UNWEIGHTED PSSTRAT only:
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
 *
 *  PARAMETERS:  
 *          
