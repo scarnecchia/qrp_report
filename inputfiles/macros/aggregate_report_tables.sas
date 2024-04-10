@@ -20,7 +20,7 @@
 *			-[RUNID]_t2_multevent.sas7bdat 
 *			-[RUNID]_t2_epigap.sas7bdat 
 *			-[RUNID]_t2_overlap.sas7bdat 
-*     -[RUNID]_t2_treeanalysis_poisson_[LOOK].sas7bdat 
+*           -[RUNID]_t2_treeanalysis_poisson_[LOOK].sas7bdat 
 *
 *			-[RUNID]_psdistribution_[LOOK].sas7bdat 
 *
@@ -28,7 +28,7 @@
 *			-[RUNID]_t4_cida_preg_gestwk.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
-*     -[RUNID]_t4_treeanalysis_poisson_[LOOK].sas7bdat
+*           -[RUNID]_t4_treeanalysis_poisson_[LOOK].sas7bdat
 *
 *			-[runid]_t5_cida_disp_by_daysupp
 *           -[runid]_t5_cida_dose
@@ -283,8 +283,10 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
-		%if &treeaggindicator. eq Y %then %do;		  
+		%if &treeaggindicator. eq Y %then %do;	
+		  %if &treeanalysisindicator eq Y %then %do;	  
 		  %agg_report(infile=t&typenum._tree_analysis_&periodid., outfile=agg_t&typenum._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
+		  %end;
 		  %if &treepoissonindicator eq Y %then %do;
 		  %agg_report(infile=t&typenum._treeanalysis_poisson_&periodid., outfile=agg_t&typenum._treeanalysis_poisson_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end;
