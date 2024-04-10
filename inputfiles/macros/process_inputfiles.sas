@@ -1313,8 +1313,8 @@
         %end;
 
         /* Type 3 tree weekdays table is not requested through tablefile
-            and will be stored and processed independently */
-        /* Check if treeanalysis stratifications were requested to determine whether to execute portion of aggregate tree */
+           and will be stored and processed independently. 
+           Check if t3treewkdays was requested */
         %if &treeaggindicator. eq Y and &reporttype = T3 %then %do;
             data _null_;
                 set userstrata(keep=tableid);
@@ -2450,7 +2450,7 @@
             create table _tree_group_lookup as 
             select a.runid, a.treeanalysisgrp, a.group, a.denominator, 
                    d.treeanalysisid, d.levelid, d.levelnum, d.levelnumlbl, 
-                   d.rwstart, d.rwend, d.cwstart, d.cwend, lower(e.tableid) as tableid, e.levelvars
+                   d.rwstart, d.rwend, d.cwstart, d.cwend, e.tableid, e.levelvars
                    %if &reporttype ^= T3 %then %do;
                    ,case when missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@unweighted'
                         when not missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@weighted'
@@ -2467,7 +2467,7 @@
             on lower(a.treeanalysisgrp) = lower(d.treeanalysisgrp)
             inner join userstrata e
             on d.levelid = e.levelid 
-            where lower(e.tableid) in ("t&typenum.treepoisson","t&typenum.treeanalysis");
+            where e.tableid in ("t&typenum.treepoisson","t&typenum.treeanalysis");
         quit;
 
         /* Create unweighted group for PS stratified weighted analysis */
