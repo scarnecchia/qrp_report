@@ -149,8 +149,8 @@ options validvarname = v7;
 %let repdata = &output.reportdata;
 %let msocdata = &output.msocdata;
 options DLCREATEDIR ;
-libname repdata "&repdata" ;
-libname msocdata "&msocdata" ;
+libname repdata "&repdata" filelockwait = 2;
+libname msocdata "&msocdata" filelockwait = 2;
 options NODLCREATEDIR;
 
 /* Assign ods template path */
