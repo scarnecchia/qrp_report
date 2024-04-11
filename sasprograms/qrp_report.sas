@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 03/07/2024
-* VERSION: 3.1.0
+* LAST MODIFIED: 04/11/2024
+* VERSION: 3.1.1
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -149,8 +149,8 @@ options validvarname = v7;
 %let repdata = &output.reportdata;
 %let msocdata = &output.msocdata;
 options DLCREATEDIR ;
-libname repdata "&repdata" ;
-libname msocdata "&msocdata" ;
+libname repdata "&repdata" filelockwait = 2;
+libname msocdata "&msocdata" filelockwait = 2;
 options NODLCREATEDIR;
 
 /* Assign ods template path */
