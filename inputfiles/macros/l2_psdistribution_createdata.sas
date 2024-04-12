@@ -90,7 +90,8 @@
 	                      weight = "Unweighted";
 	                      output;
 						  %do wt = 1 %to &numweights;
-		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | (&psfile = stratificationfile and %length(&strataweight) > 0) %then %do;
+		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | (&psfile = stratificationfile and %length(&strataweight) > 0) |
+                                    (&psfile.= stratificationfile and &treeaggindicator. = Y) %then %do;
 			                	type = 'Adjusted';
 			                    weight = "&&weight&wt.";
 			                    output;
