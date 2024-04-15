@@ -203,7 +203,7 @@
 			                %let maskeddpid = agg;
 			                %let dps= 0;
 			                %let hisanalysis = Unadjusted;
-			                %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                %if &psfile. = iptwfile |(&psfile. = stratificationfile & &treeaggindicator. = Y) |"&analysisgrphist." ="STRATAWEIGHT" %then %do;
 			                  proc odstext ;
 								p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
 		                %end;

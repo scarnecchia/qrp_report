@@ -302,7 +302,8 @@
 	                    %end;
 
 	                    /*Unweighted - IPTW and PS Stratum*/
-	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
+                            (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                    %tableletter(); 
 	                    %addtotoc(tabnum=Table 1&tableletter., 
 	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));

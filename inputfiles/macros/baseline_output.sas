@@ -1226,7 +1226,8 @@
 	                %end;
 
 	                /*Unweighted - IPTW and PS Stratum*/
-	                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
+                        (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                %tableletter(); 
 	                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
 	                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
