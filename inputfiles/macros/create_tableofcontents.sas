@@ -1628,7 +1628,7 @@
 								   call symput("andafter", " and After");
 		                        %end;
 								%else %if &psfile = stratificationfile %then %do;
-								   if upcase(strataweight) in ("ATE", "ATT") | &treeaggindicator.= Y then do;
+								   if upcase(strataweight) in ("ATE", "ATT") | "&treeaggindicator."= "Y" then do;
 								     call symput("andafter", " and After");
 								   end;
 		                        %end;
