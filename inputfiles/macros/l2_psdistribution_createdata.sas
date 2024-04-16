@@ -42,7 +42,7 @@
         run;
 
 		%if &OutputPSDistribution.=Y %then %do;
-            /* only psmatchfile, stratificationfile, and iptwfile have histogram */
+            /* only psmatchfile, weighted stratificationfile, unweighted stratificationfile (tree analysis only) , and iptwfile have histogram */
 	        proc sql noprint;
 	            select strip(file) into: psfile
 	            from pscs_masterinputs (where = (missing(subgroup)))

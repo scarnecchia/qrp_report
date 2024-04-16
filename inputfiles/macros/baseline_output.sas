@@ -1225,7 +1225,7 @@
 	                  includenonpregnant=&includenonpregnant.);
 	                %end;
 
-	                /*Unweighted - IPTW and PS Stratum*/
+	                /*Unweighted - IPTW, PS Stratum, PS Stratification (tree analysis only) */
 	                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
                         (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                %tableletter(); 

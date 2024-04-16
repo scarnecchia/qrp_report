@@ -1810,7 +1810,7 @@
                 %end;
             %end;
 
-            /*PS Stratification: Unweighted for PS Stratum weighted analysis and Weighted table*/
+            /*PS Stratification: Unweighted for either PS Stratum weighted or tree analysis, or Weighted table*/
             %if &psfile. = stratificationfile %then %do;
                 %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") | "&treeaggindicator."="Y" %then %do;
                 %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4, suffix=&suffix.);
