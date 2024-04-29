@@ -301,8 +301,9 @@
 	                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
 	                    %end;
 
-	                    /*Unweighted - IPTW and PS Stratum*/
-	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                    /*Unweighted - IPTW and PS Stratum, PS Stratification (tree analysis only)*/
+	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
+                            (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                    %tableletter(); 
 	                    %addtotoc(tabnum=Table 1&tableletter., 
 	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
@@ -1627,7 +1628,7 @@
 								   call symput("andafter", " and After");
 		                        %end;
 								%else %if &psfile = stratificationfile %then %do;
-								   if upcase(strataweight) in ("ATE", "ATT") then do;
+								   if upcase(strataweight) in ("ATE", "ATT") | "&treeaggindicator."= "Y" then do;
 								     call symput("andafter", " and After");
 								   end;
 		                        %end;

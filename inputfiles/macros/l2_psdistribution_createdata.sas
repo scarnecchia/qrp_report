@@ -42,7 +42,7 @@
         run;
 
 		%if &OutputPSDistribution.=Y %then %do;
-            /* only psmatchfile, stratificationfile, and iptwfile have histogram */
+            /* only psmatchfile, weighted stratificationfile, unweighted stratificationfile (tree analysis only) , and iptwfile have histogram */
 	        proc sql noprint;
 	            select strip(file) into: psfile
 	            from pscs_masterinputs (where = (missing(subgroup)))
@@ -90,7 +90,8 @@
 	                      weight = "Unweighted";
 	                      output;
 						  %do wt = 1 %to &numweights;
-		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | (&psfile = stratificationfile and %length(&strataweight) > 0) %then %do;
+		                  	%if %eval(&ratio.= F ) | &psfile = iptwfile | (&psfile = stratificationfile and %length(&strataweight) > 0) |
+                                    (&psfile.= stratificationfile and &treeaggindicator. = Y) %then %do;
 			                	type = 'Adjusted';
 			                    weight = "&&weight&wt.";
 			                    output;

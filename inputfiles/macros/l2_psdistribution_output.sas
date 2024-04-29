@@ -114,6 +114,7 @@
                              if upcase(strataweight) = "ATE" then call symputx("analysisgrpschemelong", %str(", Stratum Weighted, Average Treatment Effect (ATE)"));
                              else if upcase(strataweight)= "ATT" then call symputx("analysisgrpschemelong", %str(", Stratum Weighted, Average Treatment Effect in the Treated (ATT)"));
 						   end;
+                           if "&treeaggindicator." = "Y" then call symput("andafter", " and After");
                         %end;
                 	run; 
 	                data _null_; 
@@ -203,7 +204,7 @@
 			                %let maskeddpid = agg;
 			                %let dps= 0;
 			                %let hisanalysis = Unadjusted;
-			                %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                %if &psfile. = iptwfile |(&psfile. = stratificationfile & &treeaggindicator. = Y) |"&analysisgrphist." ="STRATAWEIGHT" %then %do;
 			                  proc odstext ;
 								p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
 		                %end;
@@ -222,7 +223,8 @@
 		                  %output_histogram(type=Adjusted, weight=Unweighted);
 	                  	%end;
 
-	                  	%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+	                  	%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" | 
+                           (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                    
 		                    proc sql noprint;
 		                      select distinct(weight)
@@ -269,7 +271,8 @@
 			                 
 			                    /*output histogram*/
 			                    %let hisanalysis = Unadjusted;
-			                    %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+			                    %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" | 
+                                   (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 			                      proc odstext ;
 									p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
 			                    %end;
@@ -290,7 +293,8 @@
 			                      %output_histogram(type=Adjusted, weight=Unweighted);
 			                    %end;
 								
-								%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" %then %do;
+								%if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" | 
+                                   (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 			                    
 				                      proc sql noprint;
 				                        select distinct(weight)
