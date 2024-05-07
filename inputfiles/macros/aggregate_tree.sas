@@ -541,14 +541,14 @@
 
 			  	proc means noprint data=_agg_poissont&typenum._&periodid.
 			    	(where=(lowcase(runid) = "&runid" and treeanalysisgrp="&&treepoissonanalysisgrp&z." and 
-			  	        level = "&&treepoissonlevelid&z" and adjustment = "&&adjustmentmethod&z" and (observed > 0 and expected > 0)
+			  	        level = "&&treepoissonlevelid&z" and adjustment = "&&adjustmentmethod&z"
 			  	        %if &num_poisson_levelvars > 0 %then %do lv = 1 %to &num_poisson_levelvars;
 			  	         and &&poisson_lvlvar&lv. = "&&poisson_lbl&lv."
 			  	        %end;)) nway missing;
 
 			    	var observed expected;
 			    	class hoi;
-			    	output out=_t&typenum._temp (drop=_:) sum(observed)=observed sum(expected)=expected;
+			    	output out=_t&typenum._temp (drop=_: where=(observed > 0 and expected > 0)) sum(observed)=observed sum(expected)=expected;
 			  	run;
 
 			  	/* Rename adjustment method for file name */
