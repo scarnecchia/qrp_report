@@ -194,7 +194,8 @@
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Mother excluded due to prior initiation of other exposure group"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy outcome must be during the look period"; report_descr = "Pregnancy outcome recorded during current look period"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episode index date must overlap the query period and satisfy the age range condition within the query period"; report_descr = "Pregnancy outcome recorded during query period and at specified age range evaluated at specified index date"; output;
-		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Mother had sufficient pre-index continuous enrollment"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the pre-pregnancy outcome enrollment requirement"; report_descr = "Had sufficient continuous enrollment prior to pregnancy outcome"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the post-pregnancy outcome enrollment requirement"; report_descr = "Had sufficient continuous enrollment post pregnancy outcome"; output;		
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
