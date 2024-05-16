@@ -198,6 +198,7 @@
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the post-pregnancy outcome enrollment requirement"; report_descr = "Sufficient continuous enrollment post pregnancy outcome"; output;		
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have at least 1 day of followup in the risk window"; report_descr = "Had at least one day of enrollment during outcome assessment period"; output;		
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 							 
