@@ -481,7 +481,7 @@
 
 			proc sql noprint;
 			select distinct levelvars into :levelvars separated by " "
-			from tree_group_lookup_all;
+			from tree_group_lookup_all(where=(adjustment="psstrat@weighted"));
 			quit;
 
 			proc means nway missing noprint data=_agg_poissont&typenum._&periodid(where=(adjustment="psstrat@weighted"));
@@ -490,14 +490,10 @@
 			output out=_t&typenum._temp(drop=_:) sum=;
 			run;
 
-			data _agg_poissont&typenum._&periodid.;
-			set _agg_poissont&typenum._&periodid.(where=(adjustment ne "psstrat@weighted"))
-			    _t&typenum._temp;
-			run;
-
 	    	/* Compute metrics based on denominator, analysis type and weighting value */
 		    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);
-		    	set _agg_poissont&typenum._&periodid;
+		    	set _agg_poissont&typenum._&periodid.(where=(adjustment ne "psstrat@weighted"))
+			    _t&typenum._temp;
 		    	length observed expected 8;
 		    	if adjustment in ('psstrat@unweighted','psstrat@unweightedw') then do;
 		    		if denominator = 'person' then do;
