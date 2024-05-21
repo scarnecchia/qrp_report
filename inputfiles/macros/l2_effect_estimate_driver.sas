@@ -265,9 +265,6 @@
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
-                                       %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                       , renameclause=%str( rename=percentilevalue = percentile)
-                                       %end;
                                        );
 
 				%if &treeaggindicator. eq Y %then %goto hdpsdata;
