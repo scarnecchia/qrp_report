@@ -87,7 +87,7 @@
 				%let andafter =;
 	            %let matchtype = ;
 	            %let analysisgrphist = ;
-	            %let analysisgrpchemelong = ;
+	            %let analysisgrpschemelong = ;
 				%let pstrim =;
 
             	%if &psfile. = psmatchfile | &psfile. = stratificationfile | &psfile. = iptwfile %then %do;
