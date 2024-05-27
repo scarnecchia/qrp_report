@@ -444,6 +444,35 @@
 		  %agg_report(infile=adjusted_attrition_&periodid., outfile=agg_adjusted_attrition_&periodid., name=analysisgrp);
           %end;
         %end;
+
+
+		/* If death/qryend censoring columns were dropped from some aggregated datasets, remove them from datasets/variables used to generate the tables/figures */
+		%if &drop_cens_output.=Y %then %do;
+			%isdata(dataset=tablefile);
+		    %if %eval(&nobs.>0) %then %do;
+				data tablefile;
+				set tablefile;
+				censorreason = tranwrd(censorreason,'cens_dth','');
+		        censorreason = tranwrd(censorreason,'cens_qryend','');
+				censorreason = tranwrd(censorreason,'deathcount','');
+		        censorreason = tranwrd(censorreason,'endquerycount','');
+				run;
+			%end;
+
+			%isdata(dataset=figurefile);
+    		%if %eval(&nobs.>0) %then %do;
+				data figurefile;
+				set figurefile;
+				censordisplay = tranwrd(censordisplay,'cens_dth','');
+		        censordisplay = tranwrd(censordisplay,'cens_qryend','');
+				censordisplay = tranwrd(censordisplay,'deathcount','');
+		        censordisplay = tranwrd(censordisplay,'endquerycount','');
+				run;
+			%end;
+
+			%let defaultcensororder=%sysfunc(tranwrd(&defaultcensororder.,cens_dth,%str()));
+			%let defaultcensororder=%sysfunc(tranwrd(&defaultcensororder.,cens_qryend,%str()));
+		%end;
 		
 	%put =====> END MACRO: aggregate_report_tables;
 
