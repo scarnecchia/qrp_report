@@ -83,6 +83,8 @@
         %macro agg_report(infile=, outfile=, name= , stratification = N, where=1);
 
             proc datasets nowarn noprint nolist lib=work; delete &outfile.; quit;	
+
+			%let death_censoring_column_exist=N;
 				
     		*loop through DPs;
     	    %do dps = 1 %to %eval(&num_dp.); 
@@ -113,7 +115,25 @@
     					    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
     					      if gapnum = 999 then delete;
 							  if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
-    					    %end;				   
+    					    %end;
+							%else %if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;
+								/* Check if cens_dth variable exist for this DP. If not, cens_dth/cens_qryend variables will have to be removed from the aggregated dataset */
+								%if %varexist(&dpidsiteid..&&runid._&infile, cens_dth) = 0 %then %do;	
+								call symputx("drop_cens_output", "Y");
+								%end;
+								%else %do;
+								call symputx("death_censoring_column_exist", "Y");
+								%end;
+							%end; 
+							%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;
+								/* Check if deathcount variable exist for this DP. If not, variable related to death/qryend censoring will have to be removed from the aggregated dataset */
+								%if %varexist(&dpidsiteid..&&runid._&infile, deathcount) = 0 %then %do;	
+								call symputx("drop_cens_output", "Y");
+								%end;
+								%else %do;
+								call symputx("death_censoring_column_exist", "Y");
+								%end;
+							%end; 
     					run;
 
     				   *warning if no rows selected after applying the where clause;
@@ -123,7 +143,25 @@
     				    %end;
     								
     				   /* Aggregate Data */
-    				   proc append data=temp_&dps. base=&outfile. force; run;
+					   %if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor or
+						   &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;
+							/* Cannot use append procedure since some DPs could have death/qryend censoring data and some not */
+							%isdata(dataset=&outfile.);
+						    %if %eval(&nobs.>0) %then %do;
+								data &outfile.;
+								set &outfile.
+									temp_&dps.;
+								run;
+							%end;
+							%else %do;
+								data &outfile.;
+								set temp_&dps.;
+								run;
+							%end;
+					   %end;
+					   %else %do;
+    				   		proc append data=temp_&dps. base=&outfile. force; run;
+					   %end;
 
     				   proc datasets nowarn noprint nolist lib=work; delete temp_&dps.; quit;	
     				%end; *&&grouplist_&n..;
@@ -132,6 +170,20 @@
 
     			%end; *runID;
     		  %end;*loop through DPs;
+
+			  /* If death/qryend censoring data was not returned by a DP, make sure the columns do not appear in the aggregated dataset */ 
+			  %if &drop_cens_output.=Y and &death_censoring_column_exist.=Y %then %do;
+				%if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;		
+					data &outfile.;
+					set &outfile.(drop=cens_dth cens_qryend);
+					run;	
+				%end;
+				%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;		
+					data &outfile.;
+					set &outfile.(drop=DeathPatCount EndQueryPatCount DeathCount EndQueryCount);
+					run;		
+				%end;
+			  %end;
 
     		  %output_datasets(dataset=&outfile., outlib=msocdata);
 			  
