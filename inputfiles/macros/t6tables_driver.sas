@@ -56,7 +56,7 @@
         run;
 
     	*** Censor tables ***;
-    	%if %sysfunc(prxmatch(m/T8\b|T9\b|T10\b/i,&tablelist.)) > 0 %then %do;
+    	%if %sysfunc(prxmatch(m/T8\b|T9\b|T10\b/i,&table.)) > 0 %then %do;
             %censortable_createdata_t6(table=&table., 
                                        censordataset=agg_&dataset., 
                                        censorreason=&censorreason., 

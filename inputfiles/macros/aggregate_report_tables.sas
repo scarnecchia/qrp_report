@@ -180,7 +180,7 @@
 				%end;
 				%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;		
 					data &outfile.;
-					set &outfile.(drop=DeathPatCount EndQueryPatCount DeathCount EndQueryCount);
+					set &outfile.(drop=%if &infile. ne t6_utilepis_censor %then %do; DeathPatCount EndQueryPatCount %end; DeathCount EndQueryCount);
 					run;		
 				%end;
 			  %end;
