@@ -476,9 +476,24 @@
 		    	where lower(b.runid) = "&runid.";
 		    quit;
 
+			/* For PS STRAT Weighted analysis groups, we need to aggregate by DP/Strata/HOI before computing observed and expected metrics */
+			%let levelvars=;
+
+			proc sql noprint;
+			select distinct levelvars into :levelvars separated by " "
+			from tree_group_lookup_all(where=(adjustment="psstrat@weighted"));
+			quit;
+
+			proc means nway missing noprint data=_agg_poissont&typenum._&periodid(where=(adjustment="psstrat@weighted"));
+			class runid dpidsiteid treeanalysisgrp group level hoi &levelvars. adjustment denominator;
+			var Exp UnExp w_UnExp EvExp EvUnExp w_EvUnExp FutimeExp FutimeUnExp W_FuTimeUnExp;
+			output out=_t&typenum._temp(drop=_:) sum=;
+			run;
+
 	    	/* Compute metrics based on denominator, analysis type and weighting value */
 		    data _agg_poissont&typenum._&periodid(drop=exp unexp evexp evunexp futimeexp futimeunexp w_unexp w_evunexp w_futimeunexp denominator);
-		    	set _agg_poissont&typenum._&periodid;
+		    	set _agg_poissont&typenum._&periodid.(where=(adjustment ne "psstrat@weighted"))
+			    _t&typenum._temp;
 		    	length observed expected 8;
 		    	if adjustment in ('psstrat@unweighted','psstrat@unweightedw') then do;
 		    		if denominator = 'person' then do;
