@@ -463,11 +463,30 @@
     		%if %eval(&nobs.>0) %then %do;
 				data figurefile;
 				set figurefile;
+				%if %str("&reporttype") = %str("T6") %then %do;
+				if upcase(figure)="F8" and lowcase(censordisplay) in ("cens_dth", "cens_qryend") then do;
+				put "WARNING: (Sentinel) cens_dth or cens_qryend was specified as competing risk for figure F8 but these were not returned by at least one DP due to data suppression. Figure F8 will not be produced.";
+				delete;
+				end;
+				else if upcase(figure)="F9" and lowcase(censordisplay) in ("cens_dth", "cens_qryend") then do;
+				put "WARNING: (Sentinel) cens_dth or cens_qryend was specified as competing risk for figure F9 but these were not returned by at least one DP due to data suppression. Figure F9 will not be produced.";
+				delete;
+				end;
+				%end;
 				censordisplay = tranwrd(censordisplay,'cens_dth','');
 		        censordisplay = tranwrd(censordisplay,'cens_qryend','');
 				censordisplay = tranwrd(censordisplay,'deathcount','');
 		        censordisplay = tranwrd(censordisplay,'endquerycount','');
 				run;
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+					/* Figures F8 and F9 could have been removed so we need to create the figure list again */
+					proc sql noprint;
+	                select distinct figure into: figurelist separated by ' '
+	                from figurefile;
+					quit;
+				%end;
+            quit;
 			%end;
 
 			%let defaultcensororder=%sysfunc(tranwrd(&defaultcensororder.,cens_dth,%str()));
