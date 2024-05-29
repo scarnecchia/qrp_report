@@ -257,7 +257,7 @@
                                        outfile=aggrd,
                                        pscsfile=&pscsfile.,
                                        %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^=''), 
                                        %end;
                                        %else %do;
                                        whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
