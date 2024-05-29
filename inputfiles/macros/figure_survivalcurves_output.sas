@@ -180,10 +180,19 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		%if &figfn = Y %then %do;
+		%if &figfn = Y or &drop_cens_output.=Y %then %do;
 		data _footnotes;
             length footnote_order 3; 
-            set lookup.lookup_footnotes(where = (type = "kmcdf"));
+            set lookup.lookup_footnotes(where = (type in (
+            %if &figfn = Y %then %do;
+              "kmcdf"
+            %end;
+			%if &figfn = Y and &drop_cens_output.=Y %then %do;
+			 ,
+			%end;
+            %if &drop_cens_output.=Y %then %do;
+              "drop_cens"
+            %end;)));
             by order;
             footnote_order = _n_;
             call symputx('num_fn', 1);
@@ -255,7 +264,7 @@
 			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in exclude=("95% CI");
 		run;
 
-		%if &figfn = Y %then %do;
+		%if &figfn = Y or &drop_cens_output.=Y  %then %do;
 		/* Only one footnote for now - May change in the future */
 		proc odstext;
 			%do fnote = 1 %to &num_fn.;

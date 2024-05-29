@@ -75,7 +75,10 @@
         %if &censorreason. = cens_dth %then %do; 7 %end;
         %if &censorreason. = cens_elig %then %do; 8 %end;
         %if &censorreason. = cens_dpend %then %do; 9 %end;
-        %if &censorreason. = cens_qryend %then %do; 10 %end; )));
+        %if &censorreason. = cens_qryend %then %do; 10 %end; )
+        %if &drop_cens_output.=Y %then %do;
+         or (type = "drop_cens")
+       %end;));
 	  by order;
 	  footnote_order = _n_;
     run;
@@ -94,7 +97,7 @@
     %end;
     
 	/* Assign macro variables for superscipts */
-	%assign_superscripts(type =title, order =3);
+	%assign_superscripts(type =title, order =3 11);
 	%assign_superscripts(type =reason, order =4 5 6 7 8 9 10);
 
     proc datasets nowarn noprint lib=work;

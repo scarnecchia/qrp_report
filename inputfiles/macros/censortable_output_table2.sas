@@ -46,7 +46,10 @@
        %if %index(&reasonlist.,cens_dth)>0 %then %do; 7 %end;
        %if %index(&reasonlist.,cens_elig)>0 %then %do; 8 %end;
        %if %index(&reasonlist.,cens_dpend)>0 %then %do; 9 %end;
-       %if %index(&reasonlist.,cens_qryend)>0 %then %do; 10 %end; )));
+       %if %index(&reasonlist.,cens_qryend)>0 %then %do; 10 %end; )
+       %if &drop_cens_output.=Y %then %do;
+         or (type = "drop_cens")
+       %end;));
 	  by order;
 	  footnote_order = _n_;
     run;
@@ -65,7 +68,7 @@
     %end;
     
 	/* Assign macro variables for superscipts */
-	%assign_superscripts(type =title, order =1 2 3);
+	%assign_superscripts(type =title, order =1 2 3 11);
 	%assign_superscripts(type =cens_episend, order =4);
 	%assign_superscripts(type =cens_event, order =5);
 	%assign_superscripts(type =cens_spec, order =6);
