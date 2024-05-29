@@ -187,9 +187,6 @@
             %if &figfn = Y %then %do;
               "kmcdf"
             %end;
-			%if &figfn = Y and &drop_cens_output.=Y %then %do;
-			 ,
-			%end;
             %if &drop_cens_output.=Y %then %do;
               "drop_cens"
             %end;)));
