@@ -70,7 +70,7 @@
     %end;
     
 	/* Assign macro variables for superscipts */
-	%assign_superscripts(type =title, order =1 2 3 11);
+	%assign_superscripts(type =title, order =1 2 3 13);
 	%assign_superscripts(type =cens_episend, order =4);
 	%assign_superscripts(type =cens_event, order =5);
 	%assign_superscripts(type =cens_spec, order =6);
