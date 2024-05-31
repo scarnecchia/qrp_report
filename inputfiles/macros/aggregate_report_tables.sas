@@ -171,16 +171,24 @@
     			%end; *runID;
     		  %end;*loop through DPs;
 
-			  /* If death/qryend censoring data was not returned by a DP, make sure the columns do not appear in the aggregated dataset */ 
+			  /* If death/qryend censoring data was not returned by a DP, make sure the columns are set to special missing the aggregated dataset */ 
 			  %if &drop_cens_output.=Y and &death_censoring_column_exist.=Y %then %do;
 				%if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;		
 					data &outfile.;
-					set &outfile.(drop=cens_dth cens_qryend);
+					set &outfile.;
+					cens_dth=.M;
+					cens_qryend=.M;
 					run;	
 				%end;
 				%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;		
 					data &outfile.;
-					set &outfile.(drop=%if &infile. ne t6_utilepis_censor %then %do; DeathPatCount EndQueryPatCount %end; DeathCount EndQueryCount);
+					set &outfile.;
+					%if &infile. ne t6_utilepis_censor %then %do;
+					DeathPatCount=.M;
+					EndQueryPatCount=.M;
+					%end;
+					DeathCount=.M;
+					EndQueryCount=.M;
 					run;		
 				%end;
 			  %end;
