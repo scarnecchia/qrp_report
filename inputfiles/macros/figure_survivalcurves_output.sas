@@ -201,7 +201,7 @@
             order by order;
         quit;
 
-        %assign_superscripts(type=kmcdf, order = 1);
+        %assign_superscripts(type=kmcdf, order = 1 13);
         %end;
         %else %do;
         	%let super_kmcdf=;
