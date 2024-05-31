@@ -115,7 +115,7 @@
 	  type = "censor";    order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
 	  type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
-	  type = "drop_cens"; order = 1; description = "All reasons for censoring may not be displayed to prevent publication of small cells.";
+	  type = "drop_cens"; order = 13; description = "All reasons for censoring may not be displayed to prevent publication of small cells.";
 
        /* Footnotes for type 4 MOI tables */
       type = "t4l1moi"; order = 1;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;

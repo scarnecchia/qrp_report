@@ -36,7 +36,8 @@
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
-       set lookup.lookup_footnotes(where = (type = "censor" and order in (999
+       set lookup.lookup_footnotes(where = ( 
+       (type = "censor" and order in (999
        %if %str("&episodesorpatients.") = %str("Episodes") %then %do; 1 %end;
        %if %str("&episodesorpatients.") = %str("Patients") %then %do; 2 %end;
        %if &tablename. = t1censor | &tablename. = t2censor %then %do; 3 %end;
@@ -47,9 +48,10 @@
        %if %index(&reasonlist.,cens_elig)>0 %then %do; 8 %end;
        %if %index(&reasonlist.,cens_dpend)>0 %then %do; 9 %end;
        %if %index(&reasonlist.,cens_qryend)>0 %then %do; 10 %end; )
-       %if &drop_cens_output.=Y %then %do;
-         or (type = "drop_cens")
-       %end;));
+       )
+        %if &drop_cens_output.=Y %then %do;
+         or (type = "drop_cens" and order = 13) 
+        %end;));
 	  by order;
 	  footnote_order = _n_;
     run;
