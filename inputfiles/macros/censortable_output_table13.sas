@@ -66,7 +66,6 @@
 
     /*Footnotes*/
     data _footnotes;
-	   length footnote_order 3; 
        set lookup.lookup_footnotes (where = 
         (type = "censor" and order in (999 /*dummy to prevent e r r o r*/
         %if %index(%str(&conttableheader.),%str(Observable Time))>0 %then %do; 3 %end;
