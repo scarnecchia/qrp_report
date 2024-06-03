@@ -182,7 +182,6 @@
 
 		%if &figfn = Y or &drop_cens_output.=Y %then %do;
 		data _footnotes;
-            length footnote_order 3; 
             set lookup.lookup_footnotes(where = (type in (
             %if &figfn = Y %then %do;
               "kmcdf"
@@ -190,10 +189,24 @@
             %if &drop_cens_output.=Y %then %do;
               "drop_cens"
             %end;)));
-            by order;
-            footnote_order = _n_;
-            call symputx('num_fn', 1);
         run;
+
+        %if &figfn = Y and &drop_cens_output.=Y %then %do;
+          proc sort data = _footnotes;
+	        by order;
+	      quit;
+	    %end;
+
+	    data _footnotes;
+	      set _footnotes;
+	      length footnote_order 3; 
+	      footnote_order = _n_;
+        run;
+	
+		proc sql noprint;
+	      select count(order) into: num_fn trimmed
+	      from _footnotes;
+        quit;
 
         proc sql noprint;
             select description into: fn1 - :fn&num_fn.
