@@ -180,14 +180,26 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		%if &figfn = Y and &drop_cens_output.=Y %then %do;
+		%if &figfn = Y or (&drop_cens_output.=Y and 
+			    ((&reporttype. = T1) or 
+                (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
+                (&reporttype. = T5 and &figure. = F5) or
+                (&reporttype. = T6 and (&figure. = F6 or &figure. = F7)))) %then %do;
 		data _footnotes;
-            set lookup.lookup_footnotes(where = (type in ("kmcdf", "drop_cens")));
+            set lookup.lookup_footnotes(where = (type in (
+            %if &figfn = Y %then %do;
+              "kmcdf"
+            %end;
+            %if &drop_cens_output.=Y  %then %do;
+              "drop_cens"
+            %end;)));
         run;
 
+        %if &figfn = Y and &drop_cens_output.=Y %then %do;
           proc sort data = _footnotes;
 	        by order;
 	      quit;
+	    %end;
 
 	    data _footnotes;
 	      set _footnotes;
