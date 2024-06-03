@@ -423,8 +423,31 @@
 				censorreason = tranwrd(censorreason,'cens_dth','');
 		        censorreason = tranwrd(censorreason,'cens_qryend','');
 				censorreason = tranwrd(censorreason,'deathcount','');
-		        censorreason = tranwrd(censorreason,'endquerycount','');
+		        censorreason = tranwrd(censorreason,'endquerycount','');				
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+				if upcase(table)="T8" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T8 were not returned by at least one DP due to data suppression. Table T8 will not be produced.";
+				delete;
+				end;
+				else if upcase(table)="T9" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T9 were not returned by at least one DP due to data suppression. Table T9 will not be produced.";
+				delete;
+				end;
+				else if upcase(table)="T10" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T10 were not returned by at least one DP due to data suppression. Table T10 will not be produced.";
+				delete;
+				end;
+				%end;
 				run;
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+					/* Tables T8, T9 and T10 could have been removed so we need to create the table list again */
+					proc sql noprint;
+					    select distinct table into: tablelist separated by ' '
+					    from tablefile;
+					quit;
+				%end;
 			%end;
 
 			%isdata(dataset=figurefile);
