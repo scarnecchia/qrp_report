@@ -67,7 +67,7 @@
     /*Footnotes*/
     data _footnotes;
 	   length footnote_order 3; 
-       set lookup.lookup_footnotes(where = 
+       set lookup.lookup_footnotes (where = 
         (type = "censor" and order in (999 /*dummy to prevent e r r o r*/
         %if %index(%str(&conttableheader.),%str(Observable Time))>0 %then %do; 3 %end;
         %if &censorreason. = cens_episend %then %do; 4 %end;
@@ -79,11 +79,23 @@
         %if &censorreason. = cens_qryend %then %do; 10 %end; )  
         %if &drop_cens_output.=Y %then %do;
          or (type = "drop_cens" and order = 13) 
-        %end;);
+        %end;));
 	  by order;
-	  footnote_order = _n_;
+	  if order >= 4 and order ne 13 then order = order +1;
+	  if order = 13 then order = 4;
     run;
 
+	%if &drop_cens_output.=Y %then %do;
+      proc sort data = _footnotes;
+	    by order;
+	  quit;
+	%end;
+
+	data _footnotes;
+	  set _footnotes;
+	  length footnote_order 3; 
+	  footnote_order = _n_;
+    run;
     proc sql noprint;
 	  select count(order) into: num_fn trimmed
 	  from _footnotes;
@@ -99,7 +111,7 @@
     
 	/* Assign macro variables for superscipts */
 	%assign_superscripts(type =title, order =3 13);
-	%assign_superscripts(type =reason, order =4 5 6 7 8 9 10);
+	%assign_superscripts(type =reason, order = 5 6 7 8 9 10 11);
 
     proc datasets nowarn noprint lib=work;
         delete _footnotes;
