@@ -180,22 +180,14 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		%if &figfn = Y or &drop_cens_output.=Y %then %do;
+		%if &figfn = Y and &drop_cens_output.=Y %then %do;
 		data _footnotes;
-            set lookup.lookup_footnotes(where = (type in (
-            %if &figfn = Y %then %do;
-              "kmcdf"
-            %end;
-            %if &drop_cens_output.=Y %then %do;
-              "drop_cens"
-            %end;)));
+            set lookup.lookup_footnotes(where = (type in ("kmcdf", "drop_cens")));
         run;
 
-        %if &figfn = Y and &drop_cens_output.=Y %then %do;
           proc sort data = _footnotes;
 	        by order;
 	      quit;
-	    %end;
 
 	    data _footnotes;
 	      set _footnotes;
