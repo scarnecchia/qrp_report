@@ -2444,6 +2444,13 @@
     *  Create dataset containing tree analysis groups for poisson aggregation and tree analysis                                        
     ***************************************************************************************************/
     %if &treeaggindicator = Y %then %do; 
+		/* Determine which datasets should be aggregated in MSOCDATA */
+		data _null_;
+		set userstrata;
+		if tableid = "t&typenum.treeanalysis" then call symputx('treeanalysisaggindicator','Y');
+        if tableid = "t&typenum.treepoisson" then call symputx('treepoissonaggindicator','Y');
+		run;
+
         /* Check if poisson analyses are being requested */
         proc sql noprint;
             /* Create look-up table for poisson aggregation */
