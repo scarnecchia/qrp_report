@@ -287,7 +287,7 @@
 		  %if &treeanalysisaggindicator eq Y %then %do;	  
 		  %agg_report(infile=t&typenum._tree_analysis_&periodid., outfile=agg_t&typenum._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end;
-		  %if &treepoissonaggindicator eq Y %then %do;
+		  %if &treepoissonaggindicator eq Y and &treepoissonindicator eq Y %then %do;
 		  %agg_report(infile=t&typenum._treeanalysis_poisson_&periodid., outfile=agg_t&typenum._treeanalysis_poisson_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
 		  %end;
 		  %if %str("&reporttype") = %str("T3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
