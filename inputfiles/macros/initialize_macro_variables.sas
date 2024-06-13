@@ -181,9 +181,11 @@
 	%global produceappendixfileonly;
 	%let produceappendixfileonly=N;
 
-	/* To determine if tree aggregation should be executed */
-	%global treeaggindicator treepoissonindicator treeanalysisindicator;
+	/* To determine if tree aggregation should be executed and csv files produced */
+	%global treeaggindicator treeanalysisaggindicator treepoissonaggindicator treepoissonindicator treeanalysisindicator;
 	%let treeaggindicator=N;
+	%let treeanalysisaggindicator=N;
+	%let treepoissonaggindicator=N;
     %let treepoissonindicator=N;
     %let treeanalysisindicator=N;
 
