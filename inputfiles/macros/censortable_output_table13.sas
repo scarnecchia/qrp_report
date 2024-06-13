@@ -76,7 +76,7 @@
         %if &censorreason. = cens_elig %then %do; 8 %end;
         %if &censorreason. = cens_dpend %then %do; 9 %end;
         %if &censorreason. = cens_qryend %then %do; 10 %end; )  
-        %if &drop_cens_output.=Y %then %do;
+        %if &drop_cens_output.=Y & (&censorreason. = cens_dth | &censorreason. = cens_qryend) %then %do;
          or (type = "drop_cens" and order = 13) 
         %end;));
 	  by order;

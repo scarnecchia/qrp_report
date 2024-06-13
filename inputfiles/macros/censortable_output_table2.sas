@@ -48,7 +48,7 @@
        %if %index(&reasonlist.,cens_dpend)>0 %then %do; 9 %end;
        %if %index(&reasonlist.,cens_qryend)>0 %then %do; 10 %end; )
       
-        %if &drop_cens_output.=Y %then %do;
+        %if &cens_dth_foot. =Y %then %do;
          or (type = "drop_cens" and order = 13) 
         %end;));
 	  by order;
