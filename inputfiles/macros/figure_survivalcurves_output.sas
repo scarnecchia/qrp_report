@@ -185,44 +185,50 @@
                 (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
                 (&reporttype. = T5 and &figure. = F5) or
                 (&reporttype. = T6 and (&figure. = F6 or &figure. = F7)))) %then %do;
-		data _footnotes;
+
+		  data _footnotes;
             set lookup.lookup_footnotes(where = (type in (
             %if &figfn = Y %then %do;
               "kmcdf"
             %end;
-            %if &drop_cens_output.=Y  %then %do;
+            %if &drop_cens_output.=Y and ( 
+                (&reporttype. = T1) or 
+                (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
+                (&reporttype. = T5 and &figure. = F5) or
+                (&reporttype. = T6 and (&figure. = F6 or &figure. = F7))
+              ) %then %do;
               "drop_cens"
             %end;)));
-        run;
+          run;
 
-        %if &figfn = Y and &drop_cens_output.=Y %then %do;
-          proc sort data = _footnotes;
-	        by order;
-	      quit;
-	    %end;
+          %if &figfn = Y and &drop_cens_output.=Y %then %do;
+            proc sort data = _footnotes;
+	          by order;
+	        quit;
+	      %end; 
 
-	    data _footnotes;
-	      set _footnotes;
-	      length footnote_order 3; 
-	      footnote_order = _n_;
-        run;
+	      data _footnotes;
+	        set _footnotes;
+	        length footnote_order 3; 
+	        footnote_order = _n_;
+          run;
 	
-		proc sql noprint;
-	      select count(order) into: num_fn trimmed
-	      from _footnotes;
-        quit;
+		  proc sql noprint;
+	        select count(order) into: num_fn trimmed
+	        from _footnotes;
+          quit;
 
-        proc sql noprint;
+          proc sql noprint;
             select description into: fn1 - :fn&num_fn.
             from _footnotes
             order by order;
-        quit;
+          quit;
 
-        %assign_superscripts(type=kmcdf, order = 1 13);
-        %end;
-        %else %do;
-        	%let super_kmcdf=;
-        %end;
+          %assign_superscripts(type=kmcdf, order = 1 13);
+      %end; /* end figfn=Y */
+      %else %do;
+        %let super_kmcdf=;
+      %end;
 
         proc odstext;
 			p "Figure &figurenum.&tableletter.. &figtitle.&super_kmcdf." / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
