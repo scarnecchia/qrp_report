@@ -75,20 +75,9 @@
         %if &censorreason. = cens_dth %then %do; 7 %end;
         %if &censorreason. = cens_elig %then %do; 8 %end;
         %if &censorreason. = cens_dpend %then %do; 9 %end;
-        %if &censorreason. = cens_qryend %then %do; 10 %end; )  
-        %if &drop_cens_output.=Y & (&censorreason. = cens_dth | &censorreason. = cens_qryend) %then %do;
-         or (type = "drop_cens" and order = 13) 
-        %end;));
+        %if &censorreason. = cens_qryend %then %do; 10 %end; ))) ; 
 	  by order;
-	  if order >= 4 and order ne 13 then order = order +1;
-	  if order = 13 then order = 4;
     run;
-
-	%if &drop_cens_output.=Y %then %do;
-      proc sort data = _footnotes;
-	    by order;
-	  quit;
-	%end;
 
 	data _footnotes;
 	  set _footnotes;

@@ -89,32 +89,9 @@
 
     /* If cens_dth and cens_qryend are dropped, remove from censorreason list*/
     /* If DP population of cens columns is heterogeneous, col is dropped for all - indicate the need for footnote */   
-    %global cens_dth_foot; 
-    %let cens_dth_foot = N;
-
 	%if &drop_cens_output.=Y %then %do;
       %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_dth,%str()));
 	  %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_qryend,%str()));
-
-      proc sql noprint;
-        select memname into: memlist_censor separated by " "
-        from dictionary.members
-        where lowcase(libname) = "msocdata" and 
-              lowcase(memname) like '%censor%' or lowcase(memname) like 't2followuptime%';
-      quit;
-
-      %do mem_i = 1 %to %sysfunc(countw(&memlist_censor));
-        %let mem_ds = %scan(&memlist_censor., &mem_i);
-        
-        proc sql noprint;
-          select sum(case when cens_dth ne .M then 1 else 0 end) 
-          into :cnt_nonmiss_cnsdth
-          from msocdata.&mem_ds.; 
-        quit;
-
-        %if %eval(&cnt_nonmiss_cnsdth > 0) %then %do; %let cens_dth_foot = Y; %end;  
-      %end; /* end loop through memlist_censor */
-       
 	%end;
 	
 	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
