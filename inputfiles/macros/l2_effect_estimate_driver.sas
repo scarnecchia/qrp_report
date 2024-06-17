@@ -255,13 +255,8 @@
                 /*******************************************************/
                 %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
                                        outfile=aggrd,
-                                       pscsfile=&pscsfile.,
-                                       %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile^='0'), 
-                                       %end;
-                                       %else %do;
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       %end;
+                                       pscsfile=&pscsfile.,                                       
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"),                                        
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
