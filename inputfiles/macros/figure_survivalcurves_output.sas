@@ -180,26 +180,55 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		%if &figfn = Y %then %do;
-		data _footnotes;
-            length footnote_order 3; 
-            set lookup.lookup_footnotes(where = (type = "kmcdf"));
-            by order;
-            footnote_order = _n_;
-            call symputx('num_fn', 1);
-        run;
+		%if &figfn = Y or (&drop_cens_output.=Y and 
+			    ((&reporttype. = T1) or 
+                (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
+                (&reporttype. = T5 and &figure. = F5) or
+                (&reporttype. = T6 and (&figure. = F6 or &figure. = F7)))) %then %do;
 
-        proc sql noprint;
+		  data _footnotes;
+            set lookup.lookup_footnotes(where = (type in (
+            %if &figfn = Y %then %do;
+              "kmcdf"
+            %end;
+            %if &drop_cens_output.=Y and ( 
+                (&reporttype. = T1) or 
+                (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
+                (&reporttype. = T5 and &figure. = F5) or
+                (&reporttype. = T6 and (&figure. = F6 or &figure. = F7))
+              ) %then %do;
+              "drop_cens"
+            %end;)));
+          run;
+
+          %if &figfn = Y and &drop_cens_output.=Y %then %do;
+            proc sort data = _footnotes;
+	          by order;
+	        quit;
+	      %end; 
+
+	      data _footnotes;
+	        set _footnotes;
+	        length footnote_order 3; 
+	        footnote_order = _n_;
+          run;
+	
+		  proc sql noprint;
+	        select count(order) into: num_fn trimmed
+	        from _footnotes;
+          quit;
+
+          proc sql noprint;
             select description into: fn1 - :fn&num_fn.
             from _footnotes
             order by order;
-        quit;
+          quit;
 
-        %assign_superscripts(type=kmcdf, order = 1);
-        %end;
-        %else %do;
-        	%let super_kmcdf=;
-        %end;
+          %assign_superscripts(type=kmcdf, order = 1 13);
+      %end; /* end figfn=Y */
+      %else %do;
+        %let super_kmcdf=;
+      %end;
 
         proc odstext;
 			p "Figure &figurenum.&tableletter.. &figtitle.&super_kmcdf." / style=[just=L font_weight=bold bordertopcolor=black borderbottomcolor=black tagattr='mergeacross:18'];
@@ -255,7 +284,7 @@
 			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in exclude=("95% CI");
 		run;
 
-		%if &figfn = Y %then %do;
+		%if &figfn = Y or &drop_cens_output.=Y  %then %do;
 		/* Only one footnote for now - May change in the future */
 		proc odstext;
 			%do fnote = 1 %to &num_fn.;
