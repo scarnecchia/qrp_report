@@ -255,19 +255,11 @@
                 /*******************************************************/
                 %aggregate_l2_datasets(infile=&runid._riskdiffdata_&periodid.,
                                        outfile=aggrd,
-                                       pscsfile=&pscsfile.,
-                                       %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp" and percentile ^='0'), 
-                                       %end;
-                                       %else %do;
-                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"), 
-                                       %end;
+                                       pscsfile=&pscsfile.,                                       
+                                       whereclause=%str(lowcase(analysisgrp)="&analysisgrp"),                                        
                                        convrule=%quote(&convrule.),
                                        convdata=&runid._estimates_&periodid.,
                                        settomissvars=%str(Exp,UnExp,EVExp,EVUnExp,FUTimeExp,FUTimeUnExp,weight,weighted_diff)
-                                       %if &pscsfile. = stratificationfile & %str("&reporttype") = "T4L2" %then %do;
-                                       , renameclause=%str( rename=percentilevalue = percentile)
-                                       %end;
                                        );
 
 				%if &treeaggindicator. eq Y %then %goto hdpsdata;
@@ -400,7 +392,7 @@
                     *analysis conditioned on percentile (PS stratification)
                     *analysis conditioned on covariate (Covariate stratification) */
                 %if &outputconditional. = Y %then %do; 
-                    %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="", 
+                    %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and missing(percentile), 
                                                  analysis= "Conditional", 
                                                  subgroupcat = );
                     %if %str("&reporttype.") = %str("T2L2") %then %do;                        
@@ -431,8 +423,8 @@
                     - Weighted (Risk metrics and effect estimate)*/
                 %if &outputweighted. = Y %then %do;
                 %l2_effect_estimate_runrobustest(where=analysis="Weighted", analysis="Weighted", subgroupcat=);
-                %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="", analysis= "Unweighted", subgroupcat = );
-                %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="", analysis= "Weighted", subgroupcat = );
+                %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and missing(percentile), analysis= "Unweighted", subgroupcat = );
+                %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and missing(percentile), analysis= "Weighted", subgroupcat = );
                 %end;
 
                 /**********************************************************************************/
@@ -469,7 +461,7 @@
 
                         /*Conditional*/ 
                         %if &outputconditional. = Y %then %do; 
-                            %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname.", 
+                            %l2_effect_estimate_runrd_rs(where=analysis="Conditional" and subgroupcat="" and dpidsiteid="&dpname." and missing(percentile), 
                                                          analysis= "Conditional", 
                                                          subgroupcat = &dpname.);
                             %if %str("&reporttype.") = %str("T2L2") %then %do;                                
@@ -498,9 +490,9 @@
                             - Weighted (Risk metrics and effect estimate)*/
                         %if &outputweighted. = Y %then %do;
                         %l2_effect_estimate_runrobustest(where=analysis="Weighted" and dpidsiteid="&dpname.", analysis="Weighted", subgroupcat=&dpname.);
-                        %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname.",
+                        %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="" and dpidsiteid="&dpname." and missing(percentile),
                                                      analysis= "Unweighted", subgroupcat = &dpname.);
-                        %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname.", 
+                        %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="" and dpidsiteid="&dpname." and missing(percentile), 
                                                      analysis= "Weighted", subgroupcat = &dpname.);
                         %end;
                     %end; *dp;  
@@ -568,7 +560,7 @@
 
                     /*Conditional*/ 
                     %if &outputconditional. = Y %then %do; 
-                        %l2_effect_estimate_runrd_rs(where=Analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat.);
+                        %l2_effect_estimate_runrd_rs(where=Analysis="Conditional" and missing(percentile), Analysis= "Conditional", subgroupcat = &subgroupcat.);
                         %if %str("&reporttype.") = %str("T2L2") %then %do;                            
                             %l2_effect_estimate_runlogithr(where=analysis="Conditional", Analysis= "Conditional", subgroupcat = &subgroupcat.);                           
                         %end;
@@ -593,8 +585,8 @@
                         - Weighted (Risk metrics and effect estimate)*/
                     %if &outputweighted. = Y %then %do;
                     %l2_effect_estimate_runrobustest(where=analysis="Weighted", analysis="Weighted", subgroupcat=&subgroupcat.);
-                    %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="&subgroupcat.", analysis= "Unweighted", subgroupcat = &subgroupcat.);
-                    %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="&subgroupcat.", analysis= "Weighted", subgroupcat = &subgroupcat.);
+                    %l2_effect_estimate_runrd_rs(where=analysis="Unweighted" and subgroupcat="&subgroupcat." and missing(percentile), analysis= "Unweighted", subgroupcat = &subgroupcat.);
+                    %l2_effect_estimate_runrd_rs(where=analysis="Weighted" and subgroupcat="&subgroupcat." and missing(percentile), analysis= "Weighted", subgroupcat = &subgroupcat.);
                     %end;
 
                     /*Clean up*/
