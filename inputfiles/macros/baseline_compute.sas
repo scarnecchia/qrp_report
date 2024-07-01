@@ -1660,7 +1660,7 @@
                     %end;
                 end;
                
-                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do;  _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do; _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
