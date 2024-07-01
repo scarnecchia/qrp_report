@@ -322,7 +322,7 @@
 
 	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk0 %end; %else %do; den_&episode_var._2trim den_&episode_var._3trim %end;);
 	     set &dsin.;
-		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
+		 /* Identify the total number of episodes at week 0 for gestational data. This is the max number of episodes in a cohort. */
 		 %if &dataset. = preggestwk %then %do;
 		   by &dpvar. group moiname pregflg gestwk_char;
 		   retain den_episodes_wk0;
