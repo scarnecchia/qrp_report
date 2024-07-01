@@ -86,7 +86,7 @@
             length gestwk_min gestwk_max 3;
             if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
             else gestwk_min = 0; 
-			if postpregdays >0 then gestwk_max = 43 + int((postpregdays/7)); 
+			if postpregdays >0 then gestwk_max = 43 + int(((postpregdays-1)/7)+1); 
 		    else gestwk_max = 43;
         run;
 
