@@ -80,14 +80,14 @@
     /*Expand table to 1 row per gestional week*/
     %if &dataset. = preggestwk %then %do;
 
-	    /* Identify min gestwk requested. Max 44 weeks if postpregdays is not positive */
+	    /* Identify min gestwk requested. Max 43 weeks if postpregdays is not positive */
         data master_typefile;
             set master_typefile;
             length gestwk_min gestwk_max 3;
             if prepregdays >0 then gestwk_min = int((-prepregdays/7)-1); 
             else gestwk_min = 0; 
-			if postpregdays >0 then gestwk_max = 44 + int((postpregdays/7)+1); 
-		    else gestwk_max = 44;
+			if postpregdays >0 then gestwk_max = 43 + int((postpregdays/7)); 
+		    else gestwk_max = 43;
         run;
 
         proc sql noprint;
@@ -116,20 +116,20 @@
             %end;
 
             /*Positive weeks*/
-            do gestwkorder = 1 to &max_max.;
+            do gestwkorder = 0 to &max_max.;
                 length columnname $32;
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
                 /*change columnlabel/columnheader (T6) to gestational week*/
                 columnlabel = strip(put(gestwkorder, best.));
-				if gestwkorder > 44 then do;
-					*columnlabel = strip(cats("(*ESC*){unicode '002B'x}",put(gestwkorder-44, best.)));
-					columnlabel = strip(cats("+",put(gestwkorder-44, best.)));
-					columnname = cats('gestwkpos', gestwkorder-44, origcolumnname);
+				if gestwkorder > 43 then do;
+					*columnlabel = strip(cats("(*ESC*){unicode '002B'x}",put(gestwkorder-43, best.)));
+					columnlabel = strip(cats("+",put(gestwkorder-43, best.)));
+					columnname = cats('gestwkpos', gestwkorder-43, origcolumnname);
 				end;
                 if table = 'T6' then do;
 					columnheader = strip(put(gestwkorder, best.));
-					if gestwkorder > 44 then columnheader = strip(cats("+",put(gestwkorder-44, best.)));
+					if gestwkorder > 43 then columnheader = strip(cats("+",put(gestwkorder-43, best.)));
 				end;
                 output;
             end;
@@ -242,8 +242,9 @@
 	      var &sumcolumns. &episode_var. &episode_var._2trim &episode_var._3trim den_&episode_var. den_&episode_var._2trim den_&episode_var._3trim;
 	      output out = _agg_t4moi_summ (drop = _:) sum=;
 	    run;
+	
 	  %end; /* T4preg and T4nopreg specific code */
-	  
+
 	/************************************************************************************************
       Summarize preg and nopreg data by group moiname pregflg and gestational week
 	   - Gestational week data is in a different format than pregnancy data and requires separate processing
@@ -262,17 +263,17 @@
 	  	if preg then pregflg = "Y";
 	      else pregflg = "N";
 	  	den_&episode_var. = &episode_var.;
-		if index(gestwk,"+") > 0 then gestwk_num = 44 + input(compress(gestwk,"+"),3.);
+		if index(gestwk,"+") > 0 then gestwk_num = 43 + input(compress(gestwk,"+"),3.);
 		else gestwk_num = input(gestwk,3.);
 		if not (&min_min. <= gestwk_num <= &max_max.) then delete; /* remove gestational weeks not requested in the type4 file */
 	    run;	
-	  	
+	
 	    proc summary data = _agg_t4moi nway missing;
           class group moiname pregflg gestwk_char;
           var &sumcolumns. den_&episode_var.;
           output out = _agg_t4moi_summ (drop = _:) sum=;
         run;
-		
+	
 		%if &stratifybydp. = Y %then %do;
 			proc summary data = _agg_t4moi nway missing;
 	        class dpidsiteid group moiname pregflg gestwk_char;
@@ -301,7 +302,8 @@
    /************************************************************************************************
      Identify columns requested and apply labels and formats          
     ************************************************************************************************/ 
-    %macro prep_t4tables (dsin =, dsout =, dpvar = );	
+    %macro prep_t4tables (dsin =, dsout =, dpvar = );
+	
     	/* Join t4pregenrdays to dataset to be utilized as a condition for formatting */
     	proc sql noprint undo_policy=none;
     		create table &dsin as 
@@ -491,7 +493,7 @@
 			   /* set post-pregnancy period to N/A for weeks that are more than the maximum gestational week per group */
 			   %if &&&gestwk_max_group&g. < &max_max. %then %do;
 			     if group = "%scan(&group_list., &g.)" then do;				   
-			       %do max_loop = &&&gestwk_max_group&g. - 43 %to &max_max. - 44;
+			       %do max_loop = &&&gestwk_max_group&g. - 43 %to &max_max. - 43;
                       %do vv = 1 %to &numcolumns; 
 				  	    if den_episodes_wk1 > 0 then do;
                           gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = 'N/A';
