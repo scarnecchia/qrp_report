@@ -320,13 +320,13 @@
     		select distinct group into: cohort_list separated by ' ' from &dsin;
     	quit;
 
-	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk1 %end; %else %do; den_&episode_var._2trim den_&episode_var._3trim %end;);
+	   data &dsin. (keep = &dpvar. group moiname column: pregflg den_&episode_var. %if &dataset. = preggestwk %then %do; gestwk_char den_episodes_wk0 %end; %else %do; den_&episode_var._2trim den_&episode_var._3trim %end;);
 	     set &dsin.;
 		 /* Identify the total number of episodes at week 1 for gestational data. This is the max number of episodes in a cohort. */
 		 %if &dataset. = preggestwk %then %do;
 		   by &dpvar. group moiname pregflg gestwk_char;
-		   retain den_episodes_wk1;
-		   if first.pregflg and gestwk_char = "gestwk1" then den_episodes_wk1 = den_pregepisodes;
+		   retain den_episodes_wk0;
+		   if first.pregflg and gestwk_char = "gestwk0" then den_episodes_wk0 = den_pregepisodes;
 		 %end;
 		 
 		 %do vv = 1 %to &numcolumns;
@@ -352,7 +352,7 @@
             
             /*standard missing value indicators*/
             /*if 0 patients in cohort, set to '.'*/
-            if %if &dataset. = preg %then %do; den_&episode_var. <=0 %end; %else %do; den_episodes_wk1 <=0 %end; then do;
+            if %if &dataset. = preg %then %do; den_&episode_var. <=0 %end; %else %do; den_episodes_wk0 <=0 %end; then do;
                 &&var&vv. = .;
                 &&var&vv.._char = '.';
             end;
@@ -452,19 +452,19 @@
             /*Transpose both numeric and character vars*/
     		%do va = 1 %to &numcolumns; 
                 proc transpose data = &dsin suffix = &&var&va.. out = &dsin._tran_&va.  (drop =_name_ _label_);
-                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   by &dpvar. group moiname pregflg den_episodes_wk0;
                    id gestwk_char;
                    var &&var&va..;
                 run;
 				
                 proc transpose data = &dsin suffix = &&var&va.._char out = &dsin._tran_&va._char  (drop =_name_ _label_);
-                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   by &dpvar. group moiname pregflg den_episodes_wk0;
                    id gestwk_char;
                    var &&var&va.._char;
                 run;
 
                 proc transpose data = &dsin suffix = &&var&va.._ss out = &dsin._tran_&va._ss  (drop =_name_);
-                   by &dpvar. group moiname pregflg den_episodes_wk1;
+                   by &dpvar. group moiname pregflg den_episodes_wk0;
                    id gestwk_char;
                    var &&var&va.._ss;
                 run;
@@ -473,14 +473,14 @@
 		   /* Merge data for all columns */
 		   data &dsin.;
              merge &dsin._tran_:;
-		     by &dpvar. group moiname pregflg den_episodes_wk1;			 
+		     by &dpvar. group moiname pregflg den_episodes_wk0;			 
 			 %do g = 1 %to %sysfunc(countw(&group_list));  
 			   /* set pre-pregnancy period to N/A for weeks that are less than the minimum gestational week per group */
 			   %if &min_min. < &&&gestwk_min_group&g. %then %do;
 			     if group = "%scan(&group_list., &g.)" then do;
 			       %do min_loop = &min_min. %to &&&gestwk_min_group&g. -1;
                       %do vv = 1 %to &numcolumns; 
-				  	    if den_episodes_wk1 > 0 then do;
+				  	    if den_episodes_wk0 > 0 then do;
                           gestwkneg%sysfunc(abs(&min_loop.))&&var&vv.._char = 'N/A';
                         end;
                         else do;
@@ -495,7 +495,7 @@
 			     if group = "%scan(&group_list., &g.)" then do;				   
 			       %do max_loop = &&&gestwk_max_group&g. - 42 %to &max_max. - 43;
                       %do vv = 1 %to &numcolumns; 
-				  	    if den_episodes_wk1 > 0 then do;
+				  	    if den_episodes_wk0 > 0 then do;
                           gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = 'N/A';
                         end;
                         else do;
