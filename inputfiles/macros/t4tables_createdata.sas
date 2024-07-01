@@ -493,7 +493,7 @@
 			   /* set post-pregnancy period to N/A for weeks that are more than the maximum gestational week per group */
 			   %if &&&gestwk_max_group&g. < &max_max. %then %do;
 			     if group = "%scan(&group_list., &g.)" then do;				   
-			       %do max_loop = &&&gestwk_max_group&g. - 43 %to &max_max. - 43;
+			       %do max_loop = &&&gestwk_max_group&g. - 42 %to &max_max. - 43;
                       %do vv = 1 %to &numcolumns; 
 				  	    if den_episodes_wk1 > 0 then do;
                           gestwkpos%sysfunc(abs(&max_loop.))&&var&vv.._char = 'N/A';
