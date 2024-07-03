@@ -102,7 +102,8 @@
             spanningheader = columnlabel;
             /*negative weeks*/
             %if %eval(&min_min<0) %then %do;
-            do i = %sysfunc(abs(&min_min.)) to 1 by -1;
+            do i = 1 to %sysfunc(abs(&min_min.)) ;
+			    if i ne 0 then do;
                 length columnname $32;
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwkneg', i, origcolumnname);
@@ -111,13 +112,14 @@
                 if table = 'T6' then columnheader = strip(cats('-',strip(put(i, best.))));
                 gestwkorder = i*-1;
                 output;
+				end;
             end;
             drop i;
             %end;
-
+            
             /*Positive weeks*/
             do gestwkorder = 0 to &max_max.;
-                length columnname $32;
+                
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
                 /*change columnlabel/columnheader (T6) to gestational week*/
@@ -133,6 +135,7 @@
 				end;
                 output;
             end;
+			
         run;
 
         data tablecolumns;
@@ -408,7 +411,7 @@
 			                        		&&var&vv. = .;
 			                        		&&var&vv.._ss=1;
 				                        end;
-			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
+			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk +1 then do;
 			                        		&&var&vv.._char = 'N/A';
 			                        		&&var&vv. = .;
 			                        		&&var&vv.._ss=1;
@@ -468,6 +471,7 @@
                    id gestwk_char;
                    var &&var&va.._ss;
                 run;
+				
             %end;
 		 
 		   /* Merge data for all columns */
