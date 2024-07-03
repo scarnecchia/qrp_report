@@ -119,7 +119,7 @@
             
             /*Positive weeks*/
             do gestwkorder = 0 to &max_max.;
-                
+                length columnname $32;
                 /*change columnname to gestwk#column#*/
                 columnname = cats('gestwk', gestwkorder, origcolumnname);
                 /*change columnlabel/columnheader (T6) to gestational week*/
