@@ -406,7 +406,7 @@
 								if index(gestwk_char, "gestwkpos") = 0 then do;
 			                        if lowcase(group) = "&t4group" then do; 
 										gestwk = input(compress(gestwk_char, "gestwkneg"),best.);
-			                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk) and gestwk < 0 then do;
+			                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk-1) and gestwk < 0 then do;
 			                        		&&var&vv.._char = 'N/A';
 			                        		&&var&vv. = .;
 			                        		&&var&vv.._ss=1;
