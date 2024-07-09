@@ -82,6 +82,11 @@
                 %end;
             end;
         run;
+
+        /* De-duplicate day rows */
+        proc sort data=&plotdata. nodupkey;
+            by dpidsiteid subgroup subgroupcat day;
+        run;
         %end;
     %mend addrows;
 
@@ -525,9 +530,12 @@
 
             /*reset day 0*/
             if day = 0 then do;
+                episodes_atriskexp = cum_nexp;
+                episodes_atriskunexp = cum_nunexp;
                 lag_episodes_atriskexp = episodes_atriskexp;
                 lag_episodes_atriskunexp = episodes_atriskunexp;
                 %if &weightedpop. = Y %then %do; 
+                episodes_atriskunexp_wght = cum_nunexp_wght;
                 lag_episodes_atriskunexp_wght = episodes_atriskunexp_wght;
                 %end;
             end;
