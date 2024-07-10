@@ -405,7 +405,8 @@
 								/* t4pregenrdays check is not required if gestwk is after the pregnancy outcome */
 								if index(gestwk_char, "gestwkpos") = 0 then do;
 			                        if lowcase(group) = "&t4group" then do; 
-										gestwk = -input(compress(gestwk_char, "gestwkneg"),best.);
+										if index(gestwk_char, "gestwkneg") > 0 then gestwk = -input(compress(gestwk_char, "gestwkneg"),best.);
+                                        else gestwk = input(compress(gestwk_char, "gestwkneg"),best.);
 			                        	if t4pregenrdays < 0 and abs(int(t4pregenrdays/7)) < abs(gestwk-1) and gestwk < 0 then do;
 			                        		&&var&vv.._char = 'N/A';
 			                        		&&var&vv. = .;
