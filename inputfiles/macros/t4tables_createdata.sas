@@ -412,7 +412,7 @@
 			                        		&&var&vv. = .;
 			                        		&&var&vv.._ss=1;
 				                        end;
-			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk +1 then do;
+			                        	else if t4pregenrdays >= 0 and int(t4pregenrdays/7) >= gestwk then do;
 			                        		&&var&vv.._char = 'N/A';
 			                        		&&var&vv. = .;
 			                        		&&var&vv.._ss=1;
