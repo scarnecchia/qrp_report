@@ -499,7 +499,6 @@
 
             /*Add spanning label for subgroup category*/
                 compute before subgroupcat / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-                    length text $100;	
 					*Overall always repeated at top of each subgroup;	
 					if subgroupcat = "" then do;	
 					 	text = "&analysisgrpfmt.";
