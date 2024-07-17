@@ -457,7 +457,8 @@
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labcodesmap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration;
+            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration
+			&&id&n.._t4hoimethod;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -511,6 +512,7 @@
 		%let &&id&n.._pregnancycodes  	   = ;
 		%let &&id&n.._pregnancymeta  	   = ;
 		%let &&id&n.._pregnancyduration    = ;
+		%let &&id&n.._t4hoimethod          = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
@@ -519,7 +521,12 @@
           if parameter = "zipfile" and not missing(&&run&n.) then do;
             call symputx("zipfile",&&run&n.);
           end;
+		  /*for T4L2 report, check if hoi method is binary or timetoevent*/
+		  if parameter = "t4hoimethod" and not missing(&&run&n.) then do;
+		  	call symputx("t4hoimethod", &&run&n.);
+		 end;
         run;
+
 
         /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
 		%if &leavebehindreport. ne Y %then %do;

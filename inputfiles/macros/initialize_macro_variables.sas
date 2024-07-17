@@ -116,6 +116,10 @@
     %let numl2comparisons = 0;
     %let attrperiodid=;
 
+	/*T4L2 report variable*/
+	%global t4hoimethod;
+	%let t4hoimethod=;
+
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
             cens_event_label cens_switch1_label cens_switch2_label includeheaderrow includemoiheaderrow;
