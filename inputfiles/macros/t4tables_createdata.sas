@@ -519,53 +519,95 @@
 		%if %index(%upcase(&sumcolumns.), ANYT3) | %index(%upcase(&sumcolumns.), ONLYT3) %then %let T3Columns=Y;
 
 	   /* Apply labels */
+       * DEFENSIVE: to avoid truncation, get longest length of label value to dynamically set label length(s);
+       proc sql noprint;
+         /* pad grouplabel value as additional trimester messages are concatenated to the label*/
+         select max(length(label)) %if &T2Columns. eq Y %then %do; + 50 %end; %if &T3Columns. eq Y %then %do; + 50 %end;
+            into: len_grouplbl 
+         from labelfile
+         where lowcase(labeltype) = "grouplabel";
+
+         select max(length(label)) into: len_moiheaderlbl 
+         from labelfile
+         where lowcase(labeltype) = "moiheader"; 
+         ;
+       quit;
+
        proc sql noprint;
          create table &dsout. as
 		 select all.*
          from(select a.*, b.order
 		 %if &labelfileexists. = Y %then %do;
-		 	,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
-			%if &dataset. = preg %then %do;
-		 	        when c.label = "" then catx(' ',strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
-		 	   else catx(' ',strip(c.label),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") end as grouplabel 
-		 	  ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
-			%end;
+		   ,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
+		   %if &dataset. = preg %then %do;
+		     when c.label = "" then catx(' ',strip(a.group),"(" || 
+             %if &T2Columns. eq Y %then %do;
+               strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
+             %end; 
+             %if &T3Columns. eq Y %then %do;
+               strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
+             %end;
+               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
+		 	 else catx(' ',strip(c.label),"(" || 
+               %if &T2Columns. eq Y %then %do;
+                 strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
+               %end; 
+               %if &T3Columns. eq Y %then %do;
+                 strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
+               %end;
+               strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)") 
+             end as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
+
+		     ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),strip(a.group),"(" || 
+               %if &T2Columns. eq Y %then %do;
+                 strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
+               %end; 
+               %if &T3Columns. eq Y %then %do;
+                 strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || 
+               %end;
+               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
+            %end; /* end condition dataset=preg */
+
 			%else %do;
-			       when c.label = "" then strip(a.group)
-		 	   else strip(c.label) end as grouplabel 
-		 	  ,case when d.label = "" then coalescec(c.label, a.group)
+			  when c.label = "" then strip(a.group)
+		 	  else strip(c.label) end as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
+		 	,case when d.label = "" then coalescec(c.label, a.group)
 			%end;
              else d.label end as header
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
 		       	,case when f.label = "" then a.moiname
-             else f.label end as moiheader 
-		 %end;
-         %else %do;
+             else f.label end as moiheader %if %eval(&len_moiheaderlbl.>0) %then %do; length=&len_moiheaderlbl. %end;
+		 %end; /* end condition labelfileexists=Y */
+         %else %do; /* condition labelfileexists ne Y */
 		    %if &dataset. = preg %then %do;
-		      ,catx(' ',strip(a.group),"(" || %if &T2Columns. eq Y %then %do;strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; %if &T3Columns. eq Y %then %do;strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") as grouplabel  
-			%end;
+		      ,catx(' ',strip(a.group),"(" || 
+              %if &T2Columns. eq Y %then %do;
+                strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; 
+              %if &T3Columns. eq Y %then %do;
+                strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;
+                strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
+               as grouplabel length= &len_grouplbl.
+			%end; /*end condition dataset=preg */
 			%else %do;
 			  ,strip(a.group) as grouplabel
 			%end;
             ,a.moiname as moilabel
             ,"" as moiheader 
-         %end;				   
-             from &dsin. a 
-		      left join groupsfile b
-		      on strip(lowcase(a.group)) = strip(lowcase(b.group))
-		      %if &labelfileexists. = Y %then %do;
-		        left join labelfile (where = (labeltype = "grouplabel")) c
-		        on strip(a.group) = strip(c.group)
-		        left join labelfile (where = (labeltype = "header")) d
-		        on strip(a.group) = strip(d.group)
-		     	left join labelfile (where = (labeltype = "moilabel")) e
-		     	on strip(a.group) = strip(e.group)
-		     	 and lowcase(a.moiname) = strip(e.labelvar)
-		     	left join labelfile (where = (labeltype = "moiheader")) f
-		     	on strip(a.group) = strip(f.group)
-		     	 and lowcase(a.moiname) = strip(f.labelvar)
-		      %end;) all;
+         %end; /*end condition labelfileexists ne Y */				   
+         from &dsin. a 
+		   left join groupsfile b
+		   on strip(lowcase(a.group)) = strip(lowcase(b.group))
+		   %if &labelfileexists. = Y %then %do;
+		     left join labelfile (where = (labeltype = "grouplabel")) c
+		       on strip(a.group) = strip(c.group)
+		     left join labelfile (where = (labeltype = "header")) d
+		       on strip(a.group) = strip(d.group)
+		   	 left join labelfile (where = (labeltype = "moilabel")) e
+		       on strip(a.group) = strip(e.group) and lowcase(a.moiname) = strip(e.labelvar)
+		     left join labelfile (where = (labeltype = "moiheader")) f
+		       on strip(a.group) = strip(f.group) and lowcase(a.moiname) = strip(f.labelvar)
+		   %end;) all;
         quit;
 		
 		proc sort data = &dsout. sortseq=linguistic(numeric_collation=on);
