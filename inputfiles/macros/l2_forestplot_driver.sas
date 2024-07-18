@@ -35,7 +35,7 @@
       %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
         /* Determine forest plot labeling */
-        %if "&reporttype." = "T2L2" %then %do;
+        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
         %let ForestRatioFoot = Hazard ratio;
         %let ForestRatioLabel = HR (95% CI);
