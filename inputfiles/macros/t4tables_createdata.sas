@@ -519,18 +519,12 @@
 		%if %index(%upcase(&sumcolumns.), ANYT3) | %index(%upcase(&sumcolumns.), ONLYT3) %then %let T3Columns=Y;
 
 	   /* Apply labels */
-       * DEFENSIVE: to avoid truncation, get longest length of label value to dynamically set label length(s);
+       * DEFENSIVE: to avoid truncation, pad grouplabel length for when additional trimester messages are concatenated*;
        proc sql noprint;
-         /* pad grouplabel value as additional trimester messages are concatenated to the label*/
          select max(length(label)) %if &T2Columns. eq Y %then %do; + 50 %end; %if &T3Columns. eq Y %then %do; + 50 %end;
             into: len_grouplbl 
          from labelfile
          where lowcase(labeltype) = "grouplabel";
-
-         select max(length(label)) into: len_moiheaderlbl 
-         from labelfile
-         where lowcase(labeltype) = "moiheader"; 
-         ;
        quit;
 
        proc sql noprint;
@@ -540,32 +534,32 @@
 		 %if &labelfileexists. = Y %then %do;
 		   ,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
 		   %if &dataset. = preg %then %do;
-		     when c.label = "" then catx(' ',strip(a.group),"(" || 
+		     when c.label = "" then strip(a.group)||"(" || 
              %if &T2Columns. eq Y %then %do;
                strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
              %end; 
              %if &T3Columns. eq Y %then %do;
                strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
              %end;
-               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)")
-		 	 else catx(' ',strip(c.label),"(" || 
+               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)"
+		 	 else strip(c.label)||"(" || 
                %if &T2Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
                %end; 
                %if &T3Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
                %end;
-               strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)") 
+               strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)" 
              end as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
 
-		     ,case when d.label = "" then catx(' ',coalescec(c.label, a.group),strip(a.group),"(" || 
+		     ,case when d.label = "" then coalescec(c.label, a.group)||strip(a.group)||"(" || 
                %if &T2Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
                %end; 
                %if &T3Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || 
                %end;
-               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
+               strip(put(a.den_&episode_var.,comma12.0))||" total episodes)" 
             %end; /* end condition dataset=preg */
 
 			%else %do;
@@ -577,17 +571,17 @@
             ,case when e.label = "" then a.moiname
              else e.label end as moilabel 
 		       	,case when f.label = "" then a.moiname
-             else f.label end as moiheader %if %eval(&len_moiheaderlbl.>0) %then %do; length=&len_moiheaderlbl. %end;
+             else f.label end as moiheader
 		 %end; /* end condition labelfileexists=Y */
          %else %do; /* condition labelfileexists ne Y */
 		    %if &dataset. = preg %then %do;
-		      ,catx(' ',strip(a.group),"(" || 
+		      ,strip(a.group)||"(" || 
               %if &T2Columns. eq Y %then %do;
                 strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; 
               %if &T3Columns. eq Y %then %do;
                 strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;
                 strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
-               as grouplabel length= &len_grouplbl.
+               as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
 			%end; /*end condition dataset=preg */
 			%else %do;
 			  ,strip(a.group) as grouplabel
