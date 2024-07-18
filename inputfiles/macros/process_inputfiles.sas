@@ -521,10 +521,6 @@
           if parameter = "zipfile" and not missing(&&run&n.) then do;
             call symputx("zipfile",&&run&n.);
           end;
-		  /*for T4L2 report, check if hoi method is binary or timetoevent*/
-		  if parameter = "t4hoimethod" and not missing(&&run&n.) then do;
-		  	call symputx("t4hoimethod", &&run&n.);
-		 end;
         run;
 
 
