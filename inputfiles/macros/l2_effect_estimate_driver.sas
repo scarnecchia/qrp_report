@@ -635,7 +635,7 @@
                   case when r.subgroup = 'dpidsiteid' then r.subgroupcat
                   else pscs.subgroupcatlabel
                   end as subgroupcatlabel,
-                %if "&reporttype." = "T2L2" %then %do;
+                %if "&reporttype." = "T2L2" | ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1 )%then %do;
                 HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
                 %end;
                 %else %if "&reporttype." = "T4L2" %then %do;

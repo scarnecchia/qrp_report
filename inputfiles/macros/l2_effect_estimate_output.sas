@@ -230,7 +230,7 @@
               if analysis = "Unweighted" then do;
                 HR_95CI = 'N/A';
                 HR_pvalue = 'N/A';
-				%if &reporttype = T4L2 %then %do; rr_95ci = 'N/A'; %end;
+				%if ( &reporttype = T4L2 and &&&runid._t4hoimethod. = binary ) %then %do; rr_95ci = 'N/A'; %end;
 		      end;
             %end;
             /* Convert monitoring period to character so format applies correctly */
@@ -316,7 +316,7 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
-        %if &reporttype = T2L2 %then %let user_label = Number of^n New Users;
+        %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent)%then %let user_label = Number of^n New Users;
         %else %let user_label = Number of^n Pregnant Patients; 
 
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
@@ -325,14 +325,16 @@
 
             columns (
                 %if %str("&subgroup.") ne %str("") %then %do; subgroupcat %end; analysis &medicalproduct &MPColumn. n 
-				  %if &reporttype = T2L2 %then %do; FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar %end;
+				  %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do; 
+					FUTime_Ychar AvgFuTime_Dchar AvgFuTime_Ychar 
+				  %end;
                 %if %index(&customizecolumns.,sumevents) = 0 %then %do;
                     EVchar
                 %end;
                 %if %index(&customizecolumns.,sumevents) > 0 %then %do;
                     totalevents
                 %end;
-                %if &reporttype = T2L2 %then %do;
+                %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
                 IR_1000PYchar Risk_1000NUchar 
                     %if %index(&customizecolumns.,includeird) > 0 %then %do;
                     IRDiff_1000PYchar
@@ -360,7 +362,7 @@
             &MPDefine. ;
             define n / display "&user_label"
                style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            %if &reporttype = T2L2 %then %do;
+            %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
                 style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
@@ -376,7 +378,7 @@
             define totalevents / order 'Total Number of Events'
                 style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %end;
-            %if &reporttype = T2L2 %then %do;
+            %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
                 define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
                     style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 define Risk_1000NUchar / display 'Risk per 1,000^n New Users'

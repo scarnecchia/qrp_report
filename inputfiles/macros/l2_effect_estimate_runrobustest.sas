@@ -284,7 +284,7 @@
 	    run; 
 	%end;
 
-	%if "&reporttype." = "T4L2" %then %do;
+	%if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
 		data est;
 		set est;
 		
