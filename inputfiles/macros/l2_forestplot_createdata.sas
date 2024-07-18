@@ -100,7 +100,7 @@
           create table id_2 as 
           select est.analysisgrp, 
                  est.analysis,
-                 %if "&reporttype." = "T2L2" %then %do;
+                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
                  est.HR_95ci,
                  est.HR, 
                  %end;
@@ -259,14 +259,14 @@
 
             end;
           
-          %if "&reporttype" = "T2L2" %then %do;
+          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
           format HR LCL UCL 5.2; 
           %end;
           if lag_title = title then delete;
       run;
 
       proc sort data =forest_&periodid (keep = title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
-                                               %if "&reporttype." = "T2L2" %then %do;
+                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
                                                HR_95ci HR  
                                                %end;
                                                %else %if "&reporttype." = "T4L2" %then %do;
