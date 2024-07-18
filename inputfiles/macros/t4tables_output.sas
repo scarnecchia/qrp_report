@@ -106,14 +106,16 @@
 	%if &table. = T1 %then %do;
 	data _null_;
 	set &dataset.;
+    len_grouplbl = length(grouplabel);
 	if index(grouplabel, "2nd trimester") > 0 then do;
       call symputx("T2Columns", "Y");
-      call symputx("len_grouplbl",length(grouplabel)+50);
+      len_grouplbl = len_grouplbl +50;
     end;
 	if index(grouplabel, "3rd trimester") > 0 then do;
       call symputx("T3Columns", "Y");
-      call symputx("len_grouplbl",length(grouplabel)+50);
+      len_grouplbl = len_grouplbl+50;
     end;
+    call symputx("len_grouplbl",len_grouplbl);
 	run;
 	%end;
     data _footnotes;
