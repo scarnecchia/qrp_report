@@ -519,13 +519,6 @@
 		%if %index(%upcase(&sumcolumns.), ANYT3) | %index(%upcase(&sumcolumns.), ONLYT3) %then %let T3Columns=Y;
 
 	   /* Apply labels */
-       * DEFENSIVE: to avoid truncation, pad grouplabel length for when additional trimester messages are concatenated*;
-       proc sql noprint;
-         select max(length(label)) %if &T2Columns. eq Y %then %do; + 50 %end; %if &T3Columns. eq Y %then %do; + 50 %end;
-            into: len_grouplbl 
-         from labelfile
-         where lowcase(labeltype) = "grouplabel";
-       quit;
 
        proc sql noprint;
          create table &dsout. as
@@ -550,7 +543,7 @@
                  strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
                %end;
                strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)" 
-             end as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
+             end as grouplabel
 
 		     ,case when d.label = "" then coalescec(c.label, a.group)||strip(a.group)||"(" || 
                %if &T2Columns. eq Y %then %do;
@@ -564,7 +557,7 @@
 
 			%else %do;
 			  when c.label = "" then strip(a.group)
-		 	  else strip(c.label) end as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
+		 	  else strip(c.label) end as grouplabel
 		 	,case when d.label = "" then coalescec(c.label, a.group)
 			%end;
              else d.label end as header
@@ -581,7 +574,7 @@
               %if &T3Columns. eq Y %then %do;
                 strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;
                 strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
-               as grouplabel %if %eval(&len_grouplbl.>0) %then %do; length= &len_grouplbl. %end;
+               as grouplabel
 			%end; /*end condition dataset=preg */
 			%else %do;
 			  ,strip(a.group) as grouplabel

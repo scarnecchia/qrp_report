@@ -106,8 +106,14 @@
 	%if &table. = T1 %then %do;
 	data _null_;
 	set &dataset.;
-	if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
-	if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
+	if index(grouplabel, "2nd trimester") > 0 then do;
+      call symputx("T2Columns", "Y");
+      call symputx("len_grouplbl",length(grouplabel)+50);
+    end;
+	if index(grouplabel, "3rd trimester") > 0 then do;
+      call symputx("T3Columns", "Y");
+      call symputx("len_grouplbl",length(grouplabel)+50);
+    end;
 	run;
 	%end;
     data _footnotes;
@@ -283,9 +289,9 @@
              %else %do;
                 style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
              %end;
-            length text $200;
+            length text $&len_grouplbl.;
             text = grouplabel;
-            num = 200;
+            num = &len_grouplbl.;
             line text $varying. num;
         endcomp;
 
