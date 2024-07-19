@@ -28,6 +28,7 @@
 
 %macro l2_forestplot_createdata;
      
+      
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
@@ -42,6 +43,10 @@
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
         where b.outputforestplot = 'Y';
+
+		select runid into: runid trimmed
+		from forest_l2_effectestimates_&periodid.;
+
       quit;
 
       /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
@@ -100,11 +105,11 @@
           create table id_2 as 
           select est.analysisgrp, 
                  est.analysis,
-                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
+                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
                  est.HR_95ci,
                  est.HR, 
                  %end;
-                 %else %if "&reporttype." = "T4L2" %then %do;
+                 %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
                  est.rr_95ci, 
                  est.rr,                  
                  %end;
@@ -259,17 +264,17 @@
 
             end;
           
-          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
+          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &&&runid._t4hoimethod.=timetoevent) %then %do;
           format HR LCL UCL 5.2; 
           %end;
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid (keep = title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
-                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
+      proc sort data =forest_&periodid (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
+                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
                                                HR_95ci HR  
                                                %end;
-                                               %else %if "&reporttype." = "T4L2" %then %do;
+                                               %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
                                                rr_95ci rr
                                                %end;
                                                LCL UCL id file

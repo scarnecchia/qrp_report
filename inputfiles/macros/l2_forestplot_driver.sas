@@ -26,6 +26,8 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_driver;
+ 
+      
 
       ods graphics on / width=6.5in scale=on;
 
@@ -33,9 +35,14 @@
         %let tableletter=a;
 
       %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
+        
+	    proc sql noprint;
+          select runid into: runid trimmed 
+		  from forest_&j;
+	    quit;
 
-        /* Determine forest plot labeling */
-        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &T4HOIMETHOD.=timetoevent) %then %do;
+		/* Determine forest plot labeling */
+        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &&&runid._t4hoimethod. = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
         %let ForestRatioFoot = Hazard ratio;
         %let ForestRatioLabel = HR (95% CI);
@@ -44,7 +51,7 @@
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
         %end;
-        %else %if "&reporttype." = "T4L2" %then %do;
+        %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
         %let ForestRatioTitle = Risk Ratios (RR);
         %let ForestRatioFoot = Risk ratio;
         %let ForestRatioLabel = RR (95% CI);
