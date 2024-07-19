@@ -545,7 +545,7 @@
                strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)" 
              end as grouplabel
 
-		     ,case when d.label = "" then coalescec(c.label, a.group)||strip(a.group)||"(" || 
+		     ,case when d.label = "" then strip(coalescec(c.label, a.group))||" "||strip(a.group)||"(" || 
                %if &T2Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
                %end; 

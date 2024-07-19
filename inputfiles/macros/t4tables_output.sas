@@ -106,17 +106,9 @@
 	%if &table. = T1 %then %do;
 	data _null_;
 	set &dataset.;
-    len_grouplbl = length(grouplabel);
-	if index(grouplabel, "2nd trimester") > 0 then do;
-      call symputx("T2Columns", "Y");
-      len_grouplbl = len_grouplbl +50;
-    end;
-	if index(grouplabel, "3rd trimester") > 0 then do;
-      call symputx("T3Columns", "Y");
-      len_grouplbl = len_grouplbl+50;
-    end;
-    call symputx("len_grouplbl",len_grouplbl);
-	run;
+	  if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
+	  if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
+    run;
 	%end;
     data _footnotes;
        length footnote_order 3; 
@@ -265,10 +257,10 @@
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
         compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $200;
+            length text $1000;
             if pregflg = 'Y' then text = "&preg_cohort_header.";
             else text = "All Matched Non-Pregnant Episodes";
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;
@@ -276,9 +268,9 @@
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $200;
+            length text $1000;
             text = header;
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;
@@ -291,18 +283,18 @@
              %else %do;
                 style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
              %end;
-            length text $&len_grouplbl.;
+            length text $1000;
             text = grouplabel;
-            num = &len_grouplbl.;
+            num = 1000;
             line text $varying. num;
         endcomp;
 
         /*MOI header*/
         %if &includemoiheaderrow. = Y %then %do;
         compute before moiheader / style=[fontstyle=italic indent=.15in backgroundcolor=white just=L bordertopcolor=white borderbottomcolor=white];
-            length text $200;
+            length text $1000;
             text = moiheader;
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;
