@@ -309,15 +309,14 @@
         /**********************************************************************
             Output Results
         ***********************************************************************/
-
         ods escapechar="^";
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="green" flow="1:400");
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
 
-        %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent)%then %let user_label = Number of^n New Users;
-        %else %let user_label = Number of^n Pregnant Patients; 
+        %if &reporttype = T2L2 %then %let user_label = New Users;
+        %else %let user_label = Pregnant Patients; 
 
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
     		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
@@ -342,7 +341,10 @@
                     %if %index(&customizecolumns.,includerd) > 0 %then %do; 
                     RD_1000NUchar 
                     %end;
-                HR_95CI HR_pvalue
+                    HR_95CI 
+					%if &reporttype = T2L2 %then %do;
+					 HR_pvalue
+					%end;
                 %end;
                 %else %do;
                 Risk_1000NUchar 
@@ -360,7 +362,7 @@
             define &medicalproduct / display 'Medical Product'
                 style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=bgr borderleftcolor=bgr];
             &MPDefine. ;
-            define n / display "&user_label"
+            define n / display "Number of^n &user_label"
                style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
             %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
@@ -381,21 +383,23 @@
             %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
                 define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
                     style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
-                define Risk_1000NUchar / display 'Risk per 1,000^n New Users'
+                define Risk_1000NUchar / display "Risk per 1,000^n &user_label."
                     style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %if %index(&customizecolumns.,includeird) > 0 %then %do;
                 define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
                     style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %end;
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
-                define RD_1000NUchar / order 'Risk Difference per 1,000^n New Users'
+                define RD_1000NUchar / order "Risk Difference per 1,000^n &user_label."
                     style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
                 %end;
                 define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
                     style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-                define HR_pvalue / order 'Wald P-Value'
+				%if &reporttype = T2L2 %then %do;
+				 define HR_pvalue / order 'Wald P-Value'
                     style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=bgr borderleftcolor=bgr];
-            %end;
+				%end;
+            %end;			
             %else %do;
             define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
