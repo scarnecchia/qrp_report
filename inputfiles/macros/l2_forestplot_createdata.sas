@@ -12,7 +12,7 @@
 *   - l2_effectestimates_&periodid.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - forest_[periodid].sas7bdat
+*   - forest_[periodid][runid].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
