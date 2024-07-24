@@ -9,7 +9,7 @@
 * PURPOSE: Creates and outputs forest plots for level 2 analyses
 *                                       
 *  Program inputs:                                                                                   
-*   - forest_[periodid].sas7bdat
+*   - forest_[periodid][runid].sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 * 
@@ -26,21 +26,15 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_driver;
- 
-      
 
       ods graphics on / width=6.5in scale=on;
 
 	    %let tablecount=1;
         %let tableletter=a;
-
+    
       %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-        
-	    proc sql noprint;
-          select runid into: runid trimmed 
-		  from forest_&j;
-	    quit;
-
+        %do n = 1 %to &numrunid.;
+         %let runid = %scan(&runidlist, &n); 
 		/* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &&&runid._t4hoimethod. = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
@@ -88,12 +82,12 @@
             proc sql noprint;
                 select count(*)
                 into: plot_n
-                from forest_&j
+                from forest_&j.&runid.
                 where plotorder=&plot;
             quit;
-
+     
             data forest;
-            set forest_&j(where=(plotorder=&plot));
+            set forest_&j.&runid.(where=(plotorder=&plot));
               obsid=_n_;
               if id ne 1 then refid=obsid;
               /* Reduce indent for methods heading */
@@ -283,6 +277,7 @@
             %end; /*produce plot*/
             %plotleaveloop:
         %end; /*loop through plots*/
+		%end;
       %end; /*loop through looks*/
 
     %let figurenum = %eval(&figurenum.+1); 
