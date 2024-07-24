@@ -527,7 +527,7 @@
 		 %if &labelfileexists. = Y %then %do;
 		   ,case %if &includeheaderrow = Y %then %do; when c.label = "" and d.label = "" then strip(a.group) %end;
 		   %if &dataset. = preg %then %do;
-		     when c.label = "" then strip(a.group)||"(" || 
+		     when c.label = "" then strip(a.group)||" (" || 
              %if &T2Columns. eq Y %then %do;
                strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
              %end; 
@@ -535,7 +535,7 @@
                strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, "|| 
              %end;
                strip(put(a.den_&episode_var.,comma12.0))||" total episodes)"
-		 	 else strip(c.label)||"(" || 
+		 	 else strip(c.label)||" (" || 
                %if &T2Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
                %end; 
@@ -545,7 +545,7 @@
                strip(put(a.den_&episode_var.,comma12.0)) ||" total episodes)" 
              end as grouplabel
 
-		     ,case when d.label = "" then strip(coalescec(c.label, a.group))||" "||strip(a.group)||"(" || 
+		     ,case when d.label = "" then strip(coalescec(c.label, a.group))||" "||strip(a.group)||" (" || 
                %if &T2Columns. eq Y %then %do;
                  strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || 
                %end; 
@@ -568,7 +568,7 @@
 		 %end; /* end condition labelfileexists=Y */
          %else %do; /* condition labelfileexists ne Y */
 		    %if &dataset. = preg %then %do;
-		      ,strip(a.group)||"(" || 
+		      ,strip(a.group)||" (" || 
               %if &T2Columns. eq Y %then %do;
                 strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; 
               %if &T3Columns. eq Y %then %do;
