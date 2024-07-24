@@ -27,8 +27,8 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-/
-  %do n = 1 %to &numrunid.;
+
+ %do n = 1 %to &numrunid.;
      %let runid = %scan(&runidlist, &n); 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
