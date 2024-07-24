@@ -12,7 +12,7 @@
 *   - l2_effectestimates_&periodid.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - forest_[periodid].sas7bdat
+*   - forest_[periodid][runid].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -27,8 +27,9 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-     
-      
+
+ %do n = 1 %to &numrunid.;
+     %let runid = %scan(&runidlist, &n); 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
@@ -42,14 +43,11 @@
           on c.analysisgrp = d.analysisgrp
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
-        where b.outputforestplot = 'Y';
-
-		select runid into: runid trimmed
-		from forest_l2_effectestimates_&periodid.;
+        where b.outputforestplot = 'Y' and b.runid = "&runid";
 
       quit;
-
-      /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
+	
+       /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
          do not resolve in sgrender */
       %isdata(dataset=covarname);
 
@@ -98,7 +96,7 @@
               on est.subgroup = cov.cov_varname and est.runid = cov.runid
           %end;
 
-          where sort2 = 1 and analysis ne "Unweighted" 
+          where sort2 = 1 and analysis ne "Unweighted"  and est.runid = "&runid"
           order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
 
 
@@ -147,6 +145,7 @@
            %end;
            where sort2 = 1 and 
                  analysis ne "Unweighted" 
+				 and est.runid = "&runid"
            order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
       quit;
 
@@ -155,7 +154,7 @@
           2 = overall results and subgroup label
           3 = subgroup categories*/
 
-      data forest_&periodid.;
+      data forest_&periodid.&runid;
           set id_1(in=id1)
               id_2(in=id2);
           length title $200 label $&label_length;
@@ -201,14 +200,14 @@
           end;
       run;
 
-      proc sort data = forest_&periodid. nodupkey;
+      proc sort data = forest_&periodid.&runid nodupkey;
         by analysisgrpsort analysis id subgrouporder subgroupcatorder subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
-      data forest_&periodid;
+      data forest_&periodid.&runid.;
         length forest_title $100 footnote $200;
-          set forest_&periodid;
+          set forest_&periodid.&runid.;
             lag_title = lag(title);
             if analysis = "Unadjusted" then do;
             plotorder=1;
@@ -270,7 +269,7 @@
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
+      proc sort data = forest_&periodid.&runid. (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
                                                %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
                                                HR_95ci HR  
                                                %end;
@@ -285,5 +284,5 @@
       proc datasets nowarn noprint lib=work;
         delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
-
+  %end;
 %mend l2_forestplot_createdata;

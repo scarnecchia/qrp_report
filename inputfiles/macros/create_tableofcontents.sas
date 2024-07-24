@@ -1706,9 +1706,11 @@
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;
+					   %do n = 1 %to &numrunid.;
+                        %let runid = %scan(&runidlist, &n); 
 	                    %let forest_title = ;
 	                    data _null_;
-	                    set forest_&j(where=(plotorder=&plot));
+	                    set forest_&j.&runid.(where=(plotorder=&plot));
 	                      call symputx("forest_title",forest_title);
 	                    run;
 
@@ -1718,6 +1720,7 @@
 	                    caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
+					%end;
 	            %end; /* loop periods */
 
                 %let figurenum = %eval(&figurenum.+1); 
