@@ -393,7 +393,7 @@
 		var &qrp_param_content.;
 		run;
 	%end;
-     
+ 
     /* Combine input files to identify all runids requested */
     data inputfiles;
        set 
@@ -2248,11 +2248,12 @@
 
                 if not x then do;
                 runid = "&runid.";
+				t4hoimethod = "&&&runid._t4hoimethod";
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars t4hoimethod;
             run;
 
             data psest_masterinputs;
@@ -2341,6 +2342,7 @@
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
                   ,pscs.stratvars 
+				  ,pscs.t4hoimethod
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 

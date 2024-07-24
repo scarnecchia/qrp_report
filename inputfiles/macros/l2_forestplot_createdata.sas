@@ -12,7 +12,7 @@
 *   - l2_effectestimates_&periodid.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - forest_[periodid][runid].sas7bdat
+*   - forest_[periodid][t4hoimethod].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -27,9 +27,15 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
+    %let t4hoimethod = ;
+    %do ru = 1 %to &numrunid.;
+      %let runidru = %scan(&runidlist., &ru.);
+	  %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	%end;
 
- %do n = 1 %to &numrunid.;
-     %let runid = %scan(&runidlist, &n); 
+    %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+     %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+	 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
@@ -37,13 +43,13 @@
         from l2_effectestimates_&periodid. a
         left join
         (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
-          from pscs_masterinputs (where = (missing(subgroup))) c
+          from pscs_masterinputs (where = (missing(subgroup) and t4hoimethod = "&t4hoimethod_current")) c
           inner join 
-          l2comparisonfile d
+          l2comparisonfile d 
           on c.analysisgrp = d.analysisgrp
           where d.outputforestplot = 'Y') as b
         on a.analysisgrp = b.analysisgrp
-        where b.outputforestplot = 'Y' and b.runid = "&runid";
+        where b.outputforestplot = 'Y' ;
 
       quit;
 	
@@ -96,7 +102,7 @@
               on est.subgroup = cov.cov_varname and est.runid = cov.runid
           %end;
 
-          where sort2 = 1 and analysis ne "Unweighted"  and est.runid = "&runid"
+          where sort2 = 1 and analysis ne "Unweighted"  
           order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
 
 
@@ -107,7 +113,7 @@
                  est.HR_95ci,
                  est.HR, 
                  %end;
-                 %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
+                 %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
                  est.rr_95ci, 
                  est.rr,                  
                  %end;
@@ -145,7 +151,6 @@
            %end;
            where sort2 = 1 and 
                  analysis ne "Unweighted" 
-				 and est.runid = "&runid"
            order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
       quit;
 
@@ -154,7 +159,7 @@
           2 = overall results and subgroup label
           3 = subgroup categories*/
 
-      data forest_&periodid.&runid;
+      data forest_&periodid.&t4hoimethod_current;
           set id_1(in=id1)
               id_2(in=id2);
           length title $200 label $&label_length;
@@ -200,14 +205,14 @@
           end;
       run;
 
-      proc sort data = forest_&periodid.&runid nodupkey;
+      proc sort data = forest_&periodid.&t4hoimethod_current nodupkey;
         by analysisgrpsort analysis id subgrouporder subgroupcatorder subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
-      data forest_&periodid.&runid.;
+      data forest_&periodid.&t4hoimethod_current.;
         length forest_title $100 footnote $200;
-          set forest_&periodid.&runid.;
+          set forest_&periodid.&t4hoimethod_current.;
             lag_title = lag(title);
             if analysis = "Unadjusted" then do;
             plotorder=1;
@@ -263,17 +268,17 @@
 
             end;
           
-          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &&&runid._t4hoimethod.=timetoevent) %then %do;
+          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current.=timetoevent) %then %do;
           format HR LCL UCL 5.2; 
           %end;
           if lag_title = title then delete;
       run;
 
-      proc sort data = forest_&periodid.&runid. (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
+      proc sort data = forest_&periodid.&t4hoimethod_current. (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
                                                %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
                                                HR_95ci HR  
                                                %end;
-                                               %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
+                                               %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
                                                rr_95ci rr
                                                %end;
                                                LCL UCL id file

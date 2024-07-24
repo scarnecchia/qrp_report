@@ -1706,11 +1706,17 @@
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
 	                %do plot = 1 %to 7;
-					   %do n = 1 %to &numrunid.;
-                        %let runid = %scan(&runidlist, &n); 
+					  %let t4hoimethod = ;
+                      %do ru = 1 %to &numrunid.;
+                        %let runidru = %scan(&runidlist., &ru.);
+	                    %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	                  %end;
+
+                      %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+                      %let t4hoimethod_current = %scan(&t4hoimethod., &t4);  
 	                    %let forest_title = ;
 	                    data _null_;
-	                    set forest_&j.&runid.(where=(plotorder=&plot));
+	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
 	                      call symputx("forest_title",forest_title);
 	                    run;
 

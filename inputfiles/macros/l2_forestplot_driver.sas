@@ -9,7 +9,7 @@
 * PURPOSE: Creates and outputs forest plots for level 2 analyses
 *                                       
 *  Program inputs:                                                                                   
-*   - forest_[periodid][runid].sas7bdat
+*   - forest_[periodid][t4hoimethod].sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 * 
@@ -33,10 +33,16 @@
         %let tableletter=a;
     
       %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-        %do n = 1 %to &numrunid.;
-         %let runid = %scan(&runidlist, &n); 
+       %let t4hoimethod = ;
+       %do ru = 1 %to &numrunid.;
+         %let runidru = %scan(&runidlist., &ru.);
+	     %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	   %end;
+
+    %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+     %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
 		/* Determine forest plot labeling */
-        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &&&runid._t4hoimethod. = timetoevent) %then %do;
+        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
         %let ForestRatioFoot = Hazard ratio;
         %let ForestRatioLabel = HR (95% CI);
@@ -45,7 +51,7 @@
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
         %end;
-        %else %if "&reporttype." = "T4L2" and &&&runid._t4hoimethod. = binary %then %do;
+        %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
         %let ForestRatioTitle = Risk Ratios (RR);
         %let ForestRatioFoot = Risk ratio;
         %let ForestRatioLabel = RR (95% CI);
@@ -82,12 +88,12 @@
             proc sql noprint;
                 select count(*)
                 into: plot_n
-                from forest_&j.&runid.
+                from forest_&j.&t4hoimethod_current.
                 where plotorder=&plot;
             quit;
      
             data forest;
-            set forest_&j.&runid.(where=(plotorder=&plot));
+            set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
               obsid=_n_;
               if id ne 1 then refid=obsid;
               /* Reduce indent for methods heading */
