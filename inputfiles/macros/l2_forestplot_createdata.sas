@@ -27,20 +27,7 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-/*     data t;*/
-/*	 set output.forest_l2_effectestimates_&periodid.;*/
-/*	 runid = "r02";*/
-/*	 run;*/
-/*    dasta  forest_l2_effectestimates_&periodid.;*/
-/*	set output.forest_l2_effectestimates_&periodid. t;*/
-/*	run;*/
-/*	data output.t;*/
-/*	set t;*/
-/*	run;*/
-/*	data output.forest2;*/
-/*	set forest_l2_effectestimates_&periodid.;*/
-/*	run;*/
-%put jolene;
+/
   %do n = 1 %to &numrunid.;
      %let runid = %scan(&runidlist, &n); 
       /* Join all data together to estimate table for processing downstream for forest dataset */
