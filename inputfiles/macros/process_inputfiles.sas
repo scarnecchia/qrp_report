@@ -2203,7 +2203,7 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
                    caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup $15 subgroupcat $11 stratvars $18;
             call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim, stratvars);
@@ -2248,7 +2248,7 @@
 
                 if not x then do;
                 runid = "&runid.";
-				t4hoimethod = "&&&runid._t4hoimethod";
+				t4hoimethod = lowcase("&&&runid._t4hoimethod");
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
@@ -2291,6 +2291,7 @@
                       ,pscs.unconditional
                       ,pscs.pstrim
                       ,pscs.stratvars 
+					  ,pscs.t4hoimethod
                       ,lowcase(sub.subgroup) as subgroup
                       ,upcase(sub.subgroupcat) as subgroupcat
                       /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
@@ -2306,6 +2307,7 @@
               data pscs_masterinputs;
                 set pscs_masterinputs
                    _pscs_masterinputs_subgroups;
+				   if t4hoimethod = " " then t4hoimethod = "binary";
               run;
               
               /* Clean up work space */

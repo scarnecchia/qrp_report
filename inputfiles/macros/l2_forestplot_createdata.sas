@@ -35,21 +35,21 @@
 
     %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
      %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
-	 
+
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
+        select a.*, b.runid, b.t4hoimethod, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
         left join
-        (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
+        (select c.analysisgrp, c.t4hoimethod, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
           from pscs_masterinputs (where = (missing(subgroup) and t4hoimethod = "&t4hoimethod_current")) c
           inner join 
           l2comparisonfile d 
-          on c.analysisgrp = d.analysisgrp
+          on c.analysisgrp = d.analysisgrp and c.runid = d.runid 
           where d.outputforestplot = 'Y') as b
-        on a.analysisgrp = b.analysisgrp
-        where b.outputforestplot = 'Y' ;
+        on a.analysisgrp = b.analysisgrp 
+        where b.outputforestplot = 'Y'  ;
 
       quit;
 	
@@ -268,7 +268,7 @@
 
             end;
           
-          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current.=timetoevent) %then %do;
+          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
           format HR LCL UCL 5.2; 
           %end;
           if lag_title = title then delete;
