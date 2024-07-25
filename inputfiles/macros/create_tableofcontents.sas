@@ -1715,7 +1715,7 @@
 	                  %end;
 
                       %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-                      %let t4hoimethod_current = %scan(&t4hoimethod., &t4);  
+                        %let t4hoimethod_current = %scan(&t4hoimethod., &t4);  
 	                    %let forest_title = ;
 	                    data _null_;
 	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));

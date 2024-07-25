@@ -32,17 +32,18 @@
 	    %let tablecount=1;
         %let tableletter=a;
     
-      %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-       %let t4hoimethod = ;
-       %do ru = 1 %to &numrunid.;
-         %let runidru = %scan(&runidlist., &ru.);
-	     %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
-	       %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
-	  %end;
-	   %end;
+		/*create set up for forestplot by t4hoimethod*/
+        %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
+          %let t4hoimethod = ;
+          %do ru = 1 %to &numrunid.;
+            %let runidru = %scan(&runidlist., &ru.);
+	        %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	          %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	        %end;
+	    %end;
 
-    %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-     %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+        %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+        %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
 		/* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);

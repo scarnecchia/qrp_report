@@ -2307,7 +2307,6 @@
               data pscs_masterinputs;
                 set pscs_masterinputs
                    _pscs_masterinputs_subgroups;
-				   if t4hoimethod = " " then t4hoimethod = "binary";
               run;
               
               /* Clean up work space */
@@ -2344,7 +2343,9 @@
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
                   ,pscs.stratvars 
-				  ,pscs.t4hoimethod
+				  ,case when pscs.t4hoimethod = " " then "binary"
+                   else pscs.t4hoimethod 
+				   end as t4hoimethod
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 

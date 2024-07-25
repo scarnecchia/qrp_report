@@ -27,16 +27,18 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-    %let t4hoimethod = ;
-    %do ru = 1 %to &numrunid.;
-      %let runidru = %scan(&runidlist., &ru.);
-	  %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
-	    %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
-	  %end;
-	%end;
 
-    %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-     %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+      /*create set up for forestplot by t4hoimethod*/
+      %let t4hoimethod = ;
+      %do ru = 1 %to &numrunid.;
+        %let runidru = %scan(&runidlist., &ru.);
+	    %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	      %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	    %end;
+	  %end;
+
+      %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+      %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
