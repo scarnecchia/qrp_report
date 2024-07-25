@@ -305,10 +305,7 @@
 
             keep analysisgrp subgroup MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
-                 /*only include followup time variables for ReportType = T2L2 or Reportype = T4L2 and hoimethod = timetoevent*/
-                 %if %str("&reporttype.") = %str("T2L2") | (%str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. = timetoevent)%then %do;
-                 FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
-                 %end;
+                  	FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  ;
 
         run;
@@ -421,15 +418,21 @@
 
                 keep analysisgrp subgroup MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
-                /*only include followup time variables for ReportType = T2L2 or ReportType = T4L2 when hoimethod = timetoevent*/
-                %if %str("&reporttype.") = %str("T2L2") | (%str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. = timetoevent )%then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
-                %end;
                 ;
             output;
             %end;
         run;
     %end;
+
+
+	/*only include followup time variables for ReportType = T2L2 or ReportType = T4L2 when hoimethod = timetoevent*/
+	%if %str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. = binary %then %do;
+		data est;
+			 set est;
+			  call missing(FUTime_Y, AvgFUTime_D, AvgFUTime_Y, IR_1000PY, IRDiff_1000PY, IR_1000PYchar, IRDiff_1000PYchar, FUTime_Ychar, AvgFUTime_Dchar, AvgFUTime_Ychar);
+		run;
+	%end;
 
     proc datasets library=work nowarn noprint;
         append base= RDEst data=est force;

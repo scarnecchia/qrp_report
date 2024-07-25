@@ -293,9 +293,13 @@
 		label HR_se = "StdErr of Coefficient";
 		label HR = "Risk Ratio";    	    
 
-			rename hr_95CI = rr_95ci;
-			rename HR = rr;
-			rename HR_se = rr_se;
+			rr_95ci =  hr_95CI ;
+			rr =  HR ;
+			rr_se =  HR_se ;
+			length hr_95CI $30 ;
+			 hr_95CI = " ";
+			 HR = .;
+			 HR_se = .;
 		%end;
 		%if  &&&runid._t4hoimethod. = timetoevent %then %do;
 		  length rr_95ci $30 ;
