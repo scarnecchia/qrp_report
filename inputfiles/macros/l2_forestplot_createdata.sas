@@ -30,7 +30,9 @@
     %let t4hoimethod = ;
     %do ru = 1 %to &numrunid.;
       %let runidru = %scan(&runidlist., &ru.);
-	  %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	  %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	    %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	  %end;
 	%end;
 
     %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
