@@ -1714,13 +1714,15 @@
 	                    %end;
 	                  %end;
 
-                       %if "&reporttype." = "T2L2" %then %do;
-                         %let t4hoimethod_current = ; 
-	                   %end;
-	                   %else %do;
-                         %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-                         %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
-                        %end; 
+                      %if "&reporttype." = "T2L2" %then %do;
+                        %let t4hoimethod_current = ; 
+		                %let t4_loop = 1;
+	                  %end;
+	                  %else %do;
+                        %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
+                      %end;
+	                  %do t4 = 1 %to &t4_loop;
+	                   %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
 	                    %let forest_title = ;
 	                    data _null_;
 	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
@@ -1733,9 +1735,7 @@
 	                    caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
-					%if "&reporttype." ne "T2L2" %then %do;
-                      %end;
-                    %end;
+			      %end;
 	            %end; /* loop periods */
 
                 %let figurenum = %eval(&figurenum.+1); 
