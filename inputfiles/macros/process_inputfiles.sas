@@ -2348,6 +2348,9 @@
                    else pscs.t4hoimethod 
 				   end as t4hoimethod
 				  %end;
+				  %if &reporttype. = T2L2 %then %do;
+				  ,pscs.t4hoimethod
+				  %end;
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
