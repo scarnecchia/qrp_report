@@ -2343,9 +2343,11 @@
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
                   ,pscs.stratvars 
+				  %if &reporttype. = T4L2 %then %do;
 				  ,case when pscs.t4hoimethod = " " then "binary"
                    else pscs.t4hoimethod 
 				   end as t4hoimethod
+				  %end;
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 
