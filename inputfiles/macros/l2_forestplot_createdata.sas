@@ -36,9 +36,14 @@
 	      %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
 	    %end;
 	  %end;
-
-      %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-      %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+      
+	  %if "&reporttype." = "T2L2" %then %do;
+        %let t4hoimethod_current = ; 
+	  %end;
+	  %else %do;
+        %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+        %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+      %end;
 
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
@@ -293,5 +298,7 @@
       proc datasets nowarn noprint lib=work;
         delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
-  %end;
+    %if "&reporttype." ne "T2L2" %then %do;
+      %end;
+    %end;
 %mend l2_forestplot_createdata;

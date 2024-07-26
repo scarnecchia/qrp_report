@@ -42,8 +42,13 @@
 	        %end;
 	    %end;
 
-        %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
-        %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+        %if "&reporttype." = "T2L2" %then %do;
+          %let t4hoimethod_current = ; 
+	    %end;
+	    %else %do;
+          %do t4 = 1 %to %sysfunc(countw(&t4hoimethod.));
+          %let t4hoimethod_current = %scan(&t4hoimethod., &t4); 
+        %end;
 		/* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
@@ -286,7 +291,10 @@
             %end; /*produce plot*/
             %plotleaveloop:
         %end; /*loop through plots*/
-		%end;
+		%if "&reporttype." ne "T2L2" %then %do;
+          %end;
+        %end;
+		
       %end; /*loop through looks*/
 
     %let figurenum = %eval(&figurenum.+1); 
