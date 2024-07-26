@@ -301,6 +301,4 @@
         delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
       %end;
-
-	%let reporttype = T4L2;
 %mend l2_forestplot_createdata;
