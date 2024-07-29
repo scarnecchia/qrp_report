@@ -1698,9 +1698,7 @@
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and &treeaggindicator. eq N %then %do;
-	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0  | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %let ForestRatioTitle = Hazard Ratios (HR);
-	            %else %let ForestRatioTitle = Risk Ratios (RR);
-
+	           
 				%let tableletter=a;
 				%let tablecount = 1;
 
@@ -1723,6 +1721,8 @@
                       %end;
 	                  %do t4 = 1 %to &t4_loop;
 	                   %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+					   %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 |(&reporttype = T4L2 and &t4hoimethod_current = timetoevent) %then %let ForestRatioTitle = Hazard Ratios (HR);
+	                   %else %let ForestRatioTitle = Risk Ratios (RR);
 	                    %let forest_title = ;
 	                    data _null_;
 	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
