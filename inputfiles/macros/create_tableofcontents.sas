@@ -1703,7 +1703,7 @@
 				%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
-	                %do plot = 1 %to 7;
+	                %do plot = 1 %to 14;
 					  %let t4hoimethod = ;
                       %do ru = 1 %to &numrunid.;
                         %let runidru = %scan(&runidlist., &ru.);
