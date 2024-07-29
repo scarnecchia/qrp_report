@@ -120,7 +120,7 @@
           create table id_2 as 
           select est.analysisgrp, 
                  est.analysis,
-                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
+                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
                  est.HR_95ci,
                  est.HR, 
                  %end;

@@ -84,7 +84,7 @@
             6. IPTW
             7. Covariate stratification */
 
-        %do plot = 1 %to 7;
+        %do plot = 1 %to 14;
 
             /*set forest plot variables for this loop*/
             %let forestfootnote = Y;
@@ -110,7 +110,7 @@
               if id=1 then indentWt=0;
               if id=2 then indentWt=.5;
               if id=3 then indentWt=1;
-              %if &plot_n ^= 2 %then %do;
+              %if &plot_n ^= 2  or &plot_n ^= 9 %then %do;
               call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
               %end;
               %else %do;
@@ -149,7 +149,7 @@
             %if %eval(&nobs)>0 %then %do;
 
                 /*Site-adjusted and covariate stratification do not have footnotes*/
-                %if %eval(&plot.=1) | %eval(&plot.=7) %then %let forestfootnote = N;
+                %if %eval(&plot.=1) | %eval(&plot.=7) | %eval(&plot.=8) | %eval(&plot.=14) %then %let forestfootnote = N;
 
                 /* Create superscripts */
                 %if &forestfootnote = Y %then %do;
