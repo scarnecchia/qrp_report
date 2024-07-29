@@ -322,7 +322,7 @@
       run;
 
       proc sort data = forest_&periodid.&t4hoimethod_current. (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
-                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and %varexist(logitest, HR_95CI) = 1) %then %do;
+                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
                                                HR_95ci HR  
                                                %end;
                                                %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;

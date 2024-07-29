@@ -95,42 +95,43 @@
 
             /* Adjust plot height for groups of 1 */
             %let plot_n = ;
-            proc sql noprint;
+			
+              proc sql noprint;
                 select count(*)
                 into: plot_n
                 from forest_&j.&t4hoimethod_current.
                 where plotorder=&plot;
-            quit;
-     
-            data forest;
-            set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
-              obsid=_n_;
-              if id ne 1 then refid=obsid;
-              /* Reduce indent for methods heading */
-              if id=1 then indentWt=0;
-              if id=2 then indentWt=.5;
-              if id=3 then indentWt=1;
-              %if &plot_n ^= 2  or &plot_n ^= 9 %then %do;
-              call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
-              %end;
-              %else %do;
-              call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
-              %end;
-              call symputx("forest_title",forest_title);
-              /*if HR cannot be computed for any row in plot, then:
+              quit;
+   
+              data forest;
+                set forest_&j.&t4hoimethod_current. (where=(plotorder=&plot));
+                obsid=_n_;
+                if id ne 1 then refid=obsid;
+                /* Reduce indent for methods heading */
+                if id=1 then indentWt=0;
+                if id=2 then indentWt=.5;
+                if id=3 then indentWt=1;
+                %if &plot_n ^= 2  or &plot_n ^= 9 %then %do;
+                call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
+                %end;
+                %else %do;
+                call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
+                %end;
+                call symputx("forest_title",forest_title);
+                /*if HR cannot be computed for any row in plot, then:
                  - only 8 additional footnotes are possible
                  - start assigning footnotes at 2
                  - modify &displayperiodid to add superscript */
-              if &ForestCI95 in ('N/A','NaN','.') then do;
+                if &ForestCI95 in ('N/A','NaN','.') then do;
                 call symputx('forestnohrfootnote', 'Y');
                 call symputx('nummaxforestfootnote', 8);
                 call symputx('unicode_forplot', substr("&unicode_list.",6)); /*unicode characters are 4 digits*/
                 call symputx('forestnohrsuper', "^{super 1}");
               end;
-              call symputx('plotwidth','7in', 'G');
-            run;
+                call symputx('plotwidth','7in', 'G');
+              run;
 
-            data _null_;
+              data _null_;
                 set forest nobs=n;
                 titlelen=length(title);
                 if id=1 and titlelen >= 80 then do;  
@@ -142,8 +143,7 @@
                         else if n > 30 and n <= 40 then call symputx('plotheight',cats(titlelen**0.6,'in'),"G");
                         else if n > 40 then call symputx('plotheight',cats(titlelen**0.7,'in'),"G");
                 end;
-            run;
-
+              run;
             /* Only create forest plots if analysis exists */
             %isdata(dataset=forest);
             %if %eval(&nobs)>0 %then %do;
