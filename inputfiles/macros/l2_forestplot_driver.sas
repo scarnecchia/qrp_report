@@ -37,14 +37,18 @@
 
         %let t4hoimethod = binary timetoevent;
         %if "&reporttype." = "T2L2" %then %do;
-          %let t4hoimethod_current = ; 
 		  %let t4_loop = 1;
 	    %end;
 	    %else %do;
           %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
         %end;
 	    %do t4 = 1 %to &t4_loop;
-	    %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+		%if "&reporttype." = "T2L2" %then %do;
+          %let t4hoimethod_current = ; 
+		%end;
+		%else %do;
+	      %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+		%end;
 		/* Determine forest plot labeling */
         %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
