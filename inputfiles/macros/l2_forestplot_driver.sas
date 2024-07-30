@@ -73,7 +73,7 @@
         %if &sysscp = WIN %then %let fontfamily=Calibri;
         %else %let fontfamily=Albany AMT;
 
-        /*7 potential plots:
+        /*7 potential plots (T4L2: Can be per identified t4hoimethod:
             1. Site-adjusted
             2. PS matched conditional analysis
             3. PS matched unconditional analysis
@@ -100,7 +100,7 @@
                 from forest_&j.&t4hoimethod_current.
                 where plotorder=&plot;
               quit;
-              
+  
               data forest;
                 set forest_&j.&t4hoimethod_current. (where=(plotorder=&plot));
                 obsid=_n_;
@@ -109,7 +109,7 @@
                 if id=1 then indentWt=0;
                 if id=2 then indentWt=.5;
                 if id=3 then indentWt=1;
-                %if &plot_n ^= 2  or &plot_n ^= 9 %then %do;
+                %if &plot_n ^= 2 %then %do;
                 call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
                 %end;
                 %else %do;
