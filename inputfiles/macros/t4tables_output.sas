@@ -106,9 +106,9 @@
 	%if &table. = T1 %then %do;
 	data _null_;
 	set &dataset.;
-	if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
-	if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
-	run;
+	  if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
+	  if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
+    run;
 	%end;
     data _footnotes;
        length footnote_order 3; 
@@ -257,10 +257,10 @@
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
         compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $200;
+            length text $1000;
             if pregflg = 'Y' then text = "&preg_cohort_header.";
             else text = "All Matched Non-Pregnant Episodes";
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;
@@ -268,9 +268,9 @@
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
         compute before header / style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
-            length text $200;
+            length text $1000;
             text = header;
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;
@@ -283,18 +283,18 @@
              %else %do;
                 style=[backgroundcolor=bwh font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
              %end;
-            length text $200;
+            length text $1000;
             text = grouplabel;
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
 
         /*MOI header*/
         %if &includemoiheaderrow. = Y %then %do;
         compute before moiheader / style=[fontstyle=italic indent=.15in backgroundcolor=white just=L bordertopcolor=white borderbottomcolor=white];
-            length text $200;
+            length text $1000;
             text = moiheader;
-            num = 200;
+            num = 1000;
             line text $varying. num;
         endcomp;
         %end;

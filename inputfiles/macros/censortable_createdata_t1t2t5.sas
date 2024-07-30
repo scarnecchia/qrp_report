@@ -86,6 +86,13 @@
 	%if &censordataset. = t2followuptime %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec cens_event);
 	%else %if &censordataset. = t5censor %then %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend cens_episend cens_spec);
 	%else %let censorreason = %str(cens_elig cens_dth cens_dpend cens_qryend);
+
+    /* If cens_dth and cens_qryend are dropped, remove from censorreason list*/
+    /* If DP population of cens columns is heterogeneous, col is dropped for all - indicate the need for footnote */   
+	%if &drop_cens_output.=Y %then %do;
+      %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_dth,%str()));
+	  %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_qryend,%str()));
+	%end;
 	
 	/* If t2followuptime or t2censor and overall stratification is requested then censdays_value is required 
 	   If t5 censor requested and episodelength is a stratifier then confirm episodenum is populated */

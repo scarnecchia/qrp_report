@@ -155,13 +155,22 @@
         %end; /*T5*/
         %else %if &reporttype. = T6 %then %do;
             %figure_survivalcurves_createdata(dataset=&dataset., 
+		                                      %if &drop_cens_output.=N %then %do; 
 		                                      rename=%str(rename=(analysisgrp=group 
 		                                                          SwitchedCount=cens_switch 
-		                                                          EndEnrollmentCount=cens_elig 
+		                                                          EndEnrollmentCount=cens_elig																   
 		                                                          DeathCount=cens_dth 
-		                                                          EndAvailDataCount=cens_dpend 
-		                                                          EndQueryCount=cens_qryend 
+																  EndAvailDataCount=cens_dpend 
+																  EndQueryCount=cens_qryend 																  		                                                          		                                                          
 		                                                          ProductDiscontinuationCount=cens_episend)),
+											  %end;
+											  %else %do;
+											  rename=%str(rename=(analysisgrp=group 
+		                                                          SwitchedCount=cens_switch 
+		                                                          EndEnrollmentCount=cens_elig																   		                                                          
+																  EndAvailDataCount=cens_dpend 																  																  		                                                          		                                                          
+		                                                          ProductDiscontinuationCount=cens_episend)),
+											  %end;
 		                                      curve=&curve., 
 		                                      whereclause=%str(level = "&levelid1." and group in (&includegroupinfigure)),                                       
 		                                      dayvar=ttswitch,

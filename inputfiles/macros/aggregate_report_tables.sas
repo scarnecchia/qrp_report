@@ -20,6 +20,7 @@
 *			-[RUNID]_t2_multevent.sas7bdat 
 *			-[RUNID]_t2_epigap.sas7bdat 
 *			-[RUNID]_t2_overlap.sas7bdat 
+*           -[RUNID]_t2_treeanalysis_poisson_[LOOK].sas7bdat 
 *
 *			-[RUNID]_psdistribution_[LOOK].sas7bdat 
 *
@@ -27,6 +28,7 @@
 *			-[RUNID]_t4_cida_preg_gestwk.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
+*           -[RUNID]_t4_treeanalysis_poisson_[LOOK].sas7bdat
 *
 *			-[runid]_t5_cida_disp_by_daysupp
 *           -[runid]_t5_cida_dose
@@ -45,6 +47,9 @@
 *			-[runid]_t6_switchplota
 *			-[runid]_t6_switchplotb
 *           -[runid]_t6_productsdates
+*
+*			-[runid]_t&typenum._tree_analysis_[LOOK]
+*			-[runid]_t3_tree_wkdays_[LOOK]
 *
 *			-[RUNID]_distindex.sas7bdat 
 *			-[RUNID]_distindexmap.sas7bdat
@@ -108,7 +113,27 @@
     					    %if %str("&infile.") = %str("t5_cida_gaps") %then %do;
     					      if gapnum = 999 then delete;
 							  if missing(gaplength)=0 and gaplength < 0 then gaplength =0;
-    					    %end;				   
+    					    %end;
+							%else %if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;
+								/* Check if cens_dth variable exist for this DP. If not, cens_dth/cens_qryend variables will have to be removed from the aggregated dataset */
+								%if %varexist(&dpidsiteid..&&runid._&infile, cens_dth) = 0 %then %do;	
+								call symputx("drop_cens_output", "Y");
+								cens_dth=.M;
+								cens_qryend=.M;
+								%end;
+							%end; 
+							%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;
+								/* Check if deathcount variable exist for this DP. If not, variable related to death/qryend censoring will have to be removed from the aggregated dataset */
+								%if %varexist(&dpidsiteid..&&runid._&infile, deathcount) = 0 %then %do;	
+								call symputx("drop_cens_output", "Y");
+								%if &infile. ne t6_utilepis_censor %then %do;
+								DeathPatCount=.M;
+								EndQueryPatCount=.M;
+								%end;
+								DeathCount=.M;
+								EndQueryCount=.M;
+								%end;
+							%end; 
     					run;
 
     				   *warning if no rows selected after applying the where clause;
@@ -278,17 +303,16 @@
 			  %agg_report(infile=psdistribution_&periodid., outfile=agg_psdistribution_&periodid., name=analysisgrp, where=%nrstr(lowcase(analysisgrp) in (&&grouplist_&n..)));
 			%end;
 		%end; *T2L2 and T4L2;
-		%if %sysfunc(exist(input.&treeaggfile.)) %then %do;
-		  %if %index(&reporttype., TREE) > 0 %then %do;
-             %let type = %substr(&reporttype,5,1);
-          %end;
-          %else %do;
-             %let type = %substr(&reporttype.,2,1);
-          %end;
-		  %agg_report(infile=t&type._tree_analysis_&periodid., outfile=agg_t&type._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
-		  %if %str("&reporttype") = %str("TREE3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
+		%if &treeaggindicator. eq Y %then %do;	
+		  %if &treeanalysisaggindicator eq Y %then %do;	  
+		  %agg_report(infile=t&typenum._tree_analysis_&periodid., outfile=agg_t&typenum._tree_analysis_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
+		  %end;
+		  %if &treepoissonaggindicator eq Y and &treepoissonindicator eq Y %then %do;
+		  %agg_report(infile=t&typenum._treeanalysis_poisson_&periodid., outfile=agg_t&typenum._treeanalysis_poisson_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
+		  %end;
+		  %if %str("&reporttype") = %str("T3") and %sysfunc(findw(&t3treewkdaysdset, t3treewkdays)) %then %do;
 		     %agg_report(infile=t3_tree_wkdays_&periodid., outfile=agg_t3_tree_wkdays_&periodid., name=treeanalysisgrp, where=%nrstr(lowcase(treeanalysisgrp) in (&&grouplist_&n..)));
-		  %end; /*TREE3*/
+		  %end; 
 		%end; /*TREEAGGFILE exists*/
 	%end; *periodid;
 
@@ -389,13 +413,77 @@
           %end;
         %end;
 
-		/* Riskdiffdata tables for tree analyses */ 
-		%if %str("&reporttype") = %str("TREE2") or %str("&reporttype") = %str("TREE4") %then %do;
-		  %do periodid = %eval(&look_start.) %to %eval(&look_end.);
-		  %agg_report(infile=riskdiffdata_&periodid., outfile=riskdiffdata_&periodid., name=analysisgrp);
-          %end;
-		%end;
 
+		/* If death/qryend censoring columns were dropped from some aggregated datasets, remove them from datasets/variables used to generate the tables/figures */
+		%if &drop_cens_output.=Y %then %do;
+			%isdata(dataset=tablefile);
+		    %if %eval(&nobs.>0) %then %do;
+				data tablefile;
+				set tablefile;
+				censorreason = tranwrd(censorreason,'cens_dth','');
+		        censorreason = tranwrd(censorreason,'cens_qryend','');
+				censorreason = tranwrd(censorreason,'deathcount','');
+		        censorreason = tranwrd(censorreason,'endquerycount','');				
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+				if upcase(table)="T8" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T8 were not returned by at least one DP due to data suppression. Table T8 will not be produced.";
+				delete;
+				end;
+				else if upcase(table)="T9" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T9 were not returned by at least one DP due to data suppression. Table T9 will not be produced.";
+				delete;
+				end;
+				else if upcase(table)="T10" and strip(censorreason)="" then do;
+				put "WARNING: (Sentinel) All censoring reasons specified for table T10 were not returned by at least one DP due to data suppression. Table T10 will not be produced.";
+				delete;
+				end;
+				%end;
+				run;
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+					/* Tables T8, T9 and T10 could have been removed so we need to create the table list again */
+					proc sql noprint;
+					    select distinct table into: tablelist separated by ' '
+					    from tablefile;
+					quit;
+				%end;
+			%end;
+
+			%isdata(dataset=figurefile);
+    		%if %eval(&nobs.>0) %then %do;
+				data figurefile;
+				set figurefile;
+				%if %str("&reporttype") = %str("T6") %then %do;
+				if upcase(figure)="F8" and lowcase(censordisplay) in ("cens_dth", "cens_qryend") then do;
+				put "WARNING: (Sentinel) cens_dth or cens_qryend was specified as competing risk for figure F8 but these were not returned by at least one DP due to data suppression. Figure F8 will not be produced.";
+				delete;
+				end;
+				else if upcase(figure)="F9" and lowcase(censordisplay) in ("cens_dth", "cens_qryend") then do;
+				put "WARNING: (Sentinel) cens_dth or cens_qryend was specified as competing risk for figure F9 but these were not returned by at least one DP due to data suppression. Figure F9 will not be produced.";
+				delete;
+				end;
+				%end;
+				censordisplay = tranwrd(censordisplay,'cens_dth','');
+		        censordisplay = tranwrd(censordisplay,'cens_qryend','');
+				censordisplay = tranwrd(censordisplay,'deathcount','');
+		        censordisplay = tranwrd(censordisplay,'endquerycount','');
+				run;
+
+				%if %str("&reporttype") = %str("T6") %then %do;
+					/* Figures F8 and F9 could have been removed so we need to create the figure list again */
+					proc sql noprint;
+	                select distinct figure into: figurelist separated by ' '
+	                from figurefile;
+					quit;
+				%end;
+            quit;
+			%end;
+
+			%let defaultcensororder=%sysfunc(tranwrd(&defaultcensororder.,cens_dth,%str()));
+			%let defaultcensororder=%sysfunc(tranwrd(&defaultcensororder.,cens_qryend,%str()));
+		%end;
+		
 	%put =====> END MACRO: aggregate_report_tables;
 
 %mend aggregate_report_tables;

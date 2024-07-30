@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 04/11/2024
-* VERSION: 3.1.1
+* LAST MODIFIED: 07/30/2024
+* VERSION: 3.2.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *

@@ -151,11 +151,18 @@
             %let reportdata = Y;
         %end;
 
-        /* Check if user specified COLLAPSE_VARS if report type is L2/Tree. Parameter only applicable for L1 reports */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|TREE2|TREE3|TREE4/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
+        /* Check if user specified COLLAPSE_VARS if report type is L2. Parameter only applicable for L1 reports */
+        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
             %put WARNING: (Sentinel) COLLAPSE_VARS is not applicable for REPORTTYPE = &reporttype.. Rows will not be collapsed in the final report;
             %let collapse_vars = ;
         %end;
+
+        /***************************************************************************************************
+        *   Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
+        *   will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
+        ***************************************************************************************************/
+
+		%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
 
 /***************************************************************************************************
 *  	Check if only the appendixfile is requested                                                     
@@ -231,16 +238,14 @@
     /*Valid values:
         - T1: Type 1 report
         - T2L1: Level 1, type 2 report
-        - T2L2: Level 2, type 2 report 
+        - T2L2: Level 2, type 2 report 		
         - ITS: ITS report
+		- T3: Type 3 report
         - T4L1: Level 1, type 4 report 
         - T4L2: Level 2, type 4 report 
         - T5: Type 5 report
-        - T6: Type 6 report
-        - TREE2: tree aggregation for Type 2
-        - TREE3: tree aggregation for Type 3
-        - TREE4: tree aggregation for Type 4 */
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T4L1|T4L2|T5|T6|TREE2|TREE3|TREE4/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
+        - T6: Type 6 report */
+    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T3|T4L1|T4L2|T5|T6/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
         %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
         %abort;
     %end;
@@ -600,10 +605,10 @@
      %end;
 
 /***********************************************************************************************************
-*   Identify groups for each runID for reporttypes = T1, T2L1, T4L1, T5, T6, T2L2, T4L2, TREE2, TREE3, TREE4                                             
+*   Identify groups for each runID for reporttypes = T1, T2L1, T3, T4L1, T5, T6, T2L2, T4L2                                           
 ************************************************************************************************************/
 
-    %if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | %sysfunc(exist(input.&treeaggfile.)) ne 0 %then %do;
+    %if %sysfunc(exist(input.&groupsfile.)) ne 0 | %sysfunc(exist(input.&l2comparisonfile.)) ne 0 | &treeaggindicator. eq Y %then %do;
          %do n = 1 %to &numrunid.;
             %global grouplist_&n.;
             %let runid = %scan(&runidlist., &n.);
@@ -703,6 +708,26 @@
             order by order;
         quit;
 
+    %end;
+
+/***************************************************************************************************
+*   Create a combined treefile for all runs                                                
+***************************************************************************************************/
+    %if &treeaggindicator = Y  %then %do; 
+         data master_treefile;
+         set %do n = 1 %to &numrunid.;
+                %let runid=&&id&n..;
+                infolder.&&&runid._treefile(in=n&n.)
+            %end;
+         ;
+         format runid $6.;
+            %do n = 1 %to &numrunid.;
+                if n&n. then do;
+                runid = "&&id&n.";
+                end;
+            %end;
+            treeanalysisgrp=lowcase(treeanalysisgrp);
+         run;
     %end;
  
 /***************************************************************************************************
@@ -889,97 +914,95 @@
 /***************************************************************************************************
 *   Create a combined type file for all runs                                        
 ***************************************************************************************************/
-
-    %if ^%index(&reporttype,TREE) %then %do;
-        %let typenum = %substr(&reporttype,2,1);
-
-         data master_typefile;
-         set %do n = 1 %to &numrunid.;
-                %let runid=&&id&n..;
-                infolder.&&&runid._type&typenum.file(in=n&n.)
-            %end;
-         ;
-         format runid $5.;
-            %do n = 1 %to &numrunid.;
-                if n&n. then do;
-                runid = "&&id&n.";
-                end;
-            %end;
     
-         %if &typenum. = 2 %then %do;
-         /*assign macro variable if BASECOHORT is specified*/
-         if missing(basecohort) = 0 then call symputx('basecohortused', 'Y');
-         %end;
-         run;
+    %let typenum = %substr(&reporttype,2,1);
+
+     data master_typefile;
+     set %do n = 1 %to &numrunid.;
+            %let runid=&&id&n..;
+            infolder.&&&runid._type&typenum.file(in=n&n.)
+        %end;
+     ;
+     format runid $5.;
+        %do n = 1 %to &numrunid.;
+            if n&n. then do;
+            runid = "&&id&n.";
+            end;
+        %end;
+
+     %if &typenum. = 2 %then %do;
+     /*assign macro variable if BASECOHORT is specified*/
+     if missing(basecohort) = 0 then call symputx('basecohortused', 'Y');
+     %end;
+     run;
 
 /***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
-        data inclusioncodes_shell;
-            length runid $5 group $40 condlevel $30;
-            call missing(runid, group, condlevel);
-            stop;
-        run;
+    data inclusioncodes_shell;
+        length runid $5 group $40 condlevel $30;
+        call missing(runid, group, condlevel);
+        stop;
+    run;
 
-        data master_inclusioncodes;
-            set 
-            %do n = 1 %to &numrunid.;
-            %let runid =&&id&n..;
-            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-            infolder.&&&runid._inclusioncodes(in=n&n)
-            %end;
-            %else %do;
-            inclusioncodes_shell
-            %end;
-            %end;
-            ;
-            format runid $5.;
-            %do n = 1 %to &numrunid.;
-            %let runid =&&id&n..;
-            %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
-            if n&n. then do;
-            runid = "&&id&n.";
-            end;
-            %end;
-            %end;
-        run;
+    data master_inclusioncodes;
+        set 
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        infolder.&&&runid._inclusioncodes(in=n&n)
+        %end;
+        %else %do;
+        inclusioncodes_shell
+        %end;
+        %end;
+        ;
+        format runid $5.;
+        %do n = 1 %to &numrunid.;
+        %let runid =&&id&n..;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
+        if n&n. then do;
+        runid = "&&id&n.";
+        end;
+        %end;
+        %end;
+    run;
 
-        /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
-        %if &basecohortused. = Y %then %do;
-            /*build set and group assignment statements*/
-            %let inclusionsetstatement = ;
-            %let inclusioninstatement = ;
+    /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
+    %if &basecohortused. = Y %then %do;
+        /*build set and group assignment statements*/
+        %let inclusionsetstatement = ;
+        %let inclusioninstatement = ;
 
-            proc sql noprint;
-                select count(*) into: numoutcomecohorts 
-                from master_typefile(where=(missing(basecohort)=0));
-            quit;
+        proc sql noprint;
+            select count(*) into: numoutcomecohorts 
+            from master_typefile(where=(missing(basecohort)=0));
+        quit;
 
-            %do bc = 1 %to %eval(&numoutcomecohorts.);
-                data _null_;
-                    set master_typefile(where=(missing(basecohort)=0));
-                    if _n_ = &bc. then do;
-                        call symputx('runid', strip(runid));
-                        call symputx('cohort', strip(group));
-                        call symputx('basecohort', strip(basecohort));
-                    end;
-                run;
-
-                %let inclusionsetstatement = &inclusionsetstatement. master_inclusioncodes(in=a&bc. where=(runid="&runid." and group = "&basecohort."));
-                %let inclusioninstatement = &inclusioninstatement. %str(if a&bc. then do; group ="&cohort"; end;) ;
-            %end;
-
-            /*add inclusion codes for outcome cohorts*/
-            data master_inclusioncodes;
-                set master_inclusioncodes
-                    &inclusionsetstatement.;
-                &inclusioninstatement.;
+        %do bc = 1 %to %eval(&numoutcomecohorts.);
+            data _null_;
+                set master_typefile(where=(missing(basecohort)=0));
+                if _n_ = &bc. then do;
+                    call symputx('runid', strip(runid));
+                    call symputx('cohort', strip(group));
+                    call symputx('basecohort', strip(basecohort));
+                end;
             run;
 
-        %end; /*Type 2 when basecohort specified*/
+            %let inclusionsetstatement = &inclusionsetstatement. master_inclusioncodes(in=a&bc. where=(runid="&runid." and group = "&basecohort."));
+            %let inclusioninstatement = &inclusioninstatement. %str(if a&bc. then do; group ="&cohort"; end;) ;
+        %end;
 
-    %end; /*REPORTTYPE ne TREEX*/
+        /*add inclusion codes for outcome cohorts*/
+        data master_inclusioncodes;
+            set master_inclusioncodes
+                &inclusionsetstatement.;
+            &inclusioninstatement.;
+        run;
+
+    %end; /*Type 2 when basecohort specified*/
+
 
 /*******************************************************************************************************
 *   Create a combined treatmentpathways file for all runs and identify analysisgrps/groups in GROUPSFILE                                     
@@ -1290,8 +1313,9 @@
         %end;
 
         /* Type 3 tree weekdays table is not requested through tablefile
-            and will be stored and processed independently */
-        %if &reporttype = TREE3 %then %do;
+           and will be stored and processed independently. 
+           Check if t3treewkdays was requested */
+        %if &treeaggindicator. eq Y and &reporttype = T3 %then %do;
             data _null_;
                 set userstrata(keep=tableid);
                 if lowcase(tableid) = 't3treewkdays' then call symputx('t3treewkdaysdset','t3treewkdays');
@@ -2363,7 +2387,7 @@
     /***************************************************************************
     Read in and Output TXT file for treelookup file per runid when it exists
     ***************************************************************************/
-    %if %sysfunc(exist(input.&treeaggfile.)) %then %do;
+    %if &treeaggindicator. eq Y %then %do;
        /*Set each table by looping through runIDs*/
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);
@@ -2414,7 +2438,81 @@
              quit;
           %end; /* treelookup exists */
         %end; /* runid loop */
-      %end; /* reporttypes are T2L2 T4L2 or TREE */ 
+      %end; /* tree aggregation requested */ 
+
+    /***************************************************************************************************
+    *  Create dataset containing tree analysis groups for poisson aggregation and tree analysis                                        
+    ***************************************************************************************************/
+    %if &treeaggindicator = Y %then %do; 
+		/* Determine which datasets should be aggregated in MSOCDATA */
+		data _null_;
+		set userstrata;
+		if tableid = "t&typenum.treeanalysis" then call symputx('treeanalysisaggindicator','Y');
+        if tableid = "t&typenum.treepoisson" then call symputx('treepoissonaggindicator','Y');
+		run;
+
+        /* Check if poisson analyses are being requested */
+        proc sql noprint;
+            /* Create look-up table for poisson aggregation */
+            create table _tree_group_lookup as 
+            select a.runid, a.treeanalysisgrp, a.group, a.denominator, 
+                   d.treeanalysisid, d.levelid, d.levelnum, d.levelnumlbl, 
+                   d.rwstart, d.rwend, d.cwstart, d.cwend, e.tableid, e.levelvars
+                   %if &reporttype ^= T3 %then %do;
+                   ,case when missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@unweighted'
+                        when not missing(c.strataweight) and c.file='stratificationfile' then 'psstrat@weighted'
+                        when not missing(c.ipweight) and c.file='iptwfile' then 'iptw@weighted'
+                        else ''
+                        end as adjustment length=20
+                   %end;
+            from master_treefile a 
+            %if &reporttype ^= T3 %then %do;
+            inner join pscs_masterinputs c
+            on a.group = c.analysisgrp
+            %end;
+            inner join input.&treeaggfile d
+            on lower(a.treeanalysisgrp) = lower(d.treeanalysisgrp)
+            inner join userstrata e
+            on d.levelid = e.levelid 
+            where e.tableid in ("t&typenum.treepoisson","t&typenum.treeanalysis");
+        quit;
+
+        /* Create unweighted group for PS stratified weighted analysis */
+        /* Tree analysis datasets cannot have values for weights, so remove them for processing in aggregate_tree */
+        /* Vice versa for poisson - currently all groups for poisson will be weighted or unweighted */
+        %if &reporttype ^= T3 %then %do;
+            data tree_group_lookup_all;
+                set _tree_group_lookup(in=a) _tree_group_lookup(where=(adjustment='psstrat@weighted') in=b);
+                if b then do;
+                    if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
+                    if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
+                    adjustment='psstrat@unweightedw';
+                    output tree_group_lookup_all;
+                end;
+                else if a then do;
+                    if tableid="t&typenum.treeanalysis" and not missing(adjustment) then delete;
+                    if tableid="t&typenum.treepoisson" and missing(adjustment) then delete;
+                    output tree_group_lookup_all;
+                end;
+            run;
+        %end;
+        %else %do;
+            data tree_group_lookup_all;
+                set _tree_group_lookup;
+            run;
+        %end;
+
+        data _null_;
+            set tree_group_lookup_all;
+            if tableid = "t&typenum.treeanalysis" then call symputx('treeanalysisindicator','Y');
+            if tableid = "t&typenum.treepoisson" then call symputx('treepoissonindicator','Y');
+        run;
+
+        /* Clean up work space */
+        proc datasets nowarn noprint nolist lib = work;
+          delete _tree_group_lookup;
+        quit;
+    %end; /* Treeaggindicator = Y */
 
 /***************************************************************************************************
 *  Create stacked dataset containing covariate labels for all runs          

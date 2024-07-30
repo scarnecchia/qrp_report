@@ -301,8 +301,9 @@
 	                    caption=%quote(&aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.), in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
 	                    %end;
 
-	                    /*Unweighted - IPTW and PS Stratum*/
-	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) %then %do;
+	                    /*Unweighted - IPTW and PS Stratum, PS Stratification (tree analysis only)*/
+	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
+                            (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 	                    %tableletter(); 
 	                    %addtotoc(tabnum=Table 1&tableletter., 
 	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
@@ -532,7 +533,7 @@
     /* Effect estimate table                                                                     */
     /*********************************************************************************************/
 
-    %if &numl2comparisons > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do; 
+    %if &numl2comparisons > 0 and &treeaggindicator. eq N %then %do; 
 
         /*loop through each comparison*/
         %do c = 1 %to &numl2comparisons;
@@ -1627,7 +1628,7 @@
 								   call symput("andafter", " and After");
 		                        %end;
 								%else %if &psfile = stratificationfile %then %do;
-								   if upcase(strataweight) in ("ATE", "ATT") then do;
+								   if upcase(strataweight) in ("ATE", "ATT") | "&treeaggindicator."= "Y" then do;
 								     call symput("andafter", " and After");
 								   end;
 		                        %end;
@@ -1696,7 +1697,7 @@
 	        %end; /*Histograms*/
 
 	        /*F2: Forest Plots*/
-	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and &treeaggindicator. eq N %then %do;
 	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
 	            %else %let ForestRatioTitle = Risk Ratios (RR);
 
@@ -1723,7 +1724,7 @@
 	        %end; /*Forest plots */
 
             /*F3-F5: KM Plots - Type 2 only*/
-            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and %sysfunc(exist(input.&treeaggfile.)) eq 0 %then %do;
+            %if &reporttype. = T2L2 & %sysfunc(prxmatch(m/F3|F4|F5/i,&figurelist.)) > 0 and &treeaggindicator. eq N %then %do;
 
                 *reset tablecount; 
 				%let tablecount = 1;

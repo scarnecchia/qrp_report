@@ -36,8 +36,7 @@
 
     /*Footnotes*/
     data _footnotes;
-	   length footnote_order 3; 
-       set lookup.lookup_footnotes(where = (type = "censor" and order in (1
+	   set lookup.lookup_footnotes(where = (type = "censor" and order in (1
         %if %index(&reasonlist.,cens_episend) %then %do; 4 %end;
         %if %index(&reasonlist.,cens_event) %then %do; 5 %end;
         %if %index(&reasonlist.,cens_spec) %then %do; 6 %end;
@@ -46,8 +45,24 @@
         %if %index(&reasonlist.,cens_dpend) %then %do; 9 %end;
         %if %index(&reasonlist.,cens_qryend) %then %do; 10 %end; 
         %if %index(&reasonlist.,cens_switch) and &dataset=tableT9 %then %do; 11 %end;
-        %if %index(&reasonlist.,cens_switch) and &dataset=tableT10 %then %do; 12 %end;)));
-	  by order;
+        %if %index(&reasonlist.,cens_switch) and &dataset=tableT10 %then %do; 12 %end;)
+       %if &drop_cens_output.=Y %then %do;
+         or (type = "drop_cens" and order = 13) 
+        %end;));
+		by order;
+        if order >= 4 and order ne 13 then order = order +1;
+	    if order = 13 then order = 4;
+	 run;
+
+	 %if &drop_cens_output.=Y %then %do;
+      proc sort data = _footnotes;
+	    by order;
+	  quit;
+	%end;
+
+	data _footnotes;
+	  set _footnotes;
+	  length footnote_order 3; 
 	  footnote_order = _n_;
     run;
 
@@ -65,16 +80,16 @@
     %end;
     
 	/* Assign macro variables for superscipts */
-	%assign_superscripts(type =title, order =1);
-	%assign_superscripts(type =cens_episend, order =4);
-	%assign_superscripts(type =cens_event, order =5);
-	%assign_superscripts(type =cens_spec, order =6);
-	%assign_superscripts(type =cens_dth, order =7);
-	%assign_superscripts(type =cens_elig, order =8);
-	%assign_superscripts(type =cens_dpend, order =9);
-	%assign_superscripts(type =cens_qryend, order =10);
-	%assign_superscripts(type =cens_switch1, order =11);
-	%assign_superscripts(type =cens_switch2, order =12);
+	%assign_superscripts(type =title, order =1 4);
+	%assign_superscripts(type =cens_episend, order =5);
+	%assign_superscripts(type =cens_event, order =6);
+	%assign_superscripts(type =cens_spec, order =7);
+	%assign_superscripts(type =cens_dth, order =8);
+	%assign_superscripts(type =cens_elig, order =9);
+	%assign_superscripts(type =cens_dpend, order =10);
+	%assign_superscripts(type =cens_qryend, order =11);
+	%assign_superscripts(type =cens_switch1, order =12);
+	%assign_superscripts(type =cens_switch2, order =13);
 
 	/* Save dataset to reportdata folder */
     %isdata(dataset=repdata.table&tablenum.);

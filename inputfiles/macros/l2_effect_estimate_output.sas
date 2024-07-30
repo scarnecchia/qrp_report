@@ -419,19 +419,19 @@
             compute before analysis / style=[background=white foreground=black just=L font_style=italic bordertopcolor=black borderbottomcolor=black];
             %end;
 
-                length text $100;
+                length text $1000;
                 
                 /*Site Adjusted Analysis for IPTW/PS Weighted Stratification*/
                 %if %length(&weightscheme) > 0 %then %do;
                 if analysis = 'Unadjusted' then do; 
                     text='Site-Adjusted Analysis, Unweighted'; 
-                    num=100;
+                    num=1000;
                 end;
                 %end;
                 %else %do;
                 if analysis = 'Unadjusted' then do; 
                     text='Site-Adjusted Analysis'; 
-                    num=100;
+                    num=1000;
                 end;
                 %end;
 
@@ -439,11 +439,11 @@
                 %if &pscsfile. = psmatchfile %then %do;
                 else if analysis = 'Conditional' then do; 
                     text="&&Ratio&corder. Propensity Score Matched Conditional Analysis&&caliper&corder.&super_line."; 
-                    num=100; 
+                    num=1000; 
                 end;
                 else if analysis = 'Unconditional' then do; 
                     text="&&Ratio&corder. Propensity Score Matched Unconditional Analysis&&caliper&corder."; 
-                    num=100; 
+                    num=1000; 
                 end; 
                 %end;
 
@@ -451,7 +451,7 @@
                 %if &pscsfile. = covstratfile %then %do;
                 else if analysis = 'Conditional' then do; 
                     text="&formattedstratvars. Adjusted Analysis"; 
-                    num=100; 
+                    num=1000; 
                 end;
                 %end;
 
@@ -459,7 +459,7 @@
                 %if &pscsfile. = stratificationfile and %length(&weightscheme) = 0 %then %do;
                 else if analysis = 'Conditional' then do; 
                     text="Propensity Score Adjusted Stratified Analysis&&percentile&corder.&pstrim.&super_line."; 
-                    num=100; 
+                    num=1000; 
                 end;
                 %end;
 
@@ -472,7 +472,7 @@
                     %else %do;
                     text="Propensity Score Stratum Adjusted Analysis; Unweighted&pstrim.";
                     %end;
-                    num=100; 
+                    num=1000; 
                 end;
                 else if analysis = 'Weighted' then do; 
                     %if &pscsfile. = iptwfile %then %do;
@@ -481,7 +481,7 @@
                     %else %do;
                     text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&pstrim.&super_line.";
                     %end;
-                    num=100; 
+                    num=1000; 
                 end;
                 %end;
                 else do; 
@@ -499,11 +499,11 @@
 
             /*Add spanning label for subgroup category*/
                 compute before subgroupcat / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
-                    length text $100;	
-					*Overall always repeated at top of each subgroup;	
+                     length text $1000;
+				    *Overall always repeated at top of each subgroup;	
 					if subgroupcat = "" then do;	
 					 	text = "&analysisgrpfmt.";
-                        num=100;
+                        num=1000;
 					end;
 					else	
                     %if %substr(%upcase(&subgroup.),1,2) ne DP %then %do;						
@@ -513,7 +513,7 @@
 								%let catlabel = %scan(%bquote(&subcategorizationlabel.), &x., @); 
                                 if subgroupcat = "&cat" then do;                                    
                                     text = "&analysisgrpfmt., &subgrouplabel: &catlabel.";
-                                    num=100;
+                                    num=1000;
                                 end;
                                 else 
                             %end;
@@ -521,11 +521,11 @@
                         %else %do;
                             if subgroupcat = "0" then do;
                                 text = "&analysisgrpfmt., No &subgrouplabel";
-                                num=100;
+                                num=1000;
                             end;
                             else if subgroupcat = "1" then do;
                                 text = "&analysisgrpfmt., &subgrouplabel";
-                                num=100;
+                                num=1000;
                             end;
                             else
                         %end;
@@ -535,7 +535,7 @@
                             %let maskedID = %scan(&masked_dplist., &dps.);
                             if subgroupcat = "&maskedID" then do;
                                 text = "&analysisgrpfmt., Data Partner %substr(&maskedID., 3)";
-                                num=100;
+                                num=1000;
                             end;
                             else
                      %end;

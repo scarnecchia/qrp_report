@@ -56,6 +56,12 @@
 
 	%put =====> MACRO CALLED: figure_survivalcurves_createdata;
 
+	/*When suppressing death/query end censor, need to remove cens_dth and cens_qryend*/
+	%if &drop_cens_output.=Y %then %do;
+		%let includevars=%sysfunc(tranwrd(&includevars.,cens_dth,%str()));
+		%let includevars=%sysfunc(tranwrd(&includevars.,cens_qryend,%str()));
+	%end;
+   
     /*--------------------------------------------------------------------------------------------*/
     /* Confirm input dataset exists                                                               */
     /*--------------------------------------------------------------------------------------------*/

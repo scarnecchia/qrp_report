@@ -35,11 +35,12 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused;
+    %global runidlist numrunid typenum basecohortused drop_cens_output;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
+	%let drop_cens_output = N;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -180,6 +181,14 @@
 	/* To determine if appendixfile only should be processed */
 	%global produceappendixfileonly;
 	%let produceappendixfileonly=N;
+
+	/* To determine if tree aggregation should be executed and csv files produced */
+	%global treeaggindicator treeanalysisaggindicator treepoissonaggindicator treepoissonindicator treeanalysisindicator;
+	%let treeaggindicator=N;
+	%let treeanalysisaggindicator=N;
+	%let treepoissonaggindicator=N;
+    %let treepoissonindicator=N;
+    %let treeanalysisindicator=N;
 
 	/* Leave behind report */
 	%global reportid dpfile logofile;

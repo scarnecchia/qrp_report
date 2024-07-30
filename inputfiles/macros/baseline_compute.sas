@@ -190,7 +190,7 @@
 
         %let cohortgrp = ;
         /*L1*/
-        %if %sysfunc(prxmatch(m/T1|T5/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T3|T5/i,&reporttype.)) > 0 %then %do;
             %let cohortgrp = &analysisgrp.;
         %end;
         %else %if %sysfunc(prxmatch(m/T2L1/i,&reporttype.)) > 0 %then %do;
@@ -328,6 +328,13 @@
                                                     %end;)));
                 quit;
             %end;
+        %end;
+        %else %if %str("&reporttype") = %str("T3") %then %do;
+           proc sql noprint;
+             select distinct(t3cohortdef) 
+             into: cohortdef separated by ' '
+             from infolder.&&&runid._type3file(where=(group in ("&cohortgrp." %if &includecomp. = Y %then %do; "&analysisgrp2." %end;)));
+           quit;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; 
             data _null_;
@@ -837,7 +844,7 @@
                     exp_std&i._char = compress(put(exp_std&i,percent10.1));
                     if metvar = 'PATIENT' then do;
                         /*patient row always N/A for L1 queries, for L2, % is computed except if 0 patients*/
-                        %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                        %if %sysfunc(prxmatch(m/T1|T3|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         exp_std&i._char = 'N/A';
                         %end;
                         if exp_mean&i = 0 then exp_std&i._char = 'N/A';
@@ -896,7 +903,7 @@
                     comp_mean&i._char = compress(put(comp_mean&i,comma12.));
                     comp_std&i._char = compress(put(comp_std&i,percent10.1));
                     if metvar = 'PATIENT' then do;
-                        %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                        %if %sysfunc(prxmatch(m/T1|T3|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                         comp_std&i._char = 'N/A';
                         %end;
                         if comp_mean&i = 0 then comp_std&i._char = 'N/A';
@@ -932,6 +939,7 @@
 						%end; 
 						%end;
 
+
 						/*set to N/A if a covariate is anchored to INDEXDT_EXP for an unexposed cohort*/
 						%if %index(&reporttype,T4) > 0 and %str(&covars_indexdt_exp.) ne %str() and &comp_exp. eq N %then %do;
 						if upcase(metvar) in (&covars_indexdt_exp_quoted.) then do;
@@ -959,7 +967,7 @@
 
                     if exp_mean&i > 0 and exp_std&i = . then exp_std&i._char = 'NaN';
                     
-                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
+                    %if ^%sysfunc(prxmatch(m/T1|T3|T2L1|T4L1|T5|T6/i,&reporttype.))  %then %do;
                     if exp_std&i = 0 and &&&n_&table._episodes_exp&i > 0 then exp_std&i._char = 'NaN';
 						/* Controls lab specific formatting for lab specific rows */
 						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
@@ -1030,7 +1038,7 @@
 
                     if comp_mean&i > 0 and comp_std&i = . then comp_std&i._char = 'NaN';
                     
-                    %if ^%sysfunc(prxmatch(m/T1|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
+                    %if ^%sysfunc(prxmatch(m/T1|T3|T2L1|T4L1|T5|T6/i,&reporttype.)) %then %do;
                     if comp_std&i = 0 and &&&n_&table._episodes_comp&i > 0 then comp_std&i._char = 'NaN';
 						%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
 						/* Controls lab specific formatting for lab specific rows */
@@ -1267,7 +1275,7 @@
                             if missing(comp_std0) or comp_std0 = 0 then comp_std0_char = 'NaN';
                           %end;
                         %end;
-                        %else %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
+                        %else %if %sysfunc(prxmatch(m/T1|T3|T2L1|T4L1|T5/i,&reporttype.)) %then %do;
                         if ^missing(exp_mean0) and (total_exp_episodes >= 0) then do;
                         exp_std0 = divide(exp_mean0,&total_unadjusted_exp_episodes.);
                         if metvar = 'PATIENT' and total_exp_episodes >= 0 then exp_std0_char = 'N/A';
@@ -1652,7 +1660,7 @@
                     %end;
                 end;
                
-                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do;  _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
+                keep metvar %if %quote(&labcharacteristics) ^= %str("missing") %then %do; _label_ %end; analysisgrp order vartype weight table exp_mean0 exp_std0 exp_mean0_char exp_std0_char
                     %if "&stratifybydp" = "Y" %then %do; exp_mean: exp_std: %end;
                     %if "&includecomp" = "Y" %then %do; comp_mean0 comp_std0 comp_mean0_char comp_std0_char
                       %if "&stratifybydp" = "Y" %then %do; comp_mean: comp_std:
@@ -1802,9 +1810,9 @@
                 %end;
             %end;
 
-            /*PS Stratification: Unweighted for PS Stratum weighted analysis and Weighted table*/
+            /*PS Stratification: Unweighted for either PS Stratum weighted or tree analysis, or Weighted table*/
             %if &psfile. = stratificationfile %then %do;
-                %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") %then %do;
+                %if ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") | "&treeaggindicator."="Y" %then %do;
                 %baselinecomputemetrics(table=Adjusted, weight=Unweighted, dataout=baseline_aggregatetab4, labelout=baseline_labels4, suffix=&suffix.);
                 %end;
                 %baselinecomputemetrics(table=Adjusted, weight=Weighted, dataout=baseline_aggregatetab5, labelout=baseline_labels5, suffix=&suffix.);

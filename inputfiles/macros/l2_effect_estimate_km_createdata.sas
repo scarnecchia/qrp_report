@@ -82,6 +82,11 @@
                 %end;
             end;
         run;
+
+        /* De-duplicate day rows */
+        proc sort data=&plotdata. nodupkey;
+            by dpidsiteid subgroup subgroupcat day;
+        run;
         %end;
     %mend addrows;
 
@@ -525,9 +530,12 @@
 
             /*reset day 0*/
             if day = 0 then do;
+                episodes_atriskexp = cum_nexp;
+                episodes_atriskunexp = cum_nunexp;
                 lag_episodes_atriskexp = episodes_atriskexp;
                 lag_episodes_atriskunexp = episodes_atriskunexp;
                 %if &weightedpop. = Y %then %do; 
+                episodes_atriskunexp_wght = cum_nunexp_wght;
                 lag_episodes_atriskunexp_wght = episodes_atriskunexp_wght;
                 %end;
             end;
@@ -615,6 +623,87 @@
 	********************************************************************************************************;
 	%if %eval(&nobsmw >0) %then %do;		
 		%let weightedpop = N;
+
+        proc sort data=_tempaggmw(keep=SumC SumEC SumSquareEC SumSquareUnEC SumE SumUnE SumSquareE SumSquareUnE dpidsiteid subgroup subgroupcat followuptime);
+            by dpidsiteid subgroup subgroupcat followuptime;
+        run;
+
+        /* Add missing day values to make sure at risk data is correctly output */
+        data _squarekmcdf(rename=i=followuptime);
+            set _tempaggmw(keep=dpidsiteid subgroup subgroupcat followuptime);
+            by dpidsiteid subgroup subgroupcat followuptime;
+            length i 6;
+            if last.subgroupcat and followuptime > 0 then do;  
+                do i = 1 to followuptime;
+                    output;
+                end;
+            end;        
+            drop followuptime;
+        run;
+
+        data _tempaggmw;
+        merge _tempaggmw(in=a)
+              _squarekmcdf(in=b);
+            by dpidsiteid subgroup subgroupcat followuptime;
+
+            if not first.subgroupcat then do; /*do not carry forward prior data for missing data on 1st day*/
+            if not missing(SumC) then do;
+                lagSumE=SumE;
+                lagSumUnE=SumUnE;
+                lagSumSquareE=SumSquareE;
+                lagSumSquareUnE=SumSquareUnE;   
+            end;
+            else do;
+                SumC=0;
+                SumEC=0;
+                SumSquareEC=0;  
+                SumSquareUnEC = 0;
+
+                SumE=lagSumE;
+                SumUnE=lagSumUnE;
+                SumSquareE=lagSumSquareE;
+                SumSquareUnE=lagSumSquareUnE;
+            end;
+
+            retain lagSumE lagSumUnE lagSumSquareE lagSumSquareUnE; 
+            drop lag:;  
+            end;
+        run;
+
+        /*reverse to lag from 1st day*/
+        proc sort data=_tempaggmw;
+            by dpidsiteid subgroup subgroupcat descending followuptime; 
+        run;
+
+        data _tempaggmw;
+            set _tempaggmw;
+            by dpidsiteid subgroup subgroupcat descending followuptime;
+            if not missing(SumC) then do;
+                lagSumE=SumE;
+                lagSumUnE=SumUnE;
+                lagSumSquareE=SumSquareE;
+                lagSumSquareUnE=SumSquareUnE;   
+            end;
+            else do;
+                SumC=0;
+                SumEC=0;
+                SumSquareEC=0;  
+                SumSquareUnEC = 0;
+
+                SumE=lagSumE;
+                SumUnE=lagSumUnE;
+                SumSquareE=lagSumSquareE;
+                SumSquareUnE=lagSumSquareUnE;
+            end;
+
+            retain lagSumE lagSumUnE lagSumSquareE lagSumSquareUnE; 
+            drop lag:;  
+        run;
+
+        /*resort back to ascending*/
+        proc sort data=_tempaggmw;
+            by dpidsiteid subgroup subgroupcat followuptime; 
+        run;
 
 		/* Summarize across DPs */
 		proc means data=_tempaggmw nway noprint missing;		
@@ -711,58 +800,10 @@
               km_evunexp = "&grp0label."
               SumUnE = "&grp0label."
               ;
-		
-		keep dpidsiteid subgroup subgroupcat day SumE SumUnE km_evexp km_evunexp lowerCI_: upperCI_:;
-		run;
 
-		proc sort data=figureF4_analysis&loopcount._&periodid.;
-		by dpidsiteid subgroup subgroupcat day;
-		run;
-
-		/* Add missing day values to make sure at risk data is correctly output */
-		data _squarekmcdf(rename=i=day);
-        set _kmdata(keep=dpidsiteid subgroup subgroupcat day);
-        by dpidsiteid subgroup subgroupcat day;
-        if last.subgroupcat and day > 0 then do;  
-            do i = 0 to day;
-            	output;
-            end;
-        end;		
-        drop day;
-        run;
-
-		data figureF4_analysis&loopcount._&periodid.;
-		merge figureF4_analysis&loopcount._&periodid.(in=a)
-			  _squarekmcdf(in=b);
-		by dpidsiteid subgroup subgroupcat day;
-
-		if not missing(episodes_atriskexp) then do;
-			lagepisodes_atriskexp=episodes_atriskexp;
-			lagepisodes_atriskunexp=episodes_atriskunexp;
-			lagkm_evexp=km_evexp;
-			lagkm_evunexp=km_evunexp;	
-			laglowerCI_exp=lowerCI_exp;
-			laglowerCI_unexp=lowerCI_unexp;	
-			lagupperCI_exp=upperCI_exp;
-			lagupperCI_unexp=upperCI_unexp;	
-		end;
-		else do;
-			episodes_atriskexp=lagepisodes_atriskexp;
-			episodes_atriskunexp=lagepisodes_atriskunexp;
-			km_evexp=lagkm_evexp;
-			km_evunexp=lagkm_evunexp;
-			lowerCI_exp=laglowerCI_exp;
-			lowerCI_unexp=laglowerCI_unexp;	
-			upperCI_exp=lagupperCI_exp;
-			upperCI_unexp=lagupperCI_unexp;	
-		end;
-
-		format analysisgrp $40.;
+        format analysisgrp $40.;
         analysisgrp = "&analysisgrp";
 
-		retain lagepisodes_atriskexp lagepisodes_atriskunexp lagkm_evexp lagkm_evunexp
-			   laglowerCI_exp laglowerCI_unexp lagupperCI_exp lagupperCI_unexp;
-		drop lag:;	
 		run;
 
 		%addrows(figureF4_analysis&loopcount._&periodid., F4);

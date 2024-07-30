@@ -115,6 +115,8 @@
 	  type = "censor";    order = 11; description = "Represents episodes censored due to occurrence of first switch."; output;
 	  type = "censor";    order = 12; description = "Represents episodes censored due to occurrence of second switch."; output;
 
+	  type = "drop_cens"; order = 13; description = "All reasons for censoring may not be displayed to prevent publication of small cells.";output;
+
        /* Footnotes for type 4 MOI tables */
       type = "t4l1moi"; order = 1;  description = "Results are not output if enrollment was not required during this time period of given pregnancy episode examined."; output;
 	  type = "t4l1moi"; order = 2;  description = "Assessing medical product use in the second trimester requires a pregnancy to continue to the second trimester (i.e. pregnancy was not terminated in the first trimester); the denominator is the total number of pregnancy episodes that progress to the second trimester."; output;
@@ -189,22 +191,24 @@
 		
 		claim_level = "MIL"; descr = "Initial Episode Count - Pregnancy episodes meeting initial cohort eligibility requirements"; report_descr = "Pregnancy episodes met initial cohort eligibility requirements"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
-		claim_level = "MIL"; descr = "Exclusion - Linked infant exceeded the maximum allowable days required between birth date and enrollment start"; report_descr = "Linked infant must meet requirement for maximum allowable days between birth date and enrollment start"; output;
 		claim_level = "MIL"; descr = "Exclusion - Linked infant exceeded maximum allowable days required between birth date and delivery date"; report_descr = "Linked infant must meet requirement for maximum allowable days between birth date and delivery date"; output;				
 		claim_level = "MIL"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Mother excluded due to prior initiation of other exposure group"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy outcome must be during the look period"; report_descr = "Pregnancy outcome recorded during current look period"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episode index date must overlap the query period and satisfy the age range condition within the query period"; report_descr = "Pregnancy outcome recorded during query period and at specified age range evaluated at specified index date"; output;
-		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the enrollment requirements"; report_descr = "Mother had sufficient pre-index continuous enrollment"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the pre-pregnancy outcome enrollment requirement"; report_descr = "Mother had sufficient continuous enrollment prior to pregnancy outcome"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the post-pregnancy outcome enrollment requirement"; report_descr = "Sufficient continuous enrollment post pregnancy outcome"; output;		
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the inclusion and exclusion criteria"; report_descr = "Mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Exclusion - Restrict to first valid pregnancy episode"; report_descr = "Restricted to first valid pregnancy episode"; output;
+		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have at least 1 day of followup in the risk window"; report_descr = "Had at least one day of enrollment during outcome assessment period"; output;		
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 							 
 		claim_level = "L2";  descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to same-day initition of both exposure groups"; output;
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
 		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
-		claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
+        claim_level = "L2";  descr = "Patients excluded due to not having at least 1 day of followup in the risk window"; report_descr ="Excluded due to 0 days at risk"; output;
+        claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
 		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
