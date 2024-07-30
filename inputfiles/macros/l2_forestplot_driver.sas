@@ -34,14 +34,8 @@
     
 		/*create set up for forestplot by t4hoimethod*/
         %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-          %let t4hoimethod = ;
-          %do ru = 1 %to &numrunid.;
-            %let runidru = %scan(&runidlist., &ru.);
-	        %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
-	          %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
-	        %end;
-	    %end;
 
+        %let t4hoimethod = binary timetoevent;
         %if "&reporttype." = "T2L2" %then %do;
           %let t4hoimethod_current = ; 
 		  %let t4_loop = 1;
@@ -83,8 +77,8 @@
             5. PS stratum weighted analysis
             6. IPTW
             7. Covariate stratification */
-
-        %do plot = 1 %to 14;
+        %if %sysfunc(exist(forest_&j.&t4hoimethod_current.)) %then %do;
+          %do plot = 1 %to 14;
 
             /*set forest plot variables for this loop*/
             %let forestfootnote = Y;
@@ -102,7 +96,7 @@
                 from forest_&j.&t4hoimethod_current.
                 where plotorder=&plot;
               quit;
-   
+              
               data forest;
                 set forest_&j.&t4hoimethod_current. (where=(plotorder=&plot));
                 obsid=_n_;
@@ -294,8 +288,8 @@
             %plotleaveloop:
         %end; /*loop through plots*/
 		
-        %end;
-		
+         %end;
+	    %end;
       %end; /*loop through looks*/
 
     %let figurenum = %eval(&figurenum.+1); 
