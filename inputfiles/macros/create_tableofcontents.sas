@@ -613,10 +613,10 @@
     /* Type 1 and 2 summary tables                                                               */
     /*********************************************************************************************/
 
-        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) %then %do;
            %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
-            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
 
                 proc sql noprint;
                     %let tableobs = 0;
