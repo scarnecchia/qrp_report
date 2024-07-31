@@ -557,6 +557,25 @@ libname tempfl "";
     *************************************;
     %let stratLevel = overall;
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
+	%let stratOneLevel = prepostind| agegroup| year| race| hispanic| zip3| state| zip_uncertain| cb_reg| hhs_reg;
+    %let stratCovar = &stratOneLevel.| covar#;
+    %let stratTwoLevel = 
+                     prepostind agegroup| prepostind agegroup year| agegroup year| prepostind year|                      
+                     zip3 zip_uncertain| zip3 prepostind| zip3 prepostind zip_uncertain| zip3 agegroup| zip3 agegroup zip_uncertain| zip3 year| zip3 year zip_uncertain|
+                     zip3 race| zip3 race zip_uncertain| zip3 hispanic| zip3 hispanic zip_uncertain| 
+                     state zip_uncertain| state prepostind| state prepostind zip_uncertain| state agegroup| state agegroup zip_uncertain| state year| 
+                     state year zip_uncertain| state race| state race zip_uncertain| state hispanic| state hispanic zip_uncertain| 
+                     zip_uncertain prepostind| zip_uncertain agegroup| zip_uncertain year|
+                     hhs_reg zip_uncertain| hhs_reg prepostind| hhs_reg prepostind zip_uncertain| hhs_reg agegroup| hhs_reg agegroup zip_uncertain|
+                     hhs_reg year| hhs_reg year zip_uncertain| hhs_reg race| hhs_reg race zip_uncertain| hhs_reg hispanic| hhs_reg hispanic zip_uncertain|
+                     cb_reg zip_uncertain| cb_reg prepostind| cb_reg prepostind zip_uncertain| cb_reg agegroup| cb_reg agegroup zip_uncertain| cb_reg year| 
+                     cb_reg year zip_uncertain| cb_reg race| cb_reg race zip_uncertain| cb_reg hispanic| cb_reg hispanic zip_uncertain| 
+                     race prepostind| race agegroup| race year|
+                     hispanic prepostind| hispanic agegroup| hispanic year| year agegroup race| year prepostind race|
+                     year agegroup hispanic| year prepostind hispanic| year race hispanic;
+
+    %let stratcida = &stratCovar. | &stratTwoLevel.;
+    %let stratnoCovar = &stratOneLevel. | &stratTwoLevel.;
 
     data tempfl.t4l1tablefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
@@ -599,6 +618,37 @@ libname tempfl "";
 		   tablesubstrat = 't4nopreggestwk';
 		   output;
 		 %end;
+
+		table = 'T7';
+		dataset = "t4cida";
+		/*Overall table*/
+		tablesub = 'overall';
+		tablesubstrat = '';
+		levelnum =1;
+		levelid1 = '';
+		levelid2 = '';
+		output;
+
+		/*Stratified tables*/
+		%do i =1 %to %sysfunc(countw(&stratcida., %str(|)));
+		%let sub = %scan(%str(&stratcida.), &i, '|');
+		    tablesub = "&sub";
+		    tablesubstrat = '';
+		    levelnum =1;
+		    levelid1 = "&sub";
+		    levelid2 = '';
+		    output;
+		%end;
+
+		%do i =1 %to %sysfunc(countw(&stratnoCovar., %str(|)));
+		%let sub = %scan(%str(&stratnoCovar.), &i, '|');
+		    tablesub = "&sub covar#";
+		    tablesubstrat = '';
+		    levelnum =1;
+		    levelid1 = "&sub covar#";
+		    levelid2 = '';
+		    output;
+		%end;
     run;
 
 
@@ -1390,8 +1440,10 @@ libname tempfl "";
               ColumnLabel       length = $100   format = $100.
               IncludeinReport   length = $1     format = $1.
               ColumnFormat      length = $10    format = $10.
+			  CIrate      		length = $1     format = $1.
               ColumnWidth       length = 8;
        
+	   CIrate="N";
        table = "T1"; Column = "usepre";                ColumnLabel = "Use in the Pre-Pregnancy Period";                ColumnFormat = "comma14.0";  order = 1;  IncludeinReport = "Y"; columnwidth=.9; output; 
        table = "T1"; Column = "usepre/episodes";       ColumnLabel = "Use in the Pre-Pregnancy Period";                ColumnFormat = "percent8.1"; order = 2;  IncludeinReport = "Y"; columnwidth=.7; output; 
        table = "T1"; Column = "anyt";                  ColumnLabel = "Use During Any Trimester";                       ColumnFormat = "comma14.0";  order = 3;  IncludeinReport = "Y"; columnwidth=.9; output; 
@@ -1460,6 +1512,30 @@ libname tempfl "";
 	   table = "T5"; Column = "moipregepisodes_overlap/pregepisodes";  ColumnLabel = "Gestational Week";               ColumnFormat = "percent8.1"; order = 2; IncludeinReport = "Y"; columnwidth=.7; output; 	   
 	   
 	   table = "T6"; Column = "moiepisodes_overlap";                   ColumnLabel = "Gestational Week";               ColumnFormat = "comma14.0";  order = 3; IncludeinReport = "Y"; columnwidth=.9; output; 	     	
+
+	   table = "t4cida"; Column = "npts";                              		ColumnLabel = "Number of Pregnant Patients";    																ColumnFormat = "comma14.0";  order = 1;  IncludeinReport = "Y"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "episodes";                          		ColumnLabel = "Number of Pregnancy Episodes";   																ColumnFormat = "comma14.0";  order = 2;  IncludeinReport = "Y"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "eps_wevents";                       		ColumnLabel = "Number of Pregnancy Episodes with an Event";     												ColumnFormat = "comma14.0";  order = 3;  IncludeinReport = "Y"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "eps_wevents/episodes";             		ColumnLabel = "Proportion of Pregnancy Episodes with an Event";             									ColumnFormat = "comma13.2";  order = 4;  IncludeinReport = "Y"; columnWidth=.72; CIrate = "N"; output;
+	   table = "t4cida"; Column = "eps_wevents/episodes";              		ColumnLabel = "Proportion of Pregnancy Episodes with an Event (95% Confidence Interval)";             			ColumnFormat = "comma13.2";  order = 5;  IncludeinReport = "N"; columnWidth=1.5; CIrate = "P"; output;
+	   table = "t4cida"; Column = "(eps_wevents/episodes)*X";               ColumnLabel = "Number of Pregnancy Episodes with an Event per X Pregnacy Episodes (95% Confidence Interval)";	ColumnFormat = "comma13.2";  order = 6;  IncludeinReport = "N"; columnWidth=1.5; CIrate = "P"; output;
+	   table = "t4cida"; Column = "followuptime/365.25";               		ColumnLabel = "Total Years at Risk";             																ColumnFormat = "comma13.1";  order = 7;  IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "followuptime/30.35";                     ColumnLabel = "Total Months at Risk";             																ColumnFormat = "comma13.1";  order = 8;  IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "followuptime/7";                         ColumnLabel = "Total Weeks at Risk";             																ColumnFormat = "comma13.1";  order = 9;  IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "followuptime";                      		ColumnLabel = "Total Days at Risk";             																ColumnFormat = "comma14.0";  order = 10; IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "eps_wevents/(followuptime/365.25)"; 		ColumnLabel = "Number of Pregnancy Episodes with an Event per Patient-Year at Risk";             				ColumnFormat = "comma13.2";  order = 11; IncludeinReport = "N"; columnWidth=.72; CIrate = "N"; output;
+	   table = "t4cida"; Column = "eps_wevents/(followuptime/365.25)";  	ColumnLabel = "Event Rate per Person-Year at Risk  (95% Confidence Interval)";         		    				ColumnFormat = "comma13.2";  order = 12; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "(eps_wevents/(followuptime/365.25))*X";  ColumnLabel = "Event Rate per X Person-Years at Risk ";       								      				ColumnFormat = "comma13.2";  order = 13; IncludeinReport = "N"; columnWidth=.72; CIrate = "N"; output;
+	   table = "t4cida"; Column = "(eps_wevents/(followuptime/365.25))*X"; 	ColumnLabel = "Event Rate per X Patient-Years at Risk (95% Confidence Interval)";	             				ColumnFormat = "comma13.2";  order = 14; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "eps_wevents/(followuptime/30.35)";  		ColumnLabel = "Event Rate per Patient-Month at Risk (95% Confidence Interval)";             					ColumnFormat = "comma13.2";  order = 15; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "(eps_wevents/(followuptime/30.35))*X"; 	ColumnLabel = "Event Rate per X Patient-Months at Risk (95% Confidence Interval)";            					ColumnFormat = "comma13.2";  order = 16; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "eps_wevents/(followuptime/7)";     		ColumnLabel = "Event Rate per Person-Week at Risk  (95% Confidence Interval)";             						ColumnFormat = "comma13.2";  order = 17; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "(eps_wevents/(followuptime/7))*X";		ColumnLabel = "Event Rate per X Person-Weeks at Risk  (95% Confidence Interval)";             					ColumnFormat = "comma13.2";  order = 18; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "eps_wevents/followuptime";				ColumnLabel = "Event Rate per Patient-Day at Risk (95% Confidence Interval)";             						ColumnFormat = "comma13.2";  order = 19; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "(eps_wevents/(followuptime)*X"; 			ColumnLabel = "Event Rate per X Patient-Days at Risk (95% Confidence Interval)";             					ColumnFormat = "comma13.2";  order = 20; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
+	   table = "t4cida"; Column = "timetocensor/365.25";                   	ColumnLabel = "Total Observable Years";             															ColumnFormat = "comma13.1";  order = 21; IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+	   table = "t4cida"; Column = "timetocensor";                          	ColumnLabel = "Total Observable Days";             																ColumnFormat = "comma14.0";  order = 22; IncludeinReport = "N"; columnWidth=.82; CIrate = "N"; output;
+
      run; 
   %mend create_t4_tablecolumns;
   %create_t4_tablecolumns();
