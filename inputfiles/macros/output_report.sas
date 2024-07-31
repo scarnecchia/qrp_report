@@ -173,7 +173,7 @@
                     run;
 
                     %tableletter();
-                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
+                    %t1t2t4conc_output(dataset=final_&reporttable(where=(level="&strataid")),
                                      varlist = &outvarlist,
                                      stratavar = %quote(&strataname),
                                      varwidths = %bquote(&outwidths.),
@@ -184,7 +184,7 @@
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                         %tableletter();
-                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
+                        %t1t2t4conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
                                          varlist = &outvarlist,
                                          stratavar = %quote(&strataname),
                                          varwidths = %bquote(&outwidths.),

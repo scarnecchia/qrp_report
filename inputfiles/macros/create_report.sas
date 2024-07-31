@@ -201,12 +201,12 @@
 		  
           /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
           %if &reporttable. = t1cida | &reporttable. = t2cida %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = group);
+            %t1t2t4conc_createdata(table = &reporttable., grpvar = group);
           %end;
 		  
           /* Concomitant episodes tables */
           %if &reporttable. = t2conc %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
+            %t1t2t4conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
 
           /*Censor tables - Types 1, 2, and 5*/
