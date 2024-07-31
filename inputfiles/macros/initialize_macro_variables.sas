@@ -169,10 +169,11 @@
     %let charlabslist = %str("missing");
 
 	/* Total number of unique stratifications by file type*/
-	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
+	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc numstrata_t4cida;
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
+	%let numstrata_t4cida = 0;
 
     /*figure specific variables*/
     %global unicode_list;
