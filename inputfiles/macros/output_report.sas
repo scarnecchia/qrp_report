@@ -361,7 +361,13 @@
                                      stratavar = %quote(&strataname),
                                      varwidths = %bquote(&outwidths.),
                                      varsmallcells = &outsmallcells,
-                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                     %if %lowcase(&reporttable) ^= t4cida %then %do;
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                     %end;
+                                     %else %do;
+                                     title=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                     %end;
+                                     );
 
                 %if &stratifybydp = Y %then %do;
                     %do dps = 1 %to %eval(&num_dp.);
@@ -372,7 +378,13 @@
                                          stratavar = %quote(&strataname),
                                          varwidths = %bquote(&outwidths.),
                                          varsmallcells = &outsmallcells,
-                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                         %if %lowcase(&reporttable) ^= t4cida %then %do;
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                         %end;
+                                         %else %do;
+                                         title = %bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                         %end;
+                                         );
                     %end;
                 %end;
                 %let tablenum = %eval(&tablenum + 1);

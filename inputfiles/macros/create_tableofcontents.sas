@@ -608,7 +608,7 @@
             %let tablenum = %eval(&tablenum + 1);
          %end; /* numl2comparison do loop */
     %end; /* numl2comparison */
-    
+
     /*********************************************************************************************/
     /* Type 4 summary tables                                                                     */
     /*********************************************************************************************/
@@ -712,14 +712,26 @@
 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                    %if %lowcase(&reporttable) ^= t4cida %then %do;
+                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                    %end;
+                    %else %do;
+                    caption=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                    %end;
+                    );
 
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                         %tableletter();
                         %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                            caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
+                            %if %lowcase(&reporttable) ^= t4cida %then %do;
+                            caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                            %end;
+                            %else %do;
+                            caption=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                            %end;
+                            );    
                     %end;
                 %end; 
 
@@ -728,7 +740,7 @@
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
-        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) */
 
         /*****************************************************************************************/
         /* Type 1 and 2 censor tables                                                            */
