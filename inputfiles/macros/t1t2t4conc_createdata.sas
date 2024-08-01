@@ -85,11 +85,11 @@
                        list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "Multi-racial", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
-                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-                              %if %index(&table,conc) = 0 %then %do;
+                       varlist=npts episodes %if &table ^= t4cida %then %do; adjustedcodecount rawcodecount daysupp amtsupp %end;
+                              %if %index(&table,conc) = 0 and &table ^= t4cida %then %do;
                                  dennumpts dennummemdays timetocensor
                     		  %end;
-                    		  %if %substr(&table,2,1) ne 1 %then %do;
+                    		  %if %substr(&table,2,1) ne 1 and &table ^= t4cida %then %do;
                     		     eps_wevents all_events followuptime
                     		  %end;,
                        classlist=dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
@@ -101,12 +101,12 @@
     ************************************************************************************************/
     proc summary data = agg_&table. (where = (level in (&&&table._levelid))) nway missing;
         class level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;
-		  var npts episodes adjustedcodecount rawcodecount daysupp amtsupp
+		  var npts episodes %if &table ^= t4cida %then %do; adjustedcodecount rawcodecount daysupp amtsupp %end;
           %if %index(&table,conc) = 0 %then %do;
-             dennumpts dennummemdays timetocensor
+             %if &table ^= t4cida %then %do; dennumpts dennummemdays %end; timetocensor
 		  %end;
 		  %if %substr(&table,2,1) ne 1 %then %do;
-		     eps_wevents all_events followuptime
+		     eps_wevents %if &table ^= t4cida %then %do; all_events %end; followuptime
 		  %end;;
         output out = agg_&table._sum (drop = _:) sum=;
     run;
@@ -118,9 +118,9 @@
                        list=%str("American Indian or Alaska Native", "Asian", "Black or African American", "Multi-racial", "White", "Native Hawaiian or Other Pacific Islander"),
                        unknown="Unknown", 
                        sort=&sortnb., 
-                       varlist=npts episodes adjustedcodecount rawcodecount daysupp amtsupp
-                              %if %index(&table,conc) = 0 %then %do; dennumpts dennummemdays timetocensor %end;
-                    		  %if %substr(&table,2,1) ne 1 %then %do; eps_wevents all_events followuptime %end;,
+                       varlist=npts episodes %if &table ^= t4cida %then %do; adjustedcodecount rawcodecount daysupp amtsupp %end;
+                              %if %index(&table,conc) = 0 %then %do; %if &table ^= t4cida %then %do; dennumpts dennummemdays %end; timetocensor %end;
+                    		  %if %substr(&table,2,1) ne 1 %then %do; eps_wevents %if &table ^= t4cida %then %do; all_events %end; followuptime %end;,
                        classlist= level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
 	%end;
 	
@@ -168,7 +168,7 @@
      	proc sql noprint undo_policy=none;
      		create table &dsin as 
      		select a.*
-			%if %index(&dsin.,t2conc) %then %do;
+			%if %index(&dsin.,t2conc) or %index(&dsin,t4cida) %then %do;
 				,'N' as outputdenom
 			%end;
 			%else %do;

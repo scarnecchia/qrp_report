@@ -138,6 +138,8 @@
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
 
+             %if &table = T7 %then %goto skipt4cida;
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreglabel = %str( );
             %let nonpreg = N;
@@ -305,6 +307,7 @@
             %end;
 
             %let tablenum = %eval(&tablenum + 1);
+            %skipt4cida:
         %end; /*loop through each table*/
 
         options orientation = portrait;

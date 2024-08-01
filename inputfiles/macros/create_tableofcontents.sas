@@ -617,6 +617,9 @@
         %do tb = 1 %to %sysfunc(countw(&tablelist.));
             %let table = %scan(&tablelist., &tb);
 
+            /* Do not execute for T7 - this is the t4cida table */
+            %if &table = T7 %then %goto skipt4cida;
+
             /*determine if table includes non-pregnant section*/;
             %let nonpreg = %str( );
             %let s=;
@@ -680,6 +683,7 @@
                  %end;
             %end;
             %let tablenum = %eval(&tablenum + 1);
+            %skipt4cida:
         %end; /*loop through each table*/
     %end; /*type 4 summary tables*/
 
