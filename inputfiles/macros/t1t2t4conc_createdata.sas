@@ -375,7 +375,7 @@
               hispanic = "Hispanic Origin"
               %end;
               %if %index(&&&table._stratification,prepostind) %then %do;
-              prepostind = "Pregnancy Status Indicator"
+              prepostind = "Gestational Age Categories"
               %end;;
 
 
