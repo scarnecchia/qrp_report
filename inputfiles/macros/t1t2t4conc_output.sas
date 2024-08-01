@@ -241,6 +241,7 @@
                                                                                          %else %if "%lowcase(&cat.)" = "agegroup" %then width = 1.1in;
                                                                                          %else %if "%lowcase(&cat.)" = "hhs_reg" %then width = 1.35in;
                                                                                          %else %if %index("%lowcase(&cat.)", covar) >0 %then width = 2in;
+                                                                                         %else %if &table = t4cida %then width = .91in;
                                                                                          %else width =.81in; indent=20] 
                         style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr];
             %end;
