@@ -16,7 +16,7 @@
 * 	- repdata.table&tablenum.&tableletter
 * 
 *  PARAMETERS:               
-*   - dataset = Input dataset (aggregated t1cida/t2cida/t2conc dataset)
+*   - dataset = Input dataset (aggregated t1cida/t2cida/t2conc/t4cida dataset)
 *   - varlist = List of character columns to be printed
 *   - stratavar = Stratification variable
 *   - varwidth = Width of variable 
@@ -37,6 +37,7 @@
 
     /*Create footnotes*/
     %let outfootnotes=;
+
     proc sql noprint;
         select distinct footnote 
         into :outfootnotes 
@@ -46,37 +47,50 @@
         order by footnote;
     quit;
 
-    data _footnotes;
+    data _footnotes; 
        length footnote_order 3; 
-       set lookup.lookup_footnotes(where=(type = "t1t2conc" and order in ( 0
-          %if %index(&stratavar.,race) %then %do;
-          1
+       set lookup.lookup_footnotes(where=(type =
+          %if "&reporttable" ne "t4cida" %then %do;
+            "t1t2conc" and order in ( 0
+            %if %index(&stratavar.,race) %then %do;
+              1
+            %end;
+            %if %str("&outfootnotes.") = %str("1") %then %do;
+              2
+            %end;
+            %if %str("&outfootnotes.") = %str("2") %then %do;
+              3
+            %end;
+            %if %str("&outfootnotes.") = %str("3") %then %do;
+              4
+            %end;
+            %if %str("&outfootnotes.") = %str("2|3") %then %do;
+              5
+            %end;
+            %if %str("&outfootnotes.") = %str("1|3") %then %do;
+              6
+            %end;
+            %if %str("&outfootnotes.") = %str("1|2") %then %do;
+              7
+            %end;
+            %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
+              8
+            %end;
+			 %if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
+               9
+             %end;)
           %end;
-          %if %str("&outfootnotes.") = %str("1") %then %do;
-          2
-          %end;
-          %if %str("&outfootnotes.") = %str("2") %then %do;
-          3
-          %end;
-          %if %str("&outfootnotes.") = %str("3") %then %do;
-          4
-          %end;
-          %if %str("&outfootnotes.") = %str("2|3") %then %do;
-          5
-          %end;
-          %if %str("&outfootnotes.") = %str("1|3") %then %do;
-          6
-          %end;
-          %if %str("&outfootnotes.") = %str("1|2") %then %do;
-          7
-          %end;
-          %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
-          8
-          %end;
-          %if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
-          9
-          %end;
-        )));
+          %else %do;
+            "t4cida" or (type = "type4" and order = -2) 
+			%if %index(&stratavar.,race) %then %do;
+			  or (type = "t1t2conc" and order = 1)
+			%end;
+			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
+              or (type = "t1t2conc" and order = 9)
+             %end;
+          %end; 
+               
+        ));
        by order;
        footnote_order = _n_;
     run;
@@ -92,8 +106,10 @@
         %end;
     quit;
 
-	%assign_superscripts(type=title, order = 1);
-    %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
+	%assign_superscripts(type=title, order = 1 %if "&reporttable" = "t4cida" %then %do; -2 2 %end;);
+	%if "&reporttable" ne "t4cida" %then %do;
+      %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
+	%end;
 	%assign_superscripts(type=raceunknown, order = 9);
 
     /*clean up*/

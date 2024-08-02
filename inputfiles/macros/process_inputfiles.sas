@@ -1684,7 +1684,7 @@
                                 %end;
                             %end;                         
                             
-                            /* Add footnotes for T1 and T2L1 */
+                            /* Add footnotes for T1 and T2L1 and T4L1*/
                             %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
                               data tablecolumns;
                                 set tablecolumns;
