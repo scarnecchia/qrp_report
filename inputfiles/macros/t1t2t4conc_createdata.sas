@@ -373,7 +373,11 @@
               %end;
               %if %index(&&&table._stratification,hispanic) %then %do;
               hispanic = "Hispanic Origin"
+              %end;
+              %if %index(&&&table._stratification,prepostind) %then %do;
+              prepostind = "Gestational Age Categories"
               %end;;
+
 
              /*covariate*/
              %if &numsummarystratcovars. > 0 %then %do;
