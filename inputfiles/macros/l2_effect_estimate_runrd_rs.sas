@@ -27,6 +27,7 @@
 %macro l2_effect_estimate_runrd_rs(where=, analysis=, subgroupcat=);
 
     %put =====> MACRO CALLED: l2_effect_estimate_runrd_rs;
+
 	
     %if %sysfunc(exist(cat_dp_rd)) > 0 %then %do; 
        * Aggregate data across DP;
@@ -166,7 +167,7 @@
             %end;
 
             /*Incidence Rate Difference per 1000 Person Years*/
-            %if %str("&reporttype.") = %str("T2L2") %then %do;
+            %if %str("&reporttype.") = %str("T2L2") | (%str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. = timetoevent) %then %do;
             IRDiff_1000PY =  IR_1000PY1  - IR_1000PY0;
             %end;
             %else %do;
@@ -282,7 +283,7 @@
                 RD_1000NUchar = 'N/A';
                 risk_1000NUchar = 'N/A';
             %end;
-            %if %index(&customizecolumns.,redactpt) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
+            %if %index(&customizecolumns.,redactpt) > 0 | (%str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. ne timetoevent) %then %do;
                 FUTime_Ychar = 'N/A';
                 AvgFUTime_Dchar = 'N/A';
                 AvgFUTime_Ychar = 'N/A';
@@ -304,10 +305,7 @@
 
             keep analysisgrp subgroup MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                  n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par EVchar RD_1000NUchar risk_1000NUchar totalevents
-                 /*only include followup time variables for ReportType = T2L2 */
-                 %if %str("&reporttype.") = %str("T2L2") %then %do;
-                 FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
-                 %end;
+                  	FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
                  ;
 
         run;
@@ -398,7 +396,7 @@
                     RD_1000NUchar = 'N/A';
                     risk_1000NUchar = 'N/A';
                 %end;
-                %if %index(&customizecolumns.,redactpt) > 0 | %str("&reporttype.") = %str("T4L2") %then %do;
+                %if %index(&customizecolumns.,redactpt) > 0 | (%str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. ne timetoevent) %then %do;
                     FUTime_Ychar = 'N/A';
                     AvgFUTime_Dchar = 'N/A';
                     AvgFUTime_Ychar = 'N/A';
@@ -420,15 +418,21 @@
 
                 keep analysisgrp subgroup MonitoringPeriod analysis subgroupcat medicalproduct analysisgrpsort sort1 sort2
                 n EV rrchar risk_1000NU RD_1000NU poprisk nnt ar par RD_95CI EVchar  RD_1000NUchar risk_1000NUchar totalevents
-                /*only include followup time variables for ReportType = T2L2 */
-                %if %str("&reporttype.") = %str("T2L2") %then %do;
                  FUTime_Y AvgFUTime_D AvgFUTime_Y IR_1000PY IRDiff_1000PY IR_1000PYchar IRDiff_1000PYchar FUTime_Ychar AvgFUTime_Dchar AvgFUTime_Ychar
-                %end;
                 ;
             output;
             %end;
         run;
     %end;
+
+
+	/*only include followup time variables for ReportType = T2L2 or ReportType = T4L2 when hoimethod = timetoevent*/
+	%if %str("&reporttype.") = %str("T4L2") and &&&runid._t4hoimethod. = binary %then %do;
+		data est;
+			 set est;
+			  call missing(FUTime_Y, AvgFUTime_D, AvgFUTime_Y, IR_1000PY, IRDiff_1000PY, IR_1000PYchar, IRDiff_1000PYchar, FUTime_Ychar, AvgFUTime_Dchar, AvgFUTime_Ychar);
+		run;
+	%end;
 
     proc datasets library=work nowarn noprint;
         append base= RDEst data=est force;

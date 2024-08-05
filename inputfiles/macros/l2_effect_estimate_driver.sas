@@ -635,12 +635,10 @@
                   case when r.subgroup = 'dpidsiteid' then r.subgroupcat
                   else pscs.subgroupcatlabel
                   end as subgroupcatlabel,
-                %if "&reporttype." = "T2L2" %then %do;
-                HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se
-                %end;
-                %else %if "&reporttype." = "T4L2" %then %do;
-                rr_95ci, rr, LCL, UCL, rr_se
-                %end;
+                  HR_95CI, HR_pvalue, HR, LCL, UCL, HR_coef, HR_se                
+				  %if "&reporttype." = "T4L2" %then %do;
+				  ,rr_95ci, rr, rr_se
+				 %end;
             from rdest as r
             /* left join b/c IPTW contains rows that do not have a computed HR*/
             left join logitest as c
