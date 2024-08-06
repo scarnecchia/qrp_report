@@ -287,17 +287,30 @@
 	%if "&reporttype." = "T4L2" %then %do;
 		data est;
 		set est;
-		
-	  	label hr_95CI = "Risk Ratio (95% CI)";	  	
-		label HR_se = "StdErr of Coefficient";
-	    label HR = "Risk Ratio";	    	    
+	
+		%if  &&&runid._t4hoimethod. = binary %then %do;		  			 	    
 
-		rename hr_95CI=rr_95ci;
-		rename HR=rr;
-		rename HR_se=rr_se;
+			rr_95ci =  hr_95CI ;
+			rr =  HR ;
+			rr_se =  HR_se ;
+			length hr_95CI $30 ;
+			 hr_95CI = " ";
+			 HR = .;
+			 HR_se = .;
+		%end;
+		%if  &&&runid._t4hoimethod. = timetoevent %then %do;
+		  length rr_95ci $30 ;
+			rr_95ci = " ";
+			rr = .;
+			rr_se = .;
+		%end;
+		label rr_95CI = "Risk Ratio (95% CI)";	  	
+		label rr_se = "StdErr of Coefficient";
+		label rr = "Risk Ratio";   
+
 		run;
 	%end;
-
+		
 	proc datasets library=work nowarn noprint;
 	    append base= logitEst data=est force;
 	    delete est pest forest lag_: HR_EQ;

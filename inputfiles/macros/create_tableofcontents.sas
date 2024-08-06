@@ -1713,17 +1713,34 @@
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and &treeaggindicator. eq N %then %do;
-	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
-	            %else %let ForestRatioTitle = Risk Ratios (RR);
-
+	           
 				%let tableletter=a;
 				%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
-	                %do plot = 1 %to 7;
+	                %do plot = 1 %to 14;
+					  %let t4hoimethod = ;
+                      %do ru = 1 %to &numrunid.;
+                        %let runidru = %scan(&runidlist., &ru.);
+	                    %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	                      %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	                    %end;
+	                  %end;
+
+                      %if "&reporttype." = "T2L2" %then %do;
+                        %let t4hoimethod_current = ; 
+		                %let t4_loop = 1;
+	                  %end;
+	                  %else %do;
+                        %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
+                      %end;
+	                  %do t4 = 1 %to &t4_loop;
+	                   %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+					   %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 |(&reporttype = T4L2 and &t4hoimethod_current = timetoevent) %then %let ForestRatioTitle = Hazard Ratios (HR);
+	                   %else %let ForestRatioTitle = Risk Ratios (RR);
 	                    %let forest_title = ;
 	                    data _null_;
-	                    set forest_&j(where=(plotorder=&plot));
+	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
 	                      call symputx("forest_title",forest_title);
 	                    run;
 
@@ -1733,6 +1750,7 @@
 	                    caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
+			      %end;
 	            %end; /* loop periods */
 
                 %let figurenum = %eval(&figurenum.+1); 
