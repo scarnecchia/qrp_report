@@ -41,7 +41,7 @@
 
 %macro t1t2t4conc_createdata(table =, grpvar = );
 
-    %put =====> MACRO CALLED: t1t2conc_createdata ;
+    %put =====> MACRO CALLED: t1t2t4conc_createdata ;
 	
    /************************************************************************************************
       Determine levels and stratifications               
@@ -86,11 +86,11 @@
                        unknown="Unknown", 
                        sort=&sortnb., 
                        varlist=npts episodes %if &table ^= t4cida %then %do; adjustedcodecount rawcodecount daysupp amtsupp %end;
-                              %if %index(&table,conc) = 0 and &table ^= t4cida %then %do;
-                                 dennumpts dennummemdays timetocensor
+                              %if %index(&table,conc) = 0 %then %do;
+                                 %if &table ^= t4cida %then %do; dennumpts dennummemdays %end; timetocensor
                     		  %end;
-                    		  %if %substr(&table,2,1) ne 1 and &table ^= t4cida %then %do;
-                    		     eps_wevents all_events followuptime
+                    		  %if %substr(&table,2,1) ne 1 %then %do;
+                    		     eps_wevents %if &table ^= t4cida %then %do; all_events %end; followuptime
                     		  %end;,
                        classlist=dpidsiteid level &grpvar. %do s = 1 %to &&numstrata_&table.; sortorder&s. %end; &&&table._stratification;);
 		%end;
