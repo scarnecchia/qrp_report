@@ -57,6 +57,35 @@
 	;
 	quit;
 
+	%if &milnobs > 0 %then %do;
+		/* Create pregnant cohort / MIL group pairing */
+		proc sql noprint;
+			select distinct catx('@',groupname,group) 
+			into :milattrgrps separated by ' '
+			from master_mil;
+		quit;
+
+		data attrition_groups;
+			set attrition_groups;
+			/* Reassign value of what group and groupname is for MIL groups */
+			if prxmatch('m/_eoi|_ref/i',group) then do;
+			%do zzz = 1 %to %sysfunc(countw(&milattrgrps));
+				%let pregmigroup = %scan(&milattrgrps,&zzz);
+				%let preggroup = %scan(&pregmigroup,1,%str(@));
+				%let migrp = %scan(&pregmigroup,-1,%str(@));
+				if scan(group,1,'_') = "&migrp" then do;
+					groupname = "&preggroup";
+					group = "&migrp";
+				end;
+			%end;
+			end;
+		run;
+
+		proc sort data = attrition_groups nodupkey;
+			by runid group groupname;
+		run;
+	%end;
+
 	/* Link EOI/REF groups back to analysisgrps */
 	%if %index(&reporttype,T2L2) %then %do;
 	proc sql noprint;
