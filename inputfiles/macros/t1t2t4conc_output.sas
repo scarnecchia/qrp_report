@@ -47,9 +47,24 @@
         order by footnote;
     quit;
 
+    /*check to see if binary is a selection for t4cida and if followuptime or timetocensor is in tablecolums*/
+    %let t4hoimethod = ;
+	%let follup_time = ;
+    %do ru = 1 %to &numrunid.;
+      %let runidru = %scan(&runidlist., &ru.);
+	  %let t4hoimethod = &t4hoimethod &&&runidru._t4hoimethod;
+	%end;
+
+	proc sql noprint;
+	  select distinct(columnname) into: follup_time separated by ' '
+	  from tablecolumns
+	  where column like '%followuptime%' or column like  '%timetocensor%';
+    quit;
+	%put follup_time = &follup_time;
+ 
     data _footnotes; 
        length footnote_order 3; 
-       set lookup.lookup_footnotes(where=(type =
+       set lookup.lookup_footnotes(where=((type =
           %if "&reporttable" ne "t4cida" %then %do;
             "t1t2conc" and order in ( 0
             %if %index(&stratavar.,race) %then %do;
@@ -76,21 +91,23 @@
             %if %str("&outfootnotes.") = %str("1|2|3") %then %do;
               8
             %end;
-			 %if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
-               9
-             %end;)
+			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
+              9
+            %end;))
           %end;
           %else %do;
-            "t4cida" or (type = "type4" and order = -2) 
+		     "type4" and order = -2) 
 			%if %index(&stratavar.,race) %then %do;
 			  or (type = "t1t2conc" and order = 1)
 			%end;
+	        %if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
+	          or (type = "t4cida")  
+	        %end;
 			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
               or (type = "t1t2conc" and order = 9)
-             %end;
+             %end;)
           %end; 
-               
-        ));
+           );
        by order;
        footnote_order = _n_;
     run;
@@ -106,7 +123,10 @@
         %end;
     quit;
 
-	%assign_superscripts(type=title, order = 1 %if "&reporttable" = "t4cida" %then %do; -2 2 %end;);
+	%assign_superscripts(type=title, order = 1 %if "&reporttable" = "t4cida" %then %do; -2 %end;);
+	%if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
+	  %assign_superscripts(type=column, order = 2);	
+	%end;
 	%if "&reporttable" ne "t4cida" %then %do;
       %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
 	%end;
@@ -114,7 +134,7 @@
 
     /*clean up*/
     proc datasets nowarn noprint lib=work;
-        delete _footnotes;
+      delete _footnotes;
     quit;
 
     /*Save dataset to repdata folder and create newcategory variable if >=2 stratification variables. 
@@ -125,8 +145,23 @@
 
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
+	    /* check to see if footnote needs attached to column */
+	    %if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
+		  data table&tablenum.&tableletter;
+		    set &dataset;
+		      %do ft = 1 %to %sysfunc(countw(&follup_time));
+		        %let current_column = %scan(&follup_time., &ft.,%str( ));
+		        label &current_column._char = "&current_column.&super_column";  
+		      %end;
+		  run;
+		%end;
+		%else %do;
+		  data table&tablenum.&tableletter;
+		    set &dataset;
+		  run;
+		%end;
     	data repdata.table&tablenum.&tableletter;
-    		set &dataset;
+    		set table&tablenum.&tableletter;
             %if &includeheaderrow = Y %then %do;
                 if missing(header) then header=grouplabel;
             %end;
