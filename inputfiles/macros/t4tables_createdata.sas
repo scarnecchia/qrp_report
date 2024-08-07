@@ -573,7 +573,7 @@
                 strip(put(a.den_&episode_var._2trim,comma12.0))||" episodes reach the 2nd trimester, " || %end; 
               %if &T3Columns. eq Y %then %do;
                 strip(put(a.den_&episode_var._3trim,comma12.0))||" episodes reach the 3rd trimester, " || %end;
-                strip(put(a.den_&episode_var.,comma12.0))||" total episodes)") 
+                strip(put(a.den_&episode_var.,comma12.0))||" total episodes)" 
                as grouplabel
 			%end; /*end condition dataset=preg */
 			%else %do;
