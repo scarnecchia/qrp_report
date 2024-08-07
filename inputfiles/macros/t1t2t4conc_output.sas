@@ -61,7 +61,7 @@
 	  where column like '%followuptime%' or column like  '%timetocensor%';
     quit;
 	%put follup_time = &follup_time;
- 
+
     data _footnotes; 
        length footnote_order 3; 
        set lookup.lookup_footnotes(where=((type =
@@ -147,13 +147,25 @@
     %if %eval(&nobs.<1) %then %do;
 	    /* check to see if footnote needs attached to column */
 	    %if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
-		  data table&tablenum.&tableletter;
-		    set &dataset;
-		      %do ft = 1 %to %sysfunc(countw(&follup_time));
+		  /*get new columnlabels and add super script*/
+		 
+		    proc sql noprint;
+			  %do ft = 1 %to %sysfunc(countw(&follup_time));
 		        %let current_column = %scan(&follup_time., &ft.,%str( ));
-		        label &current_column._char = "&current_column.&super_column";  
-		      %end;
-		  run;
+			    select columnlabel into: current_label&current_column.  
+			    from tablecolumns
+			    where columnname =  "&current_column";
+              %end;
+			quit;
+		    
+		    data table&tablenum.&tableletter;
+		      set &dataset;
+			  %do ft = 1 %to %sysfunc(countw(&follup_time));
+		        %let current_column = %scan(&follup_time., &ft.,%str( ));
+		        label &current_column._char = "%trim(&&&current_label&current_column.)&super_column";  
+              %end; 
+		    run;
+		  
 		%end;
 		%else %do;
 		  data table&tablenum.&tableletter;
