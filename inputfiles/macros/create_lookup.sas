@@ -95,7 +95,9 @@
 	  type = "t1t2conc";  order = 6;  description = 'Eligible Members and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	  type = "t1t2conc";  order = 7;  description = 'Eligible Members and Member-Days are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
 	  type = "t1t2conc";  order = 8;  description = 'Eligible Members, Member-Days, and Member-Years are reflective of the number of patients that met all cohort entry criteria on at least one day during the query period.'; output;
-	  type = "t1t2conc";  order = 9;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
+	  /* Footnotes for type 4 cida use tables - Needs to be ordered below the last t1t2conc footnote */
+     type = "t4cida";  order = 9;  description = "Time at risk (e.g. Total Days at Risk) and related metrics are only available for maternal outcomes if requested (i.e. follow-up time metrics are not computed for outcomes being assessed in infants)."; output;
+	  type = "t1t2conc";  order = 10;  description = 'Includes members classified as having an unknown race by the Data Partner and patients in race categories where the total member count is between one and ten.'; output;
 
 	   /* Footnotes for type 5 tables and figures (note - dose table footnotes query specific and are generated in t5tables_createdata */
        /* order = 1 reserved for dose footnotes*/
@@ -125,9 +127,6 @@
 	  type = "t4l1moi"; order = 5;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes."; output;
 	  type = "t4l1moi"; order = 6;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
 	  type = "t4l1moi"; order = 7;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
-	  
-	  /* Footnotes for type 4 cida use tables - Needs to be ordered below the last t1t2conc footnote */
-       type = "t4cida";  order = 10;  description = "Time at risk (e.g. Total Days at Risk) and related metrics are only available for maternal outcomes if requested (i.e. follow-up time metrics are not computed for outcomes being assessed in infants)."; output;
      run; 
 
      data lookup.lookup_attrition;

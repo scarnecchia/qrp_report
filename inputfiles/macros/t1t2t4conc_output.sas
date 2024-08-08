@@ -58,9 +58,10 @@
 	%end;
 
 	proc sql noprint;
-	  select distinct(columnname) into: follup_time separated by ' '
+	  select distinct(columnname), order into: follup_time separated by ' ', :dummyord
 	  from tablecolumns
-	  where column like '%followuptime%' or column like  '%timetocensor%';
+	  where table = 't4cida' and (column like '%followuptime%' or column like  '%timetocensor%')
+      order by order;
     quit;
 	%put follup_time = &follup_time;
     %end;
@@ -95,7 +96,7 @@
               8
             %end;
 			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
-              9
+              10
             %end;))
           %end;
           %else %do;
@@ -104,10 +105,10 @@
 			  or (type = "t1t2conc" and order = 1)
 			%end;
 	        %if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then %do;
-	          or (type = "t4cida" and order = 10)  
+	          or (type = "t4cida" and order = 9)  
 	        %end;
 			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
-              or (type = "t1t2conc" and order = 9)
+              or (type = "t1t2conc" and order = 10)
              %end;)
           %end; 
            );
@@ -128,12 +129,12 @@
 
 	%assign_superscripts(type=title, order = 1 %if "&reporttable" = "t4cida" %then %do; -2 %end;);
 	%if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then %do;
-	  %assign_superscripts(type=column, order = 10);	
+	  %assign_superscripts(type=column, order = 9);	
 	%end;
 	%if "&reporttable" ne "t4cida" %then %do;
       %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
 	%end;
-	%assign_superscripts(type=raceunknown, order = 9);
+	%assign_superscripts(type=raceunknown, order = 10);
 
     /*clean up*/
     proc datasets nowarn noprint lib=work;
@@ -156,7 +157,7 @@
 		        %let current_column = %scan(&follup_time., &ft.,%str( ));
 			    select columnlabel into: current_label&current_column.  
 			    from tablecolumns
-			    where columnname =  "&current_column";
+			    where table = 't4cida' and columnname =  "&current_column";
               %end;
 			quit;
         %end;
