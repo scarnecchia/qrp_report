@@ -557,10 +557,11 @@ libname tempfl "";
     *************************************;
     %let stratLevel = overall;
     %let stratlevels = %sysfunc(countw(&stratLevel.,'|'));
-	%let stratOneLevel = agegroup| year| race| hispanic| prepostind| zip3| state| zip_uncertain| cb_reg| hhs_reg;
+	%let stratOneLevel = agegroup| year| year month| year quarter| race| hispanic| prepostind| zip3| state| zip_uncertain| cb_reg| hhs_reg;
     %let stratCovar = &stratOneLevel.| covar#;
     %let stratTwoLevel = 
-                     agegroup year|                       
+                     agegroup year| agegroup year month| agegroup year quarter| year month agegroup race| year quarter agegroup race| year month agegroup Hispanic| year quarter agegroup Hispanic| 
+                     year month Hispanic race| year quarter Hispanic race|                    
                      zip3 zip_uncertain| zip3 prepostind| zip3 prepostind zip_uncertain| zip3 agegroup| zip3 agegroup zip_uncertain| zip3 year| zip3 year zip_uncertain|
                      zip3 race| zip3 race zip_uncertain| zip3 hispanic| zip3 hispanic zip_uncertain| 
                      state zip_uncertain| state prepostind| state prepostind zip_uncertain| state agegroup| state agegroup zip_uncertain| state year| 
@@ -570,8 +571,10 @@ libname tempfl "";
                      hhs_reg year| hhs_reg year zip_uncertain| hhs_reg race| hhs_reg race zip_uncertain| hhs_reg hispanic| hhs_reg hispanic zip_uncertain|
                      cb_reg zip_uncertain| cb_reg prepostind| cb_reg prepostind zip_uncertain| cb_reg agegroup| cb_reg agegroup zip_uncertain| cb_reg year| 
                      cb_reg year zip_uncertain| cb_reg race| cb_reg race zip_uncertain| cb_reg hispanic| cb_reg hispanic zip_uncertain| 
-                     race prepostind| race agegroup| race year| hispanic agegroup| hispanic year| year race hispanic| year agegroup race| prepostind agegroup | prepostind hispanic| prepostind year 
-                     prepostind year race| prepostind year hispanic| prepostind agegroup year;
+                     race prepostind| race agegroup| race year| race year month| race year quarter| hispanic agegroup| hispanic year| hispanic year month| hispanic year quarter| year race hispanic| year agegroup hispanic|
+                     year agegroup race| prepostind agegroup | prepostind hispanic| prepostind year| 
+                     prepostind year race| prepostind year hispanic| prepostind agegroup year| prepostind year month | prepostind year quarter;
+
 
     %let stratcida = &stratCovar. | &stratTwoLevel.;
     %let stratnoCovar = &stratOneLevel. | &stratTwoLevel.;
@@ -1524,7 +1527,7 @@ libname tempfl "";
 	   table = "T7"; Column = "followuptime";                      		ColumnLabel = "Total Days at Risk";             																ColumnFormat = "comma14.0";  order = 10; IncludeinReport = "N"; columnWidth=.9; CIrate = "N"; output;
 	   table = "T7"; Column = "eps_wevents/(followuptime/365.25)"; 		ColumnLabel = "Number of Pregnancy Episodes with an Event per Patient-Year at Risk";             				ColumnFormat = "comma13.2";  order = 11; IncludeinReport = "N"; columnWidth=.9; CIrate = "N"; output;
 	   table = "T7"; Column = "eps_wevents/(followuptime/365.25)";  	ColumnLabel = "Event Rate per Person-Year at Risk (95% Confidence Interval)";         		    				ColumnFormat = "comma13.2";  order = 12; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
-	   table = "T7"; Column = "(eps_wevents/(followuptime/365.25))*X";  ColumnLabel = "Event Rate per X Person-Years at Risk";       								      				ColumnFormat = "comma13.2";  order = 13; IncludeinReport = "N"; columnWidth=.22; CIrate = "N"; output;
+	   table = "T7"; Column = "(eps_wevents/(followuptime/365.25))*X";  ColumnLabel = "Event Rate per X Person-Years at Risk";       								      				ColumnFormat = "comma13.2";  order = 13; IncludeinReport = "N"; columnWidth=.9; CIrate = "N"; output;
 	   table = "T7"; Column = "(eps_wevents/(followuptime/365.25))*X"; 	ColumnLabel = "Event Rate per X Patient-Years at Risk (95% Confidence Interval)";	             				ColumnFormat = "comma13.2";  order = 14; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
 	   table = "T7"; Column = "eps_wevents/(followuptime/30.35)";  		ColumnLabel = "Event Rate per Patient-Month at Risk (95% Confidence Interval)";             					ColumnFormat = "comma13.2";  order = 15; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
 	   table = "T7"; Column = "(eps_wevents/(followuptime/30.35))*X"; 	ColumnLabel = "Event Rate per X Patient-Months at Risk (95% Confidence Interval)";            					ColumnFormat = "comma13.2";  order = 16; IncludeinReport = "N"; columnWidth=1.5; CIrate = "R"; output;
