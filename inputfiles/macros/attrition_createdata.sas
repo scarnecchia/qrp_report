@@ -73,7 +73,7 @@
 				%let pregmigroup = %scan(&milattrgrps,&zzz);
 				%let preggroup = %scan(&pregmigroup,1,%str(@));
 				%let migrp = %scan(&pregmigroup,-1,%str(@));
-				if scan(group,1,'_') = "&migrp" then do;
+				if substr(group,1,length(group)-4) = "&migrp" then do;
 					groupname = "&preggroup";
 					group = "&migrp";
 				end;

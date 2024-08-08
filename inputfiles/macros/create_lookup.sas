@@ -126,8 +126,8 @@
 	  type = "t4l1moi"; order = 6;  description = "Displayed percentages represent the number of pregnancy (or matched non-pregnant) episodes with evidence of the exposure of interest as a proportion of all pregnancy (or matched non-pregnant) episodes in the given gestational week"; output;
 	  type = "t4l1moi"; order = 7;  description = "Displayed percentages represent the number of pregnancy episodes with evidence of the exposure of interest as a proportion of all pregnancy episodes in the given gestational week"; output;
 	  
-	  /* Footnotes for type 4 cida use tables */
-       type = "t4cida";  order = 2;  description = "Time at risk (e.g. Total Days at Risk) and related metrics are only available for maternal outcomes if requested (i.e. follow-up time metrics are not computed for outcomes being assessed in infants)."; output;
+	  /* Footnotes for type 4 cida use tables - Needs to be ordered below the last t1t2conc footnote */
+       type = "t4cida";  order = 10;  description = "Time at risk (e.g. Total Days at Risk) and related metrics are only available for maternal outcomes if requested (i.e. follow-up time metrics are not computed for outcomes being assessed in infants)."; output;
      run; 
 
      data lookup.lookup_attrition;

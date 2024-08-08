@@ -55,6 +55,7 @@
 	  %let t4hoimethod = &t4hoimethod &&&runidru._t4hoimethod;
 	%end;
 
+    %let follup_time = ;
 	proc sql noprint;
 	  select distinct(columnname) into: follup_time separated by ' '
 	  from tablecolumns
@@ -100,8 +101,8 @@
 			%if %index(&stratavar.,race) %then %do;
 			  or (type = "t1t2conc" and order = 1)
 			%end;
-	        %if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
-	          or (type = "t4cida")  
+	        %if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then %do;
+	          or (type = "t4cida" and order = 10)  
 	        %end;
 			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
               or (type = "t1t2conc" and order = 9)
@@ -124,8 +125,8 @@
     quit;
 
 	%assign_superscripts(type=title, order = 1 %if "&reporttable" = "t4cida" %then %do; -2 %end;);
-	%if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
-	  %assign_superscripts(type=column, order = 2);	
+	%if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then %do;
+	  %assign_superscripts(type=column, order = 10);	
 	%end;
 	%if "&reporttable" ne "t4cida" %then %do;
       %assign_superscripts(type=line, order =  2 3 4 5 6 7 8);
@@ -146,9 +147,8 @@
     %isdata(dataset=repdata.table&tablenum.&tableletter.);
     %if %eval(&nobs.<1) %then %do;
 	    /* check to see if footnote needs attached to column */
-	    %if %sysfunc(findw(&t4hoimethod, binary)) and &follup_time ne '' %then %do;
+	    %if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then %do;
 		  /*get new columnlabels and add super script*/
-		 
 		    proc sql noprint;
 			  %do ft = 1 %to %sysfunc(countw(&follup_time));
 		        %let current_column = %scan(&follup_time., &ft.,%str( ));
@@ -157,26 +157,19 @@
 			    where columnname =  "&current_column";
               %end;
 			quit;
+        %end;
 		    
-		    data table&tablenum.&tableletter;
-		      set &dataset;
-			  %do ft = 1 %to %sysfunc(countw(&follup_time));
-		        %let current_column = %scan(&follup_time., &ft.,%str( ));
-		        label &current_column._char = "%trim(&&&current_label&current_column.)&super_column";  
-              %end; 
-		    run;
-		  
-		%end;
-		%else %do;
-		  data table&tablenum.&tableletter;
-		    set &dataset;
-		  run;
-		%end;
     	data repdata.table&tablenum.&tableletter;
-    		set table&tablenum.&tableletter;
+    		set &dataset;
             %if &includeheaderrow = Y %then %do;
                 if missing(header) then header=grouplabel;
             %end;
+
+            %if %sysfunc(findw(&t4hoimethod, binary)) and %length(&follup_time) > 0 %then 
+              %do ft = 1 %to %sysfunc(countw(&follup_time));
+                %let current_column = %scan(&follup_time., &ft.,%str( ));
+                label &current_column._char = "%trim(&&&current_label&current_column.)&super_column";  
+              %end; 
 
             %if &countstrata >=2 %then %do;
                 length newcategory $90;
