@@ -50,18 +50,20 @@
     /*check to see if binary is a selection for t4cida and if followuptime or timetocensor is in tablecolums*/
     %let t4hoimethod = ;
 	%let follup_time = ;
+    
+    %if %index(&reporttype,T4L1) %then %do;
     %do ru = 1 %to &numrunid.;
       %let runidru = %scan(&runidlist., &ru.);
 	  %let t4hoimethod = &t4hoimethod &&&runidru._t4hoimethod;
 	%end;
 
-    %let follup_time = ;
 	proc sql noprint;
 	  select distinct(columnname) into: follup_time separated by ' '
 	  from tablecolumns
 	  where column like '%followuptime%' or column like  '%timetocensor%';
     quit;
 	%put follup_time = &follup_time;
+    %end;
 
     data _footnotes; 
        length footnote_order 3; 
