@@ -213,7 +213,7 @@
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
 					 %if &&strata&s. = zip_uncertain %then length zip_uncertain $3;;
-					 %if &&strata&s. = prepostind %then length prepostind $60;;
+					 %if &&strata&s. = prepostind %then length prepostind $45;;
                   
 				     %if &&strata&s. = overall %then %do;
 					   sortorder&s. = 1;
