@@ -1669,6 +1669,7 @@
                                     else columnheader = 'Number';
                                     call symputx('checkt4l1_t1t5', 'Y');
                                   end;
+                                /* Re-assign to t4cida so data is subset correctly downstream */
                                 if table = 'T7' then table = 't4cida';
                               %end;
                             run;

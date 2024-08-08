@@ -6,7 +6,7 @@
 * Created (mm/dd/yyyy): 05/14/2021
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro produces tables for a standard Type 1 and Type 2 report
+* PURPOSE: The macro produces tables for a standard Type 1, Type 2 and Type 4 report
 *                                        
 *  Program inputs:                                                                                   
 *   - For Type 1 requests: agg_t1cida.sas7bdat                                               
@@ -429,6 +429,6 @@
 	  %prept1t2data(dsin=%str(agg_&table. (where = (level in (&&&table._levelid)))), dsout=final_dps_&table., dpvar=dpidsiteid);
 	%end;
 
-    %put =====> END MACRO: t1t2conc_createdata ;
+    %put =====> END MACRO: t1t2t4conc_createdata ;
 
 %mend t1t2t4conc_createdata;
