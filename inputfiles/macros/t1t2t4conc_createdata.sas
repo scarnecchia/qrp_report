@@ -229,6 +229,10 @@
 				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
 				%end;
+				%if %sysfunc(prxmatch(m/timetocensor|followuptime/i,&&formula&vv.)) %then %do;
+					if missing(timetocensor) then &&var&vv.. = "N/A";
+					if missing(followuptime) then &&var&vv.. = "N/A";
+				%end;
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -260,6 +264,10 @@
 				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
 				%end; 
+				%if %sysfunc(prxmatch(m/timetocensor|followuptime/i,&&formula&vv.)) %then %do;
+					if missing(timetocensor) then &&var&vv.. = "N/A";
+					if missing(followuptime) then &&var&vv.. = "N/A";
+				%end;
 			   	&&var&vv.._char=&&var&vv.;
 				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
@@ -284,9 +292,13 @@
 				%if %index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if missing(DenNumPts) = 1 then &&var&vv..="N/A";
 				%end;
-				 %if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
+				%if ^%index(%lowcase(&&formula&vv.),dennum) %then %do;
 					if totalnpts = 0 and &&var&vv.. = 0 then &&var&vv.._char='.';
-				 %end;	
+				%end;
+				%if %sysfunc(prxmatch(m/timetocensor|followuptime/i,&&formula&vv.)) %then %do;
+					if missing(timetocensor) then &&var&vv.. = "N/A";
+					if missing(followuptime) then &&var&vv.. = "N/A";
+				%end;	
 			   end;
 				 %if &pointflag = Y and %sysfunc(prxmatch(m/daysupp|amtsupp/i,&&formula&vv.)) %then %do;
 			     	if point = 'Y' then &&var&vv.._char='N/A';
@@ -327,6 +339,10 @@
 			if upcase(outputdenom) ^= 'M' and (missing(dennumpts) or missing(dennummemdays)) then &&var&vv.._char='N/A';
 			else if missing(dennumpts) then &&var&vv.._char='N/A';
 	      %end;	  
+	      %if %sysfunc(prxmatch(m/timetocensor|followuptime/i,&&formula&vv.)) %then %do;
+				if missing(timetocensor) then &&var&vv.._char = "N/A";
+				if missing(followuptime) then &&var&vv.._char = "N/A";
+		  %end;	
 	    %end;
 		
         /*labels for stratification variables*/
