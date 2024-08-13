@@ -1449,6 +1449,7 @@
                 if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
                 if index(tabletitle, 'Cb_reg')>0 then tabletitle =tranwrd(tabletitle, 'Cb_reg', 'Census Bureau Region');
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Gestational Age Categories');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
                 if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
@@ -1646,7 +1647,7 @@
 
                             data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
                                                   %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; columnheader numerator %end;
-                                                  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
+                                                  %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
                               set tablecolumns (rename = (order = order_in column = column_in));
                               length columnname $32 smallcellYN $1;
                               by table order_in;
@@ -1668,6 +1669,8 @@
                                     else columnheader = 'Number';
                                     call symputx('checkt4l1_t1t5', 'Y');
                                   end;
+                                /* Re-assign to t4cida so data is subset correctly downstream */
+                                if table = 'T7' then table = 't4cida';
                               %end;
                             run;
 
@@ -1685,8 +1688,8 @@
                                 %end;
                             %end;                         
                             
-                            /* Add footnotes for T1 and T2L1 */
-                            %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do;
+                            /* Add footnotes for T1 and T2L1 and T4L1*/
+                            %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
                               data tablecolumns;
                                 set tablecolumns;
                                 length footnote 3;

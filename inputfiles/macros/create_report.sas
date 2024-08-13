@@ -194,19 +194,19 @@
     %isdata(dataset=tablefile);
     %if %eval(&nobs.>0) %then %do;
 
-    /*ReportType T1 and T2L1*/
-    %if %sysfunc(prxmatch(m/T1|T2L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
+    /*ReportType T1, T2L1, T4L1 and T5*/
+    %if %sysfunc(prxmatch(m/T1|T2L1|T4L1|T5/i,&reporttype.)) & %eval(&tdatasetlistnum. > 0) %then %do;
 	   %do td = 1 %to &tdatasetlistnum.; 
 	      %let reporttable = %scan(&tdatasetlist, &td.);
 		  
-          /* Report Type T1 summary tables and Report Type T2L1 tables (T1cida or T2cida) */
-          %if &reporttable. = t1cida | &reporttable. = t2cida %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = group);
+          /* Report Type T1, T2L1 and T4L1 summary tables (T1cida, T2cida or T4cida) */
+          %if &reporttable. = t1cida | &reporttable. = t2cida | &reporttable = t4cida %then %do;
+            %t1t2t4conc_createdata(table = &reporttable., grpvar = group);
           %end;
 		  
           /* Concomitant episodes tables */
           %if &reporttable. = t2conc %then %do;
-            %t1t2conc_createdata(table = &reporttable., grpvar = analysisgrp);
+            %t1t2t4conc_createdata(table = &reporttable., grpvar = analysisgrp);
           %end;
 
           /*Censor tables - Types 1, 2, and 5*/

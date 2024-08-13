@@ -29,6 +29,7 @@
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
 *           -[RUNID]_t4_treeanalysis_poisson_[LOOK].sas7bdat
+*           -[RUNID]_t4_cida.sas7bdat
 *
 *			-[runid]_t5_cida_disp_by_daysupp
 *           -[runid]_t5_cida_dose
@@ -198,7 +199,7 @@
                    set &outfile.(rename = (
                      %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
-                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain | &&strata&s. = prepostind %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
@@ -212,12 +213,13 @@
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
 					 %if &&strata&s. = zip_uncertain %then length zip_uncertain $3;;
+					 %if &&strata&s. = prepostind %then length prepostind $45;;
                   
 				     %if &&strata&s. = overall %then %do;
 					   sortorder&s. = 1;
 					 %end;
                      %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg
-                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain %then %do;
+                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain | &&strata&s. = prepostind %then %do;
                          &&strata&s. = put(_&&strata&s., $&&strata&s..fmt.);
 						 sortorder&s. = input(put(_&&strata&s.,$&&strata&s..sort.),3.);
 				         drop _&&strata&s.;
@@ -328,7 +330,10 @@
 			%end;
 			%if %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
-			%end;	  
+			%end;	
+			%if %sysfunc(findw(&datasetlist,t4cida)) %then %do;
+			  %agg_report(infile=t4_cida, outfile=agg_t4cida, name=group, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
+			%end;	 
 		%end; *T4L1;
 
 	    %if %str("&reporttype") = %str("T5") %then %do;
