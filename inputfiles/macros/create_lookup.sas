@@ -194,7 +194,6 @@
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must have evidence of the MOI"; report_descr = "Medical product of interest recorded during pregnancy episode"; output;
 		claim_level = "MIL"; descr = "Exclusion - Linked infant exceeded maximum allowable days required between birth date and delivery date"; report_descr = "Linked infant must meet requirement for maximum allowable days between birth date and delivery date"; output;				
 		claim_level = "MIL"; descr = "Exclusion - Linked infant must satisfy the sex requirement"; report_descr = "Linked infant met sex requirement"; output;
-		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must be excluded if the member has evidence of earlier initiation of EOI or REF"; report_descr = "Mother excluded due to prior initiation of other exposure group"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy outcome must be during the look period"; report_descr = "Pregnancy outcome recorded during current look period"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episode index date must overlap the query period and satisfy the age range condition within the query period"; report_descr = "Pregnancy outcome recorded during query period and at specified age range evaluated at specified index date"; output;
 		claim_level = "MIL"; descr = "Exclusion - Pregnancy episodes must satisfy the pre-pregnancy outcome enrollment requirement"; report_descr = "Mother had sufficient continuous enrollment prior to pregnancy outcome"; output;
