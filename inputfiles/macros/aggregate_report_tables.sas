@@ -118,7 +118,7 @@
 							%else %if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;
 								/* Check if cens_dth variable exist for this DP. If not, cens_dth/cens_qryend variables will have to be removed from the aggregated dataset */
 								%if %varexist(&dpidsiteid..&&runid._&infile, cens_dth) = 0 %then %do;	
-								call symputx("drop_cens_output", "Y");
+								call symputx("drop_cens_output_qrpreport", "Y");
 								cens_dth=.M;
 								cens_qryend=.M;
 								%end;
@@ -126,7 +126,7 @@
 							%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;
 								/* Check if deathcount variable exist for this DP. If not, variable related to death/qryend censoring will have to be removed from the aggregated dataset */
 								%if %varexist(&dpidsiteid..&&runid._&infile, deathcount) = 0 %then %do;	
-								call symputx("drop_cens_output", "Y");
+								call symputx("drop_cens_output_qrpreport", "Y");
 								%if &infile. ne t6_utilepis_censor %then %do;
 								DeathPatCount=.M;
 								EndQueryPatCount=.M;
@@ -420,7 +420,7 @@
 
 
 		/* If death/qryend censoring columns were dropped from some aggregated datasets, remove them from datasets/variables used to generate the tables/figures */
-		%if &drop_cens_output.=Y %then %do;
+		%if &drop_cens_output_qrpreport=Y %then %do;
 			%isdata(dataset=tablefile);
 		    %if %eval(&nobs.>0) %then %do;
 				data tablefile;

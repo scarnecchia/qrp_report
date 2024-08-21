@@ -35,12 +35,12 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused drop_cens_output;
+    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
-	%let drop_cens_output = N;
+	%let drop_cens_output_qrpreport = N;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
