@@ -155,7 +155,7 @@
         %end; /*T5*/
         %else %if &reporttype. = T6 %then %do;
             %figure_survivalcurves_createdata(dataset=&dataset., 
-		                                      %if &drop_cens_output.=N %then %do; 
+		                                      %if &drop_cens_output_qrpreport=N %then %do; 
 		                                      rename=%str(rename=(analysisgrp=group 
 		                                                          SwitchedCount=cens_switch 
 		                                                          EndEnrollmentCount=cens_elig																   

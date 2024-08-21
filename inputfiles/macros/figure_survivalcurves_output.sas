@@ -180,7 +180,7 @@
 		ods proclabel = "Figure &figurenum.&tableletter.";
 		%end;
 
-		%if &figfn = Y or (&drop_cens_output.=Y and 
+		%if &figfn = Y or (&drop_cens_output_qrpreport=Y and 
 			    ((&reporttype. = T1) or 
                 (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
                 (&reporttype. = T5 and &figure. = F5) or
@@ -191,7 +191,7 @@
             %if &figfn = Y %then %do;
               "kmcdf"
             %end;
-            %if &drop_cens_output.=Y and ( 
+            %if &drop_cens_output_qrpreport=Y and ( 
                 (&reporttype. = T1) or 
                 (&reporttype. = T2L1 and (&figure. = F2 or &figure. = F3)) or
                 (&reporttype. = T5 and &figure. = F5) or
@@ -201,7 +201,7 @@
             %end;)));
           run;
 
-          %if &figfn = Y and &drop_cens_output.=Y %then %do;
+          %if &figfn = Y and &drop_cens_output_qrpreport=Y %then %do;
             proc sort data = _footnotes;
 	          by order;
 	        quit;
@@ -284,7 +284,7 @@
 			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in exclude=("95% CI");
 		run;
 
-		%if &figfn = Y or &drop_cens_output.=Y  %then %do;
+		%if &figfn = Y or &drop_cens_output_qrpreport=Y  %then %do;
 		/* Only one footnote for now - May change in the future */
 		proc odstext;
 			%do fnote = 1 %to &num_fn.;

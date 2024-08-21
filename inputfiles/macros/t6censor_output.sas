@@ -46,7 +46,7 @@
         %if %index(&reasonlist.,cens_qryend) %then %do; 10 %end; 
         %if %index(&reasonlist.,cens_switch) and &dataset=tableT9 %then %do; 11 %end;
         %if %index(&reasonlist.,cens_switch) and &dataset=tableT10 %then %do; 12 %end;)
-       %if &drop_cens_output.=Y %then %do;
+       %if &drop_cens_output_qrpreport=Y %then %do;
          or (type = "drop_cens" and order = 13) 
         %end;));
 		by order;
@@ -54,7 +54,7 @@
 	    if order = 13 then order = 4;
 	 run;
 
-	 %if &drop_cens_output.=Y %then %do;
+	 %if &drop_cens_output_qrpreport=Y %then %do;
       proc sort data = _footnotes;
 	    by order;
 	  quit;
