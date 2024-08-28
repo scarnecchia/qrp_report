@@ -97,7 +97,7 @@
             %end;
 			%if %index(&stratavar.,race) & &collapse_vars. = race %then %do;
               10
-            %end;))
+            %end;)))
           %end;
           %else %do;
 		     "type4" and order = -2) 
