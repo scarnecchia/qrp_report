@@ -128,10 +128,10 @@
                 /* initialize switch_counter(# of switches) */
                 call symputx('switch_counter',0);
 
-                /*if reporttype = T2L2, T4L2, or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, or computebalance = Y or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | upcase(computebalance)= 'Y' |
-                   upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
+                   upcase(includenonpregnant) = 'Y' | missing(baselinegroupnum)=0 then do;
                    call symputx('includecomp', 'Y');
                 end;
                 else do;

@@ -862,10 +862,10 @@
                 %end;
                 if missing(baselinegroupnum)=0 then call symputx('baselinegroupnum', baselinegroupnum);
                 
-                /*if reporttype = T2L2, T4L2, T6, or cohort = mi or includenonpreggroup = Y,
+                /*if reporttype = T2L2, T4L2, T6, or computebalance = Y or includenonpreggroup = Y,
                   or BASELINEGROUPNUM is specified then include COMP columns*/
                 if "&reporttype."="T2L2" | "&reporttype."="T4L2" | "&reporttype."="T6" 
-				   | upcase(computebalance)= 'Y' | upcase(includenonpregnant) = 'Y' | cohort = "mi" | missing(baselinegroupnum)=0 then do;
+				   | upcase(computebalance)= 'Y' | upcase(includenonpregnant) = 'Y' | missing(baselinegroupnum)=0 then do;
                    call symputx('includecomp', 'Y');
                 end;
                 else do;
