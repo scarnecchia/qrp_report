@@ -230,8 +230,10 @@
                 %let cohortgrp = &analysisgrp;
             %end;
             %if %str("&cohort") = %str("mi") %then %do;
+				/* Remove _eoi or _ref suffix from analysisgrp */
+				%let milgrp=%substr(&analysisgrp.,1,%length(&analysisgrp.)-4);
                 data _null_;
-                    set infolder.&&&runid._micohortfile(where=(milgrp="&analysisgrp"));
+                    set infolder.&&&runid._micohortfile(where=(milgrp="&milgrp"));
                     call symputx('cohortgrp', strip(groupname));
                 run;            
             %end;
