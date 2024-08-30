@@ -60,22 +60,25 @@
 	%if &milnobs > 0 %then %do;
 		/* Create pregnant cohort / MIL group pairing */
 		proc sql noprint;
-			select distinct catx('@',groupname,group) 
+			select distinct catx('@',groupname,group,cohortstocreate) 
 			into :milattrgrps separated by ' '
 			from master_mil;
 		quit;
 
 		data attrition_groups;
 			set attrition_groups;
+			format cohortstocreate $1.;
 			/* Reassign value of what group and groupname is for MIL groups */
 			if prxmatch('m/_eoi|_ref/i',group) then do;
 			%do zzz = 1 %to %sysfunc(countw(&milattrgrps));
 				%let pregmigroup = %scan(&milattrgrps,&zzz);
 				%let preggroup = %scan(&pregmigroup,1,%str(@));
-				%let migrp = %scan(&pregmigroup,-1,%str(@));
+				%let migrp = %scan(&pregmigroup,2,%str(@));
+				%let cohortstocreate = %scan(&pregmigroup,-1,%str(@));
 				if substr(group,1,length(group)-4) = "&migrp" then do;
 					groupname = "&preggroup";
 					group = "&migrp";
+					cohortstocreate="&cohortstocreate.";
 				end;
 			%end;
 			end;
@@ -129,7 +132,7 @@
 	%let milgrps=;
 	%let milgrplabels=;
 	%if &milnobs > 0 %then %do;
-	/* Create EOI/REF rows based off MIL group */
+	/* Create EOI/REF rows based off MIL group. Only output relevant groups based on cohortstocreate parameter */
 	data attrition_groups;
 		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
 		/* Length needs to be increased to accomodate this */
@@ -138,9 +141,9 @@
 		if missing(groupname) then output;
 		if not missing(groupname) then do;
 		group=catx('_',group,'ref');
-		output;
+		if upcase(cohortstocreate) in ("B", "R") then output;
 		if substrn(group,max(1,length(group)-3),4) = '_ref' then group=tranwrd(group,'_ref','_eoi');
-		output;
+		if upcase(cohortstocreate) in ("B", "E") then output;
 		end;
 	run;
 
