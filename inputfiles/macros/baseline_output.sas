@@ -1048,7 +1048,7 @@
         %if %eval(&nobs.>0) %then %do;
             data _null_;
                 set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
-                    %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
+                    %if %length(&baselinegroupnum.)>0 %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                     %end; 
                     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -1179,7 +1179,7 @@
 				%end;	
 				%else %do;
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-			        %if %length(&baselinegroupnum.)>0  and &cohort = mi %then %do;
+			        %if %length(&baselinegroupnum.)>0 %then %do;
 			        %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
 			        %end;
 					%else %do;

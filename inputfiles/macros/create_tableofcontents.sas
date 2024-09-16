@@ -203,7 +203,7 @@
             %if %eval(&nobs.>0) %then %do;
                 data _null_;
                     set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
-                        %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
+                        %if %length(&baselinegroupnum.)>0 %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                         %end; 
                         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -213,7 +213,7 @@
                         if labeltype = 'grouplabel' then call symputx('grouplabel',label);
                         if labeltype = 'baselinelabel' then call symputx('baselinelabel',cat(', ',strip(label), ','));
                     end;
-                    %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
+                    %if %length(&baselinegroupnum.)>0 %then %do;
                     if b then do;
                         if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
                     end;

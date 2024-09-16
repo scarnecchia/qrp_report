@@ -909,7 +909,7 @@
              end;
              else do;
                 if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Pregnant Cohort and Non-Pregnant Cohort';
-                else if baselinenumgrps ne . then preg_outcome_label='%str( )Pregnant Cohort';  
+                else if substrn(group,max(1,length(group)-3),4) ne '_ref' and substrn(group,max(1,length(group)-3),4) ne '_eoi' then preg_outcome_label='%str( )Pregnant Cohort';  
              end;
              drop _name_ count substring i code col: rc;
         run;
