@@ -54,7 +54,7 @@
             data _temp_agg_order_profile;
                 set aggregate_profile(where=(periodid=&periodid and &where));
                 grouplabel='';
-                if cohort = 'mi' then group2=scan(group,1,'_');
+                 if cohort = 'mi' then group2=scan(group,1,'_');
                 else group2=group;
                 if cohort = 'switch' then switchlabel=' ';
                 call symputx('runid',runid);
@@ -155,7 +155,8 @@
                 end;
                 %end;
 
-                %else %if %index(&where,%str(cohort="mi")) %then %do;
+                
+               %else %if %index(&where,%str(cohort="mi")) %then %do;
                 if not missing(grouplabel) then do;
                 if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
                 else call symputx('grouplabel',group2);
@@ -166,6 +167,7 @@
                 call symputx('productlabel',group);
                 end;
                 %end;
+
 
                 %else %if &reporttype = T6 %then %do;
 

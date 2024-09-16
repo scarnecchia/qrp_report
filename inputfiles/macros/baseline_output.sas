@@ -1040,15 +1040,15 @@
             %let reflabel = &ref.;
         %end;
         %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 & &cohort. = mi %then %do;
-            %let eoilabel = &analysisgrp._eoi;
-            %let reflabel = &analysisgrp._ref;
+            %let eoilabel = &analysisgrp.;
+            %let reflabel = &analysisgrp.;
         %end;
 
         %isdata(dataset=labelfile);
         %if %eval(&nobs.>0) %then %do;
             data _null_;
                 set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
-                    %if %length(&baselinegroupnum.)>0 %then %do;
+                    %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                     %end; 
                     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -1063,9 +1063,10 @@
                         labelfile(in=h where=(group="&switch2group." and runid = "&runid"))
                         %end;
                     %end; 
-                    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 & &cohort. = mi %then %do;
-                        labelfile(in=i where=(group="&analysisgrp._eoi" and runid = "&runid"))
-                        labelfile(in=j where=(group="&analysisgrp._ref" and runid = "&runid"))
+                    %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0  %then %do;
+					  
+                        labelfile(in=i where=(group="&analysisgrp." and runid = "&runid")) 
+                        labelfile(in=j where=(group="&analysisgrp." and runid = "&runid"))
                     %end; ;
                 if a then do;
                     if labeltype = 'grouplabel' then call symputx('grouplabel',strip(label));
@@ -1109,7 +1110,7 @@
             %end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-            %if &cohort = mi %then %do;
+            %if &cohort = mi and %length(&baselinegroupnum.)>0 %then %do; 
                 /*MI exposure and reference cohorts*/
                 %let grp1_label = %bquote(&eoilabel.);
                 %let grp2_label = %bquote(&reflabel.);
@@ -1123,7 +1124,7 @@
             %end;
         %end;
        
-        %if %length(&baselinegroupnum.)>0 %then %do;
+        %if %length(&baselinegroupnum.)>0  %then %do;
             %let grp2_label = %bquote(&grouplabel2.);
             %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
             	%let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.);
@@ -1178,8 +1179,11 @@
 				%end;	
 				%else %do;
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-			        %if %length(&baselinegroupnum.)>0 %then %do;
+			        %if %length(&baselinegroupnum.)>0  and &cohort = mi %then %do;
 			        %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			        %end;
+					%else %do;
+                    %let captionlabel = %bquote(Unexposed &grouplabel. and Exposed &grouplabel2.&baselinelabel.);
 			        %end;
 			        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
 			        %let captionlabel = %bquote(&psestimatelabel.);

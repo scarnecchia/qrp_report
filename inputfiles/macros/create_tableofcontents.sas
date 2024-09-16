@@ -125,7 +125,6 @@
             %let truncationlabel = ;
             %let psestimategrp = ;
             %let unadjusted = ;
-
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
@@ -204,7 +203,7 @@
             %if %eval(&nobs.>0) %then %do;
                 data _null_;
                     set labelfile(in=a where=(group="&analysisgrp" and runid = "&runid"))
-                        %if %length(&baselinegroupnum.)>0 %then %do;
+                        %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
                         labelfile(in=b where=(group="&analysisgrp2" and runid = "&runid"))
                         %end; 
                         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -214,7 +213,7 @@
                         if labeltype = 'grouplabel' then call symputx('grouplabel',label);
                         if labeltype = 'baselinelabel' then call symputx('baselinelabel',cat(', ',strip(label), ','));
                     end;
-                    %if %length(&baselinegroupnum.)>0 %then %do;
+                    %if %length(&baselinegroupnum.)>0 & &cohort. = mi %then %do;
                     if b then do;
                         if labeltype = 'grouplabel' then call symputx('grouplabel2',label);
                     end;
@@ -263,10 +262,10 @@
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
 			            %if %length(&baselinegroupnum.)>0 %then %do;
                             %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
-			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			                %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-			            %let captionlabel = %bquote(&psestimatelabel.);
+			                %let captionlabel = %bquote(&psestimatelabel.);
 			            %end;  
 
 						%let unique_psestimate = &unique_psestimate_orig;
@@ -412,10 +411,11 @@
 
             /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
             %isdata(dataset=labelfile);
+			
             %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
-                select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
+                select a.group, a.runid, a.order, a.periodid, a.baselinegroupnum, b.label as grouplabel
                 %if %index(&where,%str(cohort="mi")) %then %do;
                 ,c.label as grouplabel2, a.group2
                 %end;
@@ -443,7 +443,7 @@
             switchlabel='';
             run;
             %end;
-                
+  
             data _null_;
                 set _temp_agg_profile(keep=group grouplabel order
                                        %if %index(&where,%str(cohort="mi")) %then %do;
@@ -467,12 +467,12 @@
                 else call symputx('grouplabel',catx(' ',group,'Pregnancy'));
                 %end;
 
-                %else %if %index(&where,%str(cohort="mi")) %then %do;
+                %else %if %index(&where,%str(cohort="mi")) and %length(&baselinegroupnum.) >0 %then %do;
                 if not missing(grouplabel) then do;
                 if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
                 else call symputx('grouplabel',group2);
                 end;
-                else do;
+                else if baselinegroupnum = . then do;
                 call symputx('grouplabel',group);
                 end;
                 %end;
