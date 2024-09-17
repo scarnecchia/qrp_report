@@ -421,25 +421,16 @@
     quit;
 
     /* Set in condlevel value and delete unneeded rows */
-	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel
-					      %if %length(&milgrps) > 0 %then %do; millabel %end;
+	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel					      
 						  t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
 		length grouplabel headerlabel $&label_length;
 	  	grouplabel=group;
-	  	headerlabel='';
-	  	%if %length(&milgrps) > 0 %then %do;
-	  	if group in (&milgrps) then do;
-	  		/* create headerlabel for when no labelfile is specified, millabel for when it is specified */
-	  		headerlabel=substr(group,1,findc(group, '_',-length(group))-1);
-	  		millabel=substr(group,1,findc(group, '_',-length(group))-1);
-	  	end;
-	  	%end;
+	  	headerlabel='';	  	
 	  	%if %length(&analysisgrps) > 0 %then %do;
 	  	if scan(group,1,'@') in (&analysisgrps) then do;
 	  		headerlabel=scan(group,1,'@');
-	  		grouplabel=scan(group,-1,'@');
-	  		millabel=scan(group,1,'@');
+	  		grouplabel=scan(group,-1,'@');	  		
 	  	end;
 	  	%end;
 		%if &inclnobs > 0 %then %do;
@@ -518,10 +509,7 @@
 	        			a.group 
 	        			%end; 
 	        			end as grouplabel, 
-	        			case when not missing(c.label) then c.label  
-	        				 %if %length(&milgrps) > 0 %then %do;
-	        				 when missing(c.label) then a.millabel
-	        				 %end;
+	        			case when not missing(c.label) then c.label  	        				 
 	        				 %if %length(&analysisgrps) > 0 %then %do;
 	        				 when missing(c.label) and index(a.group,'@') then scan(a.group,1,'@')
 	        				 %end;
