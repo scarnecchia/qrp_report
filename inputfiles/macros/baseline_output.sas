@@ -1099,8 +1099,8 @@
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
             %if &cohort = mi and %length(&baselinegroupnum.)>0 %then %do; 
                 /*MI exposure and reference cohorts*/
-                %let grp1_label = %bquote(&eoilabel.);
-                %let grp2_label = %bquote(&reflabel.);
+                %let grp1_label = %bquote(&grouplabel.);
+                %let grp2_label = %bquote(&grouplabel2.);
             %end;
             %else %do;
                 /*Pregnant and non-pregnant cohorts*/
