@@ -184,7 +184,7 @@
 
    /*T4L1: - if group is found in COHORTFILE, then cohort= 'preg' and mergevar = 'group'
            - if group is found in COHORTFILE and INCLUDENONPREGNANT = Y then add new row to include cohort=nopreg and mergevar = 'group'
-           - if group is found in MICOHORTFILE then cohort = 'mi' and mergevar = 'group'. Convert group to <group>_eoi and add new <group>_ref row */
+           - if group is found in MICOHORTFILE then cohort = 'mi' and mergevar = 'group'.*/
     %else %if %str("&reporttype") = %str("T4L1") %then %do;
         %assign_cohort_mergevar(cohort=preg, mergevar=group, outdata=baselinefile_1, crosscheckfile = cohortfile, crosscheckvar=cohortgrp, includenonpregnant=Y);
         %assign_cohort_mergevar(cohort=mi, mergevar=group, outdata=baselinefile_2, crosscheckfile = micohortfile, crosscheckvar=milgrp);
