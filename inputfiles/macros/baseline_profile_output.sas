@@ -157,13 +157,10 @@
 
                 
                %else %if %index(&where,%str(cohort="mi")) %then %do;
-                if not missing(grouplabel) then do;
-                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
-                else call symputx('grouplabel',group2);
+                if not missing(grouplabel) then do;                
                 call symputx('productlabel',grouplabel);
                 end;
-                else do;
-                call symputx('grouplabel',group);
+                else do;                
                 call symputx('productlabel',group);
                 end;
                 %end;

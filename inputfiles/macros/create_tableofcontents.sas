@@ -445,10 +445,7 @@
             %end;
   
             data _null_;
-                set _temp_agg_profile(keep=group grouplabel order
-                                       %if %index(&where,%str(cohort="mi")) %then %do;
-                                       group2 grouplabel2
-                                       %end;
+                set _temp_agg_profile(keep=group grouplabel order                                       
                                        %if %index(&where,%str(cohort="switch")) %then %do;
                                        productswitchgroup switchlabel
                                        %end;
@@ -465,17 +462,7 @@
                 %else %if %index(&where,%str(cohort="preg")) %then %do;
                 if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
                 else call symputx('grouplabel',catx(' ',group,'Pregnancy'));
-                %end;
-
-                %else %if %index(&where,%str(cohort="mi")) and %length(&baselinegroupnum.) >0 %then %do;
-                if not missing(grouplabel) then do;
-                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
-                else call symputx('grouplabel',group2);
-                end;
-                else if baselinegroupnum = . then do;
-                call symputx('grouplabel',group);
-                end;
-                %end;
+                %end;                
 
                 %else %if &reporttype = T6 %then %do;
 
