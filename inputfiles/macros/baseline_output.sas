@@ -1097,22 +1097,17 @@
             %end;
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
-            %if %length(&baselinegroupnum.)>0 %then %do; 
-			    %if &cohort ne mi %then %do;
-                  /*MI exposure and reference cohorts*/
-                  %let grp1_label = %bquote(&grouplabel.);
-                  %let grp2_label = %bquote(&grouplabel2.);
-				%end;
-                %if &cohort ne mi %then %do;
-				  %let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.); 
-				%end;
-            %end;
-            %else %do;
-                /*Pregnant and non-pregnant cohorts*/
-                %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
-                %if &includenonpregnant. = Y %then %do;
-                %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);
-                %end;
+          /*Pregnant and non-pregnant cohorts*/
+          %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
+          %if &includenonpregnant. = Y %then %do;
+            %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);
+          %end;       
+        %end;
+        
+		%if %length(&baselinegroupnum.)>0 %then %do;
+            %let grp2_label = %bquote(&grouplabel2.);
+            %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 and &cohort ne mi %then %do;
+            	%let grp2_label = %bquote(&grouplabel2. &pregnancylabel2.);
             %end;
         %end;
 
