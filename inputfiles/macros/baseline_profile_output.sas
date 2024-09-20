@@ -101,16 +101,11 @@
             %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
-                select a.*, b.label as grouplabel 
-                            %if %index(&where,%str(cohort="mi")) %then %do; ,c.label as grouplabel2 %end;
+                select a.*, b.label as grouplabel
                             %if %index(&where,%str(cohort="switch")) %then %do; ,d.label as switchlabel %end;
                 from _temp_agg_profile(drop=grouplabel %if &reporttype = T6 %then %do; switchlabel %end;) a 
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) b
                 on a.group = b.group and a.runid = b.runid
-                %if %index(&where,%str(cohort="mi")) %then %do;
-                left join labelfile(where=(lowcase(labeltype)='grouplabel')) c
-                on a.group2 = c.group and a.runid = c.runid
-                %end;
                 %if %index(&where,%str(cohort="switch")) %then %do;
                 left join labelfile(where=(lowcase(labeltype)='grouplabel')) d
                 on a.productswitchgroup = d.group and a.runid = d.runid
@@ -132,6 +127,7 @@
                 call symputx('covarsort', upcase(covarsort));
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
+				call symputx('productlabel',grouplabel);
 
                 %if %index(&where,%str(cohort="nopreg")) %then %do;
                 if not missing(grouplabel) then do;
@@ -154,17 +150,6 @@
                 call symputx('productlabel',catx(' ',group,'Pregnancy'));
                 end;
                 %end;
-
-                
-               %else %if %index(&where,%str(cohort="mi")) %then %do;
-                if not missing(grouplabel) then do;                
-                call symputx('productlabel',grouplabel);
-                end;
-                else do;                
-                call symputx('productlabel',group);
-                end;
-                %end;
-
 
                 %else %if &reporttype = T6 %then %do;
 
