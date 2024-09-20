@@ -1082,7 +1082,7 @@
         %end;
 
         /*Set group labels*/
-        %if %sysfunc(prxmatch(m/T1|T3|T5|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
+        %if %sysfunc(prxmatch(m/T1|T3|T5|T2L1/i,&reporttype.)) > 0 %then %do;
             %let grp1_label = %bquote(&grouplabel.);
         %end;
         %else %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
@@ -1098,12 +1098,12 @@
         %end;
         %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
           /*Pregnant and non-pregnant cohorts*/
-          %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
+          %let grp1_label = %bquote(&grouplabel. &pregnancylabel.);
           %if &includenonpregnant. = Y %then %do;
             %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);
           %end;       
         %end;
-        
+  
 		%if %length(&baselinegroupnum.)>0 %then %do;
             %let grp2_label = %bquote(&grouplabel2.);
             %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 and &cohort ne mi %then %do;
