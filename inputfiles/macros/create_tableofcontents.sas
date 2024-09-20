@@ -415,7 +415,7 @@
             %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
-                select a.group, a.runid, a.order, a.periodid, a.baselinegroupnum, b.label as grouplabel
+                select a.group, a.runid, a.order, a.periodid, b.label as grouplabel
                 %if %index(&where,%str(cohort="mi")) %then %do;
                 ,c.label as grouplabel2, a.group2
                 %end;
