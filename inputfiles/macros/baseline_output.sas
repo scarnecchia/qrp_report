@@ -1099,7 +1099,7 @@
 
 		/*Pregnant and non-pregnant cohorts*/
         %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 and &includenonpregnant. = Y  %then %do;
-			 %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel. &pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
+			 %let grp1_label = %sysfunc(tranwrd(%bquote(&grouplabel.&pregnancylabel.), %str(and Non-Pregnant Cohort), %str()));
              %let grp2_label = %bquote(&grouplabel. Non-Pregnant Cohort);       
         %end;
   
