@@ -1119,12 +1119,12 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid controlmp $5 ref group groupname $40 cohortstocreate $1;
-            call missing(runid, controlmp, ref, group, groupname, cohortstocreate);
+            length runid controlmp $5 ref group groupname $40;
+            call missing(runid, controlmp, ref, group, groupname);
             stop;
         run;
 
-       data master_mil(keep=runid group groupname controlmp ref cohortstocreate);
+       data master_mil(keep=runid group groupname controlmp ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
