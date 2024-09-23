@@ -127,8 +127,7 @@
                 call symputx('covarsort', upcase(covarsort));
                 if not missing(grouplabel) then call symputx('grouplabel',grouplabel);
                 else call symputx('grouplabel',group);
-				call symputx('productlabel',grouplabel);
-
+				
                 %if %index(&where,%str(cohort="nopreg")) %then %do;
                 if not missing(grouplabel) then do;
                 call symputx('grouplabel',catx(' ',grouplabel,'Non-Pregnancy'));
@@ -433,7 +432,7 @@
             proc report data = repdata.table&tablenum.&tableletter nofs nowd headline headskip split="*" contents=''
         		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
-            %if %index(&reporttype,T4) or %index(&reporttype,T6) %then %do;
+            %if (%index(&reporttype,T4) and %index(&where,%str(cohort="mi")) = 0) or %index(&reporttype,T6) %then %do;
             columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
             %end;
             %else %do;
