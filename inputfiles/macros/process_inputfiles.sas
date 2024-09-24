@@ -1120,7 +1120,7 @@
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
             length runid expmp controlmp $5 eoi ref group groupname $40;
-            call missing(runid, controlmp, eoi, ref, group, groupname);
+            call missing(runid, expmp, controlmp, eoi, ref, group, groupname);
             stop;
         run;
 
