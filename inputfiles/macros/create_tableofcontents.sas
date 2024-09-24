@@ -260,9 +260,8 @@
 					%end;	
 					%else %do;
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-			            %if %length(&baselinegroupnum.)>0 %then %do;
-                            %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
-			                %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			            %if %length(&baselinegroupnum.)>0 %then %do;                         
+			                %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel2&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
 			                %let captionlabel = %bquote(&psestimatelabel.);
