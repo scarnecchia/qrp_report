@@ -437,17 +437,23 @@
 				%let comp_exp=N;
 			%end;
 			%else %do;
-				%let eoi_exp=Y;
-				%let comp_exp=N;
+				%let eoi_exp=;
+				%let comp_exp=;				
 
-				/* comp_exp will be set to Y only if controlmp is not missing */
-				proc sql noprint;
-					select controlmp into :comp_exp from 
-					master_mil(where=(runid="&runid" and group="&analysisgrp."));
-				quit;
+				data _null_;
+				set master_mil;
+				if runid="&runid" and eoi="&analysisgrp." then call symputx("eoi_exp", expmp);
+				else if runid="&runid" and ref="&analysisgrp." then call symputx("comp_exp", controlmp);
+				%if &includecomp. eq Y %then %do;
+					if runid="&runid" and eoi="&analysisgrp2." then call symputx("comp_exp", expmp);
+					else if runid="&runid" and ref="&analysisgrp2." then call symputx("comp_exp", controlmp);
+				%end;
+				run;
 
+				%if %str(&eoi_exp.) eq %str() %then %let eoi_exp=N;
+				%else %let eoi_exp=Y;
 				%if %str(&comp_exp.) eq %str() %then %let comp_exp=N;
-				%else %let comp_exp=Y;				
+				%else %let comp_exp=Y;			
 			%end;
 			
 			/* Get list of covariates anchored on INDEXDT_EXP */

@@ -1119,12 +1119,12 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid controlmp $5 eoi ref group groupname $40;
+            length runid expmp controlmp $5 eoi ref group groupname $40;
             call missing(runid, controlmp, eoi, ref, group, groupname);
             stop;
         run;
 
-       data master_mil(keep=runid group groupname controlmp eoi ref);
+       data master_mil(keep=runid group groupname expmp controlmp eoi ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
