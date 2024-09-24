@@ -44,7 +44,7 @@
 	create table attrition_groups as 
 	select distinct a.runid, a.group 
 	%if &t2addonnobs > 0 %then %do; , b.primary, b.secondary %end; 
-	%if &milnobs > 0 %then %do; ,b.groupname %end;
+	%if &milnobs > 0 %then %do; ,coalesce(b.groupname,c.groupname) as groupname format=$40. length=40 %end;
 	from inputfiles a
 	%if &t2addonnobs > 0 %then %do;
 	left join master_t2addon b
@@ -52,38 +52,12 @@
 	%end;
 	%if &milnobs > 0 %then %do;
 	left join master_mil b 
-	on a.group = b.group and a.runid = b.runid
+	on a.group = b.eoi and a.runid = b.runid
+	left join master_mil c 
+	on a.group = c.ref and a.runid = c.runid
 	%end;
 	;
-	quit;
-
-	%if &milnobs > 0 %then %do;
-		/* Create pregnant cohort / MIL group pairing */
-		proc sql noprint;
-			select distinct catx('@',groupname,group) 
-			into :milattrgrps separated by ' '
-			from master_mil;
-		quit;
-
-		data attrition_groups;
-			set attrition_groups;			
-			/* Reassign value of what group and groupname is for MIL groups */
-			if prxmatch('m/_eoi|_ref/i',group) then do;
-			%do zzz = 1 %to %sysfunc(countw(&milattrgrps));
-				%let pregmigroup = %scan(&milattrgrps,&zzz);
-				%let preggroup = %scan(&pregmigroup,1,%str(@));
-				%let migrp = %scan(&pregmigroup,2,%str(@));				
-				if substr(group,1,length(group)-4) = "&migrp" then do;
-					groupname = "&preggroup";								
-				end;
-			%end;
-			end;
-		run;
-
-		proc sort data = attrition_groups nodupkey;
-			by runid group groupname;
-		run;
-	%end;
+	quit;	
 
 	/* Link EOI/REF groups back to analysisgrps */
 	%if %index(&reporttype,T2L2) %then %do;
