@@ -125,7 +125,6 @@
             %let truncationlabel = ;
             %let psestimategrp = ;
             %let unadjusted = ;
-
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
@@ -261,12 +260,11 @@
 					%end;	
 					%else %do;
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-			            %if %length(&baselinegroupnum.)>0 %then %do;
-                            %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
-			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			            %if %length(&baselinegroupnum.)>0 %then %do;                         
+			                %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel2&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-			            %let captionlabel = %bquote(&psestimatelabel.);
+			                %let captionlabel = %bquote(&psestimatelabel.);
 			            %end;  
 
 						%let unique_psestimate = &unique_psestimate_orig;
@@ -412,6 +410,7 @@
 
             /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
             %isdata(dataset=labelfile);
+			
             %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
@@ -443,12 +442,9 @@
             switchlabel='';
             run;
             %end;
-                
+  
             data _null_;
-                set _temp_agg_profile(keep=group grouplabel order
-                                       %if %index(&where,%str(cohort="mi")) %then %do;
-                                       group2 grouplabel2
-                                       %end;
+                set _temp_agg_profile(keep=group grouplabel order                                       
                                        %if %index(&where,%str(cohort="switch")) %then %do;
                                        productswitchgroup switchlabel
                                        %end;
@@ -465,17 +461,7 @@
                 %else %if %index(&where,%str(cohort="preg")) %then %do;
                 if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
                 else call symputx('grouplabel',catx(' ',group,'Pregnancy'));
-                %end;
-
-                %else %if %index(&where,%str(cohort="mi")) %then %do;
-                if not missing(grouplabel) then do;
-                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
-                else call symputx('grouplabel',group2);
-                end;
-                else do;
-                call symputx('grouplabel',group);
-                end;
-                %end;
+                %end;                
 
                 %else %if &reporttype = T6 %then %do;
 

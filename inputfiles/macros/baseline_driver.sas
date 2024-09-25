@@ -115,6 +115,15 @@
                 %end;
             %end;
 
+			%if "&crosscheckvar" = "milgrp" %then %do;
+				data _crosscheck;
+				set _crosscheck(in=a)
+					_crosscheck(in=b where=(missing(milgrp)=0));
+				if a and missing(milgrp)=0 then milgrp=strip(milgrp) || "_eoi";
+				else if b then milgrp=strip(milgrp) || "_ref";
+				run;			
+			%end;
+
             proc sql noprint undo_policy=none;
                 create table &outdata. as 
                 select x.*
@@ -145,21 +154,7 @@
 					abort;
 				end;
             run;
-        %end;
-
-        %if "&crosscheckvar" = "milgrp" %then %do;
-            data &outdata.;
-                set &outdata.(in=a)
-                    &outdata.(in=b);
-                format analysisgrp $40.;
-                if a then group = cats(group, '_eoi');
-                if b then group = cats(group, '_ref');
-                if not missing(baselinegroupnum) then do;
-                    put 'ERROR: (Sentinel) BASELINEGROUPNUM cannot be used with MILGRP values';
-                    abort;
-                end;
-            run;
-        %end;
+        %end;        
     %mend;
 
     /*T1, T3 and T5 cohort is missing and mergevar = 'group'*/
@@ -189,7 +184,7 @@
 
    /*T4L1: - if group is found in COHORTFILE, then cohort= 'preg' and mergevar = 'group'
            - if group is found in COHORTFILE and INCLUDENONPREGNANT = Y then add new row to include cohort=nopreg and mergevar = 'group'
-           - if group is found in MICOHORTFILE then cohort = 'mi' and mergevar = 'group'. Convert group to <group>_eoi and add new <group>_ref row */
+           - if group is found in MICOHORTFILE then cohort = 'mi' and mergevar = 'group'.*/
     %else %if %str("&reporttype") = %str("T4L1") %then %do;
         %assign_cohort_mergevar(cohort=preg, mergevar=group, outdata=baselinefile_1, crosscheckfile = cohortfile, crosscheckvar=cohortgrp, includenonpregnant=Y);
         %assign_cohort_mergevar(cohort=mi, mergevar=group, outdata=baselinefile_2, crosscheckfile = micohortfile, crosscheckvar=milgrp);
@@ -323,20 +318,14 @@
                             call symputx('computebalance', upcase(computebalance));
                             call symputx('baselinegroupnum', baselinegroupnum);
 
-                            /*if includenonpregnant = Y, group1=preg and group2=nonpreg*/
-                            /*when cohort = mi, group1= _eoi and group2=_ref*/
+                            /*if includenonpregnant = Y, group1=preg and group2=nonpreg*/                            
                             *if baselinegroupnum is specified, group1 = baselinegroupnum = 1 and group2 = baselinegroupnum = 2;
                             /*otherwise, group2 will not be populated*/
                             if upcase(includenonpregnant) = 'Y' then do;
                                 call symputx('group1where',"and cohort='preg'");
                                 call symputx('group2where',"and cohort='nopreg'");
                                 call symputx('createcompcolumns', 'Y');
-                            end;
-                            else if cohort = "mi" then do;
-                                call symputx('group1where',"and substr(group1, length(group1)-3, length(group1))='_eoi'");
-                                call symputx('group2where',"and substr(group1, length(group1)-3, length(group1))='_ref'");
-                                call symputx('createcompcolumns', 'Y');
-                            end;
+                            end;                            
                             else if missing(baselinegroupnum)=0 then do;
                                 call symputx('group1where','and group1="&analysisgrp"');
                                 call symputx('createcompcolumns', 'Y');
@@ -580,11 +569,7 @@
                             %if "&includenonpregnant" = "Y" %then %do;
                                 group1 = "preg";
                                 group2 = "nopreg";
-                            %end;
-                            %else %if %str("&cohortvalue") = %str("mi") %then %do;
-                                group1 = cats("&analysisgrp", "_eoi");
-                                group2 = cats("&analysisgrp", "_ref");
-                            %end;
+                            %end;                            
                             %else %if %length(&baselinegroupnum.) >0 %then %do;
                                 group1 = "&analysisgrp";
                                 group2 = "&analysisgrp2";

@@ -44,7 +44,7 @@
 	create table attrition_groups as 
 	select distinct a.runid, a.group 
 	%if &t2addonnobs > 0 %then %do; , b.primary, b.secondary %end; 
-	%if &milnobs > 0 %then %do; ,b.groupname %end;
+	%if &milnobs > 0 %then %do; ,coalesce(b.groupname,c.groupname) as groupname format=$40. length=40 %end;
 	from inputfiles a
 	%if &t2addonnobs > 0 %then %do;
 	left join master_t2addon b
@@ -52,39 +52,12 @@
 	%end;
 	%if &milnobs > 0 %then %do;
 	left join master_mil b 
-	on a.group = b.group and a.runid = b.runid
+	on a.group = b.eoi and a.runid = b.runid
+	left join master_mil c 
+	on a.group = c.ref and a.runid = c.runid
 	%end;
 	;
-	quit;
-
-	%if &milnobs > 0 %then %do;
-		/* Create pregnant cohort / MIL group pairing */
-		proc sql noprint;
-			select distinct catx('@',groupname,group) 
-			into :milattrgrps separated by ' '
-			from master_mil;
-		quit;
-
-		data attrition_groups;
-			set attrition_groups;
-			/* Reassign value of what group and groupname is for MIL groups */
-			if prxmatch('m/_eoi|_ref/i',group) then do;
-			%do zzz = 1 %to %sysfunc(countw(&milattrgrps));
-				%let pregmigroup = %scan(&milattrgrps,&zzz);
-				%let preggroup = %scan(&pregmigroup,1,%str(@));
-				%let migrp = %scan(&pregmigroup,-1,%str(@));
-				if substr(group,1,length(group)-4) = "&migrp" then do;
-					groupname = "&preggroup";
-					group = "&migrp";
-				end;
-			%end;
-			end;
-		run;
-
-		proc sort data = attrition_groups nodupkey;
-			by runid group groupname;
-		run;
-	%end;
+	quit;	
 
 	/* Link EOI/REF groups back to analysisgrps */
 	%if %index(&reporttype,T2L2) %then %do;
@@ -129,83 +102,83 @@
 	%let milgrps=;
 	%let milgrplabels=;
 	%if &milnobs > 0 %then %do;
-	/* Create EOI/REF rows based off MIL group */
-	data attrition_groups;
-		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
-		/* Length needs to be increased to accomodate this */
-		length group $81;
-		set attrition_groups;
-		if missing(groupname) then output;
-		if not missing(groupname) then do;
-		group=catx('_',group,'ref');
-		output;
-		if substrn(group,max(1,length(group)-3),4) = '_ref' then group=tranwrd(group,'_ref','_eoi');
-		output;
-		end;
-	run;
+		%if %index(&reporttype,T4L2) %then %do;
+			/* Create EOI/REF rows based off MIL group */
+			data attrition_groups;
+				/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+				/* Length needs to be increased to accomodate this */
+				length group $81;
+				set attrition_groups;
+				if missing(groupname) then output;
+				if not missing(groupname) then do;
+				group=catx('_',group,'ref');
+				output;
+				if substrn(group,max(1,length(group)-3),4) = '_ref' then group=tranwrd(group,'_ref','_eoi');
+				output;
+				end;
+			run;
 
-	%if %index(&reporttype,T4L2) %then %do;
-	/* Link all analysisgrp, pregnancy cohorts and EOI/REF groups back to each other */
-	proc sql noprint;
-		create table _whatgroups as 
-		select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
-							  case when missing(ref) then ref2 else ref end as ref, groupname 
-		from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
-		      from pscs_masterinputs (where = (missing(subgroup))) a 
-			  left join 
-			  psest_masterinputs b 
-			  on a.psestimategrp = b.psestimategrp
-			  left join 
-			  master_mil c 
-			  on substr(coalescec(a.eoi,b.eoi),1,findc(coalescec(a.eoi,b.eoi), '_',-length(coalescec(a.eoi,b.eoi)))-1) = c.group) 
-		;
-	quit;
+			/* Link all analysisgrp, pregnancy cohorts and EOI/REF groups back to each other */
+			proc sql noprint;
+				create table _whatgroups as 
+				select distinct runid, analysisgrp, case when missing(eoi) then eoi2 else eoi end as eoi,
+									  case when missing(ref) then ref2 else ref end as ref, groupname 
+				from (select a.runid, a.analysisgrp, a.eoi, a.ref, b.eoi as eoi2, b.ref as ref2, c.groupname 
+				      from pscs_masterinputs (where = (missing(subgroup))) a 
+					  left join 
+					  psest_masterinputs b 
+					  on a.psestimategrp = b.psestimategrp
+					  left join 
+					  master_mil c 
+					  on substr(coalescec(a.eoi,b.eoi),1,findc(coalescec(a.eoi,b.eoi), '_',-length(coalescec(a.eoi,b.eoi)))-1) = c.group) 
+				;
+			quit;
 
-	/* Transpose data to have runid, group and groupname structure */
-	data _null_;
-		if _n_=1 then do; 
-		dcl hash attr(multidata:'y') ;   
-		attr.definekey("analysisgrp") ;   
-		attr.definedata("runid","group", "groupname") ;  
-		attr.definedone() ;   
-		end;
-		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
-		/* Length needs to be increased to accomodate this */
-		length group $81;
-		set _whatgroups end=lr;
-		array t eoi ref;
-		do over t;
-		group=catx('@',analysisgrp,t);
-		attr.add();
-		end;
-		if lr then attr.output(dataset:"_tempgrps");
-	run;
+			/* Transpose data to have runid, group and groupname structure */
+			data _null_;
+				if _n_=1 then do; 
+				dcl hash attr(multidata:'y') ;   
+				attr.definekey("analysisgrp") ;   
+				attr.definedata("runid","group", "groupname") ;  
+				attr.definedone() ;   
+				end;
+				/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
+				/* Length needs to be increased to accomodate this */
+				length group $81;
+				set _whatgroups end=lr;
+				array t eoi ref;
+				do over t;
+				group=catx('@',analysisgrp,t);
+				attr.add();
+				end;
+				if lr then attr.output(dataset:"_tempgrps");
+			run;
 
-	/* Append groups */
-	data attrition_groups;
-		set attrition_groups _tempgrps;
-	run;
-	%end;
+			/* Append groups */
+			data attrition_groups;
+				set attrition_groups _tempgrps;
+			run;
+		%end; /* reporttype=T4L2 */
 
-	proc sql noprint undo_policy=none;
-		%if %index(&reporttype,T4L1) %then %do;
-		select distinct quote(strip(group)) 
-		%end;
-		%else %do;
-		select distinct quote(strip(scan(group,-1,'@')))
-		%end; 
-		into :milgrps 
-		separated by " "
-		from attrition_groups
-		where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
+		proc sql noprint undo_policy=none;
+			%if %index(&reporttype,T4L1) %then %do;
+			select distinct quote(strip(group)) 
+			%end;
+			%else %do;
+			select distinct quote(strip(scan(group,-1,'@')))
+			%end; 
+			into :milgrps 
+			separated by " "
+			from attrition_groups
+			where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
 
-		select distinct quote(substr(group,1,findc(group, '_',-length(group))-1))
-		into :milgrplabels
-		separated by " "
-		from attrition_groups 
-		where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
-	quit;
-	%end;
+			select distinct quote(substr(group,1,findc(group, '_',-length(group))-1))
+			into :milgrplabels
+			separated by " "
+			from attrition_groups 
+			where substrn(group,max(1,length(group)-3),4) in ('_eoi','_ref');
+		quit;
+	%end; /* milnobs > 0 */
 
 	%let analysisgrps=;
 	%if %index(&reporttype,L2) %then %do;
@@ -418,25 +391,16 @@
     quit;
 
     /* Set in condlevel value and delete unneeded rows */
-	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel
-					      %if %length(&milgrps) > 0 %then %do; millabel %end;
+	data all_attrition_agg(keep=runid group level claim_level agg_remaining agg_excluded report_descr grouplabel headerlabel					      
 						  t%substr(&reporttype,2,1)cohortdef);
 		set all_attrition_agg;
 		length grouplabel headerlabel $&label_length;
 	  	grouplabel=group;
-	  	headerlabel='';
-	  	%if %length(&milgrps) > 0 %then %do;
-	  	if group in (&milgrps) then do;
-	  		/* create headerlabel for when no labelfile is specified, millabel for when it is specified */
-	  		headerlabel=substr(group,1,findc(group, '_',-length(group))-1);
-	  		millabel=substr(group,1,findc(group, '_',-length(group))-1);
-	  	end;
-	  	%end;
+	  	headerlabel='';	  	
 	  	%if %length(&analysisgrps) > 0 %then %do;
 	  	if scan(group,1,'@') in (&analysisgrps) then do;
 	  		headerlabel=scan(group,1,'@');
-	  		grouplabel=scan(group,-1,'@');
-	  		millabel=scan(group,1,'@');
+	  		grouplabel=scan(group,-1,'@');	  		
 	  	end;
 	  	%end;
 		%if &inclnobs > 0 %then %do;
@@ -515,10 +479,7 @@
 	        			a.group 
 	        			%end; 
 	        			end as grouplabel, 
-	        			case when not missing(c.label) then c.label  
-	        				 %if %length(&milgrps) > 0 %then %do;
-	        				 when missing(c.label) then a.millabel
-	        				 %end;
+	        			case when not missing(c.label) then c.label  	        				 
 	        				 %if %length(&analysisgrps) > 0 %then %do;
 	        				 when missing(c.label) and index(a.group,'@') then scan(a.group,1,'@')
 	        				 %end;
