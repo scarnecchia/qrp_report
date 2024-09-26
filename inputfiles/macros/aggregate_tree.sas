@@ -204,13 +204,15 @@
 				  %let unique_wkday = %sysfunc(tranwrd(%quote(&unique_wklvlvars.),%str( ),%str(,)));
 			  	%end;
 			
+				%varlength (var = hoi, indata = _agg_t3_tree_wkdays_&periodid.);
+
 	        	proc sql noprint;
 				  create table output.&&&runid._runid._t3_tree_wkdays_&periodid._agg as
 				  select treeanalysisgrp              format = $40.
 				        ,group                        format = $40.
 						,level                        format = $3.
-						,orig_hoi                     format = $14.
-						,hoi                          format = $14.
+						,orig_hoi                     format = $&hoi_len..
+						,hoi                          format = $&hoi_len..
 				        ,wkday                        format = 8.
 						,case when sum_count < 1 then 0
 						 else sum_count end as count  format = 8.
@@ -372,6 +374,8 @@
 					levelnumlbl = "&&levelnumlbl&t..";
 				run;
 		  
+				%varlength (var = hoi, indata = &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.);
+
 			  	/* Clean up work space */
 	          	proc datasets lib = work nowarn noprint nolist;
 	            	delete temp_&runid._t&typenum._tree_analysis_&periodid._agg;
@@ -389,7 +393,7 @@
 						        ,nhois_eoi
 								,nhois_ref
 						  from (
-						    select hoi                                   format = $14.
+						    select hoi                                   format = $&hoi_len..
 							  	,case when sum(nhois_eoi) < 1 then 0
 			                       else sum(nhois_eoi) end as nhois_eoi  format = 8.
 							  	,case when sum(nhois_ref) < 1 then 0
@@ -427,7 +431,7 @@
 	      			%else %do;	   
 				        proc sql noprint undo_policy=none;
 						  create table &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
-						  select hoi                               format = $14.
+						  select hoi                               format = $&hoi_len..
 						        ,case when sum(sum_nhois) < 1 then 0
 								 else sum(sum_nhois) end as nhois  format = 8.
 						        ,tte                               format = 8.
