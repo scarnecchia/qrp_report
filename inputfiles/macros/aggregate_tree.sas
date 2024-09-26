@@ -209,8 +209,8 @@
 				  select treeanalysisgrp              format = $40.
 				        ,group                        format = $40.
 						,level                        format = $3.
-						,orig_hoi                     format = $11.
-						,hoi                          format = $11.
+						,orig_hoi                     format = $14.
+						,hoi                          format = $14.
 				        ,wkday                        format = 8.
 						,case when sum_count < 1 then 0
 						 else sum_count end as count  format = 8.
@@ -389,7 +389,7 @@
 						        ,nhois_eoi
 								,nhois_ref
 						  from (
-						    select hoi                                   format = $11.
+						    select hoi                                   format = $14.
 							  	,case when sum(nhois_eoi) < 1 then 0
 			                       else sum(nhois_eoi) end as nhois_eoi  format = 8.
 							  	,case when sum(nhois_ref) < 1 then 0
@@ -427,7 +427,7 @@
 	      			%else %do;	   
 				        proc sql noprint undo_policy=none;
 						  create table &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid. as
-						  select hoi                               format = $11.
+						  select hoi                               format = $14.
 						        ,case when sum(sum_nhois) < 1 then 0
 								 else sum(sum_nhois) end as nhois  format = 8.
 						        ,tte                               format = 8.
