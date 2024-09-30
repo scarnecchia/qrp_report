@@ -393,7 +393,7 @@
 		var &qrp_param_content.;
 		run;
 	%end;
-     
+ 
     /* Combine input files to identify all runids requested */
     data inputfiles;
        set 
@@ -457,7 +457,8 @@
             &&id&n.._utilfile &&id&n.._combofile &&id&n.._drugclassfile &&id&n.._micohortfile
             &&id&n.._surveillancemode &&id&n.._labcodesmap &&id&n.._zipfile &&id&n.._run_envelope &&id&n.._distindex &&id&n.._treatmentpathways
             &&id&n.._userstrata &&id&n.._overlapfile &&id&n.._overlapfile_adhere &&id&n.._concfile &&id&n.._multeventfile &&id&n.._multeventfile_adhere
-            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration;
+            &&id&n.._pscssubgroupfile &&id&n.._riskscorefile &&id&n.._pregnancycodes &&id&n.._pregnancymeta &&id&n.._pregnancyduration
+			&&id&n.._t4hoimethod;
                   
         %let &&id&n.._runid                = ;
         %let &&id&n.._periodidstart        = ;
@@ -511,6 +512,7 @@
 		%let &&id&n.._pregnancycodes  	   = ;
 		%let &&id&n.._pregnancymeta  	   = ;
 		%let &&id&n.._pregnancyduration    = ;
+		%let &&id&n.._t4hoimethod          = ;
 
         data _null_;
           set qrp_parameters (keep = parameter &&run&n.);
@@ -520,6 +522,7 @@
             call symputx("zipfile",&&run&n.);
           end;
         run;
+
 
         /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
 		%if &leavebehindreport. ne Y %then %do;
@@ -906,7 +909,7 @@
              end;
              else do;
                 if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Pregnant Cohort and Non-Pregnant Cohort';
-                else preg_outcome_label='%str( )Pregnant Cohort';
+                else if substrn(group,max(1,length(group)-3),4) ne '_ref' and substrn(group,max(1,length(group)-3),4) ne '_eoi' then preg_outcome_label='%str( )Pregnant Cohort';  
              end;
              drop _name_ count substring i code col: rc;
         run;
@@ -1116,12 +1119,12 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid controlmp $5 ref group groupname $40;
-            call missing(runid, controlmp, ref, group, groupname);
+            length runid expmp controlmp $5 eoi ref group groupname $40;
+            call missing(runid, expmp, controlmp, eoi, ref, group, groupname);
             stop;
         run;
 
-       data master_mil(keep=runid group groupname controlmp ref);
+       data master_mil(keep=runid group groupname expmp controlmp eoi ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
@@ -1138,6 +1141,7 @@
                 %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
                 if n&n. then do;
                 group=lowcase(milgrp);
+				eoi=catt(group,"_eoi");
 				ref=catt(group,"_ref");
                 runid = "&&id&n.";
                 end;
@@ -1446,6 +1450,7 @@
                 if index(tabletitle, 'Hhs_reg')>0 then tabletitle =tranwrd(tabletitle, 'Hhs_reg', 'Health and Human Services (HHS) Region');
                 if index(tabletitle, 'Cb_reg')>0 then tabletitle =tranwrd(tabletitle, 'Cb_reg', 'Census Bureau Region');
                 if index(tabletitle, 'Adherence')>0 and index(tabletitle, 'Adherence_')=0 then tabletitle =tranwrd(tabletitle, 'Adherence', 'Overall Adherence Criteria');
+                if index(tabletitle, 'Prepostind')>0 then tabletitle =tranwrd(tabletitle, 'Prepostind', 'Gestational Age Categories');
 
                 /*Add ampersand to covariate. Will be resovled when title prints*/
                 if index(tabletitle, 'Covar')>0 then tabletitle =tranwrd(tabletitle, 'Covar', '&StudyCovar');
@@ -1643,7 +1648,7 @@
 
                             data tablecolumns (keep = table column order columnlabel columnformat columnwidth columnname smallcellYN 
                                                   %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do; columnheader numerator %end;
-                                                  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
+                                                  %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) > 0 %then %do; cirate %end;);
                               set tablecolumns (rename = (order = order_in column = column_in));
                               length columnname $32 smallcellYN $1;
                               by table order_in;
@@ -1665,6 +1670,8 @@
                                     else columnheader = 'Number';
                                     call symputx('checkt4l1_t1t5', 'Y');
                                   end;
+                                /* Re-assign to t4cida so data is subset correctly downstream */
+                                if table = 'T7' then table = 't4cida';
                               %end;
                             run;
 
@@ -1682,8 +1689,8 @@
                                 %end;
                             %end;                         
                             
-                            /* Add footnotes for T1 and T2L1 */
-                            %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) > 0 %then %do;
+                            /* Add footnotes for T1 and T2L1 and T4L1*/
+                            %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) > 0 %then %do;
                               data tablecolumns;
                                 set tablecolumns;
                                 length footnote 3;
@@ -2200,9 +2207,9 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
                    caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup $15 subgroupcat $11 stratvars $18;
-            call missing(runid, file, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
+            call missing(runid, file, t4hoimethod, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim, stratvars);
             stop;
         run;
@@ -2242,14 +2249,15 @@
                 %if %str("&&&runid._iptwfile") ne %str("") %then %do;
                 if d then file = 'iptwfile';
                 %end;
-
+               
                 if not x then do;
                 runid = "&runid.";
+				t4hoimethod = lowcase("&&&runid._t4hoimethod");
                 end;
                 analysisgrp = lowcase(analysisgrp);
                 psestimategrp = lowcase(psestimategrp);
                 keep runid file analysisgrp psestimategrp subgroup subgroupcat ceiling caliper ratio strataweight truncweight
-                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars;
+                     ipweight percentiles eoi ref unconditional pstrim reestimateps stratvars t4hoimethod;
             run;
 
             data psest_masterinputs;
@@ -2287,6 +2295,7 @@
                       ,pscs.unconditional
                       ,pscs.pstrim
                       ,pscs.stratvars 
+					  ,pscs.t4hoimethod
                       ,lowcase(sub.subgroup) as subgroup
                       ,upcase(sub.subgroupcat) as subgroupcat
                       /*set in REESTIMATEPS - defensive set to Y / N if no applicable*/
@@ -2338,6 +2347,14 @@
                   ,pscs.subgroupcat
                   ,pscs.reestimateps
                   ,pscs.stratvars 
+				  %if &reporttype. = T4L2 %then %do;
+				  ,case when pscs.t4hoimethod = " " then "binary"
+                   else pscs.t4hoimethod 
+				   end as t4hoimethod
+				  %end;
+				  %if &reporttype. = T2L2 %then %do;
+				  ,pscs.t4hoimethod
+				  %end;
             from pscs_masterinputs as pscs
                  left join psest_masterinputs est
             on pscs.psestimategrp = est.psestimategrp; 

@@ -89,7 +89,7 @@
 
     /* If cens_dth and cens_qryend are dropped, remove from censorreason list*/
     /* If DP population of cens columns is heterogeneous, col is dropped for all - indicate the need for footnote */   
-	%if &drop_cens_output.=Y %then %do;
+	%if &drop_cens_output_qrpreport=Y %then %do;
       %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_dth,%str()));
 	  %let censorreason=%sysfunc(tranwrd(&censorreason.,cens_qryend,%str()));
 	%end;

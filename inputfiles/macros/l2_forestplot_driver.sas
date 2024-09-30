@@ -9,7 +9,7 @@
 * PURPOSE: Creates and outputs forest plots for level 2 analyses
 *                                       
 *  Program inputs:                                                                                   
-*   - forest_[periodid].sas7bdat
+*   - forest_[periodid][t4hoimethod].sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
 * 
@@ -31,11 +31,26 @@
 
 	    %let tablecount=1;
         %let tableletter=a;
+    
+		/*create set up for forestplot by t4hoimethod*/
+        %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
 
-      %do j = %eval(&look_start) %to %eval(&look_end); /*loop through periods*/
-
-        /* Determine forest plot labeling */
+        %let t4hoimethod = binary timetoevent;
         %if "&reporttype." = "T2L2" %then %do;
+		  %let t4_loop = 1;
+	    %end;
+	    %else %do;
+          %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
+        %end;
+	    %do t4 = 1 %to &t4_loop;
+		%if "&reporttype." = "T2L2" %then %do;
+          %let t4hoimethod_current = ; 
+		%end;
+		%else %do;
+	      %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+		%end;
+		/* Determine forest plot labeling */
+        %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = timetoevent) %then %do;
         %let ForestRatioTitle = Hazard Ratios (HR);
         %let ForestRatioFoot = Hazard ratio;
         %let ForestRatioLabel = HR (95% CI);
@@ -44,7 +59,7 @@
         %let ForestLowerCI = LCL;
         %let ForestUpperCI = UCL;
         %end;
-        %else %if "&reporttype." = "T4L2" %then %do;
+        %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
         %let ForestRatioTitle = Risk Ratios (RR);
         %let ForestRatioFoot = Risk ratio;
         %let ForestRatioLabel = RR (95% CI);
@@ -58,7 +73,7 @@
         %if &sysscp = WIN %then %let fontfamily=Calibri;
         %else %let fontfamily=Albany AMT;
 
-        /*7 potential plots:
+        /*7 potential plots (T4L2: Can be per identified t4hoimethod:
             1. Site-adjusted
             2. PS matched conditional analysis
             3. PS matched unconditional analysis
@@ -66,8 +81,8 @@
             5. PS stratum weighted analysis
             6. IPTW
             7. Covariate stratification */
-
-        %do plot = 1 %to 7;
+        %if %sysfunc(exist(forest_&j.&t4hoimethod_current.)) %then %do;
+          %do plot = 1 %to 14;
 
             /*set forest plot variables for this loop*/
             %let forestfootnote = Y;
@@ -78,42 +93,43 @@
 
             /* Adjust plot height for groups of 1 */
             %let plot_n = ;
-            proc sql noprint;
+			
+              proc sql noprint;
                 select count(*)
                 into: plot_n
-                from forest_&j
+                from forest_&j.&t4hoimethod_current.
                 where plotorder=&plot;
-            quit;
-
-            data forest;
-            set forest_&j(where=(plotorder=&plot));
-              obsid=_n_;
-              if id ne 1 then refid=obsid;
-              /* Reduce indent for methods heading */
-              if id=1 then indentWt=0;
-              if id=2 then indentWt=.5;
-              if id=3 then indentWt=1;
-              %if &plot_n ^= 2 %then %do;
-              call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
-              %end;
-              %else %do;
-              call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
-              %end;
-              call symputx("forest_title",forest_title);
-              /*if HR cannot be computed for any row in plot, then:
+              quit;
+  
+              data forest;
+                set forest_&j.&t4hoimethod_current. (where=(plotorder=&plot));
+                obsid=_n_;
+                if id ne 1 then refid=obsid;
+                /* Reduce indent for methods heading */
+                if id=1 then indentWt=0;
+                if id=2 then indentWt=.5;
+                if id=3 then indentWt=1;
+                %if &plot_n ^= 2 %then %do;
+                call symputx("plotheight", cats(_n_*0.225+0.7,'in'),'G');
+                %end;
+                %else %do;
+                call symputx("plotheight", cats(_n_*0.3+0.7,'in'),'G');
+                %end;
+                call symputx("forest_title",forest_title);
+                /*if HR cannot be computed for any row in plot, then:
                  - only 8 additional footnotes are possible
                  - start assigning footnotes at 2
                  - modify &displayperiodid to add superscript */
-              if &ForestCI95 in ('N/A','NaN','.') then do;
+                if &ForestCI95 in ('N/A','NaN','.') then do;
                 call symputx('forestnohrfootnote', 'Y');
                 call symputx('nummaxforestfootnote', 8);
                 call symputx('unicode_forplot', substr("&unicode_list.",6)); /*unicode characters are 4 digits*/
                 call symputx('forestnohrsuper', "^{super 1}");
               end;
-              call symputx('plotwidth','7in', 'G');
-            run;
+                call symputx('plotwidth','7in', 'G');
+              run;
 
-            data _null_;
+              data _null_;
                 set forest nobs=n;
                 titlelen=length(title);
                 if id=1 and titlelen >= 80 then do;  
@@ -125,14 +141,13 @@
                         else if n > 30 and n <= 40 then call symputx('plotheight',cats(titlelen**0.6,'in'),"G");
                         else if n > 40 then call symputx('plotheight',cats(titlelen**0.7,'in'),"G");
                 end;
-            run;
-
+              run;
             /* Only create forest plots if analysis exists */
             %isdata(dataset=forest);
             %if %eval(&nobs)>0 %then %do;
 
                 /*Site-adjusted and covariate stratification do not have footnotes*/
-                %if %eval(&plot.=1) | %eval(&plot.=7) %then %let forestfootnote = N;
+                %if %eval(&plot.=1) | %eval(&plot.=7) | %eval(&plot.=8) | %eval(&plot.=14) %then %let forestfootnote = N;
 
                 /* Create superscripts */
                 %if &forestfootnote = Y %then %do;
@@ -276,6 +291,9 @@
             %end; /*produce plot*/
             %plotleaveloop:
         %end; /*loop through plots*/
+		
+         %end;
+	    %end;
       %end; /*loop through looks*/
 
     %let figurenum = %eval(&figurenum.+1); 

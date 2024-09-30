@@ -29,6 +29,7 @@
 *			-[RUNID]_t4_cida_nopreg.sas7bdat 
 *			-[RUNID]_t4_cida_nopreg_gestwk.sas7bdat 
 *           -[RUNID]_t4_treeanalysis_poisson_[LOOK].sas7bdat
+*           -[RUNID]_t4_cida.sas7bdat
 *
 *			-[runid]_t5_cida_disp_by_daysupp
 *           -[runid]_t5_cida_dose
@@ -117,7 +118,7 @@
 							%else %if &infile. eq censor_cida or &infile. eq followuptime_cida or &infile. eq t5_cida_episdur_censor %then %do;
 								/* Check if cens_dth variable exist for this DP. If not, cens_dth/cens_qryend variables will have to be removed from the aggregated dataset */
 								%if %varexist(&dpidsiteid..&&runid._&infile, cens_dth) = 0 %then %do;	
-								call symputx("drop_cens_output", "Y");
+								call symputx("drop_cens_output_qrpreport", "Y");
 								cens_dth=.M;
 								cens_qryend=.M;
 								%end;
@@ -125,7 +126,7 @@
 							%else %if &infile. eq t6_utilepis_censor or &infile. eq t6_switchplota or &infile. eq t6_switchplotb %then %do;
 								/* Check if deathcount variable exist for this DP. If not, variable related to death/qryend censoring will have to be removed from the aggregated dataset */
 								%if %varexist(&dpidsiteid..&&runid._&infile, deathcount) = 0 %then %do;	
-								call symputx("drop_cens_output", "Y");
+								call symputx("drop_cens_output_qrpreport", "Y");
 								%if &infile. ne t6_utilepis_censor %then %do;
 								DeathPatCount=.M;
 								EndQueryPatCount=.M;
@@ -198,7 +199,7 @@
                    set &outfile.(rename = (
                      %do s = 1 %to &&numstrata_&dataset.;
                        %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg | 
-                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain %then %do;
+                           &&strata&s. = cb_reg | &&strata&s. = month | &&strata&s. = quarter | &&strata&s. = agegroup | &&strata&s. = zip_uncertain | &&strata&s. = prepostind %then %do;
                            &&strata&s. = _&&strata&s.
                        %end;
                      %end;));
@@ -212,12 +213,13 @@
 					 %if &&strata&s. = hhs_reg  %then length hhs_reg $25;;
 					 %if &&strata&s. = cb_reg   %then length cb_reg $25;;
 					 %if &&strata&s. = zip_uncertain %then length zip_uncertain $3;;
+					 %if &&strata&s. = prepostind %then length prepostind $45;;
                   
 				     %if &&strata&s. = overall %then %do;
 					   sortorder&s. = 1;
 					 %end;
                      %if &&strata&s. = sex | &&strata&s. = race | &&strata&s. = hispanic | &&strata&s. = hhs_reg
-                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain %then %do;
+                         | &&strata&s. = cb_reg | &&strata&s. = zip_uncertain | &&strata&s. = prepostind %then %do;
                          &&strata&s. = put(_&&strata&s., $&&strata&s..fmt.);
 						 sortorder&s. = input(put(_&&strata&s.,$&&strata&s..sort.),3.);
 				         drop _&&strata&s.;
@@ -328,7 +330,10 @@
 			%end;
 			%if %sysfunc(findw(&datasetlist,t4nopreggestwk)) %then %do;
 			  %agg_report(infile=t4_cida_nopreg_gestwk, outfile=agg_t4nopreggestwk, name=group, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
-			%end;	  
+			%end;	
+			%if %sysfunc(findw(&datasetlist,t4cida)) %then %do;
+			  %agg_report(infile=t4_cida, outfile=agg_t4cida, name=group, stratification = Y, where=%nrstr(lowcase(group) in (&&grouplist_&n..))); 
+			%end;	 
 		%end; *T4L1;
 
 	    %if %str("&reporttype") = %str("T5") %then %do;
@@ -415,7 +420,7 @@
 
 
 		/* If death/qryend censoring columns were dropped from some aggregated datasets, remove them from datasets/variables used to generate the tables/figures */
-		%if &drop_cens_output.=Y %then %do;
+		%if &drop_cens_output_qrpreport=Y %then %do;
 			%isdata(dataset=tablefile);
 		    %if %eval(&nobs.>0) %then %do;
 				data tablefile;

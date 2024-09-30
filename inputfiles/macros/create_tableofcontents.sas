@@ -125,7 +125,6 @@
             %let truncationlabel = ;
             %let psestimategrp = ;
             %let unadjusted = ;
-
             data _null_;
                 set baselinefile(where=(order=&b.));
                 if _n_ = 1 then do;
@@ -261,12 +260,11 @@
 					%end;	
 					%else %do;
 						%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
-			            %if %length(&baselinegroupnum.)>0 %then %do;
-                            %if %index(&reporttype,T4L1) %then %let pregnancylabel = &pregnancylabel2;
-			            %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel&baselinelabel.);
+			            %if %length(&baselinegroupnum.)>0 %then %do;                         
+			                %let captionlabel = %bquote(&grouplabel.&pregnancylabel and &grouplabel2.&pregnancylabel2&baselinelabel.);
 			            %end;
 			            %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 & &psfile. ne covstratfile %then %do;
-			            %let captionlabel = %bquote(&psestimatelabel.);
+			                %let captionlabel = %bquote(&psestimatelabel.);
 			            %end;  
 
 						%let unique_psestimate = &unique_psestimate_orig;
@@ -412,6 +410,7 @@
 
             /* Check for existence of label file and join to profile dataset. Set grouplabel to missing if no labelfile */
             %isdata(dataset=labelfile);
+			
             %if &nobs > 0 %then %do;
             proc sql noprint undo_policy=none;
                 create table _temp_agg_profile as
@@ -443,12 +442,9 @@
             switchlabel='';
             run;
             %end;
-                
+  
             data _null_;
-                set _temp_agg_profile(keep=group grouplabel order
-                                       %if %index(&where,%str(cohort="mi")) %then %do;
-                                       group2 grouplabel2
-                                       %end;
+                set _temp_agg_profile(keep=group grouplabel order                                       
                                        %if %index(&where,%str(cohort="switch")) %then %do;
                                        productswitchgroup switchlabel
                                        %end;
@@ -465,17 +461,7 @@
                 %else %if %index(&where,%str(cohort="preg")) %then %do;
                 if not missing(grouplabel) then call symputx('grouplabel',catx(' ',grouplabel,'Pregnancy'));
                 else call symputx('grouplabel',catx(' ',group,'Pregnancy'));
-                %end;
-
-                %else %if %index(&where,%str(cohort="mi")) %then %do;
-                if not missing(grouplabel) then do;
-                if not missing(grouplabel2) then call symputx('grouplabel',grouplabel2);
-                else call symputx('grouplabel',group2);
-                end;
-                else do;
-                call symputx('grouplabel',group);
-                end;
-                %end;
+                %end;                
 
                 %else %if &reporttype = T6 %then %do;
 
@@ -610,13 +596,91 @@
     %end; /* numl2comparison */
 
     /*********************************************************************************************/
-    /* Type 1 and 2 summary tables                                                               */
+    /* Type 4 MOI summary tables                                                                     */
+    /*********************************************************************************************/
+    %if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
+     
+        %do tb = 1 %to %sysfunc(countw(&tablelist.));
+            %let table = %scan(&tablelist., &tb);
+
+            /* Do not execute for T7 - this is the t4cida table */
+            %if &table = T7 %then %goto skipt4cida;
+
+            /*determine if table includes non-pregnant section*/;
+            %let nonpreg = %str( );
+            %let s=;
+            data _null_;
+                set tablefile(where=(table="&table"));
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
+                    call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
+                    call symputx('s', "s");
+                end;
+            run;
+
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+
+            /*Overall*/
+            %tableletter();
+            %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                    %if &table. = T1 %then %do;
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
+                    %end;
+                    %if &table. = T2 %then %do;
+                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
+                    %end;
+                    %if &table. = T3 %then %do;
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
+                    %end;
+                    %if &table. = T4 %then %do;
+                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
+                    %end;
+                    %if &table. = T5 %then %do;
+                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
+                    %if &table. = T6 %then %do;
+                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                    %end;
+
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
+                        %if &table. = T1 %then %do;
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        %end;
+                        %if &table. = T2 %then %do;
+                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
+                        %end;
+                        %if &table. = T3 %then %do;
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
+                        %end;
+                        %if &table. = T4 %then %do;
+                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
+                        %end;             
+                        %if &table. = T5 %then %do;
+                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                        %if &table. = T6 %then %do;
+                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
+                        %end;
+                 %end;
+            %end;
+            %let tablenum = %eval(&tablenum + 1);
+            %skipt4cida:
+        %end; /*loop through each table*/
+    %end; /*type 4 summary tables*/
+
+    /*********************************************************************************************/
+    /* Type 1, 2 and 4 summary tables                                                               */
     /*********************************************************************************************/
 
-        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) %then %do;
            %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
-            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
 
                 proc sql noprint;
                     %let tableobs = 0;
@@ -638,14 +702,26 @@
 
                 %tableletter();
                 %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                    %if %lowcase(&reporttable) ^= t4cida %then %do;
+                    caption=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                    %end;
+                    %else %do;
+                    caption=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                    %end;
+                    );
 
                 %if &stratifybydp. = Y %then %do;    
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                         %tableletter();
                         %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                            caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.));    
+                            %if %lowcase(&reporttable) ^= t4cida %then %do;
+                            caption=%bquote(Summary of &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                            %end;
+                            %else %do;
+                            caption=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. for &maskedID. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                            %end;
+                            );    
                     %end;
                 %end; 
 
@@ -654,7 +730,7 @@
                 %end; /* z */
           %leavet1t2conc:
           %end; /* td */
-        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) */
 
         /*****************************************************************************************/
         /* Type 1 and 2 censor tables                                                            */
@@ -775,81 +851,6 @@
             %t1t2censortoc(tablename=t2followuptime, title=At-Risk Period);
             %t1t2censortoc(tablename=t&typenum.censor, title=Observable Data);
         %end; /*t1censor and t2censor tables*/
- 
-
-    /*********************************************************************************************/
-    /* Type 4 summary tables                                                                     */
-    /*********************************************************************************************/
-	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
-     
-        %do tb = 1 %to %sysfunc(countw(&tablelist.));
-            %let table = %scan(&tablelist., &tb);
-
-            /*determine if table includes non-pregnant section*/;
-            %let nonpreg = %str( );
-            %let s=;
-            data _null_;
-                set tablefile(where=(table="&table"));
-                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
-                    call symput('nonpreg', " and Matched Non-Pregnant Episodes ");
-                    call symputx('s', "s");
-                end;
-            run;
-
-            %if &stratifybydp = Y %then %let tablecount=1;
-            %else %let tablecount=0;
-
-            /*Overall*/
-            %tableletter();
-            %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                    %if &table. = T1 %then %do;
-                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.));
-                    %end;
-                    %if &table. = T2 %then %do;
-                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.));
-                    %end;
-                    %if &table. = T3 %then %do;
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
-                    %end;
-                    %if &table. = T4 %then %do;
-                    caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
-                    %end;
-                    %if &table. = T5 %then %do;
-                    caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
-                    %end;
-                    %if &table. = T6 %then %do;
-                    caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week));
-                    %end;
-
-            /*By DP*/
-            %if &stratifybydp. = Y %then %do;    
-                %do dps = 1 %to %eval(&num_dp.);
-                    %let maskedID = %scan(&masked_dplist,&dps); 
-                    %tableletter();
-                    %addtotoc(tabnum=Table &tablenum.&tableletter.,
-                        %if &table. = T1 %then %do;
-                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
-                        %end;
-                        %if &table. = T2 %then %do;
-                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.));
-                        %end;
-                        %if &table. = T3 %then %do;
-                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings));
-                        %end;
-                        %if &table. = T4 %then %do;
-                        caption=%quote(&reporttitle. Codes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings));
-                        %end;             
-                        %if &table. = T5 %then %do;
-                        caption=%quote(Pregnant Episodes&nonpreg.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
-                        %end;
-                        %if &table. = T6 %then %do;
-                        caption=%quote(&reporttitle. Episodes Among Pregnant&nonpreg.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week));
-                        %end;
-                 %end;
-            %end;
-            %let tablenum = %eval(&tablenum + 1);
-        %end; /*loop through each table*/
-    %end; /*type 4 summary tables*/
 
     /*********************************************************************************************/
     /* Type 5 summary tables                                                                     */
@@ -1698,17 +1699,34 @@
 
 	        /*F2: Forest Plots*/
 	        %if %sysfunc(prxmatch(m/F2/i,&figurelist.)) > 0 and &treeaggindicator. eq N %then %do;
-	            %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 %then %let ForestRatioTitle = Hazard Ratios (HR);
-	            %else %let ForestRatioTitle = Risk Ratios (RR);
-
+	           
 				%let tableletter=a;
 				%let tablecount = 1;
 
 	            %do j = %eval(&look_start) %to %eval(&look_end);
-	                %do plot = 1 %to 7;
+	                %do plot = 1 %to 14;
+					  %let t4hoimethod = ;
+                      %do ru = 1 %to &numrunid.;
+                        %let runidru = %scan(&runidlist., &ru.);
+	                    %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	                      %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	                    %end;
+	                  %end;
+
+                      %if "&reporttype." = "T2L2" %then %do;
+                        %let t4hoimethod_current = ; 
+		                %let t4_loop = 1;
+	                  %end;
+	                  %else %do;
+                        %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
+                      %end;
+	                  %do t4 = 1 %to &t4_loop;
+	                   %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+					   %if %sysfunc(prxmatch(m/T2L2/i,&reporttype.)) > 0 |(&reporttype = T4L2 and &t4hoimethod_current = timetoevent) %then %let ForestRatioTitle = Hazard Ratios (HR);
+	                   %else %let ForestRatioTitle = Risk Ratios (RR);
 	                    %let forest_title = ;
 	                    data _null_;
-	                    set forest_&j(where=(plotorder=&plot));
+	                    set forest_&j.&t4hoimethod_current.(where=(plotorder=&plot));
 	                      call symputx("forest_title",forest_title);
 	                    run;
 
@@ -1718,6 +1736,7 @@
 	                    caption=%quote(Forest Plot of &ForestRatioTitle and 95% Confidence Intervals (CI) for &forest_title in the &database. from &startdateformatted. to &&enddate&j.formatted.))
 	                    %end; /* Forest title exists */
 	                %end; /* loop plots */
+			      %end;
 	            %end; /* loop periods */
 
                 %let figurenum = %eval(&figurenum.+1); 

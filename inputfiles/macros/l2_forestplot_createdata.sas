@@ -12,7 +12,7 @@
 *   - l2_effectestimates_&periodid.sas7bdat
 * 
 *  Program outputs:                                                                                                                                       
-*   - forest_[periodid].sas7bdat
+*   - forest_[periodid][t4hoimethod].sas7bdat
 * 
 *  PARAMETERS:                                                                       
 *            
@@ -27,24 +27,44 @@
 ***************************************************************************************************;
 
 %macro l2_forestplot_createdata;
-     
+
+      /*create set up for forestplot by t4hoimethod*/
+      %let t4hoimethod = ;
+      %do ru = 1 %to &numrunid.;
+        %let runidru = %scan(&runidlist., &ru.);
+	    %if not %sysfunc(findw(&&&runidru._t4hoimethod, &t4hoimethod)) %then %do;
+	      %let t4hoimethod = &t4hoimethod. &&&runidru._t4hoimethod;
+	    %end;
+	  %end;
+      
+	  %if "&reporttype." = "T2L2" %then %do;
+        %let t4hoimethod_current = ; 
+		%let t4_loop = 1;
+	  %end;
+	  %else %do;
+        %let t4_loop =  %sysfunc(countw(&t4hoimethod.));
+      %end;
+	  %do t4 = 1 %to &t4_loop;
+	    %let t4hoimethod_current = %scan(&t4hoimethod., &t4);
+
       /* Join all data together to estimate table for processing downstream for forest dataset */
       proc sql noprint;
         create table forest_l2_effectestimates_&periodid. as
-        select a.*, b.runid, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
+        select a.*, b.runid, b.t4hoimethod, b.file, b.ipweight, b.strataweight, b.percentiles, b.ceiling, b.caliper, b.ratio, b.outputforestplot
         from l2_effectestimates_&periodid. a
         left join
-        (select c.analysisgrp, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
-          from pscs_masterinputs (where = (missing(subgroup))) c
+        (select c.analysisgrp, c.t4hoimethod, c.file, c.ipweight, c.strataweight, c.percentiles, c.ceiling, c.caliper, c.ratio, d.runid, d.outputforestplot
+          from pscs_masterinputs (where = (missing(subgroup) and t4hoimethod = "&t4hoimethod_current")) c
           inner join 
-          l2comparisonfile d
-          on c.analysisgrp = d.analysisgrp
+          l2comparisonfile d 
+          on c.analysisgrp = d.analysisgrp and c.runid = d.runid 
           where d.outputforestplot = 'Y') as b
-        on a.analysisgrp = b.analysisgrp
-        where b.outputforestplot = 'Y';
-      quit;
+        on a.analysisgrp = b.analysisgrp 
+        where b.outputforestplot = 'Y'  ;
 
-      /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
+      quit;
+	
+       /* Check to see if covariates file exists - unlike tables need complete covar studyname here because macro variables
          do not resolve in sgrender */
       %isdata(dataset=covarname);
 
@@ -93,18 +113,18 @@
               on est.subgroup = cov.cov_varname and est.runid = cov.runid
           %end;
 
-          where sort2 = 1 and analysis ne "Unweighted" 
+          where sort2 = 1 and analysis ne "Unweighted"  
           order by analysisgrpsort, est.subgroup, subgroupcatorder, subgroupcat, sort1, sort2;
 
 
           create table id_2 as 
           select est.analysisgrp, 
                  est.analysis,
-                 %if "&reporttype." = "T2L2" %then %do;
+                 %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
                  est.HR_95ci,
                  est.HR, 
                  %end;
-                 %else %if "&reporttype." = "T4L2" %then %do;
+                 %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
                  est.rr_95ci, 
                  est.rr,                  
                  %end;
@@ -150,7 +170,7 @@
           2 = overall results and subgroup label
           3 = subgroup categories*/
 
-      data forest_&periodid.;
+      data forest_&periodid.&t4hoimethod_current;
           set id_1(in=id1)
               id_2(in=id2);
           length title $200 label $&label_length;
@@ -196,23 +216,33 @@
           end;
       run;
 
-      proc sort data = forest_&periodid. nodupkey;
+      proc sort data = forest_&periodid.&t4hoimethod_current nodupkey;
         by analysisgrpsort analysis id subgrouporder subgroupcatorder subgroupcat sort1 sort2 runid;
       run;
 
       /* Merge in all analysis type input files and create footnotes, labels and sheet names */
-      data forest_&periodid;
+      data forest_&periodid.&t4hoimethod_current.;
         length forest_title $100 footnote $200;
-          set forest_&periodid;
+          set forest_&periodid.&t4hoimethod_current.;
             lag_title = lag(title);
             if analysis = "Unadjusted" then do;
-            plotorder=1;
+			%if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+              plotorder=1;
+			%end;
+			%else %do;
+			  plotorder = 8;
+			%end;
             forest_title="Site-Adjusted Analyses";
             footnote='';
             end;
             else do;
             if file = 'iptwfile' then do;
-            plotorder=6;
+			%if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+              plotorder=6;
+			%end;
+			%else %do;
+			  plotorder = 13;
+			%end;
             forest_title="Inverse Probability of Treatment Weighted Analyses";
               if upcase(ipweight) = 'ATE' then footnote="Weighted using Average Treatment Effect, (ATE)";
               else if upcase(ipweight) = 'ATT' then footnote="Weighted using Average Treatment Effect in the Treated, (ATT)";
@@ -220,7 +250,13 @@
             end;
             if file = 'stratificationfile' then do;
               if not missing(strataweight) then do;
-              plotorder=5;
+			  %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+                plotorder=5;
+			  %end;
+			  %else %do;
+			    plotorder = 12;
+			  %end;
+              
               forest_title='Propensity Score Stratum Weighted Analyses';
                 if upcase(strataweight) = 'ATE' then do;
                   if not missing(percentiles) then footnote=cat('Weighted using Average Treatment Effect, (ATE);',' Percentiles: ',strip(put(percentiles,8.)));
@@ -232,7 +268,12 @@
                 end;
               end;
               if missing(strataweight) then do;
-              plotorder=4;
+			  %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+                plotorder=4;
+			  %end;
+			  %else %do;
+			    plotorder = 11;
+			  %end;
               forest_title='Propensity Score Stratified Analyses';
                 if not missing(percentiles) then footnote=cat("Percentiles: ",strip(put(percentiles,8.)));
                 else footnote='';
@@ -242,34 +283,49 @@
               if ratio = 'V' then ratiolabel='Variable';
               if ratio = 'F' then ratiolabel="Fixed";
                 if analysis="Unconditional" then do;
-                plotorder=3;
+				%if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+                  plotorder=3;
+			    %end;
+			    %else %do;
+			      plotorder = 10;
+			    %end;
                 forest_title="Propensity Score Matched Unconditional Analyses";
                 footnote=cat(strip(ratiolabel)," Ratio 1:",strip(put(ceiling,8.))," Propensity Score Matched ",strip(analysis)," Analysis;"," Caliper=",strip(put(caliper,8.2)));
                 end;
                 if analysis="Conditional" then do;
-                plotorder=2;
+				%if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+                  plotorder=2;
+			    %end;
+			    %else %do;
+			      plotorder = 9;
+			    %end;
                 forest_title="Propensity Score Matched Conditional Analyses";
                 footnote=cat(strip(ratiolabel)," Ratio 1:",strip(put(ceiling,8.))," Propensity Score Matched ",strip(analysis)," Analysis;"," Caliper=",strip(put(caliper,8.2)));
                 end;
             end;
             if file = 'covstratfile' then do;
-            plotorder=7;
+			%if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current = binary) %then %do;
+              plotorder=7;
+			%end;
+			%else %do;
+			  plotorder = 14;
+			%end;
             forest_title='Covariate Stratified Analyses';
             end;
 
             end;
           
-          %if "&reporttype" = "T2L2" %then %do;
+          %if "&reporttype" = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
           format HR LCL UCL 5.2; 
           %end;
           if lag_title = title then delete;
       run;
 
-      proc sort data =forest_&periodid (keep = title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
-                                               %if "&reporttype." = "T2L2" %then %do;
+      proc sort data = forest_&periodid.&t4hoimethod_current. (keep = runid title analysisgrp analysisgrpsort analysis subgrouporder subgroup subgroupcatorder subgroupcat subgroupcatlabel footnote forest_title plotorder sort1 sort2
+                                               %if "&reporttype." = "T2L2" or ("&reporttype." = "T4L2" and &t4hoimethod_current. = timetoevent) %then %do;
                                                HR_95ci HR  
                                                %end;
-                                               %else %if "&reporttype." = "T4L2" %then %do;
+                                               %else %if "&reporttype." = "T4L2" and &t4hoimethod_current. = binary %then %do;
                                                rr_95ci rr
                                                %end;
                                                LCL UCL id file
@@ -280,5 +336,5 @@
       proc datasets nowarn noprint lib=work;
         delete id_: forest_l2_effectestimates_&periodid. stack_micohort;
       quit;
-
+      %end;
 %mend l2_forestplot_createdata;

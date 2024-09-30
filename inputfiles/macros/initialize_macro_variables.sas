@@ -35,12 +35,12 @@
     %let database = ;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused drop_cens_output;
+    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
-	%let drop_cens_output = N;
+	%let drop_cens_output_qrpreport = N;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -169,10 +169,11 @@
     %let charlabslist = %str("missing");
 
 	/* Total number of unique stratifications by file type*/
-	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc;
+	%global numstrata_t1cida numstrata_t2cida numstrata_t2conc numstrata_t4cida;
     %let numstrata_t1cida = 0;
 	%let numstrata_t2cida = 0;
 	%let numstrata_t2conc = 0;
+	%let numstrata_t4cida = 0;
 
     /*figure specific variables*/
     %global unicode_list;

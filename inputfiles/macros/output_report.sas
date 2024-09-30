@@ -129,18 +129,204 @@
     %end;
 
 /*********************************************************************************************/
-/* Type 1 and 2 summary tables                                                               */
+/* Type 4 MOI summary tables                                                                     */
 /*********************************************************************************************/
-    %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %do;
+    %if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
 
-        %if %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) %then %do;
+        options orientation = landscape;
+     
+        %do tb = 1 %to %sysfunc(countw(&tablelist.));
+            %let table = %scan(&tablelist., &tb);
+
+             %if &table = T7 %then %goto skipt4cida;
+
+            /*determine if table includes non-pregnant section*/;
+            %let nonpreglabel = %str( );
+            %let nonpreg = N;
+            %let s=;
+
+            /*table specific information*/
+            %let datasuffix=;
+            %let spanningheader=;
+
+            /*column order*/
+            %let gestwkorder = ;
+
+            data _null_;
+                set tablefile(where=(table="&table"));
+
+                if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
+                if table in ('T5', 'T6') then do;
+                    call symputx('datasuffix','gestwk');
+                    call symputx('gestwkorder','gestwkorder,');
+                end;
+
+                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
+                    call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
+                    call symputx('s', "s");
+                    call symputx('nonpreg', 'Y');
+                end;
+            run;
+
+            /* Output dataset only with superscript flags */
+            proc contents data = final_t4&datasuffix out=_t4vars_ss(keep=name where=(index(name,'_ss'))) noprint;
+            run;
+
+            proc sql noprint;
+                select name 
+                into :superscript_vars separated by ' '
+                from _t4vars_ss;
+            quit;
+
+            /* Get number of non-missing observations for each superscript column */
+            proc univariate data=final_t4&datasuffix outtable=_miss_ss&datasuffix(keep=_var_ _nobs_) noprint;
+                var &superscript_vars;
+            run;
+
+            /* Only keep non-missing flag values */
+            %let non_missing_vars=;
+            proc sql noprint;
+                select _var_ into :non_missing_vars separated by ' '
+                from _miss_ss&datasuffix
+                where _nobs_>0;
+            quit;
+
+            /* flag each column to determine whether it gets a superscript */
+            data tablecolumns;
+                set tablecolumns;
+                columnsuperscript = 'N';
+                %if %str(&non_missing_vars) ne %str() %then %do;
+                    %do i = 1 %to %sysfunc(countw(&non_missing_vars));
+                        %let non_missing_var = %scan(&non_missing_vars,&i);
+                        if columnname = "%scan(&non_missing_var,1,%str(_))" then columnsuperscript = 'Y';
+                    %end;
+                %end;
+            run;
+    
+            proc sql noprint;
+                select cats(columnname,'_char') 
+                      ,cats(columnwidth,'in')
+                      ,smallcellyn
+                      ,columnlabel
+                      ,columnheader
+                      ,columnsuperscript
+                into :outvarlist separated by ' ',
+                     :outwidths separated by ' ',
+                     :outsmallcells separated by ' ',
+                     :columnlabels separated by '|||',
+                     :columnheaders separated by '|||',
+                     :columnsuperscripts separated by '|||'
+                from tablecolumns
+                where table="&table"
+                order by &gestwkorder. order;
+
+                %if &table. = T5 | &table. = T6 %then %do;
+                select distinct spanningheader into: spanningheader trimmed
+                from tablecolumns
+                where table="&table";
+                %end;
+            quit; 
+                
+            %if &stratifybydp = Y %then %let tablecount=1;
+            %else %let tablecount=0;
+            %tableletter();
+
+            /*Overall*/
+            %t4tables_output(table=&table.,
+                             dataset=final_t4&datasuffix.,
+                             %if &nonpreg. = N %then %do;
+                             where=pregflg = 'Y',
+                             %end;
+                             %else %do;
+                             where=1,
+                             %end;
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
+                             %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             varsuperscripts = &columnsuperscripts,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
+
+            /*By DP*/
+            %if &stratifybydp. = Y %then %do;    
+                %do dps = 1 %to %eval(&num_dp.);
+                    %let maskedID = %scan(&masked_dplist,&dps); 
+                    %tableletter();
+                    %t4tables_output(table=&table.,
+                             dataset=final_dps_t4&datasuffix.,
+                             where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
+                             tabnum=&tablenum.&tableletter.,
+                             %if &table. = T1 %then %do;
+                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T2 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
+                             %end;
+                             %if &table. = T3 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
+                             %end;
+                             %if &table. = T4 %then %do;
+                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
+                             %end;
+                             %if &table. = T5 %then %do;
+                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             %if &table. = T6 %then %do;
+                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
+                             %end;
+                             nonpreg = &nonpreg., 
+                             varlist = &outvarlist,
+                             varwidths = %bquote(&outwidths.),
+                             varsmallcells = &outsmallcells,
+                             varsuperscripts = &columnsuperscripts,
+                             columnstatementlabels = %quote(&columnlabels.),
+                             definestatementlabels = %quote(&columnheaders.),
+                             spanningheader = %quote(&spanningheader.));
+                %end;
+            %end;
+
+            %let tablenum = %eval(&tablenum + 1);
+            %skipt4cida:
+        %end; /*loop through each table*/
+
+        options orientation = portrait;
+
+    %end; /*ReportType = T4L1 summary tables*/
+
+/*********************************************************************************************/
+/* Type 1, 2 and 4 summary tables                                                               */
+/*********************************************************************************************/
+    %if %sysfunc(prxmatch(m/T1|T2L1|T4L1/i,&reporttype.)) %then %do;
+
+        %if %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) %then %do;
           /* Set options to missing to prevent dot from printing in row */
           options orientation = landscape;
           options missing = ' ';
 
           %do td = 1 %to &tdatasetlistnum.; 
             %let reporttable = %scan(&tdatasetlist, &td.);
-            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
+            %if ^%sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&reporttable.)) %then %goto leavet1t2conc;
                 %let tablecount=1;
                 proc sql noprint;
                     select cats(columnname,'_char') 
@@ -173,23 +359,35 @@
                     run;
 
                     %tableletter();
-                    %t1t2conc_output(dataset=final_&reporttable(where=(level="&strataid")),
+                    %t1t2t4conc_output(dataset=final_&reporttable(where=(level="&strataid")),
                                      varlist = &outvarlist,
                                      stratavar = %quote(&strataname),
                                      varwidths = %bquote(&outwidths.),
                                      varsmallcells = &outsmallcells,
-                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                     %if %lowcase(&reporttable) ^= t4cida %then %do;
+                                     title=%bquote(Summary of &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                     %end;
+                                     %else %do;
+                                     title=%bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                     %end;
+                                     );
 
                 %if &stratifybydp = Y %then %do;
                     %do dps = 1 %to %eval(&num_dp.);
                         %let maskedID = %scan(&masked_dplist,&dps); 
                         %tableletter();
-                        %t1t2conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
+                        %t1t2t4conc_output(dataset=final_dps_&reporttable(where=(level="&strataid" and dpidsiteid="&maskedID")),
                                          varlist = &outvarlist,
                                          stratavar = %quote(&strataname),
                                          varwidths = %bquote(&outwidths.),
                                          varsmallcells = &outsmallcells,
-                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.));
+                                         %if %lowcase(&reporttable) ^= t4cida %then %do;
+                                         title = %bquote(Summary of &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                         %end;
+                                         %else %do;
+                                         title = %bquote(Summary of Outcomes of Interest Among Pregnancy Episodes with &reporttitle. in the &database. for &maskedID from &startdateformatted. to &enddateformatted.&tabletitle.)
+                                         %end;
+                                         );
                     %end;
                 %end;
                 %let tablenum = %eval(&tablenum + 1);
@@ -198,7 +396,7 @@
           %end; /* td */
           options missing = '.';
           options orientation = portrait;
-        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t2conc/i,&tdatasetlist.)) */
+        %end; /* %sysfunc(prxmatch(m/t1cida|t2cida|t4cida|t2conc/i,&tdatasetlist.)) */
 
     /*****************************************************************************************/
     /* Type 1 and 2 censor tables                                                            */
@@ -378,191 +576,7 @@
         options orientation = portrait;
         %end;
 
-    %end; /*ReportType = T1 and T2L1 summary tables*/
-
-
-/*********************************************************************************************/
-/* Type 4 summary tables                                                                     */
-/*********************************************************************************************/
-	%if %str("&reporttype") = %str("T4L1") & %str("&tablelist") ne %str("") %then %do;
-
-        options orientation = landscape;
-     
-        %do tb = 1 %to %sysfunc(countw(&tablelist.));
-            %let table = %scan(&tablelist., &tb);
-
-            /*determine if table includes non-pregnant section*/;
-            %let nonpreglabel = %str( );
-            %let nonpreg = N;
-            %let s=;
-
-            /*table specific information*/
-            %let datasuffix=;
-            %let spanningheader=;
-
-            /*column order*/
-            %let gestwkorder = ;
-
-            data _null_;
-                set tablefile(where=(table="&table"));
-
-                if table in ('T1', 'T2', 'T3', 'T4') then call symputx('datasuffix','moi');
-                if table in ('T5', 'T6') then do;
-                    call symputx('datasuffix','gestwk');
-                    call symputx('gestwkorder','gestwkorder,');
-                end;
-
-                if tablesubstrat in ("t4nopreg", "t4nopreggestwk") then do;
-                    call symput('nonpreglabel', " and Matched Non-Pregnant Episodes ");
-                    call symputx('s', "s");
-                    call symputx('nonpreg', 'Y');
-                end;
-            run;
-
-            /* Output dataset only with superscript flags */
-            proc contents data = final_t4&datasuffix out=_t4vars_ss(keep=name where=(index(name,'_ss'))) noprint;
-            run;
-
-            proc sql noprint;
-                select name 
-                into :superscript_vars separated by ' '
-                from _t4vars_ss;
-            quit;
-
-            /* Get number of non-missing observations for each superscript column */
-            proc univariate data=final_t4&datasuffix outtable=_miss_ss&datasuffix(keep=_var_ _nobs_) noprint;
-                var &superscript_vars;
-            run;
-
-            /* Only keep non-missing flag values */
-			%let non_missing_vars=;
-            proc sql noprint;
-                select _var_ into :non_missing_vars separated by ' '
-                from _miss_ss&datasuffix
-                where _nobs_>0;
-            quit;
-
-            /* flag each column to determine whether it gets a superscript */
-            data tablecolumns;
-                set tablecolumns;
-                columnsuperscript = 'N';
-				%if %str(&non_missing_vars) ne %str() %then %do;
-	                %do i = 1 %to %sysfunc(countw(&non_missing_vars));
-	                    %let non_missing_var = %scan(&non_missing_vars,&i);
-	                    if columnname = "%scan(&non_missing_var,1,%str(_))" then columnsuperscript = 'Y';
-	                %end;
-				%end;
-            run;
-    
-            proc sql noprint;
-                select cats(columnname,'_char') 
-                      ,cats(columnwidth,'in')
-                      ,smallcellyn
-                      ,columnlabel
-                      ,columnheader
-                      ,columnsuperscript
-                into :outvarlist separated by ' ',
-                     :outwidths separated by ' ',
-                     :outsmallcells separated by ' ',
-                     :columnlabels separated by '|||',
-                     :columnheaders separated by '|||',
-                     :columnsuperscripts separated by '|||'
-                from tablecolumns
-                where table="&table"
-                order by &gestwkorder. order;
-
-                %if &table. = T5 | &table. = T6 %then %do;
-                select distinct spanningheader into: spanningheader trimmed
-                from tablecolumns
-                where table="&table";
-                %end;
-            quit; 
-                
-            %if &stratifybydp = Y %then %let tablecount=1;
-            %else %let tablecount=0;
-            %tableletter();
-
-            /*Overall*/
-            %t4tables_output(table=&table.,
-                             dataset=final_t4&datasuffix.,
-                             %if &nonpreg. = N %then %do;
-                             where=pregflg = 'Y',
-                             %end;
-                             %else %do;
-                             where=1,
-                             %end;
-                             tabnum=&tablenum.&tableletter.,
-                             %if &table. = T1 %then %do;
-                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted.),
-                             %end;
-                             %if &table. = T2 %then %do;
-                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted.),
-                             %end;
-                             %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
-                             %end;
-                             %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
-                             %end;
-                             %if &table. = T5 %then %do;
-                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
-                             %end;
-                             %if &table. = T6 %then %do;
-                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. from &startdateformatted. to &enddateformatted., by Gestational Week),
-                             %end;
-                             nonpreg = &nonpreg., 
-                             varlist = &outvarlist,
-                             varwidths = %bquote(&outwidths.),
-                             varsmallcells = &outsmallcells,
-                             varsuperscripts = &columnsuperscripts,
-                             columnstatementlabels = %quote(&columnlabels.),
-                             definestatementlabels = %quote(&columnheaders.),
-                             spanningheader = %quote(&spanningheader.));
-
-            /*By DP*/
-            %if &stratifybydp. = Y %then %do;    
-                %do dps = 1 %to %eval(&num_dp.);
-                    %let maskedID = %scan(&masked_dplist,&dps); 
-                    %tableletter();
-                    %t4tables_output(table=&table.,
-                             dataset=final_dps_t4&datasuffix.,
-                             where=dpidsiteid="&maskedID" %if &nonpreg. = N %then %do; and pregflg = 'Y' %end;,
-                             tabnum=&tablenum.&tableletter.,
-                             %if &table. = T1 %then %do;
-                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
-                             %end;
-                             %if &table. = T2 %then %do;
-                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted.),
-                             %end;
-                             %if &table. = T3 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., without Adjusting for Same-Day Dispensings),
-                             %end;
-                             %if &table. = T4 %then %do;
-                             title=%quote(&reporttitle. Codes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., Adjusting for Same-Day Dispensings),
-                             %end;
-                             %if &table. = T5 %then %do;
-                             title=%quote(Pregnant Episodes&nonpreglabel.with &reporttitle. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
-                             %end;
-                             %if &table. = T6 %then %do;
-                             title=%quote(&reporttitle. Episodes Among Pregnant&nonpreglabel.Cohort&s. in the &database. for &maskedid. from &startdateformatted. to &enddateformatted., by Gestational Week),
-                             %end;
-                             nonpreg = &nonpreg., 
-                             varlist = &outvarlist,
-                             varwidths = %bquote(&outwidths.),
-                             varsmallcells = &outsmallcells,
-                             varsuperscripts = &columnsuperscripts,
-                             columnstatementlabels = %quote(&columnlabels.),
-                             definestatementlabels = %quote(&columnheaders.),
-                             spanningheader = %quote(&spanningheader.));
-                %end;
-            %end;
-
-            %let tablenum = %eval(&tablenum + 1);
-        %end; /*loop through each table*/
-
-        options orientation = portrait;
-
-    %end; /*ReportType = T4L1 summary tables*/
+    %end; /*ReportType = T1, T2L1 and T4L1 summary tables*/
 
 /*********************************************************************************************/
 /* Type 5 summary tables                                                                     */
