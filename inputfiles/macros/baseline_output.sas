@@ -1178,9 +1178,9 @@
 	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
 	              numcolumns =&numcolumns.,
-	              grp1_label=&grp1_label.,
-	              grp2_label=&grp2_label., 
-	              grp3_label=&grp3_label.,
+	              grp1_label=%quote(&grp1_label.),
+	              grp2_label=%quote(&grp2_label.), 
+	              grp3_label=%quote(&grp3_label.),
 	              computebalance = &computebalance.,
 	              includenonpregnant=&includenonpregnant.);
 	            %end;
@@ -1196,9 +1196,9 @@
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
-	                  grp1_label=&grp1_label.,
-	                  grp2_label=&grp2_label., 
-	                  grp3_label=&grp3_label.,
+	                  grp1_label=%quote(&grp1_label.),
+	                  grp2_label=%quote(&grp2_label.), 
+	                  grp3_label=%quote(&grp3_label.),
 	                  computebalance = &computebalance.,
 	                  includenonpregnant=&includenonpregnant.);
 	                %end;
@@ -1213,9 +1213,9 @@
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
-	                  grp1_label=&grp1_label.,
-	                  grp2_label=&grp2_label., 
-	                  grp3_label=&grp3_label.,
+	                  grp1_label=%quote(&grp1_label.),
+	                  grp2_label=%quote(&grp2_label.), 
+	                  grp3_label=%quote(&grp3_label.),
 	                  computebalance = &computebalance.,
 	                  includenonpregnant=&includenonpregnant.);
 	                %end;
@@ -1232,9 +1232,9 @@
 						  labcharacteristics = %quote(&labcharacteristics),
 	                      dpnum = &dpnum.,
 	                      numcolumns =&numcolumns.,
-	                      grp1_label=&grp1_label.,
-	                      grp2_label=&grp2_label., 
-	                      grp3_label=&grp3_label.,
+	                      grp1_label=%quote(&grp1_label.),
+	                      grp2_label=%quote(&grp2_label.), 
+	                      grp3_label=%quote(&grp3_label.),
 	                      computebalance = &computebalance.,
 	                      includenonpregnant=&includenonpregnant.);
 	                %end;
