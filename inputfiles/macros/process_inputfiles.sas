@@ -909,7 +909,7 @@
              end;
              else do;
                 if upcase(includenonpregnant) = 'Y' then preg_outcome_label='%str( )Pregnant Cohort and Non-Pregnant Cohort';
-                else preg_outcome_label='%str( )Pregnant Cohort';
+                else if substrn(group,max(1,length(group)-3),4) ne '_ref' and substrn(group,max(1,length(group)-3),4) ne '_eoi' then preg_outcome_label='%str( )Pregnant Cohort';  
              end;
              drop _name_ count substring i code col: rc;
         run;
@@ -1119,12 +1119,12 @@
 
     %if %index(&reporttype.,T4) %then %do;
         data _mil_shell;
-            length runid controlmp $5 ref group groupname $40;
-            call missing(runid, controlmp, ref, group, groupname);
+            length runid expmp controlmp $5 eoi ref group groupname $40;
+            call missing(runid, expmp, controlmp, eoi, ref, group, groupname);
             stop;
         run;
 
-       data master_mil(keep=runid group groupname controlmp ref);
+       data master_mil(keep=runid group groupname expmp controlmp eoi ref);
             set %do n = 1 %to &numrunid.;
             %let runid=&&id&n..;
             %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
@@ -1141,6 +1141,7 @@
                 %if %sysfunc(exist(infolder.&&&runid._micohortfile)) %then %do;
                 if n&n. then do;
                 group=lowcase(milgrp);
+				eoi=catt(group,"_eoi");
 				ref=catt(group,"_ref");
                 runid = "&&id&n.";
                 end;
