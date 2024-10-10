@@ -37,7 +37,7 @@
 	data &outfile.;
 	format child parent $14.;
 	set &lookupfile.;
-	do i = 1 to countw(node,".");
+	do i = 1 to level;
 		child=node;
 		last_dot = length(node) - length(scan(node, -1, '.'));
 		parent=substr(node,1,last_dot-1);
