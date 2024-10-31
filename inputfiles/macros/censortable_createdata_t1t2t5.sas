@@ -256,25 +256,34 @@
 	   %end;
    run;
  
-  /* Identify levels on the censor_data dataset */
+   /* Identify levels on the censor_data dataset */
+   /* There are instances where there are multiple levels for t5censor, but tablesub is always overall, so force tablesub macros to "overall".
+   	  For other tables, tablesub must be populated after joining as this is always the case in the tablefile input file */
    proc sql noprint;
-     select count(distinct(level)) into: numcensorlevel trimmed
-	 from censor_data;
+   	 create table _censor_levels as
+	 select distinct(a.level)
+	 		,%if &censordataset. = t5censor %then %do; "overall" as tablesub %end;
+			 %else %do; tablesub %end;
+	 from censor_data as a
+	 left join tablefile (where = (dataset = "&censordataset." and table in (&tables.))) as b
+	 on strip(a.level) = strip(b.levelid1)
+	 %if &censordataset. ne t5censor %then %do; where strip(tablesub) ne "" %end;
+	 ;
 	 
-	 /* There are instances where there are multiple levesl for t5censor, but tablesub is always overall, so force tablesub macros to "overall" */
-	 select distinct(a.level) 
+     select count(distinct(level)) into: numcensorlevel trimmed
+	 from _censor_levels;
+	 	 
+	 select distinct(level) 
             ,%if &censordataset. = t5censor %then %do; "overall" %end;
 			 %else %do; tablesub %end;
       into:censlevel1 -:censlevel&numcensorlevel.
 		 ,:tablesub1 -:tablesub&numcensorlevel.
-	 from censor_data as a
-     left join tablefile (where = (dataset = "&censordataset." and table in (&tables.))) as b
-       on strip(a.level) = strip(b.levelid1);
+	 from _censor_levels;
    quit;
    
  /* Clean up work files */
    proc datasets lib=work nowarn nolist noprint;
-     delete censor_all censor_dps; 
+     delete censor_all censor_dps _censor_levels; 
    quit;
    
  /*--------------------------------------------------------------------------------------------
