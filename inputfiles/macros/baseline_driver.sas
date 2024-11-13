@@ -548,6 +548,18 @@
                         drop &var.;
                     %mend;
 
+					/* Defensive: check if _temp_totalcounts&b.&switch. contains variables beginning with n_covar for the drop condition below */
+					%let num_n_covar_vars=0;
+
+					proc contents data=_temp_totalcounts&b.&switch. out=_temp_content noprint;
+					quit;
+					
+					proc sql noprint;
+					select count(*) into :num_n_covar_vars 
+					from _temp_content
+					where substr(upcase(name),1,7)="N_COVAR";
+					quit;
+
                     data _temp_table1_reformat&b.&switch.;
                         merge _temp_formatted_&b.&switch.
                               _temp_totalcounts&b.&switch.;
@@ -612,7 +624,7 @@
                         drop i;
                         %end;
 
-                        drop n_episodes: n_patients: %if &totallabcovar > 0 and %length(&checklabvars) > 0 %then %do; n_covar: %end;;
+                        drop n_episodes: n_patients: %if &totallabcovar > 0 and %length(&checklabvars) > 0 and &num_n_covar_vars. > 0 %then %do; n_covar: %end;;
                     run;
 
                     /*use set to avoid missing var warnings*/
