@@ -708,28 +708,63 @@
                 quit;
             %end; /*collapse_vars = race and stratifybydp = N*/
 
-			/* If lab characteristics are requested, compute denominators for results/units to assign missing indicator */
-			%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
+			/* If lab characteristics are requested, compute denominators for results/units to assign missing indicator.
+			   Because lab covariates results returned are not squared (therefore some DPs might return a lab result while others do not),
+			   we need to assess denominators for "Test record" using the lab type to compute proportions correctly */
+			%if %quote(&labcharacteristics) ^= %str("missing") %then %do;				
 				data _lbdenom(rename=metvar=denomvar %do i = 1 %to &num_dp; rename=exp_mean&i.=exp_lbdenom&i. %if "&includecomp" = "Y" %then %do; rename=comp_mean&i.=comp_lbdenom&i. %end; %end;);
 				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
 			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
 			                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 			                             %end;));
+				if substr(metvar,1,5)="COVAR" then covar=metvar;
+				else if index(metvar, "COVAR") > 0 and (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar)) then covar=substr(metvar, index(metvar, "COVAR"), index(metvar, "LB")-index(metvar, "COVAR"));
+
 				if index(metvar, "COVAR") > 0 and not (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar) or prxmatch('/NOTESTRECORD/',metvar)) then output;
 				if (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar)) and vartype="dichotomous" then do;;
 					metvar=tranwrd(metvar,"LBUNIT","LBRES");
 					output;
 				end;
-				keep analysisgrp table weight metvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;   
+				keep analysisgrp table weight metvar covar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;   
 					%do i = 1 %to &num_dp;
 						exp_mean&i. %if "&includecomp" = "Y" %then %do;	comp_mean&i.%end;
 					%end;;
 				run;
 
-				proc sort data=_lbdenom;
-				by analysisgrp table weight denomvar %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;;
+				data _testrecord_denom(rename=metvar=covar);
+				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
+			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
+			                                and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+			                             %end;));
+				if index(metvar, "COVAR") > 0 and not (prxmatch('/LBRES/',metvar) or prxmatch('/LBUNIT/',metvar) or prxmatch('/NOTESTRECORD/',metvar));
+				agg_exp_mean=sum(of exp_mean1-exp_mean&num_dp.);
+				agg_exp_w = sum(of exp_w1_1-exp_w1_&num_dp.);
+				%if "&includecomp" = "Y" %then %do; 
+					agg_comp_mean=sum(of comp_mean1-comp_mean&num_dp.);
+					agg_comp_w = sum(of comp_w1_1-comp_w1_&num_dp.);
+				%end;
+				keep metvar agg_exp_mean agg_exp_w %if "&includecomp" = "Y" %then %do; agg_comp_mean agg_comp_w %end;;									
 				run;
 
+				proc sql noprint undo_policy=none;
+				create table _lbdenom(drop=covar) as
+				select a.*
+					   ,case when upcase(c.LabType)="C" then b.agg_exp_mean
+				        else b.agg_exp_w
+				        end as agg_exp_testrecord_denom
+					   %if "&includecomp" = "Y" %then %do; 
+					   ,case when upcase(c.LabType)="C" then b.agg_comp_mean
+				        else b.agg_comp_w
+				        end as agg_comp_testrecord_denom
+					   %end;			
+				from _lbdenom as a
+				join _testrecord_denom as b 
+				on lowcase(a.covar)=lowcase(b.covar)
+				join Covarname as c
+				on lowcase(b.covar)=lowcase(c.cov_varname)
+				order by analysisgrp, table, weight, denomvar %if %index(&reporttype,L2) %then %do; ,subgroup ,subgroupcat %end;;	
+				quit;
+				
 				data &dataout.&suffix.; 
 				set &datain.(where=(table="&table" and weight = "&weight" and order=&b.
 			                             %if %str("&reporttype") = %str("T2L2") or %str("&reporttype") = %str("T4L2") %then %do;
@@ -755,7 +790,7 @@
 				run;
 
 				proc datasets nowarn noprint lib=work;
-		            delete _lbdenom;
+		            delete _lbdenom _testrecord_denom;
 		        quit;
 			%end;
 			%else %do;
