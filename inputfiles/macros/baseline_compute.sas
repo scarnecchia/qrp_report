@@ -1342,7 +1342,7 @@
                     /* Calculate lab covariate percentages */
 					%if %quote(&labcharacteristics) ^= %str("missing") %then %do;
                     else if prxmatch("/(LBUNIT|LBRES)/",metvar) then do; 
-                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(comp_mean0,coalesce(agg_comp_testrecord_denom, agg_comp_w));
+                        if ^missing(exp_mean0) and (total_exp_episodes gt 0) then exp_std0 = divide(exp_mean0,coalesce(%if %quote(&labcharacteristics) ^= %str("missing") %then %do;agg_exp_testrecord_denom,%end; agg_exp_w));
                         if missing(exp_mean0) then exp_std0 = .;
                         exp_std0_char = compress(put(exp_std0,percent10.1));
                         if missing(exp_mean0) or exp_mean0=0 then do;
@@ -1354,7 +1354,7 @@
                             end;
                         end;						
                         %if "&includecomp" = "Y" %then %do;
-                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,coalesce(agg_comp_testrecord_denom, agg_comp_w));
+                        if ^missing(comp_mean0) and (total_comp_episodes gt 0) then comp_std0 = divide(comp_mean0,coalesce(%if %quote(&labcharacteristics) ^= %str("missing") %then %do;agg_comp_testrecord_denom,%end; agg_comp_w));
                         if missing(comp_mean0) then comp_std0 = .;
                         comp_std0_char = compress(put(comp_std0,percent10.1));
                         if missing(comp_mean0) or comp_mean0=0 then do;
