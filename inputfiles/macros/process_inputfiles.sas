@@ -2409,11 +2409,28 @@
        %do n = 1 %to &numrunid.;
        %let runid = %scan(&runidlist., &n.);
        
-       /* Determine if there is a comma in any row on the lookup file */
-          %if %str("&&&runid._treelookup") ne %str("") %then %do;
+       %if %str("&&&runid._treelookup") ne %str("") %then %do;
+			/* Determine if tree lookup file is the expanded tree file. Will be the case if the node variable is in the file */
+			data _null_;
+			dsid = open("infolder.&&&runid._treelookup");
+			if varnum(dsid,"node") = 0 then call symputx('expandedtree', 'N');
+			else call symputx('expandedtree', 'Y');
+			rc= close(dsid);				
+			drop rc dsid;
+			run;
+
+			%put &=expandedtree;
+
+			/* If expanded tree is used then collapse to child-parent tree architecture */
+			%if &expandedtree. eq Y %then %do;
+				%collapse_expanded_tree(lookupfile=infolder.&&&runid._treelookup, outfile=collapsed_treelookup);
+			%end;	
+
+			/* Determine if there is a comma in any row on the lookup file */
              data _treelookup;
                length comma_in_parent comma_in_child 3.;
-               set infolder.&&&runid._treelookup;
+               set %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
+				   %else %do; collapsed_treelookup %end;;
                 if index(parent,',') > 0 then comma_in_parent = 1;
                 else comma_in_parent = 0;
                 if index(child,',') > 0 then comma_in_child = 1;
@@ -2430,18 +2447,20 @@
              
              %let parent_comma = &parent_comma.;
              %let child_comma = &child_comma.;
-             
+
              %if &parent_comma. > 0 or &child_comma. > 0 %then %do;
                %put WARNING: Commas exist in either the child or parent node. A tab-delimited file will be produced.;
                %put &parent_comma. parent, and &child_comma. child nodes have commas.;
-                proc export data = infolder.&&&runid._treelookup
+                proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
+								   %else %do; collapsed_treelookup %end;
                       outfile   = "&output.&&&runid._treelookup..txt"
                      dbms      = tab replace;
                      putnames  = NO;
                 run;
              %end;  
              %else %do;  
-                proc export data = infolder.&&&runid._treelookup
+                proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
+								   %else %do; collapsed_treelookup %end;
                       outfile   = "&output.&&&runid._treelookup..txt"
                      dbms      = dlm replace;
                      delimiter = ',';
@@ -2451,7 +2470,7 @@
           
              /* Clean up work space */
              proc datasets lib = work;
-              delete _treelookup;
+              delete _treelookup collapsed_treelookup;
              quit;
           %end; /* treelookup exists */
         %end; /* runid loop */
@@ -2561,6 +2580,13 @@
 								%end;
                                 codetype,
                                 codecat
+								/* Because lab covariates results returned are not squared, we need to keep the lab type 
+								  (numeric or character) to assess denominators in baseline computation later */
+								%if %length(&labcovars) > 0 %then %do;
+								, case when upcase(codecat)="LB" then substr(codetype,3,1)
+                                  else ''
+                                  end as LabType format=$1.
+								%end;
                 from infolder.&&&runid._covariatecodes.;
 
                 select length
@@ -2672,7 +2698,8 @@
     %end;
 
     %if &nobs > 0 %then %do;
-	    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
+	    proc sort data = covarname nodupkey out=covarname(keep=covarnum studyname runid cov_varname %if %length(&labcovars) > 0 %then %do; LabType %end;
+															   %if %index(&reporttype,T4) > 0 %then %do; covfromanchor covtoanchor codepop %end;);
 	        by runid covarnum;
 	    run;  
 

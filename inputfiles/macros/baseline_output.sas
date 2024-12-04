@@ -656,27 +656,27 @@
             define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
                            style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
 
-            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"] 
+            define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"] 
                             style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
-            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
+            define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
                             style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
-            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+            define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
-            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
+            define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
-            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+            define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
-            define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string"]
+            define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
-            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string"]
+            define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
-            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string"]
+            define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string format:@"]
                             style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
             %end;
 
@@ -1178,9 +1178,9 @@
 	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
 	              numcolumns =&numcolumns.,
-	              grp1_label=&grp1_label.,
-	              grp2_label=&grp2_label., 
-	              grp3_label=&grp3_label.,
+	              grp1_label=%quote(&grp1_label.),
+	              grp2_label=%quote(&grp2_label.), 
+	              grp3_label=%quote(&grp3_label.),
 	              computebalance = &computebalance.,
 	              includenonpregnant=&includenonpregnant.);
 	            %end;
@@ -1196,9 +1196,9 @@
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
-	                  grp1_label=&grp1_label.,
-	                  grp2_label=&grp2_label., 
-	                  grp3_label=&grp3_label.,
+	                  grp1_label=%quote(&grp1_label.),
+	                  grp2_label=%quote(&grp2_label.), 
+	                  grp3_label=%quote(&grp3_label.),
 	                  computebalance = &computebalance.,
 	                  includenonpregnant=&includenonpregnant.);
 	                %end;
@@ -1213,9 +1213,9 @@
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
 	                  numcolumns =&numcolumns.,
-	                  grp1_label=&grp1_label.,
-	                  grp2_label=&grp2_label., 
-	                  grp3_label=&grp3_label.,
+	                  grp1_label=%quote(&grp1_label.),
+	                  grp2_label=%quote(&grp2_label.), 
+	                  grp3_label=%quote(&grp3_label.),
 	                  computebalance = &computebalance.,
 	                  includenonpregnant=&includenonpregnant.);
 	                %end;
@@ -1232,9 +1232,9 @@
 						  labcharacteristics = %quote(&labcharacteristics),
 	                      dpnum = &dpnum.,
 	                      numcolumns =&numcolumns.,
-	                      grp1_label=&grp1_label.,
-	                      grp2_label=&grp2_label., 
-	                      grp3_label=&grp3_label.,
+	                      grp1_label=%quote(&grp1_label.),
+	                      grp2_label=%quote(&grp2_label.), 
+	                      grp3_label=%quote(&grp3_label.),
 	                      computebalance = &computebalance.,
 	                      includenonpregnant=&includenonpregnant.);
 	                %end;

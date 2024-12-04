@@ -211,7 +211,7 @@
 		  
 	      %if %sysfunc(index(&&formula&vv.,/)) > 0 %then %do;
 			 %if %str("&&cirate&vv.") = %str("R") %then %do;
-			   format &&var&vv. $30.;
+			   format &&var&vv. $50.;
 			   if &&cidenom&vv.. > 0 and &&num&vv. > 0 then do;
                   lambda = &&formula&vv.;
 			      se = sqrt(1/&&num&vv.);
@@ -243,7 +243,7 @@
 			   %end;			   
              %end;	
 			 %else %if %str("&&cirate&vv.") = %str("P") %then %do;
-               format &&var&vv. $30.;			 
+               format &&var&vv. $50.;			 
 			   if &&cidenom&vv. > 0 then do;
                  p = %scan(&&formula&vv.,1,*);
 			     q = 1 - p;
