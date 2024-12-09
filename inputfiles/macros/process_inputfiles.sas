@@ -730,6 +730,7 @@
                 end;
             %end;
             treeanalysisgrp=lowcase(treeanalysisgrp);
+			group=lowcase(group);
          run;
     %end;
  
