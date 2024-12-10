@@ -203,22 +203,22 @@
             quit;
             %put &totalpatients &totalepisodes;
 
+			%let numprofilecovars_valid=0;
+
+			/* If ALL covariates where requested, need to build the list */
+			%if %str("&profilecovarsnocomma.") eq %str("covar:") %then %do;
+				proc sql noprint;
+				select distinct upcase(cov_varname) into :profilecovarsnocomma separated by " "
+				from covarname;
+				quit;
+			%end;
+
+			%let profilecovars_valid=&profilecovarsnocomma;
+			%let profilecovarsquoted=%upcase(&profilecovarsnocomma);	
+			%baseline_expand_parameters(var=profilecovarsquoted);
+
 			/* Exclude from covariates to report those anchored to INDEXDT_EXP for type 4 unexposed cohorts */
-			%if %index(&reporttype,T4) > 0 %then %do;
-				%let numprofilecovars_valid=0;
-
-				/* If ALL covariates where requested, need to build the list */
-				%if %str("&profilecovarsnocomma.") eq %str("covar:") %then %do;
-					proc sql noprint;
-					select distinct upcase(cov_varname) into :profilecovarsnocomma separated by " "
-					from covarname;
-					quit;
-				%end;
-
-				%let profilecovars_valid=&profilecovarsnocomma;
-				%let profilecovarsquoted=%upcase(&profilecovarsnocomma);	
-				%baseline_expand_parameters(var=profilecovarsquoted);
-				
+			%if %index(&reporttype,T4) > 0 %then %do;								
 				%if &profilecohort. eq mi %then %do;
 					%if %substr(&profilegroup.,%length(&profilegroup.)-3, 4) eq _eoi %then %let profile_unexposed=N; /* _eoi group always exposed */
 					%else %do;
@@ -254,8 +254,11 @@
 				%put &=numprofilecovars_valid;
 			%end;
 			%else %do;
-				%let numprofilecovars_valid = &numprofilecovarstoinclude.;
-				%let profilecovars_valid = &profilecovarsnocomma.;
+				proc sql noprint;
+				select count(*) into: numprofilecovars_valid 
+				from covarname
+				where upcase(cov_varname) in (&profilecovarsquoted.) and runid="&runid";					  
+				quit;
 			%end;
 
             *Determine covariate label and order;
