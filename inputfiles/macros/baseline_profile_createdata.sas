@@ -184,7 +184,7 @@
         /* Rejoin profilecovarstoinclude to use in output macro */
         proc sql noprint undo_policy=none;
             create table agg_profile_&periodid as
-            select a.*, b.profilecovarstoinclude, b.covarsort, b.baselinegroupnum
+            select distinct a.*, b.profilecovarstoinclude, b.covarsort, b.baselinegroupnum
             from agg_profile_&periodid a
             left join baselinefile b
             on a.group = b.group and a.runid = b.runid;
