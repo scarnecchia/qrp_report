@@ -11,7 +11,7 @@
 *  Program inputs:                                                                                   
 *   - For Type 1 requests: agg_t1cida.sas7bdat                                               
 *   - For Type 2 requests: agg_t2cida.sas7bdat
-*   - For Type 2 concomitance requests: agg_t1conc.sas7bdat
+*   - For Type 2 concomitance requests: agg_t2conc.sas7bdat
 *   - For Type 4 requests: agg_t4cida.sas7bdat
 * 
 *  Program outputs:                                                                                                                           
