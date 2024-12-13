@@ -217,6 +217,9 @@
     /*loop through each periodid*/
     %do periodid = %eval(&look_start.) %to %eval(&look_end.);
 
+		/* Defensive: make sure labcharacteristics does not contain any double quotes. This can happen when &look_end. > 1 and it will cause the code to error out */
+		%let labcharacteristics= %qsysfunc(compress((&labcharacteristics),%str((%"))));
+
         /*loop through each DP*/
         %do dps = 1 %to %eval(&num_dp.);
             %let dpsiteid = %scan(&random_dplist., &dps.);
