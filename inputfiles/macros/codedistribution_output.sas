@@ -73,7 +73,7 @@
 				,sum(codeCount) as N
 		from codedistcounts
 		group by code, description, codecat, codetype
-		order by N desc;
+		order by N desc, totalN desc;
 		quit;
 
 		data codedistcounts;
