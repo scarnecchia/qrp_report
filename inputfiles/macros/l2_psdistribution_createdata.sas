@@ -164,8 +164,9 @@
                                 , x.subgroup
                                 , x.subgroupcat
 	                            , "&analysisgrp" as analysisgrp format=$40. length=40
-	                            , y.bin_eoi label="Histogram of &eoilabel."
-	                            , y.bin_ref label="Histogram of &reflabel."
+								/* Because they can have different labels we create different bin variables for each &loopcount */
+	                            , y.bin_eoi as bin_eoi_&loopcount. label="Histogram of &eoilabel."
+	                            , y.bin_ref as bin_ref_&loopcount. label="Histogram of &reflabel."
 	                            , "&dpsiteid." as dp length=6
 								, "&runid." as runid length=3
 								, "&loopcount." as order length=3
@@ -173,7 +174,17 @@
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 
-	                proc append data=raw_histogram_&loopcount._&dps._&periodid. base=histogram_&periodid. force; run;
+	                %if &loopcount. eq 1 %then %do;
+						data histogram_&periodid.;
+						set raw_histogram_&loopcount._&dps._&periodid.;
+						run;
+					%end;
+					%else %do;
+						data histogram_&periodid.;
+						set histogram_&periodid.
+							raw_histogram_&loopcount._&dps._&periodid.;
+						run;
+					%end;
 
 	                proc datasets noprint nowarn lib=work; delete raw:; quit;
 
