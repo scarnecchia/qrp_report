@@ -36,8 +36,8 @@
 		%end;
 
 		proc sgplot data=histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));  
-			histogram bin_eoi / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
-			histogram bin_ref / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
+			histogram bin_eoi_&loopcount. / freq = _eoi    transparency=0.8 fillattrs=(color=blue) binstart = 0 binwidth = 0.025;
+			histogram bin_ref_&loopcount. / freq =_ref  transparency=0.8 fillattrs=(color=red) binstart = 0 binwidth = 0.025;
 			keylegend / location=outside position=bottom noborder valueattrs=(size=&fontsize. family=&font.);
 			xaxis label = "PS" labelattrs=(size=&fontsize. family=&font. color=gray) valueattrs=(size=&fontsize. family=&font. color=gray) values=(0 to 1 by .2) offsetmax = .02;
 			yaxis display=(noline) label="Percent" labelattrs=(size=&fontsize. family=&font. color=gray) valueattrs=(size=&fontsize. family=&font. color=gray);
