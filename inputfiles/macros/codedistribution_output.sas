@@ -73,7 +73,7 @@
 				,sum(codeCount) as N
 		from codedistcounts
 		group by code, description, codecat, codetype
-		order by N desc, totalN desc;
+		order by N desc;
 		quit;
 
 		data codedistcounts;
@@ -145,6 +145,11 @@
 		by descending totalN;
 		run; 
 	
+		/* Observations where TotalN=0 have their distindexlist variable include both codes selected and codes not selected in the &topncodedist codes. 
+		   For example distindexlist=16_36 and code associated with 16 is in &topncodedist but code associated with 36 is not. These must be removed */
+		proc sort data=repdata.table&tablenum.&tableletter(drop = _:  where=(TotalN > 0));
+		by descending totalN;
+		run; 
 
 		%let title = %quote(Table &tablenum.&tableletter.. Full Code Distribution of &grouplabel. in the &database. from &startdateformatted. to &enddateformatted.);
 
