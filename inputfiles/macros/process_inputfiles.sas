@@ -2486,7 +2486,7 @@
             from master_treefile a 
             %if &reporttype ^= T3 %then %do;
             inner join pscs_masterinputs c
-            on a.group = c.analysisgrp
+            on lower(a.group) = lower(c.analysisgrp)
             %end;
             inner join input.&treeaggfile d
             on lower(a.treeanalysisgrp) = lower(d.treeanalysisgrp)
