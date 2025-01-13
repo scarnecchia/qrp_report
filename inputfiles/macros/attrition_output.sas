@@ -204,7 +204,7 @@
                 num=100;
             end;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
+            else if report_descr='Excluded due to same-day initiation of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
             end;
@@ -247,7 +247,7 @@
                 num=100;
             end;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            else if report_descr='Excluded due to same-day initition of both exposure groups' then do;
+            else if report_descr='Excluded due to same-day initiation of both exposure groups' then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
             end;
