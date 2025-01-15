@@ -215,7 +215,27 @@
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
-		proc report data=repdata.&_data nofs nowd
+		data _hdpsappendix;
+		set repdata.&_data;
+		format rankingChar $15. codecatChar $3.;
+		if missing(code) then do;
+			code="N/A";
+			codecatChar="N/A";
+			codetype="N/A";
+			frequency="N/A";
+			rankingChar="N/A";
+			call symputx('convergence',0);
+		end;
+        else do;
+			codecatChar=codecat;
+			rankingChar=strip(put(ranking,12.3));
+			call symputx('convergence',1);
+		end;
+		drop ranking codecat;
+        rename rankingChar=ranking codecatChar=codecat;
+		run;
+
+		proc report data=_hdpsappendix nofs nowd
     		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
@@ -232,9 +252,18 @@
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&apptitle.";
             endcomp;
+
+			%if &convergence. = 0 %then %do;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.];
+                line "Note: N/A represent PS models that did not reach convergence.";
+            endcomp;
+            %end;
+			%else %do;
             compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
             line ' ';
             endcomp;
+			%end;
         run;
 		
 	%mend appendixhdps;	
