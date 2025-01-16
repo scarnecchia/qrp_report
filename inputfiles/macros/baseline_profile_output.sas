@@ -60,6 +60,7 @@
                 call symputx('runid',runid);
 				call symputx('profilegroup',group);
 				call symputx('profilecohort',cohort);
+				call symputx('cohortdef',cohortdef);
             run;
 
             %let profileswitches = 0;
@@ -436,17 +437,15 @@
         		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
             %if (%index(&reporttype,T4) and %index(&where,%str(cohort="mi")) = 0) or %index(&reporttype,T6) %then %do;
-            columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
+            columns (label ("^S={background=white}&productlabel." sum_npts sum_nepisodes percent_episodes));    
             %end;
             %else %do;
-            columns (label sum_npts percent_npts sum_nepisodes percent_episodes);
+            columns (label sum_npts sum_nepisodes percent_episodes);
             %end;
                 define label / order=data 'Characteristic Category'
                                  style(header)=[background = bgr borderleftcolor = BGR] style(column)=[rules=none width=4.5in just=L];
                 define sum_npts / 'Number of Patients'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
-                define percent_npts /'% of Total*Number of*Patients'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=.65in just=C] ;
+                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;                
                 define sum_nepisodes / 'Number of Episodes'
                                 style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
                 define percent_episodes / '% of Total*Number of*Episodes'
@@ -457,9 +456,18 @@
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&title.";
             endcomp;
+
+			%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and &cohortdef. ne 01 %then %do;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.];
+                line "Each patient can contribute more than one exposure episode. Hence, the percentages are calculated using total number of episodes and reflect percentage of episodes with a particular profile definition.";
+            endcomp;
+            %end;
+            %else %do;
             compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
             line ' ';
             endcomp;
+			%end;
 
             run;
 

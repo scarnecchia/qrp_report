@@ -108,6 +108,7 @@
                      %if &reporttype = T6 %then %do;
                      , y.switchstep
                      %end;
+					 , y.cohortdef
                 from &profiletable as x,
                      _temp_profile_tablenames&dps._&b. as y
                 where x.&mergevar. = y.group;
@@ -155,7 +156,7 @@
 
                 proc means data=_temp_profilegroup_&c._&d nway missing noprint;
                     var npts n_episodes;
-                    class periodid runid group order cohort %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
+                    class periodid runid group order cohort cohortdef %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
                     output out=sum_agg_profile_&c._&d.(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
@@ -163,7 +164,7 @@
                 /* Stratified by DP */
                 proc means data=_temp_profilegroup_&c._&d nway missing noprint;
                     var npts n_episodes;
-                    class periodid runid dpidsiteid group order cohort %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
+                    class periodid runid dpidsiteid group order cohort cohortdef %if &reporttype = T6 %then %do; switchstep %end; &profilecovarsnocomma;
                     output out=sum_dp_agg_profile_&c._&d.(drop=_:)   
                     sum(npts n_episodes)=sum_npts sum_nepisodes;
                 run;
