@@ -93,8 +93,7 @@
                     call symputx("parameter", strip(parameter));
                     call symputx("value", strip(value));
                     /*defensive*/
-                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination',
-                                              'outputviewsdata', 'jirakey') then call symputx("value",upcase(value));
+                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination') then call symputx("value",upcase(value));
                     if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
@@ -113,9 +112,7 @@
                 end;
             run;
 
-            /* Mask special characters from studytitle parameter */
-            %if %lowcase(&parameter.) = studytitle %then %let value = %bquote(&value);
-            %let &parameter. = &value.;
+             %let &parameter. = &value.;
 
             /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
             proc printto log=log;
@@ -1149,39 +1146,6 @@
                 %end;
             %end;
         run;
-    %end;
-
-/***************************************************************************************************
-*   Create a stacked monitoring file for Sentinel Views                                
-***************************************************************************************************/
-
-    /* Create periodid2 variable when multiple runs are requested in query */
-    /* Views platform does not have a way of distinguishing multiple runids
-       so monitoring period variable is incremented as periodid2 to work around
-       limitation */
-    %if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
-        data monitoringfile_views;
-            set %do n = 1 %to &numrunid.;
-            %let runid=&&id&n..;
-            infolder.&&&runid._monitoringfile(in=n&n.)
-            %end;
-        ;
-         retain periodid2 0;
-         format runid $6.;
-            %do n = 1 %to &numrunid.;
-                if n&n. then do;
-                runid = "&&id&n.";
-                periodid2+1;
-                end;
-            %end;
-        run;
-
-        /* Check that groupsfile is defined */
-        %if %length(&groupsfile) = 0 and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
-            %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
-            %put The reporting code will abort;
-            %abort;
-        %end;
     %end;
 
 /***************************************************************************************************
@@ -2704,22 +2668,6 @@
 	        by runid covarnum;
 	    run;  
 
-		/* Views dashboards require the same covariates to be specified across runs for all covariates */
-		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
-			proc sort data=covarname out=_covarstudyname nodupkey;
-				by covarnum studyname;
-			run;
-
-			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname cov_varname) dupout=_covdup nodupkey;
-				by covarnum;
-			run;
-
-			%isdata(dataset=_covdup);
-			%if %eval(&nobs.>0) %then %do;
-				%put ERROR: (Sentinel) The same covariatecodes file must be used for all runs when using Sentinel Views.;
-				%abort;
-			%end;
-	    %end;
 
 	%end;
 
