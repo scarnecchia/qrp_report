@@ -420,8 +420,7 @@
             %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
 			%let super_title=;
-			%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and &cohortdef. ne 01 %then %do; 
-			%*assign_superscripts(type=title, order = 1);
+			%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and &cohortdef. ne 01 %then %do; 			
 			%let super_title=%str(^{Super 1});
 
 			proc sql noprint;
