@@ -73,6 +73,9 @@
 	  type = "baseline"; order = 29; description = "Chang H-Y, Weiner JP, Richards TM, Bleich SN, Segal JB. Validating the adapted Diabetes Complications Severity Index in claims data. Am J Manag Care. 2012;18(11):721-726."; output;
 	  type = "baseline"; order = 30; description = "Kim DH, Schneeweiss S, Glynn RJ, Lipsitz LA, Rockwood K, Avorn J. Measuring frailty in Medicare data: development and validation of a claims-based frailty index. J Gerontol A Biol Sci Med Sci. 2018;73(7)980-987."; output;
 
+	   /* Footnotes for profile table */
+	  type = "profile";  order = 1; description = "Each patient can contribute more than one exposure episode. Hence, the percentages are calculated using total number of episodes and reflect percentage of episodes with a particular profile definition."; output;	   
+      
 	   /* Footnotes for L2 effect estimates table */	  
 	  type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
 	  type = "effectest"; order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
