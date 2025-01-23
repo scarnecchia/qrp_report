@@ -243,13 +243,16 @@
 									p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black tagattr='mergeacross:12'];
 		                      %end;
 							  %else %do;
-							    proc odstext ;
-									p " ";
-									p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
-							  %end;
-		                      
+							  	%if &include_unweighted_trim. = Y %then %do;
+								    proc odstext ;
+										p " ";
+										p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
+							  	%end;
+							   %end;		                      
 		                      %let hisanalysis = Adjusted;
-		                      %output_histogram(type=Adjusted, weight=&analysisgrp_type);
+							  %if &include_unweighted_trim. = Y | ( &include_unweighted_trim. = N & &analysisgrp_type. = Weighted) %then %do;
+		                      	%output_histogram(type=Adjusted, weight=&analysisgrp_type);
+							  %end;
 
 		                    %end; *analysisgrpcount;
 	                  	%end; * iptwfile;                
@@ -313,9 +316,11 @@
 												p "Weighted Propensity Score Distribution After Trimming&analysisgrpschemelong." / style=[just=L color=black tagattr='mergeacross:12'];
 											%end;
 											%else %do;
-											  proc odstext ;
-												p " ";
-												p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
+												%if &include_unweighted_trim. = Y %then %do;
+												  proc odstext ;
+													p " ";
+													p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
+												%end;
 											%end;
 											proc odstext ;
 												p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];

@@ -94,12 +94,14 @@
                     call symputx("value", strip(value));
                     /*defensive*/
                     if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination',
-                                              'outputviewsdata', 'jirakey') then call symputx("value",upcase(value));
+                                              'outputviewsdata', 'jirakey', 'include_unweighted_trim') then call symputx("value",upcase(value));
                     if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
                     /*default report_destination is both*/
                     if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
                     /*default stratifybydp*/
                     if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
+					/*default include_unweighted_trim*/
+                    if lowcase(parameter) = 'include_unweighted_trim' and missing(value) then call symputx("value","N");
                     /*add parenthesis for datedistributed*/
                     if lowcase(parameter) in ('datedistributed') and missing(value)=0 then do;
                         tempvalue = input(value,ANYDTDTE32.); /*convert to SAS date*/

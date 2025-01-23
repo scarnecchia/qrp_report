@@ -224,22 +224,27 @@
         %isdata(dataset=repdata.table&tablenum.&tableletter.);
         %if %eval(&nobs.<1) %then %do;
 
-        data repdata.table&tablenum.&tableletter;
-            set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
-            %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
-              if analysis = "Unweighted" then do;
-                HR_95CI = 'N/A';
-                HR_pvalue = 'N/A';
-				%if ( &reporttype = T4L2 and &&&runid._t4hoimethod. = binary ) %then %do; rr_95ci = 'N/A'; %end;
-		      end;
-            %end;
-            /* Convert monitoring period to character so format applies correctly */
-            %if &look_start ^= &look_end %then %do;
-            MP_char = strip(put(MonitoringPeriod,3.));
-            drop MonitoringPeriod;
-            rename MP_char=MonitoringPeriod;
-            %end;
-        run;
+		        data repdata.table&tablenum.&tableletter;
+		            set table&tablenum.(where=(subgroup in ("", "&subgroup.")));
+		            %if &pscsfile = iptwfile or (&pscsfile = stratificationfile and %length(&weightscheme) > 0) %then %do;
+					  %if &include_unweighted_trim. = Y %then %do;
+			              if analysis = "Unweighted" then do;
+			                HR_95CI = 'N/A';
+			                HR_pvalue = 'N/A';
+							%if ( &reporttype = T4L2 and &&&runid._t4hoimethod. = binary ) %then %do; rr_95ci = 'N/A'; %end;
+					      end;
+						%end;
+						%else %do;
+							if analysis = "Unweighted" then delete;
+						%end;							
+		            %end;
+		            /* Convert monitoring period to character so format applies correctly */
+		            %if &look_start ^= &look_end %then %do;
+		            MP_char = strip(put(MonitoringPeriod,3.));
+		            drop MonitoringPeriod;
+		            rename MP_char=MonitoringPeriod;
+		            %end;
+		        run;
         %end;
 
         /* Select Footnotes */  

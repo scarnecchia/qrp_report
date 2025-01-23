@@ -53,7 +53,7 @@
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile
             TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars OutputViewsData
-            jirakey userid studytitle;
+            jirakey userid studytitle include_unweighted_trim;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -81,6 +81,7 @@
     %let jirakey = ;
     %let userid = ;
     %let studytitle = ;
+	%let include_unweighted_trim=;
 
     /* Type 3 Tree weekdays dataset variable */
     %global t3treewkdaysdset;
