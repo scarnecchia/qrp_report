@@ -325,7 +325,9 @@
 											proc odstext ;
 												p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
 											%let hisanalysis = Adjusted;
-											%output_histogram(type=Adjusted, weight=&analysisgrp_type);
+											%if &include_unweighted_trim. = Y | ( &include_unweighted_trim. = N & &analysisgrp_type. = Weighted) %then %do;
+												%output_histogram(type=Adjusted, weight=&analysisgrp_type);
+											%end;
 				                    %end; *analysisgrpcount;
 								%end; *iptwfile;  
 			                %end; * dps;  
