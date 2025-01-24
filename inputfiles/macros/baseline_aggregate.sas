@@ -502,17 +502,6 @@
         proc sort data=_baseline_agg_&periodid.; 
             by dpidsiteid analysisgrp runid order table group1 group2 weight subgroup subgroupcat vartype metvar;                 
         run;
-
-		/*if lab covariates and views data are requested, need to create Covarlabunits only once since covariates are the same for all periods*/
-		%isdata(dataset=Covarlabunits);        
-		%if %eval(&nobs.=0) and %length(&labcharacteristics) > 0 and %length(&checkbaselinelabvars) > 0 and &outputviewsdata=Y %then %do;		
-		data Covarlabunits;
-		set _labvarsname(where=(index(metvar, "LBUNIT")>0));		
-		metvar=strip(tranwrd(metvar,"N_",""));	
-		metvar=substr(metvar, 1, index(metvar,"LBUNIT")-1);
-		rename label=labunit;
-		run;
-		%end;
 			
     %end; /*level 2 baseline tables*/
 						
