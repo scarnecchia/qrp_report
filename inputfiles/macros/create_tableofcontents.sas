@@ -271,9 +271,11 @@
 	                    /*Unweighted - IPTW and PS Stratum, PS Stratification (tree analysis only)*/
 	                    %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
                             (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
-	                    %tableletter(); 
-	                    %addtotoc(tabnum=Table 1&tableletter., 
-	                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+							%if &include_unweighted_trim. = Y %then %do;
+			                    %tableletter(); 
+			                    %addtotoc(tabnum=Table 1&tableletter., 
+			                     caption=%quote(&aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.));
+							%end;
 	                    %end;
 
 	                    /*Weighted - IPTW, PS Stratum, PS Stratification*/

@@ -52,7 +52,7 @@
     /*variables related to createreport input file*/
     %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
             figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars;
+            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars include_unweighted_trim;
 
     %let ReportType= ;
     %let small_cellcounts = ;
@@ -76,8 +76,9 @@
     %let datedistributed = ;
     %let report_destination = ;
 	%let collapse_vars = ;
+	%let include_unweighted_trim= N;
 
-    /* Type 3 Tree weekdays dataset variable */
+	/* Type 3 Tree weekdays dataset variable */
     %global t3treewkdaysdset;
     %let t3treewkdaysdset = ;
 

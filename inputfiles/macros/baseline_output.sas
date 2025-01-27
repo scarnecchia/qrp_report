@@ -1203,18 +1203,20 @@
 	                /*Unweighted - IPTW, PS Stratum, PS Stratification (tree analysis only) */
 	                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
                         (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
-	                %tableletter(); 
-	                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-	                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
-	                  characteristiclabel =&characteristiclabel.,
-					  labcharacteristics = %quote(&labcharacteristics),
-	                  dpnum = &dpnum.,
-	                  numcolumns =&numcolumns.,
-	                  grp1_label=%quote(&grp1_label.),
-	                  grp2_label=%quote(&grp2_label.), 
-	                  grp3_label=%quote(&grp3_label.),
-	                  computebalance = &computebalance.,
-	                  includenonpregnant=&includenonpregnant.);
+						%if &include_unweighted_trim. = Y %then %do;
+			                %tableletter(); 
+			                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
+			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+			                  characteristiclabel =&characteristiclabel.,
+							  labcharacteristics = %quote(&labcharacteristics),
+			                  dpnum = &dpnum.,
+			                  numcolumns =&numcolumns.,
+			                  grp1_label=%quote(&grp1_label.),
+			                  grp2_label=%quote(&grp2_label.), 
+			                  grp3_label=%quote(&grp3_label.),
+			                  computebalance = &computebalance.,
+			                  includenonpregnant=&includenonpregnant.);
+						%end;
 	                %end;
 						
 	                /*Weighted - IPTW, PS Stratum, PS Stratification*/
