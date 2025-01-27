@@ -76,7 +76,7 @@
     %let datedistributed = ;
     %let report_destination = ;
 	%let collapse_vars = ;
-	%let include_unweighted_trim=;
+	%let include_unweighted_trim= N;
 
 	/* Type 3 Tree weekdays dataset variable */
     %global t3treewkdaysdset;
