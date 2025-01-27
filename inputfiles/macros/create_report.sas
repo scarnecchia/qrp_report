@@ -73,88 +73,6 @@
                   dataroot = &dataroot.,
                   signaturefile =%scan(&runidlist,1)_signature);
 
-
-***************************************************************************************************;
-* Using requestID, create new folder for Sentinel Views output                                                
-***************************************************************************************************;
-
-    %if &OUTPUTVIEWSDATA. = Y %then %do;
-	
-        /*Determine folder name - 5 token request ID.
-            If dpid or versionID tokens differ then:
-                DPID: use NSDP
-                versionID: use the latest version (i.e. if combining v01, v02, then use v02. if combining b01 and v01, use v01)
-            If any of the 1st 3 tokens differ, write a warning in the log (i.e. can't aggregate across workplans)*/
-
-        %if &leavebehindreport = Y %then %do;
-            %let viewsID = &ReqID;
-        %end;
-        %else %do;
-
-			proc summary data = output.dpinfo missing;
-				class projid wptype wpid dpid dpversion;
-				ways 1 ;
-				output out=unique;
-			run;
-
-			proc sql noprint;
-			select projid, wptype, wpid, dpid, dpversion
-				into :viewsprojid separated by ' ',
-					:viewswptype separated by ' ',
-					:viewswpid separated by ' ',
-					:viewsdpid separated by ' ',
-					:viewsdpversion separated by ' ' 
-				from unique
-				order by dpversion;
-			quit;			
-		
-			%let viewsprojid=%cmpres(&viewsprojid);
-			%let viewswptype=%cmpres(&viewswptype);	
-			%let viewswpid=%cmpres(&viewswpid);
-			%let viewsdpid=%cmpres(&viewsdpid);
-			%let viewsdpversion=%cmpres(&viewsdpversion);
-		
-            %if %sysfunc(countw(&viewsprojid., ' '))>1 | %sysfunc(countw(&viewswptype., ' '))>1 | %sysfunc(countw(&viewswpid., ' '))>1 %then %do;
-                %put WARNING: (Sentinel) Tokens PROJID, WPTYPE, or WPID have incompatible values. Sentinel Views datasets will reside in a folder that may not match workplan;
-                %let viewsprojid_wptype_wpid = %scan(&viewsprojid., 1)_%scan(&viewswptype., 1)_%scan(&viewswpid., 1);
-            %end;
-            %else %do;
-                %let viewsprojid_wptype_wpid = &viewsprojid._&viewswptype._&viewswpid;
-            %end;
-
-            %if %sysfunc(countw(&viewsdpid., ' '))>1 %then %do;
-                %let viewsdpid = nsdp;
-            %end;
-
-            %if %sysfunc(countw(&viewsdpversion., ' '))>1 %then %do;
-                %let viewsdpversion = %scan(&viewsdpversion., %sysfunc(countw(&viewsdpversion., ' ')));
-            %end;
-	
-			%let viewsID = %sysfunc(compress(&viewsprojid_wptype_wpid._&viewsdpid._&viewsdpversion.));
-
-            /*clean up*/
-            proc datasets nowarn nolist lib=work;
-                delete unique;
-            quit;
-        %end;
-		
-        /*create folder - if a leave behind report, divert log to avoid writing paths to MSOC log*/
-        %if &leavebehindreport = Y %then %do;
- 			proc printto log=log;
-			run;
-        %end;
-
-        options DLCREATEDIR ;
-        libname views "&output.&viewsID.&reportid.";
-        options NODLCREATEDIR;
-
-        %if &leavebehindreport = Y %then %do;
- 			proc printto log="&output.qrp_report_log&reportid..log";
-			run;
-        %end;
-
-    %end;
-
     /*Drop requestID tokens from dpinfo file*/
     data output.dpinfo;
         set output.dpinfo(drop=projid wptype wpid dpid);
@@ -327,16 +245,7 @@
       %do periodid = %eval(&look_start.) %to %eval(&look_end.);
         %aggregate_tree();
       %end;
-    %end;
-
-***************************************************************************************************;
-* Produce Views output                                             
-***************************************************************************************************;
-
-    %if &outputviewsdata=Y %then %do;
-	  %if %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype.)) %then %l1_sentinel_views_convertdata(requestid=&viewsID,jirakey=&jirakey,userid=&userid,studytitle=%bquote(&studytitle));
-      %else %l2_sentinel_views_convertdata(queryid=&viewsID,jirakey=&jirakey,userid=&userid,studytitle=%bquote(&studytitle));
-    %end;			
+    %end;		
 
 /*************************************************************************************************/
 /* Run log checker                                                                               */
