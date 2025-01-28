@@ -322,11 +322,11 @@
 													p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
 												%end;
 											%end;
-											proc odstext ;
-												p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-											%let hisanalysis = Adjusted;
 											%if &include_unweighted_trim. = Y | ( &include_unweighted_trim. = N & &analysisgrp_type. = Weighted) %then %do;
-												%output_histogram(type=Adjusted, weight=&analysisgrp_type);
+												proc odstext ;
+													p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
+												%let hisanalysis = Adjusted;
+													%output_histogram(type=Adjusted, weight=&analysisgrp_type);
 											%end;
 				                    %end; *analysisgrpcount;
 								%end; *iptwfile;  
