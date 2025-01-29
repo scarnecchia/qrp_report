@@ -2295,7 +2295,7 @@
                %put &parent_comma. parent, and &child_comma. child nodes have commas.;
                 proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
 								   %else %do; collapsed_treelookup %end;
-                      outfile   = "&output.&&&runid._treelookup..txt"
+                      outfile   = "&output.&&&runid._treelookup.&reportid..txt"
                      dbms      = tab replace;
                      putnames  = NO;
                 run;
@@ -2303,7 +2303,7 @@
              %else %do;  
                 proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
 								   %else %do; collapsed_treelookup %end;
-                      outfile   = "&output.&&&runid._treelookup..txt"
+                      outfile   = "&output.&&&runid._treelookup.&reportid..txt"
                      dbms      = dlm replace;
                      delimiter = ',';
                      putnames  = NO;
