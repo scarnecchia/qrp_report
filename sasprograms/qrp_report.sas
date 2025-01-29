@@ -43,9 +43,6 @@
 /* Location of QRP report package */
 %let REPORTROOT =;
 
-/* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =; 
-
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
 *******                         DO NOT EDIT BELOW THIS LINE                                  ******
@@ -145,14 +142,6 @@ options validvarname = v7;
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
 %let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
-/* Create reportdata and msocdata folders */
-%let repdata = &output.reportdata;
-%let msocdata = &output.msocdata;
-options DLCREATEDIR ;
-libname repdata "&repdata" filelockwait = 2;
-libname msocdata "&msocdata" filelockwait = 2;
-options NODLCREATEDIR;
-
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
@@ -168,6 +157,6 @@ ods path(prepend) work.templat(update);
 %include_macros(PROGRAM_DIR=%str(&reportroot.inputfiles/macros));
 
 /*-----------------------------------------------------------------------------------------------*/
-/* Section 4 - Call create_report.sas 															 */
+/* Section 4 - Call create_report_driver.sas 													 */
 /*-----------------------------------------------------------------------------------------------*/
-%create_report();
+%create_report_driver();

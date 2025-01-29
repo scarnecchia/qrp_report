@@ -47,7 +47,7 @@
     ods select all;
     ods noresults;
     %if &destination. = excel %then %do;
-    ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
+    ods excel file="&output.qrp_report&reportid..xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
