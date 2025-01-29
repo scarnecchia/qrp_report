@@ -203,7 +203,6 @@
 
 			                %let maskeddpid = agg;
 			                %let dps= 0;
-			                %let hisanalysis = Unadjusted;
 			                %if &psfile. = iptwfile |(&psfile. = stratificationfile & &treeaggindicator. = Y) |"&analysisgrphist." ="STRATAWEIGHT" %then %do;
 			                  proc odstext ;
 								p "Unweighted Propensity Score Distribution Before Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
@@ -219,7 +218,6 @@
 		                  proc odstext ;
 							p " ";
 							p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black tagattr='mergeacross:12'];
-		                  %let hisanalysis = Adjusted;
 		                  %output_histogram(type=Adjusted, weight=Unweighted);
 	                  	%end;
 
@@ -249,7 +247,6 @@
 										p "Unweighted Propensity Score Distribution After Trimming" / style=[just=L color=black tagattr='mergeacross:12'];
 							  	%end;
 							   %end;		                      
-		                      %let hisanalysis = Adjusted;
 							  %if &include_unweighted_trim. = Y | ( &include_unweighted_trim. = N & &analysisgrp_type. = Weighted) %then %do;
 		                      	%output_histogram(type=Adjusted, weight=&analysisgrp_type);
 							  %end;
@@ -273,7 +270,6 @@
 			                    %let maskeddpid = %scan(&masked_dplist,&dps);
 			                 
 			                    /*output histogram*/
-			                    %let hisanalysis = Unadjusted;
 			                    %if &psfile. = iptwfile | "&analysisgrphist." ="STRATAWEIGHT" | 
                                    (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
 			                      proc odstext ;
@@ -288,7 +284,6 @@
 			                    %output_histogram(type=Unadjusted, weight=Unweighted);
 
 			                    %if "&matchtype" = "F" %then %do;
-			                      %let hisanalysis = Adjusted;
 			                      proc odstext ;
 									p " ";
 									p "Propensity Score Fixed Ratio &ratiohist. Adjusted Cohort, Matched Caliper = &caliperhist." / style=[just=L color=black tagattr='mergeacross:12'];
@@ -325,7 +320,6 @@
 											%if &include_unweighted_trim. = Y | ( &include_unweighted_trim. = N & &analysisgrp_type. = Weighted) %then %do;
 												proc odstext ;
 													p "Data Partner %substr(&MaskedDPID.,3)" / style=[just=L color=black];
-												%let hisanalysis = Adjusted;
 													%output_histogram(type=Adjusted, weight=&analysisgrp_type);
 											%end;
 				                    %end; *analysisgrpcount;
