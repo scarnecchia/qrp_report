@@ -244,17 +244,7 @@
 ***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
-
-    /*remove filenames datasets if created*/
-    %if &leavebehindreport = N %then %do;
-    proc datasets nowarn nolist lib=input;
-        delete filenames format_values;
-    quit;
-    proc datasets nowarn nolist lib=infolder;
-        delete filenames format_values;
-    quit;
-    %end;
-
+   
     /* End log */
     proc printto;
     run;
