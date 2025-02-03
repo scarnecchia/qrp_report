@@ -954,6 +954,11 @@
 * Clean up                                                                                
 ***************************************************************************************************;
 
+	/* rename dpinfo file with reportid */
+	proc datasets nowarn noprint lib=output;        
+        change dpinfo = dpinfo&reportid.;
+    quit;
+
     /*reset title*/
     %let title = ;
 
