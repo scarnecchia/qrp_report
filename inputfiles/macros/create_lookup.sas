@@ -85,6 +85,7 @@
        /* Footnotes for attrition table */
 	  type = "attrition"; order = -3;  description = 'Cohorts are formed by first evaluating enrollment and demographic requirements as well as index events among members, then evaluating index dates, pre-index history, and post-index follow-up among %sysfunc(lowcase(&claim_level_descr.)). Because of this, the number remaining often increases from the member- to episode-level steps.'; output;
 	  type = "attrition"; order = 1;  description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
+	  type = "attrition"; order = 99;  description = 'Excluded due to same day initiation of both exposure groups or prior initiation of other exposure group or due to prior initiation of other exposure group in a prior look or due to 0 days at risk or due to propensity score trimming or due to lack of treatment heterogeneity in stratum.'; output;
 	  
 	   /* Footnotes for KM/CDF figures */
 	  type = "kmcdf";     order = 1;  description = 'A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day.'; output;
@@ -207,12 +208,6 @@
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 							 
-		claim_level = "L2";  descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to same-day initiation of both exposure groups"; output;
-		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
-		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
-        claim_level = "L2";  descr = "Patients excluded due to not having at least 1 day of followup in the risk window"; report_descr ="Excluded due to 0 days at risk"; output;
-        claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
-		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
 		claim_level = "L2";  descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
