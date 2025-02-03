@@ -150,7 +150,7 @@
 		end;
 		run;
 				
-		proc sort data=repdata.table&tablenum.&tableletter;
+		proc sort data=repdata.table&tablenum.&tableletter(drop = _:);
 		by descending totalN;
 		run; 
 
