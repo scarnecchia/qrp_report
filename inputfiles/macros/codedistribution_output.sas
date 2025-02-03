@@ -80,6 +80,17 @@
 		set codedistcounts;
 		if _N_ <= &topncodedist.;
 		run;
+
+		proc sql noprint;
+		create table codedistindex as
+		select code.*,
+			   dist.distindexlist
+		from codedistcounts as code 
+		join Codedistdata as dist
+					on dist.codecat=code.codecat 
+					and dist.codetype=code.codetype 
+					and dist.code=code.code;
+		quit;
 		
 
 		/*  Compute and output Full Code Distribution */
@@ -87,7 +98,7 @@
 
 		proc sql;
 		create table repdata.table&tablenum.&tableletter as 
-		select  dist.group
+		select  distinct dist.group
 				,dist.distindexlist
 				,dist.code Label="Code"
 				,dist.description Label="Code Description"
@@ -95,11 +106,9 @@
 				,dist.codetype Label="Code Type"
 				,dist.caresetting Label="Encounter Care Setting"
 				,dist.totalN as totalN Label="Overall Counts"
-		from codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype.")) as dist
-		join codedistcounts as code
-			on dist.codecat=code.codecat 
-			and dist.codetype=code.codetype 
-			and dist.code=code.code
+		from codedistdata (where=(lower(group) = "&group." and runid = "&runid" and lower(distindextype) = "&distindextype.")) as dist		
+		join codedistindex as code
+			 on dist.distindexlist=code.distindexlist
 		order distindexlist, code;
 		quit;
 
@@ -140,10 +149,8 @@
 			output; 
 		end;
 		run;
-		
-		/* Observations where TotalN=0 have their distindexlist variable include both codes selected and codes not selected in the &topncodedist codes. 
-		   For example distindexlist=16_36 and code associated with 16 is in &topncodedist but code associated with 36 is not. These must be removed */
-		proc sort data=repdata.table&tablenum.&tableletter(drop = _:  where=(TotalN > 0));
+				
+		proc sort data=repdata.table&tablenum.&tableletter;
 		by descending totalN;
 		run; 
 
