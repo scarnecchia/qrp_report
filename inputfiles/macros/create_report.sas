@@ -245,6 +245,13 @@
 
     proc datasets nowarn nolist lib=work kill; quit;
    
+	/* rename dpinfo file with reportid */
+	%if &leavebehindreport. = N %then %do;
+		proc datasets nowarn noprint lib=output;        
+	        change dpinfo = dpinfo&reportid.;
+	    quit;
+	%end;
+
     /* End log */
     proc printto;
     run;
