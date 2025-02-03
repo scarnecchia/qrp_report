@@ -12,8 +12,8 @@
 *
 * 
 *  Program outputs:                                                                                                                                       
-*   - qrp_report.pdf
-*   - qrp_report.xlsx
+*   - qrp_report&reportid..pdf
+*   - qrp_report&reportid..xlsx
 *
 *  PARAMETERS:                                                                       
 *   - destination: ODS destination. Valid values: excel or pdf
