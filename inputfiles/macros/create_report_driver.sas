@@ -33,14 +33,20 @@
 
     %put =====> MACRO CALLED: create_report_driver;
 	
-	%isdata(dataset=input.report_parameters);
-    %if %eval(&nobs<1) %then %do;
-        %put ERROR: (Sentinel) REPORT_PARAMETERS file is missing. Make sure file placed in the inputfiles folder;
-        %abort;
-    %end;
+	%let inputlib=infolder;
+
+	%if &leavebehindreport. eq N %then %do;
+		%isdata(dataset=input.report_parameters);
+	    %if %eval(&nobs<1) %then %do;
+	        %put ERROR: (Sentinel) REPORT_PARAMETERS file is missing. Make sure file placed in the inputfiles folder;
+	        %abort;
+	    %end;
+
+		%let inputlib=input;
+	%end;
 
 	/*Count number of reports and parameters*/
-	proc contents data=input.report_parameters noprint out=report_param_content;
+	proc contents data=&inputlib..report_parameters noprint out=report_param_content;
 	quit;
 
 	proc sql noprint;
@@ -49,8 +55,13 @@
     where substr(upcase(name),1,6) = 'REPORT';
 
     select count(*) into: numreportparams
-    from input.report_parameters;
+    from &inputlib..report_parameters;
     quit;
+
+	proc datasets nowarn noprint lib=work;
+		delete report_param_content;
+	quit;
+
 
 	%global reportid reportdata database logofile ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile 
             baselinefile tablefile figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile TableColumnsFile
@@ -58,11 +69,18 @@
 
 	%do reportrun = 1 %to %eval(&numreports.);
 
-        /*Reset all parameters*/		        
-		%let reportid = &reportrun.;
-		%let logofile = ;
-		%let reportdata = Y;
+        /*Reset all parameters*/
+		%if &leavebehindreport. eq N %then %do; 
+			%let reportid = &reportrun.;
+			%let reportdata = Y;
+		%end;
+		%else %do;
+			%let reportid =&reqid.;			
+			%let reportdata = N;
+		%end;
+		%let logofile = ;		
 		%let database = ;
+		%let dpname = ;
 		%let ReportType= ;
 	    %let small_cellcounts = ;
 	    %let customizecolumns =;
@@ -90,7 +108,7 @@
         /*Assign all parameters to macro variables*/
         %do reportparameter = 1 %to %eval(&numreportparams.);
             data _null_;
-            set input.report_parameters;
+            set &inputlib..report_parameters;
             if _n_ = &reportparameter. then do;
                 call symputx("parameter", parameter);
                 call symputx("value", report&reportrun.);
@@ -127,14 +145,41 @@
 			%put WARNING: (Sentinel) More than one report is requested in REPORT_PARAMETERS and reportid is not specified for report number &reportrun..;
 			%end;
 		%end;
+		
+		%if &leavebehindreport. eq N %then %do;
+			/* Create reportdata and msocdata folders */
+			%let repdata = &output.reportdata&reportid.;
+			%let msocdata = &output.msocdata&reportid.;
+			options DLCREATEDIR ;
+			libname repdata "&repdata" ;
+			libname msocdata "&msocdata" ;
+			options NODLCREATEDIR;
+		%end;
+		%else %do;
+			/* Create dpinfo file */
+			data dpinfofile;
+              length dp $10 dpname $100 path $250 database $250 includedp $1;
+			  dp = "&dp.";
+			  path = "&msoc.";
+			  %if %nrbquote(&dpname.) = %str() %then %do; dpname = "&dp."; %end;
+			  %else %do; dpname = "&dpname."; %end;
+			  %if %nrbquote(&database.) = %str() %then %do; database = "Sentinel Distributed Database"; %end;
+			  %else %do; database = "&database."; %end;
+			  includedp = "Y";
+			run;
 
-		/* Create reportdata and msocdata folders */
-		%let repdata = &output.reportdata&reportid.;
-		%let msocdata = &output.msocdata&reportid.;
-		options DLCREATEDIR ;
-		libname repdata "&repdata" ;
-		libname msocdata "&msocdata" ;
-		options NODLCREATEDIR;
+			/*If reportdata is set to N then set reportdata folder to the work folder, otherwise assign the repdata folder and libname*/
+			%if &reportdata. = N %then %do;
+		    	libname repdata %sysfunc(quote(%sysfunc(pathname(work))));	 
+		    %end;
+		  	%else %do; 
+				%let repdata = &output.reportdata&reportid.;
+				options DLCREATEDIR ;
+				libname repdata "&repdata" ;
+				proc datasets nowarn nolist lib=repdata kill; quit;
+				options NODLCREATEDIR;
+		  	%end;
+		%end;
 
 		/* Create current report */
 		%create_report();
@@ -143,11 +188,12 @@
 	/*************************************************************************************************/
 	/* Run log checker                                                                               */
 	/*************************************************************************************************/
-	
-    proc printto log="&output.log_checker.log" new;
-    run;
+	%if &leavebehindreport. eq N %then %do;
+	    proc printto log="&output.log_checker.log" new;
+	    run;
 
-	%ms_logchecker(logdir =&output., logdir_out=output);
+		%ms_logchecker(logdir =&output., logdir_out=output);
+	%end;
 
 	/* End log */
     proc printto;
