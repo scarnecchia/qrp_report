@@ -19,18 +19,18 @@
 *    Type 3 Analysis:       
 *       	msoc.[RUNID]_t3_tree_wkdays_[PERIODID]_agg.sas7bdat
 *	   	non fixed window only:
-*	    	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
+*	    	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]&reportid..csv
 *		fixed window only: 	
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl&reportid..csv
 *    Type 2 and Type 4:
-*       	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
+*       	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl&reportid..csv
 *		UNWEIGHTED PSSTRAT only:
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_weighted.csv
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_unweighted.csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_weighted&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_unweighted&reportid..csv
 *		non UNWEIGHTED PSSTRAT only:
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]&reportid..csv
 *
 *  PARAMETERS:  
 *          
