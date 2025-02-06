@@ -1412,7 +1412,7 @@
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
-                    data output.levelid_check;
+                    data output.levelid_check&reportid.;
                         set levelid_check;
                     run;
                    %put ERROR: (Sentinel) Unable to generate all requested report tables and stratifications.;
@@ -1821,7 +1821,7 @@
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
-                    data output.levelid_check;
+                    data output.levelid_check&reportid.;
                         set levelid_check;
                     run;
                    %put ERROR: (Sentinel) Unable to generate all requested report figures and stratifications.;
