@@ -6,16 +6,23 @@
 * Created (mm/dd/yyyy): 01/29/2025
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro drives the creation of all QRP reports
+* PURPOSE: This macro drives the creation of all QRP reports. It loops through all reports specified in 
+*		   the report_parameters input file and calls the %create_report() macro for each one.
 *                                        
-*  Program inputs:                                                                                   
+*  Program inputs: 
+*	- input.report_parameters
 *
 * 
-*  Program outputs:                                                                                                                                       
+*  Program outputs:  
+* 	- dpinfofile if called from QRP to produce leave behind reports 
+*	- all data produced by the %create_report() macro
 * 
-*  PARAMETERS:                                                                       
+*  PARAMETERS:    
+*	- leavebehindreport(Y/N) specify if leave behind report is produced or not 
 *            
-*  Programming Notes:                                                                                
+*  Programming Notes:  
+*	- This program calls the %ms_logchecker macro that will process all the log files created 
+*	  in the output folder at the same time
 *                                                                           
 *
 *--------------------------------------------------------------------------------------------------
@@ -25,15 +32,13 @@
 *
 ***************************************************************************************************;
 
-%macro create_report_driver();
+%macro create_report_driver(leavebehindreport=N);
 
 ***************************************************************************************************;
 * Initialize global macro variables and librairies, and read in REPORT_PARAMETERS input file                                  
 ***************************************************************************************************;
 
     %put =====> MACRO CALLED: create_report_driver;
-	
-	%let inputlib=infolder;
 
 	%if &leavebehindreport. eq N %then %do;
 		%isdata(dataset=input.report_parameters);
@@ -41,12 +46,10 @@
 	        %put ERROR: (Sentinel) REPORT_PARAMETERS file is missing. Make sure file placed in the inputfiles folder;
 	        %abort;
 	    %end;
-
-		%let inputlib=input;
 	%end;
 
 	/*Count number of reports and parameters*/
-	proc contents data=&inputlib..report_parameters noprint out=report_param_content;
+	proc contents data=input.report_parameters noprint out=report_param_content;
 	quit;
 
 	proc sql noprint;
@@ -55,7 +58,7 @@
     where substr(upcase(name),1,6) = 'REPORT';
 
     select count(*) into: numreportparams
-    from &inputlib..report_parameters;
+    from input.report_parameters;
     quit;
 
 	proc datasets nowarn noprint lib=work;
@@ -63,21 +66,22 @@
 	quit;
 
 
-	%global reportid reportdata database logofile ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile 
+	%global reportid dpfile reportdata database logofile ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile 
             baselinefile tablefile figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile TableColumnsFile
             DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars include_unweighted_trim;
 
 	%do reportrun = 1 %to %eval(&numreports.);
 
         /*Reset all parameters*/
-		%if &leavebehindreport. eq N %then %do; 
-			%let reportid = &reportrun.;
-			%let reportdata = Y;
+		%if &leavebehindreport. eq N %then %do; 			
+			%let reportdata = Y;			               
 		%end;
-		%else %do;
-			%let reportid =&reqid.;			
+		%else %do;				
 			%let reportdata = N;
+			%let stratifybydp = N;
+        	%let report_destination = PDF;        	
 		%end;
+		%let reportid = ;
 		%let logofile = ;		
 		%let database = ;
 		%let dpname = ;
@@ -108,7 +112,7 @@
         /*Assign all parameters to macro variables*/
         %do reportparameter = 1 %to %eval(&numreportparams.);
             data _null_;
-            set &inputlib..report_parameters;
+            set input.report_parameters;
             if _n_ = &reportparameter. then do;
                 call symputx("parameter", parameter);
                 call symputx("value", report&reportrun.);
@@ -138,13 +142,7 @@
         %end;
 	
 		/* Add underscore for report id */
-		%let reportid = _&reportid.;
-		%if &reportid=_ %then %do;
-		 	%let reportid=;
-			%if &numreports. > 1 %then %do;
-			%put WARNING: (Sentinel) More than one report is requested in REPORT_PARAMETERS and reportid is not specified for report number &reportrun..;
-			%end;
-		%end;
+		%let reportid = _&reportid.;		
 		
 		%if &leavebehindreport. eq N %then %do;
 			/* Create reportdata and msocdata folders */
@@ -154,6 +152,8 @@
 			libname repdata "&repdata" ;
 			libname msocdata "&msocdata" ;
 			options NODLCREATEDIR;
+
+			%let dpfile = input.&DPInfoFile.;
 		%end;
 		%else %do;
 			/* Create dpinfo file */
@@ -167,6 +167,8 @@
 			  %else %do; database = "&database."; %end;
 			  includedp = "Y";
 			run;
+
+			%let dpfile = dpinfofile;
 
 			/*If reportdata is set to N then set reportdata folder to the work folder, otherwise assign the repdata folder and libname*/
 			%if &reportdata. = N %then %do;

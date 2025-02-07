@@ -156,10 +156,7 @@
 	%let treepoissonaggindicator=N;
     %let treepoissonindicator=N;
     %let treeanalysisindicator=N;
-
-	/* Leave behind report */
-	%global reportid dpfile;
-
+	
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;

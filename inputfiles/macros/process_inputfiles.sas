@@ -28,19 +28,7 @@
 %macro process_inputfiles();
 
     %put =====> MACRO CALLED: process_inputfiles ;
-
-    /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
-        dpfile is set to the work dpinfofile and reportdata is N. */
-    %if &leavebehindreport = Y %then %do;
-        %let stratifybydp = N;
-        %let report_destination = PDF;
-        %let dpfile = dpinfofile;
-    %end;        
-    %else %do;            
-        %let dpfile = input.&DPInfoFile.;       
-        %let reportdata = Y;
-    %end;
-
+    
     /* Check if user specified COLLAPSE_VARS if report type is L2. Parameter only applicable for L1 reports */
     %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
         %put WARNING: (Sentinel) COLLAPSE_VARS is not applicable for REPORTTYPE = &reporttype.. Rows will not be collapsed in the final report;
@@ -68,58 +56,6 @@
 	quit;
 
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
-
-/***************************************************************************************************
- * Assign the maximum length to duplicate character variable names if a format values table exists 
- **************************************************************************************************/
-    %if %sysfunc(exist(tmplib.format_values)) %then %do;
-		/* Get character variables length to make sure the max function below works correctly */
-		data tmplib.format_values;
-		set tmplib.format_values;
-		if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
-		run;
-
-        %let inputvarlist=;
-        proc sql noprint;
-            select catx('@',full_inputfile_name,id,char_var_length)
-            into :inputvarlist separated by ' '
-            from 
-            (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
-                from tmplib.format_values a
-                inner join 
-                 (select id, count(*) as id_counts
-                    from tmplib.format_values 
-                    group by id) b
-            on a.id = b.id 
-            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
-            group by b.id
-            )
-        quit;
-
-        %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
-            %let inputcombo = %scan(&inputvarlist,&x,%str( ));
-            %let inputfile = %scan(&inputcombo,1,%str(@));
-            %let inputvar = %scan(&inputcombo,2,%str(@));
-            %let varformat = $%scan(&inputcombo,3,%str(@));
-			
-            %if &leavebehindreport = Y %then %do;
-                data infolder.&inputfile;
-                    length &inputvar &varformat;
-                    format &inputvar &varformat..;
-                    informat &inputvar &varformat..;
-                    set infolder.&inputfile;
-                run;
-            %end;
-            %else %do;
-                data input.&inputfile;
-                    length &inputvar &varformat;
-                    format &inputvar &varformat..;
-                    informat &inputvar &varformat..;
-                    set input.&inputfile;
-                run;
-            %end;
-        %end; /*x*/
-    %end;/* tmplib.format_values exists */
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
@@ -434,51 +370,7 @@
 		/*restore tmplib to its original location*/
 		%if &leavebehindreport. ne Y %then %do;
 		libname tmplib "&REPORTROOT.inputfiles/";
-		%end;
-
-        /***************************************************************************************************
-         * Assign the maximum length to duplicate character variable names if a format values table exists 
-         **************************************************************************************************/
-        %if %sysfunc(exist(tmplib.format_values)) %then %do;
-			/* Get character variables length to make sure the max function below works correctly */
-			data tmplib.format_values;
-			set tmplib.format_values;
-			if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
-			run;
-
-            %let inputvarlist=;
-            proc sql noprint;
-                select catx('@',full_inputfile_name,id,char_var_length)
-                into :inputvarlist separated by ' '
-                from 
-                (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
-                    from tmplib.format_values a
-                    inner join 
-                     (select id, count(*) as id_counts
-                        from tmplib.format_values 
-                        group by id) b
-                on a.id = b.id 
-                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
-                group by b.id
-                )
-            quit;
-
-            %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
-                %let inputcombo = %scan(&inputvarlist,&x,%str( ));
-                %let inputfile = %scan(&inputcombo,1,%str(@));
-                %let inputvar = %scan(&inputcombo,2,%str(@));
-                %let varformat = $%scan(&inputcombo,3,%str(@));
-				
-                    data infolder.&inputfile;
-                        length &inputvar &varformat;
-                        format &inputvar &varformat..;
-                        informat &inputvar &varformat..;
-                        set infolder.&inputfile;
-                    run;
-                    
-            %end; /*x*/
-        %end;/* tmplib.format_values exists */
-      
+		%end;        
      %end;
 
 /***********************************************************************************************************

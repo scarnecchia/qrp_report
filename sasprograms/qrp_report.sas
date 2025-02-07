@@ -145,10 +145,6 @@ options validvarname = v7;
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
 
-/* Assign leavebehindreport macro variable to N */
-%global leavebehindreport;
-%let leavebehindreport = N;
-
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
 /*-----------------------------------------------------------------------------------------------*/
@@ -159,4 +155,4 @@ ods path(prepend) work.templat(update);
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 4 - Call create_report_driver.sas 													 */
 /*-----------------------------------------------------------------------------------------------*/
-%create_report_driver();
+%create_report_driver(leavebehindreport=N);
