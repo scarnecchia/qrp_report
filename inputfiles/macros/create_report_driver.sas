@@ -70,17 +70,8 @@
             baselinefile tablefile figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile TableColumnsFile
             DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars include_unweighted_trim;
 
-	%do reportrun = 1 %to %eval(&numreports.);
-
-        /*Reset all parameters*/
-		%if &leavebehindreport. eq N %then %do; 			
-			%let reportdata = Y;			               
-		%end;
-		%else %do;				
-			%let reportdata = N;
-			%let stratifybydp = N;
-        	%let report_destination = PDF;        	
-		%end;
+	%do reportrun = 1 %to %eval(&numreports.);        
+		%let reportdata = N;
 		%let reportid = ;
 		%let logofile = ;		
 		%let database = ;
@@ -154,6 +145,7 @@
 			options NODLCREATEDIR;
 
 			%let dpfile = input.&DPInfoFile.;
+			%let reportdata = Y;
 		%end;
 		%else %do;
 			/* Create dpinfo file */
@@ -169,6 +161,8 @@
 			run;
 
 			%let dpfile = dpinfofile;
+			%let stratifybydp = N;
+        	%let report_destination = PDF;  
 
 			/*If reportdata is set to N then set reportdata folder to the work folder, otherwise assign the repdata folder and libname*/
 			%if &reportdata. = N %then %do;

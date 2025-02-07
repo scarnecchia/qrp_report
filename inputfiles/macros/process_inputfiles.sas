@@ -347,13 +347,7 @@
           if parameter = "zipfile" and not missing(&&run&n.) then do;
             call symputx("zipfile",&&run&n.);
           end;
-        run;
-
-
-        /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
-		%if &leavebehindreport. ne Y %then %do;
-		libname tmplib "&INFOLDER";
-		%end;
+        run;        
 
         %isdata(dataset=qrp_parameters);
         %do p = 1 %to &nobs.;
@@ -365,12 +359,7 @@
                 call symputx("value", strip(&&run&n.));
               end;
             run;            
-        %end;
-
-		/*restore tmplib to its original location*/
-		%if &leavebehindreport. ne Y %then %do;
-		libname tmplib "&REPORTROOT.inputfiles/";
-		%end;        
+        %end;		 
      %end;
 
 /***********************************************************************************************************
