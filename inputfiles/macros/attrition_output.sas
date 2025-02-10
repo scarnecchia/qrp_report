@@ -120,7 +120,11 @@
 			data _L2noncollapse
 				 _L2collapse;
 			set repdata.table&tablenum.&tableletter.(where=(claim_level eq "L2"));
-			if 2002 <= level <= 2007 then output _L2collapse;
+			if 2002 <= level <= 2007 then do;
+				if level > 2002 then agg_remaining = 0; 
+				else agg_remaining = agg_remaining + agg_excluded;
+				output _L2collapse;
+			end;
 			else output _L2noncollapse;
 			run;
 
@@ -132,6 +136,7 @@
 
 			data _L2collapse;
 			set _L2collapse;
+			agg_remaining=agg_remaining-agg_excluded;
 			agg_remaining_char=strip(put(agg_remaining,comma12.));
 		  	agg_excluded_char=strip(put(agg_excluded,comma12.));	  				
 			run;
