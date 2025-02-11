@@ -6,7 +6,7 @@
 * Created (mm/dd/yyyy): 11/30/2020
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: This macro drives the creation of QRP reports
+* PURPOSE: This macro drives the creation of a single report
 *                                        
 *  Program inputs:                                                                                   
 *
@@ -34,26 +34,18 @@
     %put =====> MACRO CALLED: create_report;
 
     /* If leave behind report runs then use reportid for log suffix */
-    %if &leavebehindreport = Y %then %do;
-    /* Start log */
-       proc printto log="&output.qrp_report_log&reportid..log" new;
-       run;
-    %end;
-
-	%else %do;
-    /* Need to retain work datasets from qrp for leave behind report.
+    %if &leavebehindreport = N %then %do;
+	/* Need to retain work datasets from qrp for leave behind report.
        Repdata is set to work directory when leave behind report is run,
 	   and data for qrp report is in the msocdata folder	*/
 	   proc datasets nowarn nolist lib=work kill; quit;
 	   proc datasets nowarn nolist lib=repdata kill; quit;
-	   proc datasets nowarn nolist lib=msocdata kill; quit; 
+	   proc datasets nowarn nolist lib=msocdata kill; quit;     
+    %end;
 
-        /*read in JSON file and determine if there are any CSV files*/
-        %convert_inputfiles(lib=&INFOLDER, JSON_LIB=&infolder.macros/integration);
-        %convert_inputfiles(lib=&REPORTROOT.inputfiles/, JSON_LIB=&input.macros/integration);
-
-       proc printto log="&output.qrp_report_log.log" new;
-	%end;
+	/* Start log */
+   	proc printto log="&output.qrp_report_log&reportid..log" new;
+   	run;
 	
     /*Initialize global macro variables*/
     %initialize_macro_variables();
@@ -247,32 +239,18 @@
       %end;
     %end;		
 
-/*************************************************************************************************/
-/* Run log checker                                                                               */
-/*************************************************************************************************/
-	
-    %if &leavebehindreport = N %then %do;
-	  proc printto log="&output.log_checker.log" new;
-      run;
-
-	   %ms_logchecker(logdir =&output., logdir_out=output, logname=qrp_report_log.log );
-	%end;
-
 ***************************************************************************************************;
 *   Clean directories                                                                                 
 ***************************************************************************************************;
 
     proc datasets nowarn nolist lib=work kill; quit;
-
-    /*remove filenames datasets if created*/
-    %if &leavebehindreport = N %then %do;
-    proc datasets nowarn nolist lib=input;
-        delete filenames format_values;
-    quit;
-    proc datasets nowarn nolist lib=infolder;
-        delete filenames format_values;
-    quit;
-    %end;
+   
+	/* rename dpinfo file with reportid */
+	%if &leavebehindreport. = N %then %do;
+		proc datasets nowarn noprint lib=output;        
+	        change dpinfo = dpinfo&reportid.;
+	    quit;
+	%end;
 
     /* End log */
     proc printto;

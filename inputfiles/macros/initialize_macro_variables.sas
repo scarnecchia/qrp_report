@@ -15,7 +15,7 @@
 *  PARAMETERS:                                                                       
 *            
 *  Programming Notes:                                                                                
-*   -Macro variables read in from CREATEREPORTFILE are set to global in processinputfiles.sas                                                                        
+*   -Macro variables read in from REPORT_PARAMETERS are set to global in create_report_driver.sas                                                                        
 *
 *--------------------------------------------------------------------------------------------------
 * CONTACT INFO: 
@@ -29,10 +29,9 @@
     %put =====> MACRO CALLED: initialize_macro_variables ;
 
     /*variables related to DPs*/
-    %global num_dp random_dplist masked_dplist database;
+    %global num_dp random_dplist masked_dplist;
     %let num_dp = 0;
 	%let masked_dplist =;
-    %let database = ;
 
     /*variables related to query*/
     %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
@@ -47,36 +46,7 @@
     %let startdateformatted = ;
     %let enddateformatted = ;
     %let minqueryyear = ;
-    %let maxqueryyear = ;
-
-    /*variables related to createreport input file*/
-    %global ReportType small_cellcounts customizecolumns stratifybyDP seed groupsfile baselinefile tablefile
-            figurefile labelfile itsregressionfile treeaggfile appendixfile CodeDescriptionsFile
-            TableColumnsFile DPInfoFile L2ComparisonFile look_start look_end DateDistributed report_destination collapse_vars include_unweighted_trim;
-
-    %let ReportType= ;
-    %let small_cellcounts = ;
-    %let customizecolumns =;
-    %let stratifybyDP = ;
-    %let seed = ;
-    %let groupsfile = ;
-    %let baselinefile = ;
-    %let tablefile = ;
-    %let figurefile = ;
-    %let labelfile = ;
-    %let itsregressionfile = ;
-    %let treeaggfile = ;
-    %let appendixfile = ;    
-    %let CodeDescriptionsFile = ;
-    %let TableColumnsFile = ;
-    %let DPInfoFile = ;
-    %let L2ComparisonFile = ;
-    %let look_start = 1;
-    %let look_end = 1;
-    %let datedistributed = ;
-    %let report_destination = ;
-	%let collapse_vars = ;
-	%let include_unweighted_trim= N;
+    %let maxqueryyear = ;    
 
 	/* Type 3 Tree weekdays dataset variable */
     %global t3treewkdaysdset;
@@ -186,10 +156,7 @@
 	%let treepoissonaggindicator=N;
     %let treepoissonindicator=N;
     %let treeanalysisindicator=N;
-
-	/* Leave behind report */
-	%global reportid dpfile logofile;
-
+	
     %put =====> MACRO ENDED: initialize_macro_variables ;
 
 %mend initialize_macro_variables;
