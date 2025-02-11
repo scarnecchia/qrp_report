@@ -198,16 +198,7 @@
 		h.definedata("runid","dpidsiteid", "group", "level", "claim_level", "descr","remaining","excluded") ;  
 		h.definedone() ;   
 		end;
-		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;
-		/* Levels 2 to 7 should be collapsed */
-		if 2 <= level <= 7 then do;
-			if level < 7 then do;
-				eoi_remaining=0;
-				ref_remaining=0;
-			end;
-			level=2;
-			descr="Excluded due to ineligibility for comparative analysis";
-		end;
+		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;		
 		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
 		/* Length needs to be increased to accomodate this */
 		length group $81;
