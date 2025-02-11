@@ -77,7 +77,8 @@
 					%end;
                     %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;					
                ));
-               by order;			   
+               by order;
+			   footnote_order = _n_; 
             run;      
 
             proc sql noprint;
@@ -105,7 +106,10 @@
     		%assign_superscripts(type =exclincl, order = );
         %end;
 
-		/* Add footnote for collapsed levels if L2 analysis. Will be the last footnote in the table. */
+		/* Add footnote for collapsed levels if L2 analysis. For now this is always the last footnote in the table and the code 
+		   was added here because it was simpler then modifying the &num_fn. logic and the where conditions when creating lookup_footnotes above.
+		   If at some point in the future a footnote with the potential of being displayed after this one is added the logic should be revised */
+		%let super_comparativeexcl=;
 		%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
 			%let num_fn = %eval(&num_fn. + 1);
 			proc sql noprint;
@@ -113,44 +117,11 @@
               from lookup.lookup_footnotes
               where type = "attrition" and order eq 99;
             quit;
-		%end;
 
-		/* Collapse adjusted attrition levels 2 to 7 */
-		%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-			data _L2noncollapse
-				 _L2collapse;
-			set repdata.table&tablenum.&tableletter.(where=(claim_level eq "L2"));
-			if 2002 <= level <= 2007 then do;
-				if level > 2002 then agg_remaining = 0; 
-				else agg_remaining = agg_remaining + agg_excluded;
-				output _L2collapse;
-			end;
-			else output _L2noncollapse;
-			run;
-
-			proc means data=_L2collapse nway noprint;
-			class runid group claim_level eoireforder grouplabel headerlabel attrorder %if %index(&reporttype,T2) %then %do; T2CohortDef monitoringperiod %end; %else %do; T4CohortDef %end;;
-			var agg_remaining agg_excluded;
-			output out=_L2collapse(drop=_:) sum=;
-			run;
-
-			data _L2collapse;
-			set _L2collapse;
-			agg_remaining=agg_remaining-agg_excluded;
-			agg_remaining_char=strip(put(agg_remaining,comma12.));
-		  	agg_excluded_char=strip(put(agg_excluded,comma12.));	  				
-			run;
-
-			data repdata.table&tablenum.&tableletter.;
-			set repdata.table&tablenum.&tableletter.(where=(claim_level ne "L2"))
-				_L2collapse(in=b)
-				_L2noncollapse;
-			if b then do;
-				report_descr="Excluded due to ineligibility for comparative analysis^{super &num_fn.}";
-				level=2002;
-			end;
-			run;
-		%end;
+			/* assign_superscripts macro expect _footnotes dataset to be created. This dataset might not exist when this is the only footnote so 
+			   we assign super_comparativeexcl instead of creating _footnotes only to call %assign_superscripts(type =comparativeexcl, order = 99) */
+			%let super_comparativeexcl = ^{Super &num_fn.};
+		%end;				
 
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal" flow="1:400");
@@ -186,6 +157,8 @@
                     %if &milexcl = Y %then %do;
                         if report_descr = 'Mother met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
                     %end;
+
+					if report_descr = 'Excluded due to ineligibility for comparative analysis' then report_descr = catt(report_descr,"&super_comparativeexcl.");
                 %end;
             endcomp;
 
