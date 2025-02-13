@@ -89,7 +89,8 @@
 		join Codedistdata as dist
 					on dist.codecat=code.codecat 
 					and dist.codetype=code.codetype 
-					and dist.code=code.code;
+					and dist.code=code.code
+					and dist.description=code.description;
 		quit;
 		
 
