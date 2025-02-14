@@ -66,7 +66,8 @@
               by order;
 			run;
 
-            data _footnotes;               
+            data _footnotes;      
+			   length footnote_order 3;  
                set lookup_footnotes (where = (
 			        /*only need the title footnote when attrition contains both member and episode*/
                     %if %lowcase(&tabletype.) = episode  %then %do;
