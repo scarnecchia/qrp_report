@@ -176,8 +176,9 @@
 	%let numstrata_t4cida = 0;
 
     /*figure specific variables*/
-    %global unicode_list;
+    %global unicode_list xmin;
     %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
+	%let xmin = 0 ;
 
 	/* To determine if appendixfile only should be processed */
 	%global produceappendixfileonly;
