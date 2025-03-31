@@ -74,7 +74,7 @@
             UCL =  exp(UpperWaldCL);
 
             /* set HR_95CI to NaN if not computed */
-            if nmiss(HR, LCL, UCL)=3 then do;
+            if nmiss(HR, LCL, UCL)>0 then do;
                HR_95CI='NaN';
             end;
 
