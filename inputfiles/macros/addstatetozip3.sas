@@ -78,7 +78,7 @@
       %if %eval(&nobs. > 1) %then %do;
         %put WARNING: Additional 3 digit zip codes map to multiple states. Further investigation recommended.
               See output dataset for these zip and state codes;
-        data output.discrepant_states;
+        data output.discrepant_states&reportid.;
           set _recodedstates;
         run;
       %end;

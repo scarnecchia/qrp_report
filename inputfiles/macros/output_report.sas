@@ -12,8 +12,8 @@
 *
 * 
 *  Program outputs:                                                                                                                                       
-*   - qrp_report.pdf
-*   - qrp_report.xlsx
+*   - qrp_report&reportid..pdf
+*   - qrp_report&reportid..xlsx
 *
 *  PARAMETERS:                                                                       
 *   - destination: ODS destination. Valid values: excel or pdf
@@ -47,7 +47,7 @@
     ods select all;
     ods noresults;
     %if &destination. = excel %then %do;
-    ods excel file="&output.qrp_report.xlsx" NOGTITLE style = qrp_report_excel
+    ods excel file="&output.qrp_report&reportid..xlsx" NOGTITLE style = qrp_report_excel
         options(embedded_titles="yes"
             sheet_interval="proc"
             gridlines="off"
@@ -953,7 +953,7 @@
 ***************************************************************************************************;
 * Clean up                                                                                
 ***************************************************************************************************;
-
+	
     /*reset title*/
     %let title = ;
 

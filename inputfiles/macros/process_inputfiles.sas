@@ -6,7 +6,7 @@
 * Created (mm/dd/yyyy): 11/30/2020
 *
 *--------------------------------------------------------------------------------------------------
-* PURPOSE: The macro reads in the CREATEREPORTFILE and other input files and merges in relevant
+* PURPOSE: The macro reads in REPORT_PARAMETERS and other input files and merges in relevant
 *          QRP input file parameter values
 *                                        
 *  Program inputs:                                                                                   
@@ -28,141 +28,19 @@
 %macro process_inputfiles();
 
     %put =====> MACRO CALLED: process_inputfiles ;
-
-/***************************************************************************************************
-*   Read in CREATEREPORTFILE and assign each parameter to a macro variable                                                  
-***************************************************************************************************/
-
-    %isdata(dataset=input.&createreportfile.);
-    %if %eval(&nobs<1) %then %do;
-        %put ERROR: (Sentinel) CREATEREPORTFILE is missing.;
-        %put ERROR: (Sentinel) Make sure file is specified correctly and placed in the inputfiles folder;
-        %abort;
-    %end;
     
-	* Check if createreportfile has horizontal structure;
-	proc contents data=input.&createreportfile. noprint out=createreportfile_content;
-	quit;
+    /* Check if user specified COLLAPSE_VARS if report type is L2. Parameter only applicable for L1 reports */
+    %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
+        %put WARNING: (Sentinel) COLLAPSE_VARS is not applicable for REPORTTYPE = &reporttype.. Rows will not be collapsed in the final report;
+        %let collapse_vars = ;
+    %end;
 
-	%let parameter_variable_exists=0;
-	proc sql noprint;
-	select count(*) into :parameter_variable_exists from createreportfile_content
-	where lowcase(name)="parameter";
-	quit;
+    /***************************************************************************************************
+    *   Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
+    *   will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
+    ***************************************************************************************************/
 
-	%put &=parameter_variable_exists;
-
-	/* createreportfile has vertical structure */
-	%if &parameter_variable_exists. > 0 %then %do;	
-		data &createreportfile.;
-		set input.&createreportfile.;
-		run; 
-	%end;
-	/* createreportfile has horizontal structure */
-	%else %do;		
-		proc sql noprint;
-		select distinct name into :createreportfile_param_content separated by ' ' from createreportfile_content			
-		quit;
-
-		%put &=createreportfile_param_content;
-
-		data &createreportfile.;
-		set input.&createreportfile.;
-		value="value";		
-		run;
-
-		proc transpose data=&createreportfile. 
-					   out=&createreportfile.(rename=_name_=parameter);
-		id value;
-		var &createreportfile_param_content.;
-		run;		
-	%end;
-
-    /* Identify if leave behind report is being created based on the existance of the report_parameters dataset.
-       Create macro variable to identify if it is a leave behind report */
-        proc sql noprint;
-            select count(*) into: numparms
-            from &createreportfile;
-        quit;
-
-        /*Assign all parameters to macro variables*/
-        %do createreportparameter = 1 %to %eval(&numparms.);		
-            data _null_;
-                set &createreportfile;
-                if _n_ = &createreportparameter. then do;
-                    call symputx("parameter", strip(parameter));
-                    call symputx("value", strip(value));
-                    /*defensive*/
-                    if lowcase(parameter) in ('reporttype','stratifybydp','small_cellcounts','report_destination',
-                                              'outputviewsdata', 'jirakey') then call symputx("value",upcase(value));
-                    if lowcase(parameter) in ('customizecolumns', 'collapse_vars') then call symputx("value",lowcase(value));
-                    /*default report_destination is both*/
-                    if lowcase(parameter) = 'report_destination' and missing(value) then call symputx("value","BOTH");
-                    /*default stratifybydp*/
-                    if lowcase(parameter) = 'stratifybydp' and missing(value) then call symputx("value","N");
-                    /*add parenthesis for datedistributed*/
-                    if lowcase(parameter) in ('datedistributed') and missing(value)=0 then do;
-                        tempvalue = input(value,ANYDTDTE32.); /*convert to SAS date*/
-                        if missing(tempvalue) = 0 then do;
-                            call symputx("value",cats('(', strip(put(tempvalue, worddate20.)), ')'));
-                        end;
-                        else do;
-                            call symputx("value",cats('(', strip(value), ')'));
-                        end;
-                    end;
-                end;
-            run;
-
-            /* Mask special characters from studytitle parameter */
-            %if %lowcase(&parameter.) = studytitle %then %let value = %bquote(&value);
-            %let &parameter. = &value.;
-
-            /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
-            proc printto log=log;
-	        run;
-
-            %get_sas_format (%if &leavebehindreport = Y %then %do; path=&infolder., lib=infolder, %end;
-                             %if &leavebehindreport = N %then %do; path=&input., lib=input, %end;
-                             inputfile = &value, parameter=&parameter);
-
-            /* Resume writing to log */
-            %if &leavebehindreport = Y %then %do;
-               proc printto log="&output.qrp_report_log&reportid..log";
-               run;
-            %end;
-            %else %do;
-                proc printto log="&output.qrp_report_log.log";
-            %end;
-
-        %end; /*createreport parameter loop*/
-
-        /* If leave behind report is requested stratify by DP is set to N, report destination is PDF,
-            dpfile is set to the work dpinfofile and reportdata is N. */
-        %if &leavebehindreport = Y %then %do;
-            %let stratifybydp = N;
-            %let report_destination = PDF;
-            %let dpfile = dpinfofile;
-        %end;
-        /* Set reportid suffix to missing when not a leave behind report */
-        %else %do;
-            %let reportid = ;
-            %let dpfile = input.&DPInfoFile.;
-            %global reportdata;
-            %let reportdata = Y;
-        %end;
-
-        /* Check if user specified COLLAPSE_VARS if report type is L2. Parameter only applicable for L1 reports */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) >0 and %length(&collapse_vars) > 0 %then %do;
-            %put WARNING: (Sentinel) COLLAPSE_VARS is not applicable for REPORTTYPE = &reporttype.. Rows will not be collapsed in the final report;
-            %let collapse_vars = ;
-        %end;
-
-        /***************************************************************************************************
-        *   Check if treeaggfile is specified. If this is the case, aggregated tree files and csv files 
-        *   will automatically be created no matter what is the reporttype value (T3, T2L2, T4L2)  
-        ***************************************************************************************************/
-
-		%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
+	%if %sysfunc(exist(input.&treeaggfile.)) %then %let treeaggindicator=Y;
 
 /***************************************************************************************************
 *  	Check if only the appendixfile is requested                                                     
@@ -170,66 +48,14 @@
  	%let numfiles=0;
 	%let numappendixfile=0;
 	proc sql noprint;
-		select count(*) into :numfiles from &createreportfile. 
-		where strip(value) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
+		select count(*) into :numfiles from input.report_parameters 
+		where strip(report&reportrun.) ne "" and lowcase(parameter) in ("baselinefile", "codedescriptionsfile", "groupsfile", "itsregressionfile", "l2comparisonfile", "treeaggfile");
 
-		select count(*) into :numappendixfile from &createreportfile. 
-		where strip(value) ne "" and lowcase(parameter) = "appendixfile";
+		select count(*) into :numappendixfile from input.report_parameters  
+		where strip(report&reportrun.) ne "" and lowcase(parameter) = "appendixfile";
 	quit;
 
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
-
-/***************************************************************************************************
- * Assign the maximum length to duplicate character variable names if a format values table exists 
- **************************************************************************************************/
-    %if %sysfunc(exist(tmplib.format_values)) %then %do;
-		/* Get character variables length to make sure the max function below works correctly */
-		data tmplib.format_values;
-		set tmplib.format_values;
-		if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
-		run;
-
-        %let inputvarlist=;
-        proc sql noprint;
-            select catx('@',full_inputfile_name,id,char_var_length)
-            into :inputvarlist separated by ' '
-            from 
-            (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
-                from tmplib.format_values a
-                inner join 
-                 (select id, count(*) as id_counts
-                    from tmplib.format_values 
-                    group by id) b
-            on a.id = b.id 
-            where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
-            group by b.id
-            )
-        quit;
-
-        %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
-            %let inputcombo = %scan(&inputvarlist,&x,%str( ));
-            %let inputfile = %scan(&inputcombo,1,%str(@));
-            %let inputvar = %scan(&inputcombo,2,%str(@));
-            %let varformat = $%scan(&inputcombo,3,%str(@));
-			
-            %if &leavebehindreport = Y %then %do;
-                data infolder.&inputfile;
-                    length &inputvar &varformat;
-                    format &inputvar &varformat..;
-                    informat &inputvar &varformat..;
-                    set infolder.&inputfile;
-                run;
-            %end;
-            %else %do;
-                data input.&inputfile;
-                    length &inputvar &varformat;
-                    format &inputvar &varformat..;
-                    informat &inputvar &varformat..;
-                    set input.&inputfile;
-                run;
-            %end;
-        %end; /*x*/
-    %end;/* tmplib.format_values exists */
 
 /***************************************************************************************************
 *   Check that REPORTTYPE is valid                                              
@@ -521,13 +347,7 @@
           if parameter = "zipfile" and not missing(&&run&n.) then do;
             call symputx("zipfile",&&run&n.);
           end;
-        run;
-
-
-        /*if CSV files, assign SAS format. Need to reassign tmplib if not running leave behind report*/
-		%if &leavebehindreport. ne Y %then %do;
-		libname tmplib "&INFOLDER";
-		%end;
+        run;        
 
         %isdata(dataset=qrp_parameters);
         %do p = 1 %to &nobs.;
@@ -538,73 +358,8 @@
                 call symputx("parameter", strip(parameter));
                 call symputx("value", strip(&&run&n.));
               end;
-            run;
-
-            /*assign formats to input files that were initially CSV - need to redirect log due to read of CSV file exposing file paths*/
-            proc printto log=log;
-	        run;
-
-            %get_sas_format (path=&infolder., lib=infolder, inputfile = &value, parameter=&parameter);
-
-            /* Resume writing to log */
-            %if &leavebehindreport = Y %then %do;
-               proc printto log="&output.qrp_report_log&reportid..log";
-               run;
-            %end;
-            %else %do;
-                proc printto log="&output.qrp_report_log.log";
-            %end;
-
-        %end;
-
-		/*restore tmplib to its original location*/
-		%if &leavebehindreport. ne Y %then %do;
-		libname tmplib "&REPORTROOT.inputfiles/";
-		%end;
-
-        /***************************************************************************************************
-         * Assign the maximum length to duplicate character variable names if a format values table exists 
-         **************************************************************************************************/
-        %if %sysfunc(exist(tmplib.format_values)) %then %do;
-			/* Get character variables length to make sure the max function below works correctly */
-			data tmplib.format_values;
-			set tmplib.format_values;
-			if substr(sas_format,1,1) eq "$" then char_var_length=input(compress(sas_format, "$"),best.);				
-			run;
-
-            %let inputvarlist=;
-            proc sql noprint;
-                select catx('@',full_inputfile_name,id,char_var_length)
-                into :inputvarlist separated by ' '
-                from 
-                (select b.id, max(a.char_var_length) as char_var_length, a.full_inputfile_name 
-                    from tmplib.format_values a
-                    inner join 
-                     (select id, count(*) as id_counts
-                        from tmplib.format_values 
-                        group by id) b
-                on a.id = b.id 
-                where b.id_counts > 1 and not missing(a.full_inputfile_name) and not missing(a.char_var_length)
-                group by b.id
-                )
-            quit;
-
-            %if %length(&inputvarlist) > 0 %then %do x = 1 %to %sysfunc(countw(&inputvarlist,%str( )));
-                %let inputcombo = %scan(&inputvarlist,&x,%str( ));
-                %let inputfile = %scan(&inputcombo,1,%str(@));
-                %let inputvar = %scan(&inputcombo,2,%str(@));
-                %let varformat = $%scan(&inputcombo,3,%str(@));
-				
-                    data infolder.&inputfile;
-                        length &inputvar &varformat;
-                        format &inputvar &varformat..;
-                        informat &inputvar &varformat..;
-                        set infolder.&inputfile;
-                    run;
-                    
-            %end; /*x*/
-        %end;/* tmplib.format_values exists */
-      
+            run;            
+        %end;		 
      %end;
 
 /***********************************************************************************************************
@@ -1152,39 +907,6 @@
     %end;
 
 /***************************************************************************************************
-*   Create a stacked monitoring file for Sentinel Views                                
-***************************************************************************************************/
-
-    /* Create periodid2 variable when multiple runs are requested in query */
-    /* Views platform does not have a way of distinguishing multiple runids
-       so monitoring period variable is incremented as periodid2 to work around
-       limitation */
-    %if &outputviewsdata = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
-        data monitoringfile_views;
-            set %do n = 1 %to &numrunid.;
-            %let runid=&&id&n..;
-            infolder.&&&runid._monitoringfile(in=n&n.)
-            %end;
-        ;
-         retain periodid2 0;
-         format runid $6.;
-            %do n = 1 %to &numrunid.;
-                if n&n. then do;
-                runid = "&&id&n.";
-                periodid2+1;
-                end;
-            %end;
-        run;
-
-        /* Check that groupsfile is defined */
-        %if %length(&groupsfile) = 0 and %sysfunc(prxmatch(m/T1|T2L1/i,&reporttype)) %then %do;
-            %put ERROR: (SENTINEL) GROUPSFILE must be specified when OUTPUTVIEWSDATA=Y;
-            %put The reporting code will abort;
-            %abort;
-        %end;
-    %end;
-
-/***************************************************************************************************
 *   Read in LABELFILE if specified                                               
 ***************************************************************************************************/
     
@@ -1571,7 +1293,7 @@
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
-                    data output.levelid_check;
+                    data output.levelid_check&reportid.;
                         set levelid_check;
                     run;
                    %put ERROR: (Sentinel) Unable to generate all requested report tables and stratifications.;
@@ -1633,7 +1355,7 @@
                     /* Read in table columns file*/
                     %if %str("&tablecolumnsfile.") ne %str("") %then %do;
                       %if %sysfunc(exist(input.&tablecolumnsfile.))=0 %then %do;
-                        %put ERROR: (Sentinel) tablecolumnsfile table is specified as input.&tablecolumnsfile. on &createreportfile., but the file does not exist.;
+                        %put ERROR: (Sentinel) tablecolumnsfile table is specified as input.&tablecolumnsfile. on input.report_parameters, but the file does not exist.;
                         %abort;
                       %end;
                       %else %do;
@@ -1713,7 +1435,7 @@
                     %end; 
                     %else %if %sysfunc(prxmatch(m/T4L1/i,&reporttype.)) > 0 %then %do;
                         /* A table columns file must be specified for T4L1 */
-                        %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+                        %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in input.report_parameters file.;
                         %abort;
                     %end;
                 %end;
@@ -1973,14 +1695,14 @@
                         %end;
                     %end;
                     %else %do;
-                        %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however GROUPSFILE is missing. Specify a GROUPSFILE in CREATEREPORTFILE;
+                        %put ERROR: (Sentinel) Figures requested in FIGUREFILE, however GROUPSFILE is missing. Specify a GROUPSFILE in REPORT_PARAMETERS;
                         %abort;
                     %end;
                 %end;
 
                 %isdata(dataset=levelid_check);
                 %if %eval(&nobs.>0) %then %do;
-                    data output.levelid_check;
+                    data output.levelid_check&reportid.;
                         set levelid_check;
                     run;
                    %put ERROR: (Sentinel) Unable to generate all requested report figures and stratifications.;
@@ -2454,7 +2176,7 @@
                %put &parent_comma. parent, and &child_comma. child nodes have commas.;
                 proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
 								   %else %do; collapsed_treelookup %end;
-                      outfile   = "&output.&&&runid._treelookup..txt"
+                      outfile   = "&output.&&&runid._treelookup.&reportid..txt"
                      dbms      = tab replace;
                      putnames  = NO;
                 run;
@@ -2462,7 +2184,7 @@
              %else %do;  
                 proc export data = %if &expandedtree. eq N %then %do; infolder.&&&runid._treelookup %end;
 								   %else %do; collapsed_treelookup %end;
-                      outfile   = "&output.&&&runid._treelookup..txt"
+                      outfile   = "&output.&&&runid._treelookup.&reportid..txt"
                      dbms      = dlm replace;
                      delimiter = ',';
                      putnames  = NO;
@@ -2704,22 +2426,6 @@
 	        by runid covarnum;
 	    run;  
 
-		/* Views dashboards require the same covariates to be specified across runs for all covariates */
-		%if &outputviewsdata. = Y and %sysfunc(prxmatch(m/T1|T2L1|T2L2/i,&reporttype)) %then %do;
-			proc sort data=covarname out=_covarstudyname nodupkey;
-				by covarnum studyname;
-			run;
-
-			proc sort data=_covarstudyname out=covarnameviews(keep=covarnum studyname cov_varname) dupout=_covdup nodupkey;
-				by covarnum;
-			run;
-
-			%isdata(dataset=_covdup);
-			%if %eval(&nobs.>0) %then %do;
-				%put ERROR: (Sentinel) The same covariatecodes file must be used for all runs when using Sentinel Views.;
-				%abort;
-			%end;
-	    %end;
 
 	%end;
 

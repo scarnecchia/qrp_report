@@ -198,7 +198,7 @@
 		h.definedata("runid","dpidsiteid", "group", "level", "claim_level", "descr","remaining","excluded") ;  
 		h.definedone() ;   
 		end;
-		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;
+		set agg_adjusted_attrition_&periodid(where=(analysisgrp in (&analysisgrps))) end=lr;		
 		/* For L2 requests, cohort groups and analysisgrp values are concatenated with @ delimiter. */
 		/* Length needs to be increased to accomodate this */
 		length group $81;
