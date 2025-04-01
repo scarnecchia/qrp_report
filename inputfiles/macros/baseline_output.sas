@@ -120,9 +120,6 @@
 				%if %index(&reporttype,T4) > 0 %then %do;
 				codepop
 				%end;
-				%if &outputviewsdata.=Y %then %do;
-				sortorder:
-				%end;
                 ;
             run;
         %end;
@@ -560,12 +557,12 @@
 			end;
 			if superscript ne "" then superscript=cat('^{Super ',strip(superscript),'}');	
 			if label = "Gestational age at pregnancy outcome (weeks)" then do;
-				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} at pregnancy outcome (weeks)^{Super *}");
+				label=cat("Gestational age at pregnancy outcome (weeks)^{Super ", strip(put(fn_gestage, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age at pregnancy outcome (weeks)^{Super ", strip(put(fn_gestage, best.)), "}^{Super ,}^{Super *}");
 			end;	
 			else if label = "Gestational age of first exposure (weeks)" then do;
-				label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)");
-				if fn_covinps ne . then label=cat("Gestational age^{Super", strip(put(fn_gestage, best.)), "} of first exposure (weeks)^{Super *}");
+				label=cat("Gestational age of first exposure (weeks)^{Super ", strip(put(fn_gestage, best.)), "}");
+				if fn_covinps ne . then label=cat("Gestational age of first exposure (weeks)^{Super ", strip(put(fn_gestage, best.)), "}^{Super ,}^{Super *}");
 			end;
 			else label=catt(label, superscript);			
 			run;		
@@ -1206,18 +1203,20 @@
 	                /*Unweighted - IPTW, PS Stratum, PS Stratification (tree analysis only) */
 	                %if (&psfile. = iptwfile & %eval(&unique_psestimate.) = 1) | (&psfile. = stratificationfile & ("&weightscheme." = "ATE" | "&weightscheme." = "ATT") & %eval(&pstrim.>=0)) |
                         (&psfile. = stratificationfile & &treeaggindicator. = Y) %then %do;
-	                %tableletter(); 
-	                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-	                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
-	                  characteristiclabel =&characteristiclabel.,
-					  labcharacteristics = %quote(&labcharacteristics),
-	                  dpnum = &dpnum.,
-	                  numcolumns =&numcolumns.,
-	                  grp1_label=%quote(&grp1_label.),
-	                  grp2_label=%quote(&grp2_label.), 
-	                  grp3_label=%quote(&grp3_label.),
-	                  computebalance = &computebalance.,
-	                  includenonpregnant=&includenonpregnant.);
+						%if &include_unweighted_trim. = Y %then %do;
+			                %tableletter(); 
+			                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
+			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+			                  characteristiclabel =&characteristiclabel.,
+							  labcharacteristics = %quote(&labcharacteristics),
+			                  dpnum = &dpnum.,
+			                  numcolumns =&numcolumns.,
+			                  grp1_label=%quote(&grp1_label.),
+			                  grp2_label=%quote(&grp2_label.), 
+			                  grp3_label=%quote(&grp3_label.),
+			                  computebalance = &computebalance.,
+			                  includenonpregnant=&includenonpregnant.);
+						%end;
 	                %end;
 						
 	                /*Weighted - IPTW, PS Stratum, PS Stratification*/

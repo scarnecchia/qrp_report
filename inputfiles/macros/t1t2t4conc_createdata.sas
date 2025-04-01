@@ -48,7 +48,7 @@
     ************************************************************************************************/	
 	/* Confirm a table columns file has been specified */
 	%if %str("&tablecolumnsfile.") = %str("") %then %do;
-	  %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in &createreportfile. file.;
+	  %put ERROR: (Sentinel) Lookup table includes dataset &tdatasetlist., but tablecolumnsfile is not specified in REPORT_PARAMETERS file.;
 	  %abort;
 	%end;
 	

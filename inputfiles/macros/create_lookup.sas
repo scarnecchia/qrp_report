@@ -73,6 +73,9 @@
 	  type = "baseline"; order = 29; description = "Chang H-Y, Weiner JP, Richards TM, Bleich SN, Segal JB. Validating the adapted Diabetes Complications Severity Index in claims data. Am J Manag Care. 2012;18(11):721-726."; output;
 	  type = "baseline"; order = 30; description = "Kim DH, Schneeweiss S, Glynn RJ, Lipsitz LA, Rockwood K, Avorn J. Measuring frailty in Medicare data: development and validation of a claims-based frailty index. J Gerontol A Biol Sci Med Sci. 2018;73(7)980-987."; output;
 
+	   /* Footnotes for profile table */
+	  type = "profile";  order = 1; description = "Each patient can contribute more than one exposure episode. Hence, the percentages are calculated using total number of episodes and reflect percentage of episodes with a particular profile definition."; output;	   
+      
 	   /* Footnotes for L2 effect estimates table */	  
 	  type = "effectest"; order = 1;  description = "All values in this section are weighted."; output;
 	  type = "effectest"; order = 2;  description = "Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete."; output;
@@ -82,6 +85,7 @@
        /* Footnotes for attrition table */
 	  type = "attrition"; order = -3;  description = 'Cohorts are formed by first evaluating enrollment and demographic requirements as well as index events among members, then evaluating index dates, pre-index history, and post-index follow-up among %sysfunc(lowcase(&claim_level_descr.)). Because of this, the number remaining often increases from the member- to episode-level steps.'; output;
 	  type = "attrition"; order = 1;  description = '&claim_level_descr. can meet multiple inclusion and/or exclusion criteria; therefore, the total number of %sysfunc(lowcase(&claim_level_descr.)) excluded overall may not equal the sum of all %sysfunc(lowcase(&claim_level_descr.)) in each criterion.'; output;
+	  type = "attrition"; order = 99;  description = 'Excluded due to same day initiation of both exposure groups or prior initiation of other exposure group or due to prior initiation of other exposure group in a prior look or due to 0 days at risk or due to propensity score trimming or due to lack of treatment heterogeneity in stratum.'; output;
 	  
 	   /* Footnotes for KM/CDF figures */
 	  type = "kmcdf";     order = 1;  description = 'A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day.'; output;
@@ -204,16 +208,16 @@
 		claim_level = "MIL"; descr = "Information: Episodes excluded for lacking"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 		claim_level = "MIL"; descr = "Information: Episodes excluded for"; report_descr = "Linked mother met inclusion and exclusion criteria"; output;
 							 
-		claim_level = "L2";  descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to same-day initition of both exposure groups"; output;
-		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to prior initiation of other exposure group"; output;
-		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to prior initiation of other exposure group in a prior look"; output;
-        claim_level = "L2";  descr = "Patients excluded due to not having at least 1 day of followup in the risk window"; report_descr ="Excluded due to 0 days at risk"; output;
-        claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to propensity score trimming"; output;
-		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to lack of treatment heterogeneity in stratum"; output; 
+		claim_level = "L2";  descr = "Patients excluded due to same day EOI and REF initiation"; report_descr = "Excluded due to ineligibility for comparative analysis"; output;
+		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF"; report_descr = "Excluded due to ineligibility for comparative analysis"; output;
+		claim_level = "L2";  descr = "Patients excluded due to earlier initiation of EOI or REF in a prior look"; report_descr = "Excluded due to ineligibility for comparative analysis"; output;
+        claim_level = "L2";  descr = "Patients excluded due to not having at least 1 day of followup in the risk window"; report_descr ="Excluded due to ineligibility for comparative analysis"; output;
+        claim_level = "L2";  descr = "Patients excluded due to non-overlap eligibility criteria"; report_descr = "Excluded due to ineligibility for comparative analysis"; output;
+		claim_level = "L2";  descr = "Patients excluded due to lack of treatment heterogeneity in stratum"; report_descr = "Excluded due to ineligibility for comparative analysis"; output; 		 		
 		claim_level = "L2";  descr = "Patients in adjusted cohort"; report_descr = "Included in comparative analysis"; output;
 		claim_level = "L2";  descr = "Events for patients in adjusted cohort"; report_descr = "Number of events in comparative analysis"; output;
 		claim_level = "L2";  descr = "Information: Number of patients whose IPTW was truncated"; report_descr = "Number of patients with a truncated inverse probability of treatment weight"; output;
-	 run; 
+	 run;
 
   %mend create_lookup;
   %create_lookup();

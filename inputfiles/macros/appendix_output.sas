@@ -215,7 +215,27 @@
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
-		proc report data=repdata.&_data nofs nowd
+		data _hdpsappendix;
+		set repdata.&_data;
+		format rankingChar $15. codecatChar $3.;
+		if missing(code) then do;
+			code="N/A";
+			codecatChar="N/A";
+			codetype="N/A";
+			frequency="N/A";
+			rankingChar="N/A";
+			call symputx('convergence',0);
+		end;
+        else do;
+			codecatChar=codecat;
+			rankingChar=strip(put(ranking,12.3));
+			call symputx('convergence',1);
+		end;
+		drop ranking codecat;
+        rename rankingChar=ranking codecatChar=codecat;
+		run;
+
+		proc report data=_hdpsappendix nofs nowd
     		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
@@ -232,9 +252,18 @@
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
             line "&apptitle.";
             endcomp;
+
+			%if &convergence. = 0 %then %do;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize.];
+                line "Note: N/A represent PS models that did not reach convergence.";
+            endcomp;
+            %end;
+			%else %do;
             compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
             line ' ';
             endcomp;
+			%end;
         run;
 		
 	%mend appendixhdps;	
@@ -433,52 +462,49 @@
     %isdata(dataset=tableofcontents);
     %if %eval(&nobs.>0) %then %do;
 		proc sql noprint;
-		select case when upcase(appendixtype) = "APPENDIXNDC" then compress(tabnum,,'ka')
-		       else compress(tabnum,,'kad') end
-		      ,tabnum
-			  ,appendixtype
-			  ,caption
-			  ,count(*)
-		into  :apxdata separated by "*", 
-			  :apxname separated by "*",
-			  :apxtype separated by "*", 
-			  :apxtitle separated by "*",
-			  :appendixcnt
-		from tableofcontents
-		where appendixtype is not missing;
+			select count(*) into: appendixcnt
+			from tableofcontents
+			where appendixtype is not missing;
 		quit;
 
 		%if %eval(&appendixcnt.>0) %then %do;
 	
 			%do p=1 %to %eval(&appendixcnt.);
-				%let _apxdata = %scan(&apxdata., &p, %str(*));
-				%let _apxtype = %scan(&apxtype., &p., %str(*));				
-				%let _apxname = %scan(&apxname., &p., %str(*));			
-				%let _apxtitle = %scan(%bquote(&apxtitle.), &p.,%str(*));	
+				data _null_;
+					set tableofcontents(where=(missing(appendixtype)=0));
+					if _n_ = &p. then do;
+						if upcase(appendixtype) = "APPENDIXNDC" then call symputx('apxdata', compress(tabnum,,'ka'));
+							else call symputx('apxdata', compress(tabnum,,'kad'));
+						call symputx('apxtype',appendixtype);
+						call symputx('apxname',tabnum);
+						call symputx('apxtitle',%bquote(caption));
+					end;
+				run;
+
 				ods startpage=now;
                 %if &destination. = excel %then %do;
-		        ods excel options(sheet_name= "&_apxname." tab_color='purple' sheet_interval="table" flow="tables");
+		        ods excel options(sheet_name= "&apxname." tab_color='purple' sheet_interval="table" flow="tables");
                 %end;
-				%if "%upcase(&_apxtype.)" = "APPENDIXT6DATES" %then %do;	
-					%appendixt6dates(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%if "%upcase(&apxtype.)" = "APPENDIXT6DATES" %then %do;	
+					%appendixt6dates(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
-				%if "%upcase(&_apxtype.)" = "APPENDIXGEOG" %then %do;	
-					%appendixGEOG(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%if "%upcase(&apxtype.)" = "APPENDIXGEOG" %then %do;	
+					%appendixGEOG(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
-				%else %if "%upcase(&_apxtype.)" = "APPENDIXDXPX" %then %do;
-					%appendixDXPX(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%else %if "%upcase(&apxtype.)" = "APPENDIXDXPX" %then %do;
+					%appendixDXPX(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
-				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC_GENBR" %then %do;
-					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%else %if "%upcase(&apxtype.)" = "APPENDIXNDC_GENBR" %then %do;
+					%appendixNDC(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
-				%else %if "%upcase(&_apxtype.)" = "APPENDIXNDC" %then %do;
-					%appendixNDC(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%else %if "%upcase(&apxtype.)" = "APPENDIXNDC" %then %do;
+					%appendixNDC(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
-				%else %if "%upcase(&_apxtype.)" = "APPENDIXHDPS" %then %do;
-					%appendixhdps(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%else %if "%upcase(&apxtype.)" = "APPENDIXHDPS" %then %do;
+					%appendixhdps(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 			    %end;
-				%else %if "%upcase(&_apxtype.)" = "APPENDIXWEIGHTDIST" %then %do;
-				    %appendixWeightDist(_data=&_apxdata., _rptlabel=%bquote(&_apxtitle.), _tab=&_apxname.);
+				%else %if "%upcase(&apxtype.)" = "APPENDIXWEIGHTDIST" %then %do;
+				    %appendixWeightDist(_data=&apxdata., _rptlabel=%bquote(&apxtitle.), _tab=&apxname.);
 				%end;
 			%end;
 		%end;

@@ -581,13 +581,12 @@ libname tempfl "";
 
     data tempfl.t4l1tablefile;
         retain table dataset tablesub tablesubstrat levelnum levelid1 levelid2 levelid3 includeinreport categories;
-        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100.;
+        format table $5. dataset $15. tablesubstrat $25. tablesub $40. levelid1 levelid2 levelid3 $55. categories $100. censorreason $85.;
 
         includeinreport = 'N';
         categories = '';
-        call missing(levelid2);
-        call missing(levelid3);
-
+        call missing(levelid2, levelid3, censorreason);
+        
         dataset = "t4preg";
         %do p = 1 %to 4;
         %do s = 1 %to &stratlevels.;

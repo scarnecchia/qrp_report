@@ -73,32 +73,17 @@
 		%if &atrisktable = Y %then %do;
 		if day in (&kmxtickmarks) then xaxisatrisk=day;
 		%end;
-		/* Add columns for Sentinel Views */
-		%if &reporttype = T2L2 and (&figure=F3 or &figure=F4 or &figure=F5) %then %do;
-		length monitoringperiod 3 analysis $13 analysisgrp eoi ref $40;
-		%if &analysis = Adjusted %then %do;
-			%if &figure = F4 and &pscsfile. = psmatchfile %then %let analysis=Conditional;
-			%else %if &figure = F5 and &pscsfile. = psmatchfile %then %let analysis=Unconditional;
-			%else %if &pscsfile. = stratificationfile | &pscsfile. = iptwfile %then %let analysis=Weighted; 
-		%end;
-	    analysis="&analysis";
-        analysisgrp="&analysisgrp";
-        monitoringperiod=&monitoringperiod;
-        eoi="&eoi";
-        ref="&ref";
-        eoilabel="&eoilabel";
-        reflabel="&reflabel";
-        %end;
 		run;
 		%end;
 
 		/* Obtain all KM and Episode columns from data */
 		proc contents data = repdata.Figure&figurenum.&tableletter. noprint 
-					  out=_kmcolnames(keep=name);
+					  out=_kmcolnames(keep=name varnum);
 		run;
 
 		%let kmcols = ;
 		%let atriskcols = ;
+		/* For L1 figures, sort by varnum to display groups in correct order when there are more than 9. This do not apply to L2 figures */
 		proc sql noprint;
 			select lower(name) 
 			into :kmcols separated by ' '
@@ -113,7 +98,12 @@
 			%else %do;
 			scan(lower(name),1,'_') in ('km' 'cdf' 'cif')
 			%end;
+			%if (&reporttype = T2L2 or &reporttype = T4L2) %then %do;
 			order by lower(name);
+			%end;
+			%else %do;
+			order by varnum;
+			%end;
 
 			%if (&reporttype = T2L2 or &reporttype = T4L2) and &kmrefpop. = unweighted %then %do;
 			select lower(name) 
@@ -130,20 +120,25 @@
 			%end;
 
 			%if &atrisktable = Y %then %do;
-			select lower(name)
-			into :atriskcols separated by ' '
-			from _kmcolnames 
-			where
-			%if &kmrefpop = unweighted %then %do;
-			lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp') and lower(name) ^= 'episodes_atriskunexp_wght'
-			%end;
-			%else %if &kmrefpop = weighted %then %do;
-			lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp_wght')
-			%end;
-			%else %do;
-			scan(lower(name),1,'_') = 'episodes'
-			%end;
-			order by lower(name);
+				select lower(name)
+				into :atriskcols separated by ' '
+				from _kmcolnames 
+				where
+				%if &kmrefpop = unweighted %then %do;
+				lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp') and lower(name) ^= 'episodes_atriskunexp_wght'
+				%end;
+				%else %if &kmrefpop = weighted %then %do;
+				lower(name) in ('episodes_atriskexp' 'episodes_atriskunexp_wght')
+				%end;
+				%else %do;
+				scan(lower(name),1,'_') = 'episodes'
+				%end;
+				%if (&reporttype = T2L2 or &reporttype = T4L2) %then %do;
+				order by lower(name);
+				%end;
+				%else %do;
+				order by varnum;
+				%end;
 			%end;
 		quit;
 

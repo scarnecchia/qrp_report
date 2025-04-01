@@ -211,13 +211,13 @@
                 Analysis= &analysis.;
                 subgroupcat = "&subgroupcat.";
                 HR_pvalue = 'N/A'; /*no p value*/
+				HR_95CI = strip(put(HR, 5.2))|| " ("||strip(put(LCL, 5.2))||", "|| strip(put(UCL, 5.2))||")";
 
                 /* set HR_95CI to NaN if not computed */
-                if nmiss(HR, LCL, UCL)=3 then do;
+                if nmiss(HR, LCL, UCL)>0 then do;
                    HR_95CI='NaN';
                 end;
-
-                HR_95CI = strip(put(HR, 5.2))|| " ("||strip(put(LCL, 5.2))||", "|| strip(put(UCL, 5.2))||")";
+                
                 label MonitoringPeriod = "Monitoring Period";
                 label hr_95CI = "Hazard Ratio (95% CI)";
                 label HR = "Hazard Ratio";

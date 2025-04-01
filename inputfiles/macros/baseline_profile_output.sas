@@ -60,6 +60,7 @@
                 call symputx('runid',runid);
 				call symputx('profilegroup',group);
 				call symputx('profilecohort',cohort);
+				call symputx('cohortdef',cohortdef);
             run;
 
             %let profileswitches = 0;
@@ -354,14 +355,8 @@
                 %end;
 
                 *Output metrics;
-                format sum_npts sum_nepisodes comma12.0 percent_npts percent_episodes percent8.1;
-                        
-                if &totalpatients.>0 then do;
-                    percent_npts = sum_npts/&totalpatients.;
-                end;
-                else do;
-                    percent_npts=0;
-                end;
+                format sum_npts sum_nepisodes comma12.0 percent_episodes percent8.1;
+                                
                 if &totalepisodes.>0 then do;
                     percent_episodes = sum_nepisodes/&totalepisodes.;
                 end;
@@ -374,8 +369,7 @@
                 if eof then do;
                     *Defensive - add all/no row if not present;
                     sum_npts = 0;
-                    sum_nepisodes = 0;
-                    percent_npts=0;
+                    sum_nepisodes = 0;                    
                     percent_episodes=0;
                     %do i = 1 %to %eval(&numprofilecovars.);
                         %scan(&covarlist., &i.) = 1;
@@ -385,8 +379,7 @@
                     output;
 
                     sum_npts = 0;
-                    sum_nepisodes = 0;
-                    percent_npts=0;
+                    sum_nepisodes = 0;                   
                     percent_episodes=0;
                     %do i = 1 %to %eval(&numprofilecovars.);
                         %scan(&covarlist., &i.) = 0;
@@ -396,7 +389,7 @@
                     output;
                 end;
 
-                keep label sortorder sum_npts sum_nepisodes percent_npts percent_episodes covar:;
+                keep label sortorder sum_npts sum_nepisodes percent_episodes covar:;
             run;
 
             %tableletter();
@@ -426,6 +419,17 @@
 
             %let title = %quote(Table &tablenum.&tableletter.. Characteristic Profile of &grouplabel in the &database. from &startdateformatted. to &&enddate&periodid.formatted.);
 
+			%let super_title=;
+			%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and &cohortdef. ne 01 %then %do; 			
+			%let super_title=%str(^{Super 1});
+
+			proc sql noprint;
+			select description into :footnote trimmed 
+			from lookup.lookup_footnotes
+			where type="profile" and order=1;
+			quit;
+			%end;
+
             ods escapechar="^";
             %if &destination = excel %then %do;
             ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="rgba(0,176,80,0)");
@@ -436,30 +440,38 @@
         		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
             %if (%index(&reporttype,T4) and %index(&where,%str(cohort="mi")) = 0) or %index(&reporttype,T6) %then %do;
-            columns (label ("^S={background=white}&productlabel." sum_npts percent_npts sum_nepisodes percent_episodes));    
+            columns (label ("^S={background=white}&productlabel." sum_npts sum_nepisodes percent_episodes));    
             %end;
             %else %do;
-            columns (label sum_npts percent_npts sum_nepisodes percent_episodes);
+            columns (label sum_npts sum_nepisodes percent_episodes);
             %end;
                 define label / order=data 'Characteristic Category'
                                  style(header)=[background = bgr borderleftcolor = BGR] style(column)=[rules=none width=4.5in just=L];
                 define sum_npts / 'Number of Patients'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
-                define percent_npts /'% of Total*Number of*Patients'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=.65in just=C] ;
+                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;                
                 define sum_nepisodes / 'Number of Episodes'
                                 style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
                 define percent_episodes / '% of Total*Number of*Episodes'
                                 style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=.65in just=C] ;
 
-            /* Add title */
+            /* Add title */			
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
-			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
-            line "&title.";
+			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in ];
+            line "&title.&super_title.";
             endcomp;
+
+			/* Add footnote if necessary */
+			%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and &cohortdef. ne 01 %then %do;
+            compute after / style=[background=white just=L foreground=black vjust=b bordertopwidth = &bordersize borderbottomcolor=white bordertopcolor=black 
+                                   nobreakspace=off font_size=&footfontsize. height=.3in];
+                line "^{super 1}&footnote.";
+            endcomp;
+            %end;
+            %else %do;
             compute after _page_ / style=[bordertopcolor=black bordertopwidth=&bordersize borderbottomcolor=white borderleftcolor=white borderrightcolor=white];
             line ' ';
             endcomp;
+			%end;
 
             run;
 
