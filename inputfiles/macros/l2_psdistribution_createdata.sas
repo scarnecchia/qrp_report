@@ -174,7 +174,8 @@
 	                    from raw_histogram1 as x right join bins as y on x.ps_cat = y.ps_cat and x.type =y.type and x.weight=y.weight;
 	                quit;
 
-	                %if &loopcount. eq 1 %then %do;
+	                %isdata(dataset=histogram_&periodid.);
+					%if %eval(&nobs<=0) %then %do;
 						data histogram_&periodid.;
 						set raw_histogram_&loopcount._&dps._&periodid.;
 						run;
