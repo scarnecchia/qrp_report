@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 1/10/2025
-* VERSION: 4.1.1
+* LAST MODIFIED: 4/1/2025
+* VERSION: 4.2.0
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -42,9 +42,6 @@
 
 /* Location of QRP report package */
 %let REPORTROOT =;
-
-/* Enter the name of the CREATEREPORTFILE file*/
-%let CREATEREPORTFILE =; 
 
 ***************************************************************************************************;
 *******                                 END OF USER INPUT                                    ******
@@ -145,20 +142,8 @@ options validvarname = v7;
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
 %let LOOKUP = %soc_clean_paths(&INPUT.macros/lookuptables/);
 
-/* Create reportdata and msocdata folders */
-%let repdata = &output.reportdata;
-%let msocdata = &output.msocdata;
-options DLCREATEDIR ;
-libname repdata "&repdata" filelockwait = 2;
-libname msocdata "&msocdata" filelockwait = 2;
-options NODLCREATEDIR;
-
 /* Assign ods template path */
 ods path(prepend) work.templat(update);
-
-/* Assign leavebehindreport macro variable to N */
-%global leavebehindreport;
-%let leavebehindreport = N;
 
 /*-----------------------------------------------------------------------------------------------*/
 /* Section 3 - Include macros 															         */
@@ -168,6 +153,6 @@ ods path(prepend) work.templat(update);
 %include_macros(PROGRAM_DIR=%str(&reportroot.inputfiles/macros));
 
 /*-----------------------------------------------------------------------------------------------*/
-/* Section 4 - Call create_report.sas 															 */
+/* Section 4 - Call create_report_driver.sas 													 */
 /*-----------------------------------------------------------------------------------------------*/
-%create_report();
+%create_report_driver(leavebehindreport=N);

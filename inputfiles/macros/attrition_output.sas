@@ -37,7 +37,7 @@
         /*initialize macro variables for footnotes*/
         %let num_fn = 0;
         %if %lowcase(&tabletype.) = episode %then %let num_fn = 1;
-        %if %index(&reporttype,T4) %then %let num_fn = 2;
+        %if %index(&reporttype,T4) %then %let num_fn = 2;		
 
         %let exclincl = N;
         %let milexcl = N;
@@ -59,28 +59,27 @@
             monitoringperiod=&j;
             %end;
         run;
-
+				
         %if %eval(&num_fn.>0) %then %do;
 
 		     proc sort data =lookup.lookup_footnotes out = lookup_footnotes; 
               by order;
 			run;
 
-            data _footnotes;
-               length footnote_order 3; 
+            data _footnotes;      
+			   length footnote_order 3;  
                set lookup_footnotes (where = (
 			        /*only need the title footnote when attrition contains both member and episode*/
                     %if %lowcase(&tabletype.) = episode  %then %do;
-					  (type = "attrition")
+					  (type = "attrition" and order < 99)
 					%end;
 					%else  %do;
-                      (type = "attrition" and order > 0)
+                      (type = "attrition" and 99 > order > 0)
 					%end;
-                    %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;
-					
+                    %if %index(&reporttype,T4) > 0 %then %do; or (type='type4' and order in (-2)) %end;					
                ));
                by order;
-               footnote_order = _n_;
+			   footnote_order = _n_; 
             run;      
 
             proc sql noprint;
@@ -107,6 +106,23 @@
     		%assign_superscripts(type =title, order = );
     		%assign_superscripts(type =exclincl, order = );
         %end;
+
+		/* Add footnote for collapsed levels if L2 analysis. For now this is always the last footnote in the table and the code 
+		   was added here because it was simpler then modifying the &num_fn. logic and the where conditions when creating lookup_footnotes above.
+		   If at some point in the future a footnote with the potential of being displayed after this one is added the logic should be revised */
+		%let super_comparativeexcl=;
+		%if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
+			%let num_fn = %eval(&num_fn. + 1);
+			proc sql noprint;
+              select description into :fn&num_fn.
+              from lookup.lookup_footnotes
+              where type = "attrition" and order eq 99;
+            quit;
+
+			/* assign_superscripts macro expect _footnotes dataset to be created. This dataset might not exist when this is the only footnote so 
+			   we assign super_comparativeexcl instead of creating _footnotes only to call %assign_superscripts(type =comparativeexcl, order = 99) */
+			%let super_comparativeexcl = ^{Super &num_fn.};
+		%end;				
 
         %if &destination = excel %then %do;
         ods excel options(sheet_name="Table &tablenum.&tableletter." tab_color="teal" flow="1:400");
@@ -142,6 +158,8 @@
                     %if &milexcl = Y %then %do;
                         if report_descr = 'Mother met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
                     %end;
+
+					if report_descr = 'Excluded due to ineligibility for comparative analysis' then report_descr = catt(report_descr,"&super_comparativeexcl.");
                 %end;
             endcomp;
 
@@ -204,7 +222,7 @@
                 num=100;
             end;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            else if report_descr='Excluded due to same-day initiation of both exposure groups' then do;
+            else if index(report_descr, 'Excluded due to ineligibility for comparative analysis') > 0 then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
             end;
@@ -247,7 +265,7 @@
                 num=100;
             end;
             %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
-            else if report_descr='Excluded due to same-day initiation of both exposure groups' then do;
+            else if index(report_descr, 'Excluded due to ineligibility for comparative analysis') > 0 then do;
                 text='Members meeting comparative cohort eligibility requirements';
                 num=100;
             end;

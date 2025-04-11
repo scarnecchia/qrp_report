@@ -19,18 +19,18 @@
 *    Type 3 Analysis:       
 *       	msoc.[RUNID]_t3_tree_wkdays_[PERIODID]_agg.sas7bdat
 *	   	non fixed window only:
-*	    	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
+*	    	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]&reportid..csv
 *		fixed window only: 	
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl&reportid..csv
 *    Type 2 and Type 4:
-*       	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case.csv
-*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl.csv
+*       	msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_case&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEANALYSISID]_[LEVELID]_[LEVELNUM]_[PERIODID]_ctrl&reportid..csv
 *		UNWEIGHTED PSSTRAT only:
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_weighted.csv
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_unweighted.csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_weighted&reportid..csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]_unweighted&reportid..csv
 *		non UNWEIGHTED PSSTRAT only:
-*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID].csv
+*			msoc.[RUNID]_t#_treeads_[TREEPOISSON]_[LEVELID]_[LEVELNUM]_[PERIODID]&reportid..csv
 *
 *  PARAMETERS:  
 *          
@@ -410,14 +410,14 @@
 
 							/* Exposed CSV */
 							data _null_;
-							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case.csv" dsd delimiter=',';
+							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._case&reportid..csv" dsd delimiter=',';
 							     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_eoi);
 									 put (_all_) (+0);
 							run;
 
 							/* Unexposed CSV */
 							data _null_;
-							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl.csv" dsd delimiter=',';
+							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid._ctrl&reportid..csv" dsd delimiter=',';
 							     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.(keep=hoi nhois_ref);
 									 put (_all_) (+0);
 							run;
@@ -448,7 +448,7 @@
 							proc printto log=log; run;
 
 							data _null_;
-							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid..csv" dsd delimiter=',';
+							     file "&OUTPUT.&runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.&reportid..csv" dsd delimiter=',';
 							     set &runid._t&typenum._treeads_&&tree&t.._&&levelid&t.._&&levelnum&t.._&periodid.;
 									 put (_all_) (+0);
 							run;
@@ -582,7 +582,7 @@
 				  	proc printto log=log; run;
 
 				  	data _null_;
-				     file "&OUTPUT.&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment..csv" dsd delimiter=',';
+				     file "&OUTPUT.&runid._t&typenum._treeads_&&treepoissonid&z.._&&treepoissonlevelid&z.._&&treepoissonlevelnum&z.._&periodid.&adjustment.&reportid..csv" dsd delimiter=',';
 				     set _t&typenum._temp;
 						 put (_all_) (+0);
 				  	run;
