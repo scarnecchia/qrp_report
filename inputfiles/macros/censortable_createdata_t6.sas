@@ -62,7 +62,7 @@
             select x.*
                   , y.maskedid as dpidsiteid
             from _square(drop=dpidsiteid) x,
-                 output.dpinfo y;
+                 output.dpinfo&reportid. y;
         quit;
 
         data _square;
