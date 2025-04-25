@@ -58,25 +58,6 @@
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
-*   Check that REPORTTYPE is valid                                              
-***************************************************************************************************/
-
-    /*Valid values:
-        - T1: Type 1 report
-        - T2L1: Level 1, type 2 report
-        - T2L2: Level 2, type 2 report 		
-        - ITS: ITS report
-		- T3: Type 3 report
-        - T4L1: Level 1, type 4 report 
-        - T4L2: Level 2, type 4 report 
-        - T5: Type 5 report
-        - T6: Type 6 report */
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T3|T4L1|T4L2|T5|T6/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
-        %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
-        %abort;
-    %end;
-
-/***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
 ***************************************************************************************************/
 
@@ -1739,7 +1720,6 @@
 ***************************************************************************************************/
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-        %let chk_baselinegroupnum = ;
         %let chk_covinps=;
 
         /* Check whether order values are the same across different run IDs */
@@ -1802,17 +1782,10 @@
              put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
              abort;
            end;
-           if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
            if not missing(covinps) then call symputx('chk_covinps', covinps);
         run;
         %end; /* m */
         
-        /* Check for populated baselinegroupnum parameter within specific analysis types */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
-         %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
-         %abort;
-        %end;
-
         /* Check if covinps has been specifed for L1 requests*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covinps) > 0 %then %do;
          %put WARNING: (Sentinel) covinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
