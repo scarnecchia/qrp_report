@@ -269,12 +269,7 @@
 
 			data _null_;
 			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
-			i=1;
-			do while(scan(code, i, " ") ne "");
-				code2=upcase(scan(code, i, " "));
-				if code2 in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 							
-				i=i+1; 
-			end;									
+			if code in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 																			
 			run;
 		%end;
 
