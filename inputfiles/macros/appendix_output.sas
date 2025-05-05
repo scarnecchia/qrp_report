@@ -433,7 +433,7 @@
     %end;
 	ods proclabel = "Appendix A";
 
-    proc report data = output.dpinfo nofs nowd
+    proc report data = output.dpinfo&reportid. nofs nowd
 		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
 		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	

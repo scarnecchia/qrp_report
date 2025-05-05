@@ -19,7 +19,8 @@
 *   - dplist: list of DPs separated by a space
 *   - dpinfofile: file containing list of DPs and optional path
 *   - dataroot: location of /data folder in the standard structure /data/[version]/[dp]/msoc/ 
-*   - signaturefile: signature file from which to extract DP metadata            
+*   - signaturefile: signature file from which to extract DP metadata     
+*	- outfile: dataset to save dp metadata 
 *
 *  Programming Notes:                                                                                
 *                                                                           
@@ -34,7 +35,8 @@
 %macro createlibref(dplist=,
                     dpinfofile = , 
 	    		    dataroot = ,
-	   			    signaturefile = );
+	   			    signaturefile = ,
+					outfile = );
 
 	**********************************************************
 	macro %dynamiclibref automatically creates libnames for
@@ -297,24 +299,24 @@
 
         %if %eval(&nobs.>0) %then %do;
             %let nobs=0;
-    	    %if %sysfunc(exist(output.dpinfo))=1 %then %do;
+    	    %if %sysfunc(exist(&outfile.))=1 %then %do;
                 data _null_;
-                dsid=open("output.dpinfo"); 
+                dsid=open("&outfile."); 
                 call symputx("NOBS",attrn(dsid,"NLOBS"));
     			run;
     		%end;	
             %if %eval(&nobs.>0) %then %do;
                 proc sql noprint undo_policy=none;
-                    create table output.dpinfo as
+                    create table &outfile. as
                     select distinct y.maskedID,
                                     x.* 
-                    from output.dpinfo as y
+                    from &outfile. as y
                     full join dpsignature as x
                     on x.dp = y.dp;
                 quit;
             %end;
             %else %do;
-                data output.dpinfo;
+                data &outfile.;
                     set dpsignature;
                 run;
             %end;

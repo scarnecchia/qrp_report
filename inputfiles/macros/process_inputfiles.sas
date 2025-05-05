@@ -126,7 +126,7 @@
             by random;
         run;
 
-        data output.dpinfo;
+        data output.dpinfo&reportid.;
             length maskedID $4;
             set maskedDPIDkey;
             maskedID = "DP"||put(_N_, z02.);
@@ -136,9 +136,9 @@
         /*Put list of DPs into macro variable in order to maintain random order*/
         proc sql noprint;
             select dp into: random_dplist separated by ' '
-            from output.dpinfo;
+            from output.dpinfo&reportid.;
             select maskedID into: masked_dplist separated by ' '
-            from output.dpinfo;
+            from output.dpinfo&reportid.;
         quit;
     %end;
 

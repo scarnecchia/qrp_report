@@ -44,7 +44,7 @@
     /*Determine the max DP End Date*/
     proc sql noprint;
         select max(input(dpmaxdate,date9.)) into: maxdpenddate
-        from output.dpinfo;
+        from output.dpinfo&reportid.;
     quit;
     %put maximum dp_maxdate: &maxdpenddate;
 
@@ -108,9 +108,9 @@
 
     %end;
 
-    /*Add DPENDDATE to output.dpinfo as the earliest of: DPMAXDATE and Query End Date*/
-    data output.dpinfo(rename=dpmindate1=dpmindate);
-        set output.dpinfo;
+    /*Add DPENDDATE to output.dpinfo&reportid. as the earliest of: DPMAXDATE and Query End Date*/
+    data output.dpinfo&reportid.(rename=dpmindate1=dpmindate);
+        set output.dpinfo&reportid.;
         format dpenddate dpmindate1 $10.;
         dpenddate = put(min(&maxfupenddate., input(dpmaxdate,date9.)), mmddyy10.);
         /*format dpmindate*/
@@ -118,7 +118,7 @@
         drop dpmindate;
     run;
 
-    proc sort data=output.dpinfo sortseq=linguistic(numeric_collation=on);
+    proc sort data=output.dpinfo&reportid. sortseq=linguistic(numeric_collation=on);
         by maskedid;
     run;
 
