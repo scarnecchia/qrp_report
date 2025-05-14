@@ -696,6 +696,25 @@
      run;
 
 /***************************************************************************************************
+*   Create a combined userstrata file for all runs (T4L1 only)                                        
+***************************************************************************************************/
+	%if &reporttype. = T4L1 %then %do;
+		 data master_userstrata;
+	     set %do n = 1 %to &numrunid.;
+	            %let runid=&&id&n..;
+	            infolder.&&&runid._userstrata(in=n&n.)
+	        %end;
+	     ;
+	     format runid $5.;
+	        %do n = 1 %to &numrunid.;
+	            if n&n. then do;
+	            runid = "&&id&n.";
+	            end;
+	        %end;
+		run;
+	%end;
+
+/***************************************************************************************************
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 

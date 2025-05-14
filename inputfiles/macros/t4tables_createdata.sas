@@ -92,9 +92,11 @@
 
         proc sql noprint;
 		    select min(a.gestwk_min), max(a.gestwk_max) into: min_min, :max_max
-            from master_typefile a,
-                 groupsfile b
-            where a.group = b.group;
+            from master_typefile a
+            join groupsfile b
+            on a.group = b.group
+			join master_userstrata(where=(lowcase(tableid) in ("t4preggestwk", "t4nopreggestwk"))) c
+			on a.runid = c.runid;
         quit;
 
         data _temptablecolumns;
