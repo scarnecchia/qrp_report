@@ -136,7 +136,7 @@ options validvarname = v7;
 
 %soc_lib(INFOLDER, &INFOLDER);
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER);
-%soc_lib(OUTPUT, &REPORTROOT.output/);
+%soc_lib(OUTPUT, &REPORTROOT.output/, options=%str(filelockwait=2));
 %soc_lib(lookup, &REPORTROOT.inputfiles/macros/lookuptables/);
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);
