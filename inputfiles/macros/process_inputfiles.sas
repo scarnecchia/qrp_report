@@ -160,46 +160,15 @@
     
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
-***************************************************************************************************/
-	* Check if qrp_parameters has horizontal structure;
-	proc contents data=infolder.qrp_parameters noprint out=qrp_param_content;
-	quit;
+***************************************************************************************************/	
+	/* Transpose qrp_parameters to determine run values associated with desired runids */
+	proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+	var run:;
+	run;
 
-	%let parameter_var_exists=0;
-	proc sql noprint;
-	select count(*) into :parameter_var_exists from qrp_param_content
-	where lowcase(name)="parameter";
-	quit;
-
-	%put &=parameter_var_exists;
-
-	%if &parameter_var_exists. > 0 %then %do;
-		/* Transpose qrp_parameters to determine run values associated with desired runids */
-		proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
-		var run:;
-		run;
-
-		data qrp_parameters;
-		set infolder.qrp_parameters;
-		run;
-	%end;
-	%else %do;
-		data _qrp_parameters_trans(keep=run runid rename=runid=col1 rename=run=_name_)
-			 qrp_parameters;
-		set infolder.qrp_parameters;		
-		run = "run" || strip(put(_N_, best.));	
-		run;
-
-		proc sql noprint;
-		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
-		quit;
-
-		proc transpose data=qrp_parameters 
-					   out=qrp_parameters(rename=_name_=parameter);
-		id run;
-		var &qrp_param_content.;
-		run;
-	%end;
+	data qrp_parameters;
+	set infolder.qrp_parameters;
+	run;	
  
     /* Combine input files to identify all runids requested */
     data inputfiles;
