@@ -924,7 +924,7 @@
 
                 /*ReportType = T2L1*/
                 %if %str("&reporttype") = %str("T2L1") %then %do;
-                if tableID in ('t2epigap', 't2epigapprev') and index(levelvars, 'epi_gap') = 0 then do;
+                if tableID in ('t2epigap') and index(levelvars, 'epi_gap') = 0 then do;
                     levelvars = catx(' ',levelvars, "epi_gap");
                 end;
                 %end;

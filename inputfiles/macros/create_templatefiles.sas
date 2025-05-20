@@ -1229,29 +1229,7 @@ libname tempfl "";
                 output;
              %end;
              %end;
-        %end;
-
-        dataset = "t2itsprev";
-        %do t = 1 %to 2;
-            %do int = 1 %to 3;
-            %do s = 1 %to &stratlevels.;
-                table = "T&t.";
-                tablesub= "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|')))";
-                levelnum =1;
-                %if %sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) = overall %then %do;
-                  levelid1 = "%sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
-                  levelid2 = "";
-                  levelid3 = "";
-                %end;
-                %else %do;
-                  levelid1 = "%sysfunc(left(%scan(%str(&stratLevel.), &s, '|'))) %sysfunc(left(%scan(%str(&intervallist.), &int, '|')))";
-                  levelid2 = "";
-                  levelid3 = "";
-                %end;
-                output;
-             %end;
-             %end;
-        %end;
+        %end;        
     run;
     
     /*Output ITS files*/
