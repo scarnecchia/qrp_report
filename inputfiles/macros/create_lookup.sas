@@ -151,7 +151,8 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episode must have an index date within the age range condition"; report_descr = "Claim recorded during specified age range"; output;
         claim_level = "Episode"; descr = "Exclusion - Episodes must have a MatchMethod value of a linked live birth delivery"; report_descr = "Pregnancy outcome must match specified Match Method values"; output;
 		claim_level = "Episode"; descr = "Exclusion - Episodes must have birth type value of a live birth delivery"; report_descr = "Pregnancy outcome must match specified birth type values (singleton births only, twins, etc.)"; output;
-        claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must have an index date within the age range condition"; report_descr = "Pregnancy outcome within the age range condition assessed at pregnancy outcome date"; output;
+		claim_level = "Episode"; descr = "Exclusion - Infant linked to pregnancy birth type must have valid initial enrollment span"; report_descr = "Linked infant had required coverage"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must have an index date within the age range condition"; report_descr = "Pregnancy outcome within the age range condition assessed at pregnancy outcome date"; output;
 		claim_level = "Member";  descr = "Exclusion - Members cannot have all their valid index dates in a prior look period"; report_descr = "Claim recorded during current look period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Valid index dates cannot be in a prior look period"; report_descr = "Claim recorded during current look period"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one episode defining index claim during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;

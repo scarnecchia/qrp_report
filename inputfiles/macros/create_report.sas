@@ -63,11 +63,12 @@
     %createlibref(dplist = &random_dplist.,
                   dpinfofile = dpinfofile, 
                   dataroot = &dataroot.,
-                  signaturefile =%scan(&runidlist,1)_signature);
+                  signaturefile =%scan(&runidlist,1)_signature,
+				  outfile=output.dpinfo&reportid.);
 
-    /*Drop requestID tokens from dpinfo file*/
-    data output.dpinfo;
-        set output.dpinfo(drop=projid wptype wpid dpid);
+    /*Drop requestID tokens from output.dpinfo&requestid file*/
+    data output.dpinfo&reportid.;
+        set output.dpinfo&reportid.(drop=projid wptype wpid dpid);
     run;
 	
 ***************************************************************************************************;
@@ -245,13 +246,6 @@
 
     proc datasets nowarn nolist lib=work kill; quit;
    
-	/* rename dpinfo file with reportid */
-	%if &leavebehindreport. = N %then %do;
-		proc datasets nowarn noprint lib=output;        
-	        change dpinfo = dpinfo&reportid.;
-	    quit;
-	%end;
-
     /* End log */
     proc printto;
     run;

@@ -140,8 +140,8 @@
 			%let repdata = &output.reportdata&reportid.;
 			%let msocdata = &output.msocdata&reportid.;
 			options DLCREATEDIR ;
-			libname repdata "&repdata" ;
-			libname msocdata "&msocdata" ;
+			libname repdata "&repdata" filelockwait = 2;
+			libname msocdata "&msocdata" filelockwait = 2;
 			options NODLCREATEDIR;
 
 			%let dpfile = input.&DPInfoFile.;
