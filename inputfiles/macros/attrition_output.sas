@@ -129,22 +129,22 @@
         %end;
         ods proclabel = "Table &tablenum.&tableletter.";
         proc report data=repdata.table&tablenum.&tableletter. nofs nowd spanrows missing
-            style(header)=[rules=none frame=void vjust=b borderbottomcolor=bgr bordertopcolor=bgr background=bgr borderleftcolor=bgr] split='*'
+            style(header)=[rules=none frame=void vjust=b borderbottomcolor=GGR bordertopcolor=GGR background=GGR borderleftcolor=GGR] split='*'
             style(report)=[rules=none frame=void cellpadding=1.75pt];
             column report_descr (headerlabel,(grouplabel,(agg_remaining_char agg_excluded_char))) dummyvar;
             define report_descr / group order=data ' ' style(column)=[just=L] 
-                                                       style(header)=[background = bgr borderleftcolor= bgr borderrightcolor=bgr];
-            define headerlabel / nozero across order=data ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=bgr borderrightcolor=black 
+                                                       style(header)=[background = GGR borderleftcolor= GGR borderrightcolor=GGR];
+            define headerlabel / nozero across order=data ' ' style(header)=[rules=none vjust=b borderbottomcolor=black background=GGR borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
-            define grouplabel / nozero across order=data ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
+            define grouplabel / nozero across order=data ' '  style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=GGR borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
 
             define agg_remaining_char / display 'Remaining' style(column)=[background=$backgroundfmt. tagattr="type:string"] 
-                                                            style(header)=[background = bgr borderleftcolor=black borderleftwidth=1 borderrightcolor=bgr] format=$nafmt.;
+                                                            style(header)=[background = GGR borderleftcolor=black borderleftwidth=1 borderrightcolor=GGR] format=$nafmt.;
 
             define agg_excluded_char / display 'Excluded' style(column)=[background=$backgroundfmt. tagattr="type:string"]
-                                                          style(header)=[background = bgr borderleftcolor=bgr borderrightcolor=black borderrightwidth=1] format=$nafmt.;
+                                                          style(header)=[background = GGR borderleftcolor=GGR borderrightcolor=black borderrightwidth=1] format=$nafmt.;
 			
 			define dummyvar / computed noprint;
 
@@ -175,7 +175,7 @@
 
           
             /*Add header rows*/
-            compute before report_descr / style=[background=libgr foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black];
+            compute before report_descr / style=[background=LIGGR foreground=black just=L font_weight=bold bordertopcolor=black bordertopwidth=1 borderbottomcolor=black];
             length text $100;
             %if &tabletype = episode %then %do;
             if report_descr = 'Enrolled at any point during the query period' then do; 

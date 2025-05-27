@@ -105,7 +105,7 @@
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)
 							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
-							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
+							  	and suGGRoup="&suGGRoup." and suGGRoupcat="&suGGRoupcat."
 							  %end;));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
                 %if &includecomp. = Y %then %do; comp_mean&dpnum. comp_std&dpnum. comp_mean&dpnum._char comp_std&dpnum._char %end;
@@ -115,7 +115,7 @@
                 monitoringperiod
                 %end;
 				%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
-				subgroup subgroupcat
+				suGGRoup suGGRoupcat
 				%end;
 				%if %index(&reporttype,T4) > 0 %then %do;
 				codepop
@@ -626,59 +626,59 @@
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=&table1_dataset. nofs nowd spanrows split='*'
-            style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+            style(header)=[rules=none frame=void background=GGR borderleftcolor = GGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
             column (metvar grouper label
-                    %if &computebalance. = Y %then %do; ("^S={background=BGR}&cohortheaderlabel." %end;
-                    ("^S={background=BGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    %if &computebalance. = Y %then %do; ("^S={background=GGR}&cohortheaderlabel." %end;
+                    ("^S={background=GGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=BGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=GGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=BGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=GGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 					
 						%if %index(&reporttype,L2) %then %do;
-							('^S={background=BGR}Covariate Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=GGR}Covariate Balance' '^S={background=GGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
 						%else %do;
-							('^S={background=BGR}Characteristic Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=GGR}Characteristic Balance' '^S={background=GGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
                     %end; );
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
-                           style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
+                           style(header)=[background = LIGGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"] 
-                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
+                            style(header)=[background = LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in]; 
             define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
+                            style(header)=[background = LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
             define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines and superscript to Lab characteristic header */
-            compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
+            compute before grouper / style=[background=LIGGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
               	if grouper = "Laboratory Characteristics" then do; 
@@ -898,7 +898,7 @@
         /*Additional meta-data and group-specific names for each reporttype*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup) ne 0));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(suGGRoup) ne 0));
                 call symputx('psfile', strip(file));
                 call symputx('psestimategrp', psestimategrp);
                 call symput('unadjusted', 'Unadjusted '); /*for unadjusted table label*/
@@ -957,7 +957,7 @@
 				left join pscs_masterinputs as b
 				on a.analysisgrp = b.analysisgrp and
 				a.psestimategrp = a.psestimategrp
-				where b.subgroup=""
+				where b.suGGRoup=""
 				order by a.order;
 				quit;
 
@@ -1120,32 +1120,32 @@
         /*1 block of code for both aggregate and DP tables*/
         %macro baselinereport(dpnum=, aggregated=, dpinparenthesis=, dpcomma=);
 
-			* Process L2 subgroups;
-			%let numsubgroups=0;
-			%let subgroup=;
-			%let subgroupcat=;
-			%let subgrouptitle=;
+			* Process L2 suGGRoups;
+			%let numsuGGRoups=0;
+			%let suGGRoup=;
+			%let suGGRoupcat=;
+			%let suGGRouptitle=;
 
 			%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
-				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
-								   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
-				by subgrouporder subgroupcatorder;
+				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(suGGRoup))) 
+								   out=_suGGRoups(keep=suGGRoup suGGRoupcat suGGRouporder suGGRoupcatorder combinedlabel);
+				by suGGRouporder suGGRoupcatorder;
 				run;
 
 				proc sql noprint;
-				select count(*) into :numsubgroups from _subgroups;
+				select count(*) into :numsuGGRoups from _suGGRoups;
 				quit;
 			%end;
 
-			%do sub=0 %to &numsubgroups.;
+			%do sub=0 %to &numsuGGRoups.;
 
 				%if &sub. > 0 %then %do;
 					data _null_;
-					set _subgroups;
+					set _suGGRoups;
 					if _N_=&sub.;
-					call symputx("SubGroup",lowcase(strip(subgroup)));
-				    call symputx("SubgroupCat",upcase(strip(subgroupcat)));
-					call symputx("subgrouptitle",combinedlabel);
+					call symputx("SuGGRoup",lowcase(strip(suGGRoup)));
+				    call symputx("SuGGRoupCat",upcase(strip(suGGRoupcat)));
+					call symputx("suGGRouptitle",combinedlabel);
 					run;
 					
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
@@ -1163,14 +1163,14 @@
 					%let unique_psestimate = &unique_psestimate_orig;
 				%end;
 		
-                /*For L2 queries, set &tablecount to 0 if covariate stratification AND no subgroups*/
-				%if &psfile. = covstratfile and &numsubgroups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
+                /*For L2 queries, set &tablecount to 0 if covariate stratification AND no suGGRoups*/
+				%if &psfile. = covstratfile and &numsuGGRoups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
 					&stratifybydp. = N and %eval(&numbaselinetablegrp.=1) %then %let tablecount = 0;
 
 	            %if %eval(&unique_psestimate.) = 1 %then %do;					
 	             %tableletter(); 
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
-	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
 	              characteristiclabel =&characteristiclabel.,
 	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
@@ -1188,7 +1188,7 @@
 	                %if &psfile. = psmatchfile %then %do;
 	                %tableletter(); 
 	                %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-	                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+	                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
 	                  characteristiclabel =&characteristiclabel.,
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
@@ -1206,7 +1206,7 @@
 						%if &include_unweighted_trim. = Y %then %do;
 			                %tableletter(); 
 			                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
 			                  characteristiclabel =&characteristiclabel.,
 							  labcharacteristics = %quote(&labcharacteristics),
 			                  dpnum = &dpnum.,
@@ -1226,7 +1226,7 @@
 	                    %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
 	                    %tableletter(); 
 	                    %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-	                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
+	                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
 	                      characteristiclabel =&characteristiclabel.,
 						  labcharacteristics = %quote(&labcharacteristics),
 	                      dpnum = &dpnum.,
@@ -1238,7 +1238,7 @@
 	                      includenonpregnant=&includenonpregnant.);
 	                %end;
 	            %end; /*Additional L2 tables*/
-		  	%end; /*Subgroups looping*/
+		  	%end; /*SuGGRoups looping*/
         %mend;
 
         /*loop through each periodid*/

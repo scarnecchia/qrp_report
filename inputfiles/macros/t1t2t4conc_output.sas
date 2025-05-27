@@ -279,7 +279,7 @@
         
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &stratavar. = overall %then %do;
-        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = GGR borderleftcolor = GGR]; 
         %end;
         %else %do;
         define grouplabel /group noprint;
@@ -301,7 +301,7 @@
                                                                                          %else %if "%lowcase(&cat.)" = "hhs_reg" %then width = 1.35in;
                                                                                          %else %if %index("%lowcase(&cat.)", covar) >0 %then width = 2in;
                                                                                          %else width =.81in; indent=20] 
-                        style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr];
+                        style(header)=[just=C borderbottomcolor=black backgroundcolor=GGR];
             %end;
              %else %do;
                 define &cat. / noprint;
@@ -317,7 +317,7 @@
 			
 			   define &varname. / display 
                      style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
-					 style(header)=[just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
+					 style(header)=[just=C borderbottomcolor=black backgroundcolor=GGR borderrightcolor=GGR borderleftcolor=GGR];
         %end;
 
 		/* Add title */
@@ -328,7 +328,7 @@
 
         /*add header line*/
         %if &includeheaderrow = Y %then %do;
-        compute before header / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+        compute before header / style=[backgroundcolor=LIGGR font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $100;
             text = header;
             num = 100;
@@ -343,7 +343,7 @@
                     style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
             length text $100;
             text = grouplabel;

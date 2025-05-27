@@ -437,7 +437,7 @@
             ods proclabel = "Table &tablenum.&tableletter.";
 
             proc report data = repdata.table&tablenum.&tableletter nofs nowd headline headskip split="*" contents=''
-        		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
+        		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
             %if (%index(&reporttype,T4) and %index(&where,%str(cohort="mi")) = 0) or %index(&reporttype,T6) %then %do;
             columns (label ("^S={background=white}&productlabel." sum_npts sum_nepisodes percent_episodes));    
@@ -446,13 +446,13 @@
             columns (label sum_npts sum_nepisodes percent_episodes);
             %end;
                 define label / order=data 'Characteristic Category'
-                                 style(header)=[background = bgr borderleftcolor = BGR] style(column)=[rules=none width=4.5in just=L];
+                                 style(header)=[background = GGR borderleftcolor = GGR] style(column)=[rules=none width=4.5in just=L];
                 define sum_npts / 'Number of Patients'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;                
+                                style(header)=[background = GGR borderleftcolor = GGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;                
                 define sum_nepisodes / 'Number of Episodes'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
+                                style(header)=[background = GGR borderleftcolor = GGR] style(column)=[width=1in just=C background=background_n_fmt.] format=comma12.;
                 define percent_episodes / '% of Total*Number of*Episodes'
-                                style(header)=[background = bgr borderleftcolor = BGR] style(column)=[width=.65in just=C] ;
+                                style(header)=[background = GGR borderleftcolor = GGR] style(column)=[width=.65in just=C] ;
 
             /* Add title */			
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
