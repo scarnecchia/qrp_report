@@ -901,6 +901,8 @@
 /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
     %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
+		%let gestwktable=N;
+
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
             data _tempuserstrata(rename=levelvars_out=levelvars);
@@ -929,6 +931,11 @@
                 end;
                 %end;
 
+				/*ReportType = T4L1*/
+				%if %str("&reporttype") = %str("T4L1") %then %do;
+				if lowcase(tableid) in ("t4preggestwk", "t4nopreggestwk") then call symputx("gestwktable", "Y");
+				%end;
+
                 /*ReportType = T6*/
                 %if %str("&reporttype") = %str("T6") %then %do;
                 if tableID= "t6disp" and index(levelvars, 'daysupp') = 0 then do;
@@ -954,6 +961,10 @@
                 *alphabetize levelid vars;
                 %alphabetizevarutil(array=d, in=levelvars, out=levelvars_out);
             run;
+
+			%if %str("&reporttype") = %str("T4L1") %then %do;
+			%if &gestwktable. eq Y %then %let gestwktables_runid_list = &gestwktables_runid_list. "&runid.";
+			%end;
 
             proc append base=userstrata data=_tempuserstrata force; run;
         %end;
