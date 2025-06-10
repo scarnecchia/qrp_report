@@ -94,7 +94,7 @@
 		    select min(a.gestwk_min), max(a.gestwk_max) into: min_min, :max_max
             from master_typefile a,
                  groupsfile b
-            where a.group = b.group;
+            where a.group = b.group and a.runid in (&gestwktables_runid_list.);
         quit;
 
         data _temptablecolumns;

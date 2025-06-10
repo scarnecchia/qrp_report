@@ -160,46 +160,15 @@
     
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
-***************************************************************************************************/
-	* Check if qrp_parameters has horizontal structure;
-	proc contents data=infolder.qrp_parameters noprint out=qrp_param_content;
-	quit;
+***************************************************************************************************/	
+	/* Transpose qrp_parameters to determine run values associated with desired runids */
+	proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+	var run:;
+	run;
 
-	%let parameter_var_exists=0;
-	proc sql noprint;
-	select count(*) into :parameter_var_exists from qrp_param_content
-	where lowcase(name)="parameter";
-	quit;
-
-	%put &=parameter_var_exists;
-
-	%if &parameter_var_exists. > 0 %then %do;
-		/* Transpose qrp_parameters to determine run values associated with desired runids */
-		proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
-		var run:;
-		run;
-
-		data qrp_parameters;
-		set infolder.qrp_parameters;
-		run;
-	%end;
-	%else %do;
-		data _qrp_parameters_trans(keep=run runid rename=runid=col1 rename=run=_name_)
-			 qrp_parameters;
-		set infolder.qrp_parameters;		
-		run = "run" || strip(put(_N_, best.));	
-		run;
-
-		proc sql noprint;
-		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
-		quit;
-
-		proc transpose data=qrp_parameters 
-					   out=qrp_parameters(rename=_name_=parameter);
-		id run;
-		var &qrp_param_content.;
-		run;
-	%end;
+	data qrp_parameters;
+	set infolder.qrp_parameters;
+	run;	
  
     /* Combine input files to identify all runids requested */
     data inputfiles;
@@ -932,6 +901,8 @@
 /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
     %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
+		%let gestwktable=N;
+
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
             data _tempuserstrata(rename=levelvars_out=levelvars);
@@ -955,10 +926,15 @@
 
                 /*ReportType = T2L1*/
                 %if %str("&reporttype") = %str("T2L1") %then %do;
-                if tableID in ('t2epigap', 't2epigapprev') and index(levelvars, 'epi_gap') = 0 then do;
+                if tableID in ('t2epigap') and index(levelvars, 'epi_gap') = 0 then do;
                     levelvars = catx(' ',levelvars, "epi_gap");
                 end;
                 %end;
+
+				/*ReportType = T4L1*/
+				%if %str("&reporttype") = %str("T4L1") %then %do;
+				if lowcase(tableid) in ("t4preggestwk", "t4nopreggestwk") then call symputx("gestwktable", "Y");
+				%end;
 
                 /*ReportType = T6*/
                 %if %str("&reporttype") = %str("T6") %then %do;
@@ -985,6 +961,10 @@
                 *alphabetize levelid vars;
                 %alphabetizevarutil(array=d, in=levelvars, out=levelvars_out);
             run;
+
+			%if %str("&reporttype") = %str("T4L1") %then %do;
+			%if &gestwktable. eq Y %then %let gestwktables_runid_list = &gestwktables_runid_list. "&runid.";
+			%end;
 
             proc append base=userstrata data=_tempuserstrata force; run;
         %end;
