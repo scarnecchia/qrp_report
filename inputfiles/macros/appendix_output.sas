@@ -273,12 +273,12 @@
 	/********************************************/	
 	%macro appendixWeightDist(_data=, _rptlabel=, _tab=);		
 
-		%let numsuGGRoups=0;
+		%let numsubgroups=0;
 		%let covarlabel=;
 		%let nocovarlabel=;
 
 		proc sql noprint;
-			select count (distinct suGGRoup) into :numsuGGRoups from repdata.&_data;
+			select count (distinct suGGRoup) into :numsubgroups from repdata.&_data;
 			select combinedlabel into :covarlabel from repdata.&_data where substr(compress(combinedlabel, ' &'),1,10)="StudyCovar"; 
 			select combinedlabel into :nocovarlabel from repdata.&_data where substr(compress(combinedlabel, ' &'),1,12)="NoStudyCovar"; 
 		quit
@@ -297,9 +297,9 @@
             style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
         	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
-            column (%if &numsuGGRoups. > 0 %then %do; combinedlabel %end; dpidsiteid N min max mean sd); 
+            column (%if &numsubgroups. > 0 %then %do; combinedlabel %end; dpidsiteid N min max mean sd); 
 
-			%if &numsuGGRoups. > 0 %then %do;
+			%if &numsubgroups. > 0 %then %do;
 				define combinedlabel / order order=data noprint;
 			%end;
             define dpidsiteid / display 'Masked DP ID' 
@@ -320,7 +320,7 @@
 			line "&apptitle.";
 			endcomp;
 
-			%if &numsuGGRoups. > 0 %then %do;
+			%if &numsubgroups. > 0 %then %do;
 			compute before combinedlabel / style=[background=LIGGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 	            length text $100;					
 				if prxmatch('/^NoStudyCovar/',compress(combinedlabel, ' &')) > 0 then do;

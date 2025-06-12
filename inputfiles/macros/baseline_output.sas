@@ -1120,28 +1120,28 @@
         /*1 block of code for both aggregate and DP tables*/
         %macro baselinereport(dpnum=, aggregated=, dpinparenthesis=, dpcomma=);
 
-			* Process L2 suGGRoups;
-			%let numsuGGRoups=0;
+			* Process L2 subgroups;
+			%let numsubgroups=0;
 			%let suGGRoup=;
 			%let suGGRoupcat=;
 			%let suGGRouptitle=;
 
 			%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
 				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(suGGRoup))) 
-								   out=_suGGRoups(keep=suGGRoup suGGRoupcat suGGRouporder suGGRoupcatorder combinedlabel);
+								   out=_subgroups(keep=suGGRoup suGGRoupcat suGGRouporder suGGRoupcatorder combinedlabel);
 				by suGGRouporder suGGRoupcatorder;
 				run;
 
 				proc sql noprint;
-				select count(*) into :numsuGGRoups from _suGGRoups;
+				select count(*) into :numsubgroups from _subgroups;
 				quit;
 			%end;
 
-			%do sub=0 %to &numsuGGRoups.;
+			%do sub=0 %to &numsubgroups.;
 
 				%if &sub. > 0 %then %do;
 					data _null_;
-					set _suGGRoups;
+					set _subgroups;
 					if _N_=&sub.;
 					call symputx("SuGGRoup",lowcase(strip(suGGRoup)));
 				    call symputx("SuGGRoupCat",upcase(strip(suGGRoupcat)));
@@ -1163,8 +1163,8 @@
 					%let unique_psestimate = &unique_psestimate_orig;
 				%end;
 		
-                /*For L2 queries, set &tablecount to 0 if covariate stratification AND no suGGRoups*/
-				%if &psfile. = covstratfile and &numsuGGRoups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
+                /*For L2 queries, set &tablecount to 0 if covariate stratification AND no subgroups*/
+				%if &psfile. = covstratfile and &numsubgroups. = 0 and %eval(&look_start.) = %eval(&look_end.) and 
 					&stratifybydp. = N and %eval(&numbaselinetablegrp.=1) %then %let tablecount = 0;
 
 	            %if %eval(&unique_psestimate.) = 1 %then %do;					
@@ -1238,7 +1238,7 @@
 	                      includenonpregnant=&includenonpregnant.);
 	                %end;
 	            %end; /*Additional L2 tables*/
-		  	%end; /*SuGGRoups looping*/
+		  	%end; /*subgroups looping*/
         %mend;
 
         /*loop through each periodid*/
