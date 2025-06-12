@@ -105,7 +105,7 @@
             data repdata.table1&tableletter.;
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)
 							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
-							  	and suGGRoup="&suGGRoup." and suGGRoupcat="&suGGRoupcat."
+							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
 							  %end;));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
                 %if &includecomp. = Y %then %do; comp_mean&dpnum. comp_std&dpnum. comp_mean&dpnum._char comp_std&dpnum._char %end;
@@ -115,7 +115,7 @@
                 monitoringperiod
                 %end;
 				%if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
-				suGGRoup suGGRoupcat
+				subgroup subgroupcat
 				%end;
 				%if %index(&reporttype,T4) > 0 %then %do;
 				codepop
@@ -898,7 +898,7 @@
         /*Additional meta-data and group-specific names for each reporttype*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) > 0 %then %do;
             data _null_;
-                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(suGGRoup) ne 0));
+                set pscs_masterinputs(where=(analysisgrp = "&analysisgrp." and missing(subgroup) ne 0));
                 call symputx('psfile', strip(file));
                 call symputx('psestimategrp', psestimategrp);
                 call symput('unadjusted', 'Unadjusted '); /*for unadjusted table label*/
@@ -957,7 +957,7 @@
 				left join pscs_masterinputs as b
 				on a.analysisgrp = b.analysisgrp and
 				a.psestimategrp = a.psestimategrp
-				where b.suGGRoup=""
+				where b.subgroup=""
 				order by a.order;
 				quit;
 
@@ -1122,14 +1122,14 @@
 
 			* Process L2 subgroups;
 			%let numsubgroups=0;
-			%let suGGRoup=;
-			%let suGGRoupcat=;
-			%let suGGRouptitle=;
+			%let subgroup=;
+			%let subgroupcat=;
+			%let subgrouptitle=;
 
 			%if &reporttype = T2L2 or &reporttype = T4L2 %then %do;
-				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(suGGRoup))) 
-								   out=_subgroups(keep=suGGRoup suGGRoupcat suGGRouporder suGGRoupcatorder combinedlabel);
-				by suGGRouporder suGGRoupcatorder;
+				proc sort nodupkey data=Pscs_masterinputs(where=(analysisgrp="&analysisgrp." and runid="&runid." and not missing(subgroup))) 
+								   out=_subgroups(keep=subgroup subgroupcat subgrouporder subgroupcatorder combinedlabel);
+				by subgrouporder subgroupcatorder;
 				run;
 
 				proc sql noprint;
@@ -1143,9 +1143,9 @@
 					data _null_;
 					set _subgroups;
 					if _N_=&sub.;
-					call symputx("SuGGRoup",lowcase(strip(suGGRoup)));
-				    call symputx("SuGGRoupCat",upcase(strip(suGGRoupcat)));
-					call symputx("suGGRouptitle",combinedlabel);
+					call symputx("subgroup",lowcase(strip(subgroup)));
+				    call symputx("subgroupCat",upcase(strip(subgroupcat)));
+					call symputx("subgrouptitle",combinedlabel);
 					run;
 					
 					%let captionlabel = %bquote(&grouplabel.&pregnancylabel&baselinelabel.);
@@ -1170,7 +1170,7 @@
 	            %if %eval(&unique_psestimate.) = 1 %then %do;					
 	             %tableletter(); 
 	             %baseline_procreport(order = &b., table = 'Unadjusted', weight ='Unweighted',
-	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
+	              title =%quote(Table 1&tableletter.. &aggregated.&unadjusted.Characteristics of &captionlabel. &dpinparenthesis.in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	              characteristiclabel =&characteristiclabel.,
 	              labcharacteristics = %quote(&labcharacteristics),
 	              dpnum = &dpnum.,
@@ -1188,7 +1188,7 @@
 	                %if &psfile. = psmatchfile %then %do;
 	                %tableletter(); 
 	                %baseline_procreport(order = &b., table = 'Adjusted', weight = %str('Unweighted', 'Weighted'),
-	                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
+	                  title =%quote(Table 1&tableletter.. &aggregated.Adjusted Characteristics of &grouplabel. (Propensity Score Matched&dpcomma., &ratiolabel.&caliperlabel.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	                  characteristiclabel =&characteristiclabel.,
 					  labcharacteristics = %quote(&labcharacteristics),
 	                  dpnum = &dpnum.,
@@ -1206,7 +1206,7 @@
 						%if &include_unweighted_trim. = Y %then %do;
 			                %tableletter(); 
 			                %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Unweighted',
-			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
+			                  title=%quote(Table 1&tableletter.. &aggregated.Unweighted Characteristics of &grouplabel. (Unweighted, Trimmed&dpcomma.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 			                  characteristiclabel =&characteristiclabel.,
 							  labcharacteristics = %quote(&labcharacteristics),
 			                  dpnum = &dpnum.,
@@ -1226,7 +1226,7 @@
 	                    %else %let stratumtitle =Propensity Score Stratified&dpcomma., Percentiles: &percentiles.;
 	                    %tableletter(); 
 	                    %baseline_procreport(order = &b., table = 'Adjusted', weight = 'Weighted',
-	                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&suGGRouptitle.),
+	                      title=%quote(Table 1&tableletter.. &aggregated.Weighted Characteristics of &grouplabel. (&stratumtitle.) in the &database. from &startdateformatted. to &&enddate&periodid.formatted.&subgrouptitle.),
 	                      characteristiclabel =&characteristiclabel.,
 						  labcharacteristics = %quote(&labcharacteristics),
 	                      dpnum = &dpnum.,
