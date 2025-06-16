@@ -443,7 +443,7 @@
 				data _null_;
 				set master_mil;
 				if runid="&runid" and eoi="&analysisgrp." then call symputx("eoi_exp", expmp);
-				else if runid="&runid" and ref="&analysisgrp." then call symputx("comp_exp", controlmp);
+				else if runid="&runid" and ref="&analysisgrp." then call symputx("eoi_exp", controlmp);
 				%if &includecomp. eq Y %then %do;
 					if runid="&runid" and eoi="&analysisgrp2." then call symputx("comp_exp", expmp);
 					else if runid="&runid" and ref="&analysisgrp2." then call symputx("comp_exp", controlmp);
