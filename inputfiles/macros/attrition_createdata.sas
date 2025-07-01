@@ -343,7 +343,7 @@
    	data lookup_attrition;
    		set lookup.lookup_attrition;
    		%if &inclnobs > 0 %then %do;
-   		length condlevel $50 descr1 $200;
+   		length condlevel $250 descr1 $200;
    		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
    			%do n = 1 %to &ncond;
    			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
