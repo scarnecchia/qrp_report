@@ -131,7 +131,7 @@
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
 	            order order=data 'Monitoring*Period' style(column)=[just=c background=background_n_fmt. width=2.3in vjust=middle] 
-				style(header)=[just=C background=bgr borderleftcolor=bgr] format=$periodidfmt.;
+				style(header)=[just=C background=LIGGR borderleftcolor=LIGGR] format=$periodidfmt.;
 	    %end;
 
         /* Create output datasets based on subgroups */
@@ -324,7 +324,7 @@
         %else %let user_label = Pregnant Patients; 
 
         proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
             columns (
@@ -365,55 +365,55 @@
             %end;
             define analysis / order order=data noprint  ;
             define &medicalproduct / display 'Medical Product'
-                style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=bgr borderleftcolor=bgr];
+                style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=GGR borderleftcolor=GGR];
             &MPDefine. ;
             define n / display "Number of^n &user_label"
-               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=bgr];
             %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=bgr];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
             %end;
             %if %index(&customizecolumns.,sumevents) = 0 %then %do;
             define EVchar / display 'Number of Events'
-                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=bgr];
             %end;
             %if %index(&customizecolumns.,sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
-                style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[vjust=middle just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=GGR];
             %end;
             %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
                 define IR_1000PYchar / display 'Incidence^n Rate per 1,000^n Person Years'
-                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 define Risk_1000NUchar / display "Risk per 1,000^n &user_label."
-                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 %if %index(&customizecolumns.,includeird) > 0 %then %do;
                 define IRDiff_1000PYchar / order 'Incidence Rate^n Difference per 1,000^n Person Years'
-                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 %end;
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
                 define RD_1000NUchar / order "Risk Difference per 1,000^n &user_label."
-                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 %end;
                 define HR_95CI / order 'Hazard Ratio^n (95% Confidence Interval)'
-                    style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=GGR borderleftcolor=GGR];
 				%if &reporttype = T2L2 %then %do;
 				 define HR_pvalue / order 'Wald P-Value'
-                    style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                    style(column)=[vjust=middle just=C width=.65in] style(header)=[just=C background=GGR borderleftcolor=GGR];
 				%end;
             %end;			
             %else %do;
             define Risk_1000NUchar / display 'Risk per 1,000^n Pregnant Patients'
-                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 %if %index(&customizecolumns.,includerd) > 0 %then %do;
             define RD_1000NUchar / order 'Risk Difference per 1,000^n Pregnant Patients'
-                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=bgr borderleftcolor=bgr];
+                style(column)=[vjust=middle just=C width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
                 %end;
             define RR_95CI / order 'Risk Ratio^n (95% Confidence Interval)'
-                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=bgr borderleftcolor=bgr];            
+                style(column)=[vjust=middle just=C width=1.2in] style(header)=[just=C background=GGR borderleftcolor=GGR];            
             %end;
 
             /*Add title*/
@@ -424,7 +424,7 @@
 
             /*Add spanning description of analysis*/
             %if %str("&subgroup.") eq %str("") %then %do;
-            compute before analysis / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before analysis / style=[background=LIGGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             %end;
             %else %do;
             compute before analysis / style=[background=white foreground=black just=L font_style=italic bordertopcolor=black borderbottomcolor=black];
@@ -509,7 +509,7 @@
 				%end;
 
             /*Add spanning label for subgroup category*/
-                compute before subgroupcat / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                compute before subgroupcat / style=[background=LIGGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                      length text $1000;
 				    *Overall always repeated at top of each subgroup;	
 					if subgroupcat = "" then do;	
