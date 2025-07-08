@@ -340,10 +340,18 @@
    	%end;
 
    	/* Assign cond level rows */
+    
+    proc sql noprint ;
+                  select max(lengthn(condlevel)) into: condlevel_length
+            from lookup.lookup_attrition ;
+    quit ;
+
+	%let condlevel_cat = %sysevalf(&condlevel_length + 50) ;
+    
    	data lookup_attrition;
    		set lookup.lookup_attrition;
    		%if &inclnobs > 0 %then %do;
-   		length condlevel $250 descr1 $200;
+   		length condlevel $&condlevel_cat. descr1 $200;
    		if index(descr,"Information: Members excluded for") or index(descr,"Information: Episodes excluded for") then do;
    			%do n = 1 %to &ncond;
    			descr1 = catx(' ',descr,"%upcase(&&condlevel&n)");
