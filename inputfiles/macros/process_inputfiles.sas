@@ -649,13 +649,31 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
+    %do n = 1 %to &numrunid. ;
+        %let runid =&&id&n.. ;
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
+            proc sql noprint ;
+                  select max(lengthn(condlevel)) into: condlevel_length
+            from infolder.&&&runid._inclusioncodes ;
+
+                  select max(lengthn(subcondlevel)) into: subcondlevel_length
+            from infolder.&&&runid._inclusioncodes ;              
+            quit ;
+
+			%if &condlevel_length. < 1 %then %let condlevel_length = 1 ;
+            %if &subcondlevel_length. < 1 %then %let subcondlevel_length = 1 ;
+
+      %end;
+    %end;
+
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
+        length runid $5 group $40 $&condlevel_length. ;
         call missing(runid, group, condlevel);
         stop;
     run;
 
     data master_inclusioncodes;
+        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length.;
         set 
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
