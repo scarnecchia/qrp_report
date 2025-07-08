@@ -343,7 +343,7 @@
     
     proc sql noprint ;
                   select max(lengthn(condlevel)) into: condlevel_length
-            from lookup.lookup_attrition ;
+            from master_inclusioncodes ;
     quit ;
 
 	%let condlevel_cat = %sysevalf(&condlevel_length + 50) ;
