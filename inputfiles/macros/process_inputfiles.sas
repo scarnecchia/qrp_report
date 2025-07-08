@@ -649,6 +649,9 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
+    %let condlevel_length=1;
+    %let subcondlevel_length=1;
+
     %do n = 1 %to &numrunid. ;
         %let runid =&&id&n.. ;
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
