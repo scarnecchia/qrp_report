@@ -673,7 +673,9 @@
     run;
 
     data master_inclusioncodes;
-        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length.;
+        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        format condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
+        informat condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
         set 
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
