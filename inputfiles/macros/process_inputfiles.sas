@@ -670,8 +670,8 @@
     %end;
 
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $&condlevel_length. ;
-        call missing(runid, group, condlevel);
+        length runid $5 group $40 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        call missing(runid, group, condlevel,subcondlevel);
         stop;
     run;
 
