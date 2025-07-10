@@ -346,7 +346,7 @@
             from lookup.lookup_attrition ;
     quit ;
 
-	%let condlevel_cat = %sysevalf(&condlevel_length + 50) ;
+	%let condlevel_cat = %sysevalf(&condlevel_length + 15) ;
     %let descr_cat = %sysevalf(&condlevel_length + &descr_length) ;
     
    	data lookup_attrition;
