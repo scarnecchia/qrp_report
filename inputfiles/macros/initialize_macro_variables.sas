@@ -53,13 +53,14 @@
     %let t3treewkdaysdset = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
+    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure condlevel_length;
     %let datasetlist = ;
 	%let tdatasetlist = ;
 	%let tdatasetlistnum = ;
     %let figurelist = ;
     %let tablelist = ;
     %let includegroupinfigure = ;
+    %let condlevel_length = ;
 
     /*baseline table variables*/
     %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary;
