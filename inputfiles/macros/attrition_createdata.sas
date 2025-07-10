@@ -342,11 +342,6 @@
    	/* Assign cond level rows */
     
     proc sql noprint ;
-                  select max(lengthn(condlevel)) into: condlevel_length
-            from master_inclusioncodes ;
-    quit ;
-    
-    proc sql noprint ;
                   select max(lengthn(descr)) into: descr_length
             from lookup.lookup_attrition ;
     quit ;
