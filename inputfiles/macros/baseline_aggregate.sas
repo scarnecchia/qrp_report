@@ -271,20 +271,21 @@
             rename _name_ = metvar;
         quit;
 
+		data _temp_baseline_transposed;
+			set _temp_baseline_transposed;
+            /*defensive: set metvar to uppercase*/
+            metvar=upcase(metvar);			 	
+			/*if there are 0 episodes, initialize _label_*/
+			%if &total_episodes. = 0 & &dps.=1 %then %do;
+				length _label_ $&baselinelabellength;
+             	/* Initialize _label_ variable when there are no patients in the cohort */
+            	_label_='';
+			%end;
+		run;
+
         proc sort data=_temp_baseline_transposed;
             by analysisgrp group1 runid order cohort metvar &switch_s;
         run;
-		
-		/* Change case of metvar from n_episodes to N_episodes for baseline datasets that have 0 total N_episodes */
-		%if &total_episodes. = 0 %then %do;
-		   data _temp_baseline_transposed;
-		     set _temp_baseline_transposed;
-             length _label_ $&baselinelabellength;
-			 if metvar = 'n_episodes' then metvar = 'N_episodes';
-             /* Initialize _label_ variable when there are no patients in the cohort */
-            _label_='';
-		   run;
-		%end;
 
         /*if DPNUMBER =1 or &outdata does not exist, then output &outdata, else merge into existing outdata*/
         %if %eval(&dpnumber.=1) | %sysfunc(exist(&outdata.))=0 %then %do;
@@ -309,11 +310,8 @@
 				    _temp_baseline_stacked (in=b);
                 if b then dpidsiteid = "&maskedid.";  
             run;
-        %end;
-
-		
+        %end;		
     %end; /*level 1 baseline tables*/
-
 
     /*********************************************************************************************/
     /* Level 2 baseline tables
