@@ -34,12 +34,13 @@
 	%let masked_dplist =;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
+    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport condlevel_length;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
 	%let drop_cens_output_qrpreport = N;
+    %let condlevel_length = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -53,14 +54,13 @@
     %let t3treewkdaysdset = ;
 
     /*tablefile and figurefile variables*/
-    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure condlevel_length;
+    %global datasetlist figurelist tablelist tdatasetlist tdatasetlistnum includegroupinfigure;
     %let datasetlist = ;
 	%let tdatasetlist = ;
 	%let tdatasetlistnum = ;
     %let figurelist = ;
     %let tablelist = ;
     %let includegroupinfigure = ;
-    %let condlevel_length = ;
 
     /*baseline table variables*/
     %global numbaselinetablegrp numprofilecovarstoinclude labcharacteristics riskscoreslist_quoted riskscores_with_cats riskscorelibrary;
