@@ -654,17 +654,18 @@
 
     %do n = 1 %to &numrunid. ;
         %let runid =&&id&n.. ;
+        
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
             proc sql noprint ;
-                  select max(lengthn(condlevel)) into: condlevel_length
+                  select max(lengthn(condlevel)) into: condlevel_&n.
             from infolder.&&&runid._inclusioncodes ;
 
-                  select max(lengthn(subcondlevel)) into: subcondlevel_length
+                  select max(lengthn(subcondlevel)) into: subcondlevel_&n.
             from infolder.&&&runid._inclusioncodes ;              
             quit ;
 
-			%if &condlevel_length. < 1 %then %let condlevel_length = 1 ;
-            %if &subcondlevel_length. < 1 %then %let subcondlevel_length = 1 ;
+			%if &&condlevel_&n. > &condlevel_length %then %let condlevel_length = &&condlevel_&n. ;
+			%if &&subcondlevel_&n. > &subcondlevel_length %then %let subcondlevel_length = &&subcondlevel_&n. ;
 
       %end;
     %end;
