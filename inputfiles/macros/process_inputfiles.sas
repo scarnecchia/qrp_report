@@ -656,12 +656,17 @@
         %let runid =&&id&n.. ;
         
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
-            proc sql noprint ;
-                  select max(lengthn(condlevel)) into: condlevel_&n.
-            from infolder.&&&runid._inclusioncodes ;
+            proc contents data = infolder.&&&runid._inclusioncodes noprint out = inclusioncontents_&n. ; 
+			run ;
 
-                  select max(lengthn(subcondlevel)) into: subcondlevel_&n.
-            from infolder.&&&runid._inclusioncodes ;              
+            proc sql noprint ;
+                  select max(LENGTH) into: condlevel_&n.
+            		from inclusioncontents_&n.
+						where upcase ( name ) in ('CONDLEVEL') ;
+
+                  select max(LENGTH) into: subcondlevel_&n.
+				  	from inclusioncontents_&n.
+            			where upcase ( name ) in ('SUBCONDLEVEL')  ;              
             quit ;
 
 			%if &&condlevel_&n. > &condlevel_length %then %let condlevel_length = &&condlevel_&n. ;
