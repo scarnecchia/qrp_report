@@ -649,13 +649,42 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
+    %let condlevel_length=1;
+    %let subcondlevel_length=1;
+
+    %do n = 1 %to &numrunid. ;
+        %let runid =&&id&n.. ;
+        
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
+            proc contents data = infolder.&&&runid._inclusioncodes noprint out = _inclusioncontents_&n. ; 
+			run ;
+
+            proc sql noprint ;
+                  select LENGTH into: condlevel_&n.
+            		from inclusioncontents_&n.
+						where upcase ( name ) in ('CONDLEVEL') ;
+
+                  select LENGTH into: subcondlevel_&n.
+				  	from inclusioncontents_&n.
+            			where upcase ( name ) in ('SUBCONDLEVEL')  ;              
+            quit ;
+
+			%if &&condlevel_&n. > &condlevel_length %then %let condlevel_length = &&condlevel_&n. ;
+			%if &&subcondlevel_&n. > &subcondlevel_length %then %let subcondlevel_length = &&subcondlevel_&n. ;
+
+      %end;
+    %end;
+
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
+        length runid $5 group $40 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        call missing(runid, group, condlevel,subcondlevel);
         stop;
     run;
 
     data master_inclusioncodes;
+        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        format condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
+        informat condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
         set 
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;

@@ -34,12 +34,13 @@
 	%let masked_dplist =;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
+    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport condlevel_length;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
 	%let drop_cens_output_qrpreport = N;
+    %let condlevel_length = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
