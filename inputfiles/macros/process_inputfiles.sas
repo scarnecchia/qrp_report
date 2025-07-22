@@ -1056,34 +1056,32 @@
             quit;           
         %end;
 
-        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat);
-            length censorreason $125;
+        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat rename=censorreason_new=censorreason);            
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			length censorreason_new $125;
+			censorreason_new = lowcase(censorreason);
             %if &typenum. = 4 | &typenum. = 3 %then %do;
-              call missing(censorreason);
+              call missing(censorreason_new);
             %end;
             %else %do;
               if missing(censorreason) then do;
-                if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
-                else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
-                else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
-                else if dataset = "t6censor" then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
-                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
+                if dataset in ("t1censor" "t2censor") then censorreason_new = "cens_elig cens_dth cens_dpend cens_qryend";
+                else if dataset = "t2followuptime" then censorreason_new = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t5censor" then censorreason_new = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t6censor" then censorreason_new = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
+                else if dataset in ("t6plota", "t6plotb") then censorreason_new = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
               end;
               else do;
                 %if &reporttype. = T6 %then %do;
                     /*convert to type 6 variables*/
-                   censorreason = tranwrd(censorreason,'cens_elig','endenrollmentcount');
-                   censorreason = tranwrd(censorreason,'cens_dth','deathcount');
-                   censorreason = tranwrd(censorreason,'cens_dpend','endavaildatacount');
-                   censorreason = tranwrd(censorreason,'cens_qryend','endquerycount');
-                   if dataset = "t6censor" then censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
-                    else censorreason = tranwrd(censorreason,'cens_episend','productdiscontinuationcount');
-                   censorreason = tranwrd(censorreason,'cens_switch','switchedcount');
-                %end;
-                %else %do;
-                censorreason = lowcase(censorreason);
-                %end;
+                   censorreason_new = tranwrd(censorreason_new,'cens_elig','endenrollmentcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_dth','deathcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_dpend','endavaildatacount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_qryend','endquerycount');
+                   if dataset = "t6censor" then censorreason_new = tranwrd(censorreason_new,'cens_episend','endproductdiscontinuationcount');
+                    else censorreason_new = tranwrd(censorreason_new,'cens_episend','productdiscontinuationcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_switch','switchedcount');
+                %end;                
               end;
             %end;
             table=upcase(table);
@@ -1093,7 +1091,7 @@
             levelid2 = lowcase(levelid2);
             levelid3 = lowcase(levelid3);
             dataset = lowcase(dataset);
-            n = _n_;
+            n = _n_;			
 
             /*defensive - abort if switchplots requested but no switch analysisgrps*/
             %if &reporttype.=T6 & %eval(&switchobs <1) %then %do;
@@ -1175,6 +1173,8 @@
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
             *%alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
+
+			drop censorreason;
         run;
 
         %isdata(dataset=tablefile);
