@@ -243,7 +243,6 @@
 		%if %index(&reporttype., L2)>0 %then %do; name=adjusted_baseline_&periodid. %end;
 		%else %do; name=baseline_&periodid. %end;);
 		
-
         ***********************************************************************************************;
         * Reformat L1 tables to mimic L2 format                             
         ***********************************************************************************************;
@@ -257,9 +256,6 @@
                  _temp_std(keep=metvar group1 cohort order dp: &Switch_s);
                 set alldptable1_&periodid.;
                 format vartype $30.;
-
-                /*defensive: set metvar to uppercase*/
-                metvar=upcase(metvar);
          
                 if substr(metvar,1,4) = 'STD_' then do;
                     metvar = substr(metvar, 5);
