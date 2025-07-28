@@ -511,24 +511,12 @@
             from master_pregnancymeta
             where upper(preg_outcomecat) = 'NONLIVE';
         quit; 
-
-        data _po_codes;
-            set master_cohortcodes(where=(upcase(codecat) = 'PO'));
-            i=1;
-            do while(scan(code, i, " ") ne "");
-                code2=upcase(scan(code, i, " "));           
-                output;
-                i=i+1; 
-            end;
-            drop i code;
-            rename code2=code;
-        run;
-
+       
         proc sql noprint;
             create table _pregnancy_outcome_labels as 
             select distinct a.runid, a.group, a.order, b.code  
             from input.&baselinefile as a 
-            left join _po_codes as b
+            left join master_cohortcodes(where=(upcase(codecat) = 'PO')) as b
             on a.runid = b.runid and a.group = b.group
             order by a.runid, a.group, a.order;
         quit;

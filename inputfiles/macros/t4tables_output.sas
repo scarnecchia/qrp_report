@@ -65,19 +65,7 @@
 	from &dataset. as a 
 	join Master_cohortcodes as b on a.group=b.group
 	where b.codecat="PO";
-	quit;
-
-	data _outcomes;
-	set _outcomes;
-	i=1;
-	do while(scan(code, i, " ") ne "");
-		code2=upcase(scan(code, i, " "));	
-		output;
-		i=i+1; 
-	end;
-	drop i code;
-	rename code2=code;									
-	run;
+	quit;	
 
 	proc sql noprint undo_policy=none;
 	create table _outcomes as
