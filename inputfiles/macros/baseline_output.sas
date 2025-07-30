@@ -229,7 +229,8 @@
 				%end;
 			%end;
 			%if %length(&covinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) or (missing(metvar) and upcase(label) in (&covinps) and upcase(label)^='AGE') 
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) 
+				or (missing(metvar) and ((upcase(label) in (&covinps) and upcase(label)^='AGE') | (upcase(label)='AGE' and %index(%upcase(&covinps., AGEGROUP))>0)))
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
 					%end;
