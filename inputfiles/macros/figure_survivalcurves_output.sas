@@ -276,7 +276,7 @@
 										x=xaxisatrisk location=outside nomissingclass nomissingchar;
 										format &atriskcols comma12.;
 			%end;
-			keylegend / valueattrs=(size=&footfontsize family=&font) across=3 position=bottom noborder linelength=.25in exclude=("95% CI");
+			keylegend / valueattrs=(size=&footfontsize family=&font) across=1 position=bottom noborder linelength=.25in exclude=("95% CI");
 		run;
 
 		%if &figfn = Y or &drop_cens_output_qrpreport=Y  %then %do;
