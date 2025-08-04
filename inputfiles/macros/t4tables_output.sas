@@ -104,11 +104,12 @@
 	%let T2Columns=N;
 	%let T3Columns=N;
 	%if &table. = T1 %then %do;
-	data _null_;
-	set &dataset.;
-	  if index(grouplabel, "2nd trimester") > 0 then call symputx("T2Columns", "Y");
-	  if index(grouplabel, "3rd trimester") > 0 then call symputx("T3Columns", "Y");
-    run;
+		proc contents data=&dataset.(keep=&varlist.) out=_contents(keep=label) noprint; run;
+		data _null_;
+			set _contents;
+			if index(lowcase(label),"second trimester") | index(lowcase(label),"2nd trimester") then call symputx("T2Columns", "Y");
+			if index(lowcase(label),"third trimester") | index(lowcase(label),"3rd trimester") then call symputx("T3Columns", "Y");
+		run;
 	%end;
     data _footnotes;
        length footnote_order 3; 
@@ -314,5 +315,9 @@
         endcomp;
         %end;
     run;
+
+	proc datasets nowarn noprint lib=work;
+		delete _contents _footnotes _outcomes;
+	quit;
 
 %mend t4tables_output;

@@ -4,8 +4,8 @@
 *
 * PROGRAM: qrp_report.sas
 * CREATED (mm/dd/yyyy): 06/14/2021
-* LAST MODIFIED: 4/1/2025
-* VERSION: 4.2.0
+* LAST MODIFIED: 8/4/2025
+* VERSION: 4.2.1
 *
 * PURPOSE: Aggregate QRP outputs from data partners and produce an Excel/PDF report
 *
@@ -136,7 +136,7 @@ options validvarname = v7;
 
 %soc_lib(INFOLDER, &INFOLDER);
 %soc_lib(INPUT, &REPORTROOT.inputfiles/ &INFOLDER);
-%soc_lib(OUTPUT, &REPORTROOT.output/);
+%soc_lib(OUTPUT, &REPORTROOT.output/, options=%str(filelockwait=2));
 %soc_lib(lookup, &REPORTROOT.inputfiles/macros/lookuptables/);
 %let INPUT = %soc_clean_paths(&REPORTROOT.inputfiles/);
 %let OUTPUT = %soc_clean_paths(&REPORTROOT.output/);

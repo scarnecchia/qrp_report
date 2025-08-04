@@ -82,6 +82,10 @@
     %let numl2comparisons = 0;
     %let attrperiodid=;
 
+	/*T4L1 report variables*/
+	%global gestwktables_runid_list;
+	%let gestwktables_runid_list=;
+
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label
             cens_event_label cens_switch1_label cens_switch2_label includeheaderrow includemoiheaderrow;
@@ -142,8 +146,9 @@
 	%let numstrata_t4cida = 0;
 
     /*figure specific variables*/
-    %global unicode_list;
+    %global unicode_list xmin;
     %let unicode_list = 00b9 00b2 00b3 2074 2075 2076 2077 2078 2079; /*1-9 in unicode*/
+	%let xmin = 0 ;
 
 	/* To determine if appendixfile only should be processed */
 	%global produceappendixfileonly;

@@ -32,6 +32,8 @@
 		%if %eval(&nobs=0) %then %do;
 		data repdata.Figure&figurenum.&tableletter.;
 		set histogram_&i. (where=(runid="&runid." and order="&loopcount." and subgroup="&subgroup." and subgroupcat="&subgroupcat."));
+		keep _eoi _ref type ps_cat weight subgroup subgroupcat bin_eoi_&loopcount. bin_ref_&loopcount. dp runid order monitoringperiod;
+		rename bin_eoi_&loopcount.=bin_eoi bin_ref_&loopcount.=bin_ref;
 		run;
 		%end;
 
