@@ -131,7 +131,7 @@
 	        %let MPColumn = MonitoringPeriod;
 	        %let MPDefine = define MonitoringPeriod /
 	            order order=data 'Monitoring*Period' style(column)=[just=c background=background_n_fmt. width=2.3in vjust=middle] 
-				style(header)=[just=C background=LIGGR borderleftcolor=LIGGR] format=$periodidfmt.;
+				style(header)=[just=C background=GGR borderleftcolor=GGR] format=$periodidfmt.;
 	    %end;
 
         /* Create output datasets based on subgroups */
