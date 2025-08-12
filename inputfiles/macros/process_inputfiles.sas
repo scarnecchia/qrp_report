@@ -649,11 +649,11 @@
 
             proc sql noprint ;
                   select LENGTH into: condlevel_&n.
-            		from inclusioncontents_&n.
+            		from _inclusioncontents_&n.
 						where upcase ( name ) in ('CONDLEVEL') ;
 
                   select LENGTH into: subcondlevel_&n.
-				  	from inclusioncontents_&n.
+				  	from _inclusioncontents_&n.
             			where upcase ( name ) in ('SUBCONDLEVEL')  ;              
             quit ;
 
@@ -664,8 +664,8 @@
     %end;
 
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
-        call missing(runid, group, condlevel,subcondlevel);
+        length runid $5 group $40 conduse $8 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        call missing(runid, group, condlevel,subcondlevel, conduse);
         stop;
     run;
 
@@ -685,6 +685,7 @@
         %end;
         ;
         format runid $5.;
+		where upcase(conduse) ne 'FEVENTDT';
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
@@ -694,6 +695,10 @@
         %end;
         %end;
     run;
+
+	proc sort data=master_inclusioncodes(keep=runid group condlevel) nodupkey; 
+		by runid group condlevel;
+	run;
 
     /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
     %if &basecohortused. = Y %then %do;
