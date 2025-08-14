@@ -2383,8 +2383,23 @@
         quit;
 
         /*warn user if labcharacteristics parameter contains non-lab covariates*/
+		data covarname;
+		set covarname;
+		length numericlab characterlab 3;
+		if labtype="C" then characterlab=1;
+		else characterlab=0;
+		if labtype="N" then numericlab=1;
+		else numericlab=0;
+		run;
+
+		proc means data=covarname nway noprint;
+		class covarnum cov_varname codecat;
+		var numericlab characterlab codedays;
+		output out=covarname_check(drop=_:) max= / keeplen;
+		run;
+
         data _null_;
-            set covarname(where=(codecat^='LB' or codedays>1));
+            set covarname_check(where=(codecat^='LB' or codedays>1 or (numericlab>0 and characterlab>0)));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
                 %let labcovar = %scan(&labcharacteristics,&labcovarnum);
                 if upcase(cov_varname) = "&labcovar" then do;
@@ -2406,7 +2421,7 @@
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_: _covarstudyname _covdup; 
+        delete studylen covarname_: _covarstudyname _covdup covarname_check; 
    quit;  
 
 /************************************************************************************************
