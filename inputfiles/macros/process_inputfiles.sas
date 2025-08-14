@@ -2403,8 +2403,7 @@
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
                 %let labcovar = %scan(&labcharacteristics,&labcovarnum);
                 if upcase(cov_varname) = "&labcovar" then do;
-                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
-                    put cov_varname= codecat= codetype=;
+                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate: " cov_varname;
                 end;
             %end;
         run;
