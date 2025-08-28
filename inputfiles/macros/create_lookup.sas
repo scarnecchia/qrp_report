@@ -72,6 +72,7 @@
 	  type = "baseline"; order = 28; description = "Bateman BT, Mhyre JM, Hernandez-Diaz S, Huybrechts KF, Fischer MA, Creanga AA, Callaghan WM, Gagne JJ. Development of a comorbidity index for use in obstetric patients. Obstet Gynecol. 2013;122(5):957-965."; output;
 	  type = "baseline"; order = 29; description = "Chang H-Y, Weiner JP, Richards TM, Bleich SN, Segal JB. Validating the adapted Diabetes Complications Severity Index in claims data. Am J Manag Care. 2012;18(11):721-726."; output;
 	  type = "baseline"; order = 30; description = "Kim DH, Schneeweiss S, Glynn RJ, Lipsitz LA, Rockwood K, Avorn J. Measuring frailty in Medicare data: development and validation of a claims-based frailty index. J Gerontol A Biol Sci Med Sci. 2018;73(7)980-987."; output;
+	  type = "baseline"; order = 31; description = "The Unknown category of Census Bureau Region includes the individual categories of Other (e.g., Island Areas), Invalid or Missing."; output;
 
 	   /* Footnotes for profile table */
 	  type = "profile";  order = 1; description = "Each patient can contribute more than one exposure episode. Hence, the percentages are calculated using total number of episodes and reflect percentage of episodes with a particular profile definition."; output;	   

@@ -416,6 +416,10 @@
 				if index(upcase(pregnancychar),'PREPOSTIND_NA') > 0 and nonliveoutcomes eq "Y" then nonlivefn="Y";
 				else nonlivefn="N";
 			%end;
+            cb_reg = "N";
+            %if %length(&zipfile)>0 %then %do;
+            cb_reg = "Y";
+            %end;
 			%else %do;
 				nonliveoutcomes="N";
 				nonlivefn="N";
