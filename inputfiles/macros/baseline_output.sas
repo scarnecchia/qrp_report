@@ -270,11 +270,11 @@
 					fn_nonlive=_N_;
 					call symput("fn_nonlive","Y");
 				end;
-                if upcase(metvar) = "CB_REG_UNKNOWN" then do;
-					fn_cb_reg=_N_;
-					call symput("fn_cb_reg","Y");
-				end;
 			%end;
+              if upcase(metvar) = "CB_REG_UNKNOWN" then do;
+			    fn_cb_reg=_N_;
+			    call symput("fn_cb_reg","Y");
+			  end;
 			run;
 
 			proc means data=table1 nway noprint;
