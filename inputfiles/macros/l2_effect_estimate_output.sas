@@ -368,10 +368,10 @@
                 style(column)=[width=1.6in just=l indent=15] style(header)=[just=L background=GGR borderleftcolor=GGR];
             &MPDefine. ;
             define n / display "Number of^n &user_label"
-               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=bgr];
+               style(column)=[just=c background=background_n_fmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=GGR];
             %if &reporttype = T2L2 | (&reporttype = T4L2 and &&&runid._t4hoimethod. = timetoevent) %then %do;
             define FUTime_Ychar / display 'Person Years^n at Risk'
-                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=bgr];
+                style(column)=[just=c background=$backgroundfmt. width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
             define AvgFuTime_Dchar / display 'Average Person Days^n at Risk'
                 style(column)=[just=c width=.7in tagattr="type:string"] style(header)=[just=C background=GGR borderleftcolor=GGR];
             define AvgFuTime_Ychar / display 'Average Person Years^n at Risk'
@@ -379,7 +379,7 @@
             %end;
             %if %index(&customizecolumns.,sumevents) = 0 %then %do;
             define EVchar / display 'Number of Events'
-                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=bgr];
+                style(column)=[just=c background=$backgroundfmt. width=.7in] style(header)=[just=C background=GGR borderleftcolor=GGR];
             %end;
             %if %index(&customizecolumns.,sumevents) > 0 %then %do;
             define totalevents / order 'Total Number of Events'
