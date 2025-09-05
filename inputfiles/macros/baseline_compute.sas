@@ -269,12 +269,7 @@
 
 			data _null_;
 			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
-			i=1;
-			do while(scan(code, i, " ") ne "");
-				code2=upcase(scan(code, i, " "));
-				if code2 in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 							
-				i=i+1; 
-			end;									
+			if code in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 																			
 			run;
 		%end;
 
@@ -443,7 +438,7 @@
 				data _null_;
 				set master_mil;
 				if runid="&runid" and eoi="&analysisgrp." then call symputx("eoi_exp", expmp);
-				else if runid="&runid" and ref="&analysisgrp." then call symputx("comp_exp", controlmp);
+				else if runid="&runid" and ref="&analysisgrp." then call symputx("eoi_exp", controlmp);
 				%if &includecomp. eq Y %then %do;
 					if runid="&runid" and eoi="&analysisgrp2." then call symputx("comp_exp", expmp);
 					else if runid="&runid" and ref="&analysisgrp2." then call symputx("comp_exp", controlmp);

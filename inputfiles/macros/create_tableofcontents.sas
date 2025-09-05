@@ -522,8 +522,7 @@
 
             proc sql noprint;
                 select distinct subgroup, subgrouporder
-                into :subgrouplist, :dummyvar
-                separated by ' '
+                into :subgrouplist separated by ' ', :dummyvar separated by ' '
                 from _subgroups
 				order by subgrouporder;				
             quit;
@@ -958,12 +957,12 @@
 				  %if %varexist(_tempmap,stratificationorder) = 1 %then %do;
 					  if stratificationorder ne . then do;
 						 %if %str("&cattableid.") ne %str("") %then %do;
-							 length cattable $3;
+							 length cattable $5;
 							 cattable="&cattableid";
 							 catstratificationorder = stratificationorder;
 						 %end;
 						 %else %if %str("&disttableid.") ne %str("") %then %do;
-							 length disttable $3;
+							 length disttable $5;
 							 disttable="&disttableid";
 							 diststratificationorder = stratificationorder;
 						 %end;

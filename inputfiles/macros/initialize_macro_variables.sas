@@ -34,12 +34,13 @@
 	%let masked_dplist =;
 
     /*variables related to query*/
-    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport;
+    %global runidlist numrunid typenum basecohortused drop_cens_output_qrpreport condlevel_length;
     %let runidlist = ;
     %let numrunid = 0;
     %let typenum = ;
     %let basecohortused = N;
 	%let drop_cens_output_qrpreport = N;
+    %let condlevel_length = ;
 
     /*variables assigned to the start and end date of the query - used in all titles*/
     %global startdateformatted enddateformatted minqueryyear maxqueryyear;
@@ -81,6 +82,10 @@
     %global numl2comparisons attrperiodid;
     %let numl2comparisons = 0;
     %let attrperiodid=;
+
+	/*T4L1 report variables*/
+	%global gestwktables_runid_list;
+	%let gestwktables_runid_list=;
 
     /*label file variables */
     %global reporttitle labelfileexists label_length cens_elig_label cens_dth_label cens_dpend_label cens_qryend_label cens_episend_label cens_spec_label

@@ -511,24 +511,12 @@
             from master_pregnancymeta
             where upper(preg_outcomecat) = 'NONLIVE';
         quit; 
-
-        data _po_codes;
-            set master_cohortcodes(where=(upcase(codecat) = 'PO'));
-            i=1;
-            do while(scan(code, i, " ") ne "");
-                code2=upcase(scan(code, i, " "));           
-                output;
-                i=i+1; 
-            end;
-            drop i code;
-            rename code2=code;
-        run;
-
+       
         proc sql noprint;
             create table _pregnancy_outcome_labels as 
             select distinct a.runid, a.group, a.order, b.code  
             from input.&baselinefile as a 
-            left join _po_codes as b
+            left join master_cohortcodes(where=(upcase(codecat) = 'PO')) as b
             on a.runid = b.runid and a.group = b.group
             order by a.runid, a.group, a.order;
         quit;
@@ -649,13 +637,42 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
+    %let condlevel_length=1;
+    %let subcondlevel_length=1;
+
+    %do n = 1 %to &numrunid. ;
+        %let runid =&&id&n.. ;
+        
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
+            proc contents data = infolder.&&&runid._inclusioncodes noprint out = _inclusioncontents_&n. ; 
+			run ;
+
+            proc sql noprint ;
+                  select LENGTH into: condlevel_&n.
+            		from _inclusioncontents_&n.
+						where upcase ( name ) in ('CONDLEVEL') ;
+
+                  select LENGTH into: subcondlevel_&n.
+				  	from _inclusioncontents_&n.
+            			where upcase ( name ) in ('SUBCONDLEVEL')  ;              
+            quit ;
+
+			%if &&condlevel_&n. > &condlevel_length %then %let condlevel_length = &&condlevel_&n. ;
+			%if &&subcondlevel_&n. > &subcondlevel_length %then %let subcondlevel_length = &&subcondlevel_&n. ;
+
+      %end;
+    %end;
+
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
+        length runid $5 group $40 conduse $8 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        call missing(runid, group, condlevel,subcondlevel, conduse);
         stop;
     run;
 
     data master_inclusioncodes;
+        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        format condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
+        informat condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
         set 
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
@@ -668,6 +685,7 @@
         %end;
         ;
         format runid $5.;
+		where upcase(conduse) ne 'FEVENTDT';
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
@@ -677,6 +695,10 @@
         %end;
         %end;
     run;
+
+	proc sort data=master_inclusioncodes(keep=runid group condlevel) nodupkey; 
+		by runid group condlevel;
+	run;
 
     /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
     %if &basecohortused. = Y %then %do;
@@ -901,6 +923,8 @@
 /*Userstrata file - loop through each runID, stack userstrata files and dedup*/
     %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
+		%let gestwktable=N;
+
         /*confirm userstrata file exists*/
         %if %sysfunc(exist(infolder.&&&runid._userstrata)) %then %do;
             data _tempuserstrata(rename=levelvars_out=levelvars);
@@ -929,6 +953,11 @@
                 end;
                 %end;
 
+				/*ReportType = T4L1*/
+				%if %str("&reporttype") = %str("T4L1") %then %do;
+				if lowcase(tableid) in ("t4preggestwk", "t4nopreggestwk") then call symputx("gestwktable", "Y");
+				%end;
+
                 /*ReportType = T6*/
                 %if %str("&reporttype") = %str("T6") %then %do;
                 if tableID= "t6disp" and index(levelvars, 'daysupp') = 0 then do;
@@ -954,6 +983,10 @@
                 *alphabetize levelid vars;
                 %alphabetizevarutil(array=d, in=levelvars, out=levelvars_out);
             run;
+
+			%if %str("&reporttype") = %str("T4L1") %then %do;
+			%if &gestwktable. eq Y %then %let gestwktables_runid_list = &gestwktables_runid_list. "&runid.";
+			%end;
 
             proc append base=userstrata data=_tempuserstrata force; run;
         %end;
@@ -1016,34 +1049,32 @@
             quit;           
         %end;
 
-        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat);
-            length censorreason $125;
+        data tablefile(rename=levelid1_out=levelid1 rename=levelid2_out=levelid2 rename=levelid3_out=levelid3 rename=tablesubstrat_out=tablesubstrat rename=censorreason_new=censorreason);            
             set input.&tablefile.(where=(upcase(includeinreport)='Y'));
+			length censorreason_new $125;
+			censorreason_new = lowcase(censorreason);
             %if &typenum. = 4 | &typenum. = 3 %then %do;
-              call missing(censorreason);
+              call missing(censorreason_new);
             %end;
             %else %do;
               if missing(censorreason) then do;
-                if dataset in ("t1censor" "t2censor") then censorreason = "cens_elig cens_dth cens_dpend cens_qryend";
-                else if dataset = "t2followuptime" then censorreason = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
-                else if dataset = "t5censor" then censorreason = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
-                else if dataset = "t6censor" then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
-                else if dataset in ("t6plota", "t6plotb") then censorreason = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
+                if dataset in ("t1censor" "t2censor") then censorreason_new = "cens_elig cens_dth cens_dpend cens_qryend";
+                else if dataset = "t2followuptime" then censorreason_new = "cens_episend cens_event cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t5censor" then censorreason_new = "cens_episend cens_spec cens_dth cens_elig cens_dpend cens_qryend";
+                else if dataset = "t6censor" then censorreason_new = "endenrollmentcount deathcount endavaildatacount endquerycount endproductdiscontinuationcount";
+                else if dataset in ("t6plota", "t6plotb") then censorreason_new = "endenrollmentcount deathcount endavaildatacount endquerycount productdiscontinuationcount switchedcount";
               end;
               else do;
                 %if &reporttype. = T6 %then %do;
                     /*convert to type 6 variables*/
-                   censorreason = tranwrd(censorreason,'cens_elig','endenrollmentcount');
-                   censorreason = tranwrd(censorreason,'cens_dth','deathcount');
-                   censorreason = tranwrd(censorreason,'cens_dpend','endavaildatacount');
-                   censorreason = tranwrd(censorreason,'cens_qryend','endquerycount');
-                   if dataset = "t6censor" then censorreason = tranwrd(censorreason,'cens_episend','endproductdiscontinuationcount');
-                    else censorreason = tranwrd(censorreason,'cens_episend','productdiscontinuationcount');
-                   censorreason = tranwrd(censorreason,'cens_switch','switchedcount');
-                %end;
-                %else %do;
-                censorreason = lowcase(censorreason);
-                %end;
+                   censorreason_new = tranwrd(censorreason_new,'cens_elig','endenrollmentcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_dth','deathcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_dpend','endavaildatacount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_qryend','endquerycount');
+                   if dataset = "t6censor" then censorreason_new = tranwrd(censorreason_new,'cens_episend','endproductdiscontinuationcount');
+                    else censorreason_new = tranwrd(censorreason_new,'cens_episend','productdiscontinuationcount');
+                   censorreason_new = tranwrd(censorreason_new,'cens_switch','switchedcount');
+                %end;                
               end;
             %end;
             table=upcase(table);
@@ -1053,7 +1084,7 @@
             levelid2 = lowcase(levelid2);
             levelid3 = lowcase(levelid3);
             dataset = lowcase(dataset);
-            n = _n_;
+            n = _n_;			
 
             /*defensive - abort if switchplots requested but no switch analysisgrps*/
             %if &reporttype.=T6 & %eval(&switchobs <1) %then %do;
@@ -1135,6 +1166,8 @@
             %alphabetizevarutil(array=c, in=levelid3, out=levelid3_out);
             *%alphabetizevarutil(array=d, in=tablesub, out=tablesub_out);
             %alphabetizevarutil(array=e, in=tablesubstrat, out=tablesubstrat_out);
+
+			drop censorreason;
         run;
 
         %isdata(dataset=tablefile);
@@ -2350,13 +2383,27 @@
         quit;
 
         /*warn user if labcharacteristics parameter contains non-lab covariates*/
+		data covarname;
+		set covarname;
+		length numericlab characterlab 3;
+		if labtype="C" then characterlab=1;
+		else characterlab=0;
+		if labtype="N" then numericlab=1;
+		else numericlab=0;
+		run;
+
+		proc means data=covarname nway noprint;
+		class covarnum cov_varname codecat;
+		var numericlab characterlab codedays;
+		output out=covarname_check(drop=_:) max= / keeplen;
+		run;
+
         data _null_;
-            set covarname(where=(codecat^='LB' or codedays>1));
+            set covarname_check(where=(codecat^='LB' or codedays>1 or (numericlab>0 and characterlab>0)));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
                 %let labcovar = %scan(&labcharacteristics,&labcovarnum);
                 if upcase(cov_varname) = "&labcovar" then do;
-                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
-                    put cov_varname= codecat= codetype=;
+                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate: " cov_varname;
                 end;
             %end;
         run;
@@ -2373,7 +2420,7 @@
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_: _covarstudyname _covdup; 
+        delete studylen covarname_: _covarstudyname _covdup covarname_check; 
    quit;  
 
 /************************************************************************************************

@@ -150,7 +150,7 @@
 
             /*indent exclusion/inclusion criteria and add footnote*/
             compute report_descr;
-                if find(report_descr,'evidence of','i') then call define (_col_,"style","style=[pretext='     ' asis=on fontstyle=italic]");
+                if find(report_descr,'evidence of','i') then call define(_col_,'style','style={indent=25 fontstyle=italic}');
                 %if %eval(&num_fn > 0) %then %do;
                     %if &exclincl = Y %then %do;
                         if report_descr = 'Met inclusion and exclusion criteria' then report_descr = catt(report_descr,"&super_exclincl.");
