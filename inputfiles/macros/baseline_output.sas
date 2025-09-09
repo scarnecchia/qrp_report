@@ -106,7 +106,8 @@
                 set &dataset.(where=(order = &order. and table = &table. and weight in (&weight.)
 							  %if &reporttype=T2L2 or &reporttype=T4L2 %then %do;
 							  	and subgroup="&subgroup." and subgroupcat="&subgroupcat."
-							  %end;));
+							  %end;
+                              %if "&cb_reg." eq "N" %then %do; and sortorder1 ne 9 %end;));
                 keep label grouper metvar vartype analysisgrp table weight exp_mean&dpnum. exp_mean&dpnum._char exp_std&dpnum. exp_std&dpnum._char
                 %if &includecomp. = Y %then %do; comp_mean&dpnum. comp_std&dpnum. comp_mean&dpnum._char comp_std&dpnum._char %end;
                 %if %eval(&maxswitch.=2) %then %do; switch2_mean&dpnum. switch2_std&dpnum. switch2_mean&dpnum._char switch2_std&dpnum._char %end;

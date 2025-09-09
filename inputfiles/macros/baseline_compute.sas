@@ -417,7 +417,7 @@
 				else nonlivefn="N";
 			%end;
             cb_reg = "N";
-            %if %length(&zipfile)>0 %then %do;
+            %if %length(&&&runid._zipfile.)>0 %then %do;
             cb_reg = "Y";
             %end;
 			%else %do;
