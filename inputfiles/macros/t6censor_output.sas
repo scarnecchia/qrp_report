@@ -117,7 +117,7 @@
 
     ods proclabel = "Table &tablenum.";
     proc report data=repdata.table&tablenum. nofs nowd spanrows missing split='*'
-        style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+        style(header)=[rules=none frame=void background=GGR borderleftcolor = GGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
     	columns order %if &includeheaderrow = Y %then %do; headerlabel %end; grouplabel %if &dptable=Y %then %do; dpidsiteid %end; censorlabel (n_char mean_char std_char min_char p1_char p5_char p10_char 
@@ -139,21 +139,21 @@
 
         define n_char / "Number of Episodes"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+            style(header)=[just=C background = GGR borderleftcolor = GGR];
 
-        define mean_char / display 'Mean' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define std_char / display 'Standard^n Deviation'  style(column)=[just=C width=44pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define min_char / display 'Minimum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p1_char / display '1%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p5_char / display '5%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p10_char / display '10%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p25_char / display '25%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define median_char / display 'Median' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p75_char / display '75%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p90_char / display '90%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p95_char / display '95%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define p99_char / display '99%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define max_char / display 'Maximum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define mean_char / display 'Mean' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define std_char / display 'Standard^n Deviation'  style(column)=[just=C width=44pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define min_char / display 'Minimum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p1_char / display '1%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p5_char / display '5%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p10_char / display '10%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p25_char / display '25%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define median_char / display 'Median' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p75_char / display '75%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p90_char / display '90%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p95_char / display '95%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define p99_char / display '99%' style(column)=[just=C width=87 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define max_char / display 'Maximum' style(column)=[just=C width=45pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
        
         /*Add title*/
         compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white
@@ -163,7 +163,7 @@
 
         /*Add header if requested*/
         %if &includeheaderrow = Y %then %do; 
-            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before headerlabel / style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             length text $100;
                 text = headerlabel;
                 num = 100;
@@ -177,7 +177,7 @@
                     style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
                 length text2 $150;
                 text2= grouplabel; 
