@@ -416,14 +416,16 @@
 				if index(upcase(pregnancychar),'PREPOSTIND_NA') > 0 and nonliveoutcomes eq "Y" then nonlivefn="Y";
 				else nonlivefn="N";
 			%end;
+            %else %do;
+				nonliveoutcomes="N";
+				nonlivefn="N";
+			%end;
+
             cb_reg = "N";
             %if %length(&&&runid._zipfile.)>0 %then %do;
             cb_reg = "Y";
             %end;
-			%else %do;
-				nonliveoutcomes="N";
-				nonlivefn="N";
-			%end;
+
             cohortdef = "&cohortdef.";
           end;
         run;
@@ -2082,7 +2084,7 @@
                 end;
 
                 /* cb_reg */
-                else if index(MetVar,'CB_REG') > 0 then do;
+                else if index(MetVar,'CB_REG') > 0 and %str("&&&runid._zipfile.") ne %str("") then do;
                 %assignbaselinevars(label=put(strip(substr(MetVar,8)), $cb_regfmt.), grouper="Demographic Characteristics", sortorder1=9, sortorder2 = input(put(strip(substr(MetVar,8)),$cb_regsort.),3.));
                 end;
             /*******************************************************************/
@@ -2395,7 +2397,7 @@
 			if b then do;
 			grouper="Pregnancy Characteristics";
 			label="Pregnancy Outcome";
-			sortorder1=9;
+			sortorder1=10;
 			sortorder2=8;
 			sortorder3=0;
 			sortorder4=0;
@@ -2448,7 +2450,8 @@
         data baseline_aggregatefinal;
             set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
                                                         %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
-														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;);
+														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;
+                                                        %if %length(&&&runid._zipfile.)=0 %then %do; where=(sortorder1 ne 9) %end; );
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;

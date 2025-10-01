@@ -269,20 +269,14 @@
         'NE' = 'Northeast'
         'S' = 'South'
         'W' = 'West'
-        'UNKNOWN' = 'CB Region (Unknown)'
-        'Invalid' = 'CB Region (Invalid)'
-        'Missing' = 'CB Region (Missing)'
-        'Other' = 'CB Region (Other)';
+        'UNKNOWN' = 'Unknown';
          
 		value $cb_regsort
         'MW' = 1
         'NE' = 2
         'S' = 3
         'W' = 4
-        'UNKNOWN' = 5
-        'Invalid' = 6
-        'Missing' = 7
-        'Other' = 8;
+        'UNKNOWN' = 5;
 		
         /* Preterm/Postterm status format */
         value $prepostindfmt
