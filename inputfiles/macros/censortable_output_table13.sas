@@ -108,12 +108,12 @@
 
     ods proclabel = "Table &tablenum.";
     proc report data=repdata.table&tablenum. nofs nowd spanrows missing split='*'
-        style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+        style(header)=[rules=none frame=void background=GGR borderleftcolor = GGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; order grouplabel (%if &tablesub. ne overall %then %do; &tablesub. %end; epi_tot_char 
                 %if %str("&censorreason") ne %str("") %then %do; &censorreason._char %end;
-                ("^S={background=BGR cellheight=0.75in}Number of &episodesorpatients. &cattableheader." censdays_value_cat_format, (episodes_char epi_tot_pct_char) ) 
+                ("^S={background=GGR cellheight=0.75in}Number of &episodesorpatients. &cattableheader." censdays_value_cat_format, (episodes_char epi_tot_pct_char) ) 
                 %if &continuousmetrics. = Y %then %do; (dummy, (min_char q1_char median_char q3_char max_char mean_char std_char) ) %end;);		
 
         %if &includeheaderrow = Y %then %do; 
@@ -124,7 +124,7 @@
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = GGR borderleftcolor = GGR]; 
         %end;
         %else %do;
         define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
@@ -133,31 +133,31 @@
 
         define epi_tot_char / group "Total Number of &episodesorpatients"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+            style(header)=[just=C background = GGR borderleftcolor = GGR];
 
         %if %str("&censorreason") ne %str("") %then %do; 
         define &censorreason._char / group "Total Number of^n &episodesorpatients Censored^n due to %bquote(&&&censorreason._label)&super_reason."
             style(column)=[width=1in tagattr="type:string" background=$backgroundfmt.  borderleftcolor=black] 
-            style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = BGR borderleftcolor = BGR];
+            style(header)=[%if &destination. = excel %then %do;cellheight=50pt %end; just=C background = GGR borderleftcolor = GGR];
         %end;
 
         define censdays_value_cat_format / across '' order=data
-            style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor=black 
+            style(column)=[just=C tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1];
         define episodes_char / "Number of &episodesorpatients" group
-           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string" ] style(header)=[just=C background = BGR borderleftcolor = black borderrightcolor = BGR];
+           style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string" ] style(header)=[just=C background = GGR borderleftcolor = black borderrightcolor = GGR];
         define Epi_Tot_Pct_char / "Percent of Total &episodesorpatients" group
-           style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
+           style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR borderrightcolor = GGR];
 
         %if &continuousmetrics. = Y %then %do;
-        define dummy / across "Distribution of &conttableheader." style(header)=[background = BGR borderleftcolor = BGR];
-        define min_char /group 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = black];
-        define q1_char /group 'Q1' style(column)=[just=C width=27 tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define median_char /group 'Median' style(column)=[just=C width=30pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define q3_char /group 'Q3' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define max_char /group 'Maximum' style(column)=[just=C width=40pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define mean_char /group 'Mean' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
-        define std_char /group 'Standard^n Deviation'  style(column)=[just=C width=44pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR];
+        define dummy / across "Distribution of &conttableheader." style(header)=[background = GGR borderleftcolor = GGR];
+        define min_char /group 'Minimum' style(column)=[just=C width=37pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = black];
+        define q1_char /group 'Q1' style(column)=[just=C width=27 tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define median_char /group 'Median' style(column)=[just=C width=30pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define q3_char /group 'Q3' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define max_char /group 'Maximum' style(column)=[just=C width=40pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define mean_char /group 'Mean' style(column)=[just=C width=27pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
+        define std_char /group 'Standard^n Deviation'  style(column)=[just=C width=44pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR];
         %end;
 
         /*Add title*/
@@ -168,7 +168,7 @@
 
         /*Add header if requested*/
         %if &includeheaderrow = Y %then %do; 
-            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before headerlabel / style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             length text $100;
                 text = headerlabel;
                 num = 100;
@@ -183,7 +183,7 @@
                     style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
                 length text2 $150;
                 text2= grouplabel; 

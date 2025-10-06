@@ -116,12 +116,12 @@
     ods proclabel = "Table &tablenum.";
 
     proc report data = repdata.table&tablenum. nofs nowd spanrows missing split="*"
-    	style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+    	style(header)=[rules=none frame=void background=GGR borderleftcolor = GGR vjust=b] split='*'
 	    style(report)=[rules=none frame=void cellpadding =1.5pt];
     		
     	columns %if &includeheaderrow = Y %then %do; headerlabel %end; order grouplabel 
              (%if &tablesub. ne overall %then %do; &tablesub. %end;  epi_tot_char 
-                ("^S={background=BGR} Censoring Reason" %do corder = 1 %to 7;
+                ("^S={background=GGR} Censoring Reason" %do corder = 1 %to 7;
                     %let cen_var = %scan(&defaultcensororder., &corder.);
                     %if %index(&reasonlist.,&cen_var.)>0 %then %do; (&cen_var._label,(&cen_var._tot_char &cen_var._tot_pct_char)) %end;
                 %end;
@@ -135,7 +135,7 @@
 
         /*if overall - print grouplabel, if stratified - group label will be in compute block*/
         %if &tablesub. = overall %then %do;
-        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = BGR borderleftcolor = BGR]; 
+        define grouplabel / group "" order=data style(column)=[just=L width =1.5in fontstyle=italic] style(header)=[background = GGR borderleftcolor = GGR]; 
         %end;
         %else %do;
         define &tablesub. / group  "" order=data style(column)=[just=L width=.9in];
@@ -144,17 +144,17 @@
 
         define epi_tot_char / group "Total Number of &episodesorpatients"
             style(column)=[width =.8in tagattr="type:string" background=$backgroundfmt.] 
-            style(header)=[just=C background = BGR borderleftcolor = BGR];
+            style(header)=[just=C background = GGR borderleftcolor = GGR];
 
         %do corder = 1 %to 7;
             %let cen_var = %scan(&defaultcensororder., &corder.);
             %if %index(&reasonlist.,&cen_var.)>0 %then %do; 
-              define &cen_var._label / across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=bgr borderrightcolor=black 
+              define &cen_var._label / across ' ' style(header)=[rules=none vjust=b bordertopcolor=black borderbottomcolor=black background=GGR borderrightcolor=black 
                                                                   borderleftcolor=black borderleftwidth=1 borderrightwidth=1 cellheight=.75in];
     		  define &cen_var._tot_char / group "Number of &episodesorpatients" 
-    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = black borderrightcolor = BGR];
+    		    style(column)=[just=C width=55pt background=$backgroundfmt. tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = black borderrightcolor = GGR];
     		  define &cen_var._tot_pct_char / group "Percent of Total &episodesorpatients"
-    		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = BGR borderleftcolor = BGR borderrightcolor = BGR];
+    		     style(column)=[just=C width=43pt tagattr="type:string"] style(header)=[just=C background = GGR borderleftcolor = GGR borderrightcolor = GGR];
             %end;
         %end;
 
@@ -166,7 +166,7 @@
 
         /*Add header if requested*/
         %if &includeheaderrow = Y %then %do; 
-            compute before headerlabel / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+            compute before headerlabel / style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
             length text $100;
                 text = headerlabel;
                 num = 100;
@@ -181,7 +181,7 @@
                     style=[background=white just=L fontstyle=italic bordertopcolor=white borderbottomcolor=white];
                     %end;
                     %else %do;
-                    style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                    style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                     %end;
 				length text2 $150;
                 text2= grouplabel; 
