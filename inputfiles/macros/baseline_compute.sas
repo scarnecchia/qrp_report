@@ -2448,10 +2448,12 @@
         %end;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
-                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
-														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;
-                                                        %if %length(&&&runid._zipfile.)=0 %then %do; where=(sortorder1 ne 9) %end; );
+            set baseline_aggregatefinal 
+                baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
+										%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;
+            /* cb_reg may not be available in all runs, remove entries from baseline table if zipfile for run has not been specified */ 
+                                        %if %length(&&&runid._zipfile.)=0 %then %do; where=(sortorder1 ne 9) %end; );
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;

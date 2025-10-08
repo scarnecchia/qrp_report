@@ -269,6 +269,9 @@
         'NE' = 'Northeast'
         'S' = 'South'
         'W' = 'West'
+        'Invalid' = 'CB Region (Invalid)'
+        'Missing' = 'CB Region (Missing)'
+        'Other' = 'CB Region (Other)';
         'UNKNOWN' = 'Unknown';
          
 		value $cb_regsort
