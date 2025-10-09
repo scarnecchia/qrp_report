@@ -198,6 +198,7 @@
 			%let fn_mi_covar=N;
 			%let fn_nonlive=N;
 			%let fn_gestage=N;
+            %let fn_cb_reg=N;
 
 			%let table1_dataset=table1;
 
@@ -215,6 +216,7 @@
 			fn_mi_covar=.;
 			fn_nonlive=.;
 			fn_gestage=.;
+            fn_cb_reg=.;
 
 			%if &riskscore_footnotes. eq Y %then %do; 
 				%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
@@ -229,7 +231,8 @@
 				%end;
 			%end;
 			%if %length(&covinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) 
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.))
+                or (missing(metvar) and lowcase(label) = "census bureau region" and "CB_REG" in (&covinps.))
 				or (missing(metvar) and ((upcase(label) in (&covinps) and upcase(label)^='AGE') | (upcase(label)='AGE' and %index(%upcase(&covinps., AGEGROUP))>0)))
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
@@ -269,11 +272,15 @@
 					call symput("fn_nonlive","Y");
 				end;
 			%end;
+              if upcase(metvar) = "CB_REG_UNKNOWN" then do;
+			    fn_cb_reg=_N_;
+			    call symput("fn_cb_reg","Y");
+			  end;
 			run;
 
 			proc means data=table1 nway noprint;
 			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
-				fn_covinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive;
+				fn_covinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive fn_cb_reg;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
@@ -290,6 +297,7 @@
 			%if &fn_mi_covar. ne N %then %do; 			call symputx("fn_mi_covar",fn_mi_covar); 				%end;
 			%if &fn_gestage. ne N %then %do; 			call symputx("fn_gestage",fn_gestage); 					%end;
 			%if &fn_nonlive. ne N %then %do; 			call symputx("fn_nonlive",fn_nonlive);	 				%end;
+            %if &fn_cb_reg. ne N %then %do; 			call symputx("fn_cb_reg",fn_cb_reg);	 				%end;
 			run;
 
 			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
@@ -369,6 +377,8 @@
 		   %if &ADCSI = Y %then %do; 29 %end;
 		   /* FRAILTY score is specified */
 		   %if &FRAILTY = Y %then %do; 30 %end;
+           /* CB_REG is specified */
+		   %if &cb_reg = Y %then %do; 31 %end;
 		   /* Lab characteristics specified. */
 		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do;
 		   	  %if %index(&reporttype,T4) > 0 %then %do; 21 %end;
@@ -431,7 +441,10 @@
 			%end;
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then order=&fn_nonlive.; 		
-			%end;		  		  
+			%end;		  	
+			%if &fn_cb_reg. ne N %then %do; 
+				if order_orig=31 then order=&fn_cb_reg.; 		
+			%end;	 
 	    run;
 		
 			* Compute new superscript and footnote values based on dynamic values;
@@ -481,6 +494,9 @@
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then call symputx("fn_nonlive",footnote_order);
 			%end;
+            %if &fn_cb_reg. ne N %then %do; 
+				if order_orig=31 then call symputx("fn_cb_reg",footnote_order);
+			%end;
 			run;
 
 			data table1;
@@ -520,11 +536,14 @@
 			%if &fn_nonlive. ne N %then %do; 
 				if fn_nonlive ne . then fn_nonlive=&fn_nonlive.;
 			%end;
+            %if &fn_cb_reg. ne N %then %do; 
+				if fn_cb_reg ne . then fn_cb_reg=&fn_cb_reg.;
+			%end;
 			run;
 
 			* Build dynamic superscript and add them to the label;
 			%let num_riskscores = %sysfunc(countw(&standard_riskscores_withfn., ' '));
-			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 6);
+			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 7);
 
 			data table1;
 			set table1;
@@ -540,7 +559,8 @@
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
 			fn[&num_riskscores. + 5]=put(fn_gestage, best.);
-			fn[&num_riskscores. + 6]=put(fn_nonlive, best.);		
+			fn[&num_riskscores. + 6]=put(fn_nonlive, best.);	
+            fn[&num_riskscores. + 7]=put(fn_cb_reg, best.);		
 			call sortc(of fn[*]);
 
 			length superscript $50;
@@ -594,8 +614,9 @@
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =nonlive, order =17);	
-		%assign_superscripts(type =gestage, order =18);				
+		%assign_superscripts(type =gestage, order =18);		
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
+        %assign_superscripts(type =cb_reg, order =31);
 
 		
         /*determine optimal report formatting*/
@@ -711,7 +732,7 @@
 					end;
 				%end;
 			  %end; 
-              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|PREG_OUTCOME*/',metvar) > 0 then do;
+              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|CB_REG*|PREG_OUTCOME*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
@@ -836,6 +857,7 @@
 					call symputx("&riskscore.",&riskscore.);
 				%end;				
 				call symputx('nonlivefn',nonlivefn);
+                call symputx('cb_reg', cb_reg);
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
 				call symputx('unique_psestimate_orig',unique_psestimate);

@@ -271,7 +271,8 @@
         'W' = 'West'
         'Invalid' = 'CB Region (Invalid)'
         'Missing' = 'CB Region (Missing)'
-        'Other' = 'CB Region (Other)';
+        'Other' = 'CB Region (Other)'
+        'UNKNOWN' = 'Unknown';
          
 		value $cb_regsort
         'MW' = 1
@@ -280,7 +281,8 @@
         'W' = 4
         'Invalid' = 5
         'Missing' = 6
-        'Other' = 7;
+        'Other' = 7
+        'UNKNOWN' = 8;
 		
         /* Preterm/Postterm status format */
         value $prepostindfmt
