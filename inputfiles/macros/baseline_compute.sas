@@ -2375,7 +2375,8 @@
 		set baseline_aggregatelabels
 		/* If pregnancy outcomes are output then add subheader */
 		%if %length(&preg_outcome_list.) > 0 %then %do;
-			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in ("PATIENT", "N_EPISODES")) in=b)
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort:
+                    %if &reporttype=T2L2 or &reporttype=T4L2 %then %do; subgroup subgroupcat %end; where=(metvar in ("PATIENT", "N_EPISODES")) in=b)
 		%end;
 		/* If risk score categories are output then add header for each score */
 		%if %length(&riskscores_with_cats.) > 0 %then %do;
