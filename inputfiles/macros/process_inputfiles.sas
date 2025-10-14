@@ -2500,7 +2500,7 @@
                  %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
 
                  %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
-                 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
+                 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(%quote(&tmpStudy.), &cc., %str(|));
                  %end;              
                quit;
              %end;
