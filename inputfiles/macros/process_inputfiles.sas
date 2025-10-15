@@ -1905,7 +1905,7 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $4 ipweight $4
                    caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup $15 subgroupcat $11 stratvars $18;
             call missing(runid, file, t4hoimethod, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim, stratvars);
