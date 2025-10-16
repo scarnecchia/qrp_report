@@ -490,7 +490,7 @@
                     text="Inverse Probability of Treatment Weighted Analysis&super_weight.; Weight = &weightscheme.&pstrim.&super_line."; 
                     %end;
                     %else %do;
-                    text="Propensity Score Stratum Adjusted Analysis; Weight = &weightscheme.&pstrim.&super_line.";
+                    text="Propensity Score Stratum Adjusted Analysis&super_weight.; Weight = &weightscheme.&pstrim.&super_line.";
                     %end;
                     num=1000; 
                 end;
