@@ -198,6 +198,7 @@
 			%let fn_mi_covar=N;
 			%let fn_nonlive=N;
 			%let fn_gestage=N;
+            %let fn_cb_reg=N;
 
 			%let table1_dataset=table1;
 
@@ -215,6 +216,7 @@
 			fn_mi_covar=.;
 			fn_nonlive=.;
 			fn_gestage=.;
+            fn_cb_reg=.;
 
 			%if &riskscore_footnotes. eq Y %then %do; 
 				%do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' '));
@@ -229,7 +231,9 @@
 				%end;
 			%end;
 			%if %length(&covinps.) > 0 %then %do;		
-				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.)) or (missing(metvar) and upcase(label) in (&covinps) and upcase(label)^='AGE') 
+				if (grouper ne "Laboratory Characteristics" and metvar in (&covinps.))
+                or (missing(metvar) and lowcase(label) = "census bureau region" and "CB_REG" in (&covinps.))
+				or (missing(metvar) and ((upcase(label) in (&covinps) and upcase(label)^='AGE') | (upcase(label)='AGE' and %index(%upcase(&covinps., AGEGROUP))>0)))
 					%if %length(&covarlablabels.) > 0 %then %do; 
 				   	 or	(grouper eq "Laboratory Characteristics" and upcase(label) in (&covarlablabels.))
 					%end;
@@ -268,11 +272,15 @@
 					call symput("fn_nonlive","Y");
 				end;
 			%end;
+              if upcase(metvar) = "CB_REG_UNKNOWN" then do;
+			    fn_cb_reg=_N_;
+			    call symput("fn_cb_reg","Y");
+			  end;
 			run;
 
 			proc means data=table1 nway noprint;
 			var %do rskscore=1 %to %sysfunc(countw(&standard_riskscores_withfn., ' ')); fn_%scan(&standard_riskscores_withfn., &rskscore., %str( )) %end; 
-				fn_covinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive;
+				fn_covinps fn_labcovar fn_nopreg_i_covar fn_i_covar fn_mi_covar fn_gestage fn_nonlive fn_cb_reg;
 			output out=_fnmin(drop=_:) min=;
 			run;
 
@@ -289,6 +297,7 @@
 			%if &fn_mi_covar. ne N %then %do; 			call symputx("fn_mi_covar",fn_mi_covar); 				%end;
 			%if &fn_gestage. ne N %then %do; 			call symputx("fn_gestage",fn_gestage); 					%end;
 			%if &fn_nonlive. ne N %then %do; 			call symputx("fn_nonlive",fn_nonlive);	 				%end;
+            %if &fn_cb_reg. ne N %then %do; 			call symputx("fn_cb_reg",fn_cb_reg);	 				%end;
 			run;
 
 			* Because fn_labcovar must be output prior to some other dynamic footnotes we need to push them forward if they were computed the same value;  
@@ -368,6 +377,8 @@
 		   %if &ADCSI = Y %then %do; 29 %end;
 		   /* FRAILTY score is specified */
 		   %if &FRAILTY = Y %then %do; 30 %end;
+           /* CB_REG is specified */
+		   %if &cb_reg = Y %then %do; 31 %end;
 		   /* Lab characteristics specified. */
 		   %if %str("&labcharacteristics.") ^= %str("missing") %then %do;
 		   	  %if %index(&reporttype,T4) > 0 %then %do; 21 %end;
@@ -430,7 +441,10 @@
 			%end;
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then order=&fn_nonlive.; 		
-			%end;		  		  
+			%end;		  	
+			%if &fn_cb_reg. ne N %then %do; 
+				if order_orig=31 then order=&fn_cb_reg.; 		
+			%end;	 
 	    run;
 		
 			* Compute new superscript and footnote values based on dynamic values;
@@ -480,6 +494,9 @@
 			%if &fn_nonlive. ne N %then %do; 
 				if order_orig=17 then call symputx("fn_nonlive",footnote_order);
 			%end;
+            %if &fn_cb_reg. ne N %then %do; 
+				if order_orig=31 then call symputx("fn_cb_reg",footnote_order);
+			%end;
 			run;
 
 			data table1;
@@ -519,11 +536,14 @@
 			%if &fn_nonlive. ne N %then %do; 
 				if fn_nonlive ne . then fn_nonlive=&fn_nonlive.;
 			%end;
+            %if &fn_cb_reg. ne N %then %do; 
+				if fn_cb_reg ne . then fn_cb_reg=&fn_cb_reg.;
+			%end;
 			run;
 
 			* Build dynamic superscript and add them to the label;
 			%let num_riskscores = %sysfunc(countw(&standard_riskscores_withfn., ' '));
-			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 6);
+			%let num_dynamic_footnotes  = %eval(&num_riskscores. + 7);
 
 			data table1;
 			set table1;
@@ -539,7 +559,8 @@
 			fn[&num_riskscores. + 3]=put(fn_i_covar, best.);
 			fn[&num_riskscores. + 4]=put(fn_mi_covar, best.);		
 			fn[&num_riskscores. + 5]=put(fn_gestage, best.);
-			fn[&num_riskscores. + 6]=put(fn_nonlive, best.);		
+			fn[&num_riskscores. + 6]=put(fn_nonlive, best.);	
+            fn[&num_riskscores. + 7]=put(fn_cb_reg, best.);		
 			call sortc(of fn[*]);
 
 			length superscript $50;
@@ -593,8 +614,9 @@
         %assign_superscripts(type =race, order =15);
         %assign_superscripts(type =unknownrace, order =16);
 		%assign_superscripts(type =nonlive, order =17);	
-		%assign_superscripts(type =gestage, order =18);				
+		%assign_superscripts(type =gestage, order =18);		
 		%assign_superscripts(type =labcovar, order =&fn_labcovar.);
+        %assign_superscripts(type =cb_reg, order =31);
 
 		
         /*determine optimal report formatting*/
@@ -626,59 +648,59 @@
         %end;
         ods proclabel = "Table 1&tableletter.";
         proc report data=&table1_dataset. nofs nowd spanrows split='*'
-            style(header)=[rules=none frame=void background=BGR borderleftcolor = BGR vjust=b] split='*'
+            style(header)=[rules=none frame=void background=GGR borderleftcolor = GGR vjust=b] split='*'
 		    style(report)=[rules=none frame=void cellpadding =1.5pt];
 
             column (metvar grouper label
-                    %if &computebalance. = Y %then %do; ("^S={background=BGR}&cohortheaderlabel." %end;
-                    ("^S={background=BGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
+                    %if &computebalance. = Y %then %do; ("^S={background=GGR}&cohortheaderlabel." %end;
+                    ("^S={background=GGR}&grp1_label." exp_mean&dpnum._char exp_std&dpnum._char)
                     %if &includecomp. = Y %then %do;
-                    ("^S={background=BGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
+                    ("^S={background=GGR}&grp2_label.&super_switch1." comp_mean&dpnum._char comp_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; ) %end;
                     %if %eval(&maxswitch.=2) %then %do;
-                    ("^S={background=BGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
+                    ("^S={background=GGR}&grp3_label.&super_switch2." switch2_mean&dpnum._char switch2_std&dpnum._char)
                     %end;
                     %if &computebalance. = Y %then %do; 					
 						%if %index(&reporttype,L2) %then %do;
-							('^S={background=BGR}Covariate Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=GGR}Covariate Balance' '^S={background=GGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
 						%else %do;
-							('^S={background=BGR}Characteristic Balance' '^S={background=BGR}' ad&dpnum._char sd&dpnum._char)
+							('^S={background=GGR}Characteristic Balance' '^S={background=GGR}' ad&dpnum._char sd&dpnum._char)
 						%end;
                     %end; );
 
             define metvar / noprint;
             define grouper / order noprint order=data '';
             define label / display "&characteristiclabel. Characteristics&super_character." style(column)=[width=&labelwidth.in just=L] 
-                           style(header)=[background = LIBGR just=L cellheight=&headerheight.in]; 
+                           style(header)=[background = LIGGR just=L cellheight=&headerheight.in]; 
 
             define exp_mean&dpnum._char  / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"] 
-                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
+                            style(header)=[background = LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in]; 
             define exp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background = LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in]; 
+                            style(header)=[background = LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in]; 
             %if &includecomp. = Y %then %do;
             define comp_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define comp_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
             %if %eval(&maxswitch.=2) %then %do;
             define switch2_mean&dpnum._char / display 'Number/Mean' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define switch2_std&dpnum._char / display "Percent/^n Standard&linebreak. Deviation&super_stdev." style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
 
             %if &computebalance. = Y %then %do;
             define ad&dpnum._char / display 'Absolute^n Difference' style(column)=[width=&width.in background = $backgroundfmt. tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             define sd&dpnum._char / display 'Standardized^n Difference' style(column)=[width=&width.in tagattr="type:string format:@"]
-                            style(header)=[background=LIBGR borderleftcolor = LIBGR cellheight=&headerheight.in];
+                            style(header)=[background=LIGGR borderleftcolor = LIGGR cellheight=&headerheight.in];
             %end;
 
             /*Add Characteristic header lines and superscript to Lab characteristic header */
-            compute before grouper / style=[background=LIBGR color=black just=L font_weight=bold];
+            compute before grouper / style=[background=LIGGR color=black just=L font_weight=bold];
               length text $100;
               if grouper ne "&characteristiclabel. Characteristics" then do;
               	if grouper = "Laboratory Characteristics" then do; 
@@ -710,7 +732,7 @@
 					end;
 				%end;
 			  %end; 
-              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|PREG_OUTCOME*/',metvar) > 0 then do;
+              if prxmatch('/AGE\d|YEAR*|RACE*|HISPANIC*|SEX*|CB_REG*|PREG_OUTCOME*/',metvar) > 0 then do;
                 call define(_col_,'style','style={indent=25}');
               end;
               %if %str("&labcharacteristics.") ^= %str("missing") %then %do; 
@@ -835,6 +857,7 @@
 					call symputx("&riskscore.",&riskscore.);
 				%end;				
 				call symputx('nonlivefn',nonlivefn);
+                call symputx('cb_reg', cb_reg);
 				call symputx('gestationalage',gestationalage);
                 call symputx('unique_psestimate',unique_psestimate);
 				call symputx('unique_psestimate_orig',unique_psestimate);
@@ -1143,8 +1166,8 @@
 					data _null_;
 					set _subgroups;
 					if _N_=&sub.;
-					call symputx("SubGroup",lowcase(strip(subgroup)));
-				    call symputx("SubgroupCat",upcase(strip(subgroupcat)));
+					call symputx("subgroup",lowcase(strip(subgroup)));
+				    call symputx("subgroupCat",upcase(strip(subgroupcat)));
 					call symputx("subgrouptitle",combinedlabel);
 					run;
 					
@@ -1238,7 +1261,7 @@
 	                      includenonpregnant=&includenonpregnant.);
 	                %end;
 	            %end; /*Additional L2 tables*/
-		  	%end; /*Subgroups looping*/
+		  	%end; /*subgroups looping*/
         %mend;
 
         /*loop through each periodid*/

@@ -77,6 +77,9 @@
         sortorder1=8;
         label='Year';
         output;
+        sortorder1=9;
+        label='Census Bureau region';
+        output;
     run;
 
     ***********************************************************************************************;
@@ -269,12 +272,7 @@
 
 			data _null_;
 			set master_cohortcodes(where=(runid="&runid." and group="&cohortgrp" and codecat="PO"));
-			i=1;
-			do while(scan(code, i, " ") ne "");
-				code2=upcase(scan(code, i, " "));
-				if code2 in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 							
-				i=i+1; 
-			end;									
+			if code in (&nonliveoutcomeslist1.) then call symputx('nonliveoutcomes', "Y"); 																			
 			run;
 		%end;
 
@@ -418,10 +416,16 @@
 				if index(upcase(pregnancychar),'PREPOSTIND_NA') > 0 and nonliveoutcomes eq "Y" then nonlivefn="Y";
 				else nonlivefn="N";
 			%end;
-			%else %do;
+            %else %do;
 				nonliveoutcomes="N";
 				nonlivefn="N";
 			%end;
+
+            cb_reg = "N";
+            %if %length(&&&runid._zipfile.)>0 %then %do;
+            cb_reg = "Y";
+            %end;
+
             cohortdef = "&cohortdef.";
           end;
         run;
@@ -2079,32 +2083,36 @@
                 %assignbaselinevars(label=compress(substr(MetVar,6)), grouper="Demographic Characteristics", sortorder1 = 8, sortorder2=input(compress(substr(MetVar,6)),4.));
                 end;
 
+                /* cb_reg */
+                else if index(MetVar,'CB_REG') > 0 and %str("&&&runid._zipfile.") ne %str("") then do;
+                %assignbaselinevars(label=put(strip(substr(MetVar,8)), $cb_regfmt.), grouper="Demographic Characteristics", sortorder1=9, sortorder2 = input(put(strip(substr(MetVar,8)),$cb_regsort.),3.));
+                end;
             /*******************************************************************/
             /* Type 4 - Pregnancy Characteristics and Exposure Characteristics */
             /*******************************************************************/
             %if %str("&reporttype") = %str("T4L1") | %str("&reporttype") = %str("T4L2") %then %do;
                 else if metvar in (&pregnancychar.) then do;      
                     if MetVar= 'PREPOSTIND_PRE' then do;
-                    %assignbaselinevars(label=put('PRE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('PRE', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('PRE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('PRE', prepostindsort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_EARL' then do;
-                    %assignbaselinevars(label=put('EARL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('EARL', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('EARL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('EARL', prepostindsort.),1.));
                     end;
 					if MetVar= 'PREPOSTIND_FULL' then do;
-                    %assignbaselinevars(label=put('FULL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('FULL', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('FULL', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('FULL', prepostindsort.),1.));
                     end;
 					if MetVar= 'PREPOSTIND_LATE' then do;
-                    %assignbaselinevars(label=put('LATE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('LATE', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('LATE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('LATE', prepostindsort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_POST' then do;
-                    %assignbaselinevars(label=put('POST', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('POST', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('POST', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('POST', prepostindsort.),1.));
                     end;
                     if MetVar= 'PREPOSTIND_NONE' then do;
-                    %assignbaselinevars(label=put('NONE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NONE', prepostindsort.),1.));
+                    %assignbaselinevars(label=put('NONE', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('NONE', prepostindsort.),1.));
                     end;
 					if MetVar= 'PREPOSTIND_NA' then do;
 						%if &nonliveoutcomes. eq Y %then %do;
-	                    	%assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=input(put('NA', prepostindsort.),1.));							
+	                    	%assignbaselinevars(label=put('NA', $prepostindfmt.), grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=input(put('NA', prepostindsort.),1.));							
 						%end;
 						%else %do;
 							/* Delete row if non live birth and/or mixed outcomes were not requested */
@@ -2118,42 +2126,42 @@
 							%let preg_outcome=%scan(&preg_outcome_list., &outcome., %str(|));
 
 							if metvar="&preg_outcome." then do;
-								 %assignbaselinevars(label=put("&preg_outcome", $pregoutcomefmt.), grouper="Pregnancy Characteristics", sortorder1=9, sortorder2=8, sortorder3=put("&preg_outcome", $pregoutcomesort.));
+								 %assignbaselinevars(label=put("&preg_outcome", $pregoutcomefmt.), grouper="Pregnancy Characteristics", sortorder1=10, sortorder2=8, sortorder3=put("&preg_outcome", $pregoutcomesort.));
 							end;		
 						%end;
 					%end;     
 
 					if MetVar= 'GA_BIRTH' then do;
-                    %assignbaselinevars(label="Gestational age at pregnancy outcome (weeks)", grouper="Pregnancy Characteristics", sortorder1 = 9, sortorder2=9);
+                    %assignbaselinevars(label="Gestational age at pregnancy outcome (weeks)", grouper="Pregnancy Characteristics", sortorder1 = 10, sortorder2=9);
                     end; 
                 end; 
                 else if metvar in (&exposurechar.) then do;      
                     if MetVar= 'GA_FIRST' then do;
-                    %assignbaselinevars(label="Gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=1);
+                    %assignbaselinevars(label="Gestational age of first exposure (weeks)", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=1);
                     end;
                     if MetVar= 'ADJUSTEDDISP_PRE' then do;
-                    %assignbaselinevars(label="Mean number of dispensings in pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=2);
+                    %assignbaselinevars(label="Mean number of dispensings in pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=2);
                     end;
                     if MetVar= 'ADJUSTEDDISP_T1' then do;
-                    %assignbaselinevars(label="Mean number of dispensings in first trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=3);
+                    %assignbaselinevars(label="Mean number of dispensings in first trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=3);
                     end;
                     if MetVar= 'ADJUSTEDDISP_T2' then do;
-                    %assignbaselinevars(label="Mean number of dispensings in second trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=4);
+                    %assignbaselinevars(label="Mean number of dispensings in second trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=4);
                     end;
                     if MetVar= 'ADJUSTEDDISP_T3' then do;
-                    %assignbaselinevars(label="Mean number of dispensings in third trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=5);
+                    %assignbaselinevars(label="Mean number of dispensings in third trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=5);
                     end;
                     if MetVar= 'EXP_T1' then do;
-                    %assignbaselinevars(label="Exposed during first trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=6);
+                    %assignbaselinevars(label="Exposed during first trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=6);
                     end;
                     if MetVar= 'EXP_T2' then do;
-                    %assignbaselinevars(label="Exposed during second trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=7);
+                    %assignbaselinevars(label="Exposed during second trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=7);
                     end;
                     if MetVar= 'EXP_T3' then do;
-                    %assignbaselinevars(label="Exposed during third trimester", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=8);
+                    %assignbaselinevars(label="Exposed during third trimester", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=8);
                     end;
                     if MetVar= 'EXP_PRE' then do;
-                    %assignbaselinevars(label="Exposed during user-defined pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 10, sortorder2=9);
+                    %assignbaselinevars(label="Exposed during user-defined pre-pregnancy period", grouper="Exposure Characteristics", sortorder1 = 11, sortorder2=9);
                     end;
                 end;
             %end;
@@ -2375,7 +2383,8 @@
 		set baseline_aggregatelabels
 		/* If pregnancy outcomes are output then add subheader */
 		%if %length(&preg_outcome_list.) > 0 %then %do;
-			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort: where=(metvar in ("PATIENT", "N_EPISODES")) in=b)
+			baseline_aggregatelabels(keep=metvar label grouper analysisgrp order table weight sort:
+                    %if &reporttype=T2L2 or &reporttype=T4L2 %then %do; subgroup subgroupcat %end; where=(metvar in ("PATIENT", "N_EPISODES")) in=b)
 		%end;
 		/* If risk score categories are output then add header for each score */
 		%if %length(&riskscores_with_cats.) > 0 %then %do;
@@ -2389,7 +2398,7 @@
 			if b then do;
 			grouper="Pregnancy Characteristics";
 			label="Pregnancy Outcome";
-			sortorder1=9;
+			sortorder1=10;
 			sortorder2=8;
 			sortorder3=0;
 			sortorder4=0;
@@ -2440,9 +2449,12 @@
         %end;
 
         data baseline_aggregatefinal;
-            set baseline_aggregatefinal baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
-                                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
-														%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;);
+            set baseline_aggregatefinal 
+                baseline_labels_stacked(keep=label sortorder1 sortorder2 sortorder3 sortorder4 grouper analysisgrp table weight order
+                                        %if %index(&reporttype,L2) %then %do; subgroup subgroupcat %end;
+										%if %quote(&labcharacteristics) ^= %str("missing") and %index(&reporttype,T4) > 0 %then %do; codepop %end;
+            /* cb_reg may not be available in all runs, remove entries from baseline table if zipfile for run has not been specified */ 
+                                        %if %length(&&&runid._zipfile.)=0 %then %do; where=(sortorder1 ne 9) %end; );
         run;
 
         %if %quote(&labcharacteristics) ^= %str("missing") %then %do;

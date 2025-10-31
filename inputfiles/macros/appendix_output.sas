@@ -49,11 +49,11 @@
 		ods proclabel = "&_tab.";
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		proc report data =  &_data nofs nowd spanrows missing headskip
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 			columns (region staterri);
-			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
-			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define region / display "&geog. Region" style(column)=[width=1.5in just=L] style(header)=[background = GGR borderleftcolor = GGR];
+			define staterri/ display "States and Territories" style(column)=[just=L] style(header)=[background = GGR borderleftcolor = GGR];
 
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
@@ -100,27 +100,27 @@
 		%put optionalvars = &optionalvars.;
 	
 		proc report data =  _data_ndc nofs nowd spanrows missing headskip
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 			columns (header %if %varexist(_data_ndc,ndc) = 1 %then %do; ndc %end; genericname &optionalvars.);
 			define header /order noprint order=data ' ';
 			%if %varexist(_data_ndc,ndc) = 1 %then %do;
-			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define ndc / display "NDC" style(column)=[tagattr='type:text' width=1in just=L] style(header)=[background = GGR borderleftcolor = GGR];
 			%end;
-			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
+			define genericname/ display "Generic Name" style(column)=[width=2.5in just=L] style(header)=[background = GGR borderleftcolor = GGR];
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
 					define %scan(&optionalvars, &x)/ %if %lowcase("%scan(&optionalvars, &x)") = "brandname" %then %do;
-													  display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = bgr borderleftcolor = BGR];
+													  display "Brand Name" style(column)=[width=2.5in just=L] style(header)=[background = GGR borderleftcolor = GGR];
 													 %end;
 													 %else %do;
-													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
+													  display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = GGR borderleftcolor = GGR];
 													 %end; 
 				%end;
 			%end;
 			
-			compute before header / style=[background=LIBGR just=c font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			compute before header / style=[background=LIGGR just=c font_weight=bold bordertopcolor=black borderbottomcolor=black];
 			length text $100;
 				text = header;
 				num = 100;
@@ -163,23 +163,23 @@
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 
 		proc report data =  _data_pxdx nofs nowd spanrows missing headskip
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 			
 			columns (codeform header code1 descrip codecat1 codetype1 &optionalvars.);
 			define header /order noprint order=data ' ';
-			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];
-			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
-			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];	
-			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = bgr borderleftcolor = BGR];		
+			define code1 / display "Code" style(column)=[tagattr="type:String" width=.75in just=L] style(header)=[background = GGR borderleftcolor = GGR];
+			define descrip/ display "Description" style(column)=[just=L] style(header)=[background = GGR borderleftcolor = GGR];
+			define codecat1/ display "Code Category" style(column)=[width=.75in just=L] style(header)=[background = GGR borderleftcolor = GGR];	
+			define codetype1/ display "Code Type" style(column)=[width=.75in just=L] style(header)=[background = GGR borderleftcolor = GGR];		
 			%if %str("&optionalvars") ne %str("") %then %do;
 				%do x = 1 %to %sysfunc(countw(&optionalvars));
-					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = bgr borderleftcolor = BGR];
+					define %scan(&optionalvars, &x)/ display "%scan(&optionalvars, &x)" style(column)=[just=L] style(header)=[background = GGR borderleftcolor = GGR];
 				%end;
 			%end;
 			define codeform/noprint;
 			
-			compute before header / style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			compute before header / style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 			length text $100;
 				text = header;
 				num = 100;
@@ -236,17 +236,17 @@
 		run;
 
 		proc report data=_hdpsappendix nofs nowd
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
             column (dpidsiteid code codecat codetype frequency ranking);
 		    		
-		    define dpidsiteid    / display 'Masked DP ID'  style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
-            define code          / display 'Code'          style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
-            define codecat       / display 'Code Category' style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
-            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C tagattr='type:string'] style(header)=[background = bgr borderleftcolor = BGR]; 
-            define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR];
-            define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+		    define dpidsiteid    / display 'Masked DP ID'  style(column)=[width=1.2in just=C] style(header)=[background = GGR borderleftcolor = GGR];
+            define code          / display 'Code'          style(column)=[width=1.2in just=C] style(header)=[background = GGR borderleftcolor = GGR];
+            define codecat       / display 'Code Category' style(column)=[width=1.2in just=C] style(header)=[background = GGR borderleftcolor = GGR]; 
+            define codetype      / display 'Code Type'     style(column)=[width=1.2in just=C tagattr='type:string'] style(header)=[background = GGR borderleftcolor = GGR]; 
+            define frequency     / display 'Frequency'     style(column)=[width=1.2in just=C] style(header)=[background = GGR borderleftcolor = GGR];
+            define ranking       / display 'Ranking'       style(column)=[width=1.2in just=C] style(header)=[background = GGR borderleftcolor = GGR]; 
 
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
@@ -294,7 +294,7 @@
 		run;
 
 		proc report data=repdata.&_data nofs nowd  
-            style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+            style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
         	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
             column (%if &numsubgroups. > 0 %then %do; combinedlabel %end; dpidsiteid N min max mean sd); 
@@ -303,17 +303,17 @@
 				define combinedlabel / order order=data noprint;
 			%end;
             define dpidsiteid / display 'Masked DP ID' 
-                style(column)=[width=1in just=C]  style(header)=[just=C background = bgr borderleftcolor = BGR];
+                style(column)=[width=1in just=C]  style(header)=[just=C background = GGR borderleftcolor = GGR];
             define N / display 'Number of Patients' 
-                style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background = bgr borderleftcolor = BGR];
+                style(column)=[width=1.25in just=C tagattr='type:string']  style(header)=[just=C background = GGR borderleftcolor = GGR];
             define min / display 'Minimum' 
-                style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.;
+                style(column)=[width=1.25in just=C] style(header)=[just=C background = GGR borderleftcolor = GGR] format=weightdist.;
             define max / display 'Maximum' 
-                style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
+                style(column)=[width=1.25in just=C] style(header)=[just=C background = GGR borderleftcolor = GGR] format=weightdist.; 
             define mean / display 'Mean' 
-              style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
+              style(column)=[width=1.25in just=C] style(header)=[just=C background = GGR borderleftcolor = GGR] format=weightdist.; 
             define sd / display 'Standard^n Deviation' 
-              style(column)=[width=1.25in just=C] style(header)=[just=C background = bgr borderleftcolor = BGR] format=weightdist.; 
+              style(column)=[width=1.25in just=C] style(header)=[just=C background = GGR borderleftcolor = GGR] format=weightdist.; 
 
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off cellheight=.3in];
@@ -321,7 +321,7 @@
 			endcomp;
 
 			%if &numsubgroups. > 0 %then %do;
-			compute before combinedlabel / style=[background=LIBGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+			compute before combinedlabel / style=[background=LIGGR foreground=black just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
 	            length text $100;					
 				if prxmatch('/^NoStudyCovar/',compress(combinedlabel, ' &')) > 0 then do;
 					text = "&nocovarlabel.";
@@ -362,7 +362,7 @@
 		%let apptitle  =  %bquote(&_tab.. &_rptlabel.);
 		
 		proc report data=repdata.&_data nofs nowd
-    		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+    		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
     		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
             column order grouplabel dpidsiteid  cdate;
@@ -370,7 +370,7 @@
 		    define order / group "" order=data noprint;
             define grouplabel / group noprint order=data;
             define dpidsiteid / group  "" order=data style(column)=[just=L width=2.5in];
-            define cdate  / display 'Computed Start Marketing Date'  style(column)=[width=5in just=C] style(header)=[background = bgr borderleftcolor = BGR]; 
+            define cdate  / display 'Computed Start Marketing Date'  style(column)=[width=5in just=C] style(header)=[background = GGR borderleftcolor = GGR]; 
 
 			compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white
 			                               borderbottomwidth=&bordersize tagattr="wrap:yes" nobreakspace=off];
@@ -378,7 +378,7 @@
             endcomp;
 
             compute before grouplabel /
-                style=[background=LIBGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
+                style=[background=LIGGR just=L font_weight=bold bordertopcolor=black borderbottomcolor=black];
                 length text $150;
                 text= grouplabel; 
                 num= 150;
@@ -434,13 +434,13 @@
 	ods proclabel = "Appendix A";
 
     proc report data = output.dpinfo&reportid. nofs nowd
-		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR] split='*'
+		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR] split='*'
 		style(report)=[rules=none frame=void cellpadding =1.75pt];
 	
 		columns (MaskedID dpmindate dpenddate);
-		define MaskedID / Display 'Masked DP ID^{super 1}' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
-		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
-		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = bgr borderleftcolor = BGR];
+		define MaskedID / Display 'Masked DP ID^{super 1}' style(column)=[width=2in] style(header)=[background = GGR borderleftcolor = GGR];
+		define dpmindate / Display 'DP Start Date' style(column)=[width=2in] style(header)=[background = GGR borderleftcolor = GGR];
+		define dpenddate / Display 'DP End Date^{super 2}' style(column)=[width=2in] style(header)=[background = GGR borderleftcolor = GGR];
 
         compute before _page_ / style=[background=white background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor = white borderbottomwidth = &bordersize];
         line "Appendix A. Dates of Available Data for Each Data Partner (DP) as of Request Distribution Date &datedistributed.";

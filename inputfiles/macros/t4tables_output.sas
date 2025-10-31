@@ -65,19 +65,7 @@
 	from &dataset. as a 
 	join Master_cohortcodes as b on a.group=b.group
 	where b.codecat="PO";
-	quit;
-
-	data _outcomes;
-	set _outcomes;
-	i=1;
-	do while(scan(code, i, " ") ne "");
-		code2=upcase(scan(code, i, " "));	
-		output;
-		i=i+1; 
-	end;
-	drop i code;
-	rename code2=code;									
-	run;
+	quit;	
 
 	proc sql noprint undo_policy=none;
 	create table _outcomes as
@@ -211,7 +199,7 @@
     ods proclabel = "Table &tabnum.";
 
      proc report data = repdata.table&tabnum. nofs nowd spanrows missing headskip split="*"
-        style(header)=[rules=none vjust=b backgroundcolor=bgr borderbottomcolor=bgr borderrightcolor=bgr borderleftcolor=bgr tagattr='type:string'] split='*'
+        style(header)=[rules=none vjust=b backgroundcolor=GGR borderbottomcolor=GGR borderrightcolor=GGR borderleftcolor=GGR tagattr='type:string'] split='*'
         style(report)=[rules=none frame=void cellpadding =1.75pt];
  
         columns (%if %length(&spanningheader)>0 %then %do; "&spanningheader." %end; %if &nonpreg. = Y %then %do; pregflg %end;
@@ -232,7 +220,7 @@
         %end;
         define moilabel / "Exposure(s) of Interest&super_exposure."
              style(column)= [just=l indent=%if &includemoiheaderrow = Y %then %do;.25in%end; %else %do;.15in%end;]
-    		 style(header)=[just=l borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr];
+    		 style(header)=[just=l borderbottomcolor=black backgroundcolor=GGR borderrightcolor=GGR borderleftcolor=GGR];
 
         /*columns*/
         %do v = 1 %to %sysfunc(countw(&varlist.));
@@ -246,7 +234,7 @@
 		   define &varname. / display %if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; "&varlabel.&super_column." %end;
                                       %else %do; "&varlabel" %end;
                  style(column)=[width=&varwidth. just=c %if %str("&varsmallcell.") = %str("y") %then %do; background=$backgroundfmt. %end; tagattr='type:string'] 
-				 style(header)=[%if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; height=.5in %end; just=C borderbottomcolor=black backgroundcolor=bgr borderrightcolor=bgr borderleftcolor=bgr tagattr='type:string'];
+				 style(header)=[%if %sysfunc(prxmatch(m/T2|T3|T4|T6/i,&table)) and &columnsuperscript_flag = Y %then %do; height=.5in %end; just=C borderbottomcolor=black backgroundcolor=GGR borderrightcolor=GGR borderleftcolor=GGR tagattr='type:string'];
         %end;
 
 		/* Add title */
@@ -257,7 +245,7 @@
         
         /*add pregnant/non-pregnant header*/
         %if &nonpreg. = Y %then %do;
-        compute before pregflg / style=[backgroundcolor=libgr font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
+        compute before pregflg / style=[backgroundcolor=LIGGR font_weight=bold just=L bordertopcolor=black borderbottomcolor=black];
             length text $1000;
             if pregflg = 'Y' then text = "&preg_cohort_header.";
             else text = "All Matched Non-Pregnant Episodes";

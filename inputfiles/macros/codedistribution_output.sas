@@ -164,7 +164,7 @@
         ods proclabel = "Table &tablenum.&tableletter.";
 
 		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing split='*'
-        		style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
+        		style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR]
         		style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 		column distindexlist code description codecat codetype totalN caresetting row_separator;
@@ -172,22 +172,22 @@
 		define row_separator / analysis noprint;
         define code / display 'Code'  
         	style(column)=[just=L tagattr="type:String" width=20%] 
-            style(header)=[just=L background = bgr borderleftcolor = BGR];
+            style(header)=[just=L background = GGR borderleftcolor = GGR];
         define description / display 'Code Description'  
           	style(column)=[just=c tagattr="type:String" width=30%] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
         define codecat / display 'Code Category'  
           	style(column)=[width=.7in just=c tagattr="type:String"] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
         define codetype / display 'Code Type' 
           	style(column)=[width=.7in just=c tagattr="type:String"] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
         define totalN / display 'Overall Counts' format=comma10.0
           	style(column)=[width=.7in just=c vjust=c] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
         define caresetting / display 'Encounter Care Setting'  
           	style(column)=[width=.7in just=c] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
 
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 
@@ -223,25 +223,25 @@
         ods proclabel = "Table &tablenum.&tableletter.";
 
 		proc report data=repdata.table&tablenum.&tableletter nofs nowd spanrows missing split='*'
-        	style(header)=[rules=none vjust=b frame=void background=BGR borderleftcolor = BGR]
+        	style(header)=[rules=none vjust=b frame=void background=GGR borderleftcolor = GGR]
         	style(report)=[rules=none frame=void cellpadding =1.75pt];
 
 		column code description codecat codetype N  ;
 	    define code / display 'Code' group  order order= data 
 	      	style(column)=[just=L tagattr="type:String" width=20%] 
-            style(header)=[just=L background = bgr borderleftcolor = BGR];
+            style(header)=[just=L background = GGR borderleftcolor = GGR];
 	    define description / display 'Code Description'  group  order order= data 
 	      	style(column)=[just=c tagattr="type:String" width=30%] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
 	    define codecat / display 'Code Category'  group  order order= data 
 	      	style(column)=[width=.7in just=c tagattr="type:String"] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
 	    define codetype / display 'Code Type' group  order order= data 
 	      	style(column)=[width=.7in just=c tagattr="type:String"] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
 	    define N / display 'Overall Counts' group order order= data format=comma10.0
 	      	style(column)=[width=.7in just=c] 
-            style(header)=[just=c background = bgr borderleftcolor = BGR];
+            style(header)=[just=c background = GGR borderleftcolor = GGR];
 
 		/* Add title */
 		compute before _page_ / style=[background=white font_weight=bold just=L foreground=black vjust=b bordertopcolor=white 

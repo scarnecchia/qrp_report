@@ -675,10 +675,10 @@
 							from dictionary.columns
 							where libname='CODES' and memname=%upcase("%scan(&eachCodelist,&k)")
 							%if %varexist(codes.%scan(&eachCodelist,&k),ndc) = 1 %then %do;
-							  and lowcase(name) not in ('ndc','genericname','generic_name','studyname');
+							  and lowcase(name) not in ('ndc','genericname','generic_name');
 							%end;
 							%else %do;
-							  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform','studyname');
+							  and lowcase(name) not in ('code1','descrip','codetype1','codecat1','codeform');
 							%end;
 						quit;			
 						%put optionalvars = &optionalvars.;
@@ -694,10 +694,7 @@
 							length header $300.;
 							%if %length(&currHeader) > 0 %then %do;
 								header = "&currHeader.";
-							%end;
-							%else %if %varexist(codes.%scan(&eachCodelist,&k),studyname)>0 %then %do;
-								header = studyname;
-							%end;
+							%end;							
 							appendix_sort = &i;
 							header_sort = &j;
 							%if %varexist(codes.%scan(&eachCodelist,&k),ndc)=0 %then %do;

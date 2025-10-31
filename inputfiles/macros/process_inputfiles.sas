@@ -58,25 +58,6 @@
 	%if &numfiles. = 0 and &numappendixfile. > 0 %then %let produceappendixfileonly=Y;
 
 /***************************************************************************************************
-*   Check that REPORTTYPE is valid                                              
-***************************************************************************************************/
-
-    /*Valid values:
-        - T1: Type 1 report
-        - T2L1: Level 1, type 2 report
-        - T2L2: Level 2, type 2 report 		
-        - ITS: ITS report
-		- T3: Type 3 report
-        - T4L1: Level 1, type 4 report 
-        - T4L2: Level 2, type 4 report 
-        - T5: Type 5 report
-        - T6: Type 6 report */
-    %if %sysfunc(prxmatch(m/T1|T2L1|T2L2|ITS|T3|T4L1|T4L2|T5|T6/i,&reporttype.)) <= 0 and &produceappendixfileonly. ne Y %then %do;
-        %put ERROR: (SENTINEL) REPORTTYPE parameter is invalid. Reporting tool will abort.;
-        %abort;
-    %end;
-
-/***************************************************************************************************
 *   Read in DPINFOFILE and mask DPs                                                     
 ***************************************************************************************************/
 
@@ -179,46 +160,15 @@
     
 /***************************************************************************************************
 *   Read in the qrp parameters file and assign parameter to macro variables                                                 
-***************************************************************************************************/
-	* Check if qrp_parameters has horizontal structure;
-	proc contents data=infolder.qrp_parameters noprint out=qrp_param_content;
-	quit;
+***************************************************************************************************/	
+	/* Transpose qrp_parameters to determine run values associated with desired runids */
+	proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
+	var run:;
+	run;
 
-	%let parameter_var_exists=0;
-	proc sql noprint;
-	select count(*) into :parameter_var_exists from qrp_param_content
-	where lowcase(name)="parameter";
-	quit;
-
-	%put &=parameter_var_exists;
-
-	%if &parameter_var_exists. > 0 %then %do;
-		/* Transpose qrp_parameters to determine run values associated with desired runids */
-		proc transpose data=infolder.qrp_parameters(where=(lowcase(parameter)= 'runid')) out=_qrp_parameters_trans;
-		var run:;
-		run;
-
-		data qrp_parameters;
-		set infolder.qrp_parameters;
-		run;
-	%end;
-	%else %do;
-		data _qrp_parameters_trans(keep=run runid rename=runid=col1 rename=run=_name_)
-			 qrp_parameters;
-		set infolder.qrp_parameters;		
-		run = "run" || strip(put(_N_, best.));	
-		run;
-
-		proc sql noprint;
-		select distinct name into :qrp_param_content separated by ' ' from qrp_param_content			
-		quit;
-
-		proc transpose data=qrp_parameters 
-					   out=qrp_parameters(rename=_name_=parameter);
-		id run;
-		var &qrp_param_content.;
-		run;
-	%end;
+	data qrp_parameters;
+	set infolder.qrp_parameters;
+	run;	
  
     /* Combine input files to identify all runids requested */
     data inputfiles;
@@ -344,7 +294,7 @@
           set qrp_parameters (keep = parameter &&run&n.);
           new_parameter = catx("_","&&id&n.",parameter);
           call symputx(new_parameter,&&run&n.,'G');
-          if parameter = "zipfile" and not missing(&&run&n.) then do;
+          if lowcase(parameter) = "zipfile" and not missing(&&run&n.) then do;
             call symputx("zipfile",&&run&n.);
           end;
         run;        
@@ -561,24 +511,12 @@
             from master_pregnancymeta
             where upper(preg_outcomecat) = 'NONLIVE';
         quit; 
-
-        data _po_codes;
-            set master_cohortcodes(where=(upcase(codecat) = 'PO'));
-            i=1;
-            do while(scan(code, i, " ") ne "");
-                code2=upcase(scan(code, i, " "));           
-                output;
-                i=i+1; 
-            end;
-            drop i code;
-            rename code2=code;
-        run;
-
+       
         proc sql noprint;
             create table _pregnancy_outcome_labels as 
             select distinct a.runid, a.group, a.order, b.code  
             from input.&baselinefile as a 
-            left join _po_codes as b
+            left join master_cohortcodes(where=(upcase(codecat) = 'PO')) as b
             on a.runid = b.runid and a.group = b.group
             order by a.runid, a.group, a.order;
         quit;
@@ -699,13 +637,42 @@
 *   Create a combined inclusion codes file for all runs                                        
 ***************************************************************************************************/
 
+    %let condlevel_length=1;
+    %let subcondlevel_length=1;
+
+    %do n = 1 %to &numrunid. ;
+        %let runid =&&id&n.. ;
+        
+        %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do ;
+            proc contents data = infolder.&&&runid._inclusioncodes noprint out = _inclusioncontents_&n. ; 
+			run ;
+
+            proc sql noprint ;
+                  select LENGTH into: condlevel_&n.
+            		from _inclusioncontents_&n.
+						where upcase ( name ) in ('CONDLEVEL') ;
+
+                  select LENGTH into: subcondlevel_&n.
+				  	from _inclusioncontents_&n.
+            			where upcase ( name ) in ('SUBCONDLEVEL')  ;              
+            quit ;
+
+			%if &&condlevel_&n. > &condlevel_length %then %let condlevel_length = &&condlevel_&n. ;
+			%if &&subcondlevel_&n. > &subcondlevel_length %then %let subcondlevel_length = &&subcondlevel_&n. ;
+
+      %end;
+    %end;
+
     data inclusioncodes_shell;
-        length runid $5 group $40 condlevel $30;
-        call missing(runid, group, condlevel);
+        length runid $5 group $40 conduse $8 condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        call missing(runid, group, condlevel,subcondlevel, conduse);
         stop;
     run;
 
     data master_inclusioncodes;
+        length condlevel $&condlevel_length. subcondlevel $&subcondlevel_length. ;
+        format condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
+        informat condlevel $&condlevel_length.. subcondlevel $&subcondlevel_length.. ;
         set 
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
@@ -718,6 +685,7 @@
         %end;
         ;
         format runid $5.;
+		where upcase(conduse) ne 'FEVENTDT';
         %do n = 1 %to &numrunid.;
         %let runid =&&id&n..;
         %if %sysfunc(exist(infolder.&&&runid._inclusioncodes)) %then %do;
@@ -727,6 +695,10 @@
         %end;
         %end;
     run;
+
+	proc sort data=master_inclusioncodes(keep=runid group condlevel) nodupkey; 
+		by runid group condlevel;
+	run;
 
     /*Type 2 queries, when BASECOHORT is specified, need to assign inclusion codes from BASECOHORT*/
     %if &basecohortused. = Y %then %do;
@@ -976,7 +948,7 @@
 
                 /*ReportType = T2L1*/
                 %if %str("&reporttype") = %str("T2L1") %then %do;
-                if tableID in ('t2epigap', 't2epigapprev') and index(levelvars, 'epi_gap') = 0 then do;
+                if tableID in ('t2epigap') and index(levelvars, 'epi_gap') = 0 then do;
                     levelvars = catx(' ',levelvars, "epi_gap");
                 end;
                 %end;
@@ -1750,7 +1722,6 @@
 ***************************************************************************************************/
 
     %if %sysfunc(exist(input.&baselinefile.)) %then %do;
-        %let chk_baselinegroupnum = ;
         %let chk_covinps=;
 
         /* Check whether order values are the same across different run IDs */
@@ -1813,17 +1784,10 @@
              put 'ERROR: (Sentinel) Please ensure your baseline input file has the appropriate values';
              abort;
            end;
-           if not missing(baselinegroupnum) then call symputx('chk_baselinegroupnum', baselinegroupnum);
            if not missing(covinps) then call symputx('chk_covinps', covinps);
         run;
         %end; /* m */
         
-        /* Check for populated baselinegroupnum parameter within specific analysis types */
-        %if %sysfunc(prxmatch(m/T2L2|T4L2|T6/i,&reporttype.)) > 0 and %length(&chk_baselinegroupnum) > 0 %then %do;
-         %put ERROR: (Sentinel) BASELINEGROUPNUM functionality is not available for REPORTTYPE = &reporttype. and must be set to missing.;
-         %abort;
-        %end;
-
         /* Check if covinps has been specifed for L1 requests*/
         %if %sysfunc(prxmatch(m/T2L2|T4L2/i,&reporttype.)) = 0 and %length(&chk_covinps) > 0 %then %do;
          %put WARNING: (Sentinel) covinps is not relevant for REPORTTYPE = &reporttype.. No covariates will be identified in the Baseline Characteristics table.;
@@ -1941,7 +1905,7 @@
 
         /*Create shell table*/
         data pscs_masterinputs;
-            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $3 ipweight $4
+            length runid $5 file t4hoimethod $32 analysisgrp psestimategrp eoi ref $40 ratio $1 strataweight $4 ipweight $4
                    caliper ceiling percentiles truncweight pstrim 8 unconditional reestimateps $1 subgroup $15 subgroupcat $11 stratvars $18;
             call missing(runid, file, t4hoimethod, analysisgrp, psestimategrp, eoi, ref, subgroup, subgroupcat, reestimateps, truncweight, ceiling, caliper, ratio, strataweight,
                    ipweight, percentiles, unconditional, pstrim, stratvars);
@@ -2419,13 +2383,27 @@
         quit;
 
         /*warn user if labcharacteristics parameter contains non-lab covariates*/
+		data covarname;
+		set covarname;
+		length numericlab characterlab 3;
+		if labtype="C" then characterlab=1;
+		else characterlab=0;
+		if labtype="N" then numericlab=1;
+		else numericlab=0;
+		run;
+
+		proc means data=covarname nway noprint;
+		class covarnum cov_varname codecat;
+		var numericlab characterlab codedays;
+		output out=covarname_check(drop=_:) max= / keeplen;
+		run;
+
         data _null_;
-            set covarname(where=(codecat^='LB' or codedays>1));
+            set covarname_check(where=(codecat^='LB' or codedays>1 or (numericlab>0 and characterlab>0)));
             %do labcovarnum = 1 %to %sysfunc(countw(&labcharacteristics));
                 %let labcovar = %scan(&labcharacteristics,&labcovarnum);
                 if upcase(cov_varname) = "&labcovar" then do;
-                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate";
-                    put cov_varname= codecat= codetype=;
+                    put "WARNING: (Sentinel) The following covariate has been specified in LABCHARACTERISTICS but is not a lab covariate: " cov_varname;
                 end;
             %end;
         run;
@@ -2442,7 +2420,7 @@
 
     /*Delete temporary dataset*/
    proc datasets nowarn noprint nolist lib=work; 
-        delete studylen covarname_: _covarstudyname _covdup; 
+        delete studylen covarname_: _covarstudyname _covdup covarname_check; 
    quit;  
 
 /************************************************************************************************
@@ -2522,7 +2500,7 @@
                  %global covar&cc studycovar%scan(&tmpcovars., &cc., %str(|));
 
                  %let covar&cc = covar%scan(&tmpcovars., &cc., %str(|));
-                 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(&tmpStudy., &cc., %str(|));
+                 %let studycovar%scan(&tmpcovars., &cc., %str(|)) = %scan(%quote(&tmpStudy.), &cc., %str(|));
                  %end;              
                quit;
              %end;

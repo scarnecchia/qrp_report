@@ -127,7 +127,7 @@
      	  fontweight = bold
      	  fontsize = &fontsize.
      	  cellpadding =1.75pt
-          backgroundcolor = libgr
+          backgroundcolor = liggr
           borderbottomcolor = black
      	  borderstyle = solid
      	  borderwidth = 1pt

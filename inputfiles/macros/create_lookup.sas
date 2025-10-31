@@ -72,6 +72,7 @@
 	  type = "baseline"; order = 28; description = "Bateman BT, Mhyre JM, Hernandez-Diaz S, Huybrechts KF, Fischer MA, Creanga AA, Callaghan WM, Gagne JJ. Development of a comorbidity index for use in obstetric patients. Obstet Gynecol. 2013;122(5):957-965."; output;
 	  type = "baseline"; order = 29; description = "Chang H-Y, Weiner JP, Richards TM, Bleich SN, Segal JB. Validating the adapted Diabetes Complications Severity Index in claims data. Am J Manag Care. 2012;18(11):721-726."; output;
 	  type = "baseline"; order = 30; description = "Kim DH, Schneeweiss S, Glynn RJ, Lipsitz LA, Rockwood K, Avorn J. Measuring frailty in Medicare data: development and validation of a claims-based frailty index. J Gerontol A Biol Sci Med Sci. 2018;73(7)980-987."; output;
+	  type = "baseline"; order = 31; description = "The Unknown category of Census Bureau Region includes the individual categories of Other (e.g., Island Areas), Invalid or Missing."; output;
 
 	   /* Footnotes for profile table */
 	  type = "profile";  order = 1; description = "Each patient can contribute more than one exposure episode. Hence, the percentages are calculated using total number of episodes and reflect percentage of episodes with a particular profile definition."; output;	   
@@ -151,7 +152,8 @@
 		claim_level = "Episode"; descr = "Exclusion - Cohort episode must have an index date within the age range condition"; report_descr = "Claim recorded during specified age range"; output;
         claim_level = "Episode"; descr = "Exclusion - Episodes must have a MatchMethod value of a linked live birth delivery"; report_descr = "Pregnancy outcome must match specified Match Method values"; output;
 		claim_level = "Episode"; descr = "Exclusion - Episodes must have birth type value of a live birth delivery"; report_descr = "Pregnancy outcome must match specified birth type values (singleton births only, twins, etc.)"; output;
-        claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must have an index date within the age range condition"; report_descr = "Pregnancy outcome within the age range condition assessed at pregnancy outcome date"; output;
+		claim_level = "Episode"; descr = "Exclusion - Infant linked to pregnancy birth type must have valid initial enrollment span"; report_descr = "Linked infant had required coverage"; output;
+		claim_level = "Episode"; descr = "Exclusion - Pregnancy episodes must have an index date within the age range condition"; report_descr = "Pregnancy outcome within the age range condition assessed at pregnancy outcome date"; output;
 		claim_level = "Member";  descr = "Exclusion - Members cannot have all their valid index dates in a prior look period"; report_descr = "Claim recorded during current look period"; output;
 		claim_level = "Episode"; descr = "Exclusion - Valid index dates cannot be in a prior look period"; report_descr = "Claim recorded during current look period"; output;
 		claim_level = "Member";  descr = "Exclusion - Members must have at least one episode defining index claim during the query period"; report_descr = "Episode defining index claim recorded during the query period"; output;
