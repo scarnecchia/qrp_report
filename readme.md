@@ -48,7 +48,16 @@ Available report types:
 - **T4L1**: Pregnancy-specific background rates
 - **T4L2**: Pregnancy-specific effect estimates
 
-### 2. Create a Configuration File
+### 2. Choose a Configuration Format
+
+The CLI supports two configuration formats:
+
+| Format | Location | Best For |
+|--------|----------|----------|
+| **YAML** | `examples/` or anywhere | New projects, human-readable config |
+| **SAS** | `inputfiles/` | Migration from SAS workflow |
+
+#### Option A: YAML Configuration (Recommended)
 
 See `examples/` for complete configuration examples:
 - `t1_config_example.yaml` - Full T1 config with all options documented
@@ -84,16 +93,46 @@ tables:
 report_destination: EXCEL
 ```
 
+#### Option B: SAS Configuration (Legacy Workflow)
+
+Place your SAS configuration files in `inputfiles/`:
+
+```
+inputfiles/
+├── report_parameters.sas7bdat    # Main config (required)
+├── dpinfo.sas7bdat               # Data Partner info
+├── groups.sas7bdat               # Analysis groups
+├── baseline.sas7bdat             # Baseline config
+├── tables.sas7bdat               # Table specifications
+└── ...                           # See inputfiles/README.md for full list
+```
+
+Then run with the directory path:
+
+```bash
+qrp-report generate ./inputfiles/
+```
+
+See `inputfiles/README.md` for complete SAS configuration documentation.
+
 ### 3. Validate Configuration
 
 ```bash
+# YAML config
 qrp-report validate config.yaml
+
+# SAS config directory
+qrp-report validate ./inputfiles/
 ```
 
 ### 4. Generate Report
 
 ```bash
+# YAML config
 qrp-report generate config.yaml
+
+# SAS config directory
+qrp-report generate ./inputfiles/
 ```
 
 ## Configuration Reference
