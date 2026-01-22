@@ -150,7 +150,3 @@ ruff check src/qrp_report/
 | 14.2.0 | 4.2.0 |
 | 14.1.0 | 4.1.1 |
 | 14.0.0 | 4.0.0 |
-
-## Additional Information
-
-The Sentinel Operations Center welcomes feedback, comments, and suggestions. Email us [here](mailto:info@sentinelsystem.org?subject=Git).
