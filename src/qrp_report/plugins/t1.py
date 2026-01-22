@@ -11,12 +11,9 @@ Input datasets:
 - censor_cida: Censoring information (optional)
 """
 
-from dataclasses import dataclass
-
 import polars as pl
 
 from qrp_report.plugins.types import (
-    ReportPlugin,
     ReportContext,
     ReportResult,
     TableResult,
@@ -26,10 +23,6 @@ from qrp_report.plugins.registry import register_plugin
 from qrp_report.plugins.aggregation import (
     aggregate_datasets,
     summarize_by_strata,
-)
-from qrp_report.stats import (
-    incidence_rate,
-    risk_per_1000,
 )
 
 
@@ -153,11 +146,15 @@ class T1Plugin:
     def _compute_t1_rates(self, df: pl.DataFrame) -> pl.DataFrame:
         """Compute T1 rates and confidence intervals.
 
+        Note: Uses vectorized Polars operations instead of qrp_report.stats
+        scalar functions for efficiency when processing entire DataFrames.
+        The formulas match those in qrp_report.stats.rates module.
+
         Adds computed columns:
         - rate_1000py: Incidence rate per 1000 person-years
-        - rate_ci_lower, rate_ci_upper: 95% CI for rate
+        - rate_ci_lower, rate_ci_upper: 95% CI for rate (Poisson)
         - risk_1000nu: Risk per 1000 new users
-        - risk_ci_lower, risk_ci_upper: 95% CI for risk
+        - risk_ci_lower, risk_ci_upper: 95% CI for risk (Binomial)
         """
         # Compute person-years from dennummemdays (days -> years)
         df = df.with_columns([

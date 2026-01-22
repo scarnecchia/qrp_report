@@ -336,11 +336,11 @@ class T2L2Plugin:
             title=f"Figure F1: Propensity Score Distribution (Period {period})",
             figure_type="histogram",
             data=df.select(["ps_value", "treatment"]),
-            metadata={
-                "period": period,
-                "x_label": "Propensity Score",
-                "y_label": "Frequency",
-            },
+            metadata=(
+                ("period", period),
+                ("x_label", "Propensity Score"),
+                ("y_label", "Frequency"),
+            ),
         )
 
     def _create_forest_plot_figure(
@@ -362,8 +362,8 @@ class T2L2Plugin:
             title=f"Figure F2: Forest Plot (Period {period})",
             figure_type="forest_plot",
             data=df.select(required_cols),
-            metadata={
-                "period": period,
-                "reference_line": 1.0,  # For ratios
-            },
+            metadata=(
+                ("period", period),
+                ("reference_line", 1.0),  # For ratios
+            ),
         )

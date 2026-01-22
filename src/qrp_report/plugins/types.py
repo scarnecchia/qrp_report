@@ -33,7 +33,7 @@ class FigureResult:
     title: str
     figure_type: Literal["histogram", "forest_plot", "km_curve"]
     data: pl.DataFrame
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: tuple[tuple[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
