@@ -16,13 +16,9 @@ Input datasets:
 - t2_overlap: Episode overlaps
 """
 
-from dataclasses import dataclass
-from typing import Literal
-
 import polars as pl
 
 from qrp_report.plugins.types import (
-    ReportPlugin,
     ReportContext,
     ReportResult,
     TableResult,
@@ -186,6 +182,10 @@ class T2L1Plugin:
 
     def _compute_t2_rates(self, df: pl.DataFrame) -> pl.DataFrame:
         """Compute T2 rates including event rates.
+
+        Note: Uses vectorized Polars operations instead of qrp_report.stats
+        scalar functions for efficiency when processing entire DataFrames.
+        The formulas match those in qrp_report.stats.rates module.
 
         Extends T1 rates with:
         - Event rate per 1000 person-years
