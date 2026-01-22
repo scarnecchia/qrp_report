@@ -27,11 +27,14 @@ from qrp_report.stats.survival import (
 from qrp_report.stats.effect_estimates import (
     risk_difference,
     risk_ratio,
+    incidence_rate_difference,
+    incidence_rate_ratio,
     hazard_ratio_logistic,
     hazard_ratio_robust,
 )
 from qrp_report.stats.balance import (
     standardized_difference,
+    aggregate_balance,
 )
 
 __all__ = [
@@ -52,8 +55,11 @@ __all__ = [
     # Effect estimates
     "risk_difference",
     "risk_ratio",
+    "incidence_rate_difference",
+    "incidence_rate_ratio",
     "hazard_ratio_logistic",
     "hazard_ratio_robust",
     # Balance
     "standardized_difference",
+    "aggregate_balance",
 ]
