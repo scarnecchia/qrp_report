@@ -34,6 +34,7 @@ from qrp_report.plugins.aggregation import (
 from qrp_report.plugins import t1  # noqa: F401
 from qrp_report.plugins import t2l1  # noqa: F401
 from qrp_report.plugins import t2l2  # noqa: F401
+from qrp_report.plugins import t4l1  # noqa: F401
 
 __all__ = [
     # Types
