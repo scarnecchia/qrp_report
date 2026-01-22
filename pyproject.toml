@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qrp-report"
+version = "0.1.0"
+description = "QRP Report generation tool - Python rewrite"
+readme = "readme.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    { name = "QRP Team" }
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "polars>=1.0.0",
+    "pyreadstat>=1.2.0",
+    "lifelines>=0.29.0",
+    "statsmodels>=0.14.0",
+    "pydantic>=2.0.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "xlsxwriter>=3.2.0",
+    "reportlab>=4.0.0",
+    "pyyaml>=6.0.0",
+    "pyarrow>=15.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+]
+
+[project.scripts]
+qrp-report = "qrp_report.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qrp_report"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
