@@ -1,109 +1,137 @@
 ![alt text](https://dev.sentinelsystem.org/projects/AP/repos/sentinel-analytic-packages/raw/resources/logo.png?at=refs%2Fheads%2Fmaster)
 # Sentinel Query Request Package (QRP) Reporting Tool
 
-## How to execute an analytic request package using the query request package (QRP) reporting tool
+## Overview
 
-### Overview
-The Sentinel QRP Reporting Tool is a SAS® program that is designed to run against the output of the <u>[Sentinel routine querying tools](https://dev.sentinelsystem.org/projects/AD/repos/qrp/browse)</u>. The QRP Reporting Tool is made up of SAS macros that allow users to aggregate results across multiple Data Partner sites in the Sentinel Distributed Database (SDD) and create formatted reports. For inferential analyses, users are able to adjust for confounders and generate effect estimates, utilizing various methods based upon the study design and balancing technique requested in the Sentinel routine querying tools. Note that data must be in the form of SAS datasets in order to use this analytic program.
+The Sentinel QRP Reporting Tool generates formatted reports from the output of the [Sentinel routine querying tools](https://dev.sentinelsystem.org/projects/AD/repos/qrp/browse). It aggregates results across multiple Data Partner sites in the Sentinel Distributed Database (SDD), computes epidemiological statistics, and produces Excel and PDF reports.
 
-### Analytic Request Package Folder Structure
-* <b>inputfiles:</b> contains SAS datasets specific to the given report
-* <b>output:</b> is where reports and output datasets are saved
-* <b>resources:</b> contains resource file(s)
-* <b>sasprograms:</b> contains the file(s) to be executed
-* <b>templatefiles:</b> contains the template lookup files
+**Version 5.0** is a complete rewrite in Python, replacing the previous SAS implementation.
 
-### Requirements
-* To execute your own customized analysis with the QRP Reporting Tool, you must
-properly parameterize the appropriate input files (see documentation <u><b>[here](https://dev.sentinelsystem.org/pages/SENTINEL/sentinel-routine-querying-tool-report-documentation/master/browse/file3000-inputfiles.html)</b></u>
-for details)
-* Output tables from the msoc folder of the Sentinel routine querying tools. The
-output tables can be found in their relevant tables of contents below:
-    * Type 1: <u><b>[Extract information to calculate background
-        rates](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type1.md)</b></u>
-    * Type 2: <u><b>[Extract information on exposures and follow-up
-        time](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type2.md)</b></u>
-    * Type 3: <u><b>[Extract information for a self-controlled risk interval
-        design](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type3.md)</b></u>
-    * Type 4: <u><b>[Extract information for medical product use during
-        pregnancy](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type4.md)</b></u>
-    * Type 5: <u><b>[Extract information for medical product
-        utilization](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type5.md)</b></u>
-    * Type 6: <u><b>[Extract information on manufacturer-level product utilization
-        and switching
-        patterns](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type6.md)
-    </b></u>
-* SAS version 9.4 or higher
+## Requirements
 
-### Getting Started
-* Create each input file as SAS datasets (file types are sas.7bdat).
-	* For more information on the input file structure in the most recent version of the QRP Reporting Tool, please refer to the <u><b>[documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-report-documentation/browse)</b></u>.
-* Open sasprograms\qrp_report.sas
-	* Follow the instructions in section 1 in the SAS program and provide:
-		* The file path for the location of your QRP request inputfiles folder
-		* The file path for the location of your data folder containing QRP request output files. Should be left blank if path is specified in Data Partner Info file.
-		* The file path for the location of this QRP report package
-		* The name of your create report file
-* Close and run qrp_report.sas by right-clicking on the file and selecting "run in batch."
+- Python 3.12 or higher
+- Output tables from the Sentinel routine querying tools (SAS7BDAT format)
 
-### Output
-* Reports are saved to the “output” folder of the QRP Reporting Tool file structure.
-* The QRP output for each Data Partner is masked and stacked into datasets and are saved in a folder called "msocdata" within the "output" folder.
-* The underlying aggregated report datasets are saved in a folder called "reportdata" within the "output" folder.
+## Installation
 
-### Compatability
-Version 4.3.0 of the QRP reporting tool is designed to be compatible with QRP 14.3.0 and later. To determine which version of the tool is compatible with older versions of QRP, use the table below:
+```bash
+# Clone the repository
+git clone https://github.com/scarnecchia/qrp_report.git
+cd qrp_report
 
- <table style="width:100%">
-  <tr>
-    <th>QRP Version<br></th>
-    <th> QRP Report Version</th>
-  </tr>
-  <tr>
-    <td>14.3.0-current</td>
-    <td>4.3.0</td>
-    </tr>
-    <tr>
-    <td>14.2.1</td>
-    <td>4.2.1</td>
-    </tr>
-    <td>14.2.0</td>
-    <td>4.2.0</td>
-  </tr>
-  <tr>
-    <td>14.1.0</td>
-    <td>4.1.1</td>
-  </tr>
-  <tr>
-  <td>14.0.0</td>
-    <td>4.0.0</td>
-  </tr>
-  <tr>
-    <td>13.2.0</td>
-    <td>3.2.0</td>
-  </tr>
-    <tr>
-    <td>13.1.0-13.1.2</td>
-    <td>3.1.1</td>
-  </tr>
-    <tr>
-    <td>13.0.0-13.0.1</td>
-    <td>3.0.1</td>
-  </tr>
-    <tr>
-    <td>12.2.0</td>
-    <td>2.2.0</td>
-  </tr>
-  <tr>
-    <td>12.1.0</td>
-    <td>2.1.0</td>
-  </tr>
-  <tr>
-    <td>12.0.0</td>
-    <td>2.0.0</td>
-  </tr>
-</table>
+# Install with pip
+pip install -e .
 
-### Additional Information
+# Or with uv (recommended)
+uv pip install -e .
+```
 
-The Sentinel Operations Center has limited capacity to support use of our tools. However, we welcome feedback, comments, and suggestions pertaining to our documentation or tools. Email us <u><b>[here](mailto:info@sentinelsystem.org?subject=Git)</u></b>.
+## Quick Start
+
+### 1. Verify Installation
+
+```bash
+# Check CLI is available
+qrp-report --help
+
+# List available report types
+qrp-report list-plugins
+```
+
+Available report types:
+- **T1**: Background rates and population statistics
+- **T2L1**: Exposure and follow-up analysis (Level 1 - descriptive)
+- **T2L2**: Effect estimates with propensity score methods (Level 2 - inferential)
+- **T4L1**: Pregnancy-specific background rates
+- **T4L2**: Pregnancy-specific effect estimates
+
+### 2. Create a Configuration File
+
+Create a YAML configuration file (e.g., `config.yaml`):
+
+```yaml
+reporttype: T1
+runid: "my_analysis_001"
+groups:
+  - "exposure_group_1"
+  - "comparator_group_1"
+
+datapartners:
+  - dpid: "DP01"
+    datapath: "/path/to/dp01/msocdata"
+  - dpid: "DP02"
+    datapath: "/path/to/dp02/msocdata"
+
+outputdir: "./output"
+```
+
+### 3. Validate Configuration
+
+```bash
+qrp-report validate config.yaml
+```
+
+### 4. Generate Report
+
+```bash
+qrp-report generate config.yaml
+```
+
+## Configuration Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `reporttype` | Yes | Report type: T1, T2L1, T2L2, T4L1, T4L2 |
+| `runid` | Yes | Unique identifier for this analysis run |
+| `groups` | Yes | List of analysis groups to include |
+| `datapartners` | Yes | List of data partner configurations |
+| `outputdir` | Yes | Directory for output files |
+| `stratification` | No | Variables to stratify by (e.g., sex, agegroup) |
+| `periods` | No | Analysis periods (required for L2 reports) |
+| `psmethod` | No | PS method for L2: matching, stratification, iptw, covstrat |
+
+## Input Data
+
+The tool expects output from Sentinel routine querying tools:
+
+- **Type 1**: Background rates ([documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type1.md))
+- **Type 2**: Exposures and follow-up ([documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type2.md))
+- **Type 4**: Pregnancy utilization ([documentation](https://dev.sentinelsystem.org/projects/SENTINEL/repos/sentinel-routine-querying-tool-documentation/browse/files/atoc-type4.md))
+
+## Output
+
+Reports are saved to the configured output directory:
+- Excel reports (`.xlsx`) with formatted tables
+- PDF reports (`.pdf`) with publication-ready formatting
+- Aggregated data files (`.parquet`) for further analysis
+
+## Development
+
+```bash
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Run tests
+pytest tests/ -v
+
+# Run type checking
+mypy src/qrp_report/
+
+# Run linter
+ruff check src/qrp_report/
+```
+
+## Compatibility
+
+| QRP Version | QRP Report Version |
+|-------------|-------------------|
+| 14.3.0+ | 5.0.0 (Python) |
+| 14.3.0+ | 4.3.0 (SAS) |
+| 14.2.1 | 4.2.1 |
+| 14.2.0 | 4.2.0 |
+| 14.1.0 | 4.1.1 |
+| 14.0.0 | 4.0.0 |
+
+## Additional Information
+
+The Sentinel Operations Center welcomes feedback, comments, and suggestions. Email us [here](mailto:info@sentinelsystem.org?subject=Git).
