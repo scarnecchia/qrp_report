@@ -26,7 +26,12 @@ from qrp_report.render.formatters import (
     format_percent,
     format_rate,
     format_ci,
+    format_rate_with_ci,
+    format_effect_estimate,
     format_pvalue,
+    format_days,
+    format_person_years,
+    apply_format,
 )
 from qrp_report.render.excel import ExcelRenderer
 from qrp_report.render.pdf import PDFRenderer
@@ -52,7 +57,12 @@ __all__ = [
     "format_percent",
     "format_rate",
     "format_ci",
+    "format_rate_with_ci",
+    "format_effect_estimate",
     "format_pvalue",
+    "format_days",
+    "format_person_years",
+    "apply_format",
     # Renderers
     "ExcelRenderer",
     "PDFRenderer",
