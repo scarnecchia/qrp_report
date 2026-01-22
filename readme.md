@@ -19,6 +19,9 @@ The Sentinel QRP Reporting Tool generates formatted reports from the output of t
 git clone https://github.com/scarnecchia/qrp_report.git
 cd qrp_report
 
+# Activate the virtual environment
+source .venv/bin/activate
+
 # Install with pip
 pip install -e .
 
