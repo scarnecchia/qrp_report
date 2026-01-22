@@ -50,22 +50,38 @@ Available report types:
 
 ### 2. Create a Configuration File
 
-Create a YAML configuration file (e.g., `config.yaml`):
+See `examples/` for complete configuration examples:
+- `t1_config_example.yaml` - Full T1 config with all options documented
+- `t1_config_minimal.yaml` - Minimal T1 config with required fields only
+
+Minimal example (`config.yaml`):
 
 ```yaml
+reportid: "MY_ANALYSIS_001"
 reporttype: T1
-runid: "my_analysis_001"
+
+dpinfo:
+  - dp: "DP001"
+    dpname: "Data Partner 1"
+    path: "/path/to/dp001/msocdata"
+
 groups:
-  - "exposure_group_1"
-  - "comparator_group_1"
+  - runid: "myquery"
+    group: "exposure"
+    order: 1
 
-datapartners:
-  - dpid: "DP01"
-    datapath: "/path/to/dp01/msocdata"
-  - dpid: "DP02"
-    datapath: "/path/to/dp02/msocdata"
+baseline:
+  - runid: "myquery"
+    group: "exposure"
+    order: 1
+    baseline: true
 
-outputdir: "./output"
+tables:
+  - table: "T1A"
+    tablesub: "overall"
+    dataset: "t1_cida"
+
+report_destination: EXCEL
 ```
 
 ### 3. Validate Configuration

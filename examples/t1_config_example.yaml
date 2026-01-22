@@ -1,0 +1,222 @@
+# =============================================================================
+# QRP Report Tool - T1 (Background Rates) Configuration Example
+# =============================================================================
+#
+# This configuration generates a Type 1 report showing:
+# - Patient counts and demographics
+# - Episode counts and distributions
+# - Incidence rates with 95% confidence intervals
+# - Stratification by demographic variables
+#
+# Input Data Required:
+#   From QRP msocdata folder: t1_cida.sas7bdat
+#   (Optionally: censor_cida.sas7bdat for censoring information)
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# REPORT IDENTIFICATION
+# -----------------------------------------------------------------------------
+
+reportid: "ACE_INHIBITORS_2024_001"    # Unique identifier for this report
+reporttype: T1                          # Report type (T1, T2L1, T2L2, T4L1, T4L2)
+
+# -----------------------------------------------------------------------------
+# DATA PARTNER CONFIGURATION
+# Maps to: Data Partner folders containing QRP output (msocdata)
+# -----------------------------------------------------------------------------
+
+dpinfo:
+  # Each data partner has a folder with QRP output datasets
+  - dp: "DP001"                         # Data Partner ID (matches runid prefix)
+    dpname: "Academic Health Center 1"  # Display name in report
+    path: "/data/sentinel/dp001/msocdata"  # Path to t1_cida.sas7bdat
+    database: "Claims 2015-2023"        # Database description
+    includedp: true                     # Include in aggregation (false to exclude)
+
+  - dp: "DP002"
+    dpname: "Regional Health System"
+    path: "/data/sentinel/dp002/msocdata"
+    database: "Claims 2016-2023"
+    includedp: true
+
+  - dp: "DP003"
+    dpname: "National Insurer"
+    path: "/data/sentinel/dp003/msocdata"
+    database: "Claims 2014-2023"
+    includedp: true
+
+# -----------------------------------------------------------------------------
+# ANALYSIS GROUPS
+# Maps to: 'group' column in t1_cida.sas7bdat
+# These are the cohorts/exposures defined in your QRP request
+# -----------------------------------------------------------------------------
+
+groups:
+  # Exposure group (e.g., users of the drug of interest)
+  - runid: "acei_2024"                  # Must match QRP runid
+    group: "ace_inhibitors"             # Must match 'group' value in t1_cida
+    order: 1                            # Display order in tables
+    includeinfigure: true               # Include in figures
+    codedist: "ndc"                     # Code distribution module (ndc, icd, cpt)
+    topncodedist: 10                    # Top N codes to display
+
+  # Comparator group (e.g., users of alternative therapy)
+  - runid: "acei_2024"
+    group: "arb_users"                  # Angiotensin receptor blockers
+    order: 2
+    includeinfigure: true
+    codedist: "ndc"
+    topncodedist: 10
+
+  # Background population (optional, for context)
+  - runid: "acei_2024"
+    group: "all_antihypertensives"
+    order: 3
+    includeinfigure: false              # Exclude from figures
+    codedist: null
+    topncodedist: 0
+
+# -----------------------------------------------------------------------------
+# BASELINE CHARACTERISTICS (Table 1)
+# Defines which groups appear in demographic/baseline tables
+# -----------------------------------------------------------------------------
+
+baseline:
+  - runid: "acei_2024"
+    group: "ace_inhibitors"
+    order: 1
+    baseline: true                      # This is the reference/baseline group
+    baselinegroupnum: 1                 # Sub-group number (for paired analyses)
+    labcharacteristics: []              # Lab covariates (if available in data)
+    covinps: []                         # Covariates in propensity score (L2 only)
+
+  - runid: "acei_2024"
+    group: "arb_users"
+    order: 2
+    baseline: false
+    baselinegroupnum: 2
+    labcharacteristics: []
+    covinps: []
+
+# -----------------------------------------------------------------------------
+# TABLE SPECIFICATIONS
+# Defines which tables to generate and their stratifications
+# Maps to: levelid columns in t1_cida.sas7bdat
+# -----------------------------------------------------------------------------
+
+tables:
+  # Table T1A: Overall summary (no stratification)
+  - table: "T1A"
+    tablesub: "overall"
+    dataset: "t1_cida"                  # Source dataset from QRP
+    levelid1: ""                        # Empty = no stratification (overall)
+    levelid2: ""
+    levelid3: ""
+    categories: "N%"                    # Column format
+    includeinreport: true
+
+  # Table T1B: Stratified by sex
+  - table: "T1B"
+    tablesub: "by_sex"
+    tablesubstrat: "sex"
+    dataset: "t1_cida"
+    levelid1: "sex"                     # Must match column/value in t1_cida
+    levelid2: ""
+    levelid3: ""
+    categories: "N%"
+    includeinreport: true
+
+  # Table T1C: Stratified by age group
+  - table: "T1C"
+    tablesub: "by_agegroup"
+    tablesubstrat: "agegroup"
+    dataset: "t1_cida"
+    levelid1: "agegroup"
+    levelid2: ""
+    levelid3: ""
+    categories: "N%"
+    includeinreport: true
+
+  # Table T1D: Stratified by region
+  - table: "T1D"
+    tablesub: "by_region"
+    tablesubstrat: "region"
+    dataset: "t1_cida"
+    levelid1: "region"
+    levelid2: ""
+    levelid3: ""
+    categories: "N%"
+    includeinreport: true
+
+  # Table T1E: Cross-stratified by sex AND age group
+  - table: "T1E"
+    tablesub: "by_sex_agegroup"
+    tablesubstrat: "sex x agegroup"
+    dataset: "t1_cida"
+    levelid1: "sex"
+    levelid2: "agegroup"
+    levelid3: ""
+    categories: "N%"
+    includeinreport: true
+
+  # Table T1F: Censoring summary (if censor_cida available)
+  - table: "T1F"
+    tablesub: "censoring"
+    dataset: "censor_cida"
+    levelid1: ""
+    levelid2: ""
+    levelid3: ""
+    categories: "N%"
+    includeinreport: true
+    censorreason:                       # Filter to specific censor reasons
+      - "end_enrollment"
+      - "death"
+      - "outcome"
+
+# -----------------------------------------------------------------------------
+# FIGURE SPECIFICATIONS (Optional for T1)
+# -----------------------------------------------------------------------------
+
+figures: []                             # T1 typically has no figures
+
+# -----------------------------------------------------------------------------
+# CUSTOM LABELS
+# Override default labels for groups or censor reasons
+# -----------------------------------------------------------------------------
+
+labels:
+  - labeltype: "grouplabel"
+    labelvar: "ace_inhibitors"
+    label: "ACE Inhibitor New Users"
+
+  - labeltype: "grouplabel"
+    labelvar: "arb_users"
+    label: "ARB New Users"
+
+  - labeltype: "censorlabel"
+    labelvar: "end_enrollment"
+    label: "End of Enrollment"
+
+  - labeltype: "censorlabel"
+    labelvar: "death"
+    label: "Death"
+
+# -----------------------------------------------------------------------------
+# REPORT OPTIONS
+# -----------------------------------------------------------------------------
+
+stratifybydp: false                     # true = include DP-specific tables
+small_cellcounts: 5                     # Suppress cells with counts < 5
+report_destination: BOTH                # EXCEL, PDF, or BOTH
+collapse_vars: []                       # Variables to collapse (rare)
+datedistributed: "2024-03-15"           # Report distribution date
+seed: 12345                             # Random seed for DP masking
+database: "Sentinel Distributed Database"
+logofile: null                          # Path to logo file (optional)
+
+# L2-specific options (not used for T1, shown for reference)
+l2comparisons: []
+include_unweighted_trim: false
+look_start: 1
+look_end: 1
