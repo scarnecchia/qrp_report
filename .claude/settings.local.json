@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__git-mcp-server__git_status",
+      "mcp__git-mcp-server__git_commit",
+      "mcp__git-mcp-server__git_push"
+    ]
+  }
+}

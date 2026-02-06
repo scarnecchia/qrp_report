@@ -1,0 +1,28 @@
+# Minimal T1 Configuration
+# This is the simplest possible T1 config - just the required fields
+
+reportid: "MINIMAL_T1_EXAMPLE"
+reporttype: T1
+
+dpinfo:
+  - dp: "DP001"
+    dpname: "Data Partner 1"
+    path: "/path/to/dp001/msocdata"
+
+groups:
+  - runid: "myquery"
+    group: "exposure"
+    order: 1
+
+baseline:
+  - runid: "myquery"
+    group: "exposure"
+    order: 1
+    baseline: true
+
+tables:
+  - table: "T1A"
+    tablesub: "overall"
+    dataset: "t1_cida"
+
+report_destination: EXCEL
