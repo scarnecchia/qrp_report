@@ -1,0 +1,8 @@
+
+    GROUP  RUNID  DISTINDEXTYPE  EPISODES
+---------  -----  -------------  --------
+exposed    RUN1   exp                 215
+exposed    RUN1   hoi                  73
+reference  RUN1   exp                 159
+reference  RUN1   hoi                  44
+

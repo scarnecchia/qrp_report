@@ -1,0 +1,26 @@
+Jenner 0.1.0 (Unlicensed - limited to 100 observations)
+Get a license at https://jenneranalytics.com/license
+
+NOTE: Option OBS changed to 100.
+NOTE: DATA baseline_long
+
+NOTE: Processing inline DATALINES (6 lines)
+
+NOTE: Read 6 rows from DATALINES.
+NOTE: Wrote baseline_long (6 rows, 3 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC SORT data=baseline_long
+
+NOTE: Unlicensed mode - input limited to 100 observations.
+NOTE: Read 6 rows from baseline_long.
+NOTE: Wrote baseline_long (6 rows, 3 columns).
+NOTE: PROC SORT statement used.
+NOTE: PROC TRANSPOSE data=baseline_long
+
+NOTE: Created 2 rows.
+NOTE: Output written to /tmp/work/work/9d24274d-e744-4ca4-9f2c-fa0e804ac9be/baseline_wide.avro.
+NOTE: PROC PRINT data=baseline_wide
+
+NOTE: PROC PRINT completed: 2 observations printed, 4 variables

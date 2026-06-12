@@ -1,0 +1,6 @@
+
+      CHECK  RESULT
+-----------  ------
+cohort_nobs       4
+empty_nobs        0
+

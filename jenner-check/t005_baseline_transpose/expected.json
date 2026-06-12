@@ -1,0 +1,20 @@
+{
+  "_captured_at": "2026-06-12T19:03:21Z",
+  "_captured_run_id": "r_019ebd37397c7e40963a41c088ba203c",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "NOTE: Wrote baseline_long (6 rows, 3 columns).",
+    "NOTE: PROC SORT statement used.",
+    "NOTE: PROC TRANSPOSE data=baseline_long",
+    "NOTE: PROC PRINT completed: 2 observations printed, 4 variables"
+  ],
+  "log_does_not_contain": [
+    "ERROR:",
+    "[JENNER-ERROR"
+  ],
+  "diagnostics": {
+    "parse_warnings": [],
+    "runtime_warnings": []
+  }
+}

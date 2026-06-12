@@ -1,0 +1,33 @@
+Jenner 0.1.0 (Unlicensed - limited to 100 observations)
+Get a license at https://jenneranalytics.com/license
+
+NOTE: Option OBS changed to 100.
+NOTE: DATA agg_distindex
+
+NOTE: Processing inline DATALINES (8 lines)
+
+NOTE: Read 8 rows from DATALINES.
+NOTE: Wrote agg_distindex (8 rows, 5 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC MEANS
+NOTE: Output dataset _agg_distindex has 4 observations and 6 variables.
+NOTE: PROC MEANS statement used.
+NOTE: DATA _agg_distindex
+
+
+NOTE: Read 4 rows from _agg_distindex.
+NOTE: Wrote _agg_distindex (4 rows, 4 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC SORT data=_agg_distindex
+
+NOTE: Unlicensed mode - input limited to 100 observations.
+NOTE: Read 4 rows from _agg_distindex.
+NOTE: Wrote _agg_distindex (4 rows, 4 columns).
+NOTE: PROC SORT statement used.
+NOTE: PROC PRINT data=_agg_distindex
+
+NOTE: PROC PRINT completed: 4 observations printed, 4 variables
