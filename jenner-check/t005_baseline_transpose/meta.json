@@ -1,0 +1,8 @@
+{
+  "bundle": "t005_baseline_transpose",
+  "source_file": "inputfiles/macros/baseline_aggregate.sas",
+  "source_blob_sha": "6b11d6ac1b047233dd7e55ba0be0b69828e57cb8",
+  "source_commit": "a51b21b914a2d918c6ed1fe3060b39860a12e021",
+  "tier": "real_data",
+  "notes": "DP-pivot pattern from baseline_aggregate.sas: baseline metrics arriving one row per (metric, data partner) reshaped by PROC TRANSPOSE so each data partner becomes its own report column."
+}

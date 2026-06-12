@@ -1,0 +1,19 @@
+{
+  "_captured_at": "2026-06-12T19:03:21Z",
+  "_captured_run_id": "r_019ebd367d347f638002f019ce49e0f4",
+  "status": "ok",
+  "exit_code": 0,
+  "log_contains": [
+    "NOTE: Wrote lookup_footnotes (8 rows, 3 columns).",
+    "NOTE: PROC PRINT completed: 8 observations printed, 3 variables",
+    "NOTE: PROC FREQ statement used."
+  ],
+  "log_does_not_contain": [
+    "ERROR:",
+    "[JENNER-ERROR"
+  ],
+  "diagnostics": {
+    "parse_warnings": [],
+    "runtime_warnings": []
+  }
+}

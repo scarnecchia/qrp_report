@@ -1,0 +1,8 @@
+{
+  "bundle": "t004_sql_levels_into",
+  "source_file": "inputfiles/macros/t1t2t4conc_createdata.sas",
+  "source_blob_sha": "9e13f189a2f81f8b3671337ca4c6a5beea6d7e7f",
+  "source_commit": "a51b21b914a2d918c6ed1fe3060b39860a12e021",
+  "tier": "real_data",
+  "notes": "Stratification-discovery step from t1t2t4conc_createdata.sas: PROC SQL collects distinct level IDs and sub-stratifications into macro variables via SELECT ... INTO : ... SEPARATED BY plus a COUNT(DISTINCT) INTO :."
+}

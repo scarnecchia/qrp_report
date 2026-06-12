@@ -1,0 +1,21 @@
+
+      TYPE  ORDER                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      DESCRIPTION
+----------  -----  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+type4          -2  Pregnancy is defined as a pregnancy that resulted in a live or non-live birth identified using the method specified in the overview section of this report.
+baseline       -4  Covariate included in the propensity score logistic regression model.
+baseline        1  All metrics are based on total number of episodes per group, except for sex, race, and Hispanic origin which are based on total number of unique patients.
+baseline       15  Race data may not be completely populated at all Data Partners; therefore, data about race may be incomplete.
+censor          1  An episode may be censored due to more than one reason if they occur on the same date. Therefore, the sum of the reasons for censoring may be greater than the total number of episodes.
+censor         10  Represents episodes censored due to user-specified study end date.
+kmcdf           1  A single episode may contribute to multiple categories if a patient was censored due to multiple criteria on the same day.
+effectest       1  All values in this section are weighted.
+
+                                                   The FREQ Procedure
+
+type         Frequency    Percent
+----------------------------------
+baseline             3     37.50
+censor               2     25.00
+effectest            1     12.50
+kmcdf                1     12.50
+type4                1     12.50

@@ -1,0 +1,7 @@
+
+      ITEM    VALUE
+----------  -------
+t1_levelid  L1 L2
+t1_strat    age sex
+n_levels    2
+

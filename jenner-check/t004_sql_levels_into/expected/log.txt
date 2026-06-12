@@ -1,0 +1,29 @@
+Jenner 0.1.0 (Unlicensed - limited to 100 observations)
+Get a license at https://jenneranalytics.com/license
+
+NOTE: Option OBS changed to 100.
+NOTE: DATA tablefile
+
+NOTE: Processing inline DATALINES (5 lines)
+
+NOTE: Read 5 rows from DATALINES.
+NOTE: Wrote tablefile (5 rows, 3 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC SQL 
+
+NOTE: Macro variable T1_LEVELID = L1 L2
+NOTE: Macro variable T1_STRAT = age sex
+NOTE: Macro variable N_LEVELS = 2
+NOTE: PROC SQL statement used.
+NOTE: DATA _r
+
+
+NOTE: Wrote _r (3 rows, 2 columns).
+NOTE: DATA elapsed:
+  wall  0.00 seconds
+  cpu   0.00 seconds
+NOTE: PROC PRINT data=_r
+
+NOTE: PROC PRINT completed: 3 observations printed, 2 variables

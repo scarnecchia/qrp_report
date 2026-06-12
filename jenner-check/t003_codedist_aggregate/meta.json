@@ -1,0 +1,8 @@
+{
+  "bundle": "t003_codedist_aggregate",
+  "source_file": "inputfiles/macros/codedistribution_createdata.sas",
+  "source_blob_sha": "96d2cce2f1a3b623794ccddcfdcfc70563808dc4",
+  "source_commit": "a51b21b914a2d918c6ed1fe3060b39860a12e021",
+  "tier": "real_data",
+  "notes": "Aggregation core of codedistribution_createdata.sas: episode counts split across data partners summed by group/runid/distindextype via PROC MEANS NWAY, then sorted for the report."
+}

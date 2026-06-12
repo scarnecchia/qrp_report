@@ -1,0 +1,8 @@
+{
+  "bundle": "t002_create_lookup",
+  "source_file": "inputfiles/macros/create_lookup.sas",
+  "source_blob_sha": "8284996132028b3319f416545fb1a78f8652d0ee",
+  "source_commit": "a51b21b914a2d918c6ed1fe3060b39860a12e021",
+  "tier": "real_data",
+  "notes": "%create_lookup authors the report footnote lookup table via an attrib-typed DATA step; redirected from the read-only lookup library to WORK. Footnote rows verbatim from source. PROC FREQ tabulates 8 footnotes across 5 report sections."
+}

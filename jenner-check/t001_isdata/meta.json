@@ -1,0 +1,8 @@
+{
+  "bundle": "t001_isdata",
+  "source_file": "inputfiles/macros/utility_macros.sas",
+  "source_blob_sha": "810dfa3b94a554f645c3096c7a8a9b0bc1b0f634",
+  "source_commit": "a51b21b914a2d918c6ed1fe3060b39860a12e021",
+  "tier": "real_data",
+  "notes": "%isdata reports NLOBS of a dataset; bundle builds a small masked cohort (4 rows) plus an empty dataset and records what %isdata returns for each (4 and 0)."
+}
